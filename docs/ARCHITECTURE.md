@@ -1,470 +1,474 @@
-# ARCHITECTURE.md — Arquitetura Tecnica do Omni Runner
+# ARCHITECTURE.md — Arquitetura Técnica do Omni Runner
 
-> **Sprint:** 1.2
-> **Status:** Ativo
-> **Referencia:** STACK.md (congelado), GOVERNANCE.md (congelado)
+> **Atualizado:** 23/02/2026
+> **Status:** Ativo — Pré-lançamento (QA em device real)
+> **Código:** 451 arquivos Dart (lib/) · 55 arquivos de teste · ~114k linhas
 
 ---
 
 ## 1. STACK
 
-| Camada | Tecnologia | Versao Minima |
+| Camada | Tecnologia | Versão |
 |---|---|---|
 | UI / Framework | Flutter | 3.22+ |
 | State Management | BLoC | 8.x |
 | DI / Service Locator | get_it | latest |
-| Persistencia Local | Isar | 3.x |
-| Modelos de Dados | Protobuf | 3.x |
-| Mapas | MapLibre | 0.19+ |
-| Backend / Sync | Supabase | 2.x |
-| GPS | Geolocator | 11.x |
-| Error Handling | fpdart (Either/Option) | 1.x |
+| Persistência Local | Isar | 3.x |
+| Mapas | MapLibre + MapTiler | 0.19+ |
+| Backend | Supabase (PostgreSQL + Auth + Edge Functions + Storage) | 2.x |
+| GPS | Geolocator + flutter_foreground_task | 11.x |
+| Heart Rate | flutter_reactive_ble | latest |
+| Health | health (HealthKit + Health Connect) | latest |
+| Audio Coach | flutter_tts | latest |
+| Crash Reporting | Sentry | latest |
+| Auth | Google Sign-In + Supabase Auth | latest |
 | Equality | Equatable | 2.x |
+| Payments (Portal only) | Stripe (Next.js portal, never in app) | latest |
 
 ---
 
-## 2. CAMADAS (Clean Architecture)
+## 2. VISÃO GERAL DA ARQUITETURA
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                     FLUTTER APP (Mobile)                           │
+│                                                                    │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐ │
+│  │   Presentation   │  │     Domain       │  │      Data        │ │
+│  │                  │  │                  │  │                  │ │
+│  │  66 Screens      │  │  54 Entities     │  │  27 Repos (Isar) │ │
+│  │  21 BLoCs        │  │  60 Use Cases    │  │  Datasources     │ │
+│  │  Widgets         │  │  Failures        │  │  Mappers         │ │
+│  └────────┬─────────┘  └────────▲─────────┘  └────────┬─────────┘ │
+│           │                     │                      │           │
+│           └─────────────────────┼──────────────────────┘           │
+│                                 │                                  │
+│                          DOMAIN É O CENTRO                         │
+└───────────────────────────────┬─┬──────────────────────────────────┘
+                                │ │
+              ┌─────────────────┘ └────────────────┐
+              ▼                                    ▼
+┌──────────────────────┐              ┌──────────────────────┐
+│   Supabase Backend   │              │    Portal B2B        │
+│                      │              │    (Next.js)         │
+│  PostgreSQL (RLS)    │              │                      │
+│  41 Edge Functions   │              │  11 páginas          │
+│  8 SQL Migrations    │              │  Stripe checkout     │
+│  RPCs (SECURITY DEF) │              │  RBAC middleware     │
+│  pg_cron schedules   │              │  SSR auth            │
+└──────────────────────┘              └──────────────────────┘
+```
+
+---
+
+## 3. ESTRUTURA DE DIRETÓRIOS
 
 ```
 lib/
-├── domain/            # Regras de negocio puras (Dart puro)
-│   ├── entities/      # Entities (Protobuf-generated, imutaveis)
-│   ├── value_objects/  # Validacoes de dominio
-│   ├── repositories/  # Contratos abstratos (interfaces)
-│   ├── usecases/      # Use Cases (um por arquivo)
-│   └── failures/      # Sealed class Failure hierarchy
+├── core/                          # Infraestrutura transversal
+│   ├── analytics/                 # ProductEventTracker
+│   ├── auth/                      # UserIdentityProvider
+│   ├── config/                    # AppConfig (env vars)
+│   ├── deep_links/                # Deep link handling
+│   ├── errors/                    # CoachingFailures, etc.
+│   ├── logging/                   # AppLogger → Sentry
+│   ├── push/                      # NotificationRulesService
+│   ├── sync/                      # AutoSyncManager
+│   ├── tips/                      # FirstUseTips
+│   └── utils/                     # Helpers genéricos
 │
-├── application/       # Orquestracao
-│   └── <feature>/
-│       ├── bloc/      # BLoC + Events + States
-│       └── dto/       # DTOs entre camadas
+├── data/                          # Camada de dados (implementações)
+│   ├── datasources/               # RemoteAuthDataSource, GPS, etc.
+│   ├── mappers/                   # PositionMapper, PermissionMapper
+│   ├── models/
+│   │   ├── isar/                  # Isar collection models (*.g.dart)
+│   │   └── proto/                 # Protobuf adapters
+│   └── repositories_impl/        # 27 implementações concretas
+│       ├── isar_*_repo.dart       # Persistência local (Isar)
+│       ├── remote_*_repo.dart     # Supabase direto
+│       ├── sync_repo.dart         # Sync offline-first
+│       └── location_stream_repo.dart
 │
-├── infrastructure/    # Implementacoes concretas
-│   ├── models/        # Isar models, Protobuf adapters
-│   ├── datasources/   # Isar, Supabase, GPS service
-│   └── repositories/  # Implementacoes dos contratos do domain
+├── domain/                        # Regras de negócio puras (Dart puro)
+│   ├── entities/                  # 54 entities (imutáveis, Equatable)
+│   ├── failures/                  # Sealed class hierarchy
+│   ├── repositories/              # Contratos abstratos (interfaces)
+│   ├── services/                  # Serviços de domínio
+│   └── usecases/                  # 60 use cases
+│       ├── coaching/              # Assessoria (CRUD, invite, remove)
+│       ├── gamification/          # Desafios, challenges, wallet
+│       ├── progression/           # XP, badges, missions, streaks
+│       ├── social/                # Amigos, grupos sociais, eventos
+│       └── (tracking)             # GPS, pace, distance, integrity
 │
-├── presentation/      # UI
-│   ├── pages/         # Telas (sufixo: Page)
-│   ├── widgets/       # Componentes reutilizaveis (sufixo: Widget)
-│   └── routes/        # Navegacao e rotas
+├── features/                      # Feature modules (mini clean arch)
+│   ├── health_export/             # HealthKit / Health Connect
+│   ├── integrations_export/       # GPX, TCX, FIT export
+│   ├── strava/                    # Strava integration
+│   ├── watch_bridge/              # WearOS / Apple Watch
+│   └── wearables_ble/             # BLE heart rate monitors
 │
-├── injection_container.dart  # get_it — unico ponto de DI
-└── main.dart                 # Entry point
+├── presentation/
+│   ├── blocs/                     # 21 BLoCs (Events + States)
+│   ├── map/                       # MapLibre helpers
+│   ├── screens/                   # 66 telas
+│   └── widgets/                   # Componentes reutilizáveis
+│
+├── core/service_locator.dart      # get_it — único ponto de DI
+└── main.dart                      # Entry point (Sentry + Supabase init)
 ```
 
 ---
 
-## 3. GRAFO DE DEPENDENCIA
+## 4. FLUXO DE AUTENTICAÇÃO E ONBOARDING
 
 ```
-presentation -> application -> domain <- infrastructure
-                                 ^
-                                 |
-                          TUDO DEPENDE DO DOMAIN
-
-Proibido:
-  presentation -> infrastructure
-  application  -> infrastructure
-  domain       -> qualquer outra camada
+App Start
+    │
+    ▼
+main.dart: SentryFlutter.init() → Supabase.initialize() → _bootstrap()
+    │
+    ▼
+AuthGate
+    ├─ Sem sessão → WelcomeScreen → LoginScreen (Google Sign-In)
+    │
+    ├─ Sessão sem perfil completo → complete-social-profile (EF)
+    │
+    ├─ Sessão sem role → OnboardingRoleScreen
+    │   ├─ Atleta → JoinAssessoriaScreen (solicitar entrada)
+    │   └─ Staff  → StaffSetupScreen (criar assessoria)
+    │       ├─ PopScope intercepta back → sign-out → Welcome
+    │       └─ Botão ← visual em todas as telas
+    │
+    ├─ Role = ATLETA → HomeScreen (4 tabs: Início, Correr, Histórico, Mais)
+    │
+    └─ Role = ASSESSORIA_STAFF → HomeScreen (2 tabs: Início, Mais)
+                                    └─ StaffDashboardScreen
 ```
 
 ---
 
-## 4. CONVENCOES DE UNIDADES (FIXAS)
+## 5. STAFF DASHBOARD (Assessoria)
 
-| Grandeza | Tipo | Unidade Interna | Formatacao UI |
+```
+StaffDashboardScreen
+    │
+    ├─ Dados: query Supabase direto → sync coaching_groups + coaching_members → Isar
+    │
+    ├─ Cards:
+    │   ├─ Atletas e Staff → CoachingGroupDetailsScreen (Supabase direto)
+    │   │   └─ Lista membros + botão remover (fn_remove_member)
+    │   │
+    │   ├─ Solicitações → StaffJoinRequestsScreen
+    │   │   └─ Aprovar/Rejeitar (fn_approve/reject_join_request)
+    │   │   └─ Badge com contagem de pendentes
+    │   │
+    │   ├─ Confirmações → StaffDisputesScreen (clearing entre assessorias)
+    │   │
+    │   ├─ Performance → StaffPerformanceScreen
+    │   │   └─ KPIs: atletas ativos, corridas, desafios, campeonatos
+    │   │   └─ RLS: sessions_staff_read via staff_group_member_ids()
+    │   │
+    │   ├─ Campeonatos → StaffChampionshipTemplatesScreen
+    │   │   └─ Criar modelo (5 seções: nome, formato, ranking, local, extras)
+    │   │   └─ Usar modelo → agendar com date/time picker
+    │   │
+    │   ├─ Convites → StaffChampionshipInvitesScreen
+    │   │
+    │   ├─ Créditos → StaffCreditsScreen (saldo + portal "em breve")
+    │   │
+    │   ├─ Administração → StaffQrHubScreen (QR operations)
+    │   │
+    │   └─ Portal → SnackBar "em breve" (url não configurada)
+    │
+    └─ Retenção / Relatório Semanal (drill-down do Performance)
+```
+
+---
+
+## 6. FLUXO DE ENTRADA EM ASSESSORIA
+
+```
+Atleta busca assessoria (nome, código, QR)
+    │
+    ▼
+JoinAssessoriaScreen → fn_request_join(p_group_id)
+    │
+    ├─ already_member → onComplete()
+    ├─ already_requested → dialog "Aguardando aprovação"
+    └─ requested → dialog "Solicitação enviada!"
+                      │
+                      ▼
+          coaching_join_requests (status: pending)
+                      │
+                      ▼
+Staff abre StaffJoinRequestsScreen
+    │
+    ├─ Aprovar → fn_approve_join_request
+    │   └─ Cria coaching_member (role: atleta)
+    │   └─ Atualiza profiles.active_coaching_group_id
+    │
+    └─ Rejeitar → fn_reject_join_request
+        └─ Status → rejected
+
+Remoção de membro (staff):
+    CoachingGroupDetailsScreen → fn_remove_member
+    └─ Limpa active_coaching_group_id do removido
+```
+
+---
+
+## 7. TRACKING (Corrida GPS)
+
+```
+TrackingScreen
+    │
+    ▼
+TrackingBloc (670 linhas — state machine)
+    │
+    ├─ StartTracking
+    │   ├─ Verifica permissões (EnsureLocationReady)
+    │   ├─ Foreground service (flutter_foreground_task, type: location)
+    │   ├─ Location stream (Geolocator)
+    │   ├─ BLE heart rate (opcional, via SensorSourceResolver)
+    │   ├─ Timer tick (1s via wall-clock)
+    │   └─ Audio coach (flutter_tts, priority queue)
+    │
+    ├─ LocationPointReceived → buffer → flush to Isar
+    │   ├─ FilterLocationPoints (3 camadas: accuracy, speed, drift)
+    │   ├─ AccumulateDistance (incremental)
+    │   ├─ CalculatePace (segmented)
+    │   ├─ AutoPauseDetector
+    │   ├─ IntegrityDetectSpeed / Teleport / Vehicle
+    │   └─ Ghost runner (interpolation + hysteresis)
+    │
+    ├─ StopTracking → FinishSession → sync → HistoryScreen
+    │
+    └─ GPS loss → 60s reconnection timeout (não finaliza sessão)
+
+Pós-sessão:
+    ├─ SyncRepo → Supabase (offline-first, AutoSyncManager)
+    ├─ AwardXpForWorkout (cap 1000 XP/dia)
+    ├─ EvaluateBadges → award XP por tier
+    ├─ UpdateMissionProgress
+    ├─ PostSessionChallengeDispatcher
+    └─ ExportWorkoutToHealth (HealthKit/Health Connect)
+```
+
+---
+
+## 8. SUPABASE BACKEND
+
+### 8.1 Tabelas Principais
+
+| Domínio | Tabelas |
+|---------|---------|
+| Auth/Profile | `profiles`, `auth.users` |
+| Coaching | `coaching_groups`, `coaching_members`, `coaching_invites`, `coaching_join_requests` |
+| Tracking | `sessions`, `session_points` |
+| Challenges | `challenges`, `challenge_participants`, `challenge_results` |
+| Championships | `championships`, `championship_templates`, `championship_participants`, `championship_invitations` |
+| Wallet | `wallets`, `coin_ledger`, `coaching_token_inventory`, `token_intents` |
+| Clearing | `clearing_weeks`, `clearing_cases`, `clearing_case_items`, `clearing_case_events` |
+| Billing | `billing_customers`, `billing_products`, `billing_purchases`, `billing_events`, `billing_refund_requests`, `billing_auto_topup_settings` |
+| Social | `groups`, `group_members`, `friendships`, `events`, `event_participants` |
+| Progression | `badges`, `badge_awards`, `missions`, `mission_progress`, `xp_transactions`, `profile_progress` |
+| Notifications | `notification_log` |
+
+### 8.2 RPC Functions (SECURITY DEFINER)
+
+| Função | Propósito |
+|--------|-----------|
+| `fn_create_assessoria` | Cria coaching_group + membership admin_master |
+| `fn_switch_assessoria` | Troca assessoria (queima coins, cria membership) |
+| `fn_request_join` | Atleta solicita entrada (cria join request pendente) |
+| `fn_approve_join_request` | Staff aprova (cria membership) |
+| `fn_reject_join_request` | Staff rejeita |
+| `fn_remove_member` | Staff remove membro (limpa profile) |
+| `fn_search_coaching_groups` | Busca assessorias por nome |
+| `fn_lookup_group_by_invite_code` | Busca por código de convite |
+| `fn_join_as_professor` | Staff entra como professor |
+| `fn_fulfill_purchase` | Processa compra (atomic credit allocation) |
+| `release_pending_to_balance` | Clearing: libera pendentes → disponível |
+| `check_daily_token_usage` | Rate limit de tokens |
+| `increment_wallet_balance` | Atualiza saldo atomicamente |
+| `user_coaching_group_ids()` | Helper RLS (retorna group_ids do caller) |
+| `user_social_group_ids()` | Helper RLS (social groups) |
+| `is_group_admin_or_mod()` | Helper RLS (social admin check) |
+| `staff_group_member_ids()` | Helper RLS (member IDs para staff leitura) |
+
+### 8.3 Edge Functions (41)
+
+| Categoria | Funções |
+|-----------|---------|
+| Auth | `set-user-role`, `complete-social-profile` |
+| Challenges | `challenge-create`, `challenge-join`, `challenge-get`, `challenge-list-mine`, `challenge-invite-group`, `challenge-accept-group-invite`, `settle-challenge` |
+| Championships | `champ-create`, `champ-open`, `champ-list`, `champ-enroll`, `champ-invite`, `champ-accept-invite`, `champ-lifecycle`, `champ-update-progress`, `champ-participant-list`, `champ-activate-badge` |
+| Tokens | `token-create-intent`, `token-consume-intent` |
+| Wallet/Billing | `create-checkout-session`, `create-portal-session`, `list-purchases`, `webhook-payments`, `process-refund`, `auto-topup-check`, `auto-topup-cron` |
+| Clearing | `clearing-confirm-sent`, `clearing-confirm-received`, `clearing-open-dispute`, `clearing-cron` |
+| Progression | `calculate-progression`, `evaluate-badges`, `compute-leaderboard` |
+| Analytics | `submit-analytics`, `verify-session` |
+| Notifications | `notify-rules`, `send-push` |
+| Lifecycle | `lifecycle-cron` |
+
+### 8.4 RLS Strategy
+
+- **coaching_members**: `group_id IN (SELECT user_coaching_group_ids())` — SECURITY DEFINER evita recursão
+- **sessions**: `user_id = auth.uid()` + `sessions_staff_read` (via `staff_group_member_ids()`)
+- **challenge_participants**: own read + staff read
+- **championship_templates**: INSERT/UPDATE/DELETE para admin_master/professor
+- **coaching_join_requests**: own read (atleta) + group staff read + staff update
+- **clearing_cases**: staff de ambos os grupos
+
+---
+
+## 9. CONVENCÕES DE UNIDADES (FIXAS)
+
+| Grandeza | Tipo | Unidade Interna | Formatação UI |
 |---|---|---|---|
-| Distancia | double | metros | km (ex: 5.23 km) |
-| Tempo | int64 (persistido/serializado) | milissegundos | HH:MM:SS |
+| Distância | double | metros | km (ex: 5.23 km) |
+| Tempo | int64 | milissegundos | HH:MM:SS |
 | Pace | double | segundos por km | min:sec/km (ex: 5:30/km) |
 | Coordenadas | double | graus decimais (WGS84) | — |
 | Velocidade | double | metros por segundo | km/h (apenas UI) |
+| Coins/Tokens | int | unidades | "X OmniCoins" |
 
-**Regra:** Conversao para unidades de exibicao acontece APENAS na presentation layer.
+Conversão para unidades de exibição acontece APENAS na presentation layer.
 
 ---
 
-## 5. ERROR HANDLING
+## 10. ERROR HANDLING
 
 ```
-Either<Failure, T> — usado em TODA operacao que pode falhar
-
-Hierarquia (sealed class):
+Hierarquia (sealed classes):
   Failure
   ├── GpsFailure (noPermission, timeout, unavailable)
   ├── StorageFailure (readError, writeError, full)
   ├── SyncFailure (noConnection, serverError, timeout)
   ├── ValidationFailure (invalidPace, invalidDistance, suspectedCheat)
-  ├── IntegrationFailure (auth, upload, export — ver integrations_failures.dart)
-  ├── HealthExportFailure (permission, availability — ver health_export_failures.dart)
-  └── GamificationFailure (unverifiedSession, dailyLimitReached, challengeExpired)
+  ├── IntegrationFailure (auth, upload, export)
+  ├── HealthExportFailure (permission, availability)
+  ├── GamificationFailure (unverifiedSession, dailyLimitReached, challengeExpired)
+  └── CoachingFailure (groupNotFound, notMember, insufficientRole, cannotRemoveAdmin)
 
-Fluxo:
-  Repository retorna Either<Failure, T>
-  -> BLoC converte para State.failed(failure)
-  -> Presentation exibe mensagem mapeada
-
-Nenhum throw no domain ou application. Apenas Either.
+Logging: AppLogger → Sentry.captureException()
+Retry: 3x exponential backoff em chamadas críticas (auth, create assessoria)
 ```
 
 ---
 
-## 6. FEATURES (MAPEADAS DO SCOPE.md)
+## 11. FEATURES MAP
 
-| Feature | Camada Principal | Tecnologia |
-|---|---|---|
-| F1 — Registro GPS | infrastructure (GPS service) | Geolocator |
-| F2 — Calculo de metricas | domain (use cases) | Dart puro |
-| F3 — Persistencia offline | infrastructure (Isar) | Isar |
-| F4 — Visualizacao de mapa | presentation | MapLibre |
-| F5 — Ghost Runner | application (BLoC) | BLoC + Isar |
-| F6 — Anti-cheat basico | domain (use cases) | Dart puro |
-| F7 — Sincronizacao manual | infrastructure (Supabase) | Supabase |
-| F8 — Integrações externas | infrastructure (HTTP, share_plus) | Strava API, GPX/TCX/FIT export |
-| F9 — Gamification Engine | domain (use cases) + infrastructure (Isar) | Coins, desafios, rankings — ver GAMIFICATION_POLICY.md |
-
----
-
-## 7. INSTITUTIONAL DOMAIN (Assessoria Ecosystem)
-
-> **Origem:** DECISAO 038 — Introdução do Ecossistema de Assessorias como Núcleo do Produto
-
-O domínio institucional introduz a **Assessoria Esportiva** como ator principal do sistema,
-responsável por gestão de atletas, distribuição de tokens, organização de campeonatos,
-monitoramento de performance e participação em clearing inter-institucional.
-
-Este domínio é isolado do domínio social existente e integra-se com:
-Tracking Domain, Challenges Domain, Gamification Domain e Wallet Domain.
-
-### 7.1 Bounded Contexts
-
-#### 7.1.1 Institution Core Context
-
-Responsável pela identidade institucional e estrutura organizacional.
-
-**Entidades:**
-
-| Entidade | Campos Principais | Descrição |
-|----------|-------------------|-----------|
-| Institution | id, name, status (pending/approved/suspended), verification_level, created_at | Assessoria esportiva |
-| InstitutionMember | user_id, institution_id, role, joined_at | Vínculo usuário-instituição |
-
-**Roles:** ADMIN_MASTER, PROFESSOR, ASSISTANT, ATHLETE
-
-**Invariantes:**
-- Um usuário pode pertencer a apenas UMA instituição ativa
-- Instituições precisam ser aprovadas antes de operar
-- Apenas ADMIN_MASTER pode gerenciar roles
-
-#### 7.1.2 Institutional Wallet Context
-
-Responsável pelo sistema econômico institucional.
-
-**Entidades:**
-
-| Entidade | Campos Principais | Descrição |
-|----------|-------------------|-----------|
-| InstitutionTokenInventory | institution_id, available_tokens | Estoque de tokens da assessoria (nunca negativo) |
-| UserInstitutionWallet | user_id, institution_id, balance_total, balance_redeemable | Carteira do atleta vinculada à instituição |
-| TokenLedgerEntry | id, user_id, institution_id, category, amount, reference_id, created_at | Registro imutável de lifecycle do token |
-
-**Categorias do Ledger:** ISSUE, STAKE_LOCK, STAKE_REFUND, PRIZE_PENDING, PRIZE_CLEARED, BURN
-
-**Invariantes:**
-- Tokens só podem ser usados dentro da instituição atual
-- Apenas tokens "redeemable" podem ser trocados
-- Toda mudança deve passar pelo ledger (append-only)
-
-#### 7.1.3 Cross-Institution Clearing Context
-
-Responsável pela compensação semanal entre instituições.
-
-**Entidades:**
-
-| Entidade | Campos Principais | Descrição |
-|----------|-------------------|-----------|
-| ClearingWeek | id, start_date, end_date | Período semanal de compensação |
-| ClearingCase | id, week_id, from_institution_id, to_institution_id, tokens_amount, status, deadline_at | Obrigação de compensação |
-| ClearingCaseEvent | case_id, actor_institution_id, event_type, created_at | Auditoria de confirmações |
-
-**Status do ClearingCase:** OPEN, AWAITING_CONFIRMATIONS, PAID_CONFIRMED, DISPUTED, EXPIRED
-
-**Invariantes:**
-- Clearing é agregado semanalmente
-- Liberação de tokens ocorre somente após dupla confirmação
-- A plataforma não intervém no processo
-
-#### 7.1.4 Championship Context
-
-Responsável pelas competições institucionais.
-
-**Entidades:**
-
-| Entidade | Campos Principais | Descrição |
-|----------|-------------------|-----------|
-| Championship | id, host_institution_id, name, start_at, end_at, requires_badge | Campeonato institucional |
-| ChampionshipInvitation | championship_id, institution_id, status | Convite para instituições |
-| ChampionshipParticipant | championship_id, user_id, institution_id, status | Participação do atleta |
-| ChampionshipBadge | championship_id, user_id, expires_at | Passe temporário de participação |
-
-**Invariantes:**
-- Apenas instituições podem criar campeonatos
-- Badge expira ao final do campeonato
-- Participação depende da instituição do atleta
-
-### 7.2 Relacionamentos entre Contextos
-
-```
-Institution Core ──── Wallet
-    │                   │
-    │                   ├── Challenges (stake institucional, pending clearing)
-    │                   │
-    │                   └── Clearing (resolve pendentes, pending → redeemable)
-    │
-    └── Championships (pertencem a instituições, participação por vínculo)
-```
-
-### 7.3 Fluxos Críticos
-
-**Troca de Instituição:**
-1. Usuário inicia troca → 2. Tokens não resgatados são queimados → 3. Vínculo atualizado
-
-**Desafio Cross-Institucional:**
-1. Stake travado → 2. Vencedor recebe tokens pendentes → 3. Clearing case criado → 4. Após liquidação, tokens liberados
-
-**Emissão de Tokens:**
-1. Professor gera QR intent → 2. Atleta escaneia → 3. Inventory reduz → 4. Carteira aumenta
-
-### 7.4 Integração com Sistema Existente
-
-O domínio institucional integra-se com Edge Functions existentes:
-- `verify-session` (tracking)
-- `settle-challenge` (gamification)
-- `submit-analytics` (analytics pipeline)
-- `evaluate-badges` (badge evaluation)
-
-Nenhuma alteração é feita no tracking pipeline.
-
-### 7.5 Garantias de Consistência
-
-- Ledger append-only
-- Edge Functions para lógica crítica
-- RLS estrito por instituição
-- Constraints de integridade referencial
-
-### 7.6 Evoluções Futuras Previstas
-
-- Score de reputação institucional
-- Sistema de ranking global de assessorias
-- Marketplace de eventos esportivos
+| Feature | Camada | Tecnologia | Status |
+|---|---|---|---|
+| F1 — GPS Tracking | data (Geolocator) + domain (use cases) | Location stream + filter + accumulate | ✅ |
+| F2 — Métricas | domain (use cases puros) | Pace, distance, elevation, HR zones | ✅ |
+| F3 — Persistência offline | data (Isar) | Sessions, points, entities | ✅ |
+| F4 — Mapa ao vivo | presentation (MapLibre) | Camera follow + auto-bearing | ✅ |
+| F5 — Ghost Runner | domain + presentation | Interpolação + hysteresis + voz | ✅ |
+| F6 — Anti-cheat | domain (3 detectors) | Speed, teleport, vehicle (via steps) | ✅ |
+| F7 — Sync offline-first | data (SyncRepo) + core (AutoSyncManager) | Auto-retry on connectivity | ✅ |
+| F8 — Exportação | features/ | GPX, TCX, FIT, Strava, HealthKit, Health Connect | ✅ |
+| F9 — Gamificação | domain + data | Coins, challenges (1v1, group, team), streaks | ✅ |
+| F10 — Progressão | domain + EFs | XP, levels, badges (30), missions, goals | ✅ |
+| F11 — Social | domain + data | Amigos, grupos, eventos, leaderboards | ✅ |
+| F12 — Assessoria | domain + data + EFs | Coaching groups, members, tokens, QR | ✅ |
+| F13 — Campeonatos | domain + EFs | Templates, scheduling, invite, lifecycle | ✅ |
+| F14 — Clearing | EFs + pg_cron | Compensação semanal inter-assessoria | ✅ |
+| F15 — Billing B2B | Portal (Next.js) + Stripe | Checkout, webhook, auto top-up, refund | ✅ |
+| F16 — Wearables BLE | features/ | HR monitors (Garmin, Polar, etc.) | ✅ |
+| F17 — Audio Coach | domain + data | TTS, priority queue, voice triggers | ✅ |
+| F18 — Crash Reporting | core (Sentry) | SentryFlutter.init + AppLogger hook | ✅ |
+| F19 — Join Request Flow | data + EFs | Solicitação → aprovação/rejeição | ✅ |
+| F20 — Member Management | data + EFs | Remover membros, role-based access | ✅ |
 
 ---
 
-## 8. PROGRESSION SYSTEM
+## 12. BOUNDED CONTEXTS
 
-> **Origem:** DECISAO 017 (Progression Engine) + DECISAO 044 (Modelo Final Phase 20)
-> **Spec completa:** `PROGRESSION_SPEC.md`
+### 12.1 Tracking Context
+Captura GPS em tempo real, anti-cheat, métricas, ghost runner, auto-pause, foreground service.
 
-O sistema de progressão é composto por 4 pilares independentes dos OmniCoins.
+### 12.2 Coaching Context (Assessoria)
+Assessorias, membros (admin_master/professor/assistente/atleta), join requests com aprovação, remoção de membros, convites, QR operations, tokens/OmniCoins.
 
-### 8.1 Pilares
+### 12.3 Challenge Context
+Desafios 1v1, grupo e team vs team. Sempre entre atletas. Assessorias não participam de desafios — apenas distribuem tokens.
 
-```
-┌───────────────────────────────────────────────────────────┐
-│                    Progression Engine                      │
-├─────────┬──────────┬─────────────┬────────────────────────┤
-│   XP    │  Streak  │   Badges    │   Goals (Metas)        │
-│         │          │             │                        │
-│ +sessão │ diário   │ 30 MVP      │ semanal automática     │
-│ +badge  │ semanal  │ 4 tiers     │ distância ou tempo     │
-│ +missão │ mensal   │ permanentes │ baseline 4 semanas     │
-│ +desafio│ freeze   │ secret      │ auto-check verificado  │
-│ +camp.  │ 1/7 dias │             │                        │
-└────┬────┴────┬─────┴──────┬──────┴───────────┬────────────┘
-     │         │            │                  │
-     ▼         ▼            ▼                  ▼
-  Nível    Milestones   Badge Awards       +40 XP/semana
-  (N^1.5)  (XP+Coins)  (XP por tier)
-```
+### 12.4 Championship Context
+Campeonatos criados por assessorias. Modelos reutilizáveis. Corrida única ou período. Métricas: distância, tempo, pace, elevação. Lifecycle automático via pg_cron.
 
-### 8.2 Relação XP × OmniCoins
+### 12.5 Wallet / Clearing Context
+OmniCoins (gamificação, nunca monetário). Ledger append-only. Clearing semanal inter-assessoria. Disputas amigáveis sem moderação da plataforma.
 
-| Aspecto | XP | OmniCoins |
-|---------|------|-----------|
-| Natureza | Progressão permanente — nunca decresce | Moeda virtual — ganha e gasta |
-| Uso | Determina nível, desbloqueia badges | Customizações visuais |
-| Conversão | **PROIBIDA** (GAMIFICATION_POLICY §2) | — |
-| Fonte | Sessões, badges, missões, streaks, desafios, campeonatos | Sessões, desafios, streaks, PRs |
+### 12.6 Progression Context
+XP, níveis (N^1.5), badges (30 tipos, 4 tiers), missions diárias, streaks (diário/semanal/mensal), goals semanais. Pertence ao atleta, não à assessoria.
 
-### 8.3 Arquitetura de Domínio
+### 12.7 Social Context
+Amigos, grupos sociais, eventos, rankings, leaderboards.
 
-```
-domain/
-├── entities/
-│   ├── profile_progress_entity.dart     # XP total, nível, season XP
-│   ├── xp_transaction_entity.dart       # Log imutável de créditos XP
-│   ├── badge_entity.dart                # Definição de badge (catálogo)
-│   ├── badge_award_entity.dart          # Badge desbloqueado por usuário
-│   ├── mission_entity.dart              # Template de missão
-│   ├── mission_progress_entity.dart     # Progresso do usuário em missão
-│   ├── season_entity.dart               # Metadados da temporada
-│   └── season_progress_entity.dart      # Progresso sazonal do usuário
-│
-├── usecases/gamification/
-│   ├── award_xp_for_workout.dart        # Sessão → XP (com daily cap)
-│   ├── evaluate_badges.dart             # Sessão → badges desbloqueados
-│   ├── create_daily_missions.dart       # Clock → novas missões diárias
-│   ├── update_mission_progress.dart     # Sessão → missões atualizadas
-│   └── claim_rewards.dart               # Missão/badge → crédito XP+Coins
-│
-├── repositories/
-│   ├── i_profile_progress_repo.dart
-│   ├── i_xp_transaction_repo.dart
-│   ├── i_badge_repo.dart
-│   └── i_mission_repo.dart
-│
-└── failures/
-    └── gamification_failure.dart         # Sealed: unverifiedSession, dailyLimitReached, etc.
-```
-
-### 8.4 Pipeline Pós-Sessão (Progressão)
-
-```
-Sessão verificada finalizada
-       │
-       ▼
-  [1] AwardXpForWorkout
-       │ → calcula sessionXp (base + dist + dur + HR)
-       │ → aplica daily cap (1000 XP/dia)
-       │ → grava XpTransaction (append-only)
-       │ → atualiza ProfileProgress (XP total, nível)
-       │
-       ▼
-  [2] EvaluateBadges
-       │ → avalia badges não-desbloqueados
-       │ → desbloqueia elegíveis
-       │ → crédito XP por tier (50/100/200/500)
-       │
-       ▼
-  [3] UpdateMissionProgress
-       │ → atualiza missões ativas
-       │ → marca completadas → ClaimRewards
-       │
-       ▼
-  [4] Check Streak (diário/semanal/mensal)
-       │ → incrementa/reseta contador
-       │ → aplica freeze se disponível
-       │ → crédito XP+Coins em milestones
-       │
-       ▼
-  [5] Check Weekly Goal
-       │ → soma sessões da semana vs meta
-       │ → se atingida → +40 XP
-```
-
-### 8.5 Goals (Metas Semanais)
-
-| Aspecto | Valor |
-|---------|-------|
-| Geração | Automática: segunda 00:00 UTC |
-| Baseline | Média das 4 últimas semanas (default: 10 km / 60 min) |
-| Fator | 1.0× ou 1.1× (alternado por semana) |
-| Check | Soma de sessões verificadas vs meta |
-| Recompensa | +40 XP (sem penalidade ao falhar) |
-| Fonte de dados | `profile_progress.weekly_distance_m` ou `weekly_moving_ms` |
-
-### 8.6 Integração com Assessoria
-
-- XP, nível, badges e streaks pertencem ao **atleta**, não à assessoria
-- Troca de assessoria preserva toda a progressão
-- Rankings de assessoria usam **Season XP** (não XP total)
-- Professor visualiza progresso do atleta no dashboard
-- Campeonatos creditam XP ao atleta individual
-
-### 8.7 Anti-Exploit
-
-| Vetor | Mitigação |
-|-------|-----------|
-| Farm de sessões curtas | `baseXp` = 20 fixo; sem bônus abaixo de 200m |
-| Farm de XP via badges | Cap 500 XP/dia para fontes não-sessão |
-| Manipulação de streak | Cálculo sempre em UTC midnight |
-| Repeat mission exploit | `maxCompletions` + `cooldownMs` |
-| Multi-account | Desafios requerem auth; anti-cheat cross-validates |
+### 12.8 Billing Context (Portal only)
+Next.js portal. Stripe (card/pix/boleto). Auto top-up. Refund. Nunca no app mobile.
 
 ---
 
-## 9. MONETIZATION MODEL (Loja-Safe)
+## 13. MONETIZATION MODEL (Loja-Safe)
 
-> **Origem:** DECISAO 046 — Modelo de Monetização Loja-Safe (Phase 21)
-> **Referência:** GAMIFICATION_POLICY.md, DECISAO 016, DECISAO 038
+O modelo de receita é **B2B SaaS** (plataforma → assessoria). O app **nunca processa pagamento** e **nunca mostra valores monetários**.
 
-O modelo de receita é **B2B SaaS** (plataforma → assessoria). O app **nunca processa pagamento**
-e **nunca mostra valores monetários** ao usuário.
-
-### 9.1 Fluxo de Monetização
-
-```
-                    EXTERNO AO APP
-┌──────────────────────────────────────────────────┐
-│  Assessoria                 Plataforma           │
-│     │    contrato/portal web    │                 │
-│     ├──────────────────────────►│                 │
-│     │    pagamento (Pix/boleto) │                 │
-│     ├──────────────────────────►│                 │
-│     │    NF-e (serviço software)│                 │
-│     │◄────────────────────────  │                 │
-│     │                           │                 │
-│     │   admin credita inventory │                 │
-│     │     coaching_token_inv.   │                 │
-│     │◄──────────(DB direto)──── │                 │
-└──────────────────────────────────────────────────┘
-
-                    DENTRO DO APP
-┌──────────────────────────────────────────────────┐
-│  Staff              Atleta                       │
-│     │  QR distribute    │                        │
-│     ├──────────────────►│                        │
-│     │  (token-intent)   │                        │
-│     │                   │  usa em desafios       │
-│     │                   ├──────► gamificação     │
-│     │                   │  personalização        │
-│     │                   ├──────► loja visual     │
-└──────────────────────────────────────────────────┘
-```
-
-### 9.2 Invariantes de Compliance
-
-| # | Invariante | Verificação |
-|---|-----------|-------------|
-| M1 | App NUNCA mostra preços em R$/USD/€ | Grep `R\$|USD|\$|€` em lib/ = 0 |
-| M2 | App NUNCA tem botão "Comprar" | Grep `comprar|buy|purchase` em UI = 0 |
-| M3 | App NUNCA processa pagamento | Zero payment SDK, zero IAP |
-| M4 | App NUNCA menciona "venda", "preço" | Vocabulário controlado (GAMIFICATION_POLICY §5) |
-| M5 | Atleta NUNCA adquire créditos | `token-consume-intent` requer intent criado por staff |
-| M6 | Créditos siloados por assessoria | `coaching_token_inventory.group_id` é FK; sem transfer cross-group |
-| M7 | OmniCoins ≠ valor monetário | GAMIFICATION_POLICY §2 em vigor |
-
-### 9.3 Componentes Existentes (sem alteração)
-
-| Componente | Papel no modelo |
-|------------|-----------------|
-| `coaching_token_inventory` | Estoque de créditos por assessoria (alimentado externamente) |
-| `token-create-intent` | Staff cria intent QR para distribuir créditos |
-| `token-consume-intent` | Atleta escaneia QR e recebe créditos |
-| `coin_ledger` | Registro append-only de todas as movimentações |
-| `clearing_cases` | Compensação inter-assessoria (in-app, sem dinheiro) |
-| `wallets` | Créditos disponíveis + pendentes do atleta |
-
-### 9.4 O que o App Mostra vs O que Não Mostra
-
-| Mostra | Não mostra |
-|--------|-----------|
-| "Estoque: 500 OmniCoins" | "R$ 250,00" |
-| "Inscrição: 25 OmniCoins" | "Taxa: R$ 12,50" |
-| "Distribuir créditos" | "Vender créditos" |
-| "Recompensa: 15 OmniCoins" | "Prêmio: R$ 7,50" |
+| Invariante | Verificação |
+|------------|-------------|
+| App NUNCA mostra preços R$/USD | 0 ocorrências em lib/ |
+| App NUNCA processa pagamento | Zero payment SDK, zero IAP |
+| App NUNCA menciona dinheiro/saque | Vocabulário controlado |
+| OmniCoins ≠ valor monetário | GAMIFICATION_POLICY §2 |
+| Checkout vive no portal web (browser externo) | `launchUrl(mode: externalApplication)` |
 
 ---
 
-*Documento gerado na Sprint 1.2*
+## 14. BUILD & DEPLOY
+
+| Item | Valor |
+|------|-------|
+| Build flavor | `prod` (prod keystore), `dev` (debug) |
+| Env vars | `--dart-define-from-file=.env.dev` |
+| Keystore | `omnirunner-release.keystore` |
+| APK atual | `v1.0.11` (126 MB) |
+| Supabase | 41 Edge Functions + 8 migrations |
+| Portal | `portal/` (Next.js 14, não deployado ainda) |
+| CI/CD | Manual (flutter build apk) |
+| Min Android SDK | 21 (Android 5.0) |
+| Target SDK | 36 |
+
+---
+
+## 15. DATA FLOW PATTERNS
+
+### Padrão 1: Supabase Direto (preferido para staff)
+Staff dashboard, performance, atletas, solicitações → query Supabase direto.
+Sem BLoC intermediário. Pull-to-refresh.
+
+### Padrão 2: Isar Cache + BLoC (para atleta/tracking)
+Tracking, history, wallet, challenges → Isar local como cache.
+BLoC lê do Isar. SyncRepo sincroniza com Supabase.
+AutoSyncManager retenta ao restaurar conectividade.
+
+### Padrão 3: Edge Function (operações transacionais)
+Criar desafio, settle challenge, criar campeonato, checkout.
+SECURITY DEFINER + validações server-side.
+
+---
+
+## 16. TESTES
+
+| Tipo | Quantidade | Diretório |
+|------|-----------|-----------|
+| Unit tests | 55 arquivos | `test/` |
+| Cobertura | GPS, pace, distance, filter, ghost, auto-pause, integrity, badges, challenges | — |
+| Smoke tests | Synthetic run E2E | `test/smoke/` |
+| Testes manuais | QA em device real (v1.0.0 → v1.0.11, 27 bugs corrigidos) | — |
+
+---
+
+*Documento atualizado em 23/02/2026 — Sprint 100.11 (QA Phase)*

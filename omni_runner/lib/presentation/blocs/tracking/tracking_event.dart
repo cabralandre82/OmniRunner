@@ -103,6 +103,11 @@ final class SetGhostSession extends TrackingEvent {
   List<Object?> get props => [ghost];
 }
 
+/// Periodic 1-second tick to keep the UI timer smooth between GPS updates.
+final class TimerTick extends TrackingEvent {
+  const TimerTick();
+}
+
 /// Activates challenge mode for this tracking session.
 ///
 /// The overlay will show the opponent's relative progress.

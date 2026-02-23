@@ -21,7 +21,7 @@ import 'package:omni_runner/presentation/screens/welcome_screen.dart';
 /// Single entry-point guard that routes users based on auth + onboarding state.
 ///
 /// Flow:
-///   No session  → [WelcomeScreen] → [LoginScreen]
+///   No session / anonymous → [WelcomeScreen] → [LoginScreen]
 ///   Session + NEW → [OnboardingRoleScreen]
 ///   Session + ROLE_SELECTED + ATLETA → [JoinAssessoriaScreen]
 ///   Session + ROLE_SELECTED + STAFF → [StaffSetupScreen]
@@ -207,9 +207,9 @@ class _AuthGateState extends State<AuthGate> {
       return;
     }
 
-    // Anonymous users (workaround): go straight to home for now.
+    // Anonymous users must go through login to access the full app.
     if (identity.isAnonymous) {
-      _go(_GateDestination.home);
+      _go(_GateDestination.welcome);
       return;
     }
 
@@ -275,9 +275,18 @@ class _AuthGateState extends State<AuthGate> {
     _resolve();
   }
 
+  Future<void> _onBackToLogin() async {
+    await sl<UserIdentityProvider>().authRepository.signOut();
+    _go(_GateDestination.welcome);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return switch (_dest) {
+    final canGoBack = _dest == _GateDestination.onboarding ||
+        _dest == _GateDestination.joinAssessoria ||
+        _dest == _GateDestination.staffSetup;
+
+    final child = switch (_dest) {
       _GateDestination.loading => const Scaffold(
           body: Center(child: CircularProgressIndicator()),
         ),
@@ -291,15 +300,29 @@ class _AuthGateState extends State<AuthGate> {
       _GateDestination.onboarding => OnboardingRoleScreen(
           initialState: _onboardingState,
           onComplete: _onOnboardingComplete,
+          onBack: _onBackToLogin,
         ),
       _GateDestination.joinAssessoria => JoinAssessoriaScreen(
           initialCode: _pendingInviteCode,
           onComplete: _onOnboardingComplete,
+          onBack: _onBackToLogin,
         ),
       _GateDestination.staffSetup => StaffSetupScreen(
           onComplete: _onOnboardingComplete,
+          onBack: _onBackToLogin,
         ),
       _GateDestination.home => HomeScreen(userRole: _userRole),
     };
+
+    if (canGoBack) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _onBackToLogin();
+        },
+        child: child,
+      );
+    }
+    return child;
   }
 }

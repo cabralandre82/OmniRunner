@@ -17,8 +17,9 @@ import 'package:omni_runner/core/service_locator.dart';
 /// Both paths set `onboarding_state` to READY and call [onComplete].
 class StaffSetupScreen extends StatefulWidget {
   final VoidCallback onComplete;
+  final VoidCallback? onBack;
 
-  const StaffSetupScreen({super.key, required this.onComplete});
+  const StaffSetupScreen({super.key, required this.onComplete, this.onBack});
 
   @override
   State<StaffSetupScreen> createState() => _StaffSetupScreenState();
@@ -105,10 +106,19 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
     });
 
     try {
-      await _client.rpc('fn_create_assessoria', params: {
-        'p_name': name,
-        'p_city': _cityCtrl.text.trim(),
-      });
+      for (var attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await _client.rpc('fn_create_assessoria', params: {
+            'p_name': name,
+            'p_city': _cityCtrl.text.trim(),
+          });
+          break;
+        } catch (e) {
+          AppLogger.warn('fn_create_assessoria attempt $attempt/3: $e', tag: _tag);
+          if (attempt == 3) rethrow;
+          await Future<void>.delayed(Duration(milliseconds: 500 * attempt));
+        }
+      }
       AppLogger.info('Created assessoria "$name"', tag: _tag);
       await _setReady();
       sl<ProductEventTracker>().track(ProductEvents.onboardingCompleted, {
@@ -122,7 +132,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = 'Não foi possível criar a assessoria. Tente novamente.';
+        _error = 'Não foi possível criar a assessoria. Verifique sua conexão e tente novamente.';
       });
     }
   }
@@ -333,6 +343,17 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 28),
           child: Column(
             children: [
+              if (widget.onBack != null) ...[
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: widget.onBack,
+                    tooltip: 'Voltar para o login',
+                  ),
+                ),
+              ],
               const Spacer(flex: 2),
               Text(
                 'Monte sua\nassessoria',

@@ -1781,9 +1781,21 @@ CREATE POLICY "coaching_invites_update" ON "public"."coaching_invites" FOR UPDAT
 ALTER TABLE "public"."coaching_members" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "coaching_members_group_read" ON "public"."coaching_members" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM "public"."coaching_members" "cm2"
-  WHERE (("cm2"."group_id" = "coaching_members"."group_id") AND ("cm2"."user_id" = "auth"."uid"())))));
+-- Helper function to avoid infinite recursion in coaching_members RLS.
+CREATE OR REPLACE FUNCTION public.user_coaching_group_ids()
+RETURNS SETOF uuid
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = 'public'
+AS $$
+  SELECT group_id FROM public.coaching_members WHERE user_id = auth.uid();
+$$;
+
+CREATE POLICY "coaching_members_group_read"
+  ON "public"."coaching_members"
+  FOR SELECT
+  USING (group_id IN (SELECT public.user_coaching_group_ids()));
 
 
 
@@ -1864,15 +1876,46 @@ CREATE POLICY "group_members_insert_self" ON "public"."group_members" FOR INSERT
 
 
 
-CREATE POLICY "group_members_read" ON "public"."group_members" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM "public"."group_members" "gm"
-  WHERE (("gm"."group_id" = "group_members"."group_id") AND ("gm"."user_id" = "auth"."uid"()) AND ("gm"."status" = 'active'::"text")))));
+-- Helper functions to avoid infinite recursion in group_members RLS.
+CREATE OR REPLACE FUNCTION public.user_social_group_ids()
+RETURNS SETOF uuid
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = 'public'
+AS $$
+  SELECT group_id FROM public.group_members
+  WHERE user_id = auth.uid() AND status = 'active';
+$$;
 
+CREATE OR REPLACE FUNCTION public.is_group_admin_or_mod(p_group_id uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = 'public'
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.group_members
+    WHERE group_id = p_group_id
+      AND user_id = auth.uid()
+      AND role IN ('admin', 'moderator')
+      AND status = 'active'
+  );
+$$;
 
+CREATE POLICY "group_members_read"
+  ON "public"."group_members"
+  FOR SELECT
+  USING (group_id IN (SELECT public.user_social_group_ids()));
 
-CREATE POLICY "group_members_update_mod" ON "public"."group_members" FOR UPDATE USING ((("auth"."uid"() = "user_id") OR (EXISTS ( SELECT 1
-   FROM "public"."group_members" "gm"
-  WHERE (("gm"."group_id" = "group_members"."group_id") AND ("gm"."user_id" = "auth"."uid"()) AND ("gm"."role" = ANY (ARRAY['admin'::"text", 'moderator'::"text"])) AND ("gm"."status" = 'active'::"text"))))));
+CREATE POLICY "group_members_update_mod"
+  ON "public"."group_members"
+  FOR UPDATE
+  USING (
+    auth.uid() = user_id
+    OR public.is_group_admin_or_mod(group_id)
+  );
 
 
 

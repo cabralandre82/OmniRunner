@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
-
-import 'package:omni_runner/core/config/app_config.dart';
 
 /// Staff screen showing the assessoria's OmniCoin inventory,
 /// distribution history, and a CTA to contact the platform.
@@ -219,13 +216,6 @@ class _MiniStat extends StatelessWidget {
 class _PortalCta extends StatelessWidget {
   const _PortalCta();
 
-  Future<void> _openPortal() async {
-    final uri = Uri.parse(AppConfig.portalUrl);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -241,12 +231,12 @@ class _PortalCta extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.open_in_browser_rounded,
+              Icon(Icons.info_outline_rounded,
                   size: 22, color: theme.colorScheme.primary),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Precisa de mais créditos?',
+                  'Portal de Assessorias',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -256,19 +246,10 @@ class _PortalCta extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Acesse o Portal de Assessorias pelo navegador '
-            'para gerenciar créditos, compras e equipe.',
+            'O Portal de Assessorias está sendo desenvolvido. '
+            'Em breve você poderá gerenciar créditos e equipe pelo navegador.',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: _openPortal,
-              icon: const Icon(Icons.launch_rounded, size: 18),
-              label: const Text('Abrir Portal de Assessorias'),
             ),
           ),
         ],

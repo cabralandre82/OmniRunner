@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
-import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
+import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_bloc.dart';
 import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_event.dart';
 import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_bloc.dart';
@@ -19,10 +20,13 @@ import 'package:omni_runner/presentation/screens/staff_qr_hub_screen.dart';
 
 /// Hub screen for secondary features: coaching, social, integrations, settings.
 ///
-/// Features whose BLoCs/repos are not yet registered show a "Coming Soon"
-/// SnackBar instead of crashing.
+/// Role-aware: staff users see a reduced menu without running-specific items.
 class MoreScreen extends StatelessWidget {
-  const MoreScreen({super.key});
+  final String? userRole;
+
+  const MoreScreen({super.key, this.userRole});
+
+  bool get _isStaff => userRole == 'ASSESSORIA_STAFF';
 
   @override
   Widget build(BuildContext context) {
@@ -35,54 +39,50 @@ class MoreScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
-          _header(context, 'Assessoria'),
-          _ActionTile(
-            icon: Icons.groups,
-            title: 'Assessorias',
-            subtitle: 'Gerenciar assessorias e membros',
-            onTap: (ctx) {
-              if (LoginRequiredSheet.guard(ctx, feature: 'Assessorias')) return;
-              final uid = sl<UserIdentityProvider>().userId;
-              Navigator.of(ctx).push(MaterialPageRoute<void>(
-                builder: (_) => BlocProvider<CoachingGroupsBloc>(
-                  create: (_) => sl<CoachingGroupsBloc>()
-                    ..add(LoadCoachingGroups(uid)),
-                  child: const CoachingGroupsScreen(),
-                ),
-              ));
-            },
-          ),
-          _ActionTile(
-            icon: Icons.swap_horiz,
-            title: 'Minha Assessoria',
-            subtitle: 'Ver assessoria atual e trocar',
-            onTap: (ctx) {
-              if (LoginRequiredSheet.guard(ctx, feature: 'Assessoria')) return;
-              final uid = sl<UserIdentityProvider>().userId;
-              Navigator.of(ctx).push(MaterialPageRoute<void>(
-                builder: (_) => BlocProvider<MyAssessoriaBloc>(
-                  create: (_) => sl<MyAssessoriaBloc>()
-                    ..add(LoadMyAssessoria(uid)),
-                  child: const MyAssessoriaScreen(),
-                ),
-              ));
-            },
-          ),
-          _ActionTile(
-            icon: Icons.qr_code,
-            title: 'Operações QR (Staff)',
-            subtitle: 'Emitir ou recolher OmniCoins, ativar badge',
-            onTap: (ctx) {
-              if (LoginRequiredSheet.guard(ctx, feature: 'Operações QR')) return;
-              _openStaffQrHub(ctx);
-            },
-          ),
-          const _ComingSoonTile(
-            icon: Icons.insights,
-            title: 'Análise do Coach',
-            subtitle: 'Insights gerados por IA para seu treino',
-            reason: 'Selecione uma assessoria para acessar.',
-          ),
+          if (!_isStaff) ...[
+            _header(context, 'Assessoria'),
+            _ActionTile(
+              icon: Icons.groups,
+              title: 'Assessorias',
+              subtitle: 'Gerenciar assessorias e membros',
+              onTap: (ctx) {
+                if (LoginRequiredSheet.guard(ctx, feature: 'Assessorias')) return;
+                final uid = sl<UserIdentityProvider>().userId;
+                Navigator.of(ctx).push(MaterialPageRoute<void>(
+                  builder: (_) => BlocProvider<CoachingGroupsBloc>(
+                    create: (_) => sl<CoachingGroupsBloc>()
+                      ..add(LoadCoachingGroups(uid)),
+                    child: const CoachingGroupsScreen(),
+                  ),
+                ));
+              },
+            ),
+            _ActionTile(
+              icon: Icons.swap_horiz,
+              title: 'Minha Assessoria',
+              subtitle: 'Ver assessoria atual e trocar',
+              onTap: (ctx) {
+                if (LoginRequiredSheet.guard(ctx, feature: 'Assessoria')) return;
+                final uid = sl<UserIdentityProvider>().userId;
+                Navigator.of(ctx).push(MaterialPageRoute<void>(
+                  builder: (_) => BlocProvider<MyAssessoriaBloc>(
+                    create: (_) => sl<MyAssessoriaBloc>()
+                      ..add(LoadMyAssessoria(uid)),
+                    child: const MyAssessoriaScreen(),
+                  ),
+                ));
+              },
+            ),
+            _ActionTile(
+              icon: Icons.qr_code,
+              title: 'Operações QR (Staff)',
+              subtitle: 'Emitir ou recolher OmniCoins, ativar badge',
+              onTap: (ctx) {
+                if (LoginRequiredSheet.guard(ctx, feature: 'Operações QR')) return;
+                _openStaffQrHub(ctx);
+              },
+            ),
+          ],
 
           _header(context, 'Social'),
           _ActionTile(
@@ -96,26 +96,6 @@ class MoreScreen extends StatelessWidget {
               ));
             },
           ),
-          const _ComingSoonTile(
-            icon: Icons.group_work,
-            title: 'Grupos',
-            subtitle: 'Grupos de corrida',
-            reason: 'Funcionalidade em desenvolvimento.',
-          ),
-          const _ComingSoonTile(
-            icon: Icons.event,
-            title: 'Eventos',
-            subtitle: 'Eventos de corrida virtuais',
-            reason: 'Funcionalidade em desenvolvimento.',
-          ),
-
-          _header(context, 'Integrações'),
-          const _ActionTile(
-            icon: Icons.watch,
-            title: 'Wearables e Saúde',
-            subtitle: 'Monitor cardíaco, Apple Health, Health Connect',
-            pushScreen: _IntegrationsInfoScreen(),
-          ),
 
           _header(context, 'Conta'),
           const _ActionTile(
@@ -125,13 +105,27 @@ class MoreScreen extends StatelessWidget {
             pushScreen: ProfileScreen(),
           ),
 
-          _header(context, 'Configurações'),
-          const _ActionTile(
-            icon: Icons.record_voice_over,
-            title: 'Áudio durante a corrida',
-            subtitle: 'Preferências de anúncio por voz',
-            pushScreen: SettingsScreen(),
-          ),
+          if (!_isStaff) ...[
+            _header(context, 'Integrações'),
+            const _ActionTile(
+              icon: Icons.watch,
+              title: 'Wearables e Saúde',
+              subtitle: 'Monitor cardíaco, Apple Health, Health Connect',
+              pushScreen: _IntegrationsInfoScreen(),
+            ),
+
+            _header(context, 'Configurações'),
+            const _ActionTile(
+              icon: Icons.record_voice_over,
+              title: 'Áudio durante a corrida',
+              subtitle: 'Preferências de anúncio por voz',
+              pushScreen: SettingsScreen(),
+            ),
+          ],
+
+          if (_isStaff)
+            _header(context, 'Informações'),
+
           _ActionTile(
             icon: Icons.info_outline,
             title: 'Sobre',
@@ -212,24 +206,54 @@ class MoreScreen extends StatelessWidget {
 
   Future<void> _openStaffQrHub(BuildContext context) async {
     final uid = sl<UserIdentityProvider>().userId;
-    final memberRepo = sl<ICoachingMemberRepo>();
-    final memberships = await memberRepo.getByUserId(uid);
-    final staffMembership = memberships.where((m) => m.isStaff).firstOrNull;
-    if (!context.mounted) return;
-    if (staffMembership == null) {
+
+    try {
+      final rows = await Supabase.instance.client
+          .from('coaching_members')
+          .select('id, user_id, group_id, display_name, role, joined_at_ms')
+          .eq('user_id', uid);
+
+      final staffRow = (rows as List).cast<Map<String, dynamic>>().where((r) {
+        final role = r['role'] as String? ?? '';
+        return role == 'admin_master' ||
+            role == 'professor' ||
+            role == 'assistente';
+      }).firstOrNull;
+
+      if (!context.mounted) return;
+      if (staffRow == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Acesso restrito a staff (admin master, professor ou assistente).',
+            ),
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+
+      final membership = CoachingMemberEntity(
+        id: staffRow['id'] as String,
+        userId: staffRow['user_id'] as String,
+        groupId: staffRow['group_id'] as String,
+        displayName: (staffRow['display_name'] as String?) ?? '',
+        role: coachingRoleFromString(staffRow['role'] as String? ?? ''),
+        joinedAtMs: (staffRow['joined_at_ms'] as num?)?.toInt() ?? 0,
+      );
+
+      Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => StaffQrHubScreen(membership: membership),
+      ));
+    } catch (_) {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Acesso restrito a staff (admin master, professor ou assistente).',
-          ),
+          content: Text('Erro ao verificar permissão. Tente novamente.'),
           duration: Duration(seconds: 3),
         ),
       );
-      return;
     }
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => StaffQrHubScreen(membership: staffMembership),
-    ));
   }
 
   Widget _header(BuildContext context, String text) {

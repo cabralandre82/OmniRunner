@@ -24,7 +24,7 @@ final class FilterLocationPoints {
   final double minMovementMeters;
 
   const FilterLocationPoints({
-    this.maxAccuracyMeters = 15.0,
+    this.maxAccuracyMeters = 25.0,
     this.maxSpeedMps = 11.5,
     this.minMovementMeters = 3.0,
   });

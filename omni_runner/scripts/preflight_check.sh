@@ -19,9 +19,13 @@ green()  { printf "\033[0;32m✓ %s\033[0m\n" "$1"; }
 header() { printf "\n\033[1;36m── %s ──\033[0m\n" "$1"; }
 
 header "1. ENV FILE"
-if [ -f "../$ENV_FILE" ]; then
+if [ -f "$ENV_FILE" ]; then
   green "$ENV_FILE exists"
-  source "../$ENV_FILE" 2>/dev/null || true
+  source "$ENV_FILE" 2>/dev/null || true
+elif [ -f "../$ENV_FILE" ]; then
+  yellow "$ENV_FILE found in parent dir — copying to omni_runner/"
+  cp "../$ENV_FILE" "$ENV_FILE"
+  source "$ENV_FILE" 2>/dev/null || true
 else
   red "$ENV_FILE NOT FOUND — copy .env.example to $ENV_FILE and fill in values"
   ERRORS=$((ERRORS + 1))
@@ -102,7 +106,7 @@ if [ $ERRORS -eq 0 ]; then
   green "ALL CHECKS PASSED ($WARNINGS warnings)"
   echo ""
   echo "  Build command:"
-  echo "  flutter run --flavor dev --dart-define-from-file=../$ENV_FILE"
+  echo "  flutter run --flavor dev --dart-define-from-file=$ENV_FILE"
   echo ""
 else
   red "$ERRORS ERRORS, $WARNINGS WARNINGS — fix errors before building"

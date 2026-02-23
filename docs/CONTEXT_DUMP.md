@@ -26058,3 +26058,476 @@ challenge_result_screen._buildTeamResults:
 - Status: ALL CHECKS PASSED (1 warning: release signing key)
 
 ### Nível de confiança: 92%
+
+### Git push
+
+- Repo: `https://github.com/cabralandre82/OmniRunner`
+- Branch: `master`
+- Commit: `87d481c` — 898 files, 161.658 insertions
+- `.gitignore` protege: `.env.*`, `google-services.json`, `.idea/`, `*.tar`, build artifacts
+- Auth: `gh` CLI (HTTPS + token)
+
+### Build APK Release (99.6.0)
+
+- Keystore: `android/app/omnirunner-release.keystore` (RSA 2048, validade 10000 dias)
+- Alias: `omnirunner`, CN=Omni Runner, O=OmniRunner, L=Sao Paulo, C=BR
+- SHA-1 release: `72:5A:90:7B:2C:4F:78:81:36:C0:DE:82:94:2C:88:EB:1F:C1:EB:09`
+- Flavor: `prod` (package: `com.omnirunner.omni_runner`, app name: "Omni Runner")
+- Comando: `flutter build apk --flavor prod --release --dart-define-from-file=../.env.dev`
+- APK: `omni_runner_v1.0.0.apk` — 121 MB (fat APK, multi-arch)
+- Signing: APK Signature Scheme v2/v3 via key.properties
+
+---
+
+## PHASE 100 — QA Device Testing (Hotfix v1.0.1)
+
+### Bugs encontrados no teste em device (v1.0.0)
+
+Três bugs críticos identificados na primeira instalação do APK:
+
+| # | Sintoma | Severidade |
+|---|---|---|
+| BUG-01 | App abre direto na Home sem mostrar tela de login | P0 — bloqueante |
+| BUG-02 | Modal "Crie sua conta" aparece, mas botão "Criar conta" fecha modal e nada acontece | P0 — bloqueante |
+| BUG-03 | Mapa mostra São Paulo (user em Brasília) + crash fatal ao clicar "Iniciar corrida" | P0 — crash |
+
+### Causa raiz global
+
+O APK v1.0.0 foi buildado com `--dart-define-from-file=../.env.dev` (path relativo ao parent dir). Os arquivos `.env.dev`/`.env.prod` estavam em `project-running/` mas Flutter resolve paths relativos a `omni_runner/`. Resultado: **todas as env vars estavam vazias** no APK — Supabase não inicializou, MapTiler sem key, Sentry sem DSN.
+
+Porém, mesmo com env vars, os bugs 1-3 existiriam por problemas de lógica no código.
+
+### Correções aplicadas
+
+#### BUG-01: Auth flow — auto-anonymous sign-in
+
+**Arquivo:** `lib/data/datasources/remote_auth_datasource.dart`
+
+```
+ANTES: init() → _auth.currentUser == null → signInAnonymously() → sessão anônima criada
+       → AuthGate vê sessão → isAnonymous → _go(home)
+
+DEPOIS: init() → _auth.currentUser == null → retorna AuthUser(id:'', isAnonymous:true)
+        → AuthGate vê !isSignedIn → _go(welcome)
+```
+
+O `signInAnonymously()` era chamado automaticamente no boot, criando uma sessão Supabase anônima. O AuthGate interpretava essa sessão como "usuário logado" e mandava direto pra Home.
+
+#### BUG-02: LoginRequiredSheet — botão "Criar conta" loop
+
+**Arquivo:** `lib/presentation/screens/auth_gate.dart`
+
+```
+ANTES: identity.isAnonymous → _go(home)    // volta pra Home = loop
+DEPOIS: identity.isAnonymous → _go(welcome) // mostra Welcome → Login
+```
+
+O botão do modal navegava para AuthGate, que routeava anonymous → home. Agora routeia anonymous → welcome → login.
+
+#### BUG-03a: Mapa hardcoded São Paulo
+
+**Arquivos:** `lib/presentation/screens/tracking_screen.dart`, `lib/presentation/screens/map_screen.dart`
+
+```
+ANTES: initialCameraPosition: LatLng(-23.5505, -46.6333)  // São Paulo
+DEPOIS: initialCameraPosition: LatLng(-15.7975, -47.8919)  // Brasília (fallback)
+        + Geolocator.getLastKnownPosition() para posição real do user
+```
+
+#### BUG-03b: Crash ao iniciar corrida
+
+**Arquivo:** `lib/presentation/blocs/tracking/tracking_bloc.dart`
+
+```
+ANTES: } on Exception catch (e, st) {  // não captura Error nativo
+DEPOIS: } catch (e, st) {               // captura tudo (Object)
+```
+
+Alterado em 3 pontos: `_onStartTracking`, `_onStopTracking.ForegroundTaskConfig.stop()`, `close()`.
+
+### Fix env files
+
+**Problema:** `.env.dev`, `.env.prod`, `.env.example` estavam em `project-running/` (root do monorepo) mas Flutter resolve `--dart-define-from-file` relativo a `omni_runner/`.
+
+**Fix:**
+- Copiados para `omni_runner/.env.dev`, `omni_runner/.env.prod`, `omni_runner/.env.example`
+- `scripts/preflight_check.sh` atualizado: busca env local primeiro, fallback para parent dir com warning
+- Ambos `.gitignore` (root e omni_runner) já excluem `.env*`
+
+### Build APK v1.0.1
+
+- Comando: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
+- APK: `omni_runner_v1.0.1.apk` — 121 MB
+- Env vars confirmadas: SUPABASE_URL, SUPABASE_ANON_KEY, MAPTILER_API_KEY, SENTRY_DSN, GOOGLE_WEB_CLIENT_ID
+- Preflight check: ALL CHECKS PASSED (0 warnings)
+
+### Teste device v1.0.2 — Google Sign-In fix
+
+**Problema:** Google Sign-In retornava `PlatformException(sign_in_failed, t2.d: 10:, null, null)`.
+O erro `10` é `DEVELOPER_ERROR` — o SHA-1 do certificado que assinou o APK não estava registrado no Firebase/GCP.
+
+- `google-services.json` original tinha apenas o SHA-1 do debug keystore: `31:AC:6D:4D:C0:C8:54:22:37:82:D3:91:AE:ED:5E:4B:87:67:B3:8E`
+- APK release assinado com SHA-1: `72:5A:90:7B:2C:4F:78:81:36:C0:DE:82:94:2C:88:EB:1F:C1:EB:09`
+
+**Fix:** Adicionado release SHA-1 no Firebase Console → Project Settings → Android app → Add fingerprint.
+Baixado novo `google-services.json` (agora com 2 OAuth clients: debug + release).
+Build v1.0.2 com `google-services.json` atualizado.
+
+### Bugs Sentry v1.0.2 — corrigidos em v1.0.3
+
+#### BUG-05: ForegroundService SecurityException (fatal crash)
+
+**Erro Sentry:** `RuntimeException: Unable to start service ForegroundService: SecurityException: Starting FGS with type connectedDevice requires permissions: any of [BLUETOOTH_ADVERTISE, BLUETOOTH_CONNECT, BLUETOOTH_SCAN, ...]`
+
+**Causa raiz:** O `AndroidManifest.xml` declarava `android:foregroundServiceType="location|connectedDevice"`. No Android 14+ (targetSDK=36), iniciar um FGS com tipo `connectedDevice` exige que pelo menos uma das permissões BLE (BLUETOOTH_CONNECT, BLUETOOTH_SCAN, etc.) esteja **concedida em runtime** — não basta declarar no manifest. Como BLE é opcional (nem todo usuário tem monitor cardíaco), e as permissões BLE não são solicitadas antes de iniciar a corrida, o serviço crashava.
+
+**Fix:**
+- `AndroidManifest.xml`: `foregroundServiceType` mudado de `location|connectedDevice` para apenas `location`
+- Removida permissão `FOREGROUND_SERVICE_CONNECTED_DEVICE` (não mais necessária)
+- Permissões BLE (`BLUETOOTH_SCAN`, `BLUETOOTH_CONNECT`) mantidas para quando o usuário conectar um monitor cardíaco
+- O foreground service mantém o GPS tracking ativo; BLE funciona independentemente do tipo de FGS
+
+#### BUG-06: coaching_members RLS infinite recursion
+
+**Erro Sentry:** `PostgrestException(message: infinite recursion detected in policy for relation "coaching_members", code: 42P17)`
+
+**Causa raiz:** A RLS policy `coaching_members_group_read` fazia:
+```sql
+EXISTS (SELECT 1 FROM coaching_members cm2
+  WHERE cm2.group_id = coaching_members.group_id AND cm2.user_id = auth.uid())
+```
+Para verificar se o usuário pode ler uma row de `coaching_members`, o PostgreSQL fazia um SELECT em `coaching_members`, o que acionava a mesma policy novamente → loop infinito.
+
+**Fix:** Criada migration `20260223140000_fix_coaching_members_rls_recursion.sql`:
+1. Função `SECURITY DEFINER` `user_coaching_group_ids()` — executa com permissões do owner (bypassa RLS), retorna os `group_id`s do usuário
+2. Policy recriada usando `group_id IN (SELECT user_coaching_group_ids())` — sem self-reference
+3. Aplicação: via Supabase Dashboard SQL Editor (CLI `db push` travava na conexão direta ao banco)
+
+### Build APK v1.0.3
+
+- Comando: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
+- APK: `omni_runner_v1.0.3.apk` — 121 MB
+- Mudanças: `AndroidManifest.xml` (FGS type), `google-services.json` (SHA-1 release)
+- Migration SQL aplicada separadamente no Supabase Dashboard
+
+### Teste device v1.0.3 — Tracking distance/timer bugs
+
+O FGS e o coaching fix funcionaram. Porém, ao iniciar uma corrida:
+- Distância ficou em 0m apesar de 64 pontos GPS registrados
+- Timer com gaps (09:41 → 09:46, pulando segundos)
+- Pace mostrou --:-- (sem distância = sem pace)
+
+#### BUG-07: Distância sempre 0m
+
+**Causa raiz:** Bug no método `_accumDist` do `TrackingBloc`. Lógica:
+```
+_filterPoints([_prevPt, pt]) → se f.length < 2 → return (sem acumular)
+                              → _prevPt NUNCA atualiza
+```
+Se o primeiro ponto GPS tiver accuracy > 15m (comum no cold start), `_prevPt` fica preso nesse ponto ruim. Cada chamada subsequente filtra `_prevPt` (accuracy ruim), deixando apenas 1 ponto aceito, e `_prevPt` nunca avança → distância permanentemente 0.
+
+**Fix (2 partes):**
+
+1. `_accumDist` corrigido para avançar `_prevPt` quando filter aceita ao menos 1 ponto:
+```dart
+if (f.length >= 2) {
+  _accumDistM += _accumulateDistance(f);
+}
+if (f.isNotEmpty) {
+  _prevPt = f.last; // Avança para último ponto aceito
+}
+```
+
+2. `maxAccuracyMeters` relaxado de 15.0 → 25.0 em `FilterLocationPoints` e `AccumulateDistance`.
+15m era muito restritivo — GPS de celular em área urbana frequentemente reporta 15-25m.
+25m é o padrão usado por apps de corrida como Strava.
+
+#### BUG-08: Timer com gaps
+
+**Causa raiz:** A UI só atualizava ao receber novos pontos GPS (via `_onLocationPointReceived`).
+Com `distanceFilter: 5m`, pontos GPS só chegam quando o device se move 5m. Resultado:
+timer congela entre updates e pula segundos.
+
+Adicionalmente, `_computeMetrics` calculava elapsed como `_points.last.timestampMs - _startMs`
+(timestamp GPS), que pode ter drift em relação ao relógio do device.
+
+**Fix:**
+1. Novo event `TimerTick` — `Timer.periodic(1s)` dispara `add(TimerTick())` durante tracking
+2. Handler `_onTimerTick` emite estado atualizado a cada segundo
+3. `_computeMetrics` agora usa `DateTime.now().millisecondsSinceEpoch - _startMs` (wall-clock)
+
+### Build APK v1.0.4
+
+- Comando: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
+- APK: `omni_runner_v1.0.4.apk` — 121 MB
+- Fixes: BUG-07 (`_accumDist` + accuracy), BUG-08 (TimerTick + wall-clock elapsed)
+- Testes: 34/34 passando (filter + accumulate), 0 errors flutter analyze
+
+#### BUG-09: Corrida demora minutos para aparecer no Histórico
+
+**Causa raiz:** `HomeScreen` usa `IndexedStack` com uma lista `late final _tabs`. Todos os 4 tabs
+são criados no `initState` do `HomeScreen`, incluindo `HistoryScreen`. O `_loadSessions()` do
+`HistoryScreen` roda apenas no seu `initState` — ou seja, uma vez. Trocar de aba não recarrega.
+
+O usuário só veria a corrida se fizesse pull-to-refresh (arrastar para baixo), mas isso não é
+óbvio na UI.
+
+**Fix:**
+1. `HistoryScreen` ganhou prop `isVisible` (default `true`)
+2. `didUpdateWidget` detecta transição `!isVisible → isVisible` e chama `_loadSessions()`
+3. `HomeScreen` agora passa `HistoryScreen(isVisible: _tab == 2)` no `IndexedStack`
+4. A lista de tabs foi movida de `late final` para inline no `build()`, permitindo rebuild com novo `isVisible`
+
+### Teste device v1.0.4 — Novos bugs encontrados
+
+Distância, timer e histórico funcionando. Porém, 3 novos issues:
+
+#### BUG-10: Logout não volta para login social
+
+**Sintoma:** Ao sair da conta no perfil e clicar "Começar" novamente, o app auto-logava
+com a conta anterior sem mostrar a tela de seleção de conta Google.
+
+**Causa raiz:** `RemoteAuthDataSource.signOut()` chamava apenas `_auth.signOut()` (Supabase),
+limpando a sessão Supabase. Porém, o `GoogleSignIn` mantém a credential em cache internamente.
+Ao navegar para `LoginScreen` e clicar "Continuar com Google", `GoogleSignIn().signIn()`
+silently retorna a conta anterior sem mostrar o account picker.
+
+**Fix:** Adicionado `GoogleSignIn().signOut()` antes de `_auth.signOut()` no
+`RemoteAuthDataSource.signOut()`. Isso limpa o cache do Google Sign-In, forçando
+o account picker a aparecer na próxima tentativa de login.
+
+```dart
+Future<void> signOut() async {
+  try {
+    try { await GoogleSignIn().signOut(); } catch (_) {}
+    await _auth.signOut();
+  }
+}
+```
+
+#### BUG-11: "Sequências" naming confuso
+
+**Sintoma:** No botão "Meu Progresso", item "Sequências" com subtítulo "Quem está em
+sequência na assessoria" — texto vago e sem contexto claro para o usuário.
+
+**Fix:** Renomeado:
+- `ProgressHubScreen`: "Sequências" → "Consistência", "Quem está em sequência na assessoria" → "Ranking de dias consecutivos correndo"
+- `StreaksLeaderboardScreen`: AppBar "Sequências" → "Consistência", seção "Em sequência agora" → "Correndo consecutivamente", mensagens vazias atualizadas
+
+#### BUG-12: Rankings — infinite recursion em `group_members`
+
+**Sintoma:** Erro `PostgrestException(message: infinite recursion detected in policy for relation "group_members", code: 42P17)` em todos os rankings (assessoria, campeonato, global).
+
+**Causa raiz:** Mesma causa do BUG-06 (`coaching_members`). A policy `group_members_read` fazia:
+```sql
+EXISTS (SELECT 1 FROM group_members gm WHERE gm.group_id = group_members.group_id AND gm.user_id = auth.uid())
+```
+A subquery acessa `group_members` → dispara a mesma RLS policy → loop infinito.
+
+**Fix:** Criada migration `20260223160000_fix_group_members_rls_recursion.sql`:
+1. Função `SECURITY DEFINER` `user_social_group_ids()` — retorna `group_id`s do user (bypassa RLS)
+2. Função `SECURITY DEFINER` `is_group_admin_or_mod(p_group_id)` — verifica se user é admin/mod (para policy UPDATE)
+3. `group_members_read` recriada: `group_id IN (SELECT user_social_group_ids())`
+4. `group_members_update_mod` recriada: `auth.uid() = user_id OR is_group_admin_or_mod(group_id)`
+
+Aplicação: via Supabase Dashboard SQL Editor (mesmo processo do BUG-06).
+
+### Build APK v1.0.5
+
+- Comando: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
+- APK: `omni_runner_v1.0.5.apk` — 126 MB
+- Fixes: BUG-10 (logout), BUG-11 (naming), BUG-12 (group_members RLS), BUG-13 (retry network), BUG-14 (back nav)
+- Migration SQL aplicada via Supabase Management API
+
+#### BUG-13: Criar assessoria falha (connection abort)
+
+**Sintoma:** Ao tentar criar assessoria com conta diferente, erro `ClientException: Software caused
+connection abort` no Sentry para `set-user-role`.
+
+**Causa raiz:** `_completeSocialProfile()` era chamada com `unawaited()` após login social — se a rede
+falhasse, o profile nunca era criado e chamadas subsequentes falhavam. Além disso, nenhuma chamada
+de rede crítica tinha retry.
+
+**Fix:**
+1. `_completeSocialProfile()` agora é `await`ed (não `unawaited`) com retry 3x e backoff (500ms, 1s, 1.5s)
+2. `set-user-role` (OnboardingRoleScreen) tem retry 3x
+3. `fn_create_assessoria` (StaffSetupScreen) tem retry 3x
+4. Mensagens de erro mencionam "verifique sua conexão"
+
+#### BUG-14: Botão voltar fecha o app nas telas de onboarding
+
+**Sintoma:** Nas telas "Monte sua assessoria" ou "Encontre sua assessoria", ao pressionar o botão
+voltar do Android (ou tentar voltar para o login), o app fechava completamente.
+
+**Causa raiz:** `AuthGate` renderiza as telas de onboarding via `setState` (inline switch), sem
+`Navigator.push`. As telas são renderizadas diretamente no `build()` do `AuthGate`. Quando o user
+pressiona back, o sistema tenta `pop()` o `AuthGate` que é a raiz da navigation stack
+(`pushAndRemoveUntil(..., (_) => false)`). Sem nada abaixo, o app fecha.
+
+**Fix:**
+1. `PopScope(canPop: false)` no `AuthGate` intercepta o botão físico do Android nas telas de onboarding
+2. Novo callback `onBack` adicionado a `OnboardingRoleScreen`, `StaffSetupScreen` e `JoinAssessoriaScreen`
+3. `onBack` faz sign-out + redireciona para `WelcomeScreen`
+4. Botão ← visual adicionado no topo das 3 telas com tooltip "Voltar para o login"
+
+#### BUG-15: Criar assessoria sempre falha (NOT NULL constraint)
+
+**Sintoma:** Ao clicar "Criar" na tela "Criar assessoria", erro "Não foi possível criar a assessoria"
+em todas as tentativas, com qualquer conta. Conexão do user estava funcionando normalmente.
+
+**Causa raiz:** A função `fn_create_assessoria` fazia:
+```sql
+INSERT INTO coaching_groups (id, name, coach_user_id, city) VALUES (...)
+```
+Mas a coluna `created_at_ms` é `NOT NULL` sem valor default. O INSERT sempre falhava com:
+`null value in column "created_at_ms" of relation "coaching_groups" violates not-null constraint`
+
+O erro era mascarado pelo catch genérico no Flutter, que mostrava "verifique sua conexão" —
+dando a impressão de problema de rede quando era bug no SQL.
+
+**Fix:** Adicionado `created_at_ms` ao INSERT:
+```sql
+INSERT INTO coaching_groups (id, name, coach_user_id, city, created_at_ms)
+VALUES (v_group_id, trim(p_name), v_uid, COALESCE(trim(p_city), ''), v_now_ms)
+```
+`v_now_ms` já era calculado na função (`EXTRACT(EPOCH FROM now())::BIGINT * 1000`) mas nunca
+era usado no INSERT de `coaching_groups` (só no de `coaching_members`).
+
+Aplicação: via Supabase Management API. Sem necessidade de novo APK — fix é 100% server-side.
+Migration salva: `20260223170000_fix_fn_create_assessoria_created_at_ms.sql`
+
+#### BUG-16: Dashboard staff completamente quebrado — botões não funcionam, tabs de atleta
+
+**Sintoma:** Ao abrir o app como ASSESSORIA_STAFF após criar assessoria:
+- Apenas botão "Créditos" clicável (mostra erro ao carregar)
+- Todos os outros botões clicados e nada acontece
+- Título mostra "..." (reticências) em vez do nome da assessoria
+- Tabs inferiores mostram Correr/Histórico (não fazem sentido para staff)
+- Menu "Mais" mostra itens de atleta (Minha Assessoria, Áudio, etc.)
+- QR Staff diz "acesso restrito" apesar de ser admin_master
+
+**Causa raiz (múltipla):**
+1. `StaffDashboardScreen._loadStatus()` usava `sl<ICoachingMemberRepo>().getByUserId()` que lê
+   do Isar (cache local). Mas a assessoria foi criada server-side via RPC `fn_create_assessoria`,
+   que insere direto nas tabelas Supabase — nunca popula o Isar local. Resultado: `_groupId` vazio,
+   todos os botões fazem `if (_groupId.isEmpty) return;`
+2. `HomeScreen` mostrava os mesmos 4 tabs (Início/Correr/Histórico/Mais) para ambos os roles
+3. `MoreScreen` não era role-aware — mostrava itens de atleta (Minha Assessoria, Áudio,
+   Wearables) para staff
+4. `_openStaffQrHub()` no MoreScreen também usava Isar → sempre retornava "sem staff membership"
+
+**Fix (3 arquivos):**
+- `home_screen.dart`: Staff vê 2 tabs (Início + Mais), atleta vê 4 tabs (Início + Correr + Histórico + Mais)
+- `staff_dashboard_screen.dart`: `_loadStatus()` agora consulta Supabase direto via
+  `from('coaching_members').select().eq('user_id', uid)`. Mostra empty state com botão "Tentar
+  novamente" se nenhuma assessoria encontrada. Título com `maxLines: 2` e `overflow: ellipsis`
+- `more_screen.dart`: Aceita `userRole` param. Staff não vê: Assessoria section, Integrações,
+  Áudio, Coming Soon tiles. `_openStaffQrHub()` agora consulta Supabase direto
+
+#### BUG-17: Tela "Atletas" crashava com CoachingGroupNotFound
+
+**Sintoma:** Ao clicar em "Atletas" no dashboard staff, Sentry reportava
+`CoachingGroupNotFound` fatal — `GetCoachingGroupDetails.call` não encontrava o grupo.
+
+**Causa raiz:** O use case `GetCoachingGroupDetails` usa `ICoachingGroupRepo.getById()` que lê
+do Isar local. Apesar do fix do BUG-16 ter feito o dashboard consultar Supabase direto, os dados
+nunca eram salvos no Isar — então qualquer tela downstream que usasse o repo local falhava.
+
+**Fix:** Adicionado sync Supabase → Isar em `StaffDashboardScreen._loadStatus()`:
+1. Após buscar group data do Supabase, salva `CoachingGroupEntity` via `ICoachingGroupRepo.save()`
+2. Após buscar membership data, salva `CoachingMemberEntity` via `ICoachingMemberRepo.save()`
+3. Busca e salva TODOS os membros do grupo (`coaching_members WHERE group_id = gid`)
+   para que a tela de detalhes exiba a lista completa
+
+#### Auditoria de data source dos botões do staff dashboard
+
+Verificação preventiva para evitar o mesmo padrão de erro (Isar vazio) nos demais botões:
+
+| Botão | Tela | Data source | Status |
+|-------|------|-------------|--------|
+| Atletas | `CoachingGroupDetailsScreen` | Isar (via `GetCoachingGroupDetails`) | Corrigido (BUG-17) — sync Supabase → Isar |
+| Confirmações | `StaffDisputesScreen` | Supabase direto | OK |
+| Performance | `StaffPerformanceScreen` | Supabase direto | OK |
+| Campeonatos | `StaffChampionshipTemplatesScreen` | Supabase direto | OK |
+| Convites | `StaffChampionshipInvitesScreen` | Supabase direto | OK |
+| Créditos | `StaffCreditsScreen` | Supabase direto | OK |
+| Desafios | `StaffChallengeInvitesScreen` | Supabase direto | OK |
+| Administração | `StaffQrHubScreen` | Recebe `membership` direto | OK |
+| Portal | Browser externo | N/A | OK |
+
+Caso secundário: `StaffQrHubScreen._pushInviteQr()` usa `ICoachingGroupRepo.getById()` (Isar),
+mas só é acessível após `_loadStatus()` do dashboard que já sincroniza o grupo ao Isar.
+
+#### BUG-24: Fluxo de entrada em assessoria sem aprovação
+
+**Sintoma:** Atletas entravam automaticamente na assessoria via busca, QR ou código de convite,
+sem que a assessoria pudesse aprovar ou recusar a entrada. Assessorias existem no mundo real e
+precisam controlar quem entra.
+
+**Causa raiz:** `fn_switch_assessoria` criava membership diretamente ao ser chamado pelo atleta.
+Não existia conceito de "solicitação pendente" — era entrada imediata.
+
+**Fix (completo — banco + Flutter):**
+
+**Banco de dados:**
+1. Nova tabela `coaching_join_requests` com colunas: `id`, `group_id`, `user_id`, `display_name`,
+   `status` (pending/approved/rejected), `requested_at`, `reviewed_at`, `reviewed_by`
+2. Partial unique index `idx_join_requests_one_pending` — impede duplicatas de solicitação pendente
+3. RLS: atleta vê suas próprias solicitações; staff vê solicitações do grupo; staff pode atualizar
+4. RPC `fn_request_join(p_group_id)` — SECURITY DEFINER. Verifica autenticação, grupo existe,
+   não é membro, não tem solicitação pendente. Cria registro com status 'pending'
+5. RPC `fn_approve_join_request(p_request_id)` — SECURITY DEFINER. Verifica autenticação,
+   solicitação existe e está pendente, caller é admin_master/professor do grupo. Marca approved,
+   remove membership atleta anterior, cria nova membership, atualiza `active_coaching_group_id`
+6. RPC `fn_reject_join_request(p_request_id)` — SECURITY DEFINER. Mesmas verificações. Marca rejected
+
+**Flutter (lado atleta):**
+- `JoinAssessoriaScreen._joinGroup()`: "Entrar" → "Solicitar entrada". Chama `fn_request_join`
+  em vez de `fn_switch_assessoria`. Dialog de confirmação explica que a assessoria precisa aprovar.
+  Feedback visual: dialog com ícone verde "Solicitação enviada!" ou laranja "Solicitação já enviada"
+- Aceitar convite direto do staff (via `coaching_invites`) mantém o fluxo antigo com `fn_switch_assessoria`
+
+**Flutter (lado staff):**
+- `StaffDashboardScreen`: novo card "Solicitações" com ícone `person_add_rounded`, fundo verde.
+  Badge mostra contagem de pendentes (ex: "3 pendentes"). `_loadStatus()` consulta `coaching_join_requests`
+  com `eq('status', 'pending')`. Ao abrir, navega para `StaffJoinRequestsScreen` e recarrega ao voltar
+- `StaffJoinRequestsScreen`: nova tela completa. Seção "Pendentes" com cards de request (avatar,
+  nome, tempo relativo, botões Aprovar/Rejeitar com confirmação). Seção "Histórico" com tiles
+  aprovados/rejeitados. Empty state quando não há solicitações. Pull-to-refresh. Botão refresh no AppBar
+
+**Arquivos criados/modificados:**
+- `supabase/migrations/20260223190000_coaching_join_requests.sql` (NOVO)
+- `lib/presentation/screens/join_assessoria_screen.dart` (MODIFICADO)
+- `lib/presentation/screens/staff_join_requests_screen.dart` (NOVO)
+- `lib/presentation/screens/staff_dashboard_screen.dart` (MODIFICADO)
+
+#### FEATURE: Remoção de membros da assessoria
+
+**Contexto:** O use case `RemoveCoachingMember` existia no domínio (validações de role) mas nunca
+foi conectado à UI nem ao Supabase. Staff não conseguia remover ninguém pelo app.
+
+**Fix:**
+
+**Banco de dados:**
+- RPC `fn_remove_member(p_target_user_id, p_group_id)` — SECURITY DEFINER. Regras:
+  - Caller deve ser staff (admin_master, professor, ou assistente)
+  - Não pode remover admin_master (owner da assessoria)
+  - Assistente não pode remover outros staff (professor/assistente)
+  - Não pode remover a si mesmo
+  - Remove o registro de `coaching_members`
+  - Limpa `active_coaching_group_id` do profile do removido (se apontava para o grupo)
+
+**Flutter:**
+- `CoachingGroupDetailsScreen` (`_LoadedBodyState`):
+  - Calcula `_callerRole` a partir da lista de membros
+  - `_canRemove()` avalia se o caller pode remover cada membro (mesmas regras do RPC)
+  - `_removeMember()`: dialog de confirmação com ícone vermelho, chama `fn_remove_member`,
+    re-sincroniza membros do Supabase→Isar, refresh automático do BLoC
+  - Mensagens de erro traduzidas para cada exceção do RPC
+- `_CoachingMemberTile`: agora aceita `canRemove` e `onRemove`. Exibe `IconButton` com
+  `person_remove_outlined` (vermelho) no trailing quando `canRemove = true`. Role badge
+  movido para `subtitle` com `Align(centerLeft)` para acomodar o botão
+
+**Arquivos criados/modificados:**
+- `supabase/migrations/20260223200000_fn_remove_member.sql` (NOVO)
+- `lib/presentation/screens/coaching_group_details_screen.dart` (MODIFICADO)

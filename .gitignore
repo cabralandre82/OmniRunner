@@ -9,6 +9,7 @@
 
 # Large binary archives
 *.tar
+*.apk
 
 # Firebase credentials (contains API keys)
 omni_runner/android/app/google-services.json

@@ -81,7 +81,7 @@ class _StreaksLeaderboardScreenState extends State<StreaksLeaderboardScreen> {
           .from('coaching_members')
           .select('user_id')
           .eq('group_id', groupId)
-          .eq('role', 'athlete');
+          .eq('role', 'atleta');
 
       final members = (membersRes as List).cast<Map<String, dynamic>>();
       final athleteIds = members.map((m) => m['user_id'] as String).toList();
@@ -129,7 +129,7 @@ class _StreaksLeaderboardScreenState extends State<StreaksLeaderboardScreen> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _error = 'Não foi possível carregar as sequências.';
+          _error = 'Não foi possível carregar a consistência.';
           _loading = false;
         });
       }
@@ -151,7 +151,7 @@ class _StreaksLeaderboardScreenState extends State<StreaksLeaderboardScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Sequências')),
+      appBar: AppBar(title: const Text('Consistência')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error == 'no_group'
@@ -180,13 +180,13 @@ class _StreaksLeaderboardScreenState extends State<StreaksLeaderboardScreen> {
                           // Section 1: Active streaks
                           const _SectionHeader(
                             icon: Icons.local_fire_department_rounded,
-                            title: 'Em sequência agora',
+                            title: 'Correndo consecutivamente',
                             color: Colors.deepOrange,
                           ),
                           const SizedBox(height: 8),
                           if (_activeStreaks.isEmpty)
                             const _EmptyHint(
-                                'Nenhum atleta em sequência ativa no momento.')
+                                'Nenhum atleta correndo consecutivamente no momento.')
                           else
                             ..._activeStreaks.map((e) => _ActiveStreakTile(
                                   entry: e,
@@ -205,7 +205,7 @@ class _StreaksLeaderboardScreenState extends State<StreaksLeaderboardScreen> {
                           const SizedBox(height: 8),
                           if (_consistencyRanking.isEmpty)
                             const _EmptyHint(
-                                'Nenhum dado de sequência disponível.')
+                                'Nenhum dado de consistência disponível.')
                           else
                             ..._consistencyRanking
                                 .asMap()
@@ -406,7 +406,7 @@ class _ConsistencyTile extends StatelessWidget {
           Text(
             entry.streakCurrent > 0
                 ? '${entry.streakCurrent} ${entry.streakCurrent == 1 ? 'dia' : 'dias'} ativa'
-                : 'sem sequência',
+                : 'sem dias consecutivos',
             style: theme.textTheme.bodySmall?.copyWith(
               color: entry.streakCurrent > 0
                   ? Colors.deepOrange
@@ -486,7 +486,7 @@ class _NoGroupBody extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Entre em uma assessoria para ver\n'
-              'as sequências dos outros atletas.',
+              'a consistência dos outros atletas.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart' as geo;
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:omni_runner/core/service_locator.dart';
@@ -58,6 +59,9 @@ class _TrackingViewState extends State<_TrackingView>
   double _bearing = 0.0;
   bool _firstFix = true;
 
+  /// User's last known position, or Brasília as fallback.
+  LatLng _initialCenter = const LatLng(-15.7975, -47.8919);
+
   static const _mapLoadTimeout = Duration(seconds: 6);
 
   @override
@@ -65,6 +69,19 @@ class _TrackingViewState extends State<_TrackingView>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _mapTimeout = Timer(_mapLoadTimeout, _onMapLoadTimeout);
+    _resolveInitialPosition();
+  }
+
+  Future<void> _resolveInitialPosition() async {
+    try {
+      final pos = await geo.Geolocator.getLastKnownPosition();
+      if (pos != null && mounted) {
+        setState(() => _initialCenter = LatLng(pos.latitude, pos.longitude));
+        _mapCtrl?.animateCamera(CameraUpdate.newLatLng(_initialCenter));
+      }
+    } catch (_) {
+      // Permission not yet granted or unavailable — keep fallback.
+    }
   }
 
   @override
@@ -220,7 +237,7 @@ class _TrackingViewState extends State<_TrackingView>
               }
             },
             child: MapLibreMap(
-              initialCameraPosition: const CameraPosition(target: LatLng(-23.5505, -46.6333), zoom: 15),
+              initialCameraPosition: CameraPosition(target: _initialCenter, zoom: 15),
               styleString: mapStyleUrl,
               onMapCreated: (ctrl) => _mapCtrl = ctrl,
               onStyleLoadedCallback: _onStyleLoaded,

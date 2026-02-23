@@ -65,12 +65,12 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
 
       final members = (membersRes as List).cast<Map<String, dynamic>>();
       final athletes = members
-          .where((m) => m['role'] == 'athlete')
+          .where((m) => m['role'] == 'atleta')
           .toList();
       final athleteIds =
           athletes.map((m) => m['user_id'] as String).toList();
 
-      _totalMembers = members.length;
+      _totalMembers = athletes.length;
 
       if (athleteIds.isEmpty) {
         _setEmpty();
@@ -356,7 +356,7 @@ class _KpiGrid extends StatelessWidget {
           icon: Icons.directions_run_rounded,
           title: 'Atletas ativos',
           value: '$activeAthletes',
-          subtitle: 'de $totalMembers membros',
+          subtitle: 'de $totalMembers ${totalMembers == 1 ? 'atleta' : 'atletas'}',
           color: Colors.blue,
         ),
         _KpiCard(

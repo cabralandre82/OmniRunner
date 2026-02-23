@@ -8,14 +8,8 @@ import 'package:omni_runner/presentation/screens/tracking_screen.dart';
 
 /// Root navigation shell with bottom tab bar.
 ///
-/// Tab 0 shows [AthleteDashboardScreen] or [StaffDashboardScreen]
-/// depending on [userRole] (passed from [AuthGate]).
-///
-/// Tabs:
-///   0 — Início (role-aware dashboard)
-///   1 — Correr (GPS tracking, map, ghost runner)
-///   2 — Histórico (past sessions, sync)
-///   3 — Mais (coaching, social, integrations, settings)
+/// Athlete tabs: Início, Correr, Histórico, Mais
+/// Staff tabs: Início, Mais (no running / history)
 class HomeScreen extends StatefulWidget {
   final String? userRole;
 
@@ -28,19 +22,22 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _tab = 0;
 
-  late final List<Widget> _tabs = [
-    widget.userRole == 'ASSESSORIA_STAFF'
-        ? const StaffDashboardScreen()
-        : const AthleteDashboardScreen(),
-    const TrackingScreen(),
-    const HistoryScreen(),
-    const MoreScreen(),
-  ];
+  bool get _isStaff => widget.userRole == 'ASSESSORIA_STAFF';
 
   @override
   Widget build(BuildContext context) {
+    if (_isStaff) return _buildStaffShell();
+    return _buildAthleteShell();
+  }
+
+  Widget _buildAthleteShell() {
     return Scaffold(
-      body: IndexedStack(index: _tab, children: _tabs),
+      body: IndexedStack(index: _tab, children: [
+        const AthleteDashboardScreen(),
+        const TrackingScreen(),
+        HistoryScreen(isVisible: _tab == 2),
+        const MoreScreen(userRole: 'ATLETA'),
+      ]),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
         onDestinationSelected: (i) => setState(() => _tab = i),
@@ -61,6 +58,33 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.history_outlined),
             selectedIcon: Icon(Icons.history),
             label: 'Histórico',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.menu_outlined),
+            selectedIcon: Icon(Icons.menu),
+            label: 'Mais',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStaffShell() {
+    return Scaffold(
+      body: IndexedStack(index: _tab, children: const [
+        StaffDashboardScreen(),
+        MoreScreen(userRole: 'ASSESSORIA_STAFF'),
+      ]),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _tab,
+        onDestinationSelected: (i) => setState(() => _tab = i),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        height: 64,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Início',
           ),
           NavigationDestination(
             icon: Icon(Icons.menu_outlined),

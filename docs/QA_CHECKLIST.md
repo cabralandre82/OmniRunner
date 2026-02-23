@@ -14,11 +14,12 @@
 | Device | (preencher) |
 | OS / Versão | (preencher) |
 | Flutter build mode | release |
-| `.env` utilizado | `.env.prod` com chaves reais |
-| Supabase configurado | sim / não |
-| MapTiler configurado | sim / não |
+| `.env` utilizado | `.env.dev` (em `omni_runner/`) |
+| Supabase configurado | sim |
+| MapTiler configurado | sim |
 | Stripe configurado | sim / não |
 | Data do teste | (preencher) |
+| APK versão | v1.0.1 (`omni_runner_v1.0.1.apk`) |
 
 ---
 
@@ -261,6 +262,42 @@
 | B7 | avgPace usa elapsed em vez de movingMs | **CORRIGIDO** | `run_details_screen.dart:129-130` |
 | B8 | DebugTrackingScreen como home | **CORRIGIDO** | `main.dart:114` — AuthGate |
 | B9 | CFBundleName incorreto | **CORRIGIDO** | `Info.plist:16` |
+
+### BUGS DO DEVICE TEST v1.0.0 (Phase 100)
+
+| ID | Sintoma | Status | Fix |
+|----|---------|--------|-----|
+| BUG-01 | App vai direto pra Home sem login | **CORRIGIDO** (v1.0.1) | Removido auto-anonymous sign-in de `remote_auth_datasource.dart` |
+| BUG-02 | Botão "Criar conta" no modal fecha e nada acontece | **CORRIGIDO** (v1.0.1) | `auth_gate.dart`: anonymous → welcome (não home) |
+| BUG-03a | Mapa mostra São Paulo (user em Brasília) | **CORRIGIDO** (v1.0.1) | Fallback Brasília + `getLastKnownPosition()` |
+| BUG-03b | Crash ao clicar "Iniciar corrida" | **CORRIGIDO** (v1.0.1) | `catch` (Object) em vez de `on Exception catch` |
+| ENV-01 | Env vars vazias no APK (path incorreto) | **CORRIGIDO** (v1.0.1) | `.env.*` copiados para `omni_runner/`, preflight atualizado |
+
+### BUGS DO DEVICE TEST v1.0.2 (Phase 100.3)
+
+| ID | Sintoma | Status | Fix |
+|----|---------|--------|-----|
+| BUG-04 | Google Sign-In retorna `DEVELOPER_ERROR (10)` | **CORRIGIDO** (v1.0.2) | Release SHA-1 adicionado no Firebase, `google-services.json` atualizado |
+| BUG-05 | Crash `SecurityException` FGS `connectedDevice` ao iniciar corrida | **CORRIGIDO** (v1.0.3) | `foregroundServiceType` → `location` only, removida `FOREGROUND_SERVICE_CONNECTED_DEVICE` |
+| BUG-06 | `PostgrestException: infinite recursion` em `coaching_members` | **CORRIGIDO** (v1.0.3) | Fn `SECURITY DEFINER` `user_coaching_group_ids()` + policy recriada |
+
+### BUGS DO DEVICE TEST v1.0.3 (Phase 100.4)
+
+| ID | Sintoma | Status | Fix |
+|----|---------|--------|-----|
+| BUG-07 | Distância sempre 0m (64 pts GPS) | **CORRIGIDO** (v1.0.4) | `_accumDist` avança `_prevPt` quando filter aceita ≥1 ponto; accuracy 15→25m |
+| BUG-08 | Timer com gaps (09:41 → 09:46) | **CORRIGIDO** (v1.0.4) | `TimerTick` periódico 1s + elapsed via wall-clock |
+| BUG-09 | Corrida demora minutos para aparecer no Histórico | **CORRIGIDO** (v1.0.4) | `isVisible` prop + `didUpdateWidget` recarrega ao trocar aba |
+
+### BUGS DO DEVICE TEST v1.0.4 (Phase 100.5)
+
+| ID | Sintoma | Status | Fix |
+|----|---------|--------|-----|
+| BUG-10 | Logout não volta para login social (auto-login com conta anterior) | **CORRIGIDO** (v1.0.5) | `GoogleSignIn().signOut()` antes de `_auth.signOut()` |
+| BUG-11 | "Sequências" naming confuso em Meu Progresso | **CORRIGIDO** (v1.0.5) | Renomeado para "Consistência" / "Ranking de dias consecutivos correndo" |
+| BUG-12 | Rankings: `infinite recursion` em `group_members` | **CORRIGIDO** (v1.0.5) | Fn `SECURITY DEFINER` `user_social_group_ids()` + `is_group_admin_or_mod()` |
+| BUG-13 | Criar assessoria falha: `ClientException: connection abort` | **CORRIGIDO** (v1.0.5) | `await _completeSocialProfile()` + retry 3x com backoff |
+| BUG-14 | Botão voltar fecha o app nas telas de onboarding | **CORRIGIDO** (v1.0.5) | `PopScope` + `onBack` (sign-out → welcome) + botão ← visual |
 
 ---
 

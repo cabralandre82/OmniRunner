@@ -71,22 +71,32 @@ class RemoteAuthDataSource implements IAuthDataSource {
   }
 
   /// Calls the complete-social-profile Edge Function to ensure the profile
-  /// row exists and has the correct created_via. Best-effort: failures are
-  /// logged but do not block sign-in (the trigger also creates profiles).
+  /// row exists and has the correct created_via. Retries up to 2 times on
+  /// transient network errors. Failures are logged but do not block sign-in
+  /// (the DB trigger also creates profiles as a fallback).
   Future<void> _completeSocialProfile() async {
-    try {
-      final response = await Supabase.instance.client.functions.invoke(
-        'complete-social-profile',
-        body: {},
-      );
-      final data = response.data as Map<String, dynamic>? ?? {};
-      if (data['ok'] == true) {
-        AppLogger.info('complete-social-profile OK', tag: _tag);
-      } else {
-        AppLogger.warn('complete-social-profile returned ok=false: $data', tag: _tag);
+    for (var attempt = 1; attempt <= 3; attempt++) {
+      try {
+        final response = await Supabase.instance.client.functions.invoke(
+          'complete-social-profile',
+          body: {},
+        );
+        final data = response.data as Map<String, dynamic>? ?? {};
+        if (data['ok'] == true) {
+          AppLogger.info('complete-social-profile OK', tag: _tag);
+        } else {
+          AppLogger.warn('complete-social-profile returned ok=false: $data', tag: _tag);
+        }
+        return;
+      } catch (e) {
+        AppLogger.warn(
+          'complete-social-profile attempt $attempt/3 failed: $e',
+          tag: _tag,
+        );
+        if (attempt < 3) {
+          await Future<void>.delayed(Duration(milliseconds: 500 * attempt));
+        }
       }
-    } catch (e) {
-      AppLogger.warn('complete-social-profile failed (non-blocking): $e', tag: _tag);
     }
   }
 
@@ -95,30 +105,17 @@ class RemoteAuthDataSource implements IAuthDataSource {
   @override
   Future<app.AuthUser> init() async {
     try {
-      var user = _auth.currentUser;
+      final user = _auth.currentUser;
       if (user == null) {
-        AppLogger.info('No Supabase session — signing in anonymously', tag: _tag);
-        try {
-          final res = await _auth.signInAnonymously();
-          user = res.user;
-        } catch (e) {
-          AppLogger.warn(
-            'Anonymous sign-in failed (may be disabled on server). '
-            'User will see login screen: $e',
-            tag: _tag,
-          );
-          return const app.AuthUser(id: '', displayName: 'Runner', isAnonymous: true);
-        }
+        AppLogger.info('No Supabase session — user will see login screen', tag: _tag);
+        return const app.AuthUser(id: '', displayName: 'Runner', isAnonymous: true);
       }
-      if (user != null) {
-        final mapped = _map(user);
-        AppLogger.info(
-          'Auth init OK: ${mapped.id} (${mapped.email ?? "anonymous"})',
-          tag: _tag,
-        );
-        return mapped;
-      }
-      return const app.AuthUser(id: '', displayName: 'Runner', isAnonymous: true);
+      final mapped = _map(user);
+      AppLogger.info(
+        'Auth init OK: ${mapped.id} (${mapped.email ?? "anonymous"})',
+        tag: _tag,
+      );
+      return mapped;
     } on AuthFailure {
       rethrow;
     } catch (e) {
@@ -197,7 +194,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
 
       AppLogger.info('Google SignIn OK: ${user.id}', tag: _tag);
       final mapped = _map(user);
-      unawaited(_completeSocialProfile());
+      await _completeSocialProfile();
       return mapped;
     } on AuthFailure {
       rethrow;
@@ -238,7 +235,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
 
       AppLogger.info('Apple SignIn OK: ${user.id}', tag: _tag);
       final mapped = _map(user);
-      unawaited(_completeSocialProfile());
+      await _completeSocialProfile();
       return mapped;
     } on AuthFailure {
       rethrow;
@@ -289,7 +286,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
 
       AppLogger.info('Instagram SignIn OK: ${user.id}', tag: _tag);
       final mapped = _map(user);
-      unawaited(_completeSocialProfile());
+      await _completeSocialProfile();
       return mapped;
     } on AuthFailure {
       rethrow;
@@ -351,7 +348,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
 
       AppLogger.info('TikTok SignIn OK: ${user.id}', tag: _tag);
       final mapped = _map(user);
-      unawaited(_completeSocialProfile());
+      await _completeSocialProfile();
       return mapped;
     } on AuthFailure {
       rethrow;
@@ -363,6 +360,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
   @override
   Future<void> signOut() async {
     try {
+      try { await GoogleSignIn().signOut(); } catch (_) {}
       await _auth.signOut();
       AppLogger.info('SignOut OK', tag: _tag);
     } on AuthFailure {

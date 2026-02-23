@@ -13,7 +13,8 @@ import 'package:omni_runner/presentation/screens/run_details_screen.dart';
 /// via `Navigator.pop` instead of navigating to details.
 class HistoryScreen extends StatefulWidget {
   final bool pickGhostMode;
-  const HistoryScreen({super.key, this.pickGhostMode = false});
+  final bool isVisible;
+  const HistoryScreen({super.key, this.pickGhostMode = false, this.isVisible = true});
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -26,6 +27,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   void initState() { super.initState(); _loadSessions(); }
+
+  @override
+  void didUpdateWidget(covariant HistoryScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isVisible && !oldWidget.isVisible) {
+      _loadSessions();
+    }
+  }
 
   Future<void> _loadSessions() async {
     final all = await sl<ISessionRepo>().getAll();

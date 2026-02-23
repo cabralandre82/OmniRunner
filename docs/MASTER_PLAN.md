@@ -597,6 +597,98 @@ Transformar o Omni Runner de um aplicativo centrado no usuário individual para 
 | 99.3.0 | Backend deploy: 38 migrations aplicadas (reordenadas por dependência), 40 Edge Functions deployadas | CONCLUIDA |
 | 99.3.1 | Fix: championship_tables partial index now() → composite index (IMMUTABLE) | CONCLUIDA |
 | 99.4.0 | Script preflight_check.sh: valida todas as dependências antes do build. ALL CHECKS PASSED. | CONCLUIDA |
+| 99.5.0 | Git commit (898 files, 161.658 lines) + push to github.com/cabralandre82/OmniRunner (master) | CONCLUIDA |
+| 99.6.0 | Build APK release: keystore gerado, `flutter build apk --flavor prod --release`, APK 121MB assinado | CONCLUIDA |
+
+---
+
+### PHASE 100 — QA Device Testing (Hotfix v1.0.1)
+
+> **Status:** EM ANDAMENTO
+
+| Sprint | Descrição | Status |
+|---|---|---|
+| 100.1.0 | Fix 3 bugs críticos encontrados em teste no device: auth flow, login modal, mapa+crash | CONCLUIDA |
+| 100.1.1 | Fix env files: `.env.dev`/`.env.prod` movidos para `omni_runner/` (Flutter não encontrava no parent dir) | CONCLUIDA |
+| 100.1.2 | Preflight script atualizado: busca env local primeiro, fallback p/ parent dir com warning | CONCLUIDA |
+| 100.2.0 | Build APK v1.0.1: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`, 121MB | CONCLUIDA |
+| 100.2.1 | Build APK v1.0.2: google-services.json atualizado com SHA-1 do release keystore (Google Sign-In fix) | CONCLUIDA |
+| 100.3.0 | Teste no device v1.0.2: Google Sign-In funciona, mas 2 novos bugs Sentry | CONCLUIDA |
+| 100.3.1 | Fix FGS crash: `foregroundServiceType` mudado de `location\|connectedDevice` → `location` (BLE opcional) | CONCLUIDA |
+| 100.3.2 | Fix RLS recursion: `coaching_members_group_read` policy self-reference → fn `SECURITY DEFINER` | CONCLUIDA |
+| 100.3.3 | Build APK v1.0.3: ambos os fixes aplicados | CONCLUIDA |
+| 100.4.0 | Teste no device v1.0.3: FGS OK, corrida inicia sem crash, mas distância 0m e timer com gaps | CONCLUIDA |
+| 100.4.1 | Fix `_accumDist` stuck: `_prevPt` nunca avançava se 1o ponto tinha accuracy ruim → distância sempre 0 | CONCLUIDA |
+| 100.4.2 | `maxAccuracyMeters` relaxado de 15m → 25m (FilterLocationPoints + AccumulateDistance) | CONCLUIDA |
+| 100.4.3 | `TimerTick` event periódico 1s: UI atualiza a cada segundo (timer suave sem gaps) | CONCLUIDA |
+| 100.4.4 | Elapsed time via wall-clock (`DateTime.now()`) em vez de GPS timestamp | CONCLUIDA |
+| 100.4.5 | Build APK v1.0.4: todos os fixes de tracking aplicados | CONCLUIDA |
+| 100.4.6 | Fix HistoryScreen: reload ao trocar aba via `isVisible` + `didUpdateWidget` | CONCLUIDA |
+| 100.5.0 | Teste no device v1.0.4: distância, timer, pace OK. Novos bugs: logout, "Sequências" naming, group_members RLS | CONCLUIDA |
+| 100.5.1 | Fix logout: `signOut()` agora faz `GoogleSignIn().signOut()` antes de `_auth.signOut()` — limpa cache Google | CONCLUIDA |
+| 100.5.2 | Rename "Sequências"→"Consistência" + textos atualizados na `StreaksLeaderboardScreen` e `ProgressHubScreen` | CONCLUIDA |
+| 100.5.3 | Fix RLS recursion `group_members_read`: fn `SECURITY DEFINER` `user_social_group_ids()` | CONCLUIDA |
+| 100.5.4 | Fix assessoria creation: `await _completeSocialProfile()` + retry 3x em chamadas críticas | CONCLUIDA |
+| 100.5.5 | Fix back navigation: `PopScope` + `onBack` callback nas telas de onboarding (sign-out → welcome) | CONCLUIDA |
+| 100.5.6 | Build APK v1.0.5: logout + naming + RLS + retry + back nav | CONCLUIDA |
+| 100.5.7 | Fix `fn_create_assessoria`: `created_at_ms` faltando no INSERT (NOT NULL constraint) — fix no banco via Management API | CONCLUIDA |
+| 100.6.0 | Fix staff UX: HomeScreen role-aware (sem Correr/Histórico p/ staff), StaffDashboard query Supabase direto, MoreScreen role-aware | CONCLUIDA |
+| 100.6.1 | Build APK v1.0.6: staff dashboard fix + role-aware tabs + menu cleanup | CONCLUIDA |
+| 100.7.0 | Fix UX staff dashboard: "Atletas"→"Atletas e Staff", "Desafios" subtitle, Portal "em breve", championship template flow simplificado (sem "Sessões", RadioListTile com descrições, Corrida única, duração personalizada), RLS INSERT/UPDATE/DELETE championship_templates, Portal CTA "em breve" em StaffCreditsScreen | CONCLUIDA |
+| 100.7.1 | Build APK v1.0.7: UX fixes + championship flow + RLS fix | CONCLUIDA |
+| 100.8.0 | Fix role string mismatch (`'athlete'`→`'atleta'`) em 4 telas (Performance, Retention, Streaks, Weekly Report); remover "Desafios" do dashboard staff (desafios são entre atletas); member count no card "Atletas e Staff"; re-sync Supabase→Isar ao abrir Atletas | CONCLUIDA |
+| 100.8.1 | Build APK v1.0.8: role fix + desafios removal + member count + sync | CONCLUIDA |
+| 100.9.0 | BUG-24: Fluxo de entrada em assessoria sem aprovação — novo fluxo com tabela `coaching_join_requests`, RPCs de solicitação/aprovação/rejeição, UI de solicitar entrada e tela de aprovação no dashboard staff | CONCLUIDA |
+| 100.9.1 | Build APK v1.0.9: fluxo de aprovação de entrada em assessoria | CONCLUIDA |
+| 100.10.0 | FEATURE: Remoção de membros — RPC `fn_remove_member` + UI na tela "Atletas e Staff" com ícone remover, dialog de confirmação, re-sync pós-remoção | CONCLUIDA |
+| 100.10.1 | Build APK v1.0.10: remoção de membros | CONCLUIDA |
+| 100.11.0 | BUG-25 Performance RLS (staff não via sessions atletas); BUG-26 Atletas e Staff reescrita (Supabase direto, sem Isar); campeonatos redesenhados (5 seções, formato visual, local, resumo) | CONCLUIDA |
+| 100.11.1 | Build APK v1.0.11 | CONCLUIDA |
+| 100.12.0 | Teste no device v1.0.11 | TODO |
+
+**Bugs corrigidos (100.1.0):**
+
+| # | Bug | Causa raiz | Fix |
+|---|---|---|---|
+| BUG-01 | App vai direto pra Home sem tela de login | `RemoteAuthDataSource.init()` fazia `signInAnonymously()` auto, criando sessão anônima → AuthGate via sessão e mandava pra home | Removido auto-anonymous sign-in; sem sessão → AuthGate mostra Welcome→Login |
+| BUG-02 | Botão "Criar conta" no modal fecha e nada acontece | `AuthGate._resolve()` routeava anonymous → home; botão levava a AuthGate que re-routeava pra home | Anonymous → welcome (não home); fluxo Welcome→Login→Onboarding→Home funciona |
+| BUG-03a | Mapa mostra São Paulo (user em Brasília) | Coordenadas hardcoded `-23.5505, -46.6333` (SP) em `tracking_screen.dart` e `map_screen.dart` | Fallback → Brasília (`-15.7975, -47.8919`) + `getLastKnownPosition()` p/ posição real do user |
+| BUG-03b | Crash ao clicar "Iniciar corrida" | `on Exception catch` no TrackingBloc não captura `Error` nativo (foreground service, geolocator) | `catch` (Object) em start/stop/close do tracking — erros nativos não derrubam o app |
+
+**Bugs corrigidos (100.3.x — v1.0.2/v1.0.3):**
+
+| # | Bug | Causa raiz | Fix |
+|---|---|---|---|
+| BUG-04 | Google Sign-In `DEVELOPER_ERROR (10)` | `google-services.json` só tinha SHA-1 do debug keystore; release SHA-1 não registrado no Firebase | Adicionado release SHA-1 no Firebase, baixado novo `google-services.json` |
+| BUG-05 | Crash `SecurityException` FGS `connectedDevice` | `foregroundServiceType="location\|connectedDevice"` exige BLE permission runtime Android 14+; BLE é opcional | Removido `connectedDevice` do `foregroundServiceType`, mantido apenas `location` |
+| BUG-06 | `PostgrestException: infinite recursion` coaching_members | RLS policy `coaching_members_group_read` self-reference → loop infinito | Fn `SECURITY DEFINER` `user_coaching_group_ids()` bypassa RLS |
+
+**Bugs corrigidos (100.4.x — v1.0.4):**
+
+| # | Bug | Causa raiz | Fix |
+|---|---|---|---|
+| BUG-07 | Distância sempre 0m (64 pts GPS registrados) | `_accumDist`: se 1o ponto GPS tinha accuracy > 15m, `_prevPt` nunca avançava → filter sempre rejeitava, `f.length < 2` → 0m | `_prevPt = f.last` quando filter aceita ao menos 1 ponto; accuracy relaxada 15→25m |
+| BUG-08 | Timer com gaps (09:41 → 09:46) | UI só atualizava ao receber ponto GPS; elapsed calculado por GPS timestamp | `TimerTick` periódico 1s + elapsed via `DateTime.now()` (wall-clock) |
+| BUG-09 | Corrida demora minutos para aparecer no Histórico | `HistoryScreen` usa `IndexedStack` → `initState` roda 1x na criação; trocar aba não recarrega | `isVisible` prop + `didUpdateWidget` recarrega ao entrar na aba |
+
+**Bugs corrigidos (100.5.x — v1.0.5):**
+
+| # | Bug | Causa raiz | Fix |
+|---|---|---|---|
+| BUG-10 | Logout não volta pra login social (auto-login com conta anterior) | `signOut()` só limpava sessão Supabase; Google Sign-In mantinha credential em cache → auto-seleção | `GoogleSignIn().signOut()` antes de `_auth.signOut()` — limpa cache Google |
+| BUG-11 | "Sequências" naming confuso em Meu Progresso | Título "Sequências" / "quem está em sequência" sem contexto claro | Renomeado para "Consistência" / "Ranking de dias consecutivos correndo" |
+| BUG-12 | Rankings: `infinite recursion` em `group_members` | `group_members_read` policy self-reference (mesma causa do BUG-06 com `coaching_members`) | Fn `SECURITY DEFINER` `user_social_group_ids()` + `is_group_admin_or_mod()` |
+| BUG-13 | Criar assessoria falha: `ClientException: connection abort` | `_completeSocialProfile()` era `unawaited` → podia falhar silently; sem retry em chamadas de rede críticas | `await` + retry 3x com backoff em `_completeSocialProfile`, `set-user-role`, `fn_create_assessoria` |
+| BUG-14 | Botão voltar fecha o app nas telas de onboarding | Telas renderizadas inline no `AuthGate` sem `Navigator.push` → back popa o AuthGate (raiz) → app fecha | `PopScope` + callback `onBack` (sign-out → welcome) nas 3 telas de onboarding + botão ← visual |
+| BUG-15 | Criar assessoria sempre falha (NOT NULL constraint) | `fn_create_assessoria` não incluía `created_at_ms` no INSERT; coluna `NOT NULL` sem default | Adicionado `created_at_ms` ao INSERT da função (fix no banco, sem novo APK) |
+| BUG-16 | Dashboard staff: botões não funcionam, tabs de atleta visíveis | `StaffDashboardScreen` lia do Isar (cache local vazio); `HomeScreen` mostrava Correr/Histórico p/ staff; `MoreScreen` mostrava itens de atleta p/ staff | Dashboard agora consulta Supabase direto; HomeScreen role-aware (2 tabs staff / 4 tabs atleta); MoreScreen filtra itens por role |
+| BUG-17 | Tela "Atletas" crash: `CoachingGroupNotFound` | `GetCoachingGroupDetails` lia do Isar (vazio); dados do Supabase não eram sincronizados localmente | Dashboard agora sincroniza grupo + todos membros do Supabase → Isar após fetch. Auditoria dos 9 botões: apenas "Atletas" usava Isar; demais 8 usam Supabase direto |
+| BUG-18 | "Atletas" e "Desafios" labels confusos no dashboard staff | "Atletas" não mostrava que admin aparece na lista; "Desafios" subtitle "Convites de equipe" vago | "Atletas" → "Atletas e Staff" / "Ver e gerenciar membros"; "Desafios" subtitle → "Convites de outras assessorias" |
+| BUG-19 | "Erro ao salvar modelo" nos templates de campeonato | Tabela `championship_templates` só tinha RLS SELECT — INSERT/UPDATE/DELETE bloqueados | Migration com 3 novas policies (INSERT/UPDATE/DELETE) para admin_master/professor |
+| BUG-20 | Fluxo campeonato confuso (métrica, duração, "Sessões") | Métricas com "Sessões" sem explicação; duração só chips fixos (7/14/30/60/90 dias); sem opção de corrida única | Removido "Sessões"; RadioListTile com descrições (ex: "Quem correr mais km"); duração: Corrida única (1d) / 1 semana / 2 semanas / 1 mês / Personalizado |
+| BUG-21 | Botão "Portal" e "Abrir Portal de Assessorias" não faziam nada | URL `portal.omnirunner.app` não configurada; `canLaunchUrl` falhava silenciosamente | Dashboard Portal: SnackBar "em breve"; Credits `_PortalCta`: card informativo "está sendo desenvolvido" |
+| BUG-22 | Performance mostra "0 de 2 membros" mas só tem 1 atleta | Role string mismatch: código filtrava por `'athlete'` (inglês) mas DB armazena `'atleta'` (português, desde migration 16.10.0) | Corrigido em 4 telas: `staff_performance_screen`, `staff_retention_dashboard_screen`, `streaks_leaderboard_screen`, `staff_weekly_report_screen`. Contagem agora mostra apenas atletas (não staff) |
+| BUG-23 | "Desafios" no dashboard staff — conceito errado | Card "Desafios" mostrava convites de "team vs team entre assessorias", mas desafios são SEMPRE entre atletas, não assessorias | Card removido do dashboard staff. Assessorias não participam de desafios — apenas distribuem OmniCoins e gerenciam atletas |
 
 ---
 

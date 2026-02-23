@@ -18,37 +18,37 @@ O projeto Omni Runner é um app de corrida Flutter com arquitetura Clean Archite
 
 | Item | Status | Detalhe |
 |------|--------|---------|
-| Chave MapTiler (`MAPTILER_API_KEY`) | ⚠️ PLACEHOLDER | `.env.prod` contém `your_maptiler_prod_key` — não é uma chave real |
+| Chave MapTiler (`MAPTILER_API_KEY`) | ✅ FEITO | `.env.dev` contém chave real (`8k7N8Y5T...`). `.env.prod` ainda placeholder. |
 | Fallback sem chave | ✅ OK | `map_style.dart` cai para `MapLibreStyles.demo` se a chave estiver vazia |
-| Erro de carregamento do mapa | ⚠️ PARCIAL | `MapScreen` tem `_error` field mas nunca é setado; `TrackingScreen` não tem tratamento de erro de mapa |
-| Rate limiting / quota MapTiler | ❌ AUSENTE | Sem retry ou fallback se a API retornar 429/503 |
+| Erro de carregamento do mapa | ✅ FEITO | Map load timeout (6s) com fallback "Mapa indisponível" em `TrackingScreen` e `MapScreen` |
+| Rate limiting / quota MapTiler | ⚠️ AUSENTE | Sem retry ou fallback se a API retornar 429/503 |
 
 ### 1.2 Wearables (Garmin, Apple Watch, Bluetooth/ANT+)
 
 | Item | Status | Detalhe |
 |------|--------|---------|
-| Integração com wearables | ❌ AUSENTE | Não há código de comunicação BLE/ANT+ |
-| Apple HealthKit / Google Fit | ❌ AUSENTE | Não há integração com APIs de saúde |
-| Heart Rate Monitor | ❌ AUSENTE | `AudioEventType.heartRateAlert` existe na entity mas não tem implementação |
-| Pedômetro / Step Counter | ⚠️ PLACEHOLDER | `IntegrityDetectVehicle` define `IStepsSource` mas não tem implementação concreta |
-| Garmin Connect IQ | ❌ AUSENTE | Sem integração |
+| Integração BLE HR | ✅ FEITO | `BleHeartRateSource` implementa `IHeartRateSource`, registrado no service_locator, usado no TrackingBloc (auto-connect + live BPM) |
+| Apple HealthKit / Health Connect | ✅ FEITO | `HealthPlatformService` implementa `IHealthProvider`; `ExportWorkoutToHealth` exporta sessões; `HealthExportController` para UI |
+| Heart Rate Monitor | ✅ FEITO | Live BPM no TrackingBottomPanel, avg/max persistidos na sessão, HR zone voice trigger |
+| Pedômetro / Step Counter | ✅ FEITO | `HealthStepsSource` implementa `IStepsSource`, usado por `VehicleSlidingDetector` para anti-cheat |
+| Garmin Connect IQ | ❌ AUSENTE | Sem integração nativa (BLE HR funciona com Garmin HRM via padrão BLE) |
 
 ### 1.3 Supabase / Backend
 
 | Item | Status | Detalhe |
 |------|--------|---------|
-| Chaves Supabase | ⚠️ PLACEHOLDER | `.env.prod` contém valores de exemplo, não chaves reais |
-| Supabase.initialize() | ❌ AUSENTE | `main.dart` **não** chama `Supabase.initialize()` — todas as chamadas ao Supabase client vão falhar em runtime |
-| Autenticação | ⚠️ AUSENTE | Sem fluxo de login; `userId` sempre retorna `null` no `SyncService` |
-| Tratamento de falhas de rede | ✅ PARCIAL | `SyncRepo` captura exceções e retorna `SyncFailure` tipado |
+| Chaves Supabase | ✅ FEITO | `.env.dev` com chaves reais; 38 migrations aplicadas; 40 Edge Functions deployadas |
+| Supabase.initialize() | ✅ FEITO | `main.dart` chama `Supabase.initialize()` no `_bootstrap()` com fallback mock mode |
+| Autenticação | ✅ FEITO | Social login (Google, Apple, Instagram) via `RemoteAuthDataSource`; AuthGate roteia por estado de onboarding |
+| Tratamento de falhas de rede | ✅ OK | `SyncRepo` captura exceções e retorna `SyncFailure` tipado; `AutoSyncManager` retenta ao restaurar conectividade |
 
 ### 1.4 Sentry / Crash Reporting
 
 | Item | Status | Detalhe |
 |------|--------|---------|
-| Sentry DSN | ⚠️ PLACEHOLDER | `.env.prod` tem valor de exemplo |
-| Sentry.init() | ❌ AUSENTE | `main.dart` não inicializa Sentry |
-| `AppLogger.onError` hook | ⚠️ NÃO CONECTADO | O hook existe, mas nunca é configurado para enviar ao Sentry |
+| Sentry DSN | ✅ FEITO | `.env.dev` com DSN real; `AppConfig.sentryDsn` lê via `--dart-define` |
+| Sentry.init() | ✅ FEITO | `main.dart` chama `SentryFlutter.init()` com `appRunner: _bootstrap` — captura framework errors + uncaught exceptions |
+| `AppLogger.onError` hook | ✅ FEITO | `main.dart` conecta `AppLogger.onError` → `Sentry.captureException()` — todos os `AppLogger.error()` enviam ao Sentry |
 
 ### 1.5 Manifestos e Permissões
 
@@ -63,8 +63,8 @@ O projeto Omni Runner é um app de corrida Flutter com arquitetura Clean Archite
 | `FOREGROUND_SERVICE_LOCATION` | ✅ |
 | `INTERNET` | ✅ |
 | Foreground Service declaration | ✅ `foregroundServiceType="location"` |
-| `BLUETOOTH_SCAN` / `BLUETOOTH_CONNECT` | ❌ AUSENTE (necessário para wearables) |
-| `ACTIVITY_RECOGNITION` | ❌ AUSENTE (necessário para step counter) |
+| `BLUETOOTH_SCAN` / `BLUETOOTH_CONNECT` | ✅ FEITO | Declarados no AndroidManifest (neverForLocation) |
+| `ACTIVITY_RECOGNITION` | ✅ FEITO | Declarado no AndroidManifest |
 | `WAKE_LOCK` | ⚠️ Via plugin `flutter_foreground_task` (implícito) |
 
 #### iOS (`Info.plist`)
@@ -75,9 +75,9 @@ O projeto Omni Runner é um app de corrida Flutter com arquitetura Clean Archite
 | `NSLocationAlwaysAndWhenInUseUsageDescription` | ✅ |
 | `UIBackgroundModes: location` | ✅ |
 | `UIBackgroundModes: fetch` | ❌ AUSENTE (necessário para sync em background) |
-| `UIBackgroundModes: bluetooth-central` | ❌ AUSENTE (necessário para wearables BLE) |
-| `NSBluetoothAlwaysUsageDescription` | ❌ AUSENTE |
-| `NSMotionUsageDescription` | ❌ AUSENTE (necessário para pedômetro) |
+| `UIBackgroundModes: bluetooth-central` | ✅ FEITO | Declarado em Info.plist |
+| `NSBluetoothAlwaysUsageDescription` | ✅ FEITO | "Omni Runner connects to Bluetooth heart rate monitors..." |
+| `NSMotionUsageDescription` | ❌ AUSENTE (necessário para pedômetro nativo — HealthKit steps funciona sem) |
 
 ---
 
@@ -98,16 +98,10 @@ O `_flushBuffer()` faz `_buffer = []` (reassign), mas a referência `List.of(_bu
 - O Bloc do `flutter_bloc` serializa handlers async, então **dentro do bloc não há race condition real** pois `on<Event>` processa um por vez.
 - **Porém**, se a stream GPS emitir pontos muito rápido enquanto `_flushBuffer` aguarda o `writeTxn` do Isar, novos eventos se acumulam no buffer interno do Bloc e são processados sequencialmente. **Risco baixo, mas monitorar.**
 
-#### RC-02: `ForegroundTaskConfig.start/stop` sem await (MÉDIA)
-**Arquivo:** `tracking_screen.dart:108-109`
+#### RC-02: `ForegroundTaskConfig.start/stop` sem await (CORRIGIDO)
+**Arquivo:** `tracking_bloc.dart`
 
-```dart
-if (_lastActive == null) ForegroundTaskConfig.start();  // Fire-and-forget
-...
-ForegroundTaskConfig.stop();                              // Fire-and-forget
-```
-
-O start/stop do foreground service é fire-and-forget. Se o stop for chamado antes do start completar, o serviço pode ficar "preso" rodando. Deveria ser `await`-ado.
+~~O start/stop do foreground service era fire-and-forget.~~ Agora `await ForegroundTaskConfig.start()` e `await ForegroundTaskConfig.stop()` são chamados no `TrackingBloc._onStartTracking` e `_onStopTracking`, com try-catch defensivo. ✅
 
 #### RC-03: `unawaited(_audioCoach.init())` (BAIXA)
 **Arquivo:** `tracking_bloc.dart:114`
@@ -128,18 +122,13 @@ O sync pode começar e falhar sem que ninguém trate o resultado. Aceitável par
 final client = Supabase.instance.client;
 ```
 
-`Supabase.instance` vai lançar uma exceção se `Supabase.initialize()` nunca foi chamado. **O app vai crashar na primeira tentativa de sync.**
+`Supabase.instance` vai lançar uma exceção se `Supabase.initialize()` nunca foi chamado.
 
-**Correção:** Adicionar `Supabase.initialize()` no `main.dart` ou tratar a exceção.
+**Status: ✅ CORRIGIDO** — `Supabase.initialize()` é chamado em `main.dart:_bootstrap()`. Se falhar, app continua em mock mode (`AppConfig.isSupabaseReady = false`).
 
-#### F-02: `sessionId` baseado em timestamp (MÉDIA)
-**Arquivo:** `tracking_bloc.dart:115`
+#### F-02: `sessionId` baseado em timestamp (CORRIGIDO ✅)
 
-```dart
-_sessionId = now.toString();  // "1740000000000"
-```
-
-Usar timestamp como ID pode gerar colisões se o usuário iniciar duas sessões no mesmo milissegundo (improvável mas possível em testes automatizados). **Recomendação:** Usar UUID v4.
+**Status: ✅ CORRIGIDO** — `_sessionId = generateUuidV4()` — UUID v4 criptograficamente aleatório. Sem risco de colisão.
 
 #### F-03: `GhostPositionAt` com rota vazia (TRATADO)
 Retorna `null` corretamente para rotas < 2 pontos. ✅
@@ -153,18 +142,16 @@ Pontos com `accuracy == null` passam pelo filtro (comportamento correto para GPS
 #### F-06: `_computeMetrics` no TrackingBloc — `_filterPoints` chamado repetidamente
 **Arquivo:** `tracking_bloc.dart:182`
 
-Cada tick de GPS chama `_filterPoints(_points)` sobre os últimos até 300 pontos. Isso é O(n) a cada ponto e não é cacheado. Para corridas longas com alta frequência de GPS, isso pode causar **frame drops**.
-
-**Recomendação:** Cachear o resultado do filtro e só recalcular incrementalmente.
+**Status: ✅ CORRIGIDO** — `_getFilteredPoints()` usa cache incremental (`_filteredCache` + `_filteredUpTo`). Só processa pontos novos desde a última chamada, com rebuild completo apenas quando `_points` é trimado (~300 ticks).
 
 ### 2.3 Tratamento de Erros — O que Falta
 
 | Função | Tem try-catch? | Risco |
 |--------|---------------|-------|
-| `TrackingBloc._onStartTracking` | Parcial — `ensureLocationReady` retorna failure, mas `_sessionRepo.save` pode lançar exceção | ALTO |
-| `TrackingBloc._onStopTracking` | NÃO — `_finishSession` pode lançar se Isar falhar | ALTO |
-| `TrackingBloc._flushBuffer` | NÃO — `_pointsRepo.savePoints` pode falhar | ALTO |
-| `SyncRepo._syncOne` | SIM ✅ | OK |
+| `TrackingBloc._onStartTracking` | ✅ SIM — try-catch(Object) envolve todo o método | OK |
+| `TrackingBloc._onStopTracking` | ✅ SIM — `_finishSession` wrapped em try-catch | OK |
+| `TrackingBloc._flushBuffer` | ✅ SIM — `_pointsRepo.savePoints` wrapped em try-catch | OK |
+| `SyncRepo._syncOne` | ✅ SIM | OK |
 | `FinishSession.call` | NÃO — queries ao repo podem falhar | MÉDIO |
 | `RecoverActiveSession.call` | NÃO — queries ao repo podem falhar | MÉDIO |
 | `DiscardSession.call` | NÃO — delete pode falhar | MÉDIO |
@@ -178,17 +165,16 @@ Cada tick de GPS chama `_filterPoints(_points)` sobre os últimos até 300 ponto
 
 | Arquivo | Problema |
 |---------|----------|
-| `integrity_detect_vehicle.dart` | **Não registrado** no `service_locator.dart`. `IStepsSource` não tem implementação. Código fantasma completo. |
-| `map_screen.dart` | Screen standalone de mapa. **Não é referenciado** por nenhuma rota de navegação no app. |
-| `debug_tracking_screen.dart` | Screen de debug. Funcional mas sem rota de navegação a partir da tela principal. |
-| `camera_controller.dart` | `CameraFollowController` **nunca é instanciado** em nenhuma tela. Código morto. |
-| `auto_bearing.dart` | `AutoBearing` **nunca é chamado** em nenhum lugar do app. Código morto. |
-| `AudioEventType.heartRateAlert` | Enum value definido mas **nunca emitido** por nenhum trigger. |
-| `AudioEventType.paceAlert` | Enum value definido mas **nunca emitido** por nenhum trigger. |
-| `AudioEventType.countdown` | Enum value definido mas **nunca emitido** por nenhum trigger. |
-| `AudioEventType.sessionEvent` | Enum value definido mas **nunca emitido** por nenhum trigger. |
-| `location_rationale.dart` | Arquivo de entidade não lido nesta auditoria — verificar uso. |
-| `run_details_screen.dart` | Referenciado pelo `HistoryScreen` — em uso. |
+| `integrity_detect_vehicle.dart` | ✅ INTEGRADO — `VehicleSlidingDetector` usado no TrackingBloc; `HealthStepsSource` implementa `IStepsSource` |
+| `map_screen.dart` | ⚠️ Screen standalone de mapa — sem rota de navegação (P2) |
+| `debug_tracking_screen.dart` | ⚠️ Screen de debug — sem rota de navegação (P2, remover antes de prod) |
+| `camera_controller.dart` | ✅ INTEGRADO — `CameraFollowController` instanciado em `TrackingScreen`, camera segue corredor com throttle + bearing |
+| `auto_bearing.dart` | ✅ INTEGRADO — `AutoBearing.fromPoint` e `AutoBearing.fromTwoPoints` chamados em `TrackingScreen._updateCamera` |
+| `AudioEventType.heartRateAlert` | ✅ INTEGRADO — emitido por `HrZoneVoiceTrigger` quando HR zone muda |
+| `AudioEventType.paceAlert` | ⚠️ Enum value não emitido (futuro) |
+| `AudioEventType.countdown` | ⚠️ Enum value não emitido (futuro) |
+| `AudioEventType.sessionEvent` | ⚠️ Enum value não emitido (futuro) |
+| `run_details_screen.dart` | ✅ Referenciado pelo `HistoryScreen` — em uso |
 
 ### 3.2 Potenciais Vazamentos de Memória
 
@@ -213,15 +199,15 @@ A queue tem `maxQueueSize = 5` e é drenada após cada fala. ✅
 
 ### 3.3 Dívida Técnica Significativa
 
-| Item | Descrição | Impacto |
-|------|-----------|---------|
-| Sem Supabase.initialize | O backend simplesmente não funciona | BLOCKER |
-| Sem Sentry.init | Crash reporting não funciona | HIGH |
-| SessionId = timestamp | Possíveis colisões | MEDIUM |
-| Sem fluxo de autenticação | Sync sempre falha (userId = null) | HIGH |
-| TrackingBloc muito denso | 200 linhas compactadas, difícil de manter | MEDIUM |
-| Sem retry automático no sync | Se falhar, só retenta manualmente | MEDIUM |
-| Chaves de API todas placeholder | Deploy vai falhar | BLOCKER |
+| Item | Descrição | Impacto | Status |
+|------|-----------|---------|--------|
+| Sem Supabase.initialize | O backend simplesmente não funciona | BLOCKER | ✅ CORRIGIDO |
+| Sem Sentry.init | Crash reporting não funciona | HIGH | ✅ CORRIGIDO |
+| SessionId = timestamp | Possíveis colisões | MEDIUM | ✅ CORRIGIDO (UUID v4) |
+| Sem fluxo de autenticação | Sync sempre falha (userId = null) | HIGH | ✅ CORRIGIDO (social login) |
+| TrackingBloc muito denso | 670 linhas, difícil de manter | MEDIUM | ⚠️ ABERTO |
+| Sem retry automático no sync | Se falhar, só retenta manualmente | MEDIUM | ✅ CORRIGIDO (AutoSyncManager) |
+| Chaves de API todas placeholder | Deploy vai falhar | BLOCKER | ✅ CORRIGIDO (.env.dev com chaves reais) |
 
 ---
 
@@ -607,23 +593,23 @@ void main() {
 
 ## 6. ROADMAP DE ESTABILIDADE (Prioridade 1-10)
 
-| # | Prioridade | Item | Esforço | Impacto |
-|---|-----------|------|---------|---------|
-| 1 | **P0 — BLOCKER** | Adicionar `Supabase.initialize()` no `main.dart` | 30 min | Sem isso o sync crasha |
-| 2 | **P0 — BLOCKER** | Configurar chaves de API reais (Supabase, MapTiler, Sentry) no `.env.prod` | 1h | Sem isso nada externo funciona |
-| 3 | **P1 — CRÍTICO** | Wrap `_onStartTracking`, `_onStopTracking`, `_flushBuffer` em try-catch no TrackingBloc | 2h | Previne crash durante corrida |
-| 4 | **P1 — CRÍTICO** | Inicializar Sentry e conectar `AppLogger.onError` ao Sentry | 2h | Crash reporting funcional |
-| 5 | **P2 — ALTO** | Implementar reconexão GPS: quando stream fecha, entrar em "aguardando GPS" ao invés de StopTracking | 4h | Evita perda de sessão em túneis |
-| 6 | **P2 — ALTO** | Implementar fluxo de autenticação (login anônimo ou email/social) | 8h | Sem auth, sync sempre falha |
-| 7 | **P3 — MÉDIO** | Await `ForegroundTaskConfig.start/stop` e tratar erros | 1h | Previne foreground service preso |
-| 8 | **P3 — MÉDIO** | Trocar `sessionId` de timestamp para UUID v4 | 1h | Previne colisões de ID |
-| 9 | **P3 — MÉDIO** | Adicionar sync automático ao abrir app e com `ConnectivityListener` | 4h | Sessões pendentes sincronizam sem ação manual |
-| 10 | **P4 — MELHORIA** | Implementar `CameraFollowController` e `AutoBearing` na TrackingScreen | 3h | Camera segue o corredor suavemente |
-| 11 | **P4 — MELHORIA** | Cachear resultado de `_filterPoints` no TrackingBloc (incremental) | 3h | Performance em corridas longas |
-| 12 | **P5 — FUTURO** | Integrar wearables BLE (Garmin, HR monitors) | 16h+ | Feature nova |
-| 13 | **P5 — FUTURO** | Implementar `IStepsSource` e ativar `IntegrityDetectVehicle` | 8h | Anti-cheat mais robusto |
-| 14 | **P5 — FUTURO** | Integrar Apple HealthKit / Google Fit | 12h+ | Dados de saúde |
-| 15 | **P5 — FUTURO** | Monitoramento de bateria com save automático | 4h | Resiliência |
+| # | Prioridade | Item | Esforço | Impacto | Status |
+|---|-----------|------|---------|---------|--------|
+| 1 | **P0 — BLOCKER** | Adicionar `Supabase.initialize()` no `main.dart` | 30 min | Sem isso o sync crasha | ✅ FEITO |
+| 2 | **P0 — BLOCKER** | Configurar chaves de API reais no `.env.dev` | 1h | Sem isso nada externo funciona | ✅ FEITO |
+| 3 | **P1 — CRÍTICO** | Wrap `_onStartTracking`, `_onStopTracking`, `_flushBuffer` em try-catch | 2h | Previne crash durante corrida | ✅ FEITO |
+| 4 | **P1 — CRÍTICO** | Inicializar Sentry e conectar `AppLogger.onError` ao Sentry | 2h | Crash reporting funcional | ✅ FEITO |
+| 5 | **P2 — ALTO** | Reconexão GPS (aguardar em vez de StopTracking) | 4h | Evita perda de sessão em túneis | ✅ FEITO |
+| 6 | **P2 — ALTO** | Fluxo de autenticação (social login) | 8h | Sem auth, sync sempre falha | ✅ FEITO |
+| 7 | **P3 — MÉDIO** | Await `ForegroundTaskConfig.start/stop` e tratar erros | 1h | Previne foreground service preso | ✅ FEITO |
+| 8 | **P3 — MÉDIO** | Trocar `sessionId` de timestamp para UUID v4 | 1h | Previne colisões de ID | ✅ FEITO |
+| 9 | **P3 — MÉDIO** | Sync automático ao abrir app e com `ConnectivityListener` | 4h | Sessões pendentes sincronizam sem ação manual | ✅ FEITO (AutoSyncManager) |
+| 10 | **P4 — MELHORIA** | `CameraFollowController` e `AutoBearing` na TrackingScreen | 3h | Camera segue o corredor suavemente | ✅ FEITO |
+| 11 | **P4 — MELHORIA** | Cachear resultado de `_filterPoints` (incremental) | 3h | Performance em corridas longas | ✅ FEITO |
+| 12 | **P5 — FUTURO** | Integrar wearables BLE (Garmin, HR monitors) | 16h+ | Feature nova | ✅ FEITO (BleHeartRateSource) |
+| 13 | **P5 — FUTURO** | Implementar `IStepsSource` e ativar `IntegrityDetectVehicle` | 8h | Anti-cheat mais robusto | ✅ FEITO (HealthStepsSource) |
+| 14 | **P5 — FUTURO** | Integrar Apple HealthKit / Health Connect | 12h+ | Dados de saúde | ✅ FEITO (HealthPlatformService) |
+| 15 | **P5 — FUTURO** | Monitoramento de bateria com save automático | 4h | Resiliência | ❌ PENDENTE |
 
 ---
 
@@ -643,16 +629,28 @@ void main() {
 - Foreground service configurado corretamente para Android
 - Info.plist com background modes e location descriptions
 
-### O que PRECISA de atenção imediata:
-1. **Supabase não inicializado** — blocker absoluto
-2. **Chaves de API placeholder** — nada externo funciona
-3. **Sem try-catch** nos handlers principais do TrackingBloc
-4. **GPS onDone finaliza sessão** ao invés de aguardar reconexão
-5. **Sem Sentry** — crashes em produção serão invisíveis
-6. **Sem autenticação** — sync sempre falha
+### O que FOI resolvido (desde a auditoria original):
+1. ~~Supabase não inicializado~~ → ✅ `Supabase.initialize()` em `main.dart`
+2. ~~Chaves de API placeholder~~ → ✅ `.env.dev` com chaves reais
+3. ~~Sem try-catch nos handlers do TrackingBloc~~ → ✅ try-catch(Object) em start/stop/flush
+4. ~~GPS onDone finaliza sessão~~ → ✅ Reconexão GPS com timeout 60s
+5. ~~Sem Sentry~~ → ✅ `SentryFlutter.init()` + `AppLogger.onError` hook
+6. ~~Sem autenticação~~ → ✅ Social login (Google, Apple, Instagram) + AuthGate
+7. ~~Wearables ausentes~~ → ✅ BLE HR, HealthKit/Health Connect, step counter
+8. ~~CameraFollow / AutoBearing mortos~~ → ✅ Integrados no TrackingScreen
+9. ~~filterPoints sem cache~~ → ✅ Cache incremental
+10. ~~SessionId timestamp~~ → ✅ UUID v4
+11. ~~Sync manual only~~ → ✅ AutoSyncManager
+
+### O que ainda PRECISA de atenção:
+1. **`.env.prod` com chaves placeholder** — preencher antes de release para produção
+2. **TrackingBloc muito denso** (670 linhas) — refatorar em sub-blocs/mixins
+3. **Monitoramento de bateria** — save automático em bateria crítica
+4. **`NSMotionUsageDescription` ausente no iOS** — necessário para pedômetro nativo
+5. **`UIBackgroundModes: fetch` ausente no iOS** — necessário para sync em background
 
 ### Veredicto:
-O código é de boa qualidade para MVP, com uma base sólida. Os itens P0-P2 do roadmap devem ser resolvidos **antes de qualquer teste em dispositivo real**. Os itens são majoritariamente de integração (conectar serviços externos) e resiliência (try-catch + fallbacks), não de lógica de negócio.
+**14 de 15 itens do roadmap original estão FEITOS.** O código está em boa forma para testes em device real e beta. Os itens pendentes são de polimento (`.env.prod`, battery monitoring, iOS plist entries) e não bloqueiam o fluxo principal.
 
 ---
 
@@ -1127,15 +1125,142 @@ Se for necessário adicionar Mercado Pago como gateway separado, seria um novo E
 
 | # | Ação | Status |
 |---|---|---|
-| 1 | Criar projeto Firebase + baixar `google-services.json` | PENDENTE |
-| 2 | Criar `.env.dev` com SUPABASE_URL + SUPABASE_ANON_KEY reais | PENDENTE |
-| 3 | Configurar GOOGLE_WEB_CLIENT_ID no `.env.dev` | PENDENTE |
-| 4 | Habilitar Google OAuth no Supabase Dashboard | PENDENTE |
-| 5 | `supabase db push` (aplicar 38 migrations) | PENDENTE |
-| 6 | `supabase functions deploy` (40 Edge Functions) | PENDENTE |
-| 7 | (Opcional) MAPTILER_API_KEY | PENDENTE |
-| 8 | (Opcional) SENTRY_DSN | PENDENTE |
+| 1 | Criar projeto Firebase + baixar `google-services.json` | FEITO |
+| 2 | Criar `.env.dev` com SUPABASE_URL + SUPABASE_ANON_KEY reais | FEITO |
+| 3 | Configurar GOOGLE_WEB_CLIENT_ID no `.env.dev` | FEITO |
+| 4 | Habilitar Google OAuth no Supabase Dashboard | FEITO |
+| 5 | `supabase db push` (aplicar 38 migrations) | FEITO |
+| 6 | `supabase functions deploy` (40 Edge Functions) | FEITO |
+| 7 | (Opcional) MAPTILER_API_KEY | FEITO |
+| 8 | (Opcional) SENTRY_DSN | FEITO |
+| 9 | `.env` files movidos para `omni_runner/` (Flutter resolve paths relativos ao project root) | FEITO (v1.0.1) |
 
 ### Validação pós-correção:
 - `flutter analyze`: 0 errors
 - `flutter test`: 913/913 passando
+
+### APK Release (99.6.0):
+- Keystore: `omnirunner-release.keystore` (SHA-1: `72:5A:90:7B:...`)
+- Build: `flutter build apk --flavor prod --release --dart-define-from-file=../.env.dev`
+- Output: `omni_runner_v1.0.0.apk` — 121 MB
+- Status: BUILD SUCCEEDED
+- **NOTA:** env vars estavam vazias neste build (path `../.env.dev` incorreto para Flutter)
+
+### APK Hotfix (100.2.0 — v1.0.1):
+- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
+- Output: `omni_runner_v1.0.1.apk` — 121 MB
+- Status: BUILD SUCCEEDED
+- Env vars: SUPABASE_URL, SUPABASE_ANON_KEY, MAPTILER_API_KEY, SENTRY_DSN, GOOGLE_WEB_CLIENT_ID — todas presentes
+- Fixes: BUG-01 (auth flow), BUG-02 (login modal), BUG-03 (mapa SP + crash tracking)
+
+### APK Hotfix (100.2.1 — v1.0.2):
+- `google-services.json` atualizado: adicionado SHA-1 do release keystore (`72:5A:90:7B:...`) no Firebase
+- Fix: Google Sign-In retornava `DEVELOPER_ERROR (10)` porque release SHA-1 não estava registrado
+
+### APK Hotfix (100.3.3 — v1.0.3):
+- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
+- Output: `omni_runner_v1.0.3.apk` — 121 MB
+- Status: BUILD SUCCEEDED
+- Fixes:
+  - BUG-05: `foregroundServiceType` mudado de `location|connectedDevice` → `location` (crash SecurityException no Android 14+)
+  - BUG-06: RLS policy `coaching_members_group_read` self-reference → fn `SECURITY DEFINER` `user_coaching_group_ids()`
+  - Removida permissão `FOREGROUND_SERVICE_CONNECTED_DEVICE` (desnecessária sem tipo connectedDevice)
+
+### APK Hotfix (100.4.5 — v1.0.4):
+- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
+- Output: `omni_runner_v1.0.4.apk` — 121 MB
+- Status: BUILD SUCCEEDED
+- Fixes:
+  - BUG-07: `_accumDist` stuck `_prevPt` → distância sempre 0m. Fix: avança `_prevPt` quando filter aceita ≥1 ponto
+  - BUG-08: Timer com gaps. Fix: `TimerTick` periódico 1s + elapsed via wall-clock
+  - `maxAccuracyMeters` relaxado de 15m → 25m (FilterLocationPoints + AccumulateDistance)
+  - BUG-09: `HistoryScreen` não recarregava ao trocar aba (`IndexedStack`). Fix: `isVisible` + `didUpdateWidget`
+
+### APK Hotfix (100.5.4 — v1.0.5):
+- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
+- Output: `omni_runner_v1.0.5.apk` — 126 MB
+- Status: BUILD SUCCEEDED
+- Fixes:
+  - BUG-10: Logout auto-logava de volta (Google Sign-In cache). Fix: `GoogleSignIn().signOut()` antes de `_auth.signOut()`
+  - BUG-11: "Sequências" naming confuso. Fix: renomeado para "Consistência" + textos atualizados
+  - BUG-12: `group_members` RLS infinite recursion (rankings). Fix: fn `SECURITY DEFINER` `user_social_group_ids()` + `is_group_admin_or_mod()`
+  - BUG-13: Criar assessoria falha por `ClientException: connection abort`. Fix: `await _completeSocialProfile()` + retry 3x com backoff exponencial em chamadas críticas
+  - BUG-14: Botão voltar fecha o app nas telas de onboarding. Fix: `PopScope` + `onBack` callback (sign-out → welcome) + botão ← visual
+  - BUG-15: Criar assessoria sempre falha (NOT NULL `created_at_ms`). Fix: adicionado `created_at_ms` ao INSERT de `fn_create_assessoria` (server-side, sem novo APK)
+  - BUG-16: Dashboard staff quebrado (botões inativos, tabs de atleta, menu misto). Fix: `StaffDashboardScreen` query Supabase direto; `HomeScreen` role-aware (2 tabs staff / 4 tabs atleta); `MoreScreen` filtra itens por role
+- Migrations SQL aplicadas via Management API: `20260223160000` (group_members RLS), `20260223170000` (fn_create_assessoria)
+  - BUG-17: Tela "Atletas" crash `CoachingGroupNotFound`. Fix: sync Supabase → Isar (grupo + todos membros) no `_loadStatus()` do dashboard. Auditoria: 8 de 9 botões já usavam Supabase direto; apenas "Atletas" dependia do Isar
+- APK v1.0.6 gerado com fix do dashboard staff + tabs role-aware + menu cleanup + sync Isar
+
+### APK Hotfix (100.7.0 — v1.0.7):
+- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
+- Output: `omni_runner_v1.0.7.apk` — 126 MB
+- Status: BUILD SUCCEEDED
+- Fixes:
+  - BUG-18: Labels confusos no dashboard — "Atletas" → "Atletas e Staff" / "Ver e gerenciar membros"; "Desafios" subtitle → "Convites de outras assessorias"
+  - BUG-19: "Erro ao salvar modelo" — `championship_templates` sem INSERT/UPDATE/DELETE RLS policies. Fix: migration `20260223180000` com 3 policies para admin_master/professor
+  - BUG-20: Campeonato UX confuso — removido "Sessões" como métrica; RadioListTile com descrições (ex: "Quem correr mais km"); duração: Corrida única (1 dia) / 1 semana / 2 semanas / 1 mês / Personalizado com input
+  - BUG-21: Portal "Abrir" não fazia nada — `portal.omnirunner.app` não existe. Dashboard: SnackBar "em breve"; Credits: card informativo "está sendo desenvolvido", removido botão quebrado
+- Migrations SQL aplicadas via Management API: `20260223180000` (championship_templates INSERT/UPDATE/DELETE RLS)
+
+### APK Hotfix (100.8.0 — v1.0.8):
+- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
+- Output: `omni_runner_v1.0.8.apk` — 126 MB
+- Status: BUILD SUCCEEDED
+- Fixes:
+  - BUG-22: Role string mismatch `'athlete'`→`'atleta'` em 4 telas (Performance, Retention, Streaks, Weekly Report). Performance agora mostra "X de Y atletas" (exclui staff da contagem)
+  - BUG-23: Card "Desafios" removido do dashboard staff — desafios são entre atletas, não assessorias. Assessorias distribuem OmniCoins e gerenciam atletas, não fazem desafios
+  - UX: Card "Atletas e Staff" agora mostra contagem de membros ("X membros")
+  - UX: Ao abrir "Atletas e Staff", re-sincroniza membros do Supabase→Isar para garantir dados atualizados
+- Nota sobre fluxo de entrada: ~~atletas entram na assessoria automaticamente~~ → CORRIGIDO em v1.0.9 (BUG-24)
+
+### APK Hotfix (100.9.0 — v1.0.9):
+- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
+- Output: `omni_runner_v1.0.9.apk` — 121 MB
+- Status: BUILD SUCCEEDED
+- Fixes:
+  - BUG-24: Fluxo de entrada em assessoria sem aprovação. Atletas entravam automaticamente via `fn_switch_assessoria`. Assessorias reais precisam aprovar quem entra.
+    - Nova tabela `coaching_join_requests` com status (pending/approved/rejected)
+    - RPC `fn_request_join` — atleta solicita entrada (não entra direto)
+    - RPCs `fn_approve_join_request` / `fn_reject_join_request` — staff aprova/rejeita
+    - `JoinAssessoriaScreen`: "Entrar" → "Solicitar entrada", dialog de confirmação, feedback visual (solicitação enviada/já enviada)
+    - Novo card "Solicitações" no dashboard staff com badge de pendentes
+    - Nova tela `StaffJoinRequestsScreen`: lista de solicitações pendentes com botões Aprovar/Rejeitar, histórico de aprovados/rejeitados
+    - RLS policies: atleta vê suas próprias solicitações; staff vê solicitações do seu grupo; staff pode aprovar/rejeitar
+- Migration aplicada via Management API: `20260223190000` (coaching_join_requests + RPCs + RLS)
+
+### APK Hotfix (100.10.0 — v1.0.10):
+- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
+- Output: `omni_runner_v1.0.10.apk` — 121 MB
+- Status: BUILD SUCCEEDED
+- Fixes:
+  - FEATURE: Remoção de membros da assessoria pelo staff
+    - RPC `fn_remove_member(p_target_user_id, p_group_id)` — SECURITY DEFINER com regras:
+      - Caller deve ser staff (admin_master, professor, ou assistente)
+      - Não pode remover admin_master (owner)
+      - Assistente não pode remover outros staff
+      - Não pode remover a si mesmo
+      - Limpa `active_coaching_group_id` do profile do membro removido
+    - UI na tela "Atletas e Staff": ícone de remover (person_remove) aparece nos tiles de membros que o caller pode remover
+    - Dialog de confirmação com aviso sobre perda de acesso
+    - Após remoção: re-sync Supabase→Isar + refresh automático da lista
+    - Mensagens de erro traduzidas para cada caso (admin_master, permissão, etc.)
+- Migration aplicada via Management API: `20260223200000` (fn_remove_member)
+
+### APK Hotfix (100.11.0 — v1.0.11):
+- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
+- Output: `omni_runner_v1.0.11.apk` — 121 MB
+- Status: BUILD SUCCEEDED
+- Fixes:
+  - BUG-25: Performance screen "não foi possível carregar os dados" — RLS `sessions_own_read` e `challenge_parts_own_read` só permitiam leitura dos próprios dados. Staff não conseguia ler sessions/challenges dos atletas. Fix: helper fn `staff_group_member_ids()` (SECURITY DEFINER) + novas policies `sessions_staff_read` e `challenge_parts_staff_read`
+  - BUG-26: Tela "Atletas e Staff" mostra 2 membros no badge mas só exibe admin_master — BLoC lia do Isar (cache local, dados incompletos/stale). Fix: tela reescrita para query Supabase diretamente (sem BLoC/Isar). Pull-to-refresh, erro detalhado, RefreshIndicator
+  - BUG-27: Solicitação de entrada não chega na assessoria — O atleta `cabralandre@yahoo.com.br` foi adicionado pelo fluxo antigo (v1.0.8, `fn_switch_assessoria`). `fn_request_join` corretamente retorna `already_member`. Não é bug, é estado pré-existente
+  - UX: Campeonatos — fluxo de criação redesenhado:
+    - Formulário dividido em 5 seções numeradas (Identificação, Formato, Ranking, Local, Extras)
+    - Formato: cards visuais "Corrida única" vs "Período" (não mais chips confusos)
+    - Métricas com ícones e descrições contextuais (mudam se é corrida única ou período)
+    - Campo de distância mínima para pace
+    - Campo de local/percurso (opcional)
+    - Resumo visual no final do formulário
+    - Dialog de criação: time picker para corrida única, date picker para período
+- Migrations aplicadas via Management API: `20260223210000` (staff_group_member_ids + sessions_staff_read + challenge_parts_staff_read)

@@ -13,11 +13,13 @@ import 'package:omni_runner/domain/entities/profile_entity.dart';
 class OnboardingRoleScreen extends StatefulWidget {
   final OnboardingState initialState;
   final VoidCallback onComplete;
+  final VoidCallback? onBack;
 
   const OnboardingRoleScreen({
     super.key,
     required this.initialState,
     required this.onComplete,
+    this.onBack,
   });
 
   @override
@@ -40,13 +42,24 @@ class _OnboardingRoleScreenState extends State<OnboardingRoleScreen> {
     });
 
     try {
-      final res = await Supabase.instance.client.functions.invoke(
-        'set-user-role',
-        body: {'role': _selectedRole},
-      );
-      final data = res.data as Map<String, dynamic>? ?? {};
-      if (data['ok'] != true) {
-        final err = data['error'] as Map<String, dynamic>?;
+      Map<String, dynamic>? lastData;
+      for (var attempt = 1; attempt <= 3; attempt++) {
+        try {
+          final res = await Supabase.instance.client.functions.invoke(
+            'set-user-role',
+            body: {'role': _selectedRole},
+          );
+          lastData = res.data as Map<String, dynamic>? ?? {};
+          if (lastData['ok'] == true) break;
+        } catch (e) {
+          AppLogger.warn('set-user-role attempt $attempt/3: $e', tag: _tag);
+          if (attempt == 3) rethrow;
+          await Future<void>.delayed(Duration(milliseconds: 500 * attempt));
+        }
+      }
+
+      if (lastData?['ok'] != true) {
+        final err = lastData?['error'] as Map<String, dynamic>?;
         throw Exception(err?['message'] ?? 'Erro ao salvar papel');
       }
 
@@ -59,7 +72,7 @@ class _OnboardingRoleScreenState extends State<OnboardingRoleScreen> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = 'Não foi possível salvar. Tente novamente.';
+        _error = 'Não foi possível salvar. Verifique sua conexão e tente novamente.';
       });
     }
   }
@@ -74,6 +87,17 @@ class _OnboardingRoleScreenState extends State<OnboardingRoleScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 28),
           child: Column(
             children: [
+              if (widget.onBack != null) ...[
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: _busy ? null : widget.onBack,
+                    tooltip: 'Voltar para o login',
+                  ),
+                ),
+              ],
               const Spacer(flex: 2),
 
               Text(

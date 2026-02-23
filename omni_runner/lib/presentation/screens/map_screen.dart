@@ -78,7 +78,7 @@ class _MapScreenState extends State<MapScreen> {
         children: [
           MapLibreMap(
             initialCameraPosition: const CameraPosition(
-              target: LatLng(-23.5505, -46.6333),
+              target: LatLng(-15.7975, -47.8919),
               zoom: 13,
             ),
             styleString: mapStyleUrl,

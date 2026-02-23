@@ -22,6 +22,7 @@ import 'package:omni_runner/core/service_locator.dart';
 /// `onboarding_state` to READY and calls [onComplete].
 class JoinAssessoriaScreen extends StatefulWidget {
   final VoidCallback onComplete;
+  final VoidCallback? onBack;
 
   /// Optional pre-filled invite/group code (e.g. from a deep link).
   final String? initialCode;
@@ -29,6 +30,7 @@ class JoinAssessoriaScreen extends StatefulWidget {
   const JoinAssessoriaScreen({
     super.key,
     required this.onComplete,
+    this.onBack,
     this.initialCode,
   });
 
@@ -240,8 +242,11 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Entrar na assessoria?'),
-        content: Text(groupName),
+        title: const Text('Solicitar entrada?'),
+        content: Text(
+          'Sua solicitação será enviada para a assessoria '
+          '"$groupName". Você será adicionado quando a assessoria aprovar.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -249,7 +254,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Entrar'),
+            child: const Text('Solicitar'),
           ),
         ],
       ),
@@ -262,42 +267,96 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
     });
 
     try {
-      await _client.rpc(
-        'fn_switch_assessoria',
-        params: {'p_new_group_id': groupId},
+      final res = await _client.rpc(
+        'fn_request_join',
+        params: {'p_group_id': groupId},
       );
-      AppLogger.info('Joined group $groupId', tag: _tag);
-      await _setReady();
+      final status = (res as Map<String, dynamic>?)?['status'] as String?;
+
+      if (status == 'already_member') {
+        AppLogger.info('Already a member of $groupId', tag: _tag);
+        await _setReady();
+        if (!mounted) return;
+        widget.onComplete();
+        return;
+      }
+
+      if (status == 'already_requested') {
+        if (!mounted) return;
+        setState(() {
+          _joining = false;
+          _error = null;
+        });
+        _showRequestSent(groupName, alreadyExists: true);
+        return;
+      }
+
+      AppLogger.info('Requested to join $groupId', tag: _tag);
       sl<ProductEventTracker>().track(ProductEvents.onboardingCompleted, {
         'role': 'ATLETA',
-        'method': 'join_group',
+        'method': 'request_join',
       });
+      await _setReady();
       if (!mounted) return;
-      widget.onComplete();
+      _showRequestSent(groupName, alreadyExists: false);
     } catch (e) {
-      AppLogger.error('Join failed: $e', tag: _tag, error: e);
+      AppLogger.error('Join request failed: $e', tag: _tag, error: e);
       if (!mounted) return;
       setState(() {
         _joining = false;
-        _error = 'Não foi possível entrar na assessoria. Tente novamente.';
+        _error = 'Não foi possível enviar a solicitação. Tente novamente.';
       });
     }
   }
 
+  void _showRequestSent(String groupName, {required bool alreadyExists}) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        icon: Icon(
+          alreadyExists ? Icons.info_outline : Icons.check_circle_outline,
+          size: 48,
+          color: alreadyExists ? Colors.orange : Colors.green,
+        ),
+        title: Text(
+          alreadyExists
+              ? 'Solicitação já enviada'
+              : 'Solicitação enviada!',
+        ),
+        content: Text(
+          alreadyExists
+              ? 'Você já tem uma solicitação pendente para "$groupName". '
+                'Aguarde a aprovação da assessoria.'
+              : 'Sua solicitação foi enviada para "$groupName". '
+                'A assessoria irá analisar e aprovar sua entrada.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              widget.onComplete();
+            },
+            child: const Text('Entendi'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _acceptInvite(_PendingInvite invite) async {
-    final name = invite.group?.name ?? 'Assessoria';
     setState(() {
       _joining = true;
       _error = null;
     });
 
     try {
+      // Staff-originated invites bypass the approval flow
       await _client.rpc(
         'fn_switch_assessoria',
         params: {'p_new_group_id': invite.groupId},
       );
 
-      // Mark invite as accepted
       await _client
           .from('coaching_invites')
           .update({'status': 'accepted'})
@@ -503,7 +562,18 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
+              if (widget.onBack != null) ...[
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: _joining ? null : widget.onBack,
+                    tooltip: 'Voltar para o login',
+                  ),
+                ),
+              ] else
+                const SizedBox(height: 40),
 
               // Header
               Text(

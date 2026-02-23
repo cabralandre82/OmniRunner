@@ -3,8 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
-import 'package:omni_runner/presentation/blocs/coaching_group_details/coaching_group_details_bloc.dart';
-import 'package:omni_runner/presentation/blocs/coaching_group_details/coaching_group_details_event.dart';
 import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_bloc.dart';
 import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_event.dart';
 import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_state.dart';
@@ -116,13 +114,9 @@ class _CoachingGroupCard extends StatelessWidget {
         onTap: () {
           final uid = sl<UserIdentityProvider>().userId;
           Navigator.of(context).push(MaterialPageRoute<void>(
-            builder: (_) => BlocProvider<CoachingGroupDetailsBloc>(
-              create: (_) => sl<CoachingGroupDetailsBloc>()
-                ..add(LoadCoachingGroupDetails(
-                  groupId: group.id,
-                  callerUserId: uid,
-                )),
-              child: const CoachingGroupDetailsScreen(),
+            builder: (_) => CoachingGroupDetailsScreen(
+              groupId: group.id,
+              callerUserId: uid,
             ),
           ));
         },

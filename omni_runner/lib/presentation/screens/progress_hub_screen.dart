@@ -54,8 +54,8 @@ class ProgressHubScreen extends StatelessWidget {
           ),
           _Tile(
             icon: Icons.local_fire_department_rounded,
-            title: 'Sequências',
-            subtitle: 'Quem está em sequência na assessoria',
+            title: 'Consistência',
+            subtitle: 'Ranking de dias consecutivos correndo',
             target: _Target.streaks,
           ),
           _Tile(

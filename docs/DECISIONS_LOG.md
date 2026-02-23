@@ -604,3 +604,441 @@ nao estava conectado a nenhum servico de crash reporting.
 O app funciona identicamente ao estado anterior sem a dep.
 
 ---
+
+## DECISAO 038 — Remover auto-anonymous sign-in; forcar login antes de Home (Hotfix v1.0.1)
+
+**Data:** 2026-02-23
+**Contexto:** Teste no device real revelou que o app ia direto pra Home sem mostrar
+tela de login. A causa era DECISAO 035 (auto-anonymous sign-in): `RemoteAuthDataSource.init()`
+chamava `signInAnonymously()` no boot, criando sessao Supabase anonima. O `AuthGate`
+via essa sessao como "usuario logado" e mandava direto pra Home.
+
+Alem disso, o botao "Criar conta" do `LoginRequiredSheet` navegava para `AuthGate`,
+que routeava anonymous → home, criando um loop silencioso.
+
+**Decisao:**
+1. Remover `signInAnonymously()` do `RemoteAuthDataSource.init()`. Sem sessao → retorna
+   `AuthUser(id:'', isAnonymous:true)` sem criar sessao no Supabase.
+2. Mudar `AuthGate._resolve()`: anonymous → `welcome` (nao `home`).
+
+O fluxo correto agora e:
+- Primeiro launch → sem sessao → Welcome → Login (social) → Onboarding → Home
+- Returnings → sessao Supabase persistida → AuthGate → profile check → Home
+
+**Supersede:** DECISAO 035 (parcialmente). O sync continua funcionando para usuarios
+autenticados via social login. Usuarios nao logados nao sincronizam (comportamento correto).
+
+**Arquivos modificados (2):**
+- `lib/data/datasources/remote_auth_datasource.dart` — removido signInAnonymously do init
+- `lib/presentation/screens/auth_gate.dart` — anonymous → welcome (nao home)
+
+**Risco:** Baixo. Usuarios existentes com sessao Supabase (social login) nao sao afetados.
+Usuarios anonimos verao a tela de login na proxima abertura.
+
+---
+
+## DECISAO 039 — Posicao inicial do mapa via getLastKnownPosition (Hotfix v1.0.1)
+
+**Data:** 2026-02-23
+**Contexto:** O mapa na TrackingScreen e MapScreen usava coordenadas hardcoded de
+Sao Paulo (`-23.5505, -46.6333`). Usuarios em outras cidades viam SP no mapa.
+
+**Decisao:**
+1. Fallback mudado para Brasilia (`-15.7975, -47.8919`) — centro geografico do Brasil
+2. `TrackingScreen` agora tenta `Geolocator.getLastKnownPosition()` no `initState()`
+   e centraliza o mapa na posicao real do usuario (sem solicitar permissao, usa cache)
+3. Quando o tracking inicia, o camera follow ja move para a posicao GPS real
+
+**Arquivos modificados (2):**
+- `lib/presentation/screens/tracking_screen.dart` — getLastKnownPosition + fallback Brasilia
+- `lib/presentation/screens/map_screen.dart` — fallback Brasilia
+
+**Risco:** Nenhum. `getLastKnownPosition()` nao solicita permissao (usa cache do OS).
+Se falhar, mantem o fallback Brasilia. O camera follow corrige na primeira atualizacao GPS.
+
+---
+
+## DECISAO 040 — Catch Object (nao Exception) no TrackingBloc (Hotfix v1.0.1)
+
+**Data:** 2026-02-23
+**Contexto:** O app crashava ao clicar "Iniciar corrida". O `TrackingBloc._onStartTracking`
+usava `on Exception catch` que nao captura `Error` nativo (ex: `PlatformError` do
+foreground service, `MissingPluginException` do geolocator).
+
+**Decisao:**
+Mudar `on Exception catch` para `catch` (captura `Object`) em 3 pontos:
+1. `_onStartTracking` — try externo
+2. `ForegroundTaskConfig.start()` — try interno (non-blocking)
+3. `ForegroundTaskConfig.stop()` — try interno (non-blocking)
+4. `close()` — try interno
+
+Erros nativos agora sao capturados e logados (enviados ao Sentry via `AppLogger.onError`),
+e o usuario ve a mensagem "Nao foi possivel iniciar a corrida" em vez de crash.
+
+**Arquivos modificados (1):**
+- `lib/presentation/blocs/tracking/tracking_bloc.dart` — catch Object em 4 pontos
+
+**Risco:** Nenhum. Lint `avoid_catches_without_on_clauses` emite info (nao erro).
+A captura ampla e intencional para evitar crashes em producao.
+
+---
+
+## DECISAO 041 — Env files no diretorio Flutter (omni_runner/) (Hotfix v1.0.1)
+
+**Data:** 2026-02-23
+**Contexto:** O APK v1.0.0 foi buildado com `--dart-define-from-file=../.env.dev`.
+Flutter resolve paths relativos ao CWD (que e `omni_runner/`), mas os `.env` files
+estavam em `project-running/` (parent dir). Resultado: todas as env vars estavam
+vazias → Supabase nao inicializou → modo mock → sem auth, sem sync, sem mapa.
+
+**Decisao:**
+1. Copiar `.env.dev`, `.env.prod`, `.env.example` para `omni_runner/`
+2. `preflight_check.sh` atualizado: busca local primeiro, fallback parent dir com warning
+3. Comando build correto: `flutter build apk --dart-define-from-file=.env.dev`
+
+**Arquivos modificados (1):**
+- `scripts/preflight_check.sh` — busca local + fallback parent
+
+**Risco:** Nenhum. `.gitignore` (root e omni_runner) ja exclui `.env*`.
+Env files nunca sao commitados.
+
+---
+
+## DECISAO 042 — Release SHA-1 no Firebase (Google Sign-In) (Hotfix v1.0.2)
+
+**Data:** 2026-02-23
+**Contexto:** Google Sign-In retornava `PlatformException(sign_in_failed, t2.d: 10)` —
+erro 10 = `DEVELOPER_ERROR`. O `google-services.json` so tinha o SHA-1 do debug keystore
+registrado no Firebase. O APK release e assinado com keystore diferente (SHA-1 diferente).
+
+**Decisao:**
+Adicionar SHA-1 do release keystore (`72:5A:90:7B:2C:4F:78:81:36:C0:DE:82:94:2C:88:EB:1F:C1:EB:09`)
+no Firebase Console → Project Settings → Android app → Add fingerprint.
+Baixar novo `google-services.json` atualizado com ambos os OAuth clients (debug + release).
+
+**Arquivos modificados (1):**
+- `android/app/google-services.json` — substituido pelo novo download do Firebase
+
+**Risco:** Nenhum. E configuracao padrao do Firebase para APKs de release.
+
+---
+
+## DECISAO 043 — ForegroundServiceType location-only (sem connectedDevice) (Hotfix v1.0.3)
+
+**Data:** 2026-02-23
+**Contexto:** No Android 14+ (targetSDK=36), iniciar um foreground service com tipo
+`connectedDevice` exige que permissoes BLE sejam concedidas em runtime. O manifest
+declarava `foregroundServiceType="location|connectedDevice"`, mas BLE e opcional (nem todo
+usuario tem monitor cardiaco). Sem permissao BLE concedida, o serviço crashava com
+`SecurityException` ao iniciar a corrida.
+
+**Decisao:**
+1. Mudar `foregroundServiceType` de `location|connectedDevice` para apenas `location`
+2. Remover permissao `FOREGROUND_SERVICE_CONNECTED_DEVICE` do manifest
+3. Manter permissoes BLE (`BLUETOOTH_SCAN`, `BLUETOOTH_CONNECT`) para conexao com monitor cardiaco
+4. BLE funciona independentemente do tipo de FGS — o foreground service so precisa manter o processo vivo
+
+**Supersede:** Configuracao original do manifest que incluia `connectedDevice`.
+
+**Arquivos modificados (1):**
+- `android/app/src/main/AndroidManifest.xml` — FGS type e permissao removidos
+
+**Risco:** Nenhum para GPS tracking. Se no futuro Android exigir `connectedDevice` para BLE
+em background, sera necessario solicitar permissao BLE antes de iniciar o FGS.
+
+---
+
+## DECISAO 044 — SECURITY DEFINER para coaching_members RLS (Hotfix v1.0.3)
+
+**Data:** 2026-02-23
+**Contexto:** A RLS policy `coaching_members_group_read` fazia self-reference:
+`EXISTS (SELECT 1 FROM coaching_members WHERE ...)` dentro da propria tabela,
+causando `PostgrestException: infinite recursion detected in policy` (erro 42P17).
+
+**Decisao:**
+Criar funcao `user_coaching_group_ids()` com `SECURITY DEFINER` que:
+1. Executa com permissoes do owner (bypassa RLS)
+2. Retorna `SETOF uuid` com os `group_id` do usuario autenticado
+3. A policy `coaching_members_group_read` usa `group_id IN (SELECT user_coaching_group_ids())`
+
+Isso quebra o ciclo recursivo porque a funcao SECURITY DEFINER nao aciona policies RLS.
+
+**Arquivos modificados (1):**
+- `supabase/migrations/20260223140000_fix_coaching_members_rls_recursion.sql`
+
+**Risco:** Funcoes SECURITY DEFINER executam com permissoes elevadas. A funcao e minima
+(retorna apenas group_ids do `auth.uid()` atual) e nao aceita parametros manipulaveis.
+
+---
+
+## DECISAO 045 — Fix _accumDist: avancar _prevPt quando filter aceita pontos (Hotfix v1.0.4)
+
+**Data:** 2026-02-23
+**Contexto:** Distancia ficava em 0m durante corrida apesar de 64 pontos GPS registrados.
+O metodo `_accumDist` guardava o primeiro ponto GPS como `_prevPt`. Se esse ponto tinha
+accuracy > 15m (comum no cold start GPS), o `FilterLocationPoints` rejeitava esse ponto em
+TODA chamada subsequente, deixando `f.length < 2`, e `_prevPt` nunca avancava.
+
+**Decisao:**
+Quando o filter aceita ao menos 1 ponto (`f.isNotEmpty`), avancar `_prevPt = f.last`.
+Isso garante que um ponto ruim no inicio nao trava a acumulacao de distancia para sempre.
+
+**Arquivos modificados (1):**
+- `lib/presentation/blocs/tracking/tracking_bloc.dart` — `_accumDist()`
+
+**Risco:** Perda de 1 segmento de distancia quando o primeiro ponto e ruim (compensado
+pela continuidade da acumulacao nos pontos seguintes).
+
+---
+
+## DECISAO 046 — maxAccuracyMeters de 15m para 25m (Hotfix v1.0.4)
+
+**Data:** 2026-02-23
+**Contexto:** GPS de celular em area urbana frequentemente reporta accuracy de 15-25m.
+O threshold de 15m era muito restritivo, rejeitando pontos validos e contribuindo para
+distancia 0m. Apps de corrida como Strava usam thresholds de 20-30m.
+
+**Decisao:** Relaxar `maxAccuracyMeters` de 15.0 para 25.0 em `FilterLocationPoints`
+e `AccumulateDistance`. Todos os 34 testes unitarios continuam passando.
+
+**Arquivos modificados (2):**
+- `lib/domain/usecases/filter_location_points.dart`
+- `lib/domain/usecases/accumulate_distance.dart`
+
+**Risco:** Pontos com accuracy 15-25m agora sao aceitos, podendo adicionar ate ~25m
+de erro por ponto. Mitigado pelo drift filter (3m minimum movement) e speed sanity check.
+
+---
+
+## DECISAO 047 — TimerTick periodico + wall-clock elapsed (Hotfix v1.0.4)
+
+**Data:** 2026-02-23
+**Contexto:** O timer na UI so atualizava quando novos pontos GPS chegavam. Com
+`distanceFilter: 5m`, se o usuario se movesse devagar, o timer pulava segundos
+(ex: 09:41 → 09:46). Alem disso, elapsed era calculado por timestamp GPS, que
+pode ter drift em relacao ao relogio do device.
+
+**Decisao:**
+1. Novo event `TimerTick` no TrackingBloc (classe sealed em tracking_event.dart)
+2. `Timer.periodic(1s)` dispara `add(TimerTick())` durante tracking ativo
+3. Handler `_onTimerTick` emite estado atualizado a cada segundo
+4. `_computeMetrics` usa `DateTime.now()` (wall-clock) para elapsed
+
+**Arquivos modificados (2):**
+- `lib/presentation/blocs/tracking/tracking_event.dart` — novo `TimerTick`
+- `lib/presentation/blocs/tracking/tracking_bloc.dart` — timer, handler, wall-clock elapsed
+
+**Risco:** Nenhum significativo. Timer e cancelado em `_onStopTracking` e `close()`.
+Wall-clock elapsed e consistente com a experiencia do usuario.
+
+---
+
+## DECISAO 048 — HistoryScreen reload ao trocar aba (Hotfix v1.0.4)
+
+**Data:** 2026-02-23
+**Contexto:** `HomeScreen` usa `IndexedStack` → todos os tabs sao criados no `initState`.
+`HistoryScreen._loadSessions()` roda apenas 1x no `initState`. Trocar de aba nao recarrega.
+A corrida so aparecia apos pull-to-refresh manual (nao obvio para o usuario).
+
+**Decisao:**
+1. Adicionar prop `isVisible` ao `HistoryScreen`
+2. `didUpdateWidget` detecta transicao `!isVisible → isVisible` → chama `_loadSessions()`
+3. `HomeScreen` passa `HistoryScreen(isVisible: _tab == 2)` inline no `build()`
+
+Padrao comum em Flutter para `IndexedStack`: prop de visibilidade + `didUpdateWidget`.
+
+**Arquivos modificados (2):**
+- `lib/presentation/screens/home_screen.dart` — tabs inline, `isVisible` prop
+- `lib/presentation/screens/history_screen.dart` — `isVisible` + `didUpdateWidget`
+
+**Risco:** Nenhum. Reload e uma query Isar local (<1ms). Sem impacto em performance.
+
+---
+
+## DECISAO 049 — GoogleSignIn().signOut() no logout (Hotfix v1.0.5)
+
+**Data:** 2026-02-23
+**Contexto:** Ao sair da conta e tentar logar novamente, o app auto-selecionava a
+conta Google anterior sem mostrar o account picker. Isso porque `signOut()` so limpava
+a sessao Supabase, mas o GoogleSignIn SDK mantinha a credential em cache interno.
+
+**Decisao:** Adicionar `GoogleSignIn().signOut()` antes de `_auth.signOut()` no
+`RemoteAuthDataSource.signOut()`. O catch silencioso (`catch (_) {}`) garante que falha
+do Google (ex: login nao foi feito via Google) nao bloqueia o signOut principal.
+
+**Arquivos modificados (1):**
+- `lib/data/datasources/remote_auth_datasource.dart`
+
+**Risco:** Nenhum. `GoogleSignIn().signOut()` e seguro chamar mesmo se o login nao
+foi feito via Google — retorna silently.
+
+---
+
+## DECISAO 050 — Rename "Sequencias" para "Consistencia" (Hotfix v1.0.5)
+
+**Data:** 2026-02-23
+**Contexto:** O item "Sequencias" com subtitulo "Quem esta em sequencia na assessoria"
+no ProgressHubScreen era vago e confuso para usuarios. A funcionalidade mostra ranking
+de dias consecutivos correndo (streaks).
+
+**Decisao:** Renomear para "Consistencia" com subtitulo "Ranking de dias consecutivos
+correndo". Todos os textos na StreaksLeaderboardScreen atualizados para usar linguagem
+mais clara.
+
+**Arquivos modificados (2):**
+- `lib/presentation/screens/progress_hub_screen.dart` — titulo e subtitulo
+- `lib/presentation/screens/streaks_leaderboard_screen.dart` — AppBar, secoes, mensagens
+
+**Risco:** Nenhum. Mudanca puramente cosmetic (UI text).
+
+---
+
+## DECISAO 051 — SECURITY DEFINER para group_members RLS (Hotfix v1.0.5)
+
+**Data:** 2026-02-23
+**Contexto:** Mesma causa do BUG-06 (coaching_members). A policy `group_members_read`
+fazia self-reference: `EXISTS (SELECT 1 FROM group_members WHERE ...)` dentro de uma
+policy na propria tabela `group_members` → recursao infinita.
+
+A policy `group_members_update_mod` tambem fazia self-reference no branch OR para
+verificar se o user e admin/moderador.
+
+**Decisao:** Duas funcoes `SECURITY DEFINER`:
+1. `user_social_group_ids()` — retorna `group_id`s do user autenticado (bypassa RLS)
+2. `is_group_admin_or_mod(p_group_id)` — verifica se user e admin/mod de um grupo
+
+Policies recriadas usando essas funcoes em vez de subqueries self-referencing.
+
+**Arquivos modificados (2):**
+- `supabase/migrations/20260223160000_fix_group_members_rls_recursion.sql` — migration
+- `supabase/schema.sql` — schema atualizado
+
+**Risco:** Nenhum. Mesmo padrao aplicado com sucesso em coaching_members (DECISAO 044).
+
+---
+
+## DECISAO 052 — await _completeSocialProfile + retry em chamadas criticas (Hotfix v1.0.5)
+
+**Data:** 2026-02-23
+**Contexto:** Ao criar assessoria com conta diferente, o app falhava com
+`ClientException: Software caused connection abort`. A funcao `_completeSocialProfile()`
+era chamada com `unawaited` (fire-and-forget) apos login social, podendo falhar
+silenciosamente e deixar o user sem profile. Alem disso, chamadas de rede criticas
+como `set-user-role` e `fn_create_assessoria` nao tinham retry, falhando na primeira
+instabilidade de rede.
+
+**Decisao:**
+1. `_completeSocialProfile()` agora e `await`ed em todos os sign-in flows
+   (Google, Apple, Instagram, TikTok), com retry 3x e backoff exponencial
+2. `set-user-role` (OnboardingRoleScreen) tem retry 3x com backoff
+3. `fn_create_assessoria` (StaffSetupScreen) tem retry 3x com backoff
+4. Mensagens de erro atualizadas para mencionar verificacao de conexao
+
+**Arquivos modificados (3):**
+- `lib/data/datasources/remote_auth_datasource.dart` — await + retry
+- `lib/presentation/screens/onboarding_role_screen.dart` — retry
+- `lib/presentation/screens/staff_setup_screen.dart` — retry
+
+**Risco:** `await` adiciona latencia ao login (~1-2s para a Edge Function),
+mas garante que o profile existe antes de prosseguir. O retry com backoff
+evita loops infinitos (max 3 tentativas).
+
+---
+
+## DECISAO 053 — PopScope + onBack para navegacao de volta no onboarding (Hotfix v1.0.5)
+
+**Data:** 2026-02-23
+**Contexto:** Nas telas de onboarding (role, assessoria, staff), pressionar o botao voltar
+do Android fechava o app. Isso porque `AuthGate` renderiza as telas inline via `setState`
+(switch no `build()`), sem `Navigator.push`. O back button tenta `pop()` o `AuthGate`,
+que e a raiz da stack (`pushAndRemoveUntil`), e o app fecha.
+
+**Decisao:**
+1. `PopScope(canPop: false)` no `AuthGate` intercepta o back button fisico do Android
+   quando `_dest` e onboarding, joinAssessoria ou staffSetup
+2. Novo callback `onBack` em `OnboardingRoleScreen`, `StaffSetupScreen` e `JoinAssessoriaScreen`
+3. `onBack` chama `authRepo.signOut()` + navega para welcome (mesmo comportamento de "sair da conta")
+4. Botao seta (←) visual no topo de cada tela de onboarding
+
+**Arquivos modificados (4):**
+- `lib/presentation/screens/auth_gate.dart` — `PopScope`, `_onBackToLogin`, `onBack` props
+- `lib/presentation/screens/onboarding_role_screen.dart` — `onBack` prop + botao
+- `lib/presentation/screens/staff_setup_screen.dart` — `onBack` prop + botao
+- `lib/presentation/screens/join_assessoria_screen.dart` — `onBack` prop + botao
+
+**Risco:** Nenhum. `signOut` ja e robusto (limpa Supabase + Google cache).
+O user pode voltar e entrar com outra conta normalmente.
+
+---
+
+## DECISAO 054 — Fix fn_create_assessoria: created_at_ms faltando (Hotfix v1.0.5)
+
+**Data:** 2026-02-23
+**Contexto:** Criar assessoria sempre falhava. A funcao `fn_create_assessoria` fazia
+`INSERT INTO coaching_groups (id, name, coach_user_id, city)` sem incluir `created_at_ms`,
+que e `NOT NULL` sem default. O INSERT falhava com constraint violation.
+A variavel `v_now_ms` ja era calculada na funcao mas so era usada no INSERT de
+`coaching_members`, nao no de `coaching_groups`.
+
+**Decisao:** Adicionar `created_at_ms` ao INSERT de `coaching_groups` usando `v_now_ms`.
+Fix aplicado diretamente no banco via Supabase Management API (server-side, sem novo APK).
+
+**Arquivos modificados (1):**
+- `supabase/migrations/20260223170000_fix_fn_create_assessoria_created_at_ms.sql`
+
+**Risco:** Nenhum. `v_now_ms` ja existia e era correto. O INSERT agora inclui todos
+os campos NOT NULL obrigatorios.
+
+---
+
+## DECISAO 055 — Staff Dashboard: query Supabase direto + HomeScreen role-aware (v1.0.6)
+
+**Data:** 2026-02-23
+**Contexto:** O `StaffDashboardScreen` usava `ICoachingMemberRepo.getByUserId()` que le
+do Isar local. Porem a assessoria e criada server-side via `fn_create_assessoria` RPC, que
+nunca popula o Isar. Resultado: `_groupId` vazio, todos botoes inativos.
+Alem disso, o `HomeScreen` mostrava 4 tabs (Inicio/Correr/Historico/Mais) para ambos roles,
+e o `MoreScreen` mostrava itens de atleta (Minha Assessoria, Audio, Wearables) para staff.
+
+**Decisao:**
+1. `StaffDashboardScreen._loadStatus()` agora faz query direto ao Supabase
+   (`from('coaching_members').select().eq('user_id', uid)`) ao inves de ler do Isar
+2. `HomeScreen` e role-aware: staff ve 2 tabs (Inicio + Mais), atleta ve 4 (+ Correr + Historico)
+3. `MoreScreen` aceita `userRole` e filtra itens: staff nao ve Assessoria section, Integracoes,
+   Audio, Coming Soon tiles
+4. `_openStaffQrHub()` tambem faz query direto ao Supabase
+
+**Arquivos modificados (3):**
+- `lib/presentation/screens/home_screen.dart`
+- `lib/presentation/screens/staff_dashboard_screen.dart`
+- `lib/presentation/screens/more_screen.dart`
+
+**Risco:** Baixo. Cada abertura do dashboard faz 2-3 queries ao Supabase (coaching_members,
+coaching_groups, clearing_cases). Em redes lentas pode demorar, mas ha loading indicator.
+A alternativa seria implementar sync bidirecional Isar↔Supabase, mas e muito mais complexo.
+
+---
+
+## DECISAO 056 — Sync Supabase → Isar no dashboard staff (BUG-17)
+
+**Data:** 2026-02-23
+**Contexto:** O botao "Atletas" no dashboard staff abria `CoachingGroupDetailsScreen` via
+`GetCoachingGroupDetails` use case, que le do Isar local. Como o Isar nunca era populado
+(assessoria criada server-side), dava `CoachingGroupNotFound`.
+
+**Decisao:** Apos buscar dados do Supabase no `_loadStatus()`, sincronizar ao Isar:
+1. Salva `CoachingGroupEntity` completa (todos os campos, nao so nome)
+2. Salva `CoachingMemberEntity` do staff
+3. Busca e salva TODOS os membros do grupo
+
+Auditoria preventiva: dos 9 botoes do dashboard, apenas "Atletas" usava Isar. Os outros 8
+(Confirmacoes, Performance, Campeonatos, Convites, Creditos, Desafios, Administracao, Portal)
+usam Supabase direto ou parametros passados.
+
+**Arquivos modificados (1):**
+- `lib/presentation/screens/staff_dashboard_screen.dart`
+
+**Risco:** Nenhum. O sync e idempotente (Isar `put` faz upsert). Adiciona ~1 query extra
+(buscar todos membros do grupo) mas e necessario para a tela de detalhes funcionar.
+
+---

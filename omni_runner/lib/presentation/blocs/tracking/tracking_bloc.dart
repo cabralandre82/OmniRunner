@@ -79,6 +79,7 @@ class TrackingBloc extends Bloc<TrackingEvent, TrackingState> {
   static const _gpsReconnectIntervalMs = 5000;
   static const _gpsReconnectTimeoutMs = 60000;
   Timer? _gpsReconnectTimer;
+  Timer? _tickTimer;
   int _gpsLostAtMs = 0;
   bool _gpsLost = false;
   final _intBuf = <LocationPointEntity>[]; final _intFlags = <String>{};
@@ -147,6 +148,7 @@ class TrackingBloc extends Bloc<TrackingEvent, TrackingState> {
     on<LocationStreamError>((e, emit) { _sub = null; emit(TrackingError(message: e.message)); });
     on<GpsStreamEnded>(_onGpsStreamEnded);
     on<HeartRateReceived>(_onHeartRateReceived);
+    on<TimerTick>(_onTimerTick);
     on<SetGhostSession>(_onSetGhost);
     on<SetChallengeContext>(_onSetChallengeContext);
   }
@@ -154,6 +156,11 @@ class TrackingBloc extends Bloc<TrackingEvent, TrackingState> {
   Future<void> _onPermCheck(TrackingEvent _, Emitter<TrackingState> emit) async {
     final f = await _ensureLocationReady();
     f != null ? emit(_mapFailure(f)) : emit(const TrackingIdle());
+  }
+
+  void _onTimerTick(TimerTick _, Emitter<TrackingState> emit) {
+    if (state is! TrackingActive) return;
+    _emitActiveState(emit);
   }
 
   void _onSetGhost(SetGhostSession e, Emitter<TrackingState> emit) {
@@ -186,15 +193,17 @@ class TrackingBloc extends Bloc<TrackingEvent, TrackingState> {
       final now = DateTime.now().millisecondsSinceEpoch; _sessionId = generateUuidV4(); _startMs = now;
       AppLogger.info('Start session $_sessionId', tag: _tag);
       await _sessionRepo.save(WorkoutSessionEntity(id: _sessionId, status: WorkoutStatus.running, startTimeMs: now, route: const []),);
-      try { await ForegroundTaskConfig.start(); } on Exception catch (e) {
+      try { await ForegroundTaskConfig.start(); } catch (e) {
         AppLogger.warn('Foreground service start failed (non-blocking): $e', tag: _tag);
       }
       emit(const TrackingActive(points: []));
+      _tickTimer?.cancel();
+      _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) => add(const TimerTick()));
       _sub = _locationStream.watch().listen((pt) => add(LocationPointReceived(pt)),
         onError: (Object e) => add(LocationStreamError(e.toString())),
         onDone: () { _sub = null; if (state is TrackingActive) add(const GpsStreamEnded()); },);
       _startHrListening();
-    } on Exception catch (e, st) {
+    } catch (e, st) {
       AppLogger.error('Failed to start tracking', tag: _tag, error: e, stack: st);
       emit(const TrackingError(message: 'Não foi possível iniciar a corrida. Verifique GPS e permissões.'));
     }
@@ -268,8 +277,10 @@ class TrackingBloc extends Bloc<TrackingEvent, TrackingState> {
     await _cancelSub();
     _stopHrListening();
     _cancelGpsReconnectTimer();
+    _tickTimer?.cancel();
+    _tickTimer = null;
     _gpsLost = false;
-    try { await ForegroundTaskConfig.stop(); } on Exception catch (e) {
+    try { await ForegroundTaskConfig.stop(); } catch (e) {
       AppLogger.warn('Foreground service stop failed (non-blocking): $e', tag: _tag);
     }
     if (_sessionId.isNotEmpty) {
@@ -594,8 +605,12 @@ class TrackingBloc extends Bloc<TrackingEvent, TrackingState> {
   void _accumDist(LocationPointEntity pt) {
     if (_prevPt == null) { _prevPt = pt; return; }
     final f = _filterPoints([_prevPt!, pt]);
-    if (f.length < 2) return;
-    _accumDistM += _accumulateDistance(f); _prevPt = pt;
+    if (f.length >= 2) {
+      _accumDistM += _accumulateDistance(f);
+    }
+    if (f.isNotEmpty) {
+      _prevPt = f.last;
+    }
   }
   void _evalTriggers(WorkoutMetricsEntity m, double? gd, bool paused) {
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -638,7 +653,7 @@ class TrackingBloc extends Bloc<TrackingEvent, TrackingState> {
 
   WorkoutMetricsEntity _computeMetrics() {
     final f = _getFilteredPoints();
-    final el = _points.isNotEmpty ? _points.last.timestampMs - _startMs : 0;
+    final el = DateTime.now().millisecondsSinceEpoch - _startMs;
     final movMs = calculateMovingMs(f);
     return WorkoutMetricsEntity(
       totalDistanceM: _accumDistM, elapsedMs: el, movingMs: movMs,
@@ -660,10 +675,12 @@ class TrackingBloc extends Bloc<TrackingEvent, TrackingState> {
   @override
   Future<void> close() async {
     _cancelGpsReconnectTimer();
+    _tickTimer?.cancel();
+    _tickTimer = null;
     await _flushBuffer();
     await _cancelSub();
     _stopHrListening();
-    try { await ForegroundTaskConfig.stop(); } on Exception catch (_) {}
+    try { await ForegroundTaskConfig.stop(); } catch (_) {}
     return super.close();
   }
 }

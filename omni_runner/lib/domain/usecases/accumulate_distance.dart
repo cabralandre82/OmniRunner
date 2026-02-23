@@ -19,7 +19,7 @@ final class AccumulateDistance {
   final double minMovementMeters;
 
   const AccumulateDistance({
-    this.maxAccuracyMeters = 15.0,
+    this.maxAccuracyMeters = 25.0,
     this.minMovementMeters = 3.0,
   });
 
