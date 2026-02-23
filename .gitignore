@@ -1,0 +1,43 @@
+# Environment files with secrets
+.env
+.env.local
+.env.dev
+.env.prod
+
+# IDE
+.idea/
+
+# Large binary archives
+*.tar
+
+# Firebase credentials (contains API keys)
+omni_runner/android/app/google-services.json
+omni_runner/ios/Runner/GoogleService-Info.plist
+
+# Flutter / Dart build artifacts
+omni_runner/.dart_tool/
+omni_runner/build/
+omni_runner/.flutter-plugins
+omni_runner/.flutter-plugins-dependencies
+omni_runner/.packages
+omni_runner/pubspec.lock
+**/*.g.dart
+
+# Android
+omni_runner/android/.gradle/
+omni_runner/android/app/build/
+omni_runner/android/local.properties
+omni_runner/android/key.properties
+omni_runner/android/*.keystore
+
+# iOS
+omni_runner/ios/Pods/
+omni_runner/ios/.symlinks/
+
+# Portal (Next.js)
+portal/node_modules/
+portal/.next/
+portal/.env.local
+
+# Supabase local
+supabase/.temp/

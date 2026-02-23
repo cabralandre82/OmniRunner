@@ -1,0 +1,123 @@
+import 'package:isar/isar.dart';
+
+import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/data/datasources/sync_service.dart';
+import 'package:omni_runner/data/models/isar/workout_session_record.dart';
+import 'package:omni_runner/data/models/proto/workout_proto_mapper.dart';
+import 'package:omni_runner/domain/failures/sync_failure.dart';
+import 'package:omni_runner/domain/repositories/i_points_repo.dart';
+import 'package:omni_runner/domain/repositories/i_sync_repo.dart';
+
+/// Implements [ISyncRepo] using Supabase (via [SyncService]) and Isar.
+///
+/// Offline-first: sessions are synced only when connectivity is available.
+/// Upload order: points (Storage) -> metadata (Postgres) -> mark synced.
+class SyncRepo implements ISyncRepo {
+  static const _tag = 'SyncRepo';
+  final SyncService _svc;
+  final Isar _isar;
+  final IPointsRepo _pointsRepo;
+
+  const SyncRepo({
+    required SyncService service,
+    required Isar isar,
+    required IPointsRepo pointsRepo,
+  })  : _svc = service,
+        _isar = isar,
+        _pointsRepo = pointsRepo;
+
+  /// Status int for completed sessions (matches [WorkoutStatus.completed]).
+  static const _completedStatus = 3;
+
+  @override
+  Future<void> enqueue(String sessionId) async {
+    // Sessions already default to isSynced = false.
+    // This is a no-op verification; future: could set a dedicated flag.
+    final record = await _isar.workoutSessionRecords
+        .where()
+        .sessionUuidEqualTo(sessionId)
+        .findFirst();
+    if (record == null || record.status != _completedStatus) return;
+  }
+
+  @override
+  Future<SyncFailure?> syncPending() async {
+    if (!_svc.isConfigured) return const SyncNotConfigured();
+    if (!await _svc.hasConnection()) return const SyncNoConnection();
+    final userId = _svc.userId;
+    if (userId == null || userId.isEmpty) return const SyncNotAuthenticated();
+
+    final pending = await _isar.workoutSessionRecords
+        .where()
+        .isSyncedEqualTo(false)
+        .filter()
+        .statusEqualTo(_completedStatus)
+        .findAll();
+
+    AppLogger.info('Syncing ${pending.length} pending session(s)', tag: _tag);
+    SyncFailure? firstFailure;
+    for (final record in pending) {
+      final failure = await _syncOne(record, userId);
+      if (failure != null) {
+        AppLogger.warn('Sync failed for ${record.sessionUuid}: $failure', tag: _tag);
+        firstFailure ??= failure;
+      }
+    }
+    if (firstFailure == null && pending.isNotEmpty) {
+      AppLogger.info('All ${pending.length} session(s) synced', tag: _tag);
+    }
+    return firstFailure;
+  }
+
+  @override
+  Future<void> markSynced(String sessionId) async {
+    await _isar.writeTxn(() async {
+      final record = await _isar.workoutSessionRecords
+          .where()
+          .sessionUuidEqualTo(sessionId)
+          .findFirst();
+      if (record == null) return;
+      record.isSynced = true;
+      await _isar.workoutSessionRecords.put(record);
+    });
+  }
+
+  // ── Private ──
+
+  Future<SyncFailure?> _syncOne(
+    WorkoutSessionRecord record,
+    String userId,
+  ) async {
+    try {
+      final points = await _pointsRepo.getBySessionId(record.sessionUuid);
+      if (points.isEmpty) return null; // Skip sessions with 0 points
+
+      // 1. Upload points to Storage
+      final storagePath = await _svc.uploadPoints(
+        userId: userId,
+        sessionId: record.sessionUuid,
+        points: points,
+      );
+
+      // 2. Upsert metadata to Postgres
+      await _svc.upsertSession(
+        WorkoutProtoMapper.sessionToPayload(
+          record: record,
+          userId: userId,
+          pointsPath: storagePath,
+        ),
+      );
+
+      // 3. Mark synced locally
+      await markSynced(record.sessionUuid);
+      return null;
+    } on Exception catch (e, st) {
+      final msg = e.toString();
+      AppLogger.error('Sync error: $msg', tag: _tag, error: e, stack: st);
+      if (msg.contains('TimeoutException') || msg.contains('timeout')) {
+        return const SyncTimeout();
+      }
+      return SyncServerError(msg);
+    }
+  }
+}

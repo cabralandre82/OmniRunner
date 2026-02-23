@@ -383,30 +383,11 @@ CREATE INDEX idx_groups_privacy ON public.groups(privacy) WHERE privacy != 'secr
 
 ALTER TABLE public.groups ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "groups_read_public" ON public.groups
-  FOR SELECT USING (
-    privacy != 'secret'
-    OR EXISTS (
-      SELECT 1 FROM public.group_members gm
-      WHERE gm.group_id = groups.id
-        AND gm.user_id = auth.uid()
-        AND gm.status = 'active'
-    )
-  );
+-- NOTE: groups_read_public and groups_update_admin are deferred to after
+-- group_members table creation (they reference group_members).
 
 CREATE POLICY "groups_insert_auth" ON public.groups
   FOR INSERT WITH CHECK (auth.uid() = created_by_user_id);
-
-CREATE POLICY "groups_update_admin" ON public.groups
-  FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM public.group_members gm
-      WHERE gm.group_id = groups.id
-        AND gm.user_id = auth.uid()
-        AND gm.role = 'admin'
-        AND gm.status = 'active'
-    )
-  );
 
 -- ── 15. GROUP_MEMBERS ──────────────────────────────────────────────────────
 -- Group membership records.
@@ -452,6 +433,30 @@ CREATE POLICY "group_members_update_mod" ON public.group_members
       WHERE gm.group_id = group_members.group_id
         AND gm.user_id = auth.uid()
         AND gm.role IN ('admin','moderator')
+        AND gm.status = 'active'
+    )
+  );
+
+-- Deferred policies for public.groups (depend on group_members)
+
+CREATE POLICY "groups_read_public" ON public.groups
+  FOR SELECT USING (
+    privacy != 'secret'
+    OR EXISTS (
+      SELECT 1 FROM public.group_members gm
+      WHERE gm.group_id = groups.id
+        AND gm.user_id = auth.uid()
+        AND gm.status = 'active'
+    )
+  );
+
+CREATE POLICY "groups_update_admin" ON public.groups
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM public.group_members gm
+      WHERE gm.group_id = groups.id
+        AND gm.user_id = auth.uid()
+        AND gm.role = 'admin'
         AND gm.status = 'active'
     )
   );
@@ -523,14 +528,8 @@ CREATE INDEX idx_challenges_status ON public.challenges(status);
 
 ALTER TABLE public.challenges ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "challenges_participant_read" ON public.challenges
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM public.challenge_participants cp
-      WHERE cp.challenge_id = challenges.id
-        AND cp.user_id = auth.uid()
-    )
-  );
+-- NOTE: challenges_participant_read is deferred to after
+-- challenge_participants table creation (it references challenge_participants).
 
 CREATE POLICY "challenges_insert_auth" ON public.challenges
   FOR INSERT WITH CHECK (auth.uid() = creator_user_id);
@@ -570,6 +569,17 @@ CREATE POLICY "challenge_parts_own_read" ON public.challenge_participants
 CREATE POLICY "challenge_parts_own_update" ON public.challenge_participants
   FOR UPDATE USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
+
+-- Deferred policy for public.challenges (depends on challenge_participants)
+
+CREATE POLICY "challenges_participant_read" ON public.challenges
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.challenge_participants cp
+      WHERE cp.challenge_id = challenges.id
+        AND cp.user_id = auth.uid()
+    )
+  );
 
 -- ── 19. CHALLENGE_RESULTS ──────────────────────────────────────────────────
 -- Finalized challenge results. Immutable.
@@ -776,14 +786,8 @@ CREATE TABLE IF NOT EXISTS public.coaching_groups (
 
 ALTER TABLE public.coaching_groups ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "coaching_groups_member_read" ON public.coaching_groups
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM public.coaching_members cm
-      WHERE cm.group_id = coaching_groups.id
-        AND cm.user_id = auth.uid()
-    )
-  );
+-- NOTE: coaching_groups_member_read is deferred to after
+-- coaching_members table creation (it references coaching_members).
 
 CREATE POLICY "coaching_groups_insert_coach" ON public.coaching_groups
   FOR INSERT WITH CHECK (auth.uid() = coach_user_id);
@@ -818,6 +822,17 @@ CREATE POLICY "coaching_members_group_read" ON public.coaching_members
       SELECT 1 FROM public.coaching_members cm2
       WHERE cm2.group_id = coaching_members.group_id
         AND cm2.user_id = auth.uid()
+    )
+  );
+
+-- Deferred policy for public.coaching_groups (depends on coaching_members)
+
+CREATE POLICY "coaching_groups_member_read" ON public.coaching_groups
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.coaching_members cm
+      WHERE cm.group_id = coaching_groups.id
+        AND cm.user_id = auth.uid()
     )
   );
 

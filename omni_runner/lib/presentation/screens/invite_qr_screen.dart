@@ -1,0 +1,180 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:share_plus/share_plus.dart';
+
+/// Displays a persistent QR code for an assessoria invite link.
+///
+/// The QR encodes `https://omnirunner.app/invite/{code}`, which opens the app
+/// directly via Universal/App Links or falls back to a web page.
+///
+/// Unlike token QR codes, invite QR codes do not expire — the invite_code is
+/// a permanent group-level attribute that can be disabled via `invite_enabled`.
+class InviteQrScreen extends StatelessWidget {
+  final String inviteCode;
+  final String groupName;
+
+  const InviteQrScreen({
+    super.key,
+    required this.inviteCode,
+    required this.groupName,
+  });
+
+  String get _inviteLink => 'https://omnirunner.app/invite/$inviteCode';
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Convite da Assessoria')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          children: [
+            Icon(
+              Icons.group_add_rounded,
+              size: 56,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              groupName,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Mostre este QR para novos membros '
+              'escanearem e entrarem na assessoria.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+
+            // QR code
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade300),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: QrImageView(
+                data: _inviteLink,
+                version: QrVersions.auto,
+                size: 240,
+                gapless: true,
+                eyeStyle: QrEyeStyle(
+                  eyeShape: QrEyeShape.circle,
+                  color: theme.colorScheme.primary,
+                ),
+                dataModuleStyle: const QrDataModuleStyle(
+                  dataModuleShape: QrDataModuleShape.circle,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Invite code chip
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.key_rounded,
+                      size: 18, color: theme.colorScheme.primary),
+                  const SizedBox(width: 8),
+                  SelectableText(
+                    inviteCode,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 2,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Os membros também podem digitar este código manualmente.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+
+            // Action buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _copyLink(context),
+                    icon: const Icon(Icons.copy_rounded, size: 20),
+                    label: const Text('Copiar link'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: _shareLink,
+                    icon: const Icon(Icons.share_rounded, size: 20),
+                    label: const Text('Compartilhar'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _copyLink(BuildContext context) {
+    Clipboard.setData(ClipboardData(text: _inviteLink));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Link copiado!'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _shareLink() {
+    SharePlus.instance.share(
+      ShareParams(
+        text: 'Entre na assessoria $groupName no Omni Runner: $_inviteLink',
+      ),
+    );
+  }
+}

@@ -1,0 +1,392 @@
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/logging/logger.dart';
+
+/// Screen for staff of an assessoria to view and respond to
+/// incoming team challenge invitations from other assessorias.
+class StaffChallengeInvitesScreen extends StatefulWidget {
+  final String groupId;
+
+  const StaffChallengeInvitesScreen({super.key, required this.groupId});
+
+  @override
+  State<StaffChallengeInvitesScreen> createState() =>
+      _StaffChallengeInvitesScreenState();
+}
+
+class _StaffChallengeInvitesScreenState
+    extends State<StaffChallengeInvitesScreen> {
+  static const _tag = 'StaffChallengeInvites';
+
+  bool _loading = true;
+  String? _error;
+  List<_InviteData> _invites = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInvites();
+  }
+
+  Future<void> _loadInvites() async {
+    if (!AppConfig.isSupabaseReady) {
+      setState(() {
+        _loading = false;
+        _error = 'Backend indisponível';
+      });
+      return;
+    }
+
+    try {
+      final db = Supabase.instance.client;
+
+      final res = await db
+          .from('challenge_team_invites')
+          .select('id, challenge_id, to_group_id, status, created_at')
+          .eq('to_group_id', widget.groupId)
+          .order('created_at', ascending: false)
+          .limit(50);
+
+      final rows = res as List<dynamic>;
+
+      if (rows.isEmpty) {
+        setState(() {
+          _invites = [];
+          _loading = false;
+        });
+        return;
+      }
+
+      final challengeIds =
+          rows.map((r) => r['challenge_id'] as String).toSet().toList();
+
+      // Fetch challenges to get team_a_group_id (the from-group)
+      final challengeRes = await db
+          .from('challenges')
+          .select('id, title, type, metric, entry_fee_coins, window_ms, team_a_group_id')
+          .inFilter('id', challengeIds);
+
+      final challengeMap = <String, Map<String, dynamic>>{};
+      for (final c in (challengeRes as List<dynamic>)) {
+        challengeMap[c['id'] as String] = c as Map<String, dynamic>;
+      }
+
+      // Collect team_a_group_ids to resolve names
+      final fromGroupIds = challengeMap.values
+          .map((c) => c['team_a_group_id'] as String?)
+          .whereType<String>()
+          .toSet()
+          .toList();
+
+      final groupNameMap = <String, String>{};
+      if (fromGroupIds.isNotEmpty) {
+        final groupRes = await db
+            .from('coaching_groups')
+            .select('id, name')
+            .inFilter('id', fromGroupIds);
+
+        for (final g in (groupRes as List<dynamic>)) {
+          groupNameMap[g['id'] as String] = g['name'] as String;
+        }
+      }
+
+      final invites = rows.map((r) {
+        final ch = challengeMap[r['challenge_id']];
+        final windowMs = (ch?['window_ms'] as num?)?.toInt() ?? 0;
+        final days = (windowMs / 86400000).round();
+        final fromGroupId = ch?['team_a_group_id'] as String?;
+
+        return _InviteData(
+          inviteId: r['id'] as String,
+          challengeId: r['challenge_id'] as String,
+          status: r['status'] as String,
+          fromGroupName: fromGroupId != null
+              ? (groupNameMap[fromGroupId] ?? 'Assessoria desconhecida')
+              : 'Assessoria desconhecida',
+          challengeTitle: ch?['title'] as String? ?? 'Desafio de Equipe',
+          metric: ch?['metric'] as String? ?? 'distance',
+          entryFeeCoins: (ch?['entry_fee_coins'] as num?)?.toInt() ?? 0,
+          windowDays: days,
+        );
+      }).toList();
+
+      setState(() {
+        _invites = invites;
+        _loading = false;
+      });
+    } catch (e) {
+      AppLogger.warn('Failed to load challenge invites: $e', tag: _tag);
+      setState(() {
+        _error = 'Erro ao carregar convites';
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _respond(String inviteId, bool accept) async {
+    try {
+      setState(() => _loading = true);
+      await Supabase.instance.client.functions.invoke(
+        'challenge-accept-group-invite',
+        body: {'invite_id': inviteId, 'accept': accept},
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(accept ? 'Convite aceito!' : 'Convite recusado.'),
+        ));
+        await _loadInvites();
+      }
+    } catch (e) {
+      AppLogger.warn('Failed to respond to invite: $e', tag: _tag);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Erro ao responder convite. Tente novamente.'),
+        ));
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Desafios Recebidos'),
+        backgroundColor: cs.inversePrimary,
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.error_outline, size: 48, color: cs.error),
+                      const SizedBox(height: 12),
+                      Text(_error!, style: theme.textTheme.bodyLarge),
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _error = null;
+                            _loading = true;
+                          });
+                          _loadInvites();
+                        },
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Tentar novamente'),
+                      ),
+                    ],
+                  ),
+                )
+              : _invites.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.shield_outlined,
+                              size: 64,
+                              color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Nenhum convite de desafio',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Quando outra assessoria desafiar a sua,\nos convites aparecerão aqui.',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _loadInvites,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _invites.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (_, i) =>
+                            _InviteCard(invite: _invites[i], onRespond: _respond),
+                      ),
+                    ),
+    );
+  }
+}
+
+class _InviteData {
+  final String inviteId;
+  final String challengeId;
+  final String status;
+  final String fromGroupName;
+  final String challengeTitle;
+  final String metric;
+  final int entryFeeCoins;
+  final int windowDays;
+
+  const _InviteData({
+    required this.inviteId,
+    required this.challengeId,
+    required this.status,
+    required this.fromGroupName,
+    required this.challengeTitle,
+    required this.metric,
+    required this.entryFeeCoins,
+    required this.windowDays,
+  });
+
+  bool get isPending => status == 'pending';
+}
+
+class _InviteCard extends StatelessWidget {
+  final _InviteData invite;
+  final Future<void> Function(String inviteId, bool accept) onRespond;
+
+  const _InviteCard({required this.invite, required this.onRespond});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    final metricLabel = switch (invite.metric) {
+      'pace' => 'Pace',
+      'time' => 'Tempo',
+      _ => 'Distância',
+    };
+
+    final statusColor = switch (invite.status) {
+      'accepted' => Colors.green,
+      'declined' => Colors.red,
+      _ => Colors.orange,
+    };
+    final statusLabel = switch (invite.status) {
+      'accepted' => 'Aceito',
+      'declined' => 'Recusado',
+      _ => 'Pendente',
+    };
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: cs.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    statusLabel,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: statusColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Icon(Icons.shield_rounded,
+                    size: 20, color: cs.onSurfaceVariant),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              invite.challengeTitle,
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Desafiante: ${invite.fromGroupName}',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 4,
+              children: [
+                _InfoChip(
+                    icon: Icons.straighten, label: metricLabel),
+                _InfoChip(
+                    icon: Icons.calendar_today,
+                    label: '${invite.windowDays} dia${invite.windowDays != 1 ? "s" : ""}'),
+                if (invite.entryFeeCoins > 0)
+                  _InfoChip(
+                      icon: Icons.toll,
+                      label: '${invite.entryFeeCoins} OmniCoins/atleta'),
+              ],
+            ),
+            if (invite.isPending) ...[
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => onRespond(invite.inviteId, false),
+                      child: const Text('Recusar'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => onRespond(invite.inviteId, true),
+                      child: const Text('Aceitar'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _InfoChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}

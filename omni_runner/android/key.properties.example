@@ -1,0 +1,21 @@
+# Android Release Signing — key.properties
+#
+# Copy this file to key.properties and fill in your values.
+# NEVER commit key.properties (already in .gitignore).
+#
+# ── Generate keystore ──
+#
+#   keytool -genkey -v \
+#     -keystore ~/omni-runner-release.jks \
+#     -keyalg RSA -keysize 2048 -validity 10000 \
+#     -alias omni-runner \
+#     -storepass YOUR_STORE_PASSWORD \
+#     -keypass YOUR_KEY_PASSWORD \
+#     -dname "CN=Omni Runner, O=OmniRunner, L=Sao Paulo, C=BR"
+#
+# ── Fill in below ──
+
+storePassword=YOUR_STORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=omni-runner
+storeFile=/absolute/path/to/omni-runner-release.jks

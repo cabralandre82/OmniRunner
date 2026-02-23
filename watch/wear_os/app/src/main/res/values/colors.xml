@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#FF4CAF50</color>
+    <color name="primary_variant">#FF388E3C</color>
+    <color name="secondary">#FF03DAC6</color>
+    <color name="background">#FF000000</color>
+    <color name="surface">#FF1E1E1E</color>
+    <color name="on_primary">#FF000000</color>
+    <color name="on_background">#FFFFFFFF</color>
+    <color name="on_surface">#FFFFFFFF</color>
+    <color name="error">#FFCF6679</color>
+
+    <!-- HR Zone Colors -->
+    <color name="zone_below">#FF9E9E9E</color>
+    <color name="zone_1">#FF2196F3</color>
+    <color name="zone_2">#FF4CAF50</color>
+    <color name="zone_3">#FFFFEB3B</color>
+    <color name="zone_4">#FFFF9800</color>
+    <color name="zone_5">#FFF44336</color>
+</resources>

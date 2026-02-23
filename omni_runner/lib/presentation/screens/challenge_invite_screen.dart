@@ -1,0 +1,514 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/domain/entities/challenge_entity.dart';
+import 'package:omni_runner/domain/entities/challenge_participant_entity.dart';
+import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
+import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
+import 'package:omni_runner/presentation/blocs/challenges/challenges_state.dart';
+
+/// Post-creation screen: invite opponents via link or assessoria contacts.
+///
+/// Supports async challenges between runners in different cities by clearly
+/// explaining how the challenge works (window, validation, etc.).
+class ChallengeInviteScreen extends StatefulWidget {
+  final ChallengeEntity challenge;
+
+  const ChallengeInviteScreen({super.key, required this.challenge});
+
+  @override
+  State<ChallengeInviteScreen> createState() => _ChallengeInviteScreenState();
+}
+
+class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
+  late ChallengeEntity _challenge;
+
+  String get _deepLink =>
+      'https://omnirunner.app/challenge/${_challenge.id}';
+
+  @override
+  void initState() {
+    super.initState();
+    _challenge = widget.challenge;
+  }
+
+  int get _pendingSlots {
+    final accepted = _challenge.acceptedCount;
+    if (_challenge.type == ChallengeType.oneVsOne) return 2 - accepted;
+    return 50 - accepted;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Convidar Oponente'),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: BlocListener<ChallengesBloc, ChallengesState>(
+        listener: (context, state) {
+          if (state is ChallengeDetailLoaded) {
+            setState(() => _challenge = state.challenge);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Convite enviado!')),
+            );
+          } else if (state is ChallengesError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          }
+        },
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            // Success header
+            Icon(Icons.check_circle_rounded,
+                size: 56, color: Colors.green.shade600),
+            const SizedBox(height: 12),
+            Text(
+              'Desafio criado!',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _challenge.title ?? _defaultTitle(),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(height: 24),
+
+            // Async explanation card
+            _AsyncExplainerCard(challenge: _challenge),
+            const SizedBox(height: 20),
+
+            // Share link section
+            Text('Compartilhe o link do desafio',
+                style: theme.textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: cs.outlineVariant.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _deepLink,
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: cs.primary),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.copy_rounded, size: 20),
+                    tooltip: 'Copiar link',
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: _deepLink));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Link copiado!'),
+                            duration: Duration(seconds: 1)),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Share button
+            FilledButton.icon(
+              icon: const Icon(Icons.share_rounded),
+              label: const Text('Enviar convite'),
+              onPressed: () {
+                final title = _challenge.title ?? _defaultTitle();
+                final metric = _metricLabel(_challenge.rules.metric);
+                final window = _formatWindow(_challenge.rules.windowMs);
+                SharePlus.instance.share(
+                  ShareParams(
+                    text: 'Participe do meu desafio "$title" no Omni Runner!\n'
+                        'Modalidade: $metric\n'
+                        'Duração: $window\n\n'
+                        '$_deepLink',
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 24),
+
+            // Team invite (for teamVsTeam only)
+            if (_challenge.type == ChallengeType.teamVsTeam) ...[
+              const SizedBox(height: 4),
+              _TeamInviteSection(challenge: _challenge),
+              const SizedBox(height: 16),
+            ],
+
+            // Participants preview
+            if (_challenge.participants.isNotEmpty) ...[
+              Text('Participantes',
+                  style: theme.textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              ..._challenge.participants.map((p) => ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      p.status == ParticipantStatus.accepted
+                          ? Icons.check_circle
+                          : Icons.hourglass_empty,
+                      color: p.status == ParticipantStatus.accepted
+                          ? Colors.green
+                          : Colors.orange,
+                      size: 20,
+                    ),
+                    title: Text(p.displayName),
+                    subtitle: Text(
+                      p.status == ParticipantStatus.accepted
+                          ? 'Confirmado'
+                          : 'Aguardando',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  )),
+              if (_pendingSlots > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    _challenge.type == ChallengeType.oneVsOne
+                        ? 'Falta 1 oponente para iniciar'
+                        : '$_pendingSlots vagas restantes',
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: cs.outline),
+                  ),
+                ),
+            ],
+            const SizedBox(height: 32),
+
+            // Done button
+            OutlinedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Concluir'),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _defaultTitle() => switch (_challenge.type) {
+        ChallengeType.oneVsOne => 'Desafio 1v1',
+        ChallengeType.teamVsTeam => 'Desafio de Equipe',
+        ChallengeType.group => 'Desafio em Grupo',
+      };
+
+  static String _metricLabel(ChallengeMetric m) => switch (m) {
+        ChallengeMetric.distance => 'Distância',
+        ChallengeMetric.pace => 'Pace',
+        ChallengeMetric.time => 'Tempo',
+      };
+
+  static String _formatWindow(int ms) {
+    if (ms < 3600000) return '${ms ~/ 60000} minutos';
+    if (ms < 86400000) return '${ms ~/ 3600000} horas';
+    final days = ms ~/ 86400000;
+    return '$days ${days == 1 ? "dia" : "dias"}';
+  }
+}
+
+/// Section for inviting an assessoria to a team challenge.
+class _TeamInviteSection extends StatefulWidget {
+  final ChallengeEntity challenge;
+
+  const _TeamInviteSection({required this.challenge});
+
+  @override
+  State<_TeamInviteSection> createState() => _TeamInviteSectionState();
+}
+
+class _TeamInviteSectionState extends State<_TeamInviteSection> {
+  static const _tag = 'TeamInvite';
+  bool _inviting = false;
+  String? _invitedGroupName;
+
+  SupabaseClient get _db => Supabase.instance.client;
+
+  Future<void> _selectAndInvite() async {
+    List<Map<String, String>> groups = [];
+    try {
+      final res = await _db
+          .from('coaching_groups')
+          .select('id, name')
+          .neq('id', widget.challenge.teamAGroupId ?? '')
+          .order('name')
+          .limit(100);
+      for (final g in (res as List)) {
+        groups.add({'id': g['id'] as String, 'name': (g['name'] as String?) ?? ''});
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    if (groups.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nenhuma assessoria disponível.')),
+      );
+      return;
+    }
+
+    final selected = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Convidar assessoria'),
+        children: groups.map((g) => SimpleDialogOption(
+          onPressed: () => Navigator.pop(ctx, g),
+          child: Text(g['name']!),
+        )).toList(),
+      ),
+    );
+
+    if (selected == null || !mounted) return;
+
+    setState(() => _inviting = true);
+
+    try {
+      final res = await _db.functions.invoke('challenge-invite-group', body: {
+        'challenge_id': widget.challenge.id,
+        'to_group_id': selected['id'],
+      });
+      final data = res.data as Map<String, dynamic>? ?? {};
+      if (data['ok'] == true) {
+        setState(() {
+          _invitedGroupName = selected['name'];
+          _inviting = false;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Convite enviado para ${selected['name']}!')),
+          );
+        }
+      } else {
+        final err = data['error'] as Map<String, dynamic>?;
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(err?['message'] as String? ?? 'Erro ao convidar.')),
+          );
+        }
+        setState(() => _inviting = false);
+      }
+    } catch (e) {
+      AppLogger.error('Team invite failed: $e', tag: _tag, error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro ao enviar convite.')),
+        );
+      }
+      setState(() => _inviting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Card(
+      elevation: 0,
+      color: cs.tertiaryContainer.withValues(alpha: 0.15),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: cs.tertiaryContainer.withValues(alpha: 0.4)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.shield_rounded, size: 20, color: cs.tertiary),
+                const SizedBox(width: 8),
+                Text('Desafio de Equipe',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold, color: cs.tertiary)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Sua assessoria: ${widget.challenge.teamAGroupName ?? ""}',
+              style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 4),
+            if (_invitedGroupName != null || widget.challenge.teamBGroupName != null) ...[
+              Row(
+                children: [
+                  const Icon(Icons.check_circle, size: 16, color: Colors.green),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Oponente: ${_invitedGroupName ?? widget.challenge.teamBGroupName}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.green,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Agora compartilhe o link para que os atletas da sua equipe entrem.',
+                style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+              ),
+            ] else ...[
+              Text(
+                'Cada atleta coloca o mesmo valor de OmniCoins. '
+                'A equipe com melhor resultado leva todo o prêmio.',
+                style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                icon: _inviting
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.group_add_rounded, size: 18),
+                label: const Text('Convidar Assessoria'),
+                onPressed: _inviting ? null : _selectAndInvite,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(44),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Card explaining how async challenges work across different cities.
+class _AsyncExplainerCard extends StatelessWidget {
+  final ChallengeEntity challenge;
+
+  const _AsyncExplainerCard({required this.challenge});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isScheduled =
+        challenge.rules.startMode == ChallengeStartMode.scheduled;
+    final windowText = _formatWindow(challenge.rules.windowMs);
+
+    return Card(
+      elevation: 0,
+      color: cs.primaryContainer.withValues(alpha: 0.2),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+            color: cs.primaryContainer.withValues(alpha: 0.5)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.public_rounded, size: 20, color: cs.primary),
+                const SizedBox(width: 8),
+                Text('Como funciona?',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold, color: cs.primary)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _step(theme, '1',
+                'Envie o link para seu oponente (pode ser de qualquer cidade!)'),
+            _step(theme, '2',
+                isScheduled
+                    ? 'O oponente aceita e aguarda a data agendada'
+                    : 'Quando o oponente aceitar, o desafio começa automaticamente'),
+            _step(theme, '3',
+                'Cada um corre no seu local dentro da janela de $windowText'),
+            _step(theme, '4',
+                'Ao final do prazo, o resultado é calculado automaticamente'),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.verified_rounded, size: 16, color: cs.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Apenas corridas verificadas por GPS contam. '
+                      'Distância mínima: '
+                      '${(challenge.rules.minSessionDistanceM / 1000).toStringAsFixed(1)} km.',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: cs.onSurfaceVariant),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _step(ThemeData theme, String number, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary,
+              shape: BoxShape.circle,
+            ),
+            child: Text(number,
+                style: TextStyle(
+                    color: theme.colorScheme.onPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(text,
+                style: theme.textTheme.bodySmall?.copyWith(height: 1.4)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _formatWindow(int ms) {
+    if (ms < 3600000) return '${ms ~/ 60000} minutos';
+    if (ms < 86400000) return '${ms ~/ 3600000} horas';
+    final days = ms ~/ 86400000;
+    return '$days ${days == 1 ? "dia" : "dias"}';
+  }
+}
