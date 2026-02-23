@@ -26531,3 +26531,66 @@ foi conectado à UI nem ao Supabase. Staff não conseguia remover ninguém pelo 
 **Arquivos criados/modificados:**
 - `supabase/migrations/20260223200000_fn_remove_member.sql` (NOVO)
 - `lib/presentation/screens/coaching_group_details_screen.dart` (MODIFICADO)
+
+---
+
+### QA v1.0.12 — 4 Bugs (BUG-28 a BUG-31)
+
+#### BUG-28: Performance screen still failing for staff
+
+**Sentry:** Nenhum (catch-all comia o erro silenciosamente)
+
+**Causa raiz:** O `_load()` no `StaffPerformanceScreen` usava um único `try-catch(_)` que
+abrangia 4 queries (members, sessions, challenges, championships). Se qualquer query falhasse
+(e.g. `championship_participants` RLS bloqueava), o catch-all mostrava "Não foi possível carregar
+os dados" sem logar o erro real.
+
+**Fix:**
+- Cada seção de query agora tem seu próprio `try-catch` com `AppLogger.warn()`
+- Se sessions falha, os dados de corrida ficam zerados mas o resto carrega
+- Se challenges falha, KPI de desafios fica zero mas o resto carrega
+- Query de `championship_participants` alterada de `.eq('group_id')` para `.inFilter('user_id', athleteIds)` para compatibilidade com RLS existente
+
+#### BUG-29: Championship manage screen 404
+
+**Sentry:** `FunctionException(status: 404, details: {ok: false, error: {code: NOT_FOUND, message: Championship not found or not visible}})`
+
+**Causa raiz:** O EF `champ-participant-list` filtrava championships por
+`.in("status", ["open", "active", "completed"])`, excluindo "draft". Campeonatos recém-criados
+via `champ-create` têm status "draft". O manage screen chamava este EF incondicionalmente,
+resultando em 404 → catch → erro na tela inteira.
+
+**Fix:**
+1. EF `champ-participant-list`: adicionado "draft" ao filtro de status + redeployado
+2. `StaffChampionshipManageScreen._loadAll()`: para campeonatos "draft", pula a chamada ao EF
+   (não pode ter participantes em draft). Se o EF falhar para outros status, a lista de
+   participantes fica vazia (não mata a tela inteira)
+
+#### BUG-30: Dashboard member count not refreshing
+
+**Causa raiz:** `_openAtletas()` no `StaffDashboardScreen` navegava para
+`CoachingGroupDetailsScreen` mas não recarregava `_loadStatus()` ao retornar.
+Se o staff removia um membro, voltava e via a contagem antiga.
+
+**Fix:** Adicionado `.then((_) => _loadStatus())` ao `Navigator.push` de `_openAtletas()`.
+Agora `_loadStatus()` re-executa ao retornar de qualquer tela de membros.
+
+#### BUG-31: Join request error — column "email" does not exist
+
+**Sentry:** `PostgrestException(message: column "email" does not exist, code: 42703)`
+
+**Causa raiz:** O RPC `fn_request_join` fazia:
+```sql
+SELECT COALESCE(display_name, email, 'Atleta') INTO v_display FROM public.profiles WHERE id = v_uid;
+```
+Mas a tabela `profiles` não tem coluna `email`. Email fica em `auth.users.email`.
+
+**Fix:** Migration `20260223220000` recria o RPC com `COALESCE(p.display_name, 'Atleta')`.
+Aplicada via Management API.
+
+**Arquivos criados/modificados:**
+- `supabase/migrations/20260223220000_fix_fn_request_join_email_col.sql` (NOVO)
+- `supabase/functions/champ-participant-list/index.ts` (MODIFICADO — adicionado "draft" ao filtro)
+- `lib/presentation/screens/staff_performance_screen.dart` (MODIFICADO — per-section try-catch)
+- `lib/presentation/screens/staff_championship_manage_screen.dart` (MODIFICADO — skip EF for draft)
+- `lib/presentation/screens/staff_dashboard_screen.dart` (MODIFICADO — refresh on return from athletes)

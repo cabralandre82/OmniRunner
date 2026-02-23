@@ -689,6 +689,14 @@ Transformar o Omni Runner de um aplicativo centrado no usuário individual para 
 | BUG-21 | Botão "Portal" e "Abrir Portal de Assessorias" não faziam nada | URL `portal.omnirunner.app` não configurada; `canLaunchUrl` falhava silenciosamente | Dashboard Portal: SnackBar "em breve"; Credits `_PortalCta`: card informativo "está sendo desenvolvido" |
 | BUG-22 | Performance mostra "0 de 2 membros" mas só tem 1 atleta | Role string mismatch: código filtrava por `'athlete'` (inglês) mas DB armazena `'atleta'` (português, desde migration 16.10.0) | Corrigido em 4 telas: `staff_performance_screen`, `staff_retention_dashboard_screen`, `streaks_leaderboard_screen`, `staff_weekly_report_screen`. Contagem agora mostra apenas atletas (não staff) |
 | BUG-23 | "Desafios" no dashboard staff — conceito errado | Card "Desafios" mostrava convites de "team vs team entre assessorias", mas desafios são SEMPRE entre atletas, não assessorias | Card removido do dashboard staff. Assessorias não participam de desafios — apenas distribuem OmniCoins e gerenciam atletas |
+| BUG-24 | Atletas entram na assessoria sem aprovação | `fn_switch_assessoria` adicionava atleta direto como membro | Fluxo de solicitação: `fn_request_join` → `fn_approve/reject_join_request`. Tabela `coaching_join_requests`, tela de solicitações, badge com pendentes |
+| BUG-25 | Performance "não foi possível carregar dados" | RLS impedia staff de ler sessions/challenges dos atletas | `staff_group_member_ids()` SECURITY DEFINER + policies `sessions_staff_read` e `challenge_parts_staff_read` |
+| BUG-26 | "Atletas e Staff" mostra 2 mas só exibe 1 | BLoC→Isar cache local incompleto | Reescrita para query Supabase direto, sem BLoC/Isar |
+| BUG-27 | Solicitação não chega na assessoria | Atleta já era membro do fluxo antigo | Não é bug — `fn_request_join` retorna `already_member` |
+| BUG-28 | Performance screen crash silencioso | Catch-all comia exceções | Per-section try-catch com logging |
+| BUG-29 | "Erro ao carregar campeonato" (404) | EF `champ-participant-list` excluía "draft" | EF redeployado com "draft"; manage screen resiliente |
+| BUG-30 | Contagem de membros não atualiza após remoção | Dashboard não recarregava ao voltar | `.then((_) => _loadStatus())` |
+| BUG-31 | Solicitação falha: "column email does not exist" | `fn_request_join` referenciava `email` em `profiles` (não existe) | RPC recriado com `COALESCE(display_name, 'Atleta')` |
 
 ---
 

@@ -1264,3 +1264,15 @@ Se for necessário adicionar Mercado Pago como gateway separado, seria um novo E
     - Resumo visual no final do formulário
     - Dialog de criação: time picker para corrida única, date picker para período
 - Migrations aplicadas via Management API: `20260223210000` (staff_group_member_ids + sessions_staff_read + challenge_parts_staff_read)
+
+### APK Hotfix (100.12.0 — v1.0.12):
+- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
+- Output: `omni_runner_v1.0.12.apk` — 126 MB
+- Status: BUILD SUCCEEDED
+- Fixes:
+  - BUG-28: Performance screen still failing — catch-all `catch(_)` was eating the real error and showing generic message. Fix: per-section try-catch with `AppLogger.warn()` so one failing query doesn't kill the entire screen. Changed `championship_participants` query to filter by `user_id` (athlete IDs) instead of `group_id` for RLS compatibility
+  - BUG-29: Championship manage screen crash (FunctionException 404 "not found or not visible") — `champ-participant-list` EF excluded "draft" from status filter. Newly created championships are "draft" → 404. Fix: (1) added "draft" to EF status filter and redeployed, (2) manage screen skips participant load for draft championships
+  - BUG-30: Dashboard "Atletas e Staff" card showed stale member count after removing a member — `_openAtletas()` didn't refresh dashboard on return. Fix: added `.then((_) => _loadStatus())` to navigation push
+  - BUG-31: Join request error "column 'email' does not exist" — `fn_request_join` referenced `email` column in `profiles` table, but `profiles` only has `display_name`. Email lives in `auth.users`. Fix: changed `COALESCE(display_name, email, 'Atleta')` → `COALESCE(display_name, 'Atleta')` in RPC
+- Migrations applied via Management API: `20260223220000` (fix fn_request_join email column)
+- Edge Function redeployed: `champ-participant-list` (include "draft" status)

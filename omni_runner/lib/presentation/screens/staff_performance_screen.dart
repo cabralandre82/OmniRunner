@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/presentation/screens/staff_retention_dashboard_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_weekly_report_screen.dart';
 
@@ -85,99 +86,109 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
       final weekStartMs = weekStart.millisecondsSinceEpoch;
 
       // 2. Sessions this week for group athletes
-      final sessionsRes = await db
-          .from('sessions')
-          .select('user_id, total_distance_m, is_verified')
-          .inFilter('user_id', athleteIds)
-          .gte('start_time_ms', weekStartMs)
-          .eq('is_verified', true);
+      try {
+        final sessionsRes = await db
+            .from('sessions')
+            .select('user_id, total_distance_m, is_verified')
+            .inFilter('user_id', athleteIds)
+            .gte('start_time_ms', weekStartMs)
+            .eq('is_verified', true);
 
-      final sessions = (sessionsRes as List).cast<Map<String, dynamic>>();
-      _weeklyRuns = sessions.length;
-      _weeklyDistanceKm = sessions.fold<double>(
-          0,
-          (sum, s) =>
-              sum + ((s['total_distance_m'] as num?)?.toDouble() ?? 0)) /
-          1000;
+        final sessions = (sessionsRes as List).cast<Map<String, dynamic>>();
+        _weeklyRuns = sessions.length;
+        _weeklyDistanceKm = sessions.fold<double>(
+            0,
+            (sum, s) =>
+                sum + ((s['total_distance_m'] as num?)?.toDouble() ?? 0)) /
+            1000;
 
-      // Active = athletes with ≥1 verified run this week
-      final activeIds = sessions
-          .map((s) => s['user_id'] as String)
-          .toSet();
-      _activeAthletes = activeIds.length;
+        final activeIds = sessions
+            .map((s) => s['user_id'] as String)
+            .toSet();
+        _activeAthletes = activeIds.length;
 
-      // Top athletes by runs this week
-      final runCounts = <String, int>{};
-      final distanceSums = <String, double>{};
-      for (final s in sessions) {
-        final uid = s['user_id'] as String;
-        runCounts[uid] = (runCounts[uid] ?? 0) + 1;
-        distanceSums[uid] = (distanceSums[uid] ?? 0) +
-            ((s['total_distance_m'] as num?)?.toDouble() ?? 0);
+        final runCounts = <String, int>{};
+        final distanceSums = <String, double>{};
+        for (final s in sessions) {
+          final uid = s['user_id'] as String;
+          runCounts[uid] = (runCounts[uid] ?? 0) + 1;
+          distanceSums[uid] = (distanceSums[uid] ?? 0) +
+              ((s['total_distance_m'] as num?)?.toDouble() ?? 0);
+        }
+
+        final nameMap = <String, String>{};
+        for (final m in athletes) {
+          nameMap[m['user_id'] as String] =
+              (m['display_name'] as String?) ?? 'Atleta';
+        }
+
+        final sorted = runCounts.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+
+        _topAthletes = sorted.take(5).map((e) {
+          return _AthleteActivity(
+            name: nameMap[e.key] ?? 'Atleta',
+            runs: e.value,
+            distanceKm: (distanceSums[e.key] ?? 0) / 1000,
+          );
+        }).toList();
+      } catch (e) {
+        AppLogger.warn('Performance: sessions query failed: $e', tag: 'StaffPerf');
       }
-
-      final nameMap = <String, String>{};
-      for (final m in athletes) {
-        nameMap[m['user_id'] as String] =
-            (m['display_name'] as String?) ?? 'Atleta';
-      }
-
-      final sorted = runCounts.entries.toList()
-        ..sort((a, b) => b.value.compareTo(a.value));
-
-      _topAthletes = sorted.take(5).map((e) {
-        return _AthleteActivity(
-          name: nameMap[e.key] ?? 'Atleta',
-          runs: e.value,
-          distanceKm: (distanceSums[e.key] ?? 0) / 1000,
-        );
-      }).toList();
 
       // 3. Challenges completed involving group athletes
-      final challRes = await db
-          .from('challenge_participants')
-          .select('user_id, challenge_id, status')
-          .inFilter('user_id', athleteIds);
+      try {
+        final challRes = await db
+            .from('challenge_participants')
+            .select('user_id, challenge_id, status')
+            .inFilter('user_id', athleteIds);
 
-      final challParts = (challRes as List).cast<Map<String, dynamic>>();
-      final completedChallIds = <String>{};
-      for (final cp in challParts) {
-        if (cp['status'] == 'accepted' || cp['status'] == 'invited') {
-          completedChallIds.add(cp['challenge_id'] as String);
+        final challParts = (challRes as List).cast<Map<String, dynamic>>();
+        final completedChallIds = <String>{};
+        for (final cp in challParts) {
+          if (cp['status'] == 'accepted' || cp['status'] == 'invited') {
+            completedChallIds.add(cp['challenge_id'] as String);
+          }
         }
-      }
-      _challengesDone = completedChallIds.length;
+        _challengesDone = completedChallIds.length;
 
-      // Check which were won (via challenge_results or challenge status)
-      if (completedChallIds.isNotEmpty) {
-        try {
-          final resultsRes = await db
-              .from('challenge_results')
-              .select('challenge_id, winner_user_id')
-              .inFilter('challenge_id', completedChallIds.toList());
-          final results = (resultsRes as List).cast<Map<String, dynamic>>();
-          _challengesWon = results
-              .where((r) => athleteIds.contains(r['winner_user_id']))
-              .length;
-        } catch (_) {
-          _challengesWon = 0;
+        if (completedChallIds.isNotEmpty) {
+          try {
+            final resultsRes = await db
+                .from('challenge_results')
+                .select('challenge_id, winner_user_id')
+                .inFilter('challenge_id', completedChallIds.toList());
+            final results = (resultsRes as List).cast<Map<String, dynamic>>();
+            _challengesWon = results
+                .where((r) => athleteIds.contains(r['winner_user_id']))
+                .length;
+          } catch (_) {
+            _challengesWon = 0;
+          }
         }
+      } catch (e) {
+        AppLogger.warn('Performance: challenges query failed: $e', tag: 'StaffPerf');
       }
 
       // 4. Championship participation
-      final champRes = await db
-          .from('championship_participants')
-          .select('user_id, status')
-          .eq('group_id', widget.groupId);
+      try {
+        final champRes = await db
+            .from('championship_participants')
+            .select('user_id, status')
+            .inFilter('user_id', athleteIds);
 
-      final champParts = (champRes as List).cast<Map<String, dynamic>>();
-      _champParticipants = champParts.length;
-      _champCompleted = champParts
-          .where((c) => c['status'] == 'completed')
-          .length;
+        final champParts = (champRes as List).cast<Map<String, dynamic>>();
+        _champParticipants = champParts.length;
+        _champCompleted = champParts
+            .where((c) => c['status'] == 'completed')
+            .length;
+      } catch (e) {
+        AppLogger.warn('Performance: championships query failed: $e', tag: 'StaffPerf');
+      }
 
       if (mounted) setState(() => _loading = false);
-    } catch (_) {
+    } catch (e) {
+      AppLogger.error('Performance: load failed: $e', tag: 'StaffPerf', error: e);
       if (mounted) {
         setState(() {
           _error = 'Não foi possível carregar os dados.';

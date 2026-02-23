@@ -83,7 +83,7 @@ serve(async (req: Request) => {
       .from("championships")
       .select("id, status, requires_badge")
       .eq("id", championship_id)
-      .in("status", ["open", "active", "completed"])
+      .in("status", ["draft", "open", "active", "completed"])
       .maybeSingle();
 
     if (!champ) {

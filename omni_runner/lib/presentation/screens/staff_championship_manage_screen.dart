@@ -107,24 +107,33 @@ class _StaffChampionshipManageScreenState
         status: (r['status'] as String?) ?? 'pending',
       )).toList();
 
-      // Load participants via EF
-      final partRes = await _db.functions.invoke('champ-participant-list', body: {
-        'championship_id': widget.championshipId,
-      });
-      final partData = partRes.data as Map<String, dynamic>? ?? {};
-      final partList = (partData['participants'] as List<dynamic>?) ?? [];
+      // Load participants via EF (skip for draft — no participants yet)
+      if (_champ!.status != 'draft') {
+        try {
+          final partRes = await _db.functions.invoke('champ-participant-list', body: {
+            'championship_id': widget.championshipId,
+          });
+          final partData = partRes.data as Map<String, dynamic>? ?? {};
+          final partList = (partData['participants'] as List<dynamic>?) ?? [];
 
-      _participants = partList.map((p) {
-        final m = p as Map<String, dynamic>;
-        return _ParticipantData(
-          userId: (m['user_id'] as String?) ?? '',
-          displayName: (m['display_name'] as String?) ?? 'Atleta',
-          groupId: (m['group_id'] as String?) ?? '',
-          status: (m['status'] as String?) ?? 'enrolled',
-          progressValue: ((m['progress_value'] as num?) ?? 0).toDouble(),
-          finalRank: m['final_rank'] as int?,
-        );
-      }).toList();
+          _participants = partList.map((p) {
+            final m = p as Map<String, dynamic>;
+            return _ParticipantData(
+              userId: (m['user_id'] as String?) ?? '',
+              displayName: (m['display_name'] as String?) ?? 'Atleta',
+              groupId: (m['group_id'] as String?) ?? '',
+              status: (m['status'] as String?) ?? 'enrolled',
+              progressValue: ((m['progress_value'] as num?) ?? 0).toDouble(),
+              finalRank: m['final_rank'] as int?,
+            );
+          }).toList();
+        } catch (e) {
+          AppLogger.warn('Load participants failed (non-fatal): $e', tag: _tag);
+          _participants = [];
+        }
+      } else {
+        _participants = [];
+      }
 
       if (mounted) setState(() => _loading = false);
     } catch (e) {

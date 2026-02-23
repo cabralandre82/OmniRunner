@@ -190,7 +190,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
         groupId: _groupId,
         callerUserId: uid,
       ),
-    ));
+    )).then((_) => _loadStatus());
   }
 
   void _openConfirmacoes() {
