@@ -434,7 +434,7 @@ O modelo de receita é **B2B SaaS** (plataforma → assessoria). O app **nunca p
 | Build flavor | `prod` (prod keystore), `dev` (debug) |
 | Env vars | `--dart-define-from-file=.env.dev` |
 | Keystore | `omnirunner-release.keystore` |
-| APK atual | `v1.0.11` (126 MB) |
+| APK atual | `v1.0.13` (127 MB) |
 | Supabase | 41 Edge Functions + 8 migrations |
 | Portal | `portal/` (Next.js 14, não deployado ainda) |
 | CI/CD | Manual (flutter build apk) |
@@ -449,8 +449,13 @@ O modelo de receita é **B2B SaaS** (plataforma → assessoria). O app **nunca p
 Staff dashboard, performance, atletas, solicitações → query Supabase direto.
 Sem BLoC intermediário. Pull-to-refresh.
 
-### Padrão 2: Isar Cache + BLoC (para atleta/tracking)
-Tracking, history, wallet, challenges → Isar local como cache.
+### Padrão 2: Supabase-first + Isar Cache (para atleta)
+MyAssessoriaBloc, HistoryScreen → query Supabase primeiro, merge no Isar.
+Garante dados frescos após aprovações server-side ou troca de conta.
+Fallback silencioso para Isar quando offline.
+
+### Padrão 2b: Isar Cache + BLoC (tracking ativo)
+Tracking, wallet, challenges → Isar local como cache principal.
 BLoC lê do Isar. SyncRepo sincroniza com Supabase.
 AutoSyncManager retenta ao restaurar conectividade.
 
@@ -467,8 +472,8 @@ SECURITY DEFINER + validações server-side.
 | Unit tests | 55 arquivos | `test/` |
 | Cobertura | GPS, pace, distance, filter, ghost, auto-pause, integrity, badges, challenges | — |
 | Smoke tests | Synthetic run E2E | `test/smoke/` |
-| Testes manuais | QA em device real (v1.0.0 → v1.0.11, 27 bugs corrigidos) | — |
+| Testes manuais | QA em device real (v1.0.0 → v1.0.13, 33 bugs corrigidos) | — |
 
 ---
 
-*Documento atualizado em 23/02/2026 — Sprint 100.11 (QA Phase)*
+*Documento atualizado em 23/02/2026 — Sprint 100.13 (QA Phase)*

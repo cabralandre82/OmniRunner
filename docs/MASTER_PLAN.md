@@ -644,7 +644,11 @@ Transformar o Omni Runner de um aplicativo centrado no usuário individual para 
 | 100.10.1 | Build APK v1.0.10: remoção de membros | CONCLUIDA |
 | 100.11.0 | BUG-25 Performance RLS (staff não via sessions atletas); BUG-26 Atletas e Staff reescrita (Supabase direto, sem Isar); campeonatos redesenhados (5 seções, formato visual, local, resumo) | CONCLUIDA |
 | 100.11.1 | Build APK v1.0.11 | CONCLUIDA |
-| 100.12.0 | Teste no device v1.0.11 | TODO |
+| 100.12.0 | BUG-28/29/30/31: Performance resilience, championship draft 404, member count refresh, join request email column | CONCLUIDA |
+| 100.12.1 | Build APK v1.0.12 | CONCLUIDA |
+| 100.13.0 | BUG-32: MyAssessoriaBloc Isar stale → Supabase direto; BUG-33: HistoryScreen Isar-only → pull Supabase + merge | CONCLUIDA |
+| 100.13.1 | Build APK v1.0.13 | CONCLUIDA |
+| 100.14.0 | Teste no device v1.0.13 | TODO |
 
 **Bugs corrigidos (100.1.0):**
 
@@ -697,6 +701,8 @@ Transformar o Omni Runner de um aplicativo centrado no usuário individual para 
 | BUG-29 | "Erro ao carregar campeonato" (404) | EF `champ-participant-list` excluía "draft" | EF redeployado com "draft"; manage screen resiliente |
 | BUG-30 | Contagem de membros não atualiza após remoção | Dashboard não recarregava ao voltar | `.then((_) => _loadStatus())` |
 | BUG-31 | Solicitação falha: "column email does not exist" | `fn_request_join` referenciava `email` em `profiles` (não existe) | RPC recriado com `COALESCE(display_name, 'Atleta')` |
+| BUG-32 | Atleta aprovado mas "Minha Assessoria" vazia | `MyAssessoriaBloc` lia do Isar local (cache nunca atualizado após aprovação) | BLoC reescrito para query Supabase direto + sync Isar |
+| BUG-33 | Corrida sumiu do histórico (visível no Performance) | `HistoryScreen` lia apenas do Isar; troca de conta perdia sessions | Pull últimas 30 sessions do Supabase → merge Isar antes de exibir |
 
 ---
 

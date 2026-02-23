@@ -26594,3 +26594,52 @@ Aplicada via Management API.
 - `lib/presentation/screens/staff_performance_screen.dart` (MODIFICADO — per-section try-catch)
 - `lib/presentation/screens/staff_championship_manage_screen.dart` (MODIFICADO — skip EF for draft)
 - `lib/presentation/screens/staff_dashboard_screen.dart` (MODIFICADO — refresh on return from athletes)
+
+---
+
+### QA v1.0.13 — 2 Bugs (BUG-32, BUG-33)
+
+#### BUG-32: Atleta aprovado mas "Minha Assessoria" vazia
+
+**Contexto:** Após o staff aprovar a solicitação de entrada via `fn_approve_join_request`, o
+registro de `coaching_members` era criado no Supabase e `profiles.active_coaching_group_id`
+atualizado. Porém, ao abrir "Minha Assessoria" na conta do atleta, a tela continuava mostrando
+"Sem assessoria".
+
+**Causa raiz:** `MyAssessoriaBloc._onLoad()` chamava `_memberRepo.getByUserId()`, que é
+`IsarCoachingMemberRepo.getByUserId()` — lê do Isar local. A aprovação ocorria no servidor
+(via SECURITY DEFINER RPC), e o Isar do atleta nunca era atualizado com o novo registro.
+
+**Fix:** `MyAssessoriaBloc._onLoad()` reescrito para:
+1. Query `coaching_members` direto do Supabase (`.from('coaching_members').select().eq('user_id', userId)`)
+2. Parsear cada row para `CoachingMemberEntity` com `coachingRoleFromString()`
+3. Sync cada membro para Isar (`_memberRepo.save()`) para offline access
+4. Query `coaching_groups` do Supabase para o grupo do atleta + save Isar
+5. Build available groups para troca de assessoria
+6. Emit `MyAssessoriaLoaded` com dados frescos
+
+Agora, assim que o atleta abre "Minha Assessoria", os dados são buscados em tempo real do Supabase.
+
+#### BUG-33: Corrida desapareceu do histórico do atleta
+
+**Contexto:** O atleta havia feito uma corrida de teste. A sessão aparecia na tela de Performance
+da assessoria (staff via Supabase), mas sumiu do Histórico do atleta.
+
+**Causa raiz:** `HistoryScreen._loadSessions()` chamava `sl<ISessionRepo>().getAll()`, que é
+`IsarSessionRepo.getAll()` — lê do Isar local sem filtro por user. O sync é one-way (Isar→Supabase
+via `SyncRepo`). Ao trocar de conta Google (logout → login com outra conta), o Isar local perdia
+referência às sessions que já haviam sido sincronizadas ao Supabase.
+
+**Fix:** `HistoryScreen._loadSessions()` agora faz reverse sync antes de ler do Isar:
+1. Obtém `uid` do user autenticado (`Supabase.instance.client.auth.currentUser?.id`)
+2. Query `sessions` do Supabase para o user (últimas 30, order by `start_time_ms` desc)
+3. Para cada session não encontrada no Isar local (`repo.getById(sid) == null`), cria
+   `WorkoutSessionEntity` a partir dos dados do Supabase e salva no Isar com `isSynced: true`
+4. Fallback silencioso (`AppLogger.warn`) se Supabase estiver offline — mostra dados locais
+5. Depois do merge, lê do Isar normalmente (`repo.getAll()`)
+
+Sessões sincronizadas ao Supabase agora persistem no histórico mesmo após troca de conta.
+
+**Arquivos modificados:**
+- `lib/presentation/blocs/my_assessoria/my_assessoria_bloc.dart` (MODIFICADO — Supabase direto + sync Isar)
+- `lib/presentation/screens/history_screen.dart` (MODIFICADO — reverse sync Supabase→Isar)

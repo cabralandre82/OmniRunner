@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/workout_session_entity.dart';
 import 'package:omni_runner/domain/entities/workout_status.dart';
@@ -21,6 +23,7 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
+  static const _tag = 'History';
   List<WorkoutSessionEntity>? _sessions;
   bool _loading = true;
   bool _syncing = false;
@@ -37,7 +40,61 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _loadSessions() async {
-    final all = await sl<ISessionRepo>().getAll();
+    final repo = sl<ISessionRepo>();
+
+    // Pull completed sessions from Supabase and merge into Isar
+    try {
+      final uid = Supabase.instance.client.auth.currentUser?.id;
+      if (uid != null) {
+        final rows = await Supabase.instance.client
+            .from('sessions')
+            .select('id, user_id, status, start_time_ms, end_time_ms, '
+                'total_distance_m, moving_ms, is_verified, integrity_flags, '
+                'ghost_session_id')
+            .eq('user_id', uid)
+            .order('start_time_ms', ascending: false)
+            .limit(30);
+
+        for (final r in (rows as List).cast<Map<String, dynamic>>()) {
+          final sid = r['id'] as String;
+          final existing = await repo.getById(sid);
+          if (existing != null) continue;
+
+          final statusInt = (r['status'] as num?)?.toInt() ?? 0;
+          final status = switch (statusInt) {
+            1 => WorkoutStatus.running,
+            2 => WorkoutStatus.paused,
+            3 => WorkoutStatus.completed,
+            4 => WorkoutStatus.discarded,
+            _ => WorkoutStatus.initial,
+          };
+
+          final flags = (r['integrity_flags'] as List<dynamic>?)
+                  ?.cast<String>() ??
+              const [];
+
+          final session = WorkoutSessionEntity(
+            id: sid,
+            userId: r['user_id'] as String?,
+            status: status,
+            startTimeMs: (r['start_time_ms'] as num).toInt(),
+            endTimeMs: (r['end_time_ms'] as num?)?.toInt(),
+            totalDistanceM: (r['total_distance_m'] as num?)?.toDouble(),
+            route: const [],
+            ghostSessionId: r['ghost_session_id'] as String?,
+            isVerified: (r['is_verified'] as bool?) ?? true,
+            integrityFlags: flags,
+            isSynced: true,
+          );
+          await repo.save(session);
+        }
+      }
+    } catch (e) {
+      AppLogger.warn('History: Supabase pull failed (showing local): $e',
+          tag: _tag);
+    }
+
+    final all = await repo.getAll();
     if (mounted) setState(() { _sessions = all.take(20).toList(); _loading = false; });
   }
 

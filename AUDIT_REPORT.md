@@ -1276,3 +1276,11 @@ Se for necessário adicionar Mercado Pago como gateway separado, seria um novo E
   - BUG-31: Join request error "column 'email' does not exist" — `fn_request_join` referenced `email` column in `profiles` table, but `profiles` only has `display_name`. Email lives in `auth.users`. Fix: changed `COALESCE(display_name, email, 'Atleta')` → `COALESCE(display_name, 'Atleta')` in RPC
 - Migrations applied via Management API: `20260223220000` (fix fn_request_join email column)
 - Edge Function redeployed: `champ-participant-list` (include "draft" status)
+
+### APK Hotfix (100.13.0 — v1.0.13):
+- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
+- Output: `omni_runner_v1.0.13.apk` — 127 MB
+- Status: BUILD SUCCEEDED
+- Fixes:
+  - BUG-32: Atleta aprovado mas "Minha Assessoria" vazia — `MyAssessoriaBloc._onLoad()` lia memberships do Isar local, que nunca era atualizado após `fn_approve_join_request` rodar no servidor. Fix: BLoC reescrito para query Supabase direto (`coaching_members` + `coaching_groups` por user_id), parseia para entities, sync para Isar (offline access), e emite estado com dados frescos
+  - BUG-33: Corrida desapareceu do histórico do atleta (mas visível no Performance da assessoria) — `HistoryScreen._loadSessions()` lia apenas do Isar local. Ao trocar de conta Google (logout/login), o Isar perdia as sessions que já haviam sido sincronizadas ao Supabase. Fix: antes de ler do Isar, o HistoryScreen agora puxa as últimas 30 sessions do Supabase (tabela `sessions`) para o user atual, salva no Isar as que não existem localmente, e então exibe a lista completa. Fallback silencioso se Supabase estiver offline
