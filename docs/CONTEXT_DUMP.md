@@ -27509,3 +27509,69 @@ Modificações (2 pontos cirúrgicos):
 - Pool forfeited é logado, não silenciado
 - ZERO override admin
 - Caps e proteções existentes (DECISAO 052) mantidos intactos
+
+---
+
+### MATCHMAKING-1 — MATCHMAKING AUTOMÁTICO POR FILA
+
+> Sprint 23.0.0 — CONCLUIDA
+
+#### Problema
+Usuários sem amigos/contatos não conseguiam participar de desafios porque o único
+mecanismo era compartilhar link. Com milhares de desafios abertos, um feed cronológico
+seria inutilizável (scroll infinito, decision paralysis, desigualdade de seleção).
+
+#### Solução: Queue-based matchmaking (modelo Uber, não OLX)
+Usuário declara uma **intenção** (métrica, meta, aposta, duração) e o sistema encontra
+automaticamente um oponente compatível. Zero browsing.
+
+#### Backend
+
+**Migration:** `20260224100000_challenge_queue.sql`
+- Tabela `challenge_queue` com status (waiting/matched/expired/cancelled)
+- Unique index parcial: 1 entry waiting por user
+- Index composto para matching rápido (metric + fee + bracket + status)
+- `fn_try_match()` — RPC atômico com `FOR UPDATE SKIP LOCKED` (lock-free concurrent matching)
+- `fn_compute_skill_bracket()` — calcula bracket do pace médio das últimas 10 sessões verificadas
+  - Elite: <4:00/km | Advanced: 4:00-5:00 | Intermediate: 5:00-6:30 | Beginner: >6:30
+- `fn_expire_queue_entries()` — pg_cron a cada 5min expira entries vencidas
+- RLS: own-read, own-insert, own-cancel (só status waiting→cancelled)
+
+**Edge Function:** `matchmake`
+- POST `{action:"queue", metric, target?, entry_fee_coins, window_ms}` → tenta match → se encontrou cria challenge + retorna; se não, enfileira
+- POST `{action:"cancel"}` → cancela entry waiting
+- GET → retorna queue_entry atual (polling)
+- Monetization gate: stake>0 exige VERIFIED (mesma regra)
+- Rate limit: 20 req/60s
+
+**Matching algorithm (fn_try_match):**
+1. Mesmo metric + mesmo entry_fee_coins
+2. Skill bracket: mesmo ou adjacente (beginner↔intermediate, advanced↔elite)
+3. Target: ambos null, ou dentro de 25% de tolerância
+4. Ordering: exact bracket match first, then FIFO
+5. Atomic: FOR UPDATE SKIP LOCKED (sem race conditions)
+
+#### Flutter
+
+**`MatchmakingScreen`** — 4 estados:
+- **setup:** form (metric, target, duração, aposta) + botão "Buscar Oponente"
+- **searching:** animação pulse + polling a cada 5s + skill bracket badge + cancelar
+- **matched:** tela de sucesso + nome do oponente + "Ver Desafio"
+- **error:** mensagem + retry
+
+**`ChallengesListScreen`** — integração:
+- Botão "Encontrar Oponente" (ícone MMA) no AppBar
+- Empty state: "Encontrar Oponente" como CTA primário, "Criar e convidar" como secundário
+
+#### Fluxo completo
+1. Usuário abre Desafios → tela vazia → toca "Encontrar Oponente"
+2. Configura: Distância, 5km, 1 hora, 0 coins
+3. Toca "Buscar Oponente"
+4. **Se outro usuário está na fila com config compatível:**
+   - Match instantâneo → challenge criado → ambos participantes "accepted"
+   - Tela "Oponente encontrado!" com nome
+5. **Se ninguém na fila:**
+   - Entra na fila (expira em 24h)
+   - Polling a cada 5s
+   - Quando alguém compatível entrar, match automático
+6. Usuário pode cancelar a qualquer momento

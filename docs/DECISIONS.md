@@ -3844,4 +3844,23 @@ O ranking e outcome são preservados (o participante "ganhou" mas perdeu eligibi
 
 ---
 
+## DECISAO 062 — Matchmaking por Fila (Queue-based)
+
+**Data:** 2026-02-24
+**Status:** ACEITA
+**Contexto:** Sem mecanismo de descoberta, desafios dependiam de links compartilhados. Com escala (milhares de desafios), um feed cronológico seria inutilizável.
+
+### Decisão
+
+Queue-based matchmaking (modelo Uber): usuário declara intenção, sistema encontra oponente automaticamente. Zero browsing. Matching atômico com `FOR UPDATE SKIP LOCKED`. Skill brackets por pace médio.
+
+### Alternativas rejeitadas
+| Rejeitada | Motivo |
+|---|---|
+| Feed com filtros | Decision paralysis, desigualdade (itens no final nunca selecionados) |
+| Feed com ranking/recomendação | Complexidade de ML desnecessária; fila é mais justa |
+| Matchmaking síncrono (WebSocket) | Overhead de infra; polling a 5s é suficiente para MVP |
+
+---
+
 *Novas decisoes sao adicionadas ao final deste arquivo com numero sequencial.*

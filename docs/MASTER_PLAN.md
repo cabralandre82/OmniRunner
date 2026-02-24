@@ -679,7 +679,8 @@ Transformar o Omni Runner de um aplicativo centrado no usuário individual para 
 | 22.5.0 | Portal Next.js: página `/verification` (observabilidade read-only, KPIs, tabela atletas com status/trust/flags/corridas); botão "Reavaliar" (admin_master/professor) chama `eval_athlete_verification` RPC via API route; sidebar atualizado; ZERO override | CONCLUIDA |
 | 22.6.0 | Testes & Provas: `scripts/test_verification_gate.sh` (12 testes curl: stake=0 ok, stake>0 bloqueado UNVERIFIED, VERIFIED libera, DOWNGRADED bloqueia, service_role INSERT bloqueado por trigger, UPDATE 0→100 bloqueado, RLS bloqueia UPDATE direto); `scripts/TEST_PLAN_FLUTTER.md` (12 test cases manuais: tela verificação, gate create, gate join, fluxos completos, matriz de cobertura 4 camadas) | CONCLUIDA |
 | 22.7.0 | Consistência settle-challenge: stake>0 settle verifica VERIFIED de cada participante; quem perdeu status recebe apenas coins-base (sem pool); log `pool_forfeited`; ZERO override; caps + proteções existentes mantidos | CONCLUIDA |
-| 22.8.0 | QA Phase 22 + update docs finais | TODO |
+| 23.0.0 | Matchmaking: `challenge_queue` table + `fn_try_match` RPC atômico + `fn_compute_skill_bracket` + `fn_expire_queue_entries` cron (5min) + EF `matchmake` (queue/cancel/poll) + Flutter `MatchmakingScreen` (setup→searching→matched→error) + integração `ChallengesListScreen` ("Encontrar Oponente") + monetization gate no matchmake + skill brackets (beginner/intermediate/advanced/elite por pace) | CONCLUIDA |
+| 23.1.0 | QA Phase 23 + update docs finais | TODO |
 
 **Bugs corrigidos (100.1.0):**
 

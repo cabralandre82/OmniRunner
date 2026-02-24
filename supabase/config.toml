@@ -505,6 +505,9 @@ verify_jwt = false
 [functions.token-create-intent]
 verify_jwt = false
 
+[functions.matchmake]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327

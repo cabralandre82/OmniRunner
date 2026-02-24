@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
@@ -8,7 +10,20 @@ import 'package:omni_runner/presentation/blocs/challenges/challenges_state.dart'
 import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/presentation/screens/challenge_create_screen.dart';
 import 'package:omni_runner/presentation/screens/challenge_details_screen.dart';
+import 'package:omni_runner/presentation/screens/matchmaking_screen.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
+
+void _openMatchmaking(BuildContext context) async {
+  final challengeId = await Navigator.of(context).push<String>(
+    MaterialPageRoute<String>(
+      builder: (_) => const MatchmakingScreen(),
+    ),
+  );
+  if (challengeId != null && context.mounted) {
+    final uid = sl<UserIdentityProvider>().userId;
+    context.read<ChallengesBloc>().add(LoadChallenges(uid));
+  }
+}
 
 class ChallengesListScreen extends StatelessWidget {
   const ChallengesListScreen({super.key});
@@ -19,6 +34,11 @@ class ChallengesListScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Desafios'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.sports_mma_rounded),
+            tooltip: 'Encontrar oponente',
+            onPressed: () => _openMatchmaking(context),
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Criar desafio',
@@ -91,6 +111,12 @@ class ChallengesListScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
+              onPressed: () => _openMatchmaking(context),
+              icon: const Icon(Icons.sports_mma_rounded),
+              label: const Text('Encontrar Oponente'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => BlocProvider.value(
@@ -100,7 +126,7 @@ class ChallengesListScreen extends StatelessWidget {
                 ),
               ),
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Criar desafio'),
+              label: const Text('Criar e convidar'),
             ),
           ],
         ),
