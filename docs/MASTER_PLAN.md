@@ -30,6 +30,7 @@
 | 19 | Assessoria Ecosystem Core (EPIC-07) | Ecossistema institucional: assessorias como ator principal, tokens institucionais, clearing, campeonatos, coaching dashboard | PLANNED |
 | 20 | Gamification (Progression Final) | Modelo final de progressão: XP, Níveis, Streaks, Goals semanais, microcopy UX | EM ANDAMENTO |
 | 21 | Monetização (Loja-Safe) | Modelo B2B SaaS: venda de créditos para assessorias fora do app, compliance Apple/Google, zero IAP | EM ANDAMENTO |
+| 22 | Atleta Verificado & Monetization Gate | Sistema de verificação de atleta: state machine DB, server-side gate (stake>0 exige VERIFIED), sem override admin, avaliação automática por sessões | EM ANDAMENTO |
 
 ---
 
@@ -648,7 +649,37 @@ Transformar o Omni Runner de um aplicativo centrado no usuário individual para 
 | 100.12.1 | Build APK v1.0.12 | CONCLUIDA |
 | 100.13.0 | BUG-32: MyAssessoriaBloc Isar stale → Supabase direto; BUG-33: HistoryScreen Isar-only → pull Supabase + merge | CONCLUIDA |
 | 100.13.1 | Build APK v1.0.13 | CONCLUIDA |
-| 100.14.0 | Teste no device v1.0.13 | TODO |
+| 100.14.0 | BUG-34/35: isSynced hardcoded false em _toRecord + syncOne skip sem markSynced | CONCLUIDA |
+| 100.14.1 | Build APK v1.0.14 | CONCLUIDA |
+| 100.15.0 | IMP-01: Remover team_vs_team de desafios + IMP-02: Warmup 5min no modo "Agora" | CONCLUIDA |
+| 100.15.1 | Deploy EF challenge-join com warmup | CONCLUIDA |
+| 100.15.2 | IMP-03: Janela de aceite para grupo (5/10/20/30 min) + migration + EFs | CONCLUIDA |
+| 100.15.3 | Build APK v1.0.15 | CONCLUIDA |
+| 100.16.0 | BUG-36: Histórico sem replay/mapa nas corridas 2+ — RunDetailsScreen só lia pontos do Isar local (vazio para sessions puxadas do Supabase); fix: download pontos do Storage bucket `session-points`, parse JSON, cache Isar, fallback Brasília | CONCLUIDA |
+| 100.16.1 | IMP-04: Cancelamento de campeonato — EF `champ-cancel` (draft/open/active→cancelled, withdraw participants, revoke pending invites); botão "Cancelar campeonato" com confirmação no ManageScreen; info card prazo de aceite de convites (antes do start_at); config.toml registrado | CONCLUIDA |
+| 100.16.2 | BUG-37: Emitir/Recolher OmniCoins e Badge Bad Request — `RemoteTokenIntentRepo` não enviava `nonce` nem `expires_at_iso`; corrigido key `id`→`intent_id` | CONCLUIDA |
+| 100.16.3 | Teste no device v1.0.16 | TODO |
+
+---
+
+## PHASE 22 — Atleta Verificado & Monetization Gate
+
+> **Status:** EM ANDAMENTO
+> **Origem:** Regra de produto congelada — stake>0 exige VERIFIED; stake=0 sempre liberado; ZERO override admin.
+
+| Sprint | Descrição | Status |
+|---|---|---|
+| 22.0.0 | Inventário & Mapa de Encaixe (Sprint 0) — leitura dos 5 docs-lei, busca no repo, identificação de arquivos-alvo para todas as sprints | CONCLUIDA |
+| 22.1.0 | Schema: tabela `athlete_verification` (state machine UNVERIFIED→CALIBRATING→MONITORED→VERIFIED→DOWNGRADED); RPC `eval_athlete_verification` (SECURITY DEFINER); helper `is_user_verified`; RLS own-read-only; trigger auto-create; backfill; DECISAO 053 | CONCLUIDA |
+| 22.1.1 | Checklist automático: RPC `get_verification_state()` (read-only, checklist booleans + contagens + thresholds); EF `eval-athlete-verification` (idempotente, user_id do JWT); thresholds finalizados (N=7, trust=80); scoring recalibrado (5pts/session); error codes padronizados; config.toml registrado | CONCLUIDA |
+| 22.2.0 | Monetization gate (3 camadas): DB triggers `trg_challenges_verified_stake_gate` + `trg_participants_verified_join_gate` (impossível burlar); RLS INSERT policy atualizada; EFs `challenge-create` + `challenge-join` com validação `ATHLETE_NOT_VERIFIED`; migration `20260224000003` | CONCLUIDA |
+| 22.2.1 | Integrity flags: dicionário oficial `_shared/integrity_flags.ts` (7 critical + 4 quality); verify-session EF reescrita com flags oficiais + 3 novos checks (NO_MOTION_PATTERN, BACKGROUND_GPS_GAP, TIME_SKEW); InvalidatedRunCard atualizado; schema sessions confirmado | CONCLUIDA |
+| 22.3.0 | Evaluation trigger: `verify-session` EF chama `eval_athlete_verification` RPC pós-verdict (fire-and-forget); `SyncRepo._syncOne()` chama `verify-session` EF pós-upsert; `eval-verification-cron` EF (pg_cron 03:00 UTC) reavalia CALIBRATING/MONITORED/DOWNGRADED + users com flags recentes; migration `20260224000004`; config.toml registrado | CONCLUIDA |
+| 22.4.0 | Flutter UX completa: `AthleteVerificationEntity` + `VerificationBloc` (load + eval) + `AthleteVerificationScreen` (status badge, progress bar, checklist com contagem regressiva, stats, botão reavaliar); `verification_gate.dart` modal sheet reutilizável; `ChallengeCreateScreen` intercepta stake>0 pré-submit; `ChallengeDetailsScreen._AcceptDeclineCard` intercepta join stake>0; server continua como autoridade final | CONCLUIDA |
+| 22.5.0 | Portal Next.js: página `/verification` (observabilidade read-only, KPIs, tabela atletas com status/trust/flags/corridas); botão "Reavaliar" (admin_master/professor) chama `eval_athlete_verification` RPC via API route; sidebar atualizado; ZERO override | CONCLUIDA |
+| 22.6.0 | Testes & Provas: `scripts/test_verification_gate.sh` (12 testes curl: stake=0 ok, stake>0 bloqueado UNVERIFIED, VERIFIED libera, DOWNGRADED bloqueia, service_role INSERT bloqueado por trigger, UPDATE 0→100 bloqueado, RLS bloqueia UPDATE direto); `scripts/TEST_PLAN_FLUTTER.md` (12 test cases manuais: tela verificação, gate create, gate join, fluxos completos, matriz de cobertura 4 camadas) | CONCLUIDA |
+| 22.7.0 | Consistência settle-challenge: stake>0 settle verifica VERIFIED de cada participante; quem perdeu status recebe apenas coins-base (sem pool); log `pool_forfeited`; ZERO override; caps + proteções existentes mantidos | CONCLUIDA |
+| 22.8.0 | QA Phase 22 + update docs finais | TODO |
 
 **Bugs corrigidos (100.1.0):**
 
@@ -703,6 +734,14 @@ Transformar o Omni Runner de um aplicativo centrado no usuário individual para 
 | BUG-31 | Solicitação falha: "column email does not exist" | `fn_request_join` referenciava `email` em `profiles` (não existe) | RPC recriado com `COALESCE(display_name, 'Atleta')` |
 | BUG-32 | Atleta aprovado mas "Minha Assessoria" vazia | `MyAssessoriaBloc` lia do Isar local (cache nunca atualizado após aprovação) | BLoC reescrito para query Supabase direto + sync Isar |
 | BUG-33 | Corrida sumiu do histórico (visível no Performance) | `HistoryScreen` lia apenas do Isar; troca de conta perdia sessions | Pull últimas 30 sessions do Supabase → merge Isar antes de exibir |
+| BUG-34 | Session do Supabase fica "PENDENTE" eternamente | `_toRecord()` hardcodeava `isSynced = false` | `..isSynced = entity.isSynced` |
+| BUG-35 | Sync não marca sessions sem pontos locais | `_syncOne()` retornava null sem `markSynced()` | `markSynced()` antes do return |
+| IMP-01 | Desafio team_vs_team não faz sentido (desafios são entre atletas) | Opção "Equipe" presente na criação | Removido segmento, simplificado `_submit()` |
+| IMP-02 | Desafio 1v1 "Agora" inicia instantaneamente (injusto) | `starts_at_ms = nowMs` no aceite | `starts_at_ms = nowMs + 5min` (warmup), countdown visual |
+| IMP-03 | Grupo: todos aceitam ao mesmo tempo, janela configurável | Grupo ativava com 2 aceites (como 1v1) | Janela de aceite (5/10/20/30 min) + ativa só quando todos aceitarem |
+| BUG-36 | Histórico: só 1a corrida tem replay/mapa correto | `RunDetailsScreen._loadPoints()` só lia pontos do Isar local; sessions puxadas do Supabase não tinham pontos locais → mapa sem polyline, posição fallback SP, sem replay | Download pontos do Supabase Storage (`session-points/{uid}/{sid}.json`), parse JSON → `LocationPointEntity`, cache no Isar; fallback Brasília |
+| IMP-04 | Staff não consegue cancelar campeonato | Não existia funcionalidade de cancelamento — sem EF, sem botão na UI | EF `champ-cancel` (draft/open/active → cancelled, withdraw participants, revoke invites); botão "Cancelar campeonato" com dialog de confirmação; info card "aceitar convite antes do início" |
+| BUG-37 | Emitir/Recolher OmniCoins e Badge de campeonato: Bad Request | `RemoteTokenIntentRepo.createIntent()` não enviava `nonce` nem `expires_at_iso` (campos obrigatórios do EF `token-create-intent`); também lia `data['id']` mas EF retorna `data['intent_id']` | Gerar `nonce` (UUID v4) e `expires_at_iso` (now+5min) no client antes de enviar; corrigir key `id` → `intent_id` na resposta |
 
 ---
 

@@ -164,6 +164,23 @@ serve(async (req: Request) => {
     const parts = participants as Participant[];
     const isLowerBetter = ch.metric === "pace";
 
+    // For stake>0 challenges, check which participants are still VERIFIED.
+    // Participants who lost VERIFIED during the challenge window do NOT
+    // receive pool winnings — only base participation coins.
+    // This prevents: get verified → join stake challenge → cheat → collect pool.
+    const verifiedSet = new Set<string>();
+    if (ch.entry_fee_coins > 0) {
+      const partIds = parts.map((p) => p.user_id);
+      const { data: verRows } = await db
+        .from("athlete_verification")
+        .select("user_id")
+        .in("user_id", partIds)
+        .eq("verification_status", "VERIFIED");
+      for (const v of (verRows ?? []) as { user_id: string }[]) {
+        verifiedSet.add(v.user_id);
+      }
+    }
+
     // Sort: primary by progress_value, secondary by last_submitted_at_ms (earlier wins ties)
     parts.sort((a, b) => {
       const diff = isLowerBetter
@@ -271,6 +288,25 @@ serve(async (req: Request) => {
         } else {
           outcome = "participated";
           coins = 10;
+        }
+      }
+
+      // Stake>0 eligibility: participants who lost VERIFIED during the
+      // challenge window forfeit pool winnings. They keep base participation
+      // coins only. This closes the verify→join→cheat→collect exploit.
+      if (ch.entry_fee_coins > 0 && !verifiedSet.has(p.user_id)) {
+        const baseCoin = isOneVsOne ? 25 : isTeamVsTeam ? 30 : 10;
+        if (coins > baseCoin) {
+          console.log(JSON.stringify({
+            request_id: requestId, fn: FN,
+            event: "pool_forfeited",
+            challenge_id: ch.id,
+            user_id: p.user_id,
+            original_coins: coins,
+            capped_coins: baseCoin,
+            reason: "ATHLETE_NOT_VERIFIED_AT_SETTLE",
+          }));
+          coins = baseCoin;
         }
       }
 

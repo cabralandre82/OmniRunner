@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — Arquitetura Técnica do Omni Runner
 
-> **Atualizado:** 23/02/2026
+> **Atualizado:** 24/02/2026
 > **Status:** Ativo — Pré-lançamento (QA em device real)
 > **Código:** 451 arquivos Dart (lib/) · 55 arquivos de teste · ~114k linhas
 
@@ -52,7 +52,7 @@
 │   Supabase Backend   │              │    Portal B2B        │
 │                      │              │    (Next.js)         │
 │  PostgreSQL (RLS)    │              │                      │
-│  41 Edge Functions   │              │  11 páginas          │
+│  41 Edge Functions   │              │  12 páginas          │
 │  8 SQL Migrations    │              │  Stripe checkout     │
 │  RPCs (SECURITY DEF) │              │  RBAC middleware     │
 │  pg_cron schedules   │              │  SSR auth            │
@@ -273,6 +273,7 @@ Pós-sessão:
 | Billing | `billing_customers`, `billing_products`, `billing_purchases`, `billing_events`, `billing_refund_requests`, `billing_auto_topup_settings` |
 | Social | `groups`, `group_members`, `friendships`, `events`, `event_participants` |
 | Progression | `badges`, `badge_awards`, `missions`, `mission_progress`, `xp_transactions`, `profile_progress` |
+| Verification | `athlete_verification` |
 | Notifications | `notification_log` |
 
 ### 8.2 RPC Functions (SECURITY DEFINER)
@@ -292,6 +293,9 @@ Pós-sessão:
 | `release_pending_to_balance` | Clearing: libera pendentes → disponível |
 | `check_daily_token_usage` | Rate limit de tokens |
 | `increment_wallet_balance` | Atualiza saldo atomicamente |
+| `eval_athlete_verification` | Avalia e transiciona estado de verificação do atleta (SECURITY DEFINER) |
+| `get_verification_state` | Retorna estado + checklist booleans + contagens + thresholds para o app (SECURITY DEFINER STABLE) |
+| `is_user_verified` | Helper: retorna true se atleta é VERIFIED (SECURITY DEFINER) |
 | `user_coaching_group_ids()` | Helper RLS (retorna group_ids do caller) |
 | `user_social_group_ids()` | Helper RLS (social groups) |
 | `is_group_admin_or_mod()` | Helper RLS (social admin check) |
@@ -308,7 +312,8 @@ Pós-sessão:
 | Wallet/Billing | `create-checkout-session`, `create-portal-session`, `list-purchases`, `webhook-payments`, `process-refund`, `auto-topup-check`, `auto-topup-cron` |
 | Clearing | `clearing-confirm-sent`, `clearing-confirm-received`, `clearing-open-dispute`, `clearing-cron` |
 | Progression | `calculate-progression`, `evaluate-badges`, `compute-leaderboard` |
-| Analytics | `submit-analytics`, `verify-session` |
+| Verification | `eval-athlete-verification`, `verify-session`, `eval-verification-cron` |
+| Analytics | `submit-analytics` |
 | Notifications | `notify-rules`, `send-push` |
 | Lifecycle | `lifecycle-cron` |
 
@@ -411,6 +416,9 @@ Amigos, grupos sociais, eventos, rankings, leaderboards.
 ### 12.8 Billing Context (Portal only)
 Next.js portal. Stripe (card/pix/boleto). Auto top-up. Refund. Nunca no app mobile.
 
+### 12.9 Verification Context (Atleta Verificado)
+State machine de verificação de atleta (`athlete_verification` table). UNVERIFIED→CALIBRATING→MONITORED→VERIFIED→DOWNGRADED. Gate de monetização: stake>0 exige VERIFIED. Trust score (0..100) computado server-side. ZERO override admin. Avaliação via RPC SECURITY DEFINER `eval_athlete_verification` (thresholds: N=7, trust>=80). Leitura via RPC `get_verification_state` (checklist booleans + contagens). EF `eval-athlete-verification` (POST, JWT, idempotente). RLS: own-read-only. Enforcement: 4 camadas — Flutter UX gate (verification_gate.dart modal) + EF validation + RLS INSERT policy + DB triggers (`trg_challenges_verified_stake_gate`, `trg_participants_verified_join_gate`) que bloqueiam mesmo service_role. Flutter: `AthleteVerificationEntity`, `VerificationBloc` (load/eval), `AthleteVerificationScreen` (status+progress+checklist), gate integrado em `ChallengeCreateScreen._submit()` e `ChallengeDetailsScreen._AcceptDeclineCard._onAccept()`. Reavaliação automática: event-driven (SyncRepo→verify-session→eval RPC fire-and-forget) + cron diário (`eval-verification-cron` EF via pg_cron 03:00 UTC, batch 100 candidatos).
+
 ---
 
 ## 13. MONETIZATION MODEL (Loja-Safe)
@@ -435,7 +443,7 @@ O modelo de receita é **B2B SaaS** (plataforma → assessoria). O app **nunca p
 | Env vars | `--dart-define-from-file=.env.dev` |
 | Keystore | `omnirunner-release.keystore` |
 | APK atual | `v1.0.13` (127 MB) |
-| Supabase | 41 Edge Functions + 8 migrations |
+| Supabase | 42 Edge Functions + 11 migrations |
 | Portal | `portal/` (Next.js 14, não deployado ainda) |
 | CI/CD | Manual (flutter build apk) |
 | Min Android SDK | 21 (Android 5.0) |

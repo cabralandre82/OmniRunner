@@ -84,4 +84,34 @@ class SyncService {
     await client.from(_table).upsert(payload);
     AppLogger.info('Upsert OK: ${payload['id']}', tag: _tag);
   }
+
+  /// Calls the verify-session Edge Function for server-side integrity checks.
+  ///
+  /// Fire-and-forget: failures are logged but do not break the sync flow.
+  /// The EF also triggers eval_athlete_verification automatically.
+  Future<void> verifySession({
+    required String sessionId,
+    required String userId,
+    required List<Map<String, Object>> route,
+    required double totalDistanceM,
+    required int startTimeMs,
+    required int endTimeMs,
+  }) async {
+    if (!isConfigured) return;
+    try {
+      await Supabase.instance.client.functions
+          .invoke('verify-session', body: {
+            'session_id': sessionId,
+            'user_id': userId,
+            'route': route,
+            'total_distance_m': totalDistanceM,
+            'start_time_ms': startTimeMs,
+            'end_time_ms': endTimeMs,
+          })
+          .timeout(const Duration(seconds: 20));
+      AppLogger.info('verify-session OK: $sessionId', tag: _tag);
+    } on Exception catch (e) {
+      AppLogger.warn('verify-session failed for $sessionId: $e', tag: _tag);
+    }
+  }
 }

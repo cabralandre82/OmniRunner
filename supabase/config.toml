@@ -448,6 +448,9 @@ verify_jwt = false
 [functions.champ-open]
 verify_jwt = false
 
+[functions.champ-cancel]
+verify_jwt = false
+
 [functions.champ-accept-invite]
 verify_jwt = false
 
@@ -491,6 +494,12 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.token-consume-intent]
+verify_jwt = false
+
+[functions.eval-athlete-verification]
+verify_jwt = false
+
+[functions.eval-verification-cron]
 verify_jwt = false
 
 [functions.token-create-intent]

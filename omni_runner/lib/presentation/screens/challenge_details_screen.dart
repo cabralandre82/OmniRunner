@@ -12,8 +12,11 @@ import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_event.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_state.dart';
+import 'package:omni_runner/presentation/blocs/verification/verification_bloc.dart';
+import 'package:omni_runner/presentation/blocs/verification/verification_event.dart';
 import 'package:omni_runner/presentation/screens/challenge_result_screen.dart';
 import 'package:omni_runner/presentation/widgets/dispute_status_card.dart';
+import 'package:omni_runner/presentation/widgets/verification_gate.dart';
 
 class ChallengeDetailsScreen extends StatelessWidget {
   final String challengeId;
@@ -117,6 +120,7 @@ class _Body extends StatelessWidget {
           _AcceptDeclineCard(
             challenge: challenge,
             userId: uid,
+            hasStake: challenge.rules.entryFeeCoins > 0,
           ),
           const SizedBox(height: 12),
         ],
@@ -124,6 +128,22 @@ class _Body extends StatelessWidget {
         // ── Share / Invite (creator on pending) ──────────────────────
         if (isPending && isCreator) ...[
           _ShareInviteCard(challenge: challenge),
+          const SizedBox(height: 12),
+        ],
+
+        // ── Group acceptance countdown ────────────────────────────────
+        if (isPending &&
+            challenge.type == ChallengeType.group &&
+            challenge.acceptDeadlineMs != null) ...[
+          _AcceptDeadlineCard(deadlineMs: challenge.acceptDeadlineMs!),
+          const SizedBox(height: 12),
+        ],
+
+        // ── Warmup countdown ──────────────────────────────────────────
+        if (challenge.status == ChallengeStatus.active &&
+            challenge.startsAtMs != null &&
+            challenge.startsAtMs! > DateTime.now().millisecondsSinceEpoch) ...[
+          _WarmupCard(startsAtMs: challenge.startsAtMs!),
           const SizedBox(height: 12),
         ],
 
@@ -229,7 +249,7 @@ class _Body extends StatelessWidget {
       };
 
   static String _modeLabel(ChallengeStartMode m) => switch (m) {
-        ChallengeStartMode.onAccept => 'Começa ao aceitar',
+        ChallengeStartMode.onAccept => '5 min após aceite',
         ChallengeStartMode.scheduled => 'Agendado',
       };
 
@@ -262,22 +282,270 @@ class _Body extends StatelessWidget {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// Group acceptance deadline card
+// ═════════════════════════════════════════════════════════════════════════════
+
+class _AcceptDeadlineCard extends StatefulWidget {
+  final int deadlineMs;
+  const _AcceptDeadlineCard({required this.deadlineMs});
+
+  @override
+  State<_AcceptDeadlineCard> createState() => _AcceptDeadlineCardState();
+}
+
+class _AcceptDeadlineCardState extends State<_AcceptDeadlineCard> {
+  late final Stream<int> _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Stream.periodic(const Duration(seconds: 1), (_) {
+      return widget.deadlineMs - DateTime.now().millisecondsSinceEpoch;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return StreamBuilder<int>(
+      stream: _ticker,
+      initialData: widget.deadlineMs - DateTime.now().millisecondsSinceEpoch,
+      builder: (context, snap) {
+        final remainMs = snap.data ?? 0;
+        if (remainMs <= 0) {
+          return Card(
+            elevation: 0,
+            color: Colors.grey.withValues(alpha: 0.1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Icon(Icons.timer_off, color: Colors.grey, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text('Prazo para aceitar encerrado',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey)),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final min = remainMs ~/ 60000;
+        final sec = (remainMs % 60000) ~/ 1000;
+        final countdown = '${min.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
+
+        return Card(
+          elevation: 0,
+          color: Colors.blue.withValues(alpha: 0.08),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: Colors.blue.withValues(alpha: 0.3)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.group_add_rounded, color: Colors.blue, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text('Aguardando todos aceitarem',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue.shade800)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(countdown,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: Colors.blue.shade800,
+                        letterSpacing: 3)),
+                const SizedBox(height: 4),
+                Text('Quando todos aceitarem, a corrida inicia em 5 minutos.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant)),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Warmup countdown card
+// ═════════════════════════════════════════════════════════════════════════════
+
+class _WarmupCard extends StatefulWidget {
+  final int startsAtMs;
+  const _WarmupCard({required this.startsAtMs});
+
+  @override
+  State<_WarmupCard> createState() => _WarmupCardState();
+}
+
+class _WarmupCardState extends State<_WarmupCard> {
+  late final Stream<int> _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Stream.periodic(const Duration(seconds: 1), (_) {
+      return widget.startsAtMs - DateTime.now().millisecondsSinceEpoch;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return StreamBuilder<int>(
+      stream: _ticker,
+      initialData: widget.startsAtMs - DateTime.now().millisecondsSinceEpoch,
+      builder: (context, snap) {
+        final remainMs = snap.data ?? 0;
+        if (remainMs <= 0) {
+          return Card(
+            elevation: 0,
+            color: Colors.green.withValues(alpha: 0.1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(color: Colors.green.withValues(alpha: 0.4)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Icon(Icons.directions_run, color: Colors.green, size: 28),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text('Valendo! Vá correr!',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold, color: Colors.green)),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final min = (remainMs ~/ 60000);
+        final sec = ((remainMs % 60000) ~/ 1000);
+        final countdown = '${min.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
+
+        return Card(
+          elevation: 0,
+          color: Colors.orange.withValues(alpha: 0.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: Colors.orange.withValues(alpha: 0.4)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.timer_rounded, color: Colors.orange, size: 28),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text('Preparem-se!',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold, color: Colors.orange.shade800)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(countdown,
+                    style: theme.textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: Colors.orange.shade800,
+                        letterSpacing: 4)),
+                const SizedBox(height: 4),
+                Text('O desafio começa em breve. Use esse tempo para se preparar!',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant)),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
 // Accept / Decline card
 // ═════════════════════════════════════════════════════════════════════════════
 
-class _AcceptDeclineCard extends StatelessWidget {
+class _AcceptDeclineCard extends StatefulWidget {
   final ChallengeEntity challenge;
   final String userId;
+  final bool hasStake;
 
   const _AcceptDeclineCard({
     required this.challenge,
     required this.userId,
+    required this.hasStake,
   });
+
+  @override
+  State<_AcceptDeclineCard> createState() => _AcceptDeclineCardState();
+}
+
+class _AcceptDeclineCardState extends State<_AcceptDeclineCard> {
+  VerificationBloc? _verificationBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.hasStake) {
+      _verificationBloc = VerificationBloc()
+        ..add(const LoadVerificationState());
+    }
+  }
+
+  @override
+  void dispose() {
+    _verificationBloc?.close();
+    super.dispose();
+  }
+
+  Future<void> _onAccept() async {
+    if (widget.hasStake) {
+      final canProceed = await checkVerificationGate(
+        context,
+        verification: _verificationBloc?.cached,
+        entryFeeCoins: widget.challenge.rules.entryFeeCoins,
+      );
+      if (!canProceed) return;
+    }
+    if (!mounted) return;
+    context.read<ChallengesBloc>().add(
+          JoinChallengeRequested(
+            challengeId: widget.challenge.id,
+            userId: widget.userId,
+          ),
+        );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final challenge = widget.challenge;
 
     return Card(
       elevation: 0,
@@ -304,8 +572,8 @@ class _AcceptDeclineCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               challenge.rules.startMode == ChallengeStartMode.onAccept
-                  ? 'O desafio começa assim que você aceitar. '
-                    'Corra no seu local — funciona em qualquer cidade!'
+                  ? 'Ao aceitar, todos terão 5 minutos para se preparar. '
+                    'Depois disso, valendo! Corra no seu local — funciona em qualquer cidade!'
                   : 'O desafio está agendado. Aceite para participar. '
                     'Corra no seu local — funciona em qualquer cidade!',
               style: theme.textTheme.bodySmall
@@ -327,14 +595,7 @@ class _AcceptDeclineCard extends StatelessWidget {
                   child: FilledButton.icon(
                     icon: const Icon(Icons.check_rounded, size: 18),
                     label: const Text('Aceitar'),
-                    onPressed: () {
-                      context.read<ChallengesBloc>().add(
-                            JoinChallengeRequested(
-                              challengeId: challenge.id,
-                              userId: userId,
-                            ),
-                          );
-                    },
+                    onPressed: _onAccept,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -347,8 +608,8 @@ class _AcceptDeclineCard extends StatelessWidget {
                     onPressed: () {
                       context.read<ChallengesBloc>().add(
                             DeclineChallengeRequested(
-                              challengeId: challenge.id,
-                              userId: userId,
+                              challengeId: widget.challenge.id,
+                              userId: widget.userId,
                             ),
                           );
                       Navigator.of(context).pop();
@@ -519,8 +780,10 @@ class _RulesCard extends StatelessWidget {
             _row('Duração', _formatWindow(rules.windowMs)),
             _row('Início',
                 rules.startMode == ChallengeStartMode.onAccept
-                    ? 'Quando todos aceitarem'
+                    ? '5 min após todos aceitarem'
                     : _formatScheduled(rules.fixedStartMs)),
+            if (rules.acceptWindowMin != null)
+              _row('Prazo p/ aceitar', '${rules.acceptWindowMin} min'),
             _row('Corrida mínima',
                 '${(rules.minSessionDistanceM / 1000).toStringAsFixed(1)} km'),
             _row('Validação',

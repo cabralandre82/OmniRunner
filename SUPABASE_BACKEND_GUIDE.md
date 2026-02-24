@@ -259,6 +259,9 @@ NOTIFICATIONS (2)
 ├── device_tokens          — FCM/APNS push tokens por user/device
 └── notification_log       — Log de notificações enviadas
 
+VERIFICATION (1)
+└── athlete_verification   — State machine de verificação de atleta (UNVERIFIED/CALIBRATING/MONITORED/VERIFIED/DOWNGRADED; trust_score 0..100; own-read-only RLS; mutations via SECURITY DEFINER RPC only)
+
 ANALYTICS & OBSERVABILITY (6)
 ├── analytics_submissions  — Idempotência de submit-analytics
 ├── athlete_baselines      — Baselines calculados (4-week rolling)
@@ -384,6 +387,10 @@ billing_purchases (id)
 | `supabase/migrations/20260221_billing_refund_requests.sql` | billing_refund_requests table (requested→approved→processed/rejected) + RLS admin_master SELECT/INSERT + UNIQUE partial index open requests + ALTER billing_purchases status adds 'refunded' + ALTER billing_events event_type adds 'refund_requested'. See DECISAO 051 |
 | `supabase/migrations/20260221_billing_limits.sql` | billing_limits table (group_id PK, daily_token_limit, daily_redemption_limit) + RLS staff SELECT / admin_master UPDATE + RPCs get_billing_limits() and check_daily_token_usage(). See DECISAO 052 |
 | `supabase/migrations/20260221_challenge_limits.sql` | DB triggers: fn_enforce_challenge_limits (max 20 challenges/day/user) on challenges INSERT + fn_enforce_participant_limits (max 5 accepted + max 10 pending per athlete) on challenge_participants INSERT/UPDATE. See DECISAO 052 |
+| `supabase/migrations/20260224000001_athlete_verification.sql` | athlete_verification table (state machine) + RLS own-read-only + eval_athlete_verification RPC (SECURITY DEFINER) + is_user_verified helper + handle_new_user_gamification trigger update + backfill |
+| `supabase/migrations/20260224000002_verification_checklist_rpc.sql` | Updated eval_athlete_verification (N=7, trust=80, scoring recalibrado) + get_verification_state RPC (read-only checklist + counts + thresholds) |
+| `supabase/migrations/20260224000003_verification_monetization_gate.sql` | Monetization gate: RLS INSERT policy atualizada (challenges); DB triggers `fn_enforce_verified_stake_gate` (challenges INSERT/UPDATE) + `fn_enforce_verified_join_gate` (challenge_participants INSERT); impossível burlar mesmo com service_role |
+| `supabase/migrations/20260224000004_verification_cron.sql` | pg_cron schedule: `eval-verification-cron` diário 03:00 UTC via pg_net HTTP |
 
 ---
 
@@ -409,8 +416,8 @@ billing_purchases (id)
 | `groups` | Open/Closed=todos, Secret=membros | Auth | Admin | - |
 | `group_members` | Membros do grupo | Próprio | Próprio ou Mod/Admin | - |
 | `group_goals` | Membros do grupo | Mod/Admin | Server | - |
-| `challenges` | Participantes | Criador | Server | - |
-| `challenge_participants` | Participantes | Server | Próprio | - |
+| `challenges` | Participantes | Criador (stake=0 livre; stake>0 VERIFIED only — RLS + trigger) | Server | - |
+| `challenge_participants` | Participantes | Server (stake>0 VERIFIED only — trigger) | Próprio | - |
 | `challenge_results` | Participantes | Server | - | - |
 | `challenge_run_bindings` | Próprio | Server | - | - |
 | `leaderboards` | Global/Season=todos, Group=membros | Server | Server | - |
@@ -471,11 +478,11 @@ billing_purchases (id)
 
 ## 5. EDGE FUNCTIONS
 
-### 5.1 Inventário (27 Edge Functions)
+### 5.1 Inventário (28 Edge Functions)
 
 | # | Function | Auth | Rate Limit | Descrição |
 |:-:|----------|------|:----------:|-----------|
-| 1 | `verify-session` | JWT | 30/60s | Anti-cheat server-side (speed, teleport, plausibility) |
+| 1 | `verify-session` | JWT | 60/60s | Pipeline único anti-cheat server-side: 11 checks (7 critical + 4 quality), flags oficiais de `_shared/integrity_flags.ts`, server OVERWRITES client flags; pós-verdict chama `eval_athlete_verification` RPC (fire-and-forget) |
 | 2 | `evaluate-badges` | JWT | 20/60s | Avalia catálogo de badges e credita XP/Coins |
 | 3 | `calculate-progression` | JWT | 20/60s | Calcula XP, nível, streaks e metas |
 | 4 | `settle-challenge` | JWT | 10/60s | Calcula resultados, distribui Coins (stake cap 10k), fecha challenges |
@@ -502,6 +509,8 @@ billing_purchases (id)
 | 25 | `auto-topup-cron` | Service role | - | Sweep horário: itera grupos enabled, chama auto-topup-check |
 | 26 | `create-portal-session` | JWT (admin_master) | 10/60s | Cria Stripe Customer Portal session |
 | 27 | `process-refund` | Service role | - | Executa refund aprovado: Stripe API + debit credits (DECISAO 051) |
+| 28 | `eval-athlete-verification` | JWT | 10/60s | Avalia verificação do atleta: session count + integrity + trust_score → state machine transition (idempotente); retorna checklist completo |
+| 29 | `eval-verification-cron` | Service role | - | Cron diário (03:00 UTC): reavalia candidatos (CALIBRATING/MONITORED/DOWNGRADED, flags recentes, não avaliados 24h); batch max 100; usa eval_athlete_verification RPC |
 
 ### 5.8 Clearing — Detalhes
 
@@ -780,6 +789,8 @@ Já documentado em `contracts/analytics_api.md`. Processa baselines (4 semanas),
 |---------|--------|--------|------|
 | `trg_challenge_creation_limit` | `challenges` INSERT | 20/day/user | RAISE EXCEPTION |
 | `trg_participant_limits` | `challenge_participants` INSERT/UPDATE | 5 accepted + 10 pending | RAISE EXCEPTION |
+| `trg_challenges_verified_stake_gate` | `challenges` INSERT/UPDATE(entry_fee_coins) | entry_fee_coins>0 requires VERIFIED | RAISE EXCEPTION ATHLETE_NOT_VERIFIED |
+| `trg_participants_verified_join_gate` | `challenge_participants` INSERT | challenge.entry_fee_coins>0 requires VERIFIED | RAISE EXCEPTION ATHLETE_NOT_VERIFIED |
 
 ---
 

@@ -94,9 +94,7 @@ serve(async (req: Request) => {
       return jsonErr(404, "NOT_FOUND", "Desafio não encontrado", requestId);
     }
 
-    const allowedStatuses = challenge.type === "group"
-      ? ["pending", "active"]
-      : ["pending"];
+    const allowedStatuses = ["pending"];
     if (!allowedStatuses.includes(challenge.status)) {
       status = 409;
       return jsonErr(409, "INVALID_STATUS", `Desafio não está aceitando participantes (status: ${challenge.status})`, requestId);
@@ -105,6 +103,22 @@ serve(async (req: Request) => {
     if (challenge.creator_user_id === user.id) {
       status = 409;
       return jsonErr(409, "ALREADY_CREATOR", "Você é o criador deste desafio", requestId);
+    }
+
+    // ── Monetization gate: stake>0 requires VERIFIED ──────────────────
+    if (challenge.entry_fee_coins > 0) {
+      const { data: verifiedRow, error: verErr } = await db
+        .rpc("is_user_verified", { p_user_id: user.id });
+
+      if (verErr || verifiedRow !== true) {
+        status = 403;
+        errorCode = "ATHLETE_NOT_VERIFIED";
+        return jsonErr(
+          403, "ATHLETE_NOT_VERIFIED",
+          "Apenas atletas verificados podem participar de desafios com stake > 0. Complete sua verificação primeiro.",
+          requestId,
+        );
+      }
     }
 
     // For team_vs_team challenges, determine team assignment
@@ -264,28 +278,35 @@ serve(async (req: Request) => {
       const acceptedCount = (allParts ?? []).filter(
         (p: { status: string }) => p.status === "accepted"
       ).length;
+      const invitedCount = (allParts ?? []).filter(
+        (p: { status: string }) => p.status === "invited"
+      ).length;
 
       let shouldStart = false;
+
       if (challenge.type === "one_vs_one") {
         shouldStart = acceptedCount === 2;
-      } else if (challenge.type === "team_vs_team") {
-        const teamACount = (allParts ?? []).filter(
-          (p: { status: string; team: string | null }) =>
-            p.status === "accepted" && p.team === "A"
-        ).length;
-        const teamBCount = (allParts ?? []).filter(
-          (p: { status: string; team: string | null }) =>
-            p.status === "accepted" && p.team === "B"
-        ).length;
-        shouldStart = teamACount >= 1 && teamBCount >= 1;
+      } else if (challenge.type === "group") {
+        // Group: activate when ALL invited have accepted (no more "invited")
+        // OR when accept deadline has passed and at least 2 accepted
+        const deadlinePassed = challenge.accept_deadline_ms
+          ? Date.now() >= challenge.accept_deadline_ms
+          : false;
+
+        if (invitedCount === 0 && acceptedCount >= 2) {
+          shouldStart = true;
+        } else if (deadlinePassed && acceptedCount >= 2) {
+          shouldStart = true;
+        }
       } else {
         shouldStart = acceptedCount >= 2;
       }
 
       if (shouldStart) {
+        const WARMUP_MS = 5 * 60 * 1000; // 5 min prep time
         const nowMs = Date.now();
-        const startsAtMs = nowMs;
-        const endsAtMs = nowMs + challenge.window_ms;
+        const startsAtMs = nowMs + WARMUP_MS;
+        const endsAtMs = startsAtMs + challenge.window_ms;
 
         const { error: activateErr } = await db
           .from("challenges")

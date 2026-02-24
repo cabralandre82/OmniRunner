@@ -4,6 +4,7 @@ import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/data/datasources/sync_service.dart';
 import 'package:omni_runner/data/models/isar/workout_session_record.dart';
 import 'package:omni_runner/data/models/proto/workout_proto_mapper.dart';
+import 'package:omni_runner/domain/entities/location_point_entity.dart';
 import 'package:omni_runner/domain/failures/sync_failure.dart';
 import 'package:omni_runner/domain/repositories/i_points_repo.dart';
 import 'package:omni_runner/domain/repositories/i_sync_repo.dart';
@@ -90,7 +91,10 @@ class SyncRepo implements ISyncRepo {
   ) async {
     try {
       final points = await _pointsRepo.getBySessionId(record.sessionUuid);
-      if (points.isEmpty) return null; // Skip sessions with 0 points
+      if (points.isEmpty) {
+        await markSynced(record.sessionUuid);
+        return null;
+      }
 
       // 1. Upload points to Storage
       final storagePath = await _svc.uploadPoints(
@@ -110,6 +114,11 @@ class SyncRepo implements ISyncRepo {
 
       // 3. Mark synced locally
       await markSynced(record.sessionUuid);
+
+      // 4. Server-side verification (fire-and-forget)
+      // verify-session validates integrity and triggers eval_athlete_verification
+      _triggerVerification(record, userId, points);
+
       return null;
     } on Exception catch (e, st) {
       final msg = e.toString();
@@ -119,5 +128,31 @@ class SyncRepo implements ISyncRepo {
       }
       return SyncServerError(msg);
     }
+  }
+
+  void _triggerVerification(
+    WorkoutSessionRecord record,
+    String userId,
+    List<LocationPointEntity> points,
+  ) {
+    final route = points
+        .map((p) => <String, Object>{
+              'lat': p.lat,
+              'lng': p.lng,
+              'timestamp_ms': p.timestampMs,
+              if (p.alt != null) 'alt': p.alt!,
+              if (p.accuracy != null) 'accuracy': p.accuracy!,
+              if (p.speed != null) 'speed': p.speed!,
+            })
+        .toList();
+
+    _svc.verifySession(
+      sessionId: record.sessionUuid,
+      userId: userId,
+      route: route,
+      totalDistanceM: record.totalDistanceM,
+      startTimeMs: record.startTimeMs,
+      endTimeMs: record.endTimeMs ?? record.startTimeMs,
+    );
   }
 }

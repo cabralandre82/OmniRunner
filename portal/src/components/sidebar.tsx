@@ -14,6 +14,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/credits", label: "Créditos", roles: ["admin_master", "professor", "assistente"] },
   { href: "/billing", label: "Faturamento", roles: ["admin_master"] },
   { href: "/athletes", label: "Atletas", roles: ["admin_master", "professor", "assistente"] },
+  { href: "/verification", label: "Verificação", roles: ["admin_master", "professor", "assistente"] },
   { href: "/engagement", label: "Engajamento", roles: ["admin_master", "professor", "assistente"] },
   { href: "/settings", label: "Configurações", roles: ["admin_master", "professor", "assistente"] },
 ];

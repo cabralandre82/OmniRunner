@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/analytics/product_event_tracker.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/push/notification_rules_service.dart';
@@ -11,7 +10,10 @@ import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_event.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_state.dart';
+import 'package:omni_runner/presentation/blocs/verification/verification_bloc.dart';
+import 'package:omni_runner/presentation/blocs/verification/verification_event.dart';
 import 'package:omni_runner/presentation/screens/challenge_invite_screen.dart';
+import 'package:omni_runner/presentation/widgets/verification_gate.dart';
 
 class ChallengeCreateScreen extends StatefulWidget {
   const ChallengeCreateScreen({super.key});
@@ -26,6 +28,9 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
   final _targetCtrl = TextEditingController();
   final _feeCtrl = TextEditingController(text: '0');
 
+  final _verificationBloc = VerificationBloc()
+    ..add(const LoadVerificationState());
+
   /// 0 = Agora, 1 = Agendado
   int _mode = 0;
 
@@ -35,6 +40,9 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
 
   /// For "Agora" mode: window in minutes after accept
   int _quickWindowMin = 60;
+
+  /// For group challenges: acceptance window in minutes
+  int _acceptWindowMin = 10;
 
   /// For "Agendado" mode
   DateTime? _scheduledDate;
@@ -49,6 +57,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
         'step': 'form',
       });
     }
+    _verificationBloc.close();
     _titleCtrl.dispose();
     _targetCtrl.dispose();
     _feeCtrl.dispose();
@@ -106,7 +115,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                     Expanded(child: _ModeCard(
                       icon: Icons.flash_on_rounded,
                       label: 'Agora',
-                      description: 'Inicia ao aceitar, cada um corre no seu local',
+                      description: 'Aceita → 5 min para se preparar → valendo!',
                       selected: _mode == 0,
                       onTap: () => setState(() => _mode = 0),
                     )),
@@ -151,17 +160,12 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                       label: Text('Grupo'),
                       icon: Icon(Icons.groups),
                     ),
-                    ButtonSegment(
-                      value: ChallengeType.teamVsTeam,
-                      label: Text('Equipe'),
-                      icon: Icon(Icons.shield_rounded),
-                    ),
                   ],
                   selected: {_type},
                   onSelectionChanged: (v) =>
                       setState(() => _type = v.first),
                 ),
-                if (_type == ChallengeType.teamVsTeam) ...[
+                if (_type == ChallengeType.group) ...[
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -175,9 +179,8 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Sua assessoria vs outra assessoria. '
-                            'Todos os atletas colocam o mesmo valor de OmniCoins. '
-                            'A equipe vencedora divide o prêmio.',
+                            'Convide vários atletas de qualquer assessoria. '
+                            'Cada um corre no seu local. Quem tiver o melhor resultado ganha!',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: cs.onSurfaceVariant,
                             ),
@@ -236,6 +239,12 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                 if (_mode == 0) _buildQuickFields(theme),
                 if (_mode == 1) _buildScheduledFields(theme),
 
+                // ── Group acceptance window ──────────────────────────
+                if (_type == ChallengeType.group && _mode == 0) ...[
+                  const SizedBox(height: 16),
+                  _buildAcceptWindowFields(theme),
+                ],
+
                 const SizedBox(height: 16),
 
                 // ── Entry fee ────────────────────────────────────────
@@ -291,7 +300,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                 FilledButton.icon(
                   icon: const Icon(Icons.emoji_events),
                   label: Text(_mode == 0
-                      ? 'Criar Desafio (começa ao aceitar)'
+                      ? 'Criar Desafio'
                       : 'Criar Desafio Agendado'),
                   onPressed: _submit,
                 ),
@@ -310,12 +319,12 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Janela de início',
+        Text('Tempo para correr',
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
-        Text('Cada corredor terá esse tempo para completar suas corridas, '
-            'independente de onde estiver:',
+        Text('Após o aceite, todos têm 5 minutos para se preparar. '
+            'Depois, cada corredor terá esse tempo para completar suas corridas:',
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.outline)),
         const SizedBox(height: 8),
@@ -341,6 +350,47 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
       onSelected: (_) => setState(() => _quickWindowMin = minutes),
       showCheckmark: false,
       selectedColor: Theme.of(context).colorScheme.primaryContainer,
+      side: selected ? BorderSide.none : null,
+      visualDensity: VisualDensity.compact,
+    );
+  }
+
+  // ── Group acceptance window fields ─────────────────────────────────────
+
+  Widget _buildAcceptWindowFields(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Tempo para aceitar',
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        Text('Todos os convidados terão esse tempo para aceitar. '
+            'Quando todos aceitarem, a corrida inicia em 5 minutos.',
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: theme.colorScheme.outline)),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          children: [
+            _acceptChip('5 min', 5),
+            _acceptChip('10 min', 10),
+            _acceptChip('20 min', 20),
+            _acceptChip('30 min', 30),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _acceptChip(String label, int minutes) {
+    final selected = _acceptWindowMin == minutes;
+    return FilterChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => setState(() => _acceptWindowMin = minutes),
+      showCheckmark: false,
+      selectedColor: Theme.of(context).colorScheme.secondaryContainer,
       side: selected ? BorderSide.none : null,
       visualDensity: VisualDensity.compact,
     );
@@ -503,6 +553,16 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
     }
 
     final fee = int.tryParse(_feeCtrl.text) ?? 0;
+
+    // Monetization gate: stake > 0 requires VERIFIED status
+    if (fee > 0) {
+      final canProceed = await checkVerificationGate(
+        context,
+        verification: _verificationBloc.cached,
+        entryFeeCoins: fee,
+      );
+      if (!canProceed) return;
+    }
     final identity = sl<UserIdentityProvider>();
     final uid = identity.userId;
     final displayName = identity.displayName;
@@ -546,47 +606,12 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
       startMode: startMode,
       fixedStartMs: fixedStartMs,
       entryFeeCoins: fee,
+      acceptWindowMin: _type == ChallengeType.group && _mode == 0
+          ? _acceptWindowMin
+          : null,
     );
 
-    String? teamAGroupId;
-    String? teamAGroupName;
-    final String typeStr;
-
-    if (_type == ChallengeType.teamVsTeam) {
-      typeStr = 'team_vs_team';
-      try {
-        final db = Supabase.instance.client;
-        final profile = await db
-            .from('profiles')
-            .select('active_coaching_group_id')
-            .eq('id', uid)
-            .maybeSingle();
-        teamAGroupId = profile?['active_coaching_group_id'] as String?;
-        if (teamAGroupId == null) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Você precisa estar em uma assessoria para criar desafio de equipe.')),
-            );
-          }
-          return;
-        }
-        final group = await db
-            .from('coaching_groups')
-            .select('name')
-            .eq('id', teamAGroupId)
-            .maybeSingle();
-        teamAGroupName = (group?['name'] as String?) ?? '';
-      } catch (_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Erro ao carregar dados da assessoria.')),
-          );
-        }
-        return;
-      }
-    } else {
-      typeStr = _type == ChallengeType.group ? 'group' : 'oneVsOne';
-    }
+    final typeStr = _type == ChallengeType.group ? 'group' : 'oneVsOne';
 
     if (!mounted) return;
 
@@ -596,8 +621,6 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
           type: typeStr,
           rules: rules,
           title: _titleCtrl.text.isEmpty ? null : _titleCtrl.text,
-          teamAGroupId: teamAGroupId,
-          teamAGroupName: teamAGroupName,
         ));
   }
 }

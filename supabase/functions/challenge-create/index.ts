@@ -98,6 +98,7 @@ serve(async (req: Request) => {
       creator_display_name,
       team_a_group_id,
       team_b_group_id,
+      accept_window_min,
     } = body;
 
     if (!VALID_TYPES.includes(type)) {
@@ -115,6 +116,22 @@ serve(async (req: Request) => {
     if (!VALID_ANTI_CHEAT.includes(anti_cheat_policy)) {
       status = 400;
       return jsonErr(400, "INVALID_ANTI_CHEAT", `anti_cheat_policy must be one of: ${VALID_ANTI_CHEAT.join(", ")}`, requestId);
+    }
+
+    // ── Monetization gate: stake>0 requires VERIFIED ──────────────────
+    if (entry_fee_coins > 0) {
+      const { data: verifiedRow, error: verErr } = await db
+        .rpc("is_user_verified", { p_user_id: user.id });
+
+      if (verErr || verifiedRow !== true) {
+        status = 403;
+        errorCode = "ATHLETE_NOT_VERIFIED";
+        return jsonErr(
+          403, "ATHLETE_NOT_VERIFIED",
+          "Apenas atletas verificados podem criar desafios com stake > 0. Complete sua verificação primeiro.",
+          requestId,
+        );
+      }
     }
 
     // Idempotent: if challenge already exists, return it
@@ -152,6 +169,11 @@ serve(async (req: Request) => {
       anti_cheat_policy,
       created_at_ms,
     };
+
+    if (type === "group" && accept_window_min) {
+      insertData.accept_window_min = accept_window_min;
+      insertData.accept_deadline_ms = created_at_ms + accept_window_min * 60 * 1000;
+    }
 
     if (type === "team_vs_team" && team_a_group_id) {
       insertData.team_a_group_id = team_a_group_id;

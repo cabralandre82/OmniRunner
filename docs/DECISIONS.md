@@ -3483,4 +3483,365 @@ Antes de criar o intent:
 
 ---
 
+## DECISAO 053 — Atleta Verificado: State Machine & Monetization Gate
+
+**Data:** 2026-02-24
+**Sprint:** 22.1.0
+**Status:** CONGELADA
+
+### Contexto
+
+O sistema de gamificação permite desafios com `entry_fee_coins > 0` (stake). Sem um gate de verificação, qualquer usuário — inclusive recém-cadastrados ou com histórico de fraude — pode criar e participar de desafios com stake, expondo outros atletas a risco.
+
+### Decisão
+
+Implementar um sistema de "Atleta Verificado" com as seguintes regras **congeladas**:
+
+1. **stake=0 sempre liberado** — qualquer usuário pode criar/participar de desafios gratuitos
+2. **stake>0 exige `verification_status = 'VERIFIED'`** — enforçado no servidor (Edge Functions)
+3. **ZERO override** — não existe e nunca será criado qualquer botão, endpoint, backdoor, ajuste manual ou "admin set verified"
+4. **Server wins** — o app pode mostrar UX hints (pré-check), mas o servidor é a fonte de verdade para elegibilidade
+
+### State Machine
+
+```
+UNVERIFIED → CALIBRATING → MONITORED → VERIFIED
+                                         ↓
+                                     DOWNGRADED
+```
+
+| Estado | Descrição | Pode stake>0? |
+|---|---|---|
+| UNVERIFIED | Novo usuário, sem corridas verificadas | NÃO |
+| CALIBRATING | Tem corridas verificadas, acumulando histórico | NÃO |
+| MONITORED | Atingiu threshold de calibração, sob observação | NÃO |
+| VERIFIED | Provado confiável — trust_score >= 70, >= 15 sessões | SIM |
+| DOWNGRADED | Era VERIFIED mas violações de integridade detectadas | NÃO |
+
+### Tabela
+
+`public.athlete_verification` (nova tabela dedicada, PK = user_id)
+
+**Por que NÃO `profile_progress`?**
+- `profile_progress` tem RLS `progress_public_read USING (true)` — qualquer user lê qualquer profile
+- Verificação exige `own-read-only` (trust_score e flags são sensíveis)
+- Bounded context distinto (ARCHITECTURE.md §12)
+
+### Colunas
+
+| Coluna | Tipo | Propósito |
+|---|---|---|
+| verification_status | TEXT (CHECK) | Estado na state machine |
+| trust_score | INT (0..100) | Score composto: volume + consistência + distância + record limpo + longevidade |
+| verified_at | TIMESTAMPTZ | Quando promovido a VERIFIED |
+| last_eval_at | TIMESTAMPTZ | Última avaliação |
+| verification_flags | TEXT[] | Sinais detectados |
+| calibration_valid_runs | INT | Sessões válidas acumuladas |
+| last_integrity_flag_at | TIMESTAMPTZ | Último flag negativo |
+
+### Enforcement
+
+| Camada | Mecanismo |
+|---|---|
+| DB RLS | SELECT own-only. ZERO UPDATE/INSERT/DELETE para user |
+| RPC | `eval_athlete_verification` (SECURITY DEFINER) — único path de mutação |
+| Helper | `is_user_verified(p_user_id)` — lookup rápido para EFs |
+| Edge Functions | `challenge-create` e `challenge-join` chamam `is_user_verified` quando `entry_fee_coins > 0` |
+| Flutter | UX gates (pré-check cosmético). Servidor decide |
+
+### Alternativas rejeitadas
+
+| Rejeitada | Motivo |
+|---|---|
+| Adicionar colunas em `profile_progress` | RLS `public_read` incompatível com own-read-only |
+| Adicionar colunas em `profiles` | `profiles` tem `public_read` (mesmo problema) |
+| Admin "set verified" manual | Viola regra de produto congelada — ZERO override |
+| Verificação por email/documento | Over-engineering para MVP; run history é mais relevante para running app |
+| Trust score visível para outros users | Gameable; info sensível deve ser own-read-only |
+
+---
+
+## DECISAO 054 — Verificação: Checklist MVP, Thresholds & Edge Function
+
+**Data:** 2026-02-24
+**Sprint:** VERIFIED-2 (22.1.1)
+**Status:** CONCLUIDA
+
+### Contexto
+Sprint 1 criou a tabela e state machine mas os thresholds ficaram provisórios
+(_verified_min_runs=15, _verified_min_score=70, volume=2pts/session). O app precisa
+de um RPC read-only que retorne checklist booleans para exibir progresso. Avaliação
+precisa ser disparada via Edge Function com user_id do JWT.
+
+### Decisões
+
+**Thresholds finalizados:**
+- N (VERIFIED_MIN_RUNS) = **7** (sugestão de produto; viável para MVP de running app)
+- Trust threshold (VERIFIED_MIN_SCORE) = **80**
+- Fórmula recalibrada: volume=5pts/session (cap 35), consistency max 15, distance max 20, clean max 20, longevity max 10
+- Exemplo: 7 corridas limpas × 3km avg (21km) = 35+15+14+20+0 = 84 → passa 80
+
+**State machine simplificada:**
+- 0 runs → UNVERIFIED
+- 1..6 runs → CALIBRATING
+- >= 7 + trust < 80 → MONITORED (oscilação ou distância curta)
+- >= 7 + trust >= 80 + clean → VERIFIED
+- >= 3 flags/30d → DOWNGRADED
+
+**Checklist MVP (6 itens):**
+| Item | Status MVP |
+|---|---|
+| identity_ok (selfie/liveness) | NULL — futuro, não bloqueia |
+| permissions_ok (GPS/sensores) | NULL — client-side, server não rastreia |
+| valid_runs_ok (>= 7 corridas) | BOOLEAN — avaliado |
+| integrity_ok (0 flags graves 30d) | BOOLEAN — avaliado |
+| baseline_ok (avg >= 1km + >= 3 sessions) | BOOLEAN — avaliado |
+| trust_ok (trust_score >= 80) | BOOLEAN — avaliado |
+
+**RPC `get_verification_state()`:**
+- SECURITY DEFINER STABLE, usa auth.uid()
+- Retorna: estado completo + 6 checklist bools + contagens + thresholds
+- Read-only, auto-cria registro se ausente
+- O app recebe `required_valid_runs` e `required_trust_score` (sem hardcodar thresholds)
+
+**Edge Function `eval-athlete-verification`:**
+- POST, JWT auth, user_id do JWT (NUNCA do client)
+- Chama RPC `eval_athlete_verification(user.id)` → build checklist → return
+- Idempotente: mesma data de sessões → mesmo resultado
+- Rate limit: 10/60s
+
+**Error codes padronizados:**
+| Code | HTTP | Uso |
+|---|---|---|
+| ATHLETE_NOT_VERIFIED | 403 | stake>0 sem VERIFIED |
+| VERIFICATION_EVAL_FAILED | 500 | Erro no RPC eval |
+| SESSION_DATA_MISSING | 500 | Registro não encontrado |
+| INTEGRITY_FLAGS_BLOCKING | 403 | Flags graves impedem avanço |
+| AUTH_ERROR | 401 | JWT ausente/inválido |
+
+### Alternativas rejeitadas
+| Rejeitada | Motivo |
+|---|---|
+| trust_score >= 70 (threshold original) | Com N=7, formula original (2pts/session) atingia max 69; com formula recalibrada 80 é achievable e mais exigente |
+| Checklist no Flutter com thresholds hardcoded | Server retorna thresholds via RPC; single source of truth |
+| EF aceitar user_id no body | Violaria regra congelada — user_id SEMPRE do JWT |
+
+---
+
+## DECISAO 055 — Gate de Monetização: 3 Camadas de Enforcement
+
+**Data:** 2026-02-24
+**Sprint:** VERIFIED-3 (22.2.0)
+**Status:** CONCLUIDA
+
+### Contexto
+O campo `challenges.entry_fee_coins` determina o stake de um desafio. Qualquer
+valor > 0 exige `verification_status = 'VERIFIED'` tanto para criar quanto para
+participar. As Edge Functions usam `service_role` que bypassa RLS, então RLS
+sozinha é insuficiente.
+
+### Decisão
+Implementar 3 camadas independentes de enforcement:
+
+1. **EF validation** (challenge-create, challenge-join): chama `is_user_verified()`
+   ANTES do insert. Retorna 403 `ATHLETE_NOT_VERIFIED` com mensagem UX clara.
+
+2. **RLS INSERT policy** (challenges): `challenges_insert_auth` atualizada para
+   exigir `entry_fee_coins = 0 OR is_user_verified(auth.uid())`. Bloqueia acesso
+   direto via Supabase client.
+
+3. **DB triggers** (challenges + challenge_participants): `BEFORE INSERT/UPDATE`
+   triggers que disparam MESMO para service_role. Última linha de defesa.
+   Impossível burlar sem alterar o trigger no banco.
+
+### Vetores de ataque bloqueados
+- Criar com stake>0 sem VERIFIED → 3 camadas bloqueiam
+- Criar com 0, UPDATE para >0 → trigger em `UPDATE OF entry_fee_coins` bloqueia
+- Join em challenge com stake>0 → 2 camadas bloqueiam (EF + trigger)
+- Acesso direto via client → RLS bloqueia
+- Acesso via service_role → trigger bloqueia
+
+### Alternativas rejeitadas
+| Rejeitada | Motivo |
+|---|---|
+| Apenas RLS | service_role bypassa RLS — insuficiente |
+| Apenas EF validation | Outro EF futuro poderia esquecer a validação |
+| CHECK CONSTRAINT no challenges | Constraints não podem chamar functions que leem outras tabelas |
+| Bloquear via app (Flutter) | App NUNCA é fonte de verdade para elegibilidade monetizada |
+
+---
+
+## DECISAO 056 — Integrity Flags: Dicionário Oficial & Pipeline Único
+
+**Data:** 2026-02-24
+**Sprint:** VERIFIED-4 (22.2.1)
+**Status:** CONCLUIDA
+
+### Contexto
+O sistema tinha flag names inconsistentes entre server e client (ex: `SPEED_EXCEEDED`
+vs `HIGH_SPEED`). Faltavam checks server-side (NO_MOTION, GPS gaps, time skew).
+A avaliação de verificação (`eval_athlete_verification`) depende de `is_verified=false`
+nas sessions — precisamos que os flags sejam consistentes e abrangentes.
+
+### Decisão
+1. Dicionário oficial em `_shared/integrity_flags.ts` (7 critical + 4 quality)
+2. `verify-session` EF é o pipeline ÚNICO e autoritativo — sobrescreve flags do client
+3. Classificação critical/quality para futura ponderação no trust_score
+4. Legacy names mantidos no Flutter `InvalidatedRunCard` para backward compat
+5. `VEHICLE_SUSPECTED` é client-only (server não recebe step cadence data)
+6. `integrity_score` per-session é opcional/futuro (trust_score = aggregate)
+
+### Flag names renomeados
+| Antigo (server) | Novo (oficial) |
+|---|---|
+| `SPEED_EXCEEDED` | `SPEED_IMPOSSIBLE` |
+| `TELEPORT_DETECTED` | `GPS_JUMP` (raw) + `TELEPORT` (accuracy-filtered) |
+
+### Novos checks adicionados
+| Flag | Check |
+|---|---|
+| `NO_MOTION_PATTERN` | Todos pontos dentro de 50m do centroide |
+| `BACKGROUND_GPS_GAP` | Gap > 60s entre pontos consecutivos |
+| `TIME_SKEW` | end <= start OU > 10% deltas negativos |
+
+### Alternativas rejeitadas
+| Rejeitada | Motivo |
+|---|---|
+| Renomear flags dos client detectors | Quebraria contratos internos do Flutter; server sobrescreve anyway |
+| integrity_score per-session | Over-engineering; trust_score no athlete_verification agrega |
+| VEHICLE check server-side | Server não recebe step data; mantido client-side |
+
+---
+
+## DECISAO 057 — Flutter UX: Jornada Atleta Verificado (Gate + Tela)
+
+**Data:** 2026-02-24
+**Status:** ACEITA
+**Contexto:** Precisamos exibir ao usuário seu status de verificação e bloquear no app (UX) a criação/join de desafios com stake>0 para não-verificados. O server já bloqueia (EF + RLS + DB triggers); o Flutter adiciona camada UX.
+
+### Decisão
+
+1. **AthleteVerificationEntity** — domain entity imutável, parseia resposta de `get_verification_state()` e `eval-athlete-verification` EF. Checklist com 4 itens avaliáveis (validRunsOk, integrityOk, baselineOk, trustOk) + 2 futuros (identityOk, permissionsOk como nullable).
+
+2. **VerificationBloc** — BLoC dedicado (não misturado com ChallengesBloc). Dois events: `LoadVerificationState` (RPC) e `RequestEvaluation` (EF). Mantém `_cached` para consulta síncrona no gate.
+
+3. **AthleteVerificationScreen** — tela independente com status badge, progress bar, checklist detalhado ("faltam X corridas"), stats, botão "Reavaliar agora", seção explicativa.
+
+4. **verification_gate.dart** — função `checkVerificationGate()` + modal bottom sheet. stake=0 → true. VERIFIED → true. Caso contrário → modal + false.
+
+5. **ChallengeCreateScreen** — `_submit()` chama gate antes de despachar. VerificationBloc carregado eagerly.
+
+6. **ChallengeDetailsScreen** — `_AcceptDeclineCard` convertido para StatefulWidget com VerificationBloc condicional (só se hasStake). `_onAccept()` chama gate.
+
+### Alternativas rejeitadas
+| Rejeitada | Motivo |
+|---|---|
+| Provider global de VerificationBloc | Over-engineering; poucos pontos de uso, melhor criar sob demanda |
+| Bloquear no ChallengesBloc | Misturaria responsabilidades; gate é UX, não domain logic |
+| Não mostrar tela de verificação | UX ruim; usuário precisa entender o que falta |
+| Cache local (Isar) do verification state | Complexidade desnecessária; dado vem do server e muda a cada sessão |
+
+---
+
+## DECISAO 058 — Reavaliação Automática: Event-driven + Cron
+
+**Data:** 2026-02-24
+**Status:** ACEITA
+**Contexto:** Precisamos que `eval_athlete_verification` rode automaticamente após cada sessão verificada e periodicamente para capturar edge cases (falhas, usuários em transição).
+
+### Decisão
+
+1. **Event-driven (pós-sync)**: Cadeia `SyncRepo._syncOne()` → `SyncService.verifySession()` → `verify-session` EF → `eval_athlete_verification` RPC (fire-and-forget). Cada sessão sincronizada trigger avaliação automaticamente.
+
+2. **Fire-and-forget pattern**: O call ao RPC dentro de `verify-session` usa `.then()/.catch()` — a resposta do EF não espera a avaliação terminar. Falhas são logadas mas não bloqueiam o fluxo.
+
+3. **Cron diário (03:00 UTC)**: `eval-verification-cron` EF via pg_cron. Reavalia até 100 candidatos: CALIBRATING/MONITORED/DOWNGRADED, flags recentes, não avaliados em 24h. Usa o mesmo `eval_athlete_verification` RPC.
+
+4. **config.toml**: `[functions.eval-verification-cron]` com `verify_jwt = false` (auth via service_role key check no handler).
+
+### Alternativas rejeitadas
+| Rejeitada | Motivo |
+|---|---|
+| DB trigger no sessions (AFTER UPDATE is_verified) | Trigger chamando RPC complexo com múltiplos SELECTs é anti-pattern; risco de deadlock e performance |
+| Supabase Database Webhook | Requer configuração externa, menos controle, overhead HTTP desnecessário para cada row |
+| Client-side eval após sync | Depende do app estar online e bem-comportado; viola "server wins" |
+| Cron a cada 5 minutos | Over-engineering; avaliação diária é suficiente dado que event-driven cobre o caso principal |
+| Fila (pg_boss / queue) | Complexidade desnecessária para MVP; fire-and-forget + cron cobre todos cenários |
+
+---
+
+## DECISAO 059 — Portal: Observabilidade de Verificação sem Override
+
+**Data:** 2026-02-24
+**Status:** ACEITA
+**Contexto:** Staff da assessoria precisa visualizar o status de verificação dos atletas. Deve ser somente leitura — sem possibilidade de alterar status manualmente.
+
+### Decisão
+
+1. **Página `/verification`** — Server Component que busca `coaching_members` + `athlete_verification` via service client (necessário para ler dados cross-user, já que RLS é own-read-only). Tabela com status, trust, corridas, flags, última avaliação.
+
+2. **Botão "Reavaliar"** — Disponível apenas para `admin_master` e `professor`. Chama o mesmo `eval_athlete_verification` RPC usado pelo event-driven e cron. API route valida session + role + pertencimento ao grupo.
+
+3. **Service client para leitura** — A tabela `athlete_verification` tem RLS `own-read-only`. O portal precisa ler dados de múltiplos atletas, então usa `createServiceClient()` (service_role) no server component. Seguro pois roda server-side (nunca exposto ao browser).
+
+4. **Sem campo editável** — Nenhum input de status, trust ou flags. A página é puramente informacional. O botão "Reavaliar" executa as mesmas regras automatizadas.
+
+### Alternativas rejeitadas
+| Rejeitada | Motivo |
+|---|---|
+| RLS policy para staff ler verification | Complexidade desnecessária; service client no server component é seguro e mais simples |
+| Botão disponível para assistente | Princípio do menor privilégio; assistentes veem dados mas não triggeram ações |
+| Campo editável para "forçar VERIFIED" | Viola regra congelada: ZERO override admin |
+| Página no Flutter (staff dashboard) | Portal é o local canônico para staff; Flutter é para atletas |
+
+---
+
+## DECISAO 060 — Testes: Script Curl + Test Plan Flutter
+
+**Data:** 2026-02-24
+**Status:** ACEITA
+**Contexto:** Precisamos provas reproduzíveis de que o gate de monetização é não-burlável em todas as 4 camadas.
+
+### Decisão
+
+1. **`scripts/test_verification_gate.sh`** — Script bash com 12 testes automatizados. Usa curl + Supabase REST API + EFs. Sequência: reset → stake=0 ok → stake>0 bloqueado → simulate VERIFIED → stake>0 ok → simulate DOWNGRADE → stake>0 bloqueado → bypass attempts → RLS check → cleanup. Saída pass/fail com contagem.
+
+2. **`scripts/TEST_PLAN_FLUTTER.md`** — 12 test cases manuais para QA do app. Cobre todos os estados da state machine, modal gate, fluxos completos UNVERIFIED→VERIFIED→DOWNGRADED, error states. Inclui matriz de cobertura 4 camadas.
+
+3. **Testes provam as 4 camadas:** Flutter UX gate (modal), EF validation (403), RLS policy (DENY), DB triggers (RAISE EXCEPTION). Mesmo bypass de uma camada não compromete as outras.
+
+### Alternativas rejeitadas
+| Rejeitada | Motivo |
+|---|---|
+| Testes unitários Dart para o gate | Gate real depende do server; mocks não provam não-burlabilidade |
+| Integration tests com Supabase local | Overhead de setup; curl contra instância real é mais convincente |
+| Testes apenas server-side | Não cobre UX (modal, navigation) |
+
+---
+
+## DECISAO 061 — Settle: Verificação de Elegibilidade no Payout
+
+**Data:** 2026-02-24
+**Status:** ACEITA
+**Contexto:** Um participante pode perder status VERIFIED durante a janela do desafio (ex: corrida com flags detectadas → DOWNGRADED). Sem check no settle, ele receberia pool winnings mesmo após perder elegibilidade.
+
+### Decisão
+
+Para challenges com `entry_fee_coins > 0`, no momento do settle:
+1. Buscar `verification_status` de todos os participantes aceitos
+2. Participantes que NÃO são VERIFIED recebem apenas coins-base (participation reward) — SEM pool share
+3. Log estruturado `pool_forfeited` para auditoria
+
+O ranking e outcome são preservados (o participante "ganhou" mas perdeu eligibilidade para receber o prêmio monetizado).
+
+### Alternativas rejeitadas
+| Rejeitada | Motivo |
+|---|---|
+| Bloquear participação retroativamente | Injusto — o user era VERIFIED ao entrar |
+| Não verificar no settle (confiar no join-time check) | Exploit: verify→join→cheat→collect |
+| Reverter entrada (refund) | Complexidade desnecessária; base coins é justo |
+| Snapshot VERIFIED no momento do join | Overhead de armazenamento; verificar no settle é mais simples e atual |
+
+---
+
 *Novas decisoes sao adicionadas ao final deste arquivo com numero sequencial.*

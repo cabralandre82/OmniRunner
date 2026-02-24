@@ -26643,3 +26643,869 @@ Sessões sincronizadas ao Supabase agora persistem no histórico mesmo após tro
 **Arquivos modificados:**
 - `lib/presentation/blocs/my_assessoria/my_assessoria_bloc.dart` (MODIFICADO — Supabase direto + sync Isar)
 - `lib/presentation/screens/history_screen.dart` (MODIFICADO — reverse sync Supabase→Isar)
+
+---
+
+### QA v1.0.14 — 2 Bugs (BUG-34, BUG-35)
+
+#### BUG-34: Session puxada do Supabase fica "PENDENTE" eternamente
+
+**Causa raiz:** `IsarSessionRepo._toRecord()` tinha `..isSynced = false` hardcoded. Mesmo que
+a `WorkoutSessionEntity` fosse criada com `isSynced: true` (no reverse sync do HistoryScreen),
+ao gravar no Isar o valor era sobrescrito para `false`.
+
+**Fix:** Alterado para `..isSynced = entity.isSynced`.
+
+#### BUG-35: Sync não marca sessions sem pontos GPS locais
+
+**Causa raiz:** `SyncRepo._syncOne()` verificava `if (points.isEmpty) return null;` — sessions
+vindas do Supabase (reverse sync) não possuem pontos GPS no Isar local. O sync as encontrava
+(isSynced=false após BUG-34), tentava sincronizar, via 0 pontos, e pulava sem chamar
+`markSynced()`. Na próxima sincronização, a mesma session era encontrada novamente — loop.
+
+**Fix:** Adicionado `await markSynced(record.sessionUuid);` antes do `return null` no branch
+de 0 pontos.
+
+**Arquivos modificados:**
+- `lib/data/repositories_impl/isar_session_repo.dart` (MODIFICADO — `isSynced = entity.isSynced`)
+- `lib/data/repositories_impl/sync_repo.dart` (MODIFICADO — markSynced para sessions sem pontos)
+
+---
+
+### Sprint 100.15 — Refactor de Desafios (IMP-01, IMP-02)
+
+#### IMP-01: Removida opção "Equipe" (team_vs_team) de desafios
+
+**Motivo:** Desafios no OmniRunner são sempre entre atletas individuais. As assessorias existem
+para vender/resgatar tokens e organizar campeonatos, mas não participam de desafios.
+
+**Mudanças:**
+- `ChallengeCreateScreen`: Removido `ButtonSegment(value: ChallengeType.teamVsTeam)` do
+  `SegmentedButton`. Restam apenas "1v1" e "Grupo".
+- `ChallengeCreateScreen._submit()`: Removida toda lógica de `teamAGroupId`/`teamAGroupName`
+  (query a `profiles` + `coaching_groups`). Removido import de `supabase_flutter`.
+- Adicionado info-box para "Grupo" explicando que convida atletas de qualquer assessoria.
+
+**Arquivos modificados:**
+- `lib/presentation/screens/challenge_create_screen.dart`
+
+#### IMP-02: Warmup de 5 minutos no modo "Agora"
+
+**Problema:** Quando o Atleta B aceita um desafio 1v1 no modo "Agora", o desafio ativava
+instantaneamente (`starts_at_ms = Date.now()`). O Atleta A podia já estar correndo. O Atleta B
+aceita e precisa sair correndo na hora — injusto.
+
+**Solução:** Ao aceitar, `starts_at_ms = now + 5 minutos`. Corridas dentro do período de warmup
+(antes de `starts_at_ms`) não contam para o resultado. Ambos recebem 5 min para se preparar.
+
+**Mudanças backend:**
+- `supabase/functions/challenge-join/index.ts`: `startsAtMs = nowMs + WARMUP_MS` (5 min)
+  em vez de `startsAtMs = nowMs`. `endsAtMs = startsAtMs + window_ms`.
+
+**Mudanças frontend:**
+- `ChallengeCreateScreen`: Texto "Aceita → 5 min para se preparar → valendo!" no card "Agora".
+  Texto "Tempo para correr" + "Após o aceite, todos têm 5 minutos para se preparar."
+- `ChallengeDetailsScreen`:
+  - Novo widget `_WarmupCard` com `StreamBuilder` que mostra countdown (mm:ss) enquanto
+    `starts_at_ms > now`. Após expirar, mostra "Valendo! Vá correr!".
+  - Labels atualizados: "5 min após aceite", "5 min após todos aceitarem"
+  - Card de aceite atualizado: "Ao aceitar, todos terão 5 minutos para se preparar."
+
+**Arquivos modificados:**
+- `supabase/functions/challenge-join/index.ts` (MODIFICADO — WARMUP_MS)
+- `lib/presentation/screens/challenge_create_screen.dart` (MODIFICADO — removido team_vs_team, textos)
+- `lib/presentation/screens/challenge_details_screen.dart` (MODIFICADO — WarmupCard, labels)
+
+#### IMP-03: Fluxo diferenciado para desafios em grupo
+
+**Problema:** O desafio de grupo se comportava igual ao 1v1 — ativava assim que 2 participantes
+aceitassem. No entanto, desafios em grupo devem dar tempo para TODOS os convidados aceitarem
+antes de iniciar. O criador precisa configurar quanto tempo os convidados têm para aceitar.
+
+**Solução:**
+1. Novo campo `accept_window_min` no `ChallengeRulesEntity` (5, 10, 20 ou 30 min)
+2. Ao criar desafio grupo, `accept_deadline_ms = created_at_ms + accept_window_min * 60000`
+3. No `challenge-join` EF, grupo só ativa quando:
+   - Todos os "invited" aceitaram (`invitedCount == 0 && acceptedCount >= 2`) → 5 min warmup
+   - OU prazo expirou com >= 2 aceites (`deadlinePassed && acceptedCount >= 2`) → 5 min warmup
+4. Na UI, card de countdown mostra "Aguardando todos aceitarem: MM:SS"
+
+**Migration SQL:** `ALTER TABLE challenges ADD COLUMN accept_window_min integer, ADD COLUMN accept_deadline_ms bigint;`
+— aplicada via Supabase Management API
+
+**Arquivos modificados:**
+- `lib/domain/entities/challenge_rules_entity.dart` (MODIFICADO — `acceptWindowMin`)
+- `lib/domain/entities/challenge_entity.dart` (MODIFICADO — `acceptDeadlineMs`)
+- `lib/domain/usecases/gamification/create_challenge.dart` (MODIFICADO — calcula `acceptDeadlineMs`)
+- `lib/presentation/screens/challenge_create_screen.dart` (MODIFICADO — seção "Tempo para aceitar" com chips)
+- `lib/presentation/screens/challenge_details_screen.dart` (MODIFICADO — `_AcceptDeadlineCard`, regras card)
+- `lib/presentation/blocs/challenges/challenges_bloc.dart` (MODIFICADO — `_mapRemoteToEntity`, `_mergeChallenge`, sync payload)
+- `supabase/functions/challenge-create/index.ts` (MODIFICADO — armazena `accept_window_min` e `accept_deadline_ms`)
+- `supabase/functions/challenge-join/index.ts` (MODIFICADO — lógica de ativação diferenciada para grupo)
+
+---
+
+### QA v1.0.16 — BUG-36: Histórico sem replay/mapa nas corridas 2+
+
+**Data:** 2026-02-24
+
+#### BUG-36: Somente a primeira corrida tem replay e mapa correto no histórico
+
+**Sintoma:** No histórico, a primeira corrida exibia o mapa na localização correta, com o
+caminho percorrido (polyline) e botão de replay funcionando. As demais corridas mostravam o
+mapa centrado em São Paulo (coordenadas fallback), sem polyline desenhada e sem botão de replay.
+
+**Causa raiz:** `RunDetailsScreen._loadPoints()` só buscava pontos GPS no Isar local via
+`IPointsRepo.getBySessionId()`. A primeira corrida funciona porque foi gravada no device e os
+pontos existem no Isar. As demais corridas, puxadas do Supabase pelo `HistoryScreen`, são salvas
+no Isar apenas com metadados (sem pontos GPS). Os pontos GPS ficam no Supabase Storage (bucket
+`session-points`, path `{userId}/{sessionId}.json`), mas nunca eram baixados ao abrir os detalhes.
+
+**Fix:**
+1. `RunDetailsScreen._loadPoints()`: se pontos locais estão vazios E a session está sincronizada
+   (`isSynced = true`), chama `_downloadPointsFromStorage()` que:
+   - Constrói o path `{userId}/{sessionId}.json`
+   - Baixa o arquivo JSON do bucket `session-points` via `Supabase.instance.client.storage.download()`
+   - Parseia o JSON de volta para `List<LocationPointEntity>`
+   - Salva os pontos no Isar via `pointsRepo.savePoints()` (cache local para próximas aberturas)
+   - Retorna os pontos para renderização normal (polyline + replay)
+2. Fallback de coordenadas atualizado de São Paulo (`-23.5505, -46.6333`) para Brasília
+   (`-15.7975, -47.8919`)
+
+**Arquivo modificado:**
+- `lib/presentation/screens/run_details_screen.dart` (MODIFICADO — +imports dart:convert, supabase_flutter, AppConfig, AppLogger; novo método `_downloadPointsFromStorage`; `_loadPoints` com fallback Supabase Storage; fallback Brasília)
+
+---
+
+### IMP-04: Cancelamento de campeonato + prazo de convite visível
+
+**Data:** 2026-02-24
+
+#### Problema
+Staff de assessoria não tinha como cancelar um campeonato criado. Se houvesse um imprevisto, o
+campeonato ficaria ativo/aberto sem possibilidade de ser cancelado. Também não havia indicação
+visual de que os convites para outras assessorias precisam ser aceitos antes da data de início.
+
+#### Solução
+
+**1. Edge Function `champ-cancel`** (`supabase/functions/champ-cancel/index.ts`):
+- Recebe `{ championship_id }`
+- Verifica que o caller é staff (admin_master/professor) do host group
+- Aceita cancelamento de campeonatos em `draft`, `open` ou `active`
+- Transições: championship → `cancelled`; participants (enrolled/active) → `withdrawn`;
+  invites (pending) → `revoked`
+- Rate limit: 10/60s
+- Segue padrão _shared (auth, http, cors, rate_limit, obs, validate, errors)
+
+**2. UI: Botão "Cancelar campeonato"** (`staff_championship_manage_screen.dart`):
+- `OutlinedButton` vermelho com ícone `cancel_outlined`
+- Dialog de confirmação: "Essa ação é irreversível. Todos os participantes inscritos
+  serão retirados e convites pendentes serão revogados."
+- Visível para status `draft`, `open` e `active`
+- Chama EF `champ-cancel` e recarrega dados
+
+**3. UI: Info card prazo de convites**:
+- Quando o campeonato está em `draft` ou `open` e tem `start_at` definido
+- Exibe: "As assessorias precisam aceitar o convite antes do início (DD/MM/YYYY),
+  caso contrário seus atletas não poderão se inscrever."
+- Ícone `info_outline_rounded`, fonte 11px, cor outline
+
+**Fluxo completo de campeonatos verificado:**
+1. Staff cria campeonato (via modelo) → status `draft`
+2. Staff abre → `champ-open` → status `open`
+3. Staff convida assessorias → `champ-invite` → invite `pending`
+4. Staff da assessoria convidada aceita/recusa → `champ-accept-invite` → invite `accepted`/`declined`
+5. Atletas de assessorias aceitas se inscrevem → `champ-enroll` (verifica grupo aceito ou host)
+6. `champ-lifecycle` (cron): open→active (quando start_at ≤ now), active→completed (quando end_at ≤ now)
+7. Staff pode cancelar a qualquer momento (draft/open/active) → `champ-cancel`
+
+**Convites recusados:** Já visíveis na UI (ícone vermelho + "Recusado")
+
+**Arquivos criados (1):**
+- `supabase/functions/champ-cancel/index.ts` (NOVO — 152 linhas)
+
+**Arquivos modificados (2):**
+- `lib/presentation/screens/staff_championship_manage_screen.dart` (MODIFICADO — +método `_cancelChampionship`, +botão cancel, +info card prazo de convites)
+- `supabase/config.toml` (MODIFICADO — +[functions.champ-cancel] verify_jwt=false)
+
+---
+
+### BUG-37: Emitir/Recolher OmniCoins e Badge de campeonato: Bad Request
+
+**Data:** 2026-02-24
+
+**Sentry:** `String: Create intent error: Bad Request` (ID: 473c614543ec4abfaff33849abbd1d89)
+
+#### Problema
+Ao tentar emitir OmniCoins, recolher OmniCoins ou gerar badge de campeonato no modo assessoria,
+o app retornava "Bad Request". Todas as 3 operações passam pelo mesmo fluxo:
+`StaffQrBloc → ITokenIntentRepo.createIntent() → token-create-intent Edge Function`.
+
+#### Causa raiz (2 bugs)
+1. **Campos obrigatórios ausentes:** A Edge Function `token-create-intent` exige 5 campos:
+   `group_id`, `type`, `amount`, `nonce`, `expires_at_iso`. Mas `RemoteTokenIntentRepo.createIntent()`
+   só enviava 3 (`group_id`, `type`, `amount`). Os campos `nonce` e `expires_at_iso` eram gerados
+   pelo `StubTokenIntentRepo` (mock) mas nunca foram adicionados à implementação real.
+2. **Key errada na resposta:** O Flutter lia `data['id']` mas a EF retorna `data['intent_id']`.
+
+#### Fix
+Arquivo: `lib/data/repositories_impl/remote_token_intent_repo.dart`
+- Adicionado import de `generate_uuid_v4.dart`
+- Constante `_ttl = Duration(minutes: 5)` (mesma do StubTokenIntentRepo)
+- Antes de invocar a EF, gera `nonce = generateUuidV4()` e
+  `expiresAt = DateTime.now().toUtc().add(_ttl).toIso8601String()`
+- Envia `'nonce': nonce` e `'expires_at_iso': expiresAt` no body da request
+- Corrigido `data['id']` → `data['intent_id']` na leitura da resposta
+- `flutter analyze`: 0 issues
+
+---
+
+### VERIFIED-1: Sistema "Atleta Verificado" — Schema & State Machine
+
+**Data:** 2026-02-24
+**Sprint:** 22.1.0
+**DECISAO:** 053
+
+#### Objetivo
+Implementar gate de monetização: `entry_fee_coins > 0` em desafios só é permitido para atletas com `verification_status = 'VERIFIED'`. Desafios gratuitos (`entry_fee_coins = 0`) continuam liberados para todos.
+
+#### Decisão de Design: tabela dedicada `athlete_verification`
+**Por que NÃO `profile_progress`:** a tabela `profile_progress` tem RLS `progress_public_read USING (true)` — qualquer user autenticado pode ler qualquer outro. Dados de verificação (trust_score, flags) são sensíveis e devem ser own-read-only. Bounded context distinto (ARCHITECTURE §12.9).
+
+#### State Machine
+```
+UNVERIFIED → CALIBRATING → MONITORED → VERIFIED
+                                         ↓
+                                     DOWNGRADED
+```
+
+#### Migration: `20260224000001_athlete_verification.sql`
+- Tabela `athlete_verification` (PK user_id, FK auth.users)
+- Colunas: `verification_status`, `trust_score` (0..100), `verified_at`, `last_eval_at`, `verification_flags`, `calibration_valid_runs`, `last_integrity_flag_at`
+- RLS: `verification_own_read` (SELECT own-only). ZERO UPDATE/INSERT/DELETE policies para users
+- RPC `eval_athlete_verification(p_user_id)` — SECURITY DEFINER, único path de mutação:
+  - Consulta sessões do user (verified count, flagged count, distance, recent flags)
+  - Computa trust_score (0..100) a partir de 5 componentes: volume (30pts), consistência distância (20pts), distância total (20pts), record limpo (20pts), longevidade (10pts)
+  - Aplica penalidades por flags recentes (-10 a -30pts)
+  - Transiciona estado conforme thresholds (5 runs → CALIBRATING, 10 → MONITORED, 15 + score≥70 → VERIFIED)
+  - Downgrade automático se ≥3 flags em 30 dias
+- Helper `is_user_verified(p_user_id)` — SQL SECURITY DEFINER STABLE, retorna boolean
+- Trigger `handle_new_user_gamification` atualizado para auto-criar row UNVERIFIED
+- Backfill para todos os users existentes
+
+#### Thresholds (hardcoded no RPC, não configuráveis pelo client)
+| Threshold | Valor |
+|---|---|
+| CALIBRATING | ≥1 sessão verificada |
+| MONITORED | ≥10 sessões verificadas |
+| VERIFIED | ≥15 sessões + trust_score ≥ 70 |
+| DOWNGRADED | ≥3 flags negativos em 30 dias |
+
+#### Regras CONGELADAS
+- stake=0 sempre liberado
+- stake>0 exige VERIFIED (server-side enforcement)
+- ZERO override admin / ZERO "force VERIFIED"
+- App mostra UX hints; servidor decide elegibilidade
+
+---
+
+### VERIFIED-2: Checklist Automático, RPC get_state, Edge eval (Sprint 22.1.1)
+
+#### Objetivo
+Implementar leitura pública do estado de verificação (para o app exibir progresso)
+e o mecanismo de avaliação idempotente via Edge Function.
+
+#### 2.1 — Checklist MVP
+
+Itens do checklist exibidos no app:
+
+| Item           | Significado                                  | Fonte         | MVP   |
+|--------------- |----------------------------------------------|---------------|-------|
+| identity_ok    | selfie + liveness concluído                  | futuro        | NULL  |
+| permissions_ok | GPS/sensores concedidos                      | client-side   | NULL  |
+| valid_runs_ok  | >= 7 corridas válidas (is_verified=true)      | sessions      | bool  |
+| integrity_ok   | 0 flags graves nos últimos 30 dias           | sessions      | bool  |
+| baseline_ok    | avg distância >= 1km + >= 3 sessões          | sessions      | bool  |
+| trust_ok       | trust_score >= 80                            | athlete_verif | bool  |
+
+Thresholds finalizados:
+- N (VERIFIED_MIN_RUNS) = **7**
+- Trust threshold (VERIFIED_MIN_SCORE) = **80**
+
+Fórmula trust_score recalibrada (5 componentes, max 100):
+1. Volume: min(verified_sessions × 5, 35) — max 35 pts
+2. Consistency: avg_distance >= 1km + >= 3 sessions = 15 pts; >= 500m = 8 pts — max 15 pts
+3. Distance: 10km+ = 8, 20km+ = 14, 50km+ = 20 pts — max 20 pts
+4. Clean record: 0 flagged + >= 5 verified = 20 pts — max 20 pts
+5. Longevity: 10+ sessions = 5, 20+ = 10 pts — max 10 pts
+
+Exemplo: 7 corridas limpas × 3km avg (21km total) = 35+15+14+20+0 = 84 → ✓ VERIFIED
+
+#### 2.2 — RPC `get_verification_state()`
+
+Arquivo: `supabase/migrations/20260224000002_verification_checklist_rpc.sql`
+
+- SECURITY DEFINER, usa `auth.uid()` internamente
+- Retorna: estado completo + checklist booleans + contagens + thresholds
+- Read-only (STABLE) — não muteia dados
+- Auto-cria registro se não existir (lazy init)
+- Retorno inclui `required_valid_runs` e `required_trust_score` para que o app
+  não precise hardcodar thresholds
+
+#### 2.3 — Edge Function `eval-athlete-verification`
+
+Arquivo: `supabase/functions/eval-athlete-verification/index.ts`
+
+- Registrada em `config.toml` (verify_jwt = false — auth manual via requireUser)
+- user_id SEMPRE do JWT (NUNCA aceita user_id do client)
+- Fluxo: auth → rate limit (10/min) → RPC eval_athlete_verification → build checklist → return
+- Idempotente: mesma data de sessões → mesmo resultado
+- Retorna: verification_status, trust_score, checklist {}, counts {}, thresholds {}
+
+State machine (finalizada):
+- 0 runs → UNVERIFIED
+- 1..6 runs → CALIBRATING
+- >= 7 runs + trust < 80 → MONITORED
+- >= 7 runs + trust >= 80 + clean → VERIFIED
+- >= 3 flags/30d → DOWNGRADED
+- DOWNGRADED + clean + trust >= 80 → MONITORED → VERIFIED
+
+#### 2.4 — Error Codes Padronizados
+
+| Code                       | HTTP | Uso                                                    |
+|--------------------------- |------|--------------------------------------------------------|
+| ATHLETE_NOT_VERIFIED       | 403  | Tentativa de stake>0 sem status VERIFIED                |
+| VERIFICATION_EVAL_FAILED   | 500  | Erro interno no RPC eval_athlete_verification           |
+| SESSION_DATA_MISSING       | 500  | Registro de verificação não encontrado                  |
+| INTEGRITY_FLAGS_BLOCKING   | 403  | Flags de integridade graves impedem avanço              |
+| AUTH_ERROR                 | 401  | JWT ausente ou inválido                                 |
+| METHOD_NOT_ALLOWED         | 405  | Método HTTP incorreto (use POST)                       |
+
+Esses códigos serão usados em:
+- `eval-athlete-verification` (já implementado)
+- `challenge-create` (Sprint 22.2.0)
+- `challenge-join` (Sprint 22.2.0)
+- Flutter client (mapeamento para mensagens UX)
+
+#### Regras Congeladas
+- Docs são lei
+- stake=0 sempre liberado
+- stake>0 exige VERIFIED (server-side enforcement)
+- ZERO override admin / ZERO "force VERIFIED"
+- user_id SEMPRE do JWT, NUNCA do client
+- App mostra UX hints; servidor decide elegibilidade
+
+---
+
+### VERIFIED-3: Gate de Monetização — Impossível Burlar (Sprint 22.2.0)
+
+#### Objetivo
+Implementar gate server-side que torna IMPOSSÍVEL criar ou participar de desafios
+com `entry_fee_coins > 0` sem status VERIFIED. Três camadas de defesa.
+
+#### 3.1 — Campo Identificado
+
+- **Coluna:** `challenges.entry_fee_coins` (INTEGER, DEFAULT 0, CHECK >= 0)
+- **Significado:** custo em coins para entrar no desafio; cada participante paga
+- **Regra:** `entry_fee_coins = 0` → qualquer user; `entry_fee_coins > 0` → VERIFIED only
+- **Ledger reason:** `challenge_entry_fee` (débito ao entrar), `challenge_pool_won` (crédito ao vencer)
+
+#### 3.2 — Camada 1: RLS Policy (challenges INSERT)
+
+Arquivo: `supabase/migrations/20260224000003_verification_monetization_gate.sql`
+
+Policy `challenges_insert_auth` atualizada:
+```
+WITH CHECK (
+  auth.uid() = creator_user_id
+  AND (entry_fee_coins = 0 OR is_user_verified(auth.uid()))
+)
+```
+Bloqueia INSERT direto via Supabase client com stake>0 sem VERIFIED.
+Não afeta EFs (service_role bypassa RLS).
+
+#### 3.3 — Camada 2: DB Triggers (impossível burlar)
+
+Dois triggers BEFORE que disparam MESMO para service_role:
+
+| Trigger | Tabela | Evento | Verifica |
+|---|---|---|---|
+| `trg_challenges_verified_stake_gate` | challenges | INSERT, UPDATE(entry_fee_coins) | creator é VERIFIED se entry_fee_coins > 0 |
+| `trg_participants_verified_join_gate` | challenge_participants | INSERT | user é VERIFIED se challenge.entry_fee_coins > 0 |
+
+Ambos usam `is_user_verified()` (SECURITY DEFINER).
+Ambos fazem RAISE EXCEPTION com código `ATHLETE_NOT_VERIFIED`.
+Impossível burlar: triggers executam dentro da transação do INSERT/UPDATE.
+
+Vetores de ataque bloqueados:
+- ✅ Criar challenge com stake>0 sem VERIFIED → trigger bloqueia
+- ✅ Criar com stake=0 e depois UPDATE para >0 → trigger em UPDATE OF entry_fee_coins bloqueia
+- ✅ JOIN em challenge com stake>0 sem VERIFIED → trigger em challenge_participants bloqueia
+- ✅ Acesso direto via Supabase client → RLS bloqueia (sem INSERT policy match)
+- ✅ Acesso via service_role (EF bypass) → trigger bloqueia
+- ✅ SQL injection / direct DB → trigger bloqueia
+
+#### 3.4 — Camada 3: Edge Functions (UX + logs)
+
+`challenge-create/index.ts`:
+- Após validação de campos, ANTES do insert:
+  - Se `entry_fee_coins > 0`, chama `is_user_verified(user.id)`
+  - Se false → retorna 403 ATHLETE_NOT_VERIFIED com mensagem UX clara
+  - Mensagem: "Apenas atletas verificados podem criar desafios com stake > 0."
+
+`challenge-join/index.ts`:
+- Após buscar challenge, ANTES de inserir participante:
+  - Se `challenge.entry_fee_coins > 0`, chama `is_user_verified(user.id)`
+  - Se false → retorna 403 ATHLETE_NOT_VERIFIED
+  - Mensagem: "Apenas atletas verificados podem participar de desafios com stake > 0."
+
+Ambas EFs logam `error_code: "ATHLETE_NOT_VERIFIED"` via `logError()`.
+
+#### Resumo das 3 Camadas
+
+| # | Camada | Escopo | Bypassed by service_role? |
+|---|--------|--------|--------------------------|
+| 1 | EF validation | challenge-create, challenge-join | N/A (é o próprio EF) |
+| 2 | RLS INSERT policy | challenges table | SIM (service_role bypassa RLS) |
+| 3 | DB triggers | challenges + challenge_participants | NÃO (triggers disparam sempre) |
+
+#### Regras Congeladas
+- Docs são lei
+- `entry_fee_coins = 0` → livre para qualquer user
+- `entry_fee_coins > 0` → exige VERIFIED (3 camadas de enforcement)
+- ZERO override admin / ZERO "force VERIFIED"
+- Workaround "criar com 0, depois UPDATE" → bloqueado por trigger UPDATE OF
+- App mostra UX hints; servidor decide elegibilidade
+
+---
+
+### VERIFIED-4: Integrity Flags — Contrato Único e Consistente (Sprint 22.2.1)
+
+#### Objetivo
+Definir dicionário oficial de integrity flags, padronizar nomes entre server e client,
+adicionar checks faltantes, e documentar o pipeline único de validação server-side.
+
+#### 4.1 — Dicionário Oficial de Integrity Flags
+
+Arquivo: `supabase/functions/_shared/integrity_flags.ts`
+
+**CRITICAL flags** (impactam trust_score e state machine):
+
+| Flag | Descrição | Threshold |
+|---|---|---|
+| `SPEED_IMPOSSIBLE` | Velocidade sustentada > 12.5 m/s (45 km/h), > 10% dos segmentos | Server |
+| `GPS_JUMP` | Salto > 500m entre pontos consecutivos | Server |
+| `TELEPORT` | Velocidade > 50 m/s (180 km/h) com accuracy boa (< 15m) em ambos os pontos | Server |
+| `VEHICLE_SUSPECTED` | Alta velocidade GPS + baixa cadência de passos | Client (server não recebe step data) |
+| `NO_MOTION_PATTERN` | Todos os pontos dentro de raio < 50m do centroide | Server |
+| `BACKGROUND_GPS_GAP` | Gap > 60s entre pontos GPS consecutivos (app em background) | Server |
+| `TIME_SKEW` | end_time <= start_time OU > 10% deltas negativos entre pontos | Server |
+
+**QUALITY flags** (informacionais, trigam is_verified=false):
+
+| Flag | Descrição | Threshold |
+|---|---|---|
+| `TOO_FEW_POINTS` | < 5 pontos GPS | Server |
+| `TOO_SHORT_DURATION` | Sessão < 60s | Server |
+| `TOO_SHORT_DISTANCE` | Distância < 50m | Server |
+| `IMPLAUSIBLE_PACE` | Pace < 1:30/km para distância > 1km | Server |
+
+**Legacy flag names** (backward compat no InvalidatedRunCard):
+`HIGH_SPEED`, `SPEED_EXCEEDED`, `TELEPORT_DETECTED`, `VEHICLE_SUSPECT`
+
+#### 4.2 — Schema Sessions
+
+Campos já existem:
+- `is_verified BOOLEAN NOT NULL DEFAULT true`
+- `integrity_flags TEXT[] NOT NULL DEFAULT '{}'`
+- `integrity_score` — opcional, não implementado (trust_score vive em athlete_verification)
+
+Zero migration necessária.
+
+#### 4.3 — Pipeline Único de Validação Server-Side
+
+Arquivo: `supabase/functions/verify-session/index.ts` (reescrita completa)
+
+Fluxo:
+1. Auth (JWT) → rate limit (60/60s)
+2. Ping mode (body incompleto → retorna ok)
+3. Pipeline de validação (11 checks):
+   - Quality: TOO_FEW_POINTS, TOO_SHORT_DURATION, TOO_SHORT_DISTANCE, IMPLAUSIBLE_PACE
+   - TIME_SKEW: end <= start OU > 10% deltas negativos
+   - Route: SPEED_IMPOSSIBLE, GPS_JUMP, TELEPORT (accuracy-filtered)
+   - BACKGROUND_GPS_GAP: max gap entre pontos > 60s
+   - NO_MOTION_PATTERN: todos pontos dentro de 50m do centroide
+4. Verdict: `is_verified = (flags.length === 0)`
+5. Persist: UPDATE sessions SET is_verified, integrity_flags (server OVERWRITES client flags)
+
+Princípio: **app pode pré-checar e mostrar warnings, mas o server decide**.
+As flags do client (`HIGH_SPEED`, `TELEPORT`, `VEHICLE_SUSPECT`) são sobrescritas
+pelas flags oficiais do server quando verify-session roda.
+
+#### 4.4 — Flutter InvalidatedRunCard
+
+Arquivo: `lib/presentation/widgets/invalidated_run_card.dart`
+
+Atualizado `_flagReasons` map com:
+- Todas 11 flags oficiais (7 critical + 4 quality) com mensagens PT-BR
+- Legacy names mantidos para backward compatibility
+
+#### Regras Congeladas
+- Docs são lei
+- Dicionário oficial em `_shared/integrity_flags.ts` — single source of truth server-side
+- Server decide (verify-session OVERWRITES client flags)
+- Flags alimentam trust_score via eval_athlete_verification
+- stake=0 livre; stake>0 exige VERIFIED
+- ZERO override admin
+
+---
+
+### VERIFIED-5 — FLUTTER UX: JORNADA "ATLETA VERIFICADO"
+
+> Sprint 22.4.0 — CONCLUIDA
+
+#### 5.1 — Entity: AthleteVerificationEntity
+
+Arquivo: `lib/domain/entities/athlete_verification_entity.dart`
+
+- Enum `VerificationStatus` (unverified, calibrating, monitored, verified, downgraded)
+- Campos: status, trustScore, verifiedAt, lastEvalAt, verificationFlags, calibrationValidRuns
+- Checklist booleans: identityOk (nullable/future), permissionsOk (nullable/future), validRunsOk, integrityOk, baselineOk, trustOk
+- Raw counts: validRunsCount, flaggedRunsRecent, totalDistanceM, avgDistanceM
+- Thresholds from server: requiredValidRuns (7), requiredTrustScore (80)
+- Helpers: `isVerified`, `completedChecks`, `progress` (0..1), `parseStatus()`
+
+#### 5.2 — BLoC: VerificationBloc
+
+Arquivos:
+- `lib/presentation/blocs/verification/verification_event.dart`
+- `lib/presentation/blocs/verification/verification_state.dart`
+- `lib/presentation/blocs/verification/verification_bloc.dart`
+
+Events: `LoadVerificationState`, `RequestEvaluation`
+States: `VerificationInitial`, `VerificationLoading`, `VerificationLoaded`, `VerificationEvaluating`, `VerificationError`
+
+Lógica:
+1. `LoadVerificationState` → chama RPC `get_verification_state()` → parse → `VerificationLoaded`
+2. `RequestEvaluation` → invoca EF `eval-athlete-verification` → parse response → `VerificationLoaded`
+3. `_cached` field mantém último estado para consulta síncrona no gate
+
+#### 5.3 — Screen: AthleteVerificationScreen
+
+Arquivo: `lib/presentation/screens/athlete_verification_screen.dart`
+
+- Cria `VerificationBloc` local (auto-dispose)
+- Status card com ícone/cor/label/subtitle por status
+- Progress bar (X/4 checks, porcentagem)
+- Checklist card com contagem regressiva: "Faltam X corridas", trust score X/80, flags recentes
+- Stats card: corridas válidas, distância total, média por corrida, trust score
+- Botão "Reavaliar agora" → `RequestEvaluation` (safe, idempotente)
+- Seção explicativa "Como funciona?"
+- RefreshIndicator (pull-to-refresh)
+- Error state com retry
+
+#### 5.4 — Gate Widget: verification_gate.dart
+
+Arquivo: `lib/presentation/widgets/verification_gate.dart`
+
+Função `checkVerificationGate()`:
+- `entryFeeCoins <= 0` → retorna true (livre)
+- VERIFIED → retorna true
+- Não VERIFIED → mostra modal bottom sheet → retorna false
+
+Modal:
+- Ícone + título "Verificação necessária"
+- Explicação de por que stake>0 exige verificação
+- Status atual + progresso (runs X/Y)
+- CTA "Ver minha verificação" → navega para AthleteVerificationScreen
+- Botão "Voltar"
+
+#### 5.5 — Interceptação: ChallengeCreateScreen
+
+Arquivo: `lib/presentation/screens/challenge_create_screen.dart`
+
+Modificações:
+- `_verificationBloc` criado em init, fechado em dispose
+- Carrega estado via `LoadVerificationState` eagerly
+- `_submit()`: se `fee > 0`, chama `checkVerificationGate()` antes de despachar `CreateChallengeRequested`
+- Se gate retorna false → submit é interrompido (modal exibido)
+- Se gate retorna true (VERIFIED) → segue normal
+
+#### 5.6 — Interceptação: ChallengeDetailsScreen (Join)
+
+Arquivo: `lib/presentation/screens/challenge_details_screen.dart`
+
+Modificações:
+- `_AcceptDeclineCard` convertido de StatelessWidget → StatefulWidget
+- Se `challenge.entry_fee_coins > 0`: cria `VerificationBloc` local
+- `_onAccept()`: chama `checkVerificationGate()` antes de despachar `JoinChallengeRequested`
+- Se não verificado → modal exibido, join bloqueado no app
+- Server também bloqueia via trigger `trg_participants_verified_join_gate` + EF
+
+#### Arquitetura de Segurança (Defesa em Profundidade)
+
+```
+Camada 1 (UX): Flutter gate → modal "Verificação necessária"
+Camada 2 (EF): challenge-create / challenge-join → ATHLETE_NOT_VERIFIED 403
+Camada 3 (RLS): challenges_insert_auth → entry_fee_coins=0 OR is_user_verified()
+Camada 4 (DB Trigger): trg_challenges_verified_stake_gate + trg_participants_verified_join_gate
+```
+
+App NUNCA é fonte de verdade. Mesmo se o gate Flutter for burlado (build custom, API direta),
+as 3 camadas server-side bloqueiam.
+
+#### Regras Congeladas
+- Docs são lei
+- stake=0 livre; stake>0 exige VERIFIED
+- App exibe e pré-checa; server decide
+- ZERO override admin
+- VerificationBloc consulta server (RPC/EF); não decide elegibilidade
+
+---
+
+### VERIFIED-6 — REAVALIAÇÃO AUTOMÁTICA (EVENT + CRON)
+
+> Sprint 22.3.0 — CONCLUIDA
+
+#### 6.1 — Event-driven: verify-session → eval_athlete_verification
+
+Cadeia completa pós-sync:
+```
+Flutter SyncRepo._syncOne()
+  → uploads points to Storage
+  → upserts session metadata to Postgres
+  → markSynced locally
+  → _triggerVerification() (fire-and-forget)
+    → SyncService.verifySession() → POST /verify-session EF
+      → 11 integrity checks → persist is_verified + integrity_flags
+      → db.rpc("eval_athlete_verification") (fire-and-forget)
+        → trust_score recalc → state machine transition
+```
+
+Arquivos modificados:
+- `supabase/functions/verify-session/index.ts` — adicionado step 7: chama `eval_athlete_verification` RPC
+  após persistir verdict. Fire-and-forget (`.then()/.catch()`), não bloqueia resposta. Logs estruturados.
+- `omni_runner/lib/data/datasources/sync_service.dart` — novo método `verifySession()` que invoca
+  EF `verify-session` com route, distance, times. Timeout 20s, falha logada mas não quebra sync.
+- `omni_runner/lib/data/repositories_impl/sync_repo.dart` — `_syncOne()` chama `_triggerVerification()`
+  após markSynced. Converte `LocationPointEntity` list para route maps com lat/lng/timestamp_ms/accuracy/etc.
+
+Propriedades:
+- Idempotente: `eval_athlete_verification` recomputa tudo do zero a cada chamada
+- Rate-limited: verify-session tem 60/60s; eval-athlete-verification tem 10/60s
+- Falha silenciosa: se EF ou RPC falhar, sessão continua synced; cron captura depois
+- ZERO override: mesma lógica de avaliação, nenhum campo setado manualmente
+
+#### 6.2 — Cron: eval-verification-cron
+
+Arquivo: `supabase/functions/eval-verification-cron/index.ts`
+
+Edge Function chamada via pg_cron diariamente às 03:00 UTC.
+
+Seleção de candidatos (OR):
+1. `verification_status IN (CALIBRATING, MONITORED, DOWNGRADED)` — estados transitórios
+2. `last_integrity_flag_at >= 30 dias atrás` — flags recentes podem afetar trust
+3. `last_eval_at IS NULL` — nunca avaliados
+4. `last_eval_at < 24h atrás` — não avaliados recentemente
+
+Batch: máximo 100 usuários por execução.
+
+Cada candidato: `db.rpc("eval_athlete_verification", { p_user_id: uid })` — mesmo RPC,
+mesma lógica, idempotente.
+
+Logs: batch_complete com candidates/evaluated/errors counts.
+Auth: service_role key only (validado no handler).
+
+Migration: `supabase/migrations/20260224000004_verification_cron.sql`
+```sql
+SELECT cron.schedule('eval-verification-cron', '0 3 * * *', $$ ... $$);
+```
+Usa `pg_cron` + `pg_net` (extensões HTTP) — mesmo padrão de `clearing-cron` e `lifecycle-cron`.
+
+config.toml: `[functions.eval-verification-cron]` registrado com `verify_jwt = false`.
+
+#### Cobertura de cenários
+
+| Cenário | Trigger |
+|---|---|
+| Sessão sincronizada pela primeira vez | SyncRepo → verify-session → eval RPC |
+| Usuário clica "Reavaliar" na tela | VerificationBloc → eval-athlete-verification EF |
+| Usuário em CALIBRATING sem atividade recente | Cron diário |
+| Usuário DOWNGRADED treina limpo | Cron diário |
+| Flags recentes afetam trust | Cron diário |
+| Sessão synced mas verify-session falhou | Cron diário captura |
+
+#### Regras Congeladas
+- Docs são lei
+- stake=0 livre; stake>0 exige VERIFIED
+- Avaliação automática, idempotente, sem override
+- ZERO admin manual
+- Cron usa mesmo RPC que event-driven
+- Falhas são resilientes (cron captura edge cases)
+
+---
+
+### VERIFIED-7 — PORTAL (NEXT.JS): OBSERVABILIDADE SEM OVERRIDE
+
+> Sprint 22.5.0 — CONCLUIDA
+
+#### 7.1 — Página de Verificação
+
+Arquivo: `portal/src/app/(portal)/verification/page.tsx`
+
+Server Component que:
+1. Busca atletas do grupo via `coaching_members` (role=atleta)
+2. Busca `athlete_verification` via service client (bypassa RLS own-read-only)
+3. Junta dados e ordena por status (DOWNGRADED primeiro, VERIFIED último)
+
+UI:
+- 6 KPI cards: total, verificados, calibrando, observação, rebaixados, sem status
+- Banner informativo: "A verificação é automática... Nenhum ajuste manual é possível"
+- Tabela com: nome, status (badge colorido), trust score/100, corridas válidas,
+  flags recentes (max 3 visíveis + "+N"), última avaliação (datetime PT-BR)
+- Coluna "Ação" com botão Reavaliar (apenas admin_master + professor)
+
+#### 7.2 — Botão Reavaliar
+
+Arquivo: `portal/src/app/(portal)/verification/reevaluate-button.tsx`
+
+Client Component:
+- POST `/api/verification/evaluate` com `{ user_id }`
+- Loading state, feedback "Feito" (verde) ou "Erro" (vermelho)
+- Auto-reload 1.5s após sucesso para atualizar tabela
+
+API Route: `portal/src/app/api/verification/evaluate/route.ts`
+- Auth: session obrigatória
+- RBAC: apenas admin_master ou professor
+- Validação: atleta deve pertencer ao grupo (query coaching_members)
+- Ação: `db.rpc("eval_athlete_verification", { p_user_id })` via service client
+- Mesmo RPC usado pelo event-driven e cron — ZERO override
+
+#### 7.3 — Sidebar
+
+Arquivo: `portal/src/components/sidebar.tsx`
+- Adicionado link "Verificação" (`/verification`) visível para todos os roles
+
+#### Segurança
+
+| Camada | Garantia |
+|---|---|
+| Session check | Usuário deve estar logado |
+| Role check | Apenas admin_master/professor podem reavaliar |
+| Group check | Atleta deve pertencer ao grupo do caller |
+| RPC | Mesma lógica automática, sem campo manual |
+| Página | Read-only; dados via service client |
+
+ZERO override: o botão "Reavaliar" chama o mesmo `eval_athlete_verification` RPC
+que o cron e o event-driven usam. Não existe campo editável de status.
+
+#### Regras Congeladas
+- Docs são lei
+- stake=0 livre; stake>0 exige VERIFIED
+- Portal é observabilidade (read-only + trigger avaliação)
+- Reavaliar ≠ forçar; é rodar as mesmas regras
+- ZERO override admin
+
+---
+
+### VERIFIED-8 — TESTES & PROVAS (NÃO-BURLÁVEL)
+
+> Sprint 22.6.0 — CONCLUIDA
+
+#### 8.1 — Script curl: `scripts/test_verification_gate.sh`
+
+Script bash executável que prova o gate de monetização end-to-end.
+
+Pré-requisitos: 5 env vars (SUPABASE_URL, SUPABASE_ANON_KEY, SERVICE_ROLE_KEY,
+TEST_USER_EMAIL, TEST_USER_PASSWORD). Aceita `.env` no mesmo diretório.
+
+**12 testes automatizados:**
+
+| # | Teste | Esperado |
+|---|-------|----------|
+| 3 | CREATE stake=0, UNVERIFIED | 200 OK |
+| 4 | CREATE stake>0, UNVERIFIED | 403 ATHLETE_NOT_VERIFIED |
+| 5 | Inserir 7 sessões válidas + eval | Status → VERIFIED |
+| 6 | CREATE stake>0, VERIFIED | 200 OK |
+| 7 | Inserir 4 sessões flagged + eval | Status → DOWNGRADED |
+| 8 | CREATE stake>0, DOWNGRADED | 403 ATHLETE_NOT_VERIFIED |
+| 9 | Direct INSERT via service_role | Trigger bloqueia |
+| 10 | UPDATE entry_fee 0→100 | Trigger bloqueia |
+| 11 | RPC get_verification_state | 200 + campos corretos |
+| 12 | RLS: user UPDATE own status | Bloqueado (0 rows) |
+
+Fluxo: auth → reset UNVERIFIED → testes sequenciais → cleanup.
+Saída: `[PASS]`/`[FAIL]` por teste + summary final.
+
+#### 8.2 — Test Plan Flutter: `scripts/TEST_PLAN_FLUTTER.md`
+
+12 test cases manuais cobrindo:
+
+- TC-01..04: AthleteVerificationScreen (estados, pull-refresh, reavaliar, error)
+- TC-05..06: ChallengeCreateScreen (stake=0 ok, stake>0 gate modal)
+- TC-07..08: ChallengeDetailsScreen join (stake=0 ok, stake>0 gate modal)
+- TC-09..10: Fluxos completos (UNVERIFIED→VERIFIED→liberado, VERIFIED→DOWNGRADED→bloqueado)
+- TC-11..12: Estados intermediários (CALIBRATING, MONITORED)
+
+**Matriz de cobertura 4 camadas:**
+
+| Cenário | App Gate | EF | RLS | DB Trigger |
+|---------|----------|-----|-----|------------|
+| CREATE stake>0 UNVERIFIED | Modal | 403 | DENY | RAISE |
+| CREATE stake>0 VERIFIED | Pass | Pass | ALLOW | Pass |
+| JOIN stake>0 UNVERIFIED | Modal | 403 | n/a | RAISE |
+| UPDATE fee 0→100 | n/a | n/a | n/a | RAISE |
+| Direct INSERT service_role | n/a | n/a | DENY | RAISE |
+
+#### Regras Congeladas
+- Docs são lei
+- stake=0 livre; stake>0 exige VERIFIED
+- Testes provam não-burlabilidade em 4 camadas
+- ZERO override admin
+- App reflete server; server é autoridade final
+
+---
+
+### VERIFIED-9 — CONSISTÊNCIA COM SETTLE (ANTI-EXPLOIT)
+
+> Sprint 22.7.0 — CONCLUIDA
+
+#### 9.1 — settle-challenge: eligibility check at payout
+
+Arquivo: `supabase/functions/settle-challenge/index.ts`
+
+**Exploit bloqueado:** verify→join stake challenge→cheat during window→collect pool.
+
+Modificações (2 pontos cirúrgicos):
+
+1. **Pré-loop:** Para `entry_fee_coins > 0`, busca `athlete_verification` de todos os
+   participantes e constrói `verifiedSet` (Set de user_ids com status VERIFIED).
+
+2. **No loop de rewards:** Após calcular outcome + coins, se `entry_fee_coins > 0` e
+   o participante NÃO está no `verifiedSet`:
+   - `coins` é limitado ao valor-base (25 para 1v1, 30 para team, 10 para group)
+   - Pool share é forfeited
+   - Log estruturado `pool_forfeited` com original_coins, capped_coins, reason
+
+**O que NÃO muda:**
+- Caps existentes (MAX_COINS_PER_CHALLENGE = 10,000) mantidos
+- Cross-assessoria clearing flow mantido
+- Ranking e outcome mantidos (participant mantém rank e outcome "won" para histórico)
+- stake=0 challenges: nenhum check adicional (sem entry_fee_coins guard)
+
+**Cenários cobertos:**
+
+| Cenário | Resultado |
+|---------|-----------|
+| VERIFIED no join E no settle | Pool pago normalmente |
+| VERIFIED no join, DOWNGRADED no settle | Pool forfeited, base coins only |
+| UNVERIFIED tenta join stake>0 | Bloqueado na entry (EF + trigger) — nunca chega ao settle |
+| stake=0 qualquer status | Sem check, coins normais |
+
+#### Regras Congeladas
+- Docs são lei
+- stake=0 livre; stake>0 exige VERIFIED
+- Settle verifica VERIFIED de cada participante no momento do payout
+- Pool forfeited é logado, não silenciado
+- ZERO override admin
+- Caps e proteções existentes (DECISAO 052) mantidos intactos

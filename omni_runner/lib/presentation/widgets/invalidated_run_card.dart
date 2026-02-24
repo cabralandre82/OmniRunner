@@ -4,15 +4,24 @@ import 'package:omni_runner/presentation/widgets/gps_tips_sheet.dart';
 
 /// Maps raw integrity flag codes to friendly, non-accusatory PT-BR messages.
 const _flagReasons = <String, String>{
-  'HIGH_SPEED': 'Velocidade GPS acima do esperado para corrida',
-  'SPEED_EXCEEDED': 'Velocidade GPS acima do esperado para corrida',
-  'TELEPORT': 'Sinal de GPS instável (salto de posição detectado)',
-  'TELEPORT_DETECTED': 'Sinal de GPS instável (salto de posição detectado)',
-  'VEHICLE_SUSPECT': 'Movimento incompatível com corrida a pé',
+  // Official critical flags (server-authoritative)
+  'SPEED_IMPOSSIBLE': 'Velocidade GPS acima do esperado para corrida',
+  'GPS_JUMP': 'Salto de posição GPS detectado (sinal instável)',
+  'TELEPORT': 'Mudança de posição impossível detectada',
+  'VEHICLE_SUSPECTED': 'Movimento incompatível com corrida a pé',
+  'NO_MOTION_PATTERN': 'Sem variação de movimento detectada na rota',
+  'BACKGROUND_GPS_GAP': 'Falha no rastreamento GPS (app em segundo plano?)',
+  'TIME_SKEW': 'Inconsistência nos horários da atividade',
+  // Official quality flags
   'TOO_FEW_POINTS': 'Poucos pontos de GPS registrados',
   'TOO_SHORT_DURATION': 'Atividade muito curta',
   'TOO_SHORT_DISTANCE': 'Distância muito curta para validação',
   'IMPLAUSIBLE_PACE': 'Pace registrado abaixo do limite de validação',
+  // Legacy flag names (client-side detectors, kept for backward compat)
+  'HIGH_SPEED': 'Velocidade GPS acima do esperado para corrida',
+  'SPEED_EXCEEDED': 'Velocidade GPS acima do esperado para corrida',
+  'TELEPORT_DETECTED': 'Mudança de posição impossível detectada',
+  'VEHICLE_SUSPECT': 'Movimento incompatível com corrida a pé',
 };
 
 String _friendlyReason(String flag) =>
