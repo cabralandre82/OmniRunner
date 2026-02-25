@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { trackBillingEvent } from "@/lib/analytics";
 import { BuyButton } from "./buy-button";
 
@@ -42,6 +43,15 @@ export default async function CreditsPage() {
 
   const balance = inventoryRes.data?.available_tokens ?? 0;
   const products = productsRes.data ?? [];
+
+  const db = createServiceClient();
+  const { data: customer } = await db
+    .from("billing_customers")
+    .select("preferred_gateway")
+    .eq("group_id", groupId)
+    .maybeSingle();
+
+  const preferredGateway = (customer?.preferred_gateway as "mercadopago" | "stripe") ?? "mercadopago";
 
   await trackBillingEvent("billing_credits_viewed", {
     group_id: groupId,
@@ -109,6 +119,7 @@ export default async function CreditsPage() {
                   <BuyButton
                     productId={product.id as string}
                     productName={product.name as string}
+                    preferredGateway={preferredGateway}
                   />
                 </div>
               );

@@ -124,6 +124,9 @@ serve(async (req: Request) => {
         case "challenge_team_invite_received":
           results[rule] = await evaluateChallengeTeamInviteReceived(db, supabaseUrl, serviceKey, body.context);
           break;
+        case "low_credits_alert":
+          results[rule] = await evaluateLowCreditsAlert(db, supabaseUrl, serviceKey, body.context);
+          break;
         default:
           results[rule] = { evaluated: 0, sent: 0 };
       }
@@ -577,6 +580,71 @@ async function evaluateJoinRequestReceived(
 
     if (ok) {
       await logNotification(db, userId, "join_request_received", dedupKey);
+      sent++;
+    }
+  }
+
+  return { evaluated: staff.length, sent };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Helpers
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Rule: Low Credits Alert (hybrid auto-topup fallback)
+// ═════════════════════════════════════════════════════════════════════════════
+
+async function evaluateLowCreditsAlert(
+  // deno-lint-ignore no-explicit-any
+  db: any,
+  supabaseUrl: string,
+  serviceKey: string,
+  context?: { group_id?: string; balance?: number; threshold?: number; product_name?: string },
+): Promise<{ evaluated: number; sent: number }> {
+  if (!context?.group_id) return { evaluated: 0, sent: 0 };
+
+  const groupId = context.group_id;
+  const balance = context.balance ?? 0;
+  const threshold = context.threshold ?? 50;
+  const productName = context.product_name ?? "créditos";
+
+  const { data: group } = await db
+    .from("coaching_groups")
+    .select("name")
+    .eq("id", groupId)
+    .maybeSingle();
+
+  const groupName = group?.name ?? "sua assessoria";
+
+  const { data: staff } = await db
+    .from("coaching_members")
+    .select("user_id")
+    .eq("group_id", groupId)
+    .eq("role", "admin_master")
+    .limit(10);
+
+  if (!staff || staff.length === 0) return { evaluated: 0, sent: 0 };
+
+  let sent = 0;
+  const dedupKey = `low_credits:${groupId}`;
+
+  for (const s of staff) {
+    const userId = s.user_id as string;
+
+    if (await wasRecentlyNotified(db, userId, "low_credits_alert", dedupKey)) {
+      continue;
+    }
+
+    const ok = await dispatchPush(supabaseUrl, serviceKey, {
+      user_ids: [userId],
+      title: "Créditos baixos",
+      body: `"${groupName}" tem apenas ${balance} OmniCoins (mínimo: ${threshold}). Compre mais pelo portal.`,
+      data: { type: "low_credits_alert", group_id: groupId },
+    });
+
+    if (ok) {
+      await logNotification(db, userId, "low_credits_alert", dedupKey);
       sent++;
     }
   }

@@ -16,13 +16,14 @@ import Stripe from "https://esm.sh/stripe@14?target=deno";
  * Headers: Authorization: Bearer <service_role_key>
  * Body: { group_id }
  *
- * Decision tree (DECISAO 050 §3.6):
+ * Decision tree (DECISAO 050 §3.6 — hybrid mode):
  *   1. Is auto_topup enabled for this group?
  *   2. Is available_tokens < threshold_tokens?
  *   3. Monthly cap not exceeded?
  *   4. 24h cooldown respected?
  *   5. Stripe customer + payment method configured?
- *   6. Create billing_purchase (source=auto_topup) + PaymentIntent (off-session)
+ *      YES → Create billing_purchase (source=auto_topup) + PaymentIntent (off-session)
+ *      NO  → Send push notification via notify-rules (low_credits_alert)
  *
  * Idempotency: cooldown + monthly cap prevent duplicate charges even
  * if this function is called multiple times in rapid succession.
@@ -46,6 +47,7 @@ interface TopupSettings {
 interface SkipResult {
   triggered: false;
   reason: string;
+  notified?: boolean;
 }
 
 interface TriggerResult {
@@ -88,9 +90,36 @@ async function countMonthlyTopups(
   return count ?? 0;
 }
 
+async function sendLowCreditsNotification(
+  supabaseUrl: string,
+  serviceKey: string,
+  groupId: string,
+  balance: number,
+  threshold: number,
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${supabaseUrl}/functions/v1/notify-rules`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${serviceKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        rule: "low_credits_alert",
+        context: { group_id: groupId, balance, threshold },
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function runCheck(
   db: DB,
-  stripe: Stripe,
+  stripe: Stripe | null,
+  supabaseUrl: string,
+  serviceKey: string,
   groupId: string,
   requestId: string,
 ): Promise<CheckResult> {
@@ -130,15 +159,36 @@ async function runCheck(
     return { triggered: false, reason: "cooldown" };
   }
 
-  // 5. Stripe payment method
+  // 5. Stripe payment method — if not available, fallback to push notification
   const { data: customer } = await db
     .from("billing_customers")
     .select("stripe_customer_id, stripe_default_pm")
     .eq("group_id", groupId)
     .maybeSingle();
 
-  if (!customer?.stripe_customer_id || !customer?.stripe_default_pm) {
-    return { triggered: false, reason: "no_payment_method" };
+  const hasStripe =
+    stripe &&
+    customer?.stripe_customer_id &&
+    customer?.stripe_default_pm;
+
+  if (!hasStripe) {
+    const notified = await sendLowCreditsNotification(
+      supabaseUrl,
+      serviceKey,
+      groupId,
+      balance,
+      cfg.threshold_tokens,
+    );
+
+    await db
+      .from("billing_auto_topup_settings")
+      .update({
+        last_triggered_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("group_id", groupId);
+
+    return { triggered: false, reason: "no_payment_method_notified", notified };
   }
 
   // 6. Load product
@@ -376,20 +426,17 @@ serve(async (req: Request) => {
       },
     });
 
-    // Stripe client
+    // Stripe client (optional — if not configured, falls back to push notification)
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) {
-      status = 500;
-      errorCode = "STRIPE_CONFIG_MISSING";
-      return jsonErr(500, "INTERNAL", "Payment service not configured", requestId);
+    let stripe: Stripe | null = null;
+    if (stripeKey) {
+      stripe = new Stripe(stripeKey, {
+        apiVersion: "2023-10-16",
+        httpClient: Stripe.createFetchHttpClient(),
+      });
     }
 
-    const stripe = new Stripe(stripeKey, {
-      apiVersion: "2023-10-16",
-      httpClient: Stripe.createFetchHttpClient(),
-    });
-
-    const result = await runCheck(db, stripe, groupId, requestId);
+    const result = await runCheck(db, stripe, supabaseUrl, serviceKey, groupId, requestId);
 
     return jsonOk(result, requestId);
   } catch (err) {

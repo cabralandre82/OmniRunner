@@ -20,6 +20,7 @@ interface TopupSettings {
 interface AutoTopupFormProps {
   currentSettings: TopupSettings | null;
   products: Product[];
+  hasStripePaymentMethod?: boolean;
 }
 
 function formatBRL(cents: number): string {
@@ -29,7 +30,7 @@ function formatBRL(cents: number): string {
   });
 }
 
-export function AutoTopupForm({ currentSettings, products }: AutoTopupFormProps) {
+export function AutoTopupForm({ currentSettings, products, hasStripePaymentMethod }: AutoTopupFormProps) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(currentSettings?.enabled ?? false);
   const [threshold, setThreshold] = useState(currentSettings?.threshold_tokens ?? 50);
@@ -123,8 +124,10 @@ export function AutoTopupForm({ currentSettings, products }: AutoTopupFormProps)
           </p>
           <p className="text-xs text-gray-500">
             {enabled
-              ? "O sistema recarregará automaticamente quando os créditos estiverem baixos"
-              : "Ative para recarregar créditos automaticamente"}
+              ? hasStripePaymentMethod
+                ? "O sistema recarregará automaticamente quando os créditos estiverem baixos"
+                : "Você receberá notificações push quando os créditos estiverem baixos"
+              : "Ative para monitorar o saldo e recarregar ou ser notificado automaticamente"}
           </p>
         </div>
         <button
@@ -207,13 +210,14 @@ export function AutoTopupForm({ currentSettings, products }: AutoTopupFormProps)
 
           {/* Summary */}
           {selectedProduct && enabled && (
-            <div className="rounded-lg bg-blue-50 p-3 text-sm text-blue-800">
+            <div className={`rounded-lg p-3 text-sm ${hasStripePaymentMethod ? "bg-blue-50 text-blue-800" : "bg-amber-50 text-amber-800"}`}>
               Quando o saldo cair abaixo de{" "}
-              <strong>{threshold.toLocaleString("pt-BR")}</strong> créditos, o
-              pacote <strong>{selectedProduct.name}</strong> (
-              {formatBRL(selectedProduct.price_cents)}) será cobrado
-              automaticamente no cartão salvo. Máximo de{" "}
-              <strong>{maxPerMonth}x</strong> por mês.
+              <strong>{threshold.toLocaleString("pt-BR")}</strong> créditos:
+              {hasStripePaymentMethod ? (
+                <> o pacote <strong>{selectedProduct.name}</strong> ({formatBRL(selectedProduct.price_cents)}) será cobrado automaticamente no cartão salvo. Máximo de <strong>{maxPerMonth}x</strong> por mês.</>
+              ) : (
+                <> você receberá uma <strong>notificação push</strong> avisando que os créditos estão baixos. Compre manualmente pelo portal com Pix, Cartão ou Boleto via MercadoPago. Para cobrança automática, configure um cartão pelo Stripe.</>
+              )}
             </div>
           )}
 

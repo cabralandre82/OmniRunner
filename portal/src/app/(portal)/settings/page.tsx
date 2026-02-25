@@ -6,6 +6,7 @@ import { InviteForm } from "./invite-form";
 import { RemoveButton } from "./remove-button";
 import { PortalButton } from "./portal-button";
 import { AutoTopupForm } from "./auto-topup-form";
+import { GatewaySelector } from "./gateway-selector";
 
 const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   admin_master: { label: "Admin", color: "bg-purple-100 text-purple-800" },
@@ -71,6 +72,8 @@ export default async function SettingsPage() {
   let topupSettings: TopupSettings | null = null;
   let products: Product[] = [];
   let hasStripeCustomer = false;
+  let hasStripePaymentMethod = false;
+  let preferredGateway: "mercadopago" | "stripe" = "mercadopago";
 
   if (isAdmin) {
     const db = createServiceClient();
@@ -93,11 +96,13 @@ export default async function SettingsPage() {
 
     const { data: customer } = await db
       .from("billing_customers")
-      .select("stripe_customer_id")
+      .select("stripe_customer_id, stripe_default_pm, preferred_gateway")
       .eq("group_id", groupId)
       .maybeSingle();
 
-    hasStripeCustomer = !!customer;
+    hasStripeCustomer = !!customer?.stripe_customer_id;
+    hasStripePaymentMethod = !!(customer?.stripe_customer_id && customer?.stripe_default_pm);
+    preferredGateway = (customer?.preferred_gateway as "mercadopago" | "stripe") ?? "mercadopago";
 
     await trackBillingEvent("billing_settings_viewed", { group_id: groupId });
   }
@@ -114,23 +119,29 @@ export default async function SettingsPage() {
             </p>
           </div>
 
-          {/* Stripe Customer Portal */}
+          {/* Gateway Preference */}
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="text-base font-semibold text-gray-900">
-              Métodos de Pagamento e Faturas
+              Gateway de Pagamento Preferido
             </h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Gerencie seus cartões, veja faturas e recibos no portal seguro do Stripe.
+            <p className="mt-1 mb-5 text-sm text-gray-500">
+              Escolha como sua assessoria prefere pagar. Você pode trocar a qualquer momento.
             </p>
-            {hasStripeCustomer ? (
-              <PortalButton />
-            ) : (
-              <p className="mt-4 text-sm text-amber-700 bg-amber-50 rounded-lg p-3">
-                Configure seu perfil de faturamento para acessar o portal de pagamento.
-                Realize sua primeira compra de créditos para ativar.
-              </p>
-            )}
+            <GatewaySelector currentGateway={preferredGateway} />
           </div>
+
+          {/* Stripe Customer Portal (optional) */}
+          {hasStripeCustomer && (
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h2 className="text-base font-semibold text-gray-900">
+                Métodos de Pagamento e Faturas (Stripe)
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Gerencie seus cartões, veja faturas e recibos no portal seguro do Stripe.
+              </p>
+              <PortalButton />
+            </div>
+          )}
 
           {/* Auto Top-Up */}
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -138,12 +149,20 @@ export default async function SettingsPage() {
               Recarga Automática
             </h2>
             <p className="mt-1 text-sm text-gray-500">
-              Quando seus créditos caírem abaixo do limite, o sistema recarrega
-              automaticamente usando o cartão salvo.
+              Quando seus créditos caírem abaixo do limite configurado:
             </p>
+            <ul className="mt-1 text-sm text-gray-500 list-disc list-inside space-y-0.5">
+              <li>
+                <strong>Com cartão Stripe salvo:</strong> cobrança automática
+              </li>
+              <li>
+                <strong>Sem cartão salvo:</strong> você recebe uma notificação push para comprar manualmente pelo portal
+              </li>
+            </ul>
             <AutoTopupForm
               currentSettings={topupSettings}
               products={products}
+              hasStripePaymentMethod={hasStripePaymentMethod}
             />
           </div>
         </>
