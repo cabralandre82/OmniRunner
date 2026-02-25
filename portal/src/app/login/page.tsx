@@ -12,7 +12,9 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(
-    searchParams.get("error") === "auth" ? "Falha na autenticação" : null,
+    searchParams.get("error") === "auth"
+      ? `Falha na autenticação${searchParams.get("detail") ? `: ${searchParams.get("detail")}` : ""}`
+      : null,
   );
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);

@@ -7,11 +7,11 @@ interface BuyButtonProps {
   productName: string;
 }
 
-export function BuyButton({ productId, productName }: BuyButtonProps) {
+export function BuyButton({ productId }: BuyButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleBuy() {
+  async function handleBuy(gateway: "mercadopago" | "stripe" = "mercadopago") {
     setLoading(true);
     setError(null);
 
@@ -19,7 +19,7 @@ export function BuyButton({ productId, productName }: BuyButtonProps) {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product_id: productId }),
+        body: JSON.stringify({ product_id: productId, gateway }),
       });
 
       const data = await res.json();
@@ -38,17 +38,15 @@ export function BuyButton({ productId, productName }: BuyButtonProps) {
   }
 
   return (
-    <div className="mt-4">
+    <div className="mt-4 space-y-2">
       <button
-        onClick={handleBuy}
+        onClick={() => handleBuy("mercadopago")}
         disabled={loading}
-        className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+        className="w-full rounded-lg bg-[#009ee3] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#0080c0] focus:outline-none focus:ring-2 focus:ring-[#009ee3] focus:ring-offset-2 disabled:opacity-50"
       >
-        {loading ? "Processando..." : `Comprar ${productName}`}
+        {loading ? "Processando..." : `Pagar com Pix, Cartão ou Boleto`}
       </button>
-      {error && (
-        <p className="mt-2 text-xs text-red-600">{error}</p>
-      )}
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
 }

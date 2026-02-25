@@ -27715,6 +27715,16 @@ automaticamente um oponente compatível. Zero browsing.
 - Vercel: Env vars `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` configuradas.
 - `next.config.mjs`: Headers `Content-Type: application/json` + cache 1h para `.well-known`.
 
+### Portal: Login social (Google/Apple) no Next.js
+**Problema:** O portal web (`omnirunner.app`) só oferecia login por email/senha. Staff que se registrou pelo app com Google/Apple não conseguia acessar o portal.
+
+**Solução:**
+- `portal/src/app/login/page.tsx`: Adicionados botões "Entrar com Google" e "Entrar com Apple" usando `supabase.auth.signInWithOAuth()` com PKCE flow. `redirectTo` aponta para `/api/auth/callback`.
+- `portal/src/app/api/auth/callback/route.ts`: Reescrito para usar `createServerClient` do `@supabase/ssr` com gerenciamento explícito de cookies no `NextResponse`, garantindo que cookies PKCE (`code_verifier`) persistam durante os redirects. Inclui mensagens de erro detalhadas para diagnóstico.
+- **Google Cloud Console**: Adicionado `https://naxcwttpwtjmrhnorbhf.supabase.co/auth/v1/callback` aos Authorized redirect URIs do OAuth 2.0 Client ID.
+- **Supabase Auth**: Site URL atualizado de `http://localhost:3000` para `https://omnirunner.app`. Redirect URLs: `https://omnirunner.app/**` e `omnirunner://auth-callback`.
+- **Vercel**: Env vars (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) recriadas e verificadas.
+
 ### W-6: Integração Strava funcional
 **Problema:** Botão "Conectar" do Strava era apenas placeholder visual, sem funcionalidade.
 
@@ -27725,3 +27735,16 @@ automaticamente um oponente compatível. Zero browsing.
 - **Tela Integrações no Settings**: seção "Integrações" com `_StravaIntegrationTile` — mostra estado (desconectado / conectado como X / reconexão necessária), botão "Conectar" (laranja Strava #FC4C02) ou "Desconectar" com confirmação.
 - **Auto-upload pós-corrida**: no `SyncRepo._syncOne()`, após `markSynced`, roda fire-and-forget: verifica se Strava está conectado → gera FIT via `FitEncoder` → faz upload via `IStravaUploadRepository.uploadAndWait()`. Falhas não bloqueiam o sync.
 - **Infraestrutura já existia**: `StravaAuthRepositoryImpl` (OAuth2 completo), `StravaSecureStore` (flutter_secure_storage), `StravaHttpClient` (retry, rate-limit, 429), `StravaUploadRepositoryImpl` (upload + polling), `StravaConnectController`.
+
+### Billing: Checkout MercadoPago + Stripe (compra de créditos OmniCoins)
+**Problema:** Staff não conseguia comprar créditos OmniCoins pelo portal. A tabela `billing_products` existia mas estava vazia, as Edge Functions de checkout não tinham credenciais configuradas, e o webhook do MercadoPago não existia.
+
+**Solução completa:**
+- **Seed `billing_products`**: 5 pacotes (Starter 50/R$29.90, Basic 120/R$59.90, Plus 300/R$129.90, Pro 700/R$249.90, Enterprise 1500/R$449.90).
+- **Edge Function `create-checkout-mercadopago`**: Cria `billing_purchase` (pending) + MercadoPago Preference, retorna `init_point` (checkout URL). Auth via `requireUser()`, gate `admin_master`.
+- **Edge Function `webhook-mercadopago`**: Recebe IPN do MercadoPago, busca payment via API, roteia por status (approved → paid → fulfilled via `fn_fulfill_purchase`; cancelled/rejected → cancelled; refunded → event). Deploy com `--no-verify-jwt`.
+- **Edge Function `create-checkout-session`** (Stripe): Já existia, secrets configurados (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`). Webhook Stripe registrado via API para 6 event types.
+- **Portal `/api/checkout`**: Atualizado para suportar gateway `mercadopago` (default) ou `stripe`. Mensagens de erro detalhadas.
+- **Portal `BuyButton`**: Botão "Pagar com Pix, Cartão ou Boleto" (cor MercadoPago #009ee3).
+- **Secrets Supabase**: `MERCADOPAGO_ACCESS_TOKEN`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PORTAL_URL` configurados.
+- **Fluxo testado end-to-end**: checkout → pagamento sandbox → redirect success → créditos alocados automaticamente (50 OmniCoins).

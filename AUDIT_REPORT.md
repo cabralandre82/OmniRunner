@@ -329,6 +329,18 @@ O app está **funcional para early adopters** que já entendem o conceito, mas *
 | 45 | S-5 | **BAIXA** | Performance temporal: KPI de corridas semanais agora compara com semana anterior ("±N% vs sem. anterior"). | `staff_performance_screen.dart` |
 | 46 | P-4 | **BAIXA** | Settings expandidos: seção Unidades (km/mi toggle), seção Privacidade (visibilidade ranking, share feed). Auth Debug só em debug mode. | `settings_screen.dart`, `coach_settings_entity.dart`, `coach_settings_repo.dart` |
 
+### AUDIT-FIX: Portal — Login social (Google/Apple)
+
+| # | ID | Severidade | Correção | Arquivos |
+|---|----|-----------|----------|----------|
+| 47 | PORTAL-1 | **CRÍTICO** | Login social (Google/Apple) adicionado ao portal web. Staff que se registrou com social login agora acessa o portal sem precisar de email/senha. OAuth PKCE flow com cookies explícitos no Route Handler. Google Cloud Console e Supabase Auth configurados. | `portal/src/app/login/page.tsx`, `portal/src/app/api/auth/callback/route.ts` |
+
+### BILLING: Checkout MercadoPago + Stripe
+
+| # | ID | Severidade | Correção | Arquivos |
+|---|----|-----------|----------|----------|
+| 48 | BILLING-1 | **CRÍTICO** | Compra de créditos funcional. Seed 5 pacotes billing_products. Edge Functions `create-checkout-mercadopago` e `webhook-mercadopago` implementadas. Stripe webhook registrado. Portal atualizado com botão MercadoPago. Secrets configurados. Testado end-to-end com sucesso. | `create-checkout-mercadopago/index.ts`, `webhook-mercadopago/index.ts`, `portal/credits/buy-button.tsx`, `portal/api/checkout/route.ts`, `seed_billing_products.sql` |
+
 ### Items já corretos (sem alteração necessária)
 - **T-3**: RecoveryScreen já diz "Salvar e continuar" com ícone correto.
 - **T-1**: Map timeout já exibe mensagem "Mapa indisponível offline" com explicação.

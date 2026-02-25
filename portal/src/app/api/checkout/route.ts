@@ -19,6 +19,7 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const productId = body.product_id;
+  const gateway = body.gateway ?? "mercadopago";
   if (!productId) {
     return NextResponse.json(
       { error: "product_id is required" },
@@ -27,23 +28,35 @@ export async function POST(request: Request) {
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const res = await fetch(
-    `${supabaseUrl}/functions/v1/create-checkout-session`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ product_id: productId, group_id: groupId }),
-    },
-  );
 
-  const data = await res.json();
+  const fnName =
+    gateway === "stripe"
+      ? "create-checkout-session"
+      : "create-checkout-mercadopago";
+
+  const res = await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ product_id: productId, group_id: groupId }),
+  });
+
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    const text = await res.text().catch(() => "");
+    return NextResponse.json(
+      { error: `Gateway error (${res.status}): ${text || "empty response"}` },
+      { status: 502 },
+    );
+  }
 
   if (!res.ok || !data.ok) {
     return NextResponse.json(
-      { error: data.error?.message ?? "Checkout failed" },
+      { error: data.error?.message ?? data.message ?? `Checkout failed (${res.status})` },
       { status: res.status },
     );
   }

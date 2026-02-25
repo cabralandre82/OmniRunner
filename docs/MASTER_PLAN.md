@@ -762,11 +762,23 @@ Sem pular. Sem paralelizar.
 
 ---
 
+### Portal: Login Social (Google/Apple)  ✅ CONCLUIDA
+
+Staff que se registrou no app com Google ou Apple agora pode logar no portal web (`omnirunner.app`) com o mesmo método. Implementado OAuth com PKCE flow no Next.js, cookie handling correto no Route Handler de callback, e configurações no Google Cloud Console e Supabase Auth.
+
+---
+
 ### Sprint 24.0.0 — CORREÇÃO DE BUGS DO AUDIT (P0-P3)  ✅ CONCLUIDA
 
 14 correções aplicadas cobrindo bugs críticos (mock mode, LGPD, QR staff leak, rate limit) e melhorias de UX (onboarding, pull-to-refresh, logout visível, pending coins, invite warning, verification dashboard).
 
 Ver `AUDIT_REPORT.md` seção 17 para lista completa.
+
+---
+
+### Billing: Checkout MercadoPago + Stripe  ✅ CONCLUIDA
+
+Compra de créditos OmniCoins pelo portal agora funcional. MercadoPago como gateway primário (Pix, cartão, boleto). Stripe como alternativa. Seed de 5 pacotes de créditos. Webhook handlers para ambos gateways. Fluxo testado end-to-end: checkout → pagamento → créditos alocados automaticamente.
 
 ---
 
