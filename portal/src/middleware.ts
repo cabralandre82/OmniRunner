@@ -3,6 +3,8 @@ import { updateSession } from "@/lib/supabase/middleware";
 
 const PUBLIC_ROUTES = new Set(["/login", "/no-access", "/api/auth/callback"]);
 
+const PUBLIC_PREFIXES = ["/challenge/", "/invite/"];
+
 const ADMIN_ONLY_ROUTES = [
   "/credits/history",
   "/credits/request",
@@ -15,9 +17,12 @@ const ADMIN_PROFESSOR_ROUTES = ["/engagement/export", "/settings/invite"];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (PUBLIC_ROUTES.has(pathname)) {
-    const { supabaseResponse } = await updateSession(request);
-    return supabaseResponse;
+  const isPublic =
+    PUBLIC_ROUTES.has(pathname) ||
+    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
+
+  if (isPublic) {
+    return NextResponse.next();
   }
 
   // Step 1: verify session
@@ -91,6 +96,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|\\.well-known|.*\\.(?:svg|png|jpg|jpeg|gif|webp|json)$).*)",
   ],
 };

@@ -43,7 +43,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Audio Coach'),
+        title: const Text('Configurações'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: _loading
@@ -146,8 +146,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 const Divider(height: 32),
-                _header('Auth Debug'),
-                const _AuthDebugCard(),
+                _header('Unidades'),
+                ListTile(
+                  leading: const Icon(Icons.straighten),
+                  title: const Text('Distância'),
+                  subtitle: Text(_settings.useImperial
+                      ? 'Milhas (mi)'
+                      : 'Quilômetros (km)'),
+                  trailing: Switch(
+                    value: _settings.useImperial,
+                    onChanged: (v) =>
+                        _update(_settings.copyWith(useImperial: v)),
+                  ),
+                ),
+                const Divider(height: 32),
+                _header('Privacidade'),
+                SwitchListTile(
+                  title: const Text('Perfil visível no ranking'),
+                  subtitle: const Text(
+                    'Permite que outros vejam seu nome nos leaderboards',
+                  ),
+                  secondary: const Icon(Icons.visibility),
+                  value: _settings.profileVisibleInRanking,
+                  onChanged: (v) =>
+                      _update(_settings.copyWith(profileVisibleInRanking: v)),
+                ),
+                SwitchListTile(
+                  title: const Text('Compartilhar atividade na assessoria'),
+                  subtitle: const Text(
+                    'Suas corridas aparecem no feed da assessoria',
+                  ),
+                  secondary: const Icon(Icons.share),
+                  value: _settings.shareActivityInFeed,
+                  onChanged: (v) =>
+                      _update(_settings.copyWith(shareActivityInFeed: v)),
+                ),
+                if (kDebugMode) ...[
+                  const Divider(height: 32),
+                  _header('Auth Debug'),
+                  const _AuthDebugCard(),
+                ],
               ],
             ),
     );

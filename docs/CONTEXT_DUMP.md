@@ -27607,3 +27607,110 @@ automaticamente um oponente compatível. Zero browsing.
 - ExportScreen agora habilita FIT como opção selecionável (não mais "em breve")
    - Quando alguém compatível entrar, match automático
 6. Usuário pode cancelar a qualquer momento
+
+### AUDIT-FIX BATCH 4: Correções Finais (20 itens)
+**ALTA:**
+- A-1: Trocar assessoria mostra lista detalhada do que se mantém/perde
+- M-2: Matchmaking com estado `pendingConfirm` — usuário revisa e aceita/recusa match
+- C-2: Banner "Sem oponente? Use o matchmaking" integrado ao formulário de criação de desafio
+
+**MÉDIA:**
+- O-2: Confirmação de role com diálogo explícito ("permanente e irreversível")
+- P-2: Avatar com iniciais + upload via `image_picker` para Supabase Storage
+- B-4: History com stale-guard de 30s evita re-queries
+- C-5: Group challenge com seletor de participantes (3–100, default 10)
+- A-3: Dashboard card muda para "Entrar em assessoria" quando sem grupo
+- A-2: Feed da assessoria surfaceado no dashboard como card proeminente
+- M-4: Posição na fila calculada no backend e exibida na busca
+- S-3: Invite QR mostra contagem de usos e status ativo/desativado
+- CH-1: Campeonatos com filter chips (Todos, Abertos, Ativos, Inscritos)
+
+**BAIXA:**
+- O-4: WelcomeScreen com animação sequencial (slide+fade)
+- O-5: Instagram ícone com gradiente de cores oficial
+- T-5: Banner "Obtendo localização..." quando usando posição fallback
+- N-4: Duplicação "Assessorias"/"Minha Assessoria" resolvida — tile único
+- N-5: Histórico com paginação (30 por vez + "Carregar mais")
+- C-7: Menção a anti-cheat "strict" removida (não implementado)
+- S-5: KPI semanal com comparação temporal (% vs semana anterior)
+- P-4: Settings expandidos com Unidades (km/mi), Privacidade (ranking, feed)
+
+### AUDIT-FIX: C-3 — Gate assessoria obrigatória para desafios
+**Regra de produto:** Atleta sem assessoria não pode criar, participar, nem buscar desafios (incluindo matchmaking e campeonatos).
+
+**Backend (Edge Functions):**
+- `challenge-create/index.ts`: Query `coaching_members` antes de tudo — retorna `NO_ASSESSORIA` (403) se sem vínculo
+- `challenge-join/index.ts`: Mesma query antes do gate de monetização
+- `matchmake/index.ts`: Mesma query antes do gate de monetização
+
+**Frontend (Flutter):**
+- `AssessoriaRequiredSheet` (novo widget): Bottom sheet reutilizável com CTA "Entrar em assessoria" → navega para `JoinAssessoriaScreen`
+- `AthleteDashboardScreen._openChallenges()`: Bloqueado se sem assessoria
+- `AthleteDashboardScreen._openChampionships()`: Bloqueado se sem assessoria
+- Defense-in-depth: mesmo que o frontend seja bypassed, o backend bloqueia
+
+### AUDIT-FIX: C-6 — Push notification quando oponente aceita desafio
+**Problema:** Criador do desafio não sabia quando alguém aceitava — precisava checar manualmente.
+
+**Backend:**
+- `notify-rules/index.ts`: Nova regra `challenge_accepted` — busca título do desafio + nome do joiner, notifica criador + demais participantes aceitos. Dedup 12h via `notification_log`.
+- `challenge-join/index.ts`: Após join com sucesso, dispara `notify-rules` com `rule: "challenge_accepted"` (fire-and-forget, nunca bloqueia resposta do join).
+
+**Infra:**
+- Secrets `FCM_PROJECT_ID` e `FCM_SERVICE_ACCOUNT` configurados no Supabase via `supabase secrets set`.
+- Pipeline completo: `challenge-join` → `notify-rules` → `send-push` → FCM HTTP v1 → dispositivo do usuário.
+
+### AUDIT-FIX: S-2 — Push notification para staff quando atleta solicita entrada
+**Problema:** Staff não sabia quando um atleta pedia para entrar na assessoria — precisava checar manualmente.
+
+**Backend:**
+- `notify-rules/index.ts`: Nova regra `join_request_received` — busca nome do grupo e staff (admin_master + professor), envia push: "Fulano quer entrar em 'Nome'. Aprove no app." Dedup 12h.
+
+**Frontend:**
+- `NotificationRulesService.notifyJoinRequestReceived()`: Novo método fire-and-forget.
+- `JoinAssessoriaScreen`: Após `fn_request_join` retornar `'requested'`, dispara push para staff do grupo.
+
+### F-3: Gráficos de evolução pessoal
+- `PersonalEvolutionScreen` (nova tela): 3 gráficos via `fl_chart`:
+  - Pace médio (min/km) — line chart, últimas 12 semanas
+  - Volume semanal (km) — bar chart
+  - Frequência (corridas/semana) — bar chart
+- Cards de PR: melhor pace e maior distância (últimas 12 semanas)
+- Dados: query `sessions` com `is_verified=true`, agregação client-side por ISO week
+- Integrado no `ProgressHubScreen` como "Minha Evolução" (primeiro tile)
+- Dependência: `fl_chart` adicionada ao `pubspec.yaml`
+
+### F-4: Feed de atividades dos amigos
+- `fn_friends_activity_feed` (RPC SECURITY DEFINER): cruza `friendships` (accepted) + `sessions` (verified, >100m) + `profiles` (display_name, avatar_url). Paginação p_limit/p_offset, max 100.
+- `FriendsActivityFeedScreen` (nova tela): cards com avatar, nome, tempo relativo ("há 3h"), métricas (distância, pace, duração) com chips coloridos. Paginação 30 por vez + "Carregar mais". Empty state com CTA "Adicione amigos".
+- Integrado no menu Mais → seção Social → "Atividade dos amigos"
+- Migration: `omni_runner/supabase/migrations/20260224200000_fn_friends_activity_feed.sql`
+
+### F-2: Compartilhamento social pós-corrida
+- `run_share_card.dart` (novo widget): Renderiza card visual com gradiente (azul→roxo→rosa), métricas hero (distância em destaque), pace, duração, FC média, nome do atleta, data, badge "Corrida verificada pelo Omni Runner".
+- `shareRunCard()`: Função que renderiza o card off-screen via `RepaintBoundary`, captura como PNG (3x pixel ratio para qualidade), salva em temp, e abre share sheet nativo via `share_plus`.
+- `RunSummaryScreen`: Botão de compartilhar (ícone share) adicionado no top bar do resumo da corrida.
+
+### C-4: Deep link sem web fallback → Landing pages + Portal na web
+**Problema:** Links de desafio/convite (`omnirunner.app/challenge/{id}`, `omnirunner.app/invite/{code}`) não tinham fallback web. Se o app não estivesse instalado, link morto.
+
+**Solução — Portal Next.js deployado em `omnirunner.app` (Vercel):**
+- Domínio `omnirunner.app` registrado no Cloudflare, CNAME apontando para Vercel.
+- Portal staff (dashboard, atletas, verificação, billing, créditos, engajamento) acessível via login em `omnirunner.app`.
+
+**Landing pages públicas (sem autenticação):**
+- `/challenge/[id]/page.tsx`: Auto-redirect (3s) para deep link `omnirunner://challenge/{id}`. Botão "Abrir no App" + badges Google Play / App Store. Gradiente emerald/cyan com ícone runner.
+- `/invite/[code]/page.tsx`: Auto-redirect (3s) para deep link `omnirunner://invite/{code}`. Botão "Aceitar Convite no App" + badges. Gradiente violet/fuchsia com ícone grupo.
+- Open Graph metadata para previews ricos em WhatsApp, Telegram, etc.
+
+**App Links / Universal Links:**
+- `/.well-known/assetlinks.json`: Android App Links com SHA256 `DF:70:EB:91:...` do APK release.
+- `/.well-known/apple-app-site-association`: iOS Universal Links (requer substituição de `TEAM_ID` quando Apple Developer Account estiver disponível).
+
+**Middleware atualizado:**
+- Rotas `/challenge/*` e `/invite/*` são públicas (sem autenticação).
+- `/.well-known/*` excluído do matcher para servir arquivos estáticos diretamente.
+
+**Infra:**
+- Vercel: Env vars `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` configuradas.
+- `next.config.mjs`: Headers `Content-Type: application/json` + cache 1h para `.well-known`.

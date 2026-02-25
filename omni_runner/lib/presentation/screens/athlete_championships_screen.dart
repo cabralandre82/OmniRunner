@@ -24,6 +24,7 @@ class _AthleteChampionshipsScreenState
   String? _error;
   List<_ChampItem> _championships = [];
   final Set<String> _enrolled = {};
+  String _statusFilter = 'all'; // all | open | active | enrolled
 
   SupabaseClient get _db => Supabase.instance.client;
 
@@ -183,25 +184,73 @@ class _AthleteChampionshipsScreenState
                   onRefresh: _load,
                   child: _championships.isEmpty
                       ? _empty(theme)
-                      : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                          itemCount: _championships.length,
-                          itemBuilder: (_, i) {
-                            final c = _championships[i];
-                            final isEnrolled = _enrolled.contains(c.id);
-                            return _ChampCard(
-                              champ: c,
-                              isEnrolled: isEnrolled,
-                              onEnroll: c.status == 'open' && !isEnrolled
-                                  ? () => _enroll(c)
-                                  : null,
-                              onViewParticipants: isEnrolled
-                                  ? () => _viewParticipants(c)
-                                  : null,
-                            );
-                          },
-                        ),
+                      : _buildFilteredList(theme),
                 ),
+    );
+  }
+
+  Widget _buildFilteredList(ThemeData theme) {
+    final filtered = _championships.where((c) {
+      if (_statusFilter == 'enrolled') return _enrolled.contains(c.id);
+      if (_statusFilter == 'all') return true;
+      return c.status == _statusFilter;
+    }).toList();
+
+    return Column(
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: Row(
+            children: [
+              _filterChip('Todos', 'all'),
+              const SizedBox(width: 8),
+              _filterChip('Abertos', 'open'),
+              const SizedBox(width: 8),
+              _filterChip('Ativos', 'active'),
+              const SizedBox(width: 8),
+              _filterChip('Inscritos', 'enrolled'),
+            ],
+          ),
+        ),
+        Expanded(
+          child: filtered.isEmpty
+              ? Center(
+                  child: Text(
+                    'Nenhum campeonato neste filtro',
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: theme.colorScheme.outline),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  itemCount: filtered.length,
+                  itemBuilder: (_, i) {
+                    final c = filtered[i];
+                    final isEnrolled = _enrolled.contains(c.id);
+                    return _ChampCard(
+                      champ: c,
+                      isEnrolled: isEnrolled,
+                      onEnroll: c.status == 'open' && !isEnrolled
+                          ? () => _enroll(c)
+                          : null,
+                      onViewParticipants: isEnrolled
+                          ? () => _viewParticipants(c)
+                          : null,
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _filterChip(String label, String value) {
+    return FilterChip(
+      label: Text(label),
+      selected: _statusFilter == value,
+      onSelected: (_) => setState(() => _statusFilter = value),
+      showCheckmark: false,
     );
   }
 

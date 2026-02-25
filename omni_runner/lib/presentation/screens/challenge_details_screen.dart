@@ -786,10 +786,7 @@ class _RulesCard extends StatelessWidget {
               _row('Prazo p/ aceitar', '${rules.acceptWindowMin} min'),
             _row('Corrida mínima',
                 '${(rules.minSessionDistanceM / 1000).toStringAsFixed(1)} km'),
-            _row('Validação',
-                rules.antiCheatPolicy == ChallengeAntiCheatPolicy.strict
-                    ? 'Avançada (frequência cardíaca obrigatória)'
-                    : 'Padrão (GPS + anti-cheat)'),
+            _row('Validação', 'Padrão (GPS + anti-cheat)'),
           ],
         ),
       ),

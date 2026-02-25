@@ -9,6 +9,9 @@ class CoachSettingsRepo implements ICoachSettingsRepo {
   static const _periodicKey = 'coach_periodic_enabled';
   static const _hrZoneKey = 'coach_hr_zone_enabled';
   static const _maxHrKey = 'coach_max_hr';
+  static const _imperialKey = 'coach_use_imperial';
+  static const _visibleRankingKey = 'coach_profile_visible_ranking';
+  static const _shareActivityKey = 'coach_share_activity_feed';
 
   @override
   Future<CoachSettingsEntity> load() async {
@@ -19,6 +22,9 @@ class CoachSettingsRepo implements ICoachSettingsRepo {
       periodicEnabled: prefs.getBool(_periodicKey) ?? true,
       hrZoneEnabled: prefs.getBool(_hrZoneKey) ?? true,
       maxHr: prefs.getInt(_maxHrKey) ?? 190,
+      useImperial: prefs.getBool(_imperialKey) ?? false,
+      profileVisibleInRanking: prefs.getBool(_visibleRankingKey) ?? true,
+      shareActivityInFeed: prefs.getBool(_shareActivityKey) ?? true,
     );
   }
 
@@ -30,5 +36,8 @@ class CoachSettingsRepo implements ICoachSettingsRepo {
     await prefs.setBool(_periodicKey, settings.periodicEnabled);
     await prefs.setBool(_hrZoneKey, settings.hrZoneEnabled);
     await prefs.setInt(_maxHrKey, settings.maxHr);
+    await prefs.setBool(_imperialKey, settings.useImperial);
+    await prefs.setBool(_visibleRankingKey, settings.profileVisibleInRanking);
+    await prefs.setBool(_shareActivityKey, settings.shareActivityInFeed);
   }
 }

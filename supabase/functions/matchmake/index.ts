@@ -71,7 +71,19 @@ serve(async (req: Request) => {
         .limit(1)
         .maybeSingle();
 
-      return jsonOk({ queue_entry: entry ?? null }, requestId);
+      let queuePosition: number | null = null;
+      if (entry && entry.status === "waiting") {
+        const { count } = await db
+          .from("challenge_queue")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "waiting")
+          .eq("metric", entry.metric)
+          .eq("skill_bracket", entry.skill_bracket)
+          .lte("created_at", entry.created_at);
+        queuePosition = count ?? null;
+      }
+
+      return jsonOk({ queue_entry: entry ?? null, queue_position: queuePosition }, requestId);
     }
 
     if (req.method !== "POST") {
@@ -145,6 +157,24 @@ serve(async (req: Request) => {
     if (windowMs <= 0) {
       status = 400;
       return jsonErr(400, "INVALID_WINDOW", "window_ms must be positive", requestId);
+    }
+
+    // ── Assessoria gate: matchmaking requires group membership ────────
+    const { data: memberRow } = await db
+      .from("coaching_members")
+      .select("id")
+      .eq("user_id", user.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (!memberRow) {
+      status = 403;
+      errorCode = "NO_ASSESSORIA";
+      return jsonErr(
+        403, "NO_ASSESSORIA",
+        "Você precisa estar em uma assessoria para buscar oponentes. Peça o código de convite ao seu professor.",
+        requestId,
+      );
     }
 
     // Monetization gate: stake > 0 requires VERIFIED

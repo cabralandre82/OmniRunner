@@ -13,6 +13,7 @@ import 'package:omni_runner/presentation/blocs/challenges/challenges_state.dart'
 import 'package:omni_runner/presentation/blocs/verification/verification_bloc.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_event.dart';
 import 'package:omni_runner/presentation/screens/challenge_invite_screen.dart';
+import 'package:omni_runner/presentation/screens/matchmaking_screen.dart';
 import 'package:omni_runner/presentation/widgets/verification_gate.dart';
 
 class ChallengeCreateScreen extends StatefulWidget {
@@ -43,6 +44,9 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
 
   /// For group challenges: acceptance window in minutes
   int _acceptWindowMin = 10;
+
+  /// Max participants for group challenges
+  int _maxParticipants = 10;
 
   /// For "Agendado" mode
   DateTime? _scheduledDate;
@@ -105,6 +109,16 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // ── Matchmaking CTA ──────────────────────────────────
+                _MatchmakingBanner(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<String>(
+                      builder: (_) => const MatchmakingScreen(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
                 // ── Mode selector ────────────────────────────────────
                 Text('Quando?',
                     style: theme.textTheme.titleMedium
@@ -188,6 +202,36 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                         ),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(Icons.group, size: 20, color: cs.primary),
+                      const SizedBox(width: 8),
+                      Text('Máximo de participantes',
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w600)),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: _maxParticipants > 3
+                            ? () => setState(() => _maxParticipants--)
+                            : null,
+                        icon: const Icon(Icons.remove_circle_outline),
+                        iconSize: 24,
+                      ),
+                      Text('$_maxParticipants',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: cs.primary,
+                          )),
+                      IconButton(
+                        onPressed: _maxParticipants < 100
+                            ? () => setState(() => _maxParticipants++)
+                            : null,
+                        icon: const Icon(Icons.add_circle_outline),
+                        iconSize: 24,
+                      ),
+                    ],
                   ),
                 ],
                 const SizedBox(height: 16),
@@ -609,6 +653,8 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
       acceptWindowMin: _type == ChallengeType.group && _mode == 0
           ? _acceptWindowMin
           : null,
+      maxParticipants:
+          _type == ChallengeType.group ? _maxParticipants : null,
     );
 
     final typeStr = switch (_type) {
@@ -684,6 +730,65 @@ class _ModeCard extends StatelessWidget {
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: cs.outline, fontSize: 11)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MatchmakingBanner extends StatelessWidget {
+  final VoidCallback onTap;
+  const _MatchmakingBanner({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: cs.tertiaryContainer,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: cs.tertiary.withValues(alpha: 0.15),
+                ),
+                child: Icon(Icons.sports_mma_rounded,
+                    size: 22, color: cs.tertiary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Sem oponente? Use o matchmaking',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: cs.onTertiaryContainer,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Encontramos alguém do seu nível automaticamente',
+                      style: TextStyle(
+                          fontSize: 11, color: cs.onTertiaryContainer),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios,
+                  size: 16, color: cs.onTertiaryContainer),
+            ],
+          ),
         ),
       ),
     );

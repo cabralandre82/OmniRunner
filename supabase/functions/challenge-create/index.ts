@@ -118,6 +118,24 @@ serve(async (req: Request) => {
       return jsonErr(400, "INVALID_ANTI_CHEAT", `anti_cheat_policy must be one of: ${VALID_ANTI_CHEAT.join(", ")}`, requestId);
     }
 
+    // ── Assessoria gate: all challenges require group membership ──────
+    const { data: memberRow } = await db
+      .from("coaching_members")
+      .select("id")
+      .eq("user_id", user.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (!memberRow) {
+      status = 403;
+      errorCode = "NO_ASSESSORIA";
+      return jsonErr(
+        403, "NO_ASSESSORIA",
+        "Você precisa estar em uma assessoria para criar desafios. Peça o código de convite ao seu professor.",
+        requestId,
+      );
+    }
+
     // ── Monetization gate: stake>0 requires VERIFIED ──────────────────
     if (entry_fee_coins > 0) {
       const { data: verifiedRow, error: verErr } = await db

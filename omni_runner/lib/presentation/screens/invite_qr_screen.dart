@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Displays a persistent QR code for an assessoria invite link.
 ///
@@ -10,7 +11,7 @@ import 'package:share_plus/share_plus.dart';
 ///
 /// Unlike token QR codes, invite QR codes do not expire — the invite_code is
 /// a permanent group-level attribute that can be disabled via `invite_enabled`.
-class InviteQrScreen extends StatelessWidget {
+class InviteQrScreen extends StatefulWidget {
   final String inviteCode;
   final String groupName;
 
@@ -20,7 +21,46 @@ class InviteQrScreen extends StatelessWidget {
     required this.groupName,
   });
 
+  @override
+  State<InviteQrScreen> createState() => _InviteQrScreenState();
+}
+
+class _InviteQrScreenState extends State<InviteQrScreen> {
+  String get inviteCode => widget.inviteCode;
+  String get groupName => widget.groupName;
+
   String get _inviteLink => 'https://omnirunner.app/invite/$inviteCode';
+
+  int? _memberCount;
+  bool? _inviteEnabled;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    try {
+      final db = Supabase.instance.client;
+      final row = await db
+          .from('coaching_groups')
+          .select('invite_enabled')
+          .eq('invite_code', inviteCode)
+          .maybeSingle();
+
+      final countRes = await db
+          .from('coaching_members')
+          .select('id')
+          .eq('joined_via', 'invite_code');
+
+      if (!mounted) return;
+      setState(() {
+        _inviteEnabled = (row?['invite_enabled'] as bool?) ?? true;
+        _memberCount = (countRes as List?)?.length;
+      });
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +160,55 @@ class InviteQrScreen extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 16),
+
+            if (_memberCount != null || _inviteEnabled != null)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      if (_memberCount != null)
+                        Column(
+                          children: [
+                            Text('$_memberCount',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.primary)),
+                            Text('entraram via convite',
+                                style: theme.textTheme.bodySmall),
+                          ],
+                        ),
+                      if (_inviteEnabled != null)
+                        Column(
+                          children: [
+                            Icon(
+                              _inviteEnabled!
+                                  ? Icons.check_circle
+                                  : Icons.cancel,
+                              color: _inviteEnabled!
+                                  ? Colors.green
+                                  : Colors.red,
+                              size: 28,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _inviteEnabled! ? 'Ativo' : 'Desativado',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: _inviteEnabled!
+                                    ? Colors.green
+                                    : Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
 
             // Action buttons
             Row(

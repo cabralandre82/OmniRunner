@@ -419,6 +419,7 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
       'created_at_ms': c.createdAtMs,
       'creator_display_name': creatorDisplayName,
       if (c.rules.acceptWindowMin != null) 'accept_window_min': c.rules.acceptWindowMin,
+      if (c.rules.maxParticipants != null) 'max_participants': c.rules.maxParticipants,
       if (c.teamAGroupId != null) 'team_a_group_id': c.teamAGroupId,
       if (c.teamBGroupId != null) 'team_b_group_id': c.teamBGroupId,
     };

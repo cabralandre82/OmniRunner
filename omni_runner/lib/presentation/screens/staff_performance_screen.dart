@@ -36,6 +36,8 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
   int _totalMembers = 0;
   int _weeklyRuns = 0;
   double _weeklyDistanceKm = 0;
+  int _prevWeekRuns = 0;
+  double _prevWeekDistanceKm = 0;
   int _challengesDone = 0;
   int _challengesWon = 0;
   int _champParticipants = 0;
@@ -132,6 +134,27 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
             distanceKm: (distanceSums[e.key] ?? 0) / 1000,
           );
         }).toList();
+        // Previous week comparison
+        final prevWeekStart = weekStart.subtract(const Duration(days: 7));
+        final prevWeekStartMs = prevWeekStart.millisecondsSinceEpoch;
+        try {
+          final prevRes = await db
+              .from('sessions')
+              .select('total_distance_m')
+              .inFilter('user_id', athleteIds)
+              .gte('start_time_ms', prevWeekStartMs)
+              .lt('start_time_ms', weekStartMs)
+              .eq('is_verified', true);
+
+          final prev = (prevRes as List).cast<Map<String, dynamic>>();
+          _prevWeekRuns = prev.length;
+          _prevWeekDistanceKm = prev.fold<double>(
+              0,
+              (sum, s) =>
+                  sum +
+                  ((s['total_distance_m'] as num?)?.toDouble() ?? 0)) /
+              1000;
+        } catch (_) {}
       } catch (e) {
         AppLogger.warn('Performance: sessions query failed: $e', tag: 'StaffPerf');
       }
@@ -242,6 +265,8 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
                         totalMembers: _totalMembers,
                         weeklyRuns: _weeklyRuns,
                         weeklyDistanceKm: _weeklyDistanceKm,
+                        prevWeekRuns: _prevWeekRuns,
+                        prevWeekDistanceKm: _prevWeekDistanceKm,
                         challengesDone: _challengesDone,
                         challengesWon: _challengesWon,
                         champParticipants: _champParticipants,
@@ -337,6 +362,8 @@ class _KpiGrid extends StatelessWidget {
   final int totalMembers;
   final int weeklyRuns;
   final double weeklyDistanceKm;
+  final int prevWeekRuns;
+  final double prevWeekDistanceKm;
   final int challengesDone;
   final int challengesWon;
   final int champParticipants;
@@ -347,11 +374,22 @@ class _KpiGrid extends StatelessWidget {
     required this.totalMembers,
     required this.weeklyRuns,
     required this.weeklyDistanceKm,
+    required this.prevWeekRuns,
+    required this.prevWeekDistanceKm,
     required this.challengesDone,
     required this.challengesWon,
     required this.champParticipants,
     required this.champCompleted,
   });
+
+  static String? _trendLabel(int current, int previous) {
+    if (previous == 0) return null;
+    final diff = current - previous;
+    final pct = ((diff / previous) * 100).round();
+    if (pct == 0) return '= sem. anterior';
+    final sign = pct > 0 ? '+' : '';
+    return '$sign$pct% vs sem. anterior';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -376,6 +414,10 @@ class _KpiGrid extends StatelessWidget {
           value: '$weeklyRuns',
           subtitle: '${weeklyDistanceKm.toStringAsFixed(1)} km totais',
           color: Colors.green,
+          trend: prevWeekRuns > 0
+              ? _trendLabel(weeklyRuns, prevWeekRuns)
+              : null,
+          trendUp: weeklyRuns >= prevWeekRuns,
         ),
         _KpiCard(
           icon: Icons.flash_on_rounded,
@@ -402,6 +444,8 @@ class _KpiCard extends StatelessWidget {
   final String value;
   final String subtitle;
   final Color color;
+  final String? trend;
+  final bool trendUp;
 
   const _KpiCard({
     required this.icon,
@@ -409,6 +453,8 @@ class _KpiCard extends StatelessWidget {
     required this.value,
     required this.subtitle,
     required this.color,
+    this.trend,
+    this.trendUp = true,
   });
 
   @override
@@ -458,6 +504,19 @@ class _KpiCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+          if (trend != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              trend!,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: trendUp ? Colors.green.shade700 : Colors.red.shade700,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ],
       ),
     );

@@ -23,6 +23,7 @@ import 'package:omni_runner/presentation/screens/badges_screen.dart';
 import 'package:omni_runner/presentation/screens/challenges_list_screen.dart';
 import 'package:omni_runner/presentation/screens/leaderboards_screen.dart';
 import 'package:omni_runner/presentation/screens/missions_screen.dart';
+import 'package:omni_runner/presentation/screens/personal_evolution_screen.dart';
 import 'package:omni_runner/presentation/screens/progression_screen.dart';
 import 'package:omni_runner/presentation/screens/streaks_leaderboard_screen.dart';
 import 'package:omni_runner/presentation/screens/wallet_screen.dart';
@@ -51,6 +52,12 @@ class ProgressHubScreen extends StatelessWidget {
             title: 'Nível e XP',
             subtitle: 'Seu nível, sequência e meta semanal',
             target: _Target.progression,
+          ),
+          _Tile(
+            icon: Icons.show_chart_rounded,
+            title: 'Minha Evolução',
+            subtitle: 'Gráficos de pace, volume e frequência',
+            target: _Target.evolution,
           ),
           _Tile(
             icon: Icons.local_fire_department_rounded,
@@ -106,7 +113,7 @@ class ProgressHubScreen extends StatelessWidget {
   }
 }
 
-enum _Target { progression, streaks, badges, missions, challenges, championships, wallet, leaderboards, feed }
+enum _Target { progression, evolution, streaks, badges, missions, challenges, championships, wallet, leaderboards, feed }
 
 class _Tile extends StatelessWidget {
   final IconData icon;
@@ -140,6 +147,7 @@ class _Tile extends StatelessWidget {
 
     final uid = sl<UserIdentityProvider>().userId;
     final Widget page = switch (target) {
+      _Target.evolution => const PersonalEvolutionScreen(),
       _Target.progression => BlocProvider<ProgressionBloc>(
           create: (_) => sl<ProgressionBloc>()..add(LoadProgression(uid)),
           child: const ProgressionScreen(),

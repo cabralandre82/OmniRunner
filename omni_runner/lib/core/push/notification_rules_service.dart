@@ -57,6 +57,17 @@ class NotificationRulesService {
     });
   }
 
+  /// Notify staff that an athlete requested to join their group.
+  void notifyJoinRequestReceived({
+    required String groupId,
+    required String athleteName,
+  }) {
+    _invoke('join_request_received', {
+      'group_id': groupId,
+      'athlete_name': athleteName,
+    });
+  }
+
   /// Evaluate all notification rules (streak_at_risk, etc.).
   /// Typically called by a server-side cron, but available for manual trigger.
   void evaluateAll() {

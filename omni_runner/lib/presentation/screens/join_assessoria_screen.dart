@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/analytics/product_event_tracker.dart';
 import 'package:omni_runner/core/deep_links/deep_link_handler.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/push/notification_rules_service.dart';
 import 'package:omni_runner/core/service_locator.dart';
 
 /// Onboarding screen for athletes to join a coaching group (assessoria).
@@ -296,6 +297,16 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
         'role': 'ATLETA',
         'method': 'request_join',
       });
+
+      // Push notification to staff (fire-and-forget)
+      final displayName = Supabase.instance.client.auth.currentUser
+              ?.userMetadata?['display_name'] as String? ??
+          'Um atleta';
+      sl<NotificationRulesService>().notifyJoinRequestReceived(
+        groupId: groupId,
+        athleteName: displayName,
+      );
+
       await _setReady();
       if (!mounted) return;
       _showRequestSent(groupName, alreadyExists: false);

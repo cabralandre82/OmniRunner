@@ -25,12 +25,24 @@ final class CoachSettingsEntity extends Equatable {
   /// Can be customised via settings or derived from `220 - age`.
   final int maxHr;
 
+  /// Use imperial units (miles) instead of metric (km).
+  final bool useImperial;
+
+  /// Whether the user's profile is visible in public rankings.
+  final bool profileVisibleInRanking;
+
+  /// Whether the user's runs appear in the assessoria feed.
+  final bool shareActivityInFeed;
+
   const CoachSettingsEntity({
     this.kmEnabled = true,
     this.ghostEnabled = true,
     this.periodicEnabled = true,
     this.hrZoneEnabled = true,
     this.maxHr = 190,
+    this.useImperial = false,
+    this.profileVisibleInRanking = true,
+    this.shareActivityInFeed = true,
   });
 
   /// Create a copy with optional overrides.
@@ -40,6 +52,9 @@ final class CoachSettingsEntity extends Equatable {
     bool? periodicEnabled,
     bool? hrZoneEnabled,
     int? maxHr,
+    bool? useImperial,
+    bool? profileVisibleInRanking,
+    bool? shareActivityInFeed,
   }) =>
       CoachSettingsEntity(
         kmEnabled: kmEnabled ?? this.kmEnabled,
@@ -47,9 +62,22 @@ final class CoachSettingsEntity extends Equatable {
         periodicEnabled: periodicEnabled ?? this.periodicEnabled,
         hrZoneEnabled: hrZoneEnabled ?? this.hrZoneEnabled,
         maxHr: maxHr ?? this.maxHr,
+        useImperial: useImperial ?? this.useImperial,
+        profileVisibleInRanking:
+            profileVisibleInRanking ?? this.profileVisibleInRanking,
+        shareActivityInFeed:
+            shareActivityInFeed ?? this.shareActivityInFeed,
       );
 
   @override
-  List<Object?> get props =>
-      [kmEnabled, ghostEnabled, periodicEnabled, hrZoneEnabled, maxHr];
+  List<Object?> get props => [
+        kmEnabled,
+        ghostEnabled,
+        periodicEnabled,
+        hrZoneEnabled,
+        maxHr,
+        useImperial,
+        profileVisibleInRanking,
+        shareActivityInFeed,
+      ];
 }

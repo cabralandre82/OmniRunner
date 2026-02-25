@@ -95,7 +95,8 @@ serve(async (req: Request) => {
 
     // ── Evaluate rules ─────────────────────────────────────────────────
     const allRules = [
-      "challenge_received", "streak_at_risk", "championship_starting",
+      "challenge_received", "challenge_accepted", "join_request_received",
+      "streak_at_risk", "championship_starting",
       "championship_invite_received", "challenge_team_invite_received",
     ];
     const rulesToRun = body.rule ? [body.rule] : allRules;
@@ -104,6 +105,12 @@ serve(async (req: Request) => {
       switch (rule) {
         case "challenge_received":
           results[rule] = await evaluateChallengeReceived(db, supabaseUrl, serviceKey, body.context);
+          break;
+        case "challenge_accepted":
+          results[rule] = await evaluateChallengeAccepted(db, supabaseUrl, serviceKey, body.context);
+          break;
+        case "join_request_received":
+          results[rule] = await evaluateJoinRequestReceived(db, supabaseUrl, serviceKey, body.context);
           break;
         case "streak_at_risk":
           results[rule] = await evaluateStreakAtRisk(db, supabaseUrl, serviceKey);
@@ -426,6 +433,155 @@ async function evaluateChallengeTeamInviteReceived(
   }
 
   return { evaluated: context.user_ids.length, sent };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Rule 6: Challenge Accepted (opponent joined)
+// ═════════════════════════════════════════════════════════════════════════════
+
+async function evaluateChallengeAccepted(
+  // deno-lint-ignore no-explicit-any
+  db: any,
+  supabaseUrl: string,
+  serviceKey: string,
+  context?: { challenge_id?: string; joiner_user_id?: string },
+): Promise<{ evaluated: number; sent: number }> {
+  if (!context?.challenge_id) {
+    return { evaluated: 0, sent: 0 };
+  }
+
+  const challengeId = context.challenge_id;
+  const joinerId = context.joiner_user_id;
+
+  const { data: challenge } = await db
+    .from("challenges")
+    .select("title, creator_user_id")
+    .eq("id", challengeId)
+    .maybeSingle();
+
+  if (!challenge) return { evaluated: 0, sent: 0 };
+
+  const challName = challenge.title ?? "Desafio";
+
+  // Get joiner display name
+  let joinerName = "Um atleta";
+  if (joinerId) {
+    const { data: joinerProfile } = await db
+      .from("profiles")
+      .select("display_name")
+      .eq("id", joinerId)
+      .maybeSingle();
+    if (joinerProfile?.display_name) {
+      joinerName = joinerProfile.display_name;
+    }
+  }
+
+  // Notify all OTHER accepted participants (including the creator)
+  const { data: participants } = await db
+    .from("challenge_participants")
+    .select("user_id")
+    .eq("challenge_id", challengeId)
+    .eq("status", "accepted")
+    .limit(100);
+
+  const targetIds = (participants ?? [])
+    .map((p: { user_id: string }) => p.user_id)
+    .filter((uid: string) => uid !== joinerId);
+
+  // Also include the creator (may not be in participants table for some flows)
+  if (challenge.creator_user_id && challenge.creator_user_id !== joinerId) {
+    if (!targetIds.includes(challenge.creator_user_id)) {
+      targetIds.push(challenge.creator_user_id);
+    }
+  }
+
+  if (targetIds.length === 0) return { evaluated: 0, sent: 0 };
+
+  let sent = 0;
+  const dedupKey = `${challengeId}:${joinerId ?? "unknown"}`;
+
+  for (const userId of targetIds) {
+    if (await wasRecentlyNotified(db, userId, "challenge_accepted", dedupKey)) {
+      continue;
+    }
+
+    const ok = await dispatchPush(supabaseUrl, serviceKey, {
+      user_ids: [userId],
+      title: "Desafio aceito!",
+      body: `${joinerName} aceitou "${challName}". Prepare-se!`,
+      data: { type: "challenge_accepted", challenge_id: challengeId },
+    });
+
+    if (ok) {
+      await logNotification(db, userId, "challenge_accepted", dedupKey);
+      sent++;
+    }
+  }
+
+  return { evaluated: targetIds.length, sent };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Rule 7: Join Request Received (athlete wants to join assessoria)
+// ═════════════════════════════════════════════════════════════════════════════
+
+async function evaluateJoinRequestReceived(
+  // deno-lint-ignore no-explicit-any
+  db: any,
+  supabaseUrl: string,
+  serviceKey: string,
+  context?: { group_id?: string; athlete_name?: string },
+): Promise<{ evaluated: number; sent: number }> {
+  if (!context?.group_id) {
+    return { evaluated: 0, sent: 0 };
+  }
+
+  const groupId = context.group_id;
+  const athleteName = context.athlete_name ?? "Um atleta";
+
+  // Get group name
+  const { data: group } = await db
+    .from("coaching_groups")
+    .select("name")
+    .eq("id", groupId)
+    .maybeSingle();
+
+  const groupName = group?.name ?? "sua assessoria";
+
+  // Get staff members (admin_master + professor) of this group
+  const { data: staff } = await db
+    .from("coaching_members")
+    .select("user_id")
+    .eq("group_id", groupId)
+    .in("role", ["admin_master", "professor"])
+    .limit(50);
+
+  if (!staff || staff.length === 0) return { evaluated: 0, sent: 0 };
+
+  let sent = 0;
+  const dedupKey = `${groupId}:${athleteName}`;
+
+  for (const s of staff) {
+    const userId = s.user_id as string;
+
+    if (await wasRecentlyNotified(db, userId, "join_request_received", dedupKey)) {
+      continue;
+    }
+
+    const ok = await dispatchPush(supabaseUrl, serviceKey, {
+      user_ids: [userId],
+      title: "Nova solicitação de entrada",
+      body: `${athleteName} quer entrar em "${groupName}". Aprove no app.`,
+      data: { type: "join_request_received", group_id: groupId },
+    });
+
+    if (ok) {
+      await logNotification(db, userId, "join_request_received", dedupKey);
+      sent++;
+    }
+  }
+
+  return { evaluated: staff.length, sent };
 }
 
 // ═════════════════════════════════════════════════════════════════════════════

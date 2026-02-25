@@ -24,9 +24,14 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   static const _tag = 'History';
+  static const _staleThreshold = Duration(seconds: 30);
+  static const _pageSize = 30;
+
   List<WorkoutSessionEntity>? _sessions;
   bool _loading = true;
   bool _syncing = false;
+  bool _hasMore = true;
+  DateTime? _lastLoadAt;
 
   @override
   void initState() { super.initState(); _loadSessions(); }
@@ -35,12 +40,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
   void didUpdateWidget(covariant HistoryScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isVisible && !oldWidget.isVisible) {
-      _loadSessions();
+      final stale = _lastLoadAt == null ||
+          DateTime.now().difference(_lastLoadAt!) > _staleThreshold;
+      if (stale) _loadSessions();
     }
   }
 
-  Future<void> _loadSessions() async {
+  Future<void> _loadSessions({bool loadMore = false}) async {
     final repo = sl<ISessionRepo>();
+    final offset = loadMore ? (_sessions?.length ?? 0) : 0;
 
     // Pull completed sessions from Supabase and merge into Isar
     try {
@@ -53,7 +61,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 'ghost_session_id')
             .eq('user_id', uid)
             .order('start_time_ms', ascending: false)
-            .limit(30);
+            .range(offset, offset + _pageSize - 1);
 
         for (final r in (rows as List).cast<Map<String, dynamic>>()) {
           final sid = r['id'] as String;
@@ -95,7 +103,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
 
     final all = await repo.getAll();
-    if (mounted) setState(() { _sessions = all.take(20).toList(); _loading = false; });
+    if (mounted) {
+      final sorted = all.toList()
+        ..sort((a, b) => b.startTimeMs.compareTo(a.startTimeMs));
+      if (loadMore) {
+        setState(() {
+          _sessions = sorted.take(offset + _pageSize).toList();
+          _hasMore = sorted.length > offset + _pageSize;
+          _loading = false;
+        });
+      } else {
+        setState(() {
+          _sessions = sorted.take(_pageSize).toList();
+          _hasMore = sorted.length > _pageSize;
+          _loading = false;
+        });
+      }
+      _lastLoadAt = DateTime.now();
+    }
   }
 
   Future<void> _onSync() async {
@@ -140,11 +165,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   onRefresh: _loadSessions,
                   child: ListView.builder(
                     padding: const EdgeInsets.all(12),
-                    itemCount: _sessions!.length,
-                    itemBuilder: (context, i) => _SessionTile(
-                      session: _sessions![i],
-                      pickGhostMode: widget.pickGhostMode,
-                    ),
+                    itemCount: _sessions!.length + (_hasMore ? 1 : 0),
+                    itemBuilder: (context, i) {
+                      if (i == _sessions!.length) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Center(
+                            child: OutlinedButton(
+                              onPressed: () => _loadSessions(loadMore: true),
+                              child: const Text('Carregar mais'),
+                            ),
+                          ),
+                        );
+                      }
+                      return _SessionTile(
+                        session: _sessions![i],
+                        pickGhostMode: widget.pickGhostMode,
+                      );
+                    },
                   ),
                 ),
     );

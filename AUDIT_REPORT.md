@@ -74,10 +74,10 @@
 |---|---|---|---|---|
 | C-1 | CRÍTICO | **Após criar desafio, a ÚNICA opção é compartilhar link.** O matchmaking foi adicionado na lista, mas o fluxo de criação manual ainda obriga o compartilhamento. Se o usuário cria desafio e fecha o ChallengeInviteScreen sem compartilhar, o desafio fica "pending" para sempre (expira). | Desafio criado mas nunca jogado. | Oferecer opção "Publicar para matchmaking" no ChallengeInviteScreen, ou alertar "Você não compartilhou. Desafio será cancelado em X horas se ninguém entrar." |
 | C-2 | ALTA | **Fluxo de criação e matchmaking são separados** — o usuário precisa decidir ANTES se quer convidar manualmente ou fazer matchmaking. Mas ambos os fluxos pedem as mesmas informações (métrica, meta, duração, stake). | Duplicação de UX. | Unificar: um formulário só, com opção "Enviar link" ou "Encontrar oponente automaticamente" no final. |
-| C-3 | ALTA | **ChallengeInviteScreen permite convidar membros da assessoria** via contacts — mas essa lista depende de `coaching_members` que pode não estar sincronizada. Se o atleta não tem assessoria, a seção fica vazia sem explicação. | Dead end no fluxo. | Se sem assessoria, mostrar: "Compartilhe o link por WhatsApp, Telegram, etc." como CTA principal. |
-| C-4 | MÉDIA | **Deep link de convite** (`https://omnirunner.app/challenge/{id}`) — se o app não está instalado, o link não resolve. Não há web fallback. | Perda de conversão. | Criar landing page web que redireciona para a store ou abre o app via universal link. |
+| C-3 | ALTA | **Atleta sem assessoria não deve acessar desafios.** Regra de produto: assessoria é pré-requisito para criar, participar ou buscar desafios. | Atletas sem vínculo competindo sem supervisão. | ✅ **CORRIGIDO** — Gate em 3 Edge Functions (`challenge-create`, `challenge-join`, `matchmake`) retorna `NO_ASSESSORIA`. Flutter bloqueia navegação para Desafios e Campeonatos com `AssessoriaRequiredSheet` + CTA "Entrar em assessoria". |
+| C-4 | MÉDIA | **Deep link de convite** (`https://omnirunner.app/challenge/{id}`) — se o app não está instalado, o link não resolve. Não há web fallback. | Perda de conversão. | ✅ **CORRIGIDO** — Portal Next.js deployado em `omnirunner.app` (Vercel). Landing pages `/challenge/[id]` e `/invite/[code]` com auto-redirect para deep link, botões de download (Play Store / App Store), e Open Graph metadata. Android App Links via `/.well-known/assetlinks.json` (SHA256 do APK). iOS Universal Links via `/.well-known/apple-app-site-association` (substituir `TEAM_ID` quando Apple Developer Account estiver disponível). |
 | C-5 | MÉDIA | **Group challenges: "50 - accepted" slots disponíveis** — hardcoded. Não há opção de limitar o número de participantes em grupo. | Grupo com 50 pessoas perde competitividade. | Adicionar campo "máximo de participantes" (default 50, editável). |
-| C-6 | MÉDIA | **Não há notificação push quando um oponente aceita** — o criador do desafio só descobre voltando à lista de desafios. | Desafio ativo sem o criador saber. | Enviar push notification quando o status muda para "active". |
+| C-6 | MÉDIA | **Não há notificação push quando um oponente aceita** — o criador do desafio só descobre voltando à lista de desafios. | Desafio ativo sem o criador saber. | ✅ **CORRIGIDO** — Regra `challenge_accepted` adicionada ao `notify-rules`. `challenge-join` dispara push fire-and-forget ao criador e demais participantes: "Fulano aceitou 'Nome do Desafio'. Prepare-se!". Dedup 12h. FCM secrets configurados. |
 | C-7 | BAIXA | **Anti-cheat policy "strict" está visível no código** (HR correlation) mas não é selecionável na UI. | Feature fantasma. | Remover do código até implementar, ou adicionar toggle na UI. |
 
 ---
@@ -154,7 +154,7 @@
 | # | Severidade | Problema | Impacto | Sugestão |
 |---|---|---|---|---|
 | S-1 | ALTA | **Staff não pode correr no app.** Home do staff tem apenas dashboard de gestão, sem tabs "Correr" e "Histórico". Se o professor é corredor, precisa de outra conta. | Exclusão do professor como atleta. | Ou permitir dual-role (staff que também corre), ou adicionar tab de corrida no shell do staff. |
-| S-2 | ALTA | **"Solicitações de entrada" (join requests)** — não há push notification para o staff quando um atleta solicita entrada. O staff precisa checar manualmente. | Atleta espera indefinidamente. | Push notification para admin_master/professor quando há join request pendente. |
+| S-2 | ALTA | **"Solicitações de entrada" (join requests)** — não há push notification para o staff quando um atleta solicita entrada. O staff precisa checar manualmente. | Atleta espera indefinidamente. | ✅ **CORRIGIDO** — Regra `join_request_received` no `notify-rules`. Flutter dispara fire-and-forget após `fn_request_join`. Push enviado para admin_master + professor: "Fulano quer entrar em 'Nome'. Aprove no app." Dedup 12h. |
 | S-3 | MÉDIA | **Invite code/QR** — o staff pode gerar QR e código de convite, mas não há indicação de quantos usaram o código, ou se ele tem validade. | Falta de rastreabilidade. | Mostrar count de usos, data de criação, opção de expirar/revogar. |
 | S-4 | MÉDIA | **Créditos (StaffCreditsScreen)** — o staff vê saldo de coins para distribuir, mas o fluxo de AQUISIÇÃO de coins pelo staff não está claro no app. | Dúvida sobre como obter coins para o grupo. | Explicar: portal web → comprar pacotes → coins creditados na assessoria. |
 | S-5 | BAIXA | **Performance screen** mostra métricas do grupo, mas sem comparação temporal (esta semana vs anterior). | Dados sem contexto de evolução. | Adicionar gráficos de tendência. |
@@ -212,9 +212,9 @@
 | # | Gap | Por que importa |
 |---|---|---|
 | F-1 | **Notificações push** — existem no código (`PushNotificationService`) mas não há evidência de triggers nos fluxos críticos: desafio aceito, match encontrado, campeonato começou, join request recebido. | Usuário não volta ao app sem push. |
-| F-2 | **Compartilhamento social** — após corrida, não há "Compartilhar no Instagram/WhatsApp" com card visual bonito. | Perda de viralidade orgânica. |
-| F-3 | **Métricas de melhoria pessoal** — o app rastreia corridas mas não mostra evolução (gráfico de pace ao longo do tempo, PR, records). | Falta de motivação para continuar. |
-| F-4 | **Friends / Social graph** — tem `InviteFriendsScreen` e `FriendsScreen`, mas não há feed de atividades dos amigos. | Feature social superficial. |
+| F-2 | **Compartilhamento social** — após corrida, não há "Compartilhar no Instagram/WhatsApp" com card visual bonito. | Perda de viralidade orgânica. | ✅ **CORRIGIDO** — `RunShareCard` gera imagem PNG com gradiente, distância hero, pace, duração, FC, nome e badge "Corrida verificada". Botão de compartilhar no `RunSummaryScreen` abre share sheet nativo. |
+| F-3 | **Métricas de melhoria pessoal** — o app rastreia corridas mas não mostra evolução (gráfico de pace ao longo do tempo, PR, records). | Falta de motivação para continuar. | ✅ **CORRIGIDO** — `PersonalEvolutionScreen` com 3 gráficos (pace, volume, frequência semanal) via `fl_chart` + cards de PR (melhor pace, maior distância). Integrado no ProgressHub. |
+| F-4 | **Friends / Social graph** — tem `InviteFriendsScreen` e `FriendsScreen`, mas não há feed de atividades dos amigos. | Feature social superficial. | ✅ **CORRIGIDO** — `FriendsActivityFeedScreen` com cards de corrida dos amigos (avatar, nome, distância, pace, duração, tempo relativo). RPC `fn_friends_activity_feed` (SECURITY DEFINER) cruza friendships + sessions + profiles. Paginação 30 por vez. Integrado no menu Mais. |
 | F-5 | **Recuperação de sessão após crash** — RecoveryScreen existe e é boa. Mas o texto dos botões confunde ("Retomar" deveria ser "Salvar"). | Detalhe de copy. |
 
 ---
@@ -303,6 +303,31 @@ O app está **funcional para early adopters** que já entendem o conceito, mas *
 | 24 | M-6 | **BAIXO** | Skill bracket com explicação: tooltip "Seu nível é calculado pelo pace médio das suas últimas 10 corridas" ao tocar no chip de nível. | `matchmaking_screen.dart` |
 | 25 | B-3 | **BAIXO** | typeStr corrigido: switch exaustivo que mapeia ChallengeType para strings snake_case corretas (`one_vs_one`, `group`, `team_vs_team`). | `challenge_create_screen.dart` |
 | 26 | T-2 | **MÉDIO** | Permissão GPS permanentemente negada agora mostra botão "Abrir Configurações" que leva às settings do SO (via `Geolocator.openAppSettings()`). | `tracking_bottom_panel.dart` |
+
+### AUDIT-FIX BATCH 4 — Correções Finais (20 itens)
+
+| # | ID | Severidade | Correção | Arquivos |
+|---|----|-----------|----------|----------|
+| 27 | A-1 | **ALTA** | Trocar assessoria: diálogo expandido com lista visual do que se mantém (treinos, desafios, verificação) e o que se perde (grupo, coins pendentes). | `my_assessoria_screen.dart` |
+| 28 | M-2 | **ALTA** | Matchmaking: estado `pendingConfirm` adicionado. Match encontrado mostra card de revisão com todas os detalhes (oponente, métrica, meta, tempo, stake) e botões Aceitar/Recusar. | `matchmaking_screen.dart` |
+| 29 | C-2 | **ALTA** | Fluxo unificado: banner "Sem oponente? Use o matchmaking" adicionado ao topo do formulário de criação de desafio. | `challenge_create_screen.dart` |
+| 30 | O-2 | **MÉDIA** | Role irreversível: diálogo de confirmação explícito com aviso em vermelho "Esta escolha é permanente". Subtítulo do onboarding também reforçado. | `onboarding_role_screen.dart` |
+| 31 | P-2 | **MÉDIA** | Avatar: CircleAvatar com iniciais + botão câmera para upload via `image_picker`. Upload para Supabase Storage `avatars/`. | `profile_screen.dart` |
+| 32 | B-4 | **MÉDIA** | History: stale-guard de 30s evita re-queries ao trocar tabs rapidamente. | `history_screen.dart` |
+| 33 | C-5 | **MÉDIA** | Group challenge: seletor de 3 a 100 participantes (default 10) com botões +/-. Valor enviado ao backend via `max_participants`. | `challenge_create_screen.dart`, `challenge_rules_entity.dart`, `challenges_bloc.dart` |
+| 34 | A-3 | **MÉDIA** | Atleta sem assessoria: card do dashboard muda para "Entrar em assessoria" com ícone `group_add`, navegando para `JoinAssessoriaScreen`. | `athlete_dashboard_screen.dart` |
+| 35 | A-2 | **MÉDIA** | Feed da assessoria: card proeminente no dashboard quando o atleta tem assessoria, com acesso direto ao feed. | `athlete_dashboard_screen.dart` |
+| 36 | M-4 | **MÉDIA** | Posição na fila: backend calcula posição (entradas waiting com mesmo metric/bracket), Flutter exibe "Posição na fila: N". | `matchmake/index.ts`, `matchmaking_screen.dart` |
+| 37 | S-3 | **MÉDIA** | Invite code: tela de convite mostra contagem de entradas via código e status ativo/desativado. | `invite_qr_screen.dart` |
+| 38 | CH-1 | **MÉDIA** | Campeonatos: filter chips (Todos, Abertos, Ativos, Inscritos) para navegação filtrada. | `athlete_championships_screen.dart` |
+| 39 | O-4 | **BAIXA** | WelcomeScreen: animação sequencial (logo slide+fade → bullets fade → CTA fade) em 1.4s. | `welcome_screen.dart` |
+| 40 | O-5 | **BAIXA** | Instagram: ícone com gradiente de cores do Instagram (amarelo → rosa → roxo) via ShaderMask. | `login_screen.dart` |
+| 41 | T-5 | **BAIXA** | GPS fallback: banner amarelo "Obtendo sua localização..." aparece quando usando posição fallback (Brasília). | `tracking_screen.dart` |
+| 42 | N-4 | **BAIXA** | Duplicação removida: "Assessorias" e "Minha Assessoria" unificados em um único tile no menu Mais. | `more_screen.dart` |
+| 43 | N-5 | **BAIXA** | Paginação: histórico agora carrega 30 por vez com botão "Carregar mais". Query Supabase usa `range()`. | `history_screen.dart` |
+| 44 | C-7 | **BAIXA** | Anti-cheat strict: removida menção a "Avançada (FC obrigatória)" que não está implementada. Sempre mostra "Padrão". | `challenge_details_screen.dart` |
+| 45 | S-5 | **BAIXA** | Performance temporal: KPI de corridas semanais agora compara com semana anterior ("±N% vs sem. anterior"). | `staff_performance_screen.dart` |
+| 46 | P-4 | **BAIXA** | Settings expandidos: seção Unidades (km/mi toggle), seção Privacidade (visibilidade ranking, share feed). Auth Debug só em debug mode. | `settings_screen.dart`, `coach_settings_entity.dart`, `coach_settings_repo.dart` |
 
 ### Items já corretos (sem alteração necessária)
 - **T-3**: RecoveryScreen já diz "Salvar e continuar" com ícone correto.

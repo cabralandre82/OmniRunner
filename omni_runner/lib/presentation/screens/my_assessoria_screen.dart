@@ -213,11 +213,39 @@ class _LoadedBody extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Ao trocar para "${target.name}", os OmniCoins da assessoria '
-              'atual que não foram utilizados serão perdidos.',
-              style: Theme.of(ctx).textTheme.bodyMedium,
+              'Ao trocar para "${target.name}":',
+              style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            _ImpactRow(
+              icon: Icons.check_circle,
+              color: Colors.green,
+              text: 'Seus treinos e histórico permanecem',
+            ),
+            _ImpactRow(
+              icon: Icons.check_circle,
+              color: Colors.green,
+              text: 'Desafios em andamento continuam normalmente',
+            ),
+            _ImpactRow(
+              icon: Icons.check_circle,
+              color: Colors.green,
+              text: 'Seu status de verificação não muda',
+            ),
+            const SizedBox(height: 8),
+            _ImpactRow(
+              icon: Icons.cancel,
+              color: Colors.red,
+              text: 'Você será removido do grupo atual',
+            ),
+            _ImpactRow(
+              icon: Icons.cancel,
+              color: Colors.red,
+              text: 'OmniCoins pendentes entre assessorias serão perdidos',
+            ),
+            const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -232,7 +260,6 @@ class _LoadedBody extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'OmniCoins não utilizados serão perdidos. '
                       'Esta ação não pode ser desfeita.',
                       style: TextStyle(
                         color: Colors.red.shade700,
@@ -476,6 +503,34 @@ class _QuickTile extends StatelessWidget {
         subtitle: Text(subtitle, style: theme.textTheme.bodySmall),
         trailing: Icon(Icons.chevron_right, color: theme.colorScheme.outline),
         onTap: onTap,
+      ),
+    );
+  }
+}
+
+class _ImpactRow extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String text;
+
+  const _ImpactRow({
+    required this.icon,
+    required this.color,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(text, style: const TextStyle(fontSize: 13)),
+          ),
+        ],
       ),
     );
   }

@@ -295,7 +295,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   height: 52,
                   child: OutlinedButton.icon(
                     onPressed: _signInWithInstagram,
-                    icon: const Icon(Icons.camera_alt_outlined, size: 24),
+                    icon: ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [
+                          Color(0xFFFCAF45),
+                          Color(0xFFE1306C),
+                          Color(0xFFC13584),
+                        ],
+                        begin: Alignment.bottomLeft,
+                        end: Alignment.topRight,
+                      ).createShader(bounds),
+                      child: const Icon(Icons.camera_alt, size: 24,
+                          color: Colors.white),
+                    ),
                     label: const Text('Continuar com Instagram'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFE1306C),

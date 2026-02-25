@@ -72,6 +72,9 @@ final class ChallengeRulesEntity extends Equatable {
   /// before the warmup starts. Null = use default (no deadline).
   final int? acceptWindowMin;
 
+  /// Max participants for group challenges. Null = unlimited.
+  final int? maxParticipants;
+
   const ChallengeRulesEntity({
     required this.metric,
     this.target,
@@ -82,6 +85,7 @@ final class ChallengeRulesEntity extends Equatable {
     this.antiCheatPolicy = ChallengeAntiCheatPolicy.standard,
     this.entryFeeCoins = 0,
     this.acceptWindowMin,
+    this.maxParticipants,
   });
 
   @override
@@ -95,5 +99,6 @@ final class ChallengeRulesEntity extends Equatable {
         antiCheatPolicy,
         entryFeeCoins,
         acceptWindowMin,
+        maxParticipants,
       ];
 }

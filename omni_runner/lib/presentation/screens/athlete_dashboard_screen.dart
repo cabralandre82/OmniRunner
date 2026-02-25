@@ -12,12 +12,17 @@ import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_event
 import 'package:omni_runner/presentation/blocs/wallet/wallet_bloc.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_event.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
+import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_bloc.dart';
+import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_event.dart';
+import 'package:omni_runner/presentation/screens/assessoria_feed_screen.dart';
 import 'package:omni_runner/presentation/screens/athlete_championships_screen.dart';
 import 'package:omni_runner/presentation/screens/athlete_verification_screen.dart';
 import 'package:omni_runner/presentation/screens/challenges_list_screen.dart';
+import 'package:omni_runner/presentation/screens/join_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/my_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/progress_hub_screen.dart';
 import 'package:omni_runner/presentation/screens/wallet_screen.dart';
+import 'package:omni_runner/presentation/widgets/assessoria_required_sheet.dart';
 import 'package:omni_runner/presentation/widgets/login_required_sheet.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 
@@ -40,6 +45,7 @@ class AthleteDashboardScreen extends StatefulWidget {
 
 class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
   String? _assessoriaName;
+  String? _assessoriaGroupId;
   bool _loading = true;
 
   @override
@@ -60,6 +66,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
         if (mounted) {
           setState(() {
             _assessoriaName = group?.name;
+            _assessoriaGroupId = membership.groupId;
             _loading = false;
           });
         }
@@ -75,6 +82,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
 
   void _openChallenges() {
     if (LoginRequiredSheet.guard(context, feature: 'Desafios')) return;
+    if (AssessoriaRequiredSheet.guard(context, hasAssessoria: _assessoriaGroupId != null)) return;
     final uid = sl<UserIdentityProvider>().userId;
     Navigator.of(context).push(MaterialPageRoute<void>(
       builder: (_) => BlocProvider<ChallengesBloc>(
@@ -119,8 +127,19 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
     ));
   }
 
+  void _openJoinAssessoria() {
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+          builder: (_) => JoinAssessoriaScreen(
+            onComplete: () => Navigator.of(context).pop(),
+          ),
+        ))
+        .then((_) => _loadAssessoriaStatus());
+  }
+
   void _openChampionships() {
     if (LoginRequiredSheet.guard(context, feature: 'Campeonatos')) return;
+    if (AssessoriaRequiredSheet.guard(context, hasAssessoria: _assessoriaGroupId != null)) return;
     Navigator.of(context).push(MaterialPageRoute<void>(
       builder: (_) => const AthleteChampionshipsScreen(),
     ));
@@ -169,6 +188,34 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
                   '3. Crie ou encontre um desafio para competir\n'
                   '4. Complete corridas para se tornar Atleta Verificado',
             ),
+            if (hasAssessoria && _assessoriaGroupId != null) ...[
+              const SizedBox(height: 8),
+              Card(
+                color: cs.primaryContainer.withValues(alpha: 0.3),
+                margin: EdgeInsets.zero,
+                child: ListTile(
+                  dense: true,
+                  leading:
+                      Icon(Icons.forum_rounded, color: cs.primary, size: 22),
+                  title: Text(
+                    'Feed da $_assessoriaName',
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  trailing: Icon(Icons.chevron_right, color: cs.primary),
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute<void>(
+                      builder: (_) => BlocProvider<AssessoriaFeedBloc>(
+                        create: (_) => AssessoriaFeedBloc()
+                          ..add(LoadFeed(_assessoriaGroupId!)),
+                        child: const AssessoriaFeedScreen(),
+                      ),
+                    ));
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
@@ -185,19 +232,25 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
                     onTap: _openChallenges,
                   ),
                   _DashCard(
-                    icon: Icons.groups_rounded,
-                    title: 'Minha assessoria',
+                    icon: hasAssessoria
+                        ? Icons.groups_rounded
+                        : Icons.group_add_rounded,
+                    title: hasAssessoria
+                        ? 'Minha assessoria'
+                        : 'Entrar em assessoria',
                     subtitle: _loading
                         ? '...'
-                        : _assessoriaName ?? 'Sem assessoria',
+                        : _assessoriaName ?? 'Toque para se juntar',
                     bgColor: hasAssessoria
                         ? cs.secondaryContainer
-                        : Colors.grey.shade200,
+                        : Colors.blue.shade50,
                     iconColor: hasAssessoria
                         ? cs.onSecondaryContainer
-                        : Colors.grey.shade500,
+                        : Colors.blue.shade700,
                     isEmpty: !hasAssessoria && !_loading,
-                    onTap: _openAssessoria,
+                    onTap: hasAssessoria
+                        ? _openAssessoria
+                        : _openJoinAssessoria,
                   ),
                   _DashCard(
                     icon: Icons.trending_up_rounded,

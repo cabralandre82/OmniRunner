@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.omnirunner.omni_runner",
+      "sha256_cert_fingerprints": [
+        "DF:70:EB:91:9B:5E:91:1F:E6:F3:9E:A9:BB:B1:57:52:6D:77:2C:1C:31:AC:28:51:A9:BF:B9:9A:ED:56:90:41"
+      ]
+    }
+  }
+]

@@ -1,0 +1,20 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAM_ID.com.omnirunner.omniRunner",
+        "paths": [
+          "/challenge/*",
+          "/invite/*",
+          "/refer/*"
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "TEAM_ID.com.omnirunner.omniRunner"
+    ]
+  }
+}

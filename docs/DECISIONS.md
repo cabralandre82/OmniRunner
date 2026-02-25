@@ -3863,4 +3863,26 @@ Queue-based matchmaking (modelo Uber): usuário declara intenção, sistema enco
 
 ---
 
+## DECISAO 063 — Assessoria obrigatória para desafios
+
+**Data:** 2026-02-24
+**Status:** ACEITA
+**Contexto:** Atletas sem vínculo com assessoria estavam criando desafios sem supervisão de um treinador. Regra de produto: toda atividade competitiva exige vínculo com assessoria.
+
+### Decisão
+
+Atleta sem assessoria NÃO pode: criar desafios, participar de desafios, entrar na fila de matchmaking, nem acessar campeonatos. Gate enforçado em 3 camadas:
+1. **Edge Functions** (`challenge-create`, `challenge-join`, `matchmake`): query `coaching_members` → retorna `NO_ASSESSORIA` (403)
+2. **Flutter UX**: `AssessoriaRequiredSheet` bloqueia navegação com CTA "Entrar em assessoria"
+3. **Mensagem clara**: "Peça o código de convite ao seu professor"
+
+### Alternativas rejeitadas
+| Rejeitada | Motivo |
+|---|---|
+| Bloquear apenas desafios com stake | Regra de produto define assessoria como pré-requisito para TODOS os desafios |
+| Bloquear apenas no frontend | Violaria "server wins" — backend deve ser fonte de verdade |
+| Permitir desafios gratuitos sem assessoria | Contraria a decisão de produto |
+
+---
+
 *Novas decisoes sao adicionadas ao final deste arquivo com numero sequencial.*

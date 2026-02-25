@@ -10,7 +10,9 @@ import 'package:omni_runner/presentation/map/polyline_builder.dart';
 import 'package:omni_runner/presentation/widgets/ghost_comparison_card.dart';
 import 'package:omni_runner/presentation/widgets/challenge_session_banner.dart';
 import 'package:omni_runner/presentation/widgets/invalidated_run_card.dart';
+import 'package:omni_runner/presentation/widgets/run_share_card.dart';
 import 'package:omni_runner/presentation/widgets/summary_metrics_panel.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 const _srcId = 'summary-route-src';
 const _layerId = 'summary-route-layer';
@@ -171,6 +173,35 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
     );
   }
 
+  void _shareRun() {
+    final distKm = widget.totalDistanceM / 1000;
+    final paceStr = widget.avgPaceSecPerKm != null
+        ? "${widget.avgPaceSecPerKm! ~/ 60}'${(widget.avgPaceSecPerKm! % 60).toInt().toString().padLeft(2, '0')}\""
+        : '--';
+    final durSec = widget.elapsedMs ~/ 1000;
+    final h = durSec ~/ 3600;
+    final m = (durSec % 3600) ~/ 60;
+    final s = durSec % 60;
+    final durStr = h > 0
+        ? '${h}h${m.toString().padLeft(2, '0')}min'
+        : '${m}min${s.toString().padLeft(2, '0')}s';
+    final now = DateTime.fromMillisecondsSinceEpoch(
+        widget.points.isNotEmpty ? widget.points.first.timestampMs : DateTime.now().millisecondsSinceEpoch);
+    final dateStr = '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
+    final userName = Supabase.instance.client.auth.currentUser
+            ?.userMetadata?['display_name'] as String?;
+
+    shareRunCard(
+      context,
+      distanceKm: distKm,
+      pace: paceStr,
+      duration: durStr,
+      date: dateStr,
+      avgBpm: widget.avgBpm,
+      userName: userName,
+    );
+  }
+
   Map<String, dynamic> _buildGeoJson() => {'type': 'FeatureCollection', 'features': [
     {'type': 'Feature', 'properties': <String, dynamic>{}, 'geometry': {
       'type': 'LineString', 'coordinates': [for (final c in _coords) [c.longitude, c.latitude]],
@@ -197,7 +228,7 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
             const SizedBox(height: 8),
             Text('Mapa indisponível offline', style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
           ])),
-        Positioned(top: 0, left: 0, right: 0, child: _TopBar()),
+        Positioned(top: 0, left: 0, right: 0, child: _TopBar(onShare: _shareRun)),
         Positioned(
           bottom: 0, left: 0, right: 0,
           child: SummaryMetricsPanel(
@@ -214,6 +245,9 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
 }
 
 class _TopBar extends StatelessWidget {
+  final VoidCallback? onShare;
+  const _TopBar({this.onShare});
+
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
@@ -224,7 +258,15 @@ class _TopBar extends StatelessWidget {
         colors: [Colors.black54, Colors.black.withAlpha(0)],
       ),),
       child: Row(children: [
-        const SizedBox(width: 48), const Spacer(),
+        if (onShare != null)
+          IconButton(
+            icon: const Icon(Icons.share_rounded, color: Colors.white),
+            tooltip: 'Compartilhar corrida',
+            onPressed: onShare,
+          )
+        else
+          const SizedBox(width: 48),
+        const Spacer(),
         const Text('Resumo da Corrida', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
         const Spacer(),
         IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.of(context).pop()),

@@ -105,6 +105,24 @@ serve(async (req: Request) => {
       return jsonErr(409, "ALREADY_CREATOR", "Você é o criador deste desafio", requestId);
     }
 
+    // ── Assessoria gate: all challenges require group membership ──────
+    const { data: memberRow } = await db
+      .from("coaching_members")
+      .select("id")
+      .eq("user_id", user.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (!memberRow) {
+      status = 403;
+      errorCode = "NO_ASSESSORIA";
+      return jsonErr(
+        403, "NO_ASSESSORIA",
+        "Você precisa estar em uma assessoria para participar de desafios. Peça o código de convite ao seu professor.",
+        requestId,
+      );
+    }
+
     // ── Monetization gate: stake>0 requires VERIFIED ──────────────────
     if (challenge.entry_fee_coins > 0) {
       const { data: verifiedRow, error: verErr } = await db
@@ -322,6 +340,33 @@ serve(async (req: Request) => {
           newChallengeStatus = "active";
         }
       }
+    }
+
+    // ── Push notification: notify creator + other participants ────────
+    try {
+      const serviceKey =
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+        Deno.env.get("SERVICE_ROLE_KEY");
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+
+      if (serviceKey && supabaseUrl) {
+        fetch(`${supabaseUrl}/functions/v1/notify-rules`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${serviceKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            rule: "challenge_accepted",
+            context: {
+              challenge_id,
+              joiner_user_id: user.id,
+            },
+          }),
+        }).catch(() => {/* fire-and-forget */});
+      }
+    } catch {
+      // Push is best-effort — never block the join response
     }
 
     return jsonOk({

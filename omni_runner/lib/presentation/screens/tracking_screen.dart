@@ -61,6 +61,7 @@ class _TrackingViewState extends State<_TrackingView>
 
   /// User's last known position, or Brasília as fallback.
   LatLng _initialCenter = const LatLng(-15.7975, -47.8919);
+  bool _usingFallbackPosition = true;
 
   static const _mapLoadTimeout = Duration(seconds: 6);
 
@@ -76,7 +77,10 @@ class _TrackingViewState extends State<_TrackingView>
     try {
       final pos = await geo.Geolocator.getLastKnownPosition();
       if (pos != null && mounted) {
-        setState(() => _initialCenter = LatLng(pos.latitude, pos.longitude));
+        setState(() {
+          _initialCenter = LatLng(pos.latitude, pos.longitude);
+          _usingFallbackPosition = false;
+        });
         _mapCtrl?.animateCamera(CameraUpdate.newLatLng(_initialCenter));
       }
     } catch (_) {
@@ -146,6 +150,7 @@ class _TrackingViewState extends State<_TrackingView>
 
     if (_firstFix) {
       _firstFix = false;
+      _usingFallbackPosition = false;
       _cameraFollow.enable();
       _cameraFollow.jumpTo(target, bearing: _bearing);
     } else {
@@ -271,6 +276,35 @@ class _TrackingViewState extends State<_TrackingView>
               onPickGhost: _pickGhost, onClearGhost: _clearGhost,
             ),
           ),
+          if (_usingFallbackPosition)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 48,
+              left: 16,
+              right: 16,
+              child: Material(
+                elevation: 2,
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.amber.shade100,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Row(
+                    children: [
+                      Icon(Icons.location_searching,
+                          size: 18, color: Colors.amber.shade800),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Obtendo sua localização...',
+                          style: TextStyle(
+                              fontSize: 12, color: Colors.amber.shade900),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           Positioned(
             bottom: 0, left: 0, right: 0,
             child: BlocBuilder<TrackingBloc, TrackingState>(

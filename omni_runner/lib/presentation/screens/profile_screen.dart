@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/auth_repository.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/profile_entity.dart';
 import 'package:omni_runner/domain/repositories/i_profile_repo.dart';
@@ -18,10 +22,12 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  static const _tag = 'Profile';
   final _nameCtrl = TextEditingController();
   ProfileEntity? _profile;
   bool _loading = true;
   bool _saving = false;
+  bool _uploadingAvatar = false;
   String? _error;
 
   @override
@@ -78,6 +84,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _error = _friendlyError(e);
         _saving = false;
+      });
+    }
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 80,
+    );
+    if (picked == null || !mounted) return;
+
+    setState(() => _uploadingAvatar = true);
+
+    try {
+      final userId = sl<UserIdentityProvider>().userId;
+      final ext = picked.path.split('.').last;
+      final path = 'avatars/$userId.$ext';
+      final bytes = await File(picked.path).readAsBytes();
+
+      await Supabase.instance.client.storage
+          .from('avatars')
+          .uploadBinary(path, bytes,
+              fileOptions: const FileOptions(upsert: true));
+
+      final publicUrl =
+          Supabase.instance.client.storage.from('avatars').getPublicUrl(path);
+
+      final updated = await sl<IProfileRepo>().upsertMyProfile(
+        ProfilePatch(avatarUrl: publicUrl),
+      );
+
+      if (!mounted) return;
+      sl<UserIdentityProvider>().refresh();
+      setState(() {
+        _profile = updated;
+        _uploadingAvatar = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Foto atualizada')),
+      );
+    } catch (e) {
+      AppLogger.error('Avatar upload failed: $e', tag: _tag, error: e);
+      if (!mounted) return;
+      setState(() {
+        _uploadingAvatar = false;
+        _error = 'Falha ao enviar foto. Tente novamente.';
       });
     }
   }
@@ -207,6 +262,83 @@ class _ProfileScreenState extends State<ProfileScreen> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                // ── Avatar ──
+                Center(
+                  child: Stack(
+                    children: [
+                      if (_profile?.avatarUrl != null &&
+                          _profile!.avatarUrl!.isNotEmpty)
+                        CircleAvatar(
+                          radius: 52,
+                          backgroundImage:
+                              NetworkImage(_profile!.avatarUrl!),
+                        )
+                      else
+                        CircleAvatar(
+                          radius: 52,
+                          backgroundColor: cs.primaryContainer,
+                          child: Text(
+                            _initials(_profile?.displayName ?? 'R'),
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: cs.primary,
+                            ),
+                          ),
+                        ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Material(
+                          color: cs.primary,
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            onTap: _uploadingAvatar
+                                ? null
+                                : _pickAndUploadAvatar,
+                            customBorder: const CircleBorder(),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: _uploadingAvatar
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.camera_alt,
+                                      size: 16, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Center(
+                  child: Text(
+                    _profile?.displayName ?? 'Runner',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Center(
+                  child: Text(
+                    identity.authUser.email ?? '',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: cs.onSurfaceVariant),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
                 // ── Info card ──
                 Card(
                   child: Padding(
@@ -217,10 +349,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _infoRow(context, 'Modo', mode),
                         _infoRow(context, 'ID',
                             _truncate(identity.userId, 24)),
-                        _infoRow(context, 'E-mail',
-                            identity.authUser.email ?? '—'),
-                        _infoRow(context, 'Nome',
-                            _profile?.displayName ?? '—'),
                         _infoRow(context, 'Criado em',
                             _profile?.createdAt.toLocal().toString().substring(0, 16) ?? '—'),
                       ],
@@ -344,4 +472,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _truncate(String s, int max) =>
       s.length <= max ? s : '${s.substring(0, max)}...';
+
+  String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.length >= 2) {
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    }
+    return name.isNotEmpty ? name[0].toUpperCase() : 'R';
+  }
 }

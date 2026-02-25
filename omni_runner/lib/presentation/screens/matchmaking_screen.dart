@@ -25,7 +25,7 @@ class MatchmakingScreen extends StatefulWidget {
   State<MatchmakingScreen> createState() => _MatchmakingScreenState();
 }
 
-enum _MatchState { setup, searching, matched, error }
+enum _MatchState { setup, searching, pendingConfirm, matched, error }
 
 class _MatchmakingScreenState extends State<MatchmakingScreen>
     with SingleTickerProviderStateMixin {
@@ -44,6 +44,8 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
   String? _matchedChallengeId;
   String? _opponentName;
   String? _skillBracket;
+  Map<String, dynamic>? _matchSummary;
+  int? _queuePosition;
   Timer? _pollTimer;
   late AnimationController _pulseCtrl;
 
@@ -145,10 +147,11 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
     _pollTimer?.cancel();
     final opp = data['opponent'] as Map<String, dynamic>?;
     setState(() {
-      _state = _MatchState.matched;
+      _state = _MatchState.pendingConfirm;
       _matchedChallengeId = data['challenge_id'] as String?;
       _opponentName = opp?['display_name'] as String? ?? 'Oponente';
       _skillBracket = data['skill_bracket'] as String?;
+      _matchSummary = data;
     });
   }
 
@@ -167,6 +170,11 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
         final data = res.data as Map<String, dynamic>?;
         final inner = data?['data'] as Map<String, dynamic>? ?? data;
         final entry = inner?['queue_entry'] as Map<String, dynamic>?;
+
+        final pos = inner?['queue_position'] as int?;
+        if (pos != null && mounted) {
+          setState(() => _queuePosition = pos);
+        }
 
         if (entry == null) return;
 
@@ -189,9 +197,13 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
             }
             if (!mounted) return;
             setState(() {
-              _state = _MatchState.matched;
+              _state = _MatchState.pendingConfirm;
               _matchedChallengeId = challengeId;
               _opponentName = oppName;
+              _matchSummary = {
+                'challenge_id': challengeId,
+                'opponent': {'display_name': oppName},
+              };
             });
           }
         } else if (entry['status'] == 'expired') {
@@ -256,6 +268,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
           child: switch (_state) {
             _MatchState.setup => _buildSetup(),
             _MatchState.searching => _buildSearching(),
+            _MatchState.pendingConfirm => _buildPendingConfirm(),
             _MatchState.matched => _buildMatched(),
             _MatchState.error => _buildError(),
           },
@@ -495,6 +508,26 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
                   onDeleted: () {},
                 ),
               ),
+            if (_queuePosition != null && _queuePosition! > 0) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  _queuePosition == 1
+                      ? 'Você é o próximo da fila'
+                      : 'Posição na fila: $_queuePosition',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: cs.primary,
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             Text(
               'Procurando alguém com configurações compatíveis.\n'
@@ -513,6 +546,200 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
         ),
       ),
     );
+  }
+
+  // ── Pending confirmation ───────────────────────────────────────────────
+
+  Widget _buildPendingConfirm() {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final fee = int.tryParse(_feeCtrl.text) ?? 0;
+
+    return SingleChildScrollView(
+      key: const ValueKey('pending_confirm'),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.amber.shade50,
+              border: Border.all(color: Colors.amber.shade400, width: 3),
+            ),
+            child: Icon(
+              Icons.handshake_rounded,
+              size: 48,
+              color: Colors.amber.shade700,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Oponente encontrado!',
+            style: theme.textTheme.headlineSmall
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Revise os detalhes antes de aceitar',
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: cs.onSurfaceVariant),
+          ),
+          const SizedBox(height: 24),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _ConfirmRow(
+                    icon: Icons.person,
+                    label: 'Oponente',
+                    value: _opponentName ?? 'Atleta',
+                  ),
+                  const Divider(height: 20),
+                  _ConfirmRow(
+                    icon: Icons.straighten,
+                    label: 'Métrica',
+                    value: _metricLabel(_metric),
+                  ),
+                  if (_targetCtrl.text.isNotEmpty) ...[
+                    const Divider(height: 20),
+                    _ConfirmRow(
+                      icon: Icons.flag,
+                      label: 'Meta',
+                      value: '${_targetCtrl.text} ${_targetUnit()}',
+                    ),
+                  ],
+                  const Divider(height: 20),
+                  _ConfirmRow(
+                    icon: Icons.timer,
+                    label: 'Tempo para correr',
+                    value: _windowLabel(_windowMin),
+                  ),
+                  if (fee > 0) ...[
+                    const Divider(height: 20),
+                    _ConfirmRow(
+                      icon: Icons.toll,
+                      label: 'Aposta',
+                      value: '$fee OmniCoins',
+                      valueColor: Colors.orange.shade700,
+                    ),
+                  ],
+                  if (_skillBracket != null) ...[
+                    const Divider(height: 20),
+                    _ConfirmRow(
+                      icon: Icons.trending_up,
+                      label: 'Nível',
+                      value: _bracketLabel(_skillBracket!),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          if (fee > 0) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline,
+                      size: 18, color: Colors.orange.shade700),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Ao aceitar, $fee OmniCoins serão debitados '
+                      'como entrada do desafio.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.orange.shade800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              icon: const Icon(Icons.check_circle),
+              label: const Text('Aceitar Desafio'),
+              onPressed: _acceptMatch,
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: Colors.green,
+                textStyle: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.close),
+              label: const Text('Recusar'),
+              onPressed: _declineMatch,
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                foregroundColor: cs.error,
+                side: BorderSide(color: cs.error.withValues(alpha: 0.5)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _acceptMatch() {
+    setState(() => _state = _MatchState.matched);
+  }
+
+  Future<void> _declineMatch() async {
+    if (_matchedChallengeId == null) {
+      setState(() => _state = _MatchState.setup);
+      return;
+    }
+
+    try {
+      await Supabase.instance.client
+          .from('challenge_participants')
+          .update({'status': 'declined'})
+          .eq('challenge_id', _matchedChallengeId!)
+          .eq('user_id',
+              Supabase.instance.client.auth.currentUser?.id ?? '');
+    } on Exception catch (e) {
+      AppLogger.warn('Decline match failed: $e', tag: _tag);
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _state = _MatchState.setup;
+      _matchedChallengeId = null;
+      _opponentName = null;
+      _matchSummary = null;
+    });
+  }
+
+  String _metricLabel(ChallengeMetric m) => switch (m) {
+        ChallengeMetric.distance => 'Distância',
+        ChallengeMetric.pace => 'Pace',
+        ChallengeMetric.time => 'Tempo',
+      };
+
+  String _windowLabel(int minutes) {
+    if (minutes < 60) return '$minutes min';
+    if (minutes < 1440) return '${minutes ~/ 60} hora${minutes >= 120 ? 's' : ''}';
+    return '${minutes ~/ 1440} dia${minutes >= 2880 ? 's' : ''}';
   }
 
   // ── Match found ────────────────────────────────────────────────────────
@@ -629,4 +856,38 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
         'elite' => 'Elite',
         _ => bracket,
       };
+}
+
+class _ConfirmRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  const _ConfirmRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: cs.onSurfaceVariant),
+        const SizedBox(width: 12),
+        Text(label, style: TextStyle(color: cs.onSurfaceVariant)),
+        const Spacer(),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: valueColor,
+          ),
+        ),
+      ],
+    );
+  }
 }

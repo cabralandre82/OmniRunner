@@ -14,6 +14,7 @@ import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_event
 import 'package:omni_runner/presentation/screens/auth_gate.dart';
 import 'package:omni_runner/presentation/screens/coaching_groups_screen.dart';
 import 'package:omni_runner/presentation/widgets/login_required_sheet.dart';
+import 'package:omni_runner/presentation/screens/friends_activity_feed_screen.dart';
 import 'package:omni_runner/presentation/screens/invite_friends_screen.dart';
 import 'package:omni_runner/presentation/screens/my_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/profile_screen.dart';
@@ -46,24 +47,8 @@ class MoreScreen extends StatelessWidget {
             _header(context, 'Assessoria'),
             _ActionTile(
               icon: Icons.groups,
-              title: 'Assessorias',
-              subtitle: 'Gerenciar assessorias e membros',
-              onTap: (ctx) {
-                if (LoginRequiredSheet.guard(ctx, feature: 'Assessorias')) return;
-                final uid = sl<UserIdentityProvider>().userId;
-                Navigator.of(ctx).push(MaterialPageRoute<void>(
-                  builder: (_) => BlocProvider<CoachingGroupsBloc>(
-                    create: (_) => sl<CoachingGroupsBloc>()
-                      ..add(LoadCoachingGroups(uid)),
-                    child: const CoachingGroupsScreen(),
-                  ),
-                ));
-              },
-            ),
-            _ActionTile(
-              icon: Icons.swap_horiz,
               title: 'Minha Assessoria',
-              subtitle: 'Ver assessoria atual e trocar',
+              subtitle: 'Ver grupo, feed e trocar de assessoria',
               onTap: (ctx) {
                 if (LoginRequiredSheet.guard(ctx, feature: 'Assessoria')) return;
                 final uid = sl<UserIdentityProvider>().userId;
@@ -89,6 +74,12 @@ class MoreScreen extends StatelessWidget {
                 builder: (_) => const InviteFriendsScreen(),
               ));
             },
+          ),
+          const _ActionTile(
+            icon: Icons.dynamic_feed_rounded,
+            title: 'Atividade dos amigos',
+            subtitle: 'Corridas recentes dos seus amigos',
+            pushScreen: FriendsActivityFeedScreen(),
           ),
 
           _header(context, 'Conta'),
