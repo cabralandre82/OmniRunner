@@ -46,13 +46,20 @@ Future<void> _bootstrap() async {
       AppConfig.markSupabaseReady();
     } on Exception catch (e) {
       AppLogger.error(
-        'Supabase.initialize() failed — continuing in mock mode: $e',
+        'Supabase.initialize() failed: $e',
         tag: 'Main',
         error: e,
       );
     }
   }
   AppLogger.info('backendMode=${AppConfig.backendMode}', tag: 'Main');
+
+  if (!AppConfig.isSupabaseReady && AppConfig.isSupabaseConfigured) {
+    AppLogger.warn(
+      'Supabase configured but failed to initialize — will show welcome screen',
+      tag: 'Main',
+    );
+  }
 
   // Set logger minimum level for production builds.
   if (AppConfig.isProd) {

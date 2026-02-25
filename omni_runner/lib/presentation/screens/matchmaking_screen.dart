@@ -154,7 +154,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
 
   void _startPolling() {
     _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+    _pollTimer = Timer.periodic(const Duration(seconds: 20), (_) async {
       if (!mounted || _state != _MatchState.searching) {
         _pollTimer?.cancel();
         return;

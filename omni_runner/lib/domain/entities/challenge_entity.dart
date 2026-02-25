@@ -88,6 +88,9 @@ final class ChallengeEntity extends Equatable {
   /// Name of team B's assessoria (cached for display).
   final String? teamBGroupName;
 
+  /// Deadline (ms epoch) by which all participants must accept (group mode).
+  final int? acceptDeadlineMs;
+
   const ChallengeEntity({
     required this.id,
     required this.creatorUserId,
@@ -103,6 +106,7 @@ final class ChallengeEntity extends Equatable {
     this.teamBGroupId,
     this.teamAGroupName,
     this.teamBGroupName,
+    this.acceptDeadlineMs,
   });
 
   /// Whether the challenge window is currently open.
@@ -139,6 +143,7 @@ final class ChallengeEntity extends Equatable {
         teamBGroupId: teamBGroupId ?? this.teamBGroupId,
         teamAGroupName: teamAGroupName,
         teamBGroupName: teamBGroupName ?? this.teamBGroupName,
+        acceptDeadlineMs: acceptDeadlineMs,
       );
 
   @override
@@ -157,5 +162,6 @@ final class ChallengeEntity extends Equatable {
         teamBGroupId,
         teamAGroupName,
         teamBGroupName,
+        acceptDeadlineMs,
       ];
 }

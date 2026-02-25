@@ -110,12 +110,43 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
         ? ChallengeSessionBanner(challengeId: widget.challengeId!)
         : null;
     if (ghost == null && integrity == null && challengeBanner == null) {
-      return null;
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.schedule, size: 14, color: Colors.grey.shade500),
+            const SizedBox(width: 4),
+            Text(
+              'Verificação final pelo servidor ao sincronizar',
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+            ),
+          ],
+        ),
+      );
     }
     return Column(mainAxisSize: MainAxisSize.min, children: [
       if (challengeBanner != null) challengeBanner,
       if (ghost != null) ghost,
       if (integrity != null) integrity,
+      if (integrity == null)
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.schedule, size: 14, color: Colors.grey.shade500),
+              const SizedBox(width: 4),
+              Text(
+                'Verificação final pelo servidor ao sincronizar',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            ],
+          ),
+        ),
     ]);
   }
 

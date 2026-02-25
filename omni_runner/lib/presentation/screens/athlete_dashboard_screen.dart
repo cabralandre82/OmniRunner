@@ -13,8 +13,8 @@ import 'package:omni_runner/presentation/blocs/wallet/wallet_bloc.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_event.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/presentation/screens/athlete_championships_screen.dart';
+import 'package:omni_runner/presentation/screens/athlete_verification_screen.dart';
 import 'package:omni_runner/presentation/screens/challenges_list_screen.dart';
-import 'package:omni_runner/presentation/screens/invite_friends_screen.dart';
 import 'package:omni_runner/presentation/screens/my_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/progress_hub_screen.dart';
 import 'package:omni_runner/presentation/screens/wallet_screen.dart';
@@ -112,6 +112,13 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
     ));
   }
 
+  void _openVerification() {
+    if (LoginRequiredSheet.guard(context, feature: 'Verificação')) return;
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => const AthleteVerificationScreen(),
+    ));
+  }
+
   void _openChampionships() {
     if (LoginRequiredSheet.guard(context, feature: 'Campeonatos')) return;
     Navigator.of(context).push(MaterialPageRoute<void>(
@@ -119,12 +126,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
     ));
   }
 
-  void _openInviteFriends() {
-    if (LoginRequiredSheet.guard(context, feature: 'Convites')) return;
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => const InviteFriendsScreen(),
-    ));
-  }
+  // Invite friends is accessible via More screen
 
   // ── Build ────────────────────────────────────────────────────────────────
 
@@ -160,15 +162,12 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
             const SizedBox(height: 16),
             const TipBanner(
               tipKey: TipKey.dashboardWelcome,
-              icon: Icons.lightbulb_outline_rounded,
-              text: 'Bem-vindo! Comece criando um desafio '
-                  'ou entre em uma assessoria para treinar com outros atletas.',
-            ),
-            const TipBanner(
-              tipKey: TipKey.assessoriaHowTo,
-              icon: Icons.groups_outlined,
-              text: 'Para entrar em uma assessoria, peça o código ou link '
-                  'de convite ao professor. Você também pode buscar pelo nome.',
+              icon: Icons.rocket_launch_rounded,
+              text: 'Primeiros passos:\n'
+                  '1. Faça sua primeira corrida (aba Correr)\n'
+                  '2. Entre em uma assessoria (peça o código ao professor)\n'
+                  '3. Crie ou encontre um desafio para competir\n'
+                  '4. Complete corridas para se tornar Atleta Verificado',
             ),
             Expanded(
               child: GridView.count(
@@ -225,12 +224,12 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
                     onTap: _openChampionships,
                   ),
                   _DashCard(
-                    icon: Icons.people_alt_rounded,
-                    title: 'Convidar amigos',
-                    subtitle: 'Compartilhe o app',
-                    bgColor: Colors.green.shade50,
-                    iconColor: Colors.green.shade700,
-                    onTap: _openInviteFriends,
+                    icon: Icons.verified_user_rounded,
+                    title: 'Verificação',
+                    subtitle: 'Status de atleta verificado',
+                    bgColor: Colors.blue.shade50,
+                    iconColor: Colors.blue.shade700,
+                    onTap: _openVerification,
                   ),
                 ],
               ),

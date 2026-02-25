@@ -167,6 +167,7 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
       teamBGroupId: remote.teamBGroupId ?? local.teamBGroupId,
       teamAGroupName: remote.teamAGroupName ?? local.teamAGroupName,
       teamBGroupName: remote.teamBGroupName ?? local.teamBGroupName,
+      acceptDeadlineMs: remote.acceptDeadlineMs ?? local.acceptDeadlineMs,
     );
   }
 
@@ -253,6 +254,7 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
         entryFeeCoins: (m['entry_fee_coins'] as num?)?.toInt() ?? 0,
         minSessionDistanceM: (m['min_session_distance_m'] as num?)?.toDouble() ?? 1000.0,
         antiCheatPolicy: antiCheat,
+        acceptWindowMin: (m['accept_window_min'] as num?)?.toInt(),
       ),
       participants: participants,
       createdAtMs: (m['created_at_ms'] as num?)?.toInt() ?? 0,
@@ -263,6 +265,7 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
       teamBGroupId: m['team_b_group_id'] as String?,
       teamAGroupName: m['team_a_group_name'] as String?,
       teamBGroupName: m['team_b_group_name'] as String?,
+      acceptDeadlineMs: (m['accept_deadline_ms'] as num?)?.toInt(),
     );
   }
 
@@ -415,6 +418,7 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
       'anti_cheat_policy': antiCheat,
       'created_at_ms': c.createdAtMs,
       'creator_display_name': creatorDisplayName,
+      if (c.rules.acceptWindowMin != null) 'accept_window_min': c.rules.acceptWindowMin,
       if (c.teamAGroupId != null) 'team_a_group_id': c.teamAGroupId,
       if (c.teamBGroupId != null) 'team_b_group_id': c.teamBGroupId,
     };

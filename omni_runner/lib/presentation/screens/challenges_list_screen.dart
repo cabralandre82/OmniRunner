@@ -22,6 +22,13 @@ void _openMatchmaking(BuildContext context) async {
   if (challengeId != null && context.mounted) {
     final uid = sl<UserIdentityProvider>().userId;
     context.read<ChallengesBloc>().add(LoadChallenges(uid));
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => BlocProvider.value(
+        value: context.read<ChallengesBloc>()
+          ..add(ViewChallengeDetails(challengeId)),
+        child: ChallengeDetailsScreen(challengeId: challengeId),
+      ),
+    ));
   }
 }
 
@@ -138,20 +145,27 @@ class ChallengesListScreen extends StatelessWidget {
     BuildContext context,
     List<ChallengeEntity> challenges,
   ) {
-    return Column(
-      children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: TipBanner(
-            tipKey: TipKey.challengeHowTo,
-            icon: Icons.emoji_events_outlined,
-            text: 'Toque no "+" para criar um novo desafio. '
-                'Escolha distância, pace ou tempo, defina o prazo '
-                'e convide seus amigos!',
+    return RefreshIndicator(
+      onRefresh: () async {
+        final uid = sl<UserIdentityProvider>().userId;
+        context.read<ChallengesBloc>().add(LoadChallenges(uid));
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      },
+      child: Column(
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: TipBanner(
+              tipKey: TipKey.challengeHowTo,
+              icon: Icons.emoji_events_outlined,
+              text: 'Toque no "+" para criar um novo desafio. '
+                  'Escolha distância, pace ou tempo, defina o prazo '
+                  'e convide seus amigos!',
+            ),
           ),
-        ),
-        Expanded(child: _list(context, challenges)),
-      ],
+          Expanded(child: _list(context, challenges)),
+        ],
+      ),
     );
   }
 

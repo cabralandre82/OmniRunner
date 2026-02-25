@@ -2,12 +2,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/errors/coaching_failures.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/utils/generate_uuid_v4.dart';
 import 'package:omni_runner/domain/entities/token_intent_entity.dart';
 import 'package:omni_runner/domain/repositories/i_token_intent_repo.dart';
 
 /// Calls `token-create-intent` and `token-consume-intent` Edge Functions.
 final class RemoteTokenIntentRepo implements ITokenIntentRepo {
   static const _tag = 'RemoteTokenIntent';
+  static const _ttl = Duration(minutes: 5);
 
   SupabaseClient get _client => Supabase.instance.client;
 
@@ -22,20 +24,25 @@ final class RemoteTokenIntentRepo implements ITokenIntentRepo {
     String? championshipId,
   }) async {
     try {
+      final nonce = generateUuidV4();
+      final expiresAt = DateTime.now().toUtc().add(_ttl);
+
       final res = await _client.functions.invoke(
         'token-create-intent',
         body: {
           'type': tokenIntentTypeToString(type),
           'group_id': groupId,
           'amount': amount,
+          'nonce': nonce,
+          'expires_at_iso': expiresAt.toIso8601String(),
           if (targetUserId != null) 'target_user_id': targetUserId,
           if (championshipId != null) 'championship_id': championshipId,
         },
       );
       final data = res.data as Map<String, dynamic>;
-      AppLogger.info('Intent created: ${data['id']}', tag: _tag);
+      AppLogger.info('Intent created: ${data['intent_id']}', tag: _tag);
       return StaffQrPayload(
-        intentId: data['id'] as String,
+        intentId: data['intent_id'] as String,
         type: type,
         groupId: groupId,
         amount: amount,

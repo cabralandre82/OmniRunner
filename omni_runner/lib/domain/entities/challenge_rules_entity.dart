@@ -68,6 +68,10 @@ final class ChallengeRulesEntity extends Equatable {
   /// See `docs/GAMIFICATION_POLICY.md` §4 — Coins are non-convertible.
   final int entryFeeCoins;
 
+  /// For group challenges: how long (in minutes) participants have to accept
+  /// before the warmup starts. Null = use default (no deadline).
+  final int? acceptWindowMin;
+
   const ChallengeRulesEntity({
     required this.metric,
     this.target,
@@ -77,6 +81,7 @@ final class ChallengeRulesEntity extends Equatable {
     this.minSessionDistanceM = 1000.0,
     this.antiCheatPolicy = ChallengeAntiCheatPolicy.standard,
     this.entryFeeCoins = 0,
+    this.acceptWindowMin,
   });
 
   @override
@@ -89,5 +94,6 @@ final class ChallengeRulesEntity extends Equatable {
         minSessionDistanceM,
         antiCheatPolicy,
         entryFeeCoins,
+        acceptWindowMin,
       ];
 }

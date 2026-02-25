@@ -36,6 +36,10 @@ final class CreateChallenge {
       groupId: type == ChallengeType.teamVsTeam ? teamAGroupId : null,
     );
 
+    final int? acceptDeadlineMs = rules.acceptWindowMin != null
+        ? createdAtMs + rules.acceptWindowMin! * 60 * 1000
+        : null;
+
     final challenge = ChallengeEntity(
       id: id,
       creatorUserId: creatorUserId,
@@ -47,6 +51,7 @@ final class CreateChallenge {
       title: title,
       teamAGroupId: type == ChallengeType.teamVsTeam ? teamAGroupId : null,
       teamAGroupName: type == ChallengeType.teamVsTeam ? teamAGroupName : null,
+      acceptDeadlineMs: acceptDeadlineMs,
     );
 
     await _challengeRepo.save(challenge);

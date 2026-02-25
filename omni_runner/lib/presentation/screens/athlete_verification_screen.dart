@@ -35,11 +35,26 @@ class AthleteVerificationScreen extends StatelessWidget {
   }
 }
 
-class _Body extends StatelessWidget {
+class _Body extends StatefulWidget {
   final AthleteVerificationEntity v;
   final bool evaluating;
 
   const _Body({required this.v, this.evaluating = false});
+
+  @override
+  State<_Body> createState() => _BodyState();
+}
+
+class _BodyState extends State<_Body> {
+  DateTime? _lastEvalTap;
+
+  bool get _inCooldown {
+    if (_lastEvalTap == null) return false;
+    return DateTime.now().difference(_lastEvalTap!) < const Duration(seconds: 30);
+  }
+
+  AthleteVerificationEntity get v => widget.v;
+  bool get evaluating => widget.evaluating;
 
   @override
   Widget build(BuildContext context) {
@@ -73,11 +88,14 @@ class _Body extends StatelessWidget {
 
           // ── Re-evaluate button ───────────────────────────────────────
           FilledButton.icon(
-            onPressed: evaluating
+            onPressed: evaluating || _inCooldown
                 ? null
-                : () => context
-                    .read<VerificationBloc>()
-                    .add(const RequestEvaluation()),
+                : () {
+                    setState(() => _lastEvalTap = DateTime.now());
+                    context
+                        .read<VerificationBloc>()
+                        .add(const RequestEvaluation());
+                  },
             icon: evaluating
                 ? const SizedBox(
                     width: 18,
@@ -88,7 +106,11 @@ class _Body extends StatelessWidget {
                     ),
                   )
                 : const Icon(Icons.refresh),
-            label: Text(evaluating ? 'Avaliando...' : 'Reavaliar agora'),
+            label: Text(evaluating
+                ? 'Avaliando...'
+                : _inCooldown
+                    ? 'Aguarde 30s...'
+                    : 'Reavaliar agora'),
           ),
           const SizedBox(height: 8),
           Text(

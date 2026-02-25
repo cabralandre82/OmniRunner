@@ -164,7 +164,7 @@ final class IsarSessionRepo implements ISessionRepo {
       ..totalDistanceM = entity.totalDistanceM ?? 0.0
       ..movingMs = 0
       ..isVerified = entity.isVerified
-      ..isSynced = false
+      ..isSynced = entity.isSynced
       ..ghostSessionId = entity.ghostSessionId
       ..integrityFlags = List.of(entity.integrityFlags)
       ..avgBpm = entity.avgBpm

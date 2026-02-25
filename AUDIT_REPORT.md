@@ -1,1286 +1,297 @@
-# Omni Runner — Relatório de Auditoria de Pré-Lançamento
+# RELATÓRIO DE AUDITORIA COMPLETA — OMNI RUNNER
 
-**Data:** 17/02/2026
-**Auditor:** Staff Engineer / QA Automatizado
-**Versão do Código:** 1.0.0+1 (Flutter/Dart)
-
----
-
-## SUMÁRIO EXECUTIVO
-
-O projeto Omni Runner é um app de corrida Flutter com arquitetura Clean Architecture bem implementada. O código base apresenta boa separação de camadas, testes unitários para a lógica core e tratamento de erros em vários pontos. Porém, há **lacunas críticas** na integração com serviços externos (Mapas, Wearables), resiliência a falhas de rede/GPS, e gerenciamento de ciclo de vida que devem ser resolvidas antes de testes em ambiente real.
+> Data: 2026-02-24
+> Perspectivas: Senior Product Designer + Senior QA Engineer + Senior Product Logic Expert
+> Escopo: Todos os fluxos do app (atleta + assessoria), caminhos felizes e de erro
 
 ---
 
-## 1. RELATÓRIO DE LACUNAS DE INTEGRAÇÃO
+## 1. ONBOARDING (Welcome → Login → Role → Assessoria/Staff)
 
-### 1.1 APIs de Mapas (MapTiler / MapLibre)
+### 1.1 Caminho Feliz
+`WelcomeScreen → LoginScreen → OnboardingRoleScreen → JoinAssessoriaScreen (atleta) OU StaffSetupScreen (staff) → HomeScreen`
 
-| Item | Status | Detalhe |
-|------|--------|---------|
-| Chave MapTiler (`MAPTILER_API_KEY`) | ✅ FEITO | `.env.dev` contém chave real (`8k7N8Y5T...`). `.env.prod` ainda placeholder. |
-| Fallback sem chave | ✅ OK | `map_style.dart` cai para `MapLibreStyles.demo` se a chave estiver vazia |
-| Erro de carregamento do mapa | ✅ FEITO | Map load timeout (6s) com fallback "Mapa indisponível" em `TrackingScreen` e `MapScreen` |
-| Rate limiting / quota MapTiler | ⚠️ AUSENTE | Sem retry ou fallback se a API retornar 429/503 |
+### 1.2 Problemas Encontrados
 
-### 1.2 Wearables (Garmin, Apple Watch, Bluetooth/ANT+)
-
-| Item | Status | Detalhe |
-|------|--------|---------|
-| Integração BLE HR | ✅ FEITO | `BleHeartRateSource` implementa `IHeartRateSource`, registrado no service_locator, usado no TrackingBloc (auto-connect + live BPM) |
-| Apple HealthKit / Health Connect | ✅ FEITO | `HealthPlatformService` implementa `IHealthProvider`; `ExportWorkoutToHealth` exporta sessões; `HealthExportController` para UI |
-| Heart Rate Monitor | ✅ FEITO | Live BPM no TrackingBottomPanel, avg/max persistidos na sessão, HR zone voice trigger |
-| Pedômetro / Step Counter | ✅ FEITO | `HealthStepsSource` implementa `IStepsSource`, usado por `VehicleSlidingDetector` para anti-cheat |
-| Garmin Connect IQ | ❌ AUSENTE | Sem integração nativa (BLE HR funciona com Garmin HRM via padrão BLE) |
-
-### 1.3 Supabase / Backend
-
-| Item | Status | Detalhe |
-|------|--------|---------|
-| Chaves Supabase | ✅ FEITO | `.env.dev` com chaves reais; 38 migrations aplicadas; 40 Edge Functions deployadas |
-| Supabase.initialize() | ✅ FEITO | `main.dart` chama `Supabase.initialize()` no `_bootstrap()` com fallback mock mode |
-| Autenticação | ✅ FEITO | Social login (Google, Apple, Instagram) via `RemoteAuthDataSource`; AuthGate roteia por estado de onboarding |
-| Tratamento de falhas de rede | ✅ OK | `SyncRepo` captura exceções e retorna `SyncFailure` tipado; `AutoSyncManager` retenta ao restaurar conectividade |
-
-### 1.4 Sentry / Crash Reporting
-
-| Item | Status | Detalhe |
-|------|--------|---------|
-| Sentry DSN | ✅ FEITO | `.env.dev` com DSN real; `AppConfig.sentryDsn` lê via `--dart-define` |
-| Sentry.init() | ✅ FEITO | `main.dart` chama `SentryFlutter.init()` com `appRunner: _bootstrap` — captura framework errors + uncaught exceptions |
-| `AppLogger.onError` hook | ✅ FEITO | `main.dart` conecta `AppLogger.onError` → `Sentry.captureException()` — todos os `AppLogger.error()` enviam ao Sentry |
-
-### 1.5 Manifestos e Permissões
-
-#### Android (`AndroidManifest.xml`)
-
-| Permissão | Status |
-|-----------|--------|
-| `ACCESS_FINE_LOCATION` | ✅ |
-| `ACCESS_COARSE_LOCATION` | ✅ |
-| `ACCESS_BACKGROUND_LOCATION` | ✅ |
-| `FOREGROUND_SERVICE` | ✅ |
-| `FOREGROUND_SERVICE_LOCATION` | ✅ |
-| `INTERNET` | ✅ |
-| Foreground Service declaration | ✅ `foregroundServiceType="location"` |
-| `BLUETOOTH_SCAN` / `BLUETOOTH_CONNECT` | ✅ FEITO | Declarados no AndroidManifest (neverForLocation) |
-| `ACTIVITY_RECOGNITION` | ✅ FEITO | Declarado no AndroidManifest |
-| `WAKE_LOCK` | ⚠️ Via plugin `flutter_foreground_task` (implícito) |
-
-#### iOS (`Info.plist`)
-
-| Chave | Status |
-|-------|--------|
-| `NSLocationWhenInUseUsageDescription` | ✅ |
-| `NSLocationAlwaysAndWhenInUseUsageDescription` | ✅ |
-| `UIBackgroundModes: location` | ✅ |
-| `UIBackgroundModes: fetch` | ❌ AUSENTE (necessário para sync em background) |
-| `UIBackgroundModes: bluetooth-central` | ✅ FEITO | Declarado em Info.plist |
-| `NSBluetoothAlwaysUsageDescription` | ✅ FEITO | "Omni Runner connects to Bluetooth heart rate monitors..." |
-| `NSMotionUsageDescription` | ❌ AUSENTE (necessário para pedômetro nativo — HealthKit steps funciona sem) |
+| # | Severidade | Problema | Impacto | Sugestão |
+|---|---|---|---|---|
+| O-1 | ALTA | **Não há opção de login por email/senha.** Apenas Google, Apple (iOS only), Instagram. Se o usuário Android não tem Google e não usa Instagram, não consegue entrar. | Exclusão de usuários Android sem Google. | Adicionar login por email/senha como fallback universal. |
+| O-2 | MÉDIA | **Seleção de role é irreversível.** "Escolha com atenção" — mas não há como trocar depois. Se o atleta errou e escolheu "Assessoria", fica preso. | Frustração, necessidade de suporte manual. | Permitir troca de role em Settings, ou pelo menos um "Você tem certeza?" com explicação clara das consequências. |
+| O-3 | MÉDIA | **JoinAssessoriaScreen tem 4 caminhos de entrada** (busca, QR, código, skip) — excelente. Mas "Continuar sem assessoria" pode confundir: o atleta pode pensar que perde funcionalidades. | Abandono por medo. | Texto mais claro: "Você pode entrar em uma assessoria depois, nas configurações." |
+| O-4 | BAIXA | **WelcomeScreen não tem splash/animação.** O ícone estático e os bullets são funcionais, mas não criam wow factor para um app de corrida. | Primeira impressão fraca. | Animação Lottie de um corredor, ou breve vídeo de 3 segundos. |
+| O-5 | BAIXA | **Login com Instagram** — usa ícone genérico `camera_alt_outlined` em vez do logo oficial do Instagram. | Parece não-oficial, pode causar desconfiança. | Usar SVG/asset do logo do Instagram (respeitando guidelines da Meta). |
+| O-6 | CRÍTICO | **AuthGate mock mode** — se Supabase falha ao iniciar, o app vai direto para Home sem login. O usuário não vê nenhuma funcionalidade real (tudo depende de server). Em mock mode, o app é um shell vazio. | Usuário pensa que o app está quebrado. | Mostrar tela de erro de conexão com retry, em vez de enviar para Home vazia. |
 
 ---
 
-## 2. DIAGNÓSTICO DE ROBUSTEZ
+## 2. HOME & NAVEGAÇÃO
 
-### 2.1 Race Conditions Identificadas
+### 2.1 Estrutura
 
-#### RC-01: `_buffer` no TrackingBloc (CRÍTICA)
-**Arquivo:** `tracking_bloc.dart:51,128,154`
+**Atleta:** 4 tabs (Início, Correr, Histórico, Mais)
+**Staff:** 2 tabs (Início, Mais)
 
-```
-_buffer.add(pt);                        // Linha 127: adiciona ao buffer
-if (_buffer.length >= _bufSize)         // Linha 128: verifica tamanho
-    await _flushBuffer();               // Linha 154: reassign _buffer = []
-```
+### 2.2 Problemas Encontrados
 
-O `_flushBuffer()` faz `_buffer = []` (reassign), mas a referência `List.of(_buffer)` captura antes do clear. Se dois eventos `LocationPointReceived` chegarem quase simultâneamente:
-- O Bloc do `flutter_bloc` serializa handlers async, então **dentro do bloc não há race condition real** pois `on<Event>` processa um por vez.
-- **Porém**, se a stream GPS emitir pontos muito rápido enquanto `_flushBuffer` aguarda o `writeTxn` do Isar, novos eventos se acumulam no buffer interno do Bloc e são processados sequencialmente. **Risco baixo, mas monitorar.**
-
-#### RC-02: `ForegroundTaskConfig.start/stop` sem await (CORRIGIDO)
-**Arquivo:** `tracking_bloc.dart`
-
-~~O start/stop do foreground service era fire-and-forget.~~ Agora `await ForegroundTaskConfig.start()` e `await ForegroundTaskConfig.stop()` são chamados no `TrackingBloc._onStartTracking` e `_onStopTracking`, com try-catch defensivo. ✅
-
-#### RC-03: `unawaited(_audioCoach.init())` (BAIXA)
-**Arquivo:** `tracking_bloc.dart:114`
-
-`_audioCoach.init()` é unawaited, mas `speak()` pode ser chamado antes do init completar. O `AudioCoachService.speak` checa `if (_tts == null)` e retorna silenciosamente, então não quebra, mas **as primeiras falas podem ser perdidas silenciosamente**.
-
-#### RC-04: `unawaited(_syncRepo.syncPending())` (BAIXA)
-**Arquivo:** `tracking_bloc.dart:146`
-
-O sync pode começar e falhar sem que ninguém trate o resultado. Aceitável para sync offline-first, mas deveria logar o resultado.
-
-### 2.2 Funções que Podem Quebrar com Dados Inconsistentes
-
-#### F-01: `SyncService.uploadPoints` — sem Supabase.initialize (CRÍTICA)
-**Arquivo:** `sync_service.dart:58`
-
-```dart
-final client = Supabase.instance.client;
-```
-
-`Supabase.instance` vai lançar uma exceção se `Supabase.initialize()` nunca foi chamado.
-
-**Status: ✅ CORRIGIDO** — `Supabase.initialize()` é chamado em `main.dart:_bootstrap()`. Se falhar, app continua em mock mode (`AppConfig.isSupabaseReady = false`).
-
-#### F-02: `sessionId` baseado em timestamp (CORRIGIDO ✅)
-
-**Status: ✅ CORRIGIDO** — `_sessionId = generateUuidV4()` — UUID v4 criptograficamente aleatório. Sem risco de colisão.
-
-#### F-03: `GhostPositionAt` com rota vazia (TRATADO)
-Retorna `null` corretamente para rotas < 2 pontos. ✅
-
-#### F-04: `CalculatePace` com deltaMs = 0 (TRATADO)
-O `continue` no loop pula segmentos com `deltaMs <= 0`. ✅
-
-#### F-05: `AccumulateDistance` com accuracy null (TRATADO)
-Pontos com `accuracy == null` passam pelo filtro (comportamento correto para GPS sem metadata). ✅
-
-#### F-06: `_computeMetrics` no TrackingBloc — `_filterPoints` chamado repetidamente
-**Arquivo:** `tracking_bloc.dart:182`
-
-**Status: ✅ CORRIGIDO** — `_getFilteredPoints()` usa cache incremental (`_filteredCache` + `_filteredUpTo`). Só processa pontos novos desde a última chamada, com rebuild completo apenas quando `_points` é trimado (~300 ticks).
-
-### 2.3 Tratamento de Erros — O que Falta
-
-| Função | Tem try-catch? | Risco |
-|--------|---------------|-------|
-| `TrackingBloc._onStartTracking` | ✅ SIM — try-catch(Object) envolve todo o método | OK |
-| `TrackingBloc._onStopTracking` | ✅ SIM — `_finishSession` wrapped em try-catch | OK |
-| `TrackingBloc._flushBuffer` | ✅ SIM — `_pointsRepo.savePoints` wrapped em try-catch | OK |
-| `SyncRepo._syncOne` | ✅ SIM | OK |
-| `FinishSession.call` | NÃO — queries ao repo podem falhar | MÉDIO |
-| `RecoverActiveSession.call` | NÃO — queries ao repo podem falhar | MÉDIO |
-| `DiscardSession.call` | NÃO — delete pode falhar | MÉDIO |
-| `AudioCoachService.speak` | NÃO — `_tts!.speak` pode falhar | BAIXO |
+| # | Severidade | Problema | Impacto | Sugestão |
+|---|---|---|---|---|
+| N-1 | ALTA | **Staff não tem acesso a Desafios.** O staff tem apenas "Início" e "Mais", sem tab de desafios ou matchmaking. Se um professor quiser criar desafios para motivar alunos, não consegue (pelo app). | Funcionalidade limitada para staff. | Avaliar se staff deveria ter acesso a Desafios (criando para o grupo) ou se isso é intencional. |
+| N-2 | MÉDIA | **Dashboard do atleta tem 6 cards** mas nenhum acesso direto à verificação do atleta. O usuário só descobre que precisa ser verificado quando tenta criar desafio com stake > 0. | Falta de proatividade; jornada reativa. | Adicionar card "Status de Verificação" no dashboard, ou badge no perfil mostrando status. |
+| N-3 | MÉDIA | **Tab "Mais" do atleta mistura conteúdo de Staff e Atleta.** O item "Operações QR (Staff)" aparece no menu do ATLETA, mas falha com "Acesso restrito a staff" quando o atleta toca. | Confusão, erro previsível. | Esconder "Operações QR (Staff)" se o `userRole == 'ATLETA'`. Ele já está dentro de `if (!_isStaff)`. |
+| N-4 | BAIXA | **"Minha Assessoria" aparece no dashboard E no menu "Mais".** Duplicação de acesso desnecessária. | Confusão sobre onde gerenciar. | Manter em um lugar só, ou diferenciar: dashboard = visão resumida, Mais = gestão completa. |
+| N-5 | BAIXA | **Histórico só mostra 20-30 sessões.** Para atletas ativos (1 corrida/dia), isso cobre apenas 1 mês. | Perda de contexto histórico. | Paginação infinita ou filtro por período. |
 
 ---
 
-## 3. CÓDIGO FANTASMA E DÍVIDA TÉCNICA
+## 3. FLUXO DE CORRIDA (Tracking → Summary → Sync)
 
-### 3.1 Código Não Utilizado / Não Integrado
+### 3.1 Caminho Feliz
+`Tab "Correr" → Mapa carrega → Iniciar corrida → Correndo (GPS tracking + métricas) → Finalizar → RunSummaryScreen → Auto-sync`
 
-| Arquivo | Problema |
-|---------|----------|
-| `integrity_detect_vehicle.dart` | ✅ INTEGRADO — `VehicleSlidingDetector` usado no TrackingBloc; `HealthStepsSource` implementa `IStepsSource` |
-| `map_screen.dart` | ⚠️ Screen standalone de mapa — sem rota de navegação (P2) |
-| `debug_tracking_screen.dart` | ⚠️ Screen de debug — sem rota de navegação (P2, remover antes de prod) |
-| `camera_controller.dart` | ✅ INTEGRADO — `CameraFollowController` instanciado em `TrackingScreen`, camera segue corredor com throttle + bearing |
-| `auto_bearing.dart` | ✅ INTEGRADO — `AutoBearing.fromPoint` e `AutoBearing.fromTwoPoints` chamados em `TrackingScreen._updateCamera` |
-| `AudioEventType.heartRateAlert` | ✅ INTEGRADO — emitido por `HrZoneVoiceTrigger` quando HR zone muda |
-| `AudioEventType.paceAlert` | ⚠️ Enum value não emitido (futuro) |
-| `AudioEventType.countdown` | ⚠️ Enum value não emitido (futuro) |
-| `AudioEventType.sessionEvent` | ⚠️ Enum value não emitido (futuro) |
-| `run_details_screen.dart` | ✅ Referenciado pelo `HistoryScreen` — em uso |
+### 3.2 Problemas Encontrados
 
-### 3.2 Potenciais Vazamentos de Memória
-
-#### ML-01: `StreamSubscription` no TrackingBloc (TRATADO)
-O `_sub` é cancelado em `_cancelSub()`, chamado por `close()`. ✅
-
-#### ML-02: `WidgetsBindingObserver` nas screens (TRATADO)
-`TrackingScreen`, `DebugTrackingScreen` fazem `addObserver/removeObserver` em `initState/dispose`. ✅
-
-#### ML-03: `FlutterTts` no AudioCoachService (RISCO MÉDIO)
-**Arquivo:** `audio_coach_service.dart`
-
-O `_tts` é criado no `init()` mas `dispose()` só é chamado se alguém explicitamente chamar `IAudioCoach.dispose()`. No `TrackingBloc.close()`, **não há chamada a `_audioCoach.dispose()`**. Cada vez que o BlocProvider recria o TrackingBloc (ex: ao navegar de volta para o TrackingScreen), uma nova instância de FlutterTts é criada via `AudioCoachService.init()`, mas como o service é `LazySingleton`, **o TTS instance anterior persiste** graças ao `if (_tts != null) return;` — **sem leak neste caso.** Porém, o TTS engine nunca é liberado durante o lifecycle do app.
-
-#### ML-04: `MapLibreMapController` no TrackingScreen (RISCO BAIXO)
-**Arquivo:** `tracking_screen.dart:44`
-
-O `_mapCtrl` é capturado em `_onMapCreated` mas **nunca recebe `dispose()`** no `_TrackingViewState`. O MapLibre widget gerencia internamente, mas é uma boa prática chamar dispose.
-
-#### ML-05: `AudioCoachRepo._queue` cresce indefinidamente? (TRATADO)
-A queue tem `maxQueueSize = 5` e é drenada após cada fala. ✅
-
-### 3.3 Dívida Técnica Significativa
-
-| Item | Descrição | Impacto | Status |
-|------|-----------|---------|--------|
-| Sem Supabase.initialize | O backend simplesmente não funciona | BLOCKER | ✅ CORRIGIDO |
-| Sem Sentry.init | Crash reporting não funciona | HIGH | ✅ CORRIGIDO |
-| SessionId = timestamp | Possíveis colisões | MEDIUM | ✅ CORRIGIDO (UUID v4) |
-| Sem fluxo de autenticação | Sync sempre falha (userId = null) | HIGH | ✅ CORRIGIDO (social login) |
-| TrackingBloc muito denso | 670 linhas, difícil de manter | MEDIUM | ⚠️ ABERTO |
-| Sem retry automático no sync | Se falhar, só retenta manualmente | MEDIUM | ✅ CORRIGIDO (AutoSyncManager) |
-| Chaves de API todas placeholder | Deploy vai falhar | BLOCKER | ✅ CORRIGIDO (.env.dev com chaves reais) |
+| # | Severidade | Problema | Impacto | Sugestão |
+|---|---|---|---|---|
+| T-1 | ALTA | **Se o mapa não carrega em 6 segundos**, o app mostra `_mapTimedOut = true` mas continua. O usuário pode iniciar corrida sem mapa. Funcional, mas confuso. | Corrida sem feedback visual. | Mostrar texto explicativo: "O mapa não carregou. Sua corrida será rastreada normalmente." |
+| T-2 | MÉDIA | **Permissão de GPS.** Se o usuário nega permissão de localização, o TrackingBloc recebe `AppStarted` mas o fluxo falha silenciosamente. | Usuário não entende por que não funciona. | Checar permissões ANTES de mostrar o mapa. Se negada, tela explicativa com botão para Settings do OS. |
+| T-3 | MÉDIA | **Recovery screen** — se o app crashou durante uma corrida, o `RecoveryScreen` aparece no restart, oferecendo "Retomar" ou "Descartar". Mas "Retomar" apenas finaliza a sessão (não re-inicia o tracking). | O nome "Retomar" engana — deveria ser "Salvar". | Renomear: "Salvar corrida" e "Descartar corrida". |
+| T-4 | MÉDIA | **RunSummaryScreen mostra `isVerified` e `integrityFlags`** — mas esses valores vêm do client-side (pré-check). O servidor pode alterar depois no verify-session. O usuário pode ver "Verificada" e depois na lista ver "Invalidada". | Inconsistência na informação. | Mostrar "Verificação pendente" até o server confirmar, ou atualizar após sync. |
+| T-5 | BAIXA | **Fallback de posição inicial = Brasília** (-15.79, -47.89). Se o GPS demora, o mapa mostra o centro do Brasil. | Confusão visual momentânea. | Manter, mas adicionar indicador "Obtendo localização..." sobre o mapa. |
 
 ---
 
-## 4. PLANO DE TESTES DE QA
+## 4. DESAFIOS (Criar → Convidar → Join → Track → Settle)
 
-### 4.1 Testes Unitários Sugeridos (Faltantes)
+### 4.1 Caminho Feliz — Criação Manual
+`Dashboard → Desafios → "+" → ChallengeCreateScreen → preenche → Criar → ChallengeInviteScreen → compartilha link`
 
-#### Cobertura Atual (26 test files)
-- ✅ `haversine_test.dart`
-- ✅ `format_pace_test.dart`
-- ✅ `filter_location_points_test.dart`
-- ✅ `accumulate_distance_test.dart`
-- ✅ `calculate_pace_test.dart`
-- ✅ `auto_pause_detector_test.dart`
-- ✅ `ghost_position_at_test.dart`
-- ✅ `calculate_ghost_delta_test.dart`
-- ✅ `integrity_detect_speed_test.dart`
-- ✅ `integrity_detect_teleport_test.dart`
-- ✅ `voice_triggers_test.dart`
-- ✅ `time_voice_trigger_test.dart`
-- ✅ `ghost_voice_trigger_test.dart`
-- ✅ `finish_session_test.dart`
-- ✅ `discard_session_test.dart`
-- ✅ `recover_active_session_test.dart`
-- ✅ `position_mapper_test.dart`
-- ✅ `permission_mapper_test.dart`
-- ✅ `ensure_location_ready_test.dart`
-- ✅ `auto_bearing_test.dart`
-- ✅ `polyline_builder_test.dart`
-- ✅ `workout_proto_mapper_test.dart`
-- ✅ `load_ghost_from_session_test.dart`
-- ✅ `synthetic_run_test.dart` (integration)
-- ✅ `entities_sanity_test.dart`
+### 4.2 Caminho Feliz — Receber convite
+`Deep link → ChallengeJoinScreen → carrega detalhes → "Aceitar Desafio"`
 
-#### Testes Faltantes (PRIORIDADE)
+### 4.3 Problemas Encontrados
 
-**P1 — TrackingBloc State Machine (CRÍTICO)**
-
-```dart
-// test/presentation/blocs/tracking/tracking_bloc_test.dart
-import 'dart:async';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:bloc_test/bloc_test.dart';
-// ... imports and mocks ...
-
-void main() {
-  group('TrackingBloc', () {
-    blocTest<TrackingBloc, TrackingState>(
-      'emits [TrackingIdle] when AppStarted and permissions are OK',
-      build: () => _createBloc(permissionGranted: true),
-      act: (bloc) => bloc.add(const AppStarted()),
-      expect: () => [const TrackingIdle()],
-    );
-
-    blocTest<TrackingBloc, TrackingState>(
-      'emits [TrackingNeedsPermission] when permission denied',
-      build: () => _createBloc(permissionGranted: false),
-      act: (bloc) => bloc.add(const AppStarted()),
-      expect: () => [isA<TrackingNeedsPermission>()],
-    );
-
-    blocTest<TrackingBloc, TrackingState>(
-      'emits [TrackingActive] then [TrackingIdle] on start/stop cycle',
-      build: () => _createBloc(permissionGranted: true),
-      act: (bloc) async {
-        bloc.add(const StartTracking());
-        await Future.delayed(const Duration(milliseconds: 100));
-        bloc.add(const StopTracking());
-      },
-      expect: () => [
-        isA<TrackingActive>(),
-        const TrackingIdle(),
-      ],
-    );
-
-    blocTest<TrackingBloc, TrackingState>(
-      'handles LocationStreamError gracefully',
-      build: () => _createBloc(permissionGranted: true, streamError: true),
-      act: (bloc) => bloc.add(const StartTracking()),
-      expect: () => [
-        isA<TrackingActive>(),
-        isA<TrackingError>(),
-      ],
-    );
-
-    test('close() flushes buffer and cancels subscription', () async {
-      final bloc = _createBloc(permissionGranted: true);
-      bloc.add(const StartTracking());
-      await Future.delayed(const Duration(milliseconds: 50));
-      await bloc.close();
-      // Verify no unhandled exceptions
-    });
-  });
-}
-```
-
-**P2 — SyncRepo com falhas de rede**
-
-```dart
-// test/data/repositories_impl/sync_repo_test.dart
-void main() {
-  group('SyncRepo', () {
-    test('syncPending returns SyncNotConfigured when Supabase not set', () async {
-      final repo = SyncRepo(
-        service: MockSyncService(configured: false),
-        isar: mockIsar,
-        pointsRepo: mockPointsRepo,
-      );
-      final result = await repo.syncPending();
-      expect(result, isA<SyncNotConfigured>());
-    });
-
-    test('syncPending returns SyncNoConnection when offline', () async {
-      final repo = SyncRepo(
-        service: MockSyncService(configured: true, connected: false),
-        isar: mockIsar,
-        pointsRepo: mockPointsRepo,
-      );
-      final result = await repo.syncPending();
-      expect(result, isA<SyncNoConnection>());
-    });
-
-    test('syncPending returns SyncNotAuthenticated when no user', () async {
-      final repo = SyncRepo(
-        service: MockSyncService(configured: true, connected: true, userId: null),
-        isar: mockIsar,
-        pointsRepo: mockPointsRepo,
-      );
-      final result = await repo.syncPending();
-      expect(result, isA<SyncNotAuthenticated>());
-    });
-
-    test('syncPending handles timeout gracefully', () async {
-      // Mock upload that throws TimeoutException
-      // Assert SyncTimeout is returned
-    });
-  });
-}
-```
-
-**P3 — AudioCoachRepo queue behavior**
-
-```dart
-// test/data/repositories_impl/audio_coach_repo_test.dart
-void main() {
-  group('AudioCoachRepo', () {
-    test('high priority event interrupts current speech', () async {
-      final service = MockAudioCoachService(isSpeaking: true);
-      final repo = AudioCoachRepo(service: service);
-      await repo.init();
-
-      final urgent = AudioEventEntity(
-        type: AudioEventType.custom,
-        priority: 3,
-        payload: {'text': 'URGENT'},
-      );
-
-      await repo.speak(urgent);
-      expect(service.stopCalled, isTrue);
-      expect(service.lastSpoken, 'URGENT');
-    });
-
-    test('queue respects maxQueueSize', () async {
-      final service = MockAudioCoachService(isSpeaking: true);
-      final repo = AudioCoachRepo(service: service, maxQueueSize: 2);
-      await repo.init();
-
-      for (var i = 0; i < 5; i++) {
-        await repo.speak(AudioEventEntity(
-          type: AudioEventType.distanceAnnouncement,
-          priority: 10,
-          payload: {'distanceKm': i},
-        ));
-      }
-      // Only 2 should be in queue
-    });
-  });
-}
-```
-
-**P4 — IntegrityDetectVehicle (código fantasma — testar se necessário)**
-
-```dart
-// test/domain/usecases/integrity_detect_vehicle_test.dart
-void main() {
-  const detector = IntegrityDetectVehicle();
-
-  test('returns empty when no step data', () {
-    final points = generatePoints(speed: 5.0, count: 10);
-    final result = detector(points, steps: null);
-    expect(result, isEmpty);
-  });
-
-  test('detects vehicle when high GPS speed + low cadence', () {
-    final points = generatePoints(speed: 8.0, count: 60, intervalMs: 1000);
-    final steps = generateSteps(spm: 50.0, count: 60, intervalMs: 1000);
-    final result = detector(points, steps: steps, minWindowMs: 10000);
-    expect(result, isNotEmpty);
-    expect(result.first.avgSpeedMps, greaterThan(4.2));
-    expect(result.first.avgSpm, lessThan(140));
-  });
-}
-```
-
-### 4.2 Roteiro de Testes de Integração
-
-#### TESTE 01: "Túnel" — Perda Súbita de Sinal GPS/Internet
-
-| Passo | Ação | Resultado Esperado | Status |
-|-------|------|--------------------|--------|
-| 1 | Iniciar corrida com GPS ativo | `TrackingActive` emitido | ⬜ |
-| 2 | Desabilitar GPS nas configurações do sistema | Stream GPS emite erro ou para de emitir | ⚠️ **Não tratado** — o stream simplesmente para; `onDone` dispara `StopTracking` |
-| 3 | Verificar que os pontos salvos até o momento estão no Isar | Buffer deve ser flushed | ⬜ |
-| 4 | Reabilitar GPS | App deveria reconectar automaticamente | ❌ **Não implementado** — o tracking é parado e não reinicia |
-| 5 | Verificar sessão recuperável após kill do app | `RecoverActiveSession` deve encontrar a sessão | ⬜ |
-| 6 | Desabilitar internet durante sync | `SyncNoConnection` retornado, sessão fica `PENDING` | ⬜ |
-| 7 | Reabilitar internet | Sync manual via botão da HistoryScreen funciona | ⬜ |
-| 8 | Verificar que não há perda de dados | Pontos locais intactos | ⬜ |
-
-**Lacuna crítica:** Quando o stream GPS emite `onDone` (GPS desligado), o bloc dispara `StopTracking` automaticamente, **finalizando a sessão**. O correto seria entrar em um estado de "esperando GPS" sem finalizar.
-
-#### TESTE 02: "Bateria Crítica" — Modo de Economia
-
-| Passo | Ação | Resultado Esperado | Status |
-|-------|------|--------------------|--------|
-| 1 | Iniciar corrida | `TrackingActive` | ⬜ |
-| 2 | Ativar modo de economia de energia do SO | Foreground service deve manter o tracking | ⬜ |
-| 3 | Verificar frequência de pontos GPS | Pode diminuir mas não deve parar | ⬜ |
-| 4 | Verificar notificação persistente (Android) | Deve continuar visível | ⬜ |
-| 5 | Verificar TTS continua funcionando | `AudioCoachService` com `setSharedInstance(true)` no iOS | ⬜ |
-| 6 | Forçar low-battery (< 5%) | App não deve crashar; considerar salvar sessão automaticamente | ❌ **Não implementado** |
-
-**Lacuna:** Sem listener de nível de bateria. Sem save automático em bateria crítica.
-
-#### TESTE 03: "Concorrência" — Chamada/Notificação durante Uso
-
-| Passo | Ação | Resultado Esperado | Status |
-|-------|------|--------------------|--------|
-| 1 | Iniciar corrida | `TrackingActive` | ⬜ |
-| 2 | Receber chamada telefônica | App vai para background | ⬜ |
-| 3 | Verificar foreground service mantém GPS | `flutter_foreground_task` gerencia | ⬜ |
-| 4 | Atender chamada, falar 1 min | TTS silencia durante chamada (iOS: `duckOthers` configurado) | ⬜ |
-| 5 | Encerrar chamada, voltar ao app | `AppLifecycleChanged(isResumed: true)` disparado | ⬜ |
-| 6 | Verificar pontos não foram perdidos | Buffer deve continuar acumulando | ⬜ |
-| 7 | Verificar métricas consistentes | `elapsedMs` inclui tempo da chamada; `movingMs` deve excluir | ⬜ |
-| 8 | Reproduzir notificação com tela cheia (alarme) | GPS não deve parar | ⬜ |
-
-**Lacuna:** O `_onAppLifecycleChanged` re-verifica permissões no `resume`, mas **se o tracking já estava ativo, não faz nada** (retorna na linha 151: `if (state is TrackingActive) return;`). Isso é correto. Porém, se o SO matou o processo durante a chamada, a session recovery é o único safety net.
-
-#### TESTE 04: "Desconexão Prolongada" — Avião por 30min
-
-| Passo | Ação | Resultado Esperado | Status |
-|-------|------|--------------------|--------|
-| 1 | Completar corrida offline | Session salva localmente com `isSynced=false` | ⬜ |
-| 2 | Manter modo avião por 30 min | Dados locais intactos | ⬜ |
-| 3 | Desativar modo avião | Sync manual disponível | ⬜ |
-| 4 | Sync automático ao abrir app | ❌ **Não implementado** — sync é manual ou fire-and-forget no `StopTracking` |
+| # | Severidade | Problema | Impacto | Sugestão |
+|---|---|---|---|---|
+| C-1 | CRÍTICO | **Após criar desafio, a ÚNICA opção é compartilhar link.** O matchmaking foi adicionado na lista, mas o fluxo de criação manual ainda obriga o compartilhamento. Se o usuário cria desafio e fecha o ChallengeInviteScreen sem compartilhar, o desafio fica "pending" para sempre (expira). | Desafio criado mas nunca jogado. | Oferecer opção "Publicar para matchmaking" no ChallengeInviteScreen, ou alertar "Você não compartilhou. Desafio será cancelado em X horas se ninguém entrar." |
+| C-2 | ALTA | **Fluxo de criação e matchmaking são separados** — o usuário precisa decidir ANTES se quer convidar manualmente ou fazer matchmaking. Mas ambos os fluxos pedem as mesmas informações (métrica, meta, duração, stake). | Duplicação de UX. | Unificar: um formulário só, com opção "Enviar link" ou "Encontrar oponente automaticamente" no final. |
+| C-3 | ALTA | **ChallengeInviteScreen permite convidar membros da assessoria** via contacts — mas essa lista depende de `coaching_members` que pode não estar sincronizada. Se o atleta não tem assessoria, a seção fica vazia sem explicação. | Dead end no fluxo. | Se sem assessoria, mostrar: "Compartilhe o link por WhatsApp, Telegram, etc." como CTA principal. |
+| C-4 | MÉDIA | **Deep link de convite** (`https://omnirunner.app/challenge/{id}`) — se o app não está instalado, o link não resolve. Não há web fallback. | Perda de conversão. | Criar landing page web que redireciona para a store ou abre o app via universal link. |
+| C-5 | MÉDIA | **Group challenges: "50 - accepted" slots disponíveis** — hardcoded. Não há opção de limitar o número de participantes em grupo. | Grupo com 50 pessoas perde competitividade. | Adicionar campo "máximo de participantes" (default 50, editável). |
+| C-6 | MÉDIA | **Não há notificação push quando um oponente aceita** — o criador do desafio só descobre voltando à lista de desafios. | Desafio ativo sem o criador saber. | Enviar push notification quando o status muda para "active". |
+| C-7 | BAIXA | **Anti-cheat policy "strict" está visível no código** (HR correlation) mas não é selecionável na UI. | Feature fantasma. | Remover do código até implementar, ou adicionar toggle na UI. |
 
 ---
 
-## 5. SUITE DE TESTES SUGERIDA — EXEMPLOS DE CÓDIGO
+## 5. MATCHMAKING
 
-### Teste: TrackingBloc com GPS que morre no meio da corrida
+### 5.1 Caminho Feliz
+`Desafios → "Encontrar Oponente" → configura → "Buscar Oponente" → match encontrado → "Ver Desafio"`
 
-```dart
-// test/presentation/blocs/tracking/tracking_bloc_gps_loss_test.dart
-import 'dart:async';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:omni_runner/domain/entities/location_point_entity.dart';
+### 5.2 Problemas Encontrados
 
-void main() {
-  test('GPS stream closes mid-run: should flush buffer, not lose data', () async {
-    final controller = StreamController<LocationPointEntity>();
-    // Configure bloc with mock stream that uses controller.stream
-
-    // Emit 5 valid points
-    for (var i = 0; i < 5; i++) {
-      controller.add(LocationPointEntity(
-        lat: -23.55 + i * 0.0001,
-        lng: -46.63,
-        accuracy: 5.0,
-        timestampMs: 1000000 + i * 5000,
-      ));
-    }
-    await Future.delayed(const Duration(milliseconds: 100));
-
-    // Simulate GPS death
-    await controller.close(); // triggers onDone -> StopTracking
-
-    await Future.delayed(const Duration(milliseconds: 200));
-
-    // Verify: all 5 points were saved to pointsRepo
-    // Verify: session status is 'completed'
-    // Verify: bloc state is TrackingIdle
-  });
-}
-```
-
-### Teste: Dados nulos e inconsistentes vindos do GPS
-
-```dart
-// test/domain/usecases/filter_edge_cases_test.dart
-void main() {
-  const filter = FilterLocationPoints();
-
-  test('handles points with null accuracy (passes through)', () {
-    final points = [
-      LocationPointEntity(lat: 0.0, lng: 0.0, timestampMs: 0),
-      LocationPointEntity(lat: 0.001, lng: 0.0, timestampMs: 5000),
-    ];
-    final result = filter(points);
-    expect(result.length, 2);
-  });
-
-  test('handles points with identical timestamps', () {
-    final points = [
-      LocationPointEntity(lat: 0.0, lng: 0.0, accuracy: 5, timestampMs: 1000),
-      LocationPointEntity(lat: 0.001, lng: 0.0, accuracy: 5, timestampMs: 1000),
-    ];
-    final result = filter(points);
-    // deltaMs = 0, speed check skipped, drift check applies
-    expect(result.length, 2); // First accepted + drift > 3m
-  });
-
-  test('handles points with negative timestamps', () {
-    final points = [
-      LocationPointEntity(lat: 0.0, lng: 0.0, accuracy: 5, timestampMs: -1000),
-      LocationPointEntity(lat: 0.001, lng: 0.0, accuracy: 5, timestampMs: 0),
-    ];
-    final result = filter(points);
-    expect(result.length, 2);
-  });
-
-  test('handles single point', () {
-    final points = [
-      LocationPointEntity(lat: 0.0, lng: 0.0, timestampMs: 0),
-    ];
-    final result = filter(points);
-    expect(result.length, 1);
-  });
-
-  test('all points filtered out returns empty', () {
-    final points = [
-      LocationPointEntity(lat: 0.0, lng: 0.0, accuracy: 100, timestampMs: 0),
-      LocationPointEntity(lat: 0.001, lng: 0.0, accuracy: 100, timestampMs: 5000),
-    ];
-    final result = filter(points);
-    expect(result, isEmpty);
-  });
-}
-```
-
-### Teste: Sync com retry e timeout
-
-```dart
-// test/data/repositories_impl/sync_resilience_test.dart
-void main() {
-  test('sync handles Supabase timeout gracefully', () async {
-    final mockService = MockSyncService(
-      uploadBehavior: () => throw TimeoutException('Upload timed out'),
-    );
-    final repo = SyncRepo(
-      service: mockService,
-      isar: mockIsar,
-      pointsRepo: mockPointsRepo,
-    );
-
-    final result = await repo.syncPending();
-    expect(result, isA<SyncTimeout>());
-    // Session should NOT be marked as synced
-  });
-
-  test('sync handles partial failure (2 sessions, 1 fails)', () async {
-    // First session uploads OK, second fails
-    // Result should be the first failure
-    // First session should be marked synced
-    // Second session should remain pending
-  });
-}
-```
+| # | Severidade | Problema | Impacto | Sugestão |
+|---|---|---|---|---|
+| M-1 | ALTA | **Matchmaking é somente 1v1.** Não há matchmaking para grupo. O botão "Encontrar Oponente" sugere apenas duelos. | Limita a feature para quem quer grupo. | Adicionar matchmaking para grupo no futuro (e-board). Para MVP, documentar a limitação. |
+| M-2 | ALTA | **Quando o match é encontrado, AMBOS participantes são setados como "accepted" automaticamente.** Mas o oponente não consente — ele entrou na fila dizendo "quero um desafio" e o sistema criou. Isso pode surpreender se ele fechou o app. | Falta de opt-in do segundo participante. | O segundo participante deveria receber push notification + ter opção de aceitar/recusar (window de 5 min). Ou deixar explícito na UX da fila: "Ao entrar na fila, você aceita automaticamente o próximo match." |
+| M-3 | MÉDIA | **Polling a cada 5s** — se o usuário fica na fila por 20 min, são 240 requests. Rate limit é 20/60s, logo atinge o limite rapidamente. | Erro de rate limit durante busca legítima. | Aumentar intervalo de polling para 15-30s, ou usar Supabase Realtime (subscribe to queue entry changes). |
+| M-4 | MÉDIA | **Matchmaking não mostra posição na fila** ("Você é o 3º na fila"). O usuário não sabe se há outras pessoas esperando. | Ansiedade sem contexto. | Adicionar count de waiting entries com mesma config (sem expor user IDs). |
+| M-5 | MÉDIA | **Após match, o pop retorna challengeId** mas a `ChallengesListScreen` apenas faz reload da lista. O usuário deveria ser levado DIRETAMENTE ao `ChallengeDetailsScreen`. | Extra tap desnecessário. | Navegar para ChallengeDetailsScreen com o challengeId retornado. |
+| M-6 | BAIXA | **Skill bracket é mostrado mas não explicado.** O chip "Nível: Intermediário" aparece na busca, mas o atleta não sabe como isso é calculado. | Frustração se o match demora por causa de bracket. | Adicionar tooltip ou tela "Como funciona": "Seu nível é baseado no pace médio das suas últimas 10 corridas." |
 
 ---
 
-## 6. ROADMAP DE ESTABILIDADE (Prioridade 1-10)
+## 6. VERIFICAÇÃO DO ATLETA
 
-| # | Prioridade | Item | Esforço | Impacto | Status |
-|---|-----------|------|---------|---------|--------|
-| 1 | **P0 — BLOCKER** | Adicionar `Supabase.initialize()` no `main.dart` | 30 min | Sem isso o sync crasha | ✅ FEITO |
-| 2 | **P0 — BLOCKER** | Configurar chaves de API reais no `.env.dev` | 1h | Sem isso nada externo funciona | ✅ FEITO |
-| 3 | **P1 — CRÍTICO** | Wrap `_onStartTracking`, `_onStopTracking`, `_flushBuffer` em try-catch | 2h | Previne crash durante corrida | ✅ FEITO |
-| 4 | **P1 — CRÍTICO** | Inicializar Sentry e conectar `AppLogger.onError` ao Sentry | 2h | Crash reporting funcional | ✅ FEITO |
-| 5 | **P2 — ALTO** | Reconexão GPS (aguardar em vez de StopTracking) | 4h | Evita perda de sessão em túneis | ✅ FEITO |
-| 6 | **P2 — ALTO** | Fluxo de autenticação (social login) | 8h | Sem auth, sync sempre falha | ✅ FEITO |
-| 7 | **P3 — MÉDIO** | Await `ForegroundTaskConfig.start/stop` e tratar erros | 1h | Previne foreground service preso | ✅ FEITO |
-| 8 | **P3 — MÉDIO** | Trocar `sessionId` de timestamp para UUID v4 | 1h | Previne colisões de ID | ✅ FEITO |
-| 9 | **P3 — MÉDIO** | Sync automático ao abrir app e com `ConnectivityListener` | 4h | Sessões pendentes sincronizam sem ação manual | ✅ FEITO (AutoSyncManager) |
-| 10 | **P4 — MELHORIA** | `CameraFollowController` e `AutoBearing` na TrackingScreen | 3h | Camera segue o corredor suavemente | ✅ FEITO |
-| 11 | **P4 — MELHORIA** | Cachear resultado de `_filterPoints` (incremental) | 3h | Performance em corridas longas | ✅ FEITO |
-| 12 | **P5 — FUTURO** | Integrar wearables BLE (Garmin, HR monitors) | 16h+ | Feature nova | ✅ FEITO (BleHeartRateSource) |
-| 13 | **P5 — FUTURO** | Implementar `IStepsSource` e ativar `IntegrityDetectVehicle` | 8h | Anti-cheat mais robusto | ✅ FEITO (HealthStepsSource) |
-| 14 | **P5 — FUTURO** | Integrar Apple HealthKit / Health Connect | 12h+ | Dados de saúde | ✅ FEITO (HealthPlatformService) |
-| 15 | **P5 — FUTURO** | Monitoramento de bateria com save automático | 4h | Resiliência | ❌ PENDENTE |
+### 6.1 Caminho Feliz
+`Tenta stake > 0 → modal de gate → "Ver minha verificação" → AthleteVerificationScreen → vê checklist → corre 7 corridas → reavaliar → VERIFIED`
+
+### 6.2 Problemas Encontrados
+
+| # | Severidade | Problema | Impacto | Sugestão |
+|---|---|---|---|---|
+| V-1 | ALTA | **A tela de verificação não é acessível proativamente.** Não há link no dashboard, perfil ou menu. Só aparece quando o gate bloqueia. | O atleta não sabe que verificação existe até tentar stake. | Adicionar card "Status de Verificação" no dashboard E no ProgressHub. |
+| V-2 | MÉDIA | **O checklist mostra "identity_ok" e "permissions_ok"** — mas não há implementação real (sempre true no server). Itens sempre verdes confundem: "Se já está verde, por que não sou verified?" | Confusão sobre o que realmente falta. | Remover itens não implementados do checklist, ou marcá-los como "futuro" com ícone diferente. |
+| V-3 | MÉDIA | **"Reavaliar agora" pode ser pressionado repetidamente** — rate limit protege o server, mas o usuário não entende por que dá erro. | UX confusa em erro de rate limit. | Desabilitar botão por 30s após pressionar, com countdown visual. |
+| V-4 | BAIXA | **Estados CALIBRATING e MONITORED não têm CTA claro.** O checklist mostra o progresso, mas não diz "Continue correndo, faltam X corridas". | Falta de orientação. | Adicionar frase motivacional dinâmica: "Mais 3 corridas e você estará verificado!" |
 
 ---
 
-## 7. RESUMO FINAL
+## 7. WALLET (OmniCoins)
 
-### O que está BEM feito:
-- Arquitetura Clean com separação clara de camadas
-- Entities imutáveis com Equatable
-- Use cases como classes puras sem side effects
-- Tratamento de permissões com sealed class hierarchy
-- Filtro GPS com 3 camadas (accuracy, speed, drift)
-- Sistema de integridade anti-cheat (speed + teleport detection)
-- Ghost runner com interpolação linear e hysteresis
-- Audio coach com priority queue e cooldown
-- Session recovery para crash scenarios
-- 26 arquivos de teste cobrindo toda a lógica core
-- Foreground service configurado corretamente para Android
-- Info.plist com background modes e location descriptions
+### 7.1 Caminho Feliz
+`Dashboard → "Meus créditos" → WalletScreen → vê saldo + histórico`
 
-### O que FOI resolvido (desde a auditoria original):
-1. ~~Supabase não inicializado~~ → ✅ `Supabase.initialize()` em `main.dart`
-2. ~~Chaves de API placeholder~~ → ✅ `.env.dev` com chaves reais
-3. ~~Sem try-catch nos handlers do TrackingBloc~~ → ✅ try-catch(Object) em start/stop/flush
-4. ~~GPS onDone finaliza sessão~~ → ✅ Reconexão GPS com timeout 60s
-5. ~~Sem Sentry~~ → ✅ `SentryFlutter.init()` + `AppLogger.onError` hook
-6. ~~Sem autenticação~~ → ✅ Social login (Google, Apple, Instagram) + AuthGate
-7. ~~Wearables ausentes~~ → ✅ BLE HR, HealthKit/Health Connect, step counter
-8. ~~CameraFollow / AutoBearing mortos~~ → ✅ Integrados no TrackingScreen
-9. ~~filterPoints sem cache~~ → ✅ Cache incremental
-10. ~~SessionId timestamp~~ → ✅ UUID v4
-11. ~~Sync manual only~~ → ✅ AutoSyncManager
+### 7.2 Problemas Encontrados
 
-### O que ainda PRECISA de atenção:
-1. **`.env.prod` com chaves placeholder** — preencher antes de release para produção
-2. **TrackingBloc muito denso** (670 linhas) — refatorar em sub-blocs/mixins
-3. **Monitoramento de bateria** — save automático em bateria crítica
-4. **`NSMotionUsageDescription` ausente no iOS** — necessário para pedômetro nativo
-5. **`UIBackgroundModes: fetch` ausente no iOS** — necessário para sync em background
-
-### Veredicto:
-**14 de 15 itens do roadmap original estão FEITOS.** O código está em boa forma para testes em device real e beta. Os itens pendentes são de polimento (`.env.prod`, battery monitoring, iOS plist entries) e não bloqueiam o fluxo principal.
+| # | Severidade | Problema | Impacto | Sugestão |
+|---|---|---|---|---|
+| W-1 | ALTA | **O atleta NÃO tem como obter OmniCoins por conta própria.** O empty state diz "Peça ao professor da sua assessoria para distribuir OmniCoins." Se o atleta não tem assessoria, dead end. | Feature monetária inacessível para atletas independentes. | Definir formas de ganhar coins: completar corridas, missões, badges. Se já existe, conectar o fluxo. |
+| W-2 | MÉDIA | **Pending coins (cross-assessoria prizes) não têm CTA.** O saldo mostra "pendente" mas não explica O QUE o atleta precisa fazer para liberar. | Confusão sobre dinheiro "preso". | Explicar: "Coins pendentes são liberados após confirmação do professor/staff da assessoria adversária." |
+| W-3 | BAIXA | **Histórico do wallet não tem filtro por tipo** (earned, spent, pending). | Difícil encontrar transação específica. | Adicionar chips de filtro. |
 
 ---
 
-## 8. QA PHASE 90 — AUDITORIA DE DESAFIOS E CAMPEONATOS (21/02/2026)
+## 8. PERFIL & CONFIGURAÇÕES
 
-### 8.1 Problemas identificados e corrigidos
+### 8.1 Problemas Encontrados
 
-Auditoria completa dos fluxos end-to-end de Desafios (1v1, Group, Team vs Team) e Campeonatos (multi-assessoria). **22 problemas** identificados e corrigidos em 4 rodadas:
+| # | Severidade | Problema | Impacto | Sugestão |
+|---|---|---|---|---|
+| P-1 | ALTA | **Não há opção de logout visível.** O `ProfileScreen` tem "Sair da conta" (via AuthRepository.signOut), mas se o usuário não navega até Mais → Perfil, não encontra. | Não consegue trocar de conta. | Adicionar "Sair" claramente em Settings/Mais, não escondido dentro de Perfil. |
+| P-2 | MÉDIA | **Não há foto de perfil.** O campo display_name é editável, mas sem avatar/foto. | App social sem identidade visual. | Adicionar upload de avatar (armazenar no Supabase Storage). |
+| P-3 | MÉDIA | **Não há opção de deletar conta** (exigência LGPD/GDPR). | Compliance legal em risco. | Adicionar "Excluir minha conta" com confirmação, que chama um RPC de exclusão. |
+| P-4 | BAIXA | **Configurações só tem "Áudio durante a corrida".** Muito limitado. | Falta de controle do usuário. | Adicionar: notificações, unidades (km/mi), tema (dark/light), privacidade. |
 
-#### Rodada 1 — 18 problemas originais
+---
 
-| ID | Prioridade | Descrição | Status |
+## 9. STAFF / ASSESSORIA
+
+### 9.1 Caminho Feliz — Staff
+`Login → Onboarding → "Represento assessoria" → Criar assessoria OU Entrar como professor → StaffDashboard → Atletas, Confirmações, Performance, Campeonatos, Créditos, Admin`
+
+### 9.2 Problemas Encontrados
+
+| # | Severidade | Problema | Impacto | Sugestão |
+|---|---|---|---|---|
+| S-1 | ALTA | **Staff não pode correr no app.** Home do staff tem apenas dashboard de gestão, sem tabs "Correr" e "Histórico". Se o professor é corredor, precisa de outra conta. | Exclusão do professor como atleta. | Ou permitir dual-role (staff que também corre), ou adicionar tab de corrida no shell do staff. |
+| S-2 | ALTA | **"Solicitações de entrada" (join requests)** — não há push notification para o staff quando um atleta solicita entrada. O staff precisa checar manualmente. | Atleta espera indefinidamente. | Push notification para admin_master/professor quando há join request pendente. |
+| S-3 | MÉDIA | **Invite code/QR** — o staff pode gerar QR e código de convite, mas não há indicação de quantos usaram o código, ou se ele tem validade. | Falta de rastreabilidade. | Mostrar count de usos, data de criação, opção de expirar/revogar. |
+| S-4 | MÉDIA | **Créditos (StaffCreditsScreen)** — o staff vê saldo de coins para distribuir, mas o fluxo de AQUISIÇÃO de coins pelo staff não está claro no app. | Dúvida sobre como obter coins para o grupo. | Explicar: portal web → comprar pacotes → coins creditados na assessoria. |
+| S-5 | BAIXA | **Performance screen** mostra métricas do grupo, mas sem comparação temporal (esta semana vs anterior). | Dados sem contexto de evolução. | Adicionar gráficos de tendência. |
+
+---
+
+## 10. ASSESSORIA (Perspectiva do Atleta)
+
+### 10.1 Problemas Encontrados
+
+| # | Severidade | Problema | Impacto | Sugestão |
+|---|---|---|---|---|
+| A-1 | ALTA | **Trocar de assessoria** é possível mas não há feedback sobre o impacto. O atleta perde acesso ao grupo anterior? Perde histórico? Coins? | Medo de trocar. | Explicar na UI: "Seus treinos e coins permanecem. Você será removido do grupo X e adicionado ao grupo Y." |
+| A-2 | MÉDIA | **Feed da assessoria** existe (AssessoriaFeedScreen) mas é acessado apenas via ProgressHub → Feed. Devia ser mais visível. | Feature escondida. | Adicionar no dashboard do atleta ou como card. |
+| A-3 | MÉDIA | **Atleta sem assessoria** — vários cards mostram "empty state" mas não há jornada guiada para encontrar uma assessoria depois do onboarding. | Dead ends múltiplos. | Botão "Encontrar assessoria" que reabre o fluxo de busca/QR/código. |
+
+---
+
+## 11. CAMPEONATOS
+
+| # | Severidade | Problema | Impacto | Sugestão |
+|---|---|---|---|---|
+| CH-1 | MÉDIA | **Campeonatos são criados pelo staff** mas o atleta só vê se está inscrito. Não há "browse" de campeonatos do grupo. | Baixa discoverability. | Mostrar campeonatos ativos do grupo no dashboard. |
+
+---
+
+## 12. PROBLEMAS TRANSVERSAIS (Cross-flow)
+
+| # | Severidade | Problema | Impacto | Sugestão |
+|---|---|---|---|---|
+| X-1 | CRÍTICO | **Sem onboarding contextual.** O app não tem tutorial, coach marks, ou tooltips na primeira vez. Um "dummy" abre o app e vê 6 cards sem saber o que fazer primeiro. | Perda massiva de novos usuários. | Adicionar onboarding tour: "1) Sua primeira corrida → 2) Entre numa assessoria → 3) Crie um desafio". Ou um checklist de "primeiros passos" no dashboard. |
+| X-2 | CRÍTICO | **Não há tratamento de "sem internet" consistente.** Cada tela trata erros de rede de forma diferente (some mostra SnackBar, some vai para empty state, AuthGate vai para mock mode). | UX inconsistente; estados quebrados. | Criar um widget global `NoConnectionBanner` que aparece no topo quando a rede cai, com retry automático. |
+| X-3 | ALTA | **LoginRequiredSheet** aparece para features que requerem conta — mas o usuário já fez login na maioria dos casos (exceto mock mode). Se está em mock mode (Supabase falhou), TUDO mostra "Faça login". | Confusão total em mock mode. | Se está em mock mode, mostrar tela dedicada de "Sem conexão" em vez de deixar navegar e bloquear em cada feature. |
+| X-4 | ALTA | **Sem pull-to-refresh em várias telas.** Dashboard, Challenges List, Wallet — dependem de carregamento inicial. Se deu erro, o usuário precisa voltar e re-entrar. | Frustração. | Adicionar RefreshIndicator em todas as telas que carregam dados do server. |
+| X-5 | MÉDIA | **Versão do app é hardcoded "v1.0.0"** no About dialog. | Informação incorreta após updates. | Usar `package_info_plus` para pegar versão dinâmica. |
+| X-6 | MÉDIA | **Não há dark mode.** O tema é apenas `deepPurple` light. | Uso noturno é comum para corredores matutinos. | Adicionar toggle de tema (dark/light/system). |
+| X-7 | BAIXA | **Sem i18n.** Todo o app é em português brasileiro. | Limita expansão. | Aceitar por agora (target market é BR), mas estruturar para i18n futuro. |
+
+---
+
+## 13. BUGS POTENCIAIS ENCONTRADOS
+
+| # | Local | Bug | Risco |
 |---|---|---|---|
-| P0-01 | CRÍTICO | Deep links de desafio morriam — Isar local sem sync backend | CORRIGIDO |
-| P0-02 | CRÍTICO | Dual persistence (Isar vs Supabase) sem sincronização | CORRIGIDO |
-| P0-03 | CRÍTICO | Lifecycle checks rodavam apenas local (race condition multi-device) | CORRIGIDO |
-| P0-04 | CRÍTICO | Sem UI para staff aceitar convites de Team vs Team | CORRIGIDO |
-| P0-05 | CRÍTICO | Campeonatos sem tracking de progresso no backend | CORRIGIDO |
-| P0-06 | CRÍTICO | Campeonatos sem lifecycle automatizado (open→active→completed) | CORRIGIDO |
-| P1-01 | ALTO | Labels de "Desafio de Equipe" exibiam "Desafio em Grupo" | CORRIGIDO |
-| P1-02 | ALTO | Resultados exibiam UUID do participante em vez do displayName | CORRIGIDO |
-| P1-03 | ALTO | challenge-join permitia join em desafios activos (deveria ser pending para 1v1/team) | CORRIGIDO |
-| P1-04 | ALTO | challenge-get não retornava caller_group_id para validação de equipe | CORRIGIDO |
-| P1-05 | ALTO | Sem limite de participantes por equipe em Team vs Team | CORRIGIDO |
-| P1-06 | MÉDIO | _syncChallengeToBackend sem retry (fire-and-forget) | CORRIGIDO |
-| P1-07 | MÉDIO | Lifecycle checks delegados ao backend com fallback local | CORRIGIDO |
-| P1-08 | MÉDIO | LedgerReason não tinha challengeTeamCompleted/challengeTeamWon | CORRIGIDO |
-| P1-09 | MÉDIO | Notificações de convite de equipe/campeonato não implementadas | CORRIGIDO |
-| P1-10 | MÉDIO | champ-enroll inseria display_name (coluna inexistente) | CORRIGIDO |
-| P1-11 | MÉDIO | champ-list falhava para atletas sem active_coaching_group_id | CORRIGIDO |
-| P2-01 | BAIXO | Tela de resultado do desafio exibia userId em vez de nome | CORRIGIDO |
-
-#### Rodada 2 — 4 problemas adicionais (confidence check)
-
-| ID | Prioridade | Descrição | Status |
-|---|---|---|---|
-| CC-01 | CRÍTICO | championship_participants.display_name não existe na tabela | CORRIGIDO |
-| CC-02 | CRÍTICO | challenge_team_invites.from_group_id não existe — StaffChallengeInvitesScreen corrigido para derivar de challenges.team_a_group_id | CORRIGIDO |
-| CC-03 | CRÍTICO | settle-challenge usava profiles.active_coaching_group_id (mutável) em vez de challenge_participants.group_id (fixo) | CORRIGIDO |
-| CC-04 | MÉDIO | IsarChallengeRepo.getByUserId excluía status "completing" | CORRIGIDO |
-
-#### Rodada 3 — 4 riscos residuais eliminados
-
-| ID | Prioridade | Descrição | Status |
-|---|---|---|---|
-| RR-01 | ALTO | Sem cron para champ-lifecycle/settle-challenge | CORRIGIDO — lifecycle-cron EF + pg_cron migration |
-| RR-02 | ALTO | notify-rules não reconhecia championship_invite_received e challenge_team_invite_received + chamadas usavam JWT user (403) | CORRIGIDO — 2 handlers adicionados + chamadas via service-role fetch() |
-| RR-03 | MÉDIO | Desafios completados não apareciam na lista | CORRIGIDO — getByUserId inclui completed (30d) + seções Ativos/Concluídos |
-| RR-04 | MÉDIO | Testes inexistentes para teamVsTeam + doc comment errado no evaluator | CORRIGIDO — 5 testes team + ordinal stability + 2 testes pré-existentes corrigidos (time=higher wins) |
-
-#### Também corrigido (colateral)
-
-- Doc comment `ChallengeEvaluator`: "time lower wins" corrigido para "time higher wins" (alinhado com `_isLowerBetter`)
-- 2 testes pré-existentes que esperavam `time` como lower-is-better — agora correct
-- `Set` → `List` no `getByUserId` (fragilidade de identity comparison)
-- Resultado final: **46/46 testes passando**, **0 erros no flutter analyze**
-
-### 8.2 Arquivos criados/modificados
-
-| Arquivo | Tipo |
-|---|---|
-| `supabase/functions/lifecycle-cron/index.ts` | NOVO — cron EF para lifecycle de championships + challenges |
-| `supabase/functions/champ-lifecycle/index.ts` | NOVO — EF para transições de championship |
-| `supabase/functions/champ-update-progress/index.ts` | NOVO — EF para atualizar progresso em campeonato |
-| `supabase/functions/challenge-list-mine/index.ts` | NOVO — EF lista challenges do user (para sync) |
-| `supabase/functions/challenge-invite-group/index.ts` | NOVO — EF convida assessoria para team challenge |
-| `supabase/functions/challenge-accept-group-invite/index.ts` | NOVO — EF aceita/recusa convite team |
-| `supabase/functions/champ-open/index.ts` | NOVO — EF transiciona championship draft→open |
-| `supabase/functions/champ-create/index.ts` | NOVO — EF cria championship a partir de template |
-| `supabase/functions/notify-rules/index.ts` | MODIFICADO — +2 rule handlers |
-| `supabase/functions/champ-invite/index.ts` | MODIFICADO — fix auth service-role |
-| `supabase/functions/challenge-invite-group/index.ts` | MODIFICADO — fix auth service-role |
-| `supabase/functions/settle-challenge/index.ts` | MODIFICADO — usa group_id de participants |
-| `supabase/functions/challenge-create/index.ts` | MODIFICADO — suporta team_vs_team |
-| `supabase/functions/challenge-join/index.ts` | MODIFICADO — restrições por tipo + limite equipe |
-| `supabase/functions/challenge-get/index.ts` | MODIFICADO — retorna caller_group_id |
-| `supabase/functions/champ-enroll/index.ts` | MODIFICADO — remove display_name |
-| `supabase/functions/champ-list/index.ts` | MODIFICADO — early return sem group |
-| `supabase/migrations/20260221_lifecycle_cron.sql` | NOVO — pg_cron schedule |
-| `omni_runner/lib/presentation/screens/staff_challenge_invites_screen.dart` | NOVO — UI staff aceita team invites |
-| `omni_runner/lib/presentation/blocs/challenges/challenges_bloc.dart` | MODIFICADO — sync backend + retry |
-| `omni_runner/lib/data/repositories_impl/isar_challenge_repo.dart` | MODIFICADO — completed 30d + List |
-| `omni_runner/lib/presentation/screens/challenges_list_screen.dart` | MODIFICADO — seções + teamVsTeam label |
-| `omni_runner/lib/domain/entities/ledger_entry_entity.dart` | MODIFICADO — +2 enum values |
-| `omni_runner/lib/domain/usecases/gamification/challenge_evaluator.dart` | MODIFICADO — doc fix |
-| `test/domain/usecases/gamification/challenge_evaluator_test.dart` | MODIFICADO — +5 team tests + 2 fixes |
-| `test/domain/usecases/gamification/settle_challenge_reason_test.dart` | NOVO — ordinal stability |
-
-### 8.3 TODOs operacionais (pré-deploy)
-
-| # | Item | Prioridade | Nota |
-|---|---|---|---|
-| 1 | Configurar `app.settings.supabase_url` e `app.settings.service_role_key` no Supabase Dashboard | P0 | Necessário para pg_cron lifecycle-cron funcionar |
-| 2 | Verificar que `send-push` EF existe e está deployado | P1 | notify-rules despacha pushes via send-push |
-| 3 | Teste de integração com Supabase real: inserir challenge → settle → verificar ledger | P1 | Exige staging environment |
-| 4 | Monitorar logs do lifecycle-cron nas primeiras 24h após deploy | P2 | Confirmar transições automáticas |
-| 5 | Verificar notification_log table existe e RLS permite service-role writes | P1 | Usado para dedup de notificações |
-
-### 8.4 Confiança
-
-**96%** — Todos os fluxos core verificados em código, testados localmente (46/46), 0 erros analyze. Os 4% restantes são configuração operacional de deploy (pg_cron settings, send-push EF, staging test).
+| B-1 | `more_screen.dart` L76-84 | **"Operações QR (Staff)" visível para atletas** — o guard de `!_isStaff` esconde seções de "Assessoria", mas "Operações QR (Staff)" está DENTRO do bloco `if (!_isStaff)`, ou seja, aparece para atletas. | CONFIRMADO — código inconsistente. |
+| B-2 | `matchmaking_screen.dart` | **Rate limit vs polling.** Rate limit do matchmake é 20/60s. Polling é 5s = 12 req/min. Com a chamada inicial, em 2 min o atleta ultrapassa o rate limit. | Race condition em uso normal. |
+| B-3 | `challenge_create_screen.dart` L614 | **`typeStr` não inclui `team_vs_team`.** O SegmentedButton tem apenas `oneVsOne` e `group`. Se `team_vs_team` fosse selecionável, o `typeStr` seria errado. | Baixo risco (não selecionável atualmente). |
+| B-4 | `history_screen.dart` L47-50 | **Merge remoto + local** faz SELECT de 30 sessions do server a cada vez que a tab fica visível. Se o atleta navega entre tabs frequentemente, muitas queries desnecessárias. | Performance degradada. |
+| B-5 | `challenges_list_screen.dart` | **`_openMatchmaking` é função top-level** que usa `context.read<ChallengesBloc>()` — mas o matchmaking retorna um `challengeId`. Deveria navegar direto para detalhes do desafio, não recarregar a lista. | UX subótima — extra tap. |
 
 ---
 
-## 9. QA PHASE 97 — WALLET / LEDGER / CLEARING (21/02/2026)
+## 14. FLUXOS FALTANTES (Features Gaps)
 
-### 9.1 Micro-passo 97.1.0 — Auditoria Wallet/Ledger (Fonte da Verdade)
-
-**Objetivo:** Confirmar wallet, intents QR, burning, "troca somente na assessoria atual", "ao trocar: aviso e queima".
-
-#### Problemas encontrados
-
-| ID | Prioridade | Problema | Fix |
-|---|---|---|---|
-| W-01 | CRITICO | `coin_ledger_reason_check` faltava `challenge_team_won` + `challenge_team_completed` — settle-challenge falharia 500 para team challenges | Migration `20260221_ledger_team_reasons.sql` |
-| W-02 | ALTO | `fn_switch_assessoria` nao queimava `pending_coins` — premios cross-assessoria pendentes persistiam apos troca | RPC recriado na mesma migration |
-
-#### Regras confirmadas
-
-| # | Regra | Codigo | Doc |
-|---|---|---|---|
-| 1 | Wallet 3-state: balance + pending = total | `wallets` table + `WalletScreen._BalanceCard` | DECISAO 038 §4.2 |
-| 2 | QR Intent lifecycle: OPEN→CONSUMED/EXPIRED/CANCELED | `token_intents` + `token-create/consume-intent` EFs | DECISAO 038 §4.3 |
-| 3 | ISSUE: inventario → wallet → ledger | `token-consume-intent` ISSUE_TO_ATHLETE branch | Sprint 17.6.1 |
-| 4 | BURN: check balance → debit → ledger → lifetime_burned | `token-consume-intent` BURN_FROM_ATHLETE branch | Sprint 17.6.1 |
-| 5 | Atleta pertence a 1 assessoria | `profiles.active_coaching_group_id` FK + partial unique | DECISAO 038 §4.2 |
-| 6 | Troca queima balance + pending | `fn_switch_assessoria` RPC (agora corrigido) | DECISAO 038 §4.2 |
-| 7 | UI burn warning | `MyAssessoriaScreen._showBurnWarning` dialog | Sprint 16.10.1 |
-| 8 | Cross-assessoria prizes → pending → clearing → release | `settle-challenge` + `release_pending_to_balance` RPC | Sprint 17.7.0 |
-| 9 | Daily limits: 5k/grupo, 500/atleta | `token-create/consume-intent` + `check_daily_token_usage` RPC | DECISAO 052 |
-
-### 9.2 Micro-passo 97.2.0 — Clearing entre Assessorias (sem moderacao da plataforma)
-
-**Objetivo:** Clearing "entre assessorias" seguro e rastreavel; sem termos de dinheiro; agrupar por semana; dispute cobra compensacao sem "money".
-
-#### Problemas encontrados
-
-| ID | Prioridade | Problema | Fix |
-|---|---|---|---|
-| C-01 | CRITICO | `settle-challenge` roteava premios de `team_vs_team` diretamente para `balance_coins` — deveria ir para `pending_coins` pois team challenges sao SEMPRE cross-assessoria. Pool do time perdedor bypassa clearing completamente. | `settle-challenge/index.ts` — `isCrossPrize` expandido para incluir `isTeamVsTeam`. Immediate = participacao + bonus (30+15 won, 30 tied). Pending = pool/winners. |
-| C-02 | CRITICO | Nenhum `clearing-cron` existia — nada criava `clearing_weeks`, `clearing_cases` ou `clearing_case_items` a partir de entries `challenge_prize_pending` no ledger. `StaffDisputesScreen` permanecia eternamente vazio. `pending_coins` ficavam permanentemente trancados. | NOVO: `clearing-cron/index.ts` — Agrega entries pendentes por (semana, grupo_perdedor -> grupo_vencedor), cria cases com deadline 7 dias, insere items com unique index. |
-| C-03 | ALTO | Nenhum cron expirava clearing cases vencidos. Cases ficavam em OPEN/SENT_CONFIRMED eternamente mesmo apos deadline. | `clearing-cron/index.ts` S5 — Transiciona cases com `deadline_at < now` para `EXPIRED` + audit event. |
-
-#### Regras confirmadas
-
-| # | Regra | Codigo | Verificado |
-|---|---|---|---|
-| 1 | Tokens pendentes NAO sao resgataveis | `token-consume-intent` verifica apenas `balance_coins`, ignora `pending_coins` | OK |
-| 2 | Sem termos de dinheiro na UI | Scan: 0 refs a "dinheiro", "money", "pagamento", "R$", "cash", "reais" nas screens | OK |
-| 3 | Clearing agrupado por semana (Mon-Sun) | `clearing-cron` cria `clearing_weeks` com ISO week boundaries | OK |
-| 4 | Dispute sem moderacao da plataforma | `clearing-open-dispute` marca DISPUTED; UI diz "Resolva diretamente com a outra assessoria" | OK |
-| 5 | OPEN -> SENT_CONFIRMED -> PAID_CONFIRMED lifecycle | `clearing-confirm-sent` + `clearing-confirm-received` EFs com idempotencia | OK |
-| 6 | PAID_CONFIRMED libera pending -> balance | `clearing-confirm-received` chama `release_pending_to_balance` + insere `challenge_prize_cleared` no ledger | OK |
-| 7 | Staff ve "Disponivel" vs "Pendente" na Wallet | `WalletScreen._BalanceCard` exibe ambos com label "Aguardando confirmacao entre assessorias" | OK |
-| 8 | Audit trail completo | `clearing_case_events` com CREATED, SENT_CONFIRMED, RECEIVED_CONFIRMED, DISPUTED, EXPIRED, CLEARED | OK |
-| 9 | RLS: staff de ambos os grupos pode ver cases | Policies em `clearing_cases`, `clearing_case_items`, `clearing_case_events` via `coaching_members` role check | OK |
-| 10 | Deadline 7 dias + expiracao automatica | `clearing-cron` seta `deadline_at` = criacao + 7d; expira automaticamente via cron diario 02:00 UTC | OK |
-
-#### C-04 (CRITICO): team_vs_team pode ser intra-assessoria
-
-**Problema:** Fix C-01 original assumia que `team_vs_team` era SEMPRE cross-assessoria. Na verdade, dois times podem ser da mesma assessoria. Toda a logica de scoring usava `group_id` para distinguir times, o que falha quando ambos os times tem o mesmo `group_id`.
-
-**Correcao completa:**
-
-| Componente | Fix |
-|---|---|
-| Migration `20260221_challenge_team_column.sql` | Adiciona coluna `team` ('A'\|'B') em `challenge_participants` |
-| `settle-challenge` isCrossPrize | Verifica `team_a_group_id !== team_b_group_id` (nao assume cross) |
-| `settle-challenge` scoring | Usa `participant.team` ('A'/'B') em vez de `group_id` |
-| `challenge-create` | Aceita `team_b_group_id` + seta `team='A'` para criador |
-| `challenge-join` team assignment | Cross: deriva team de group_id. Intra: requer parametro `team` no body |
-| `challenge-join` capacity | Conta por `team` em vez de `group_id` |
-| `challenge-join` auto-activate | Conta accepted por `team='A'`/`team='B'` |
-| `ChallengeParticipantEntity` (Flutter) | Adiciona campo `team` |
-| `ChallengeEvaluator._evaluateTeamVsTeam` | Filtra por `p.team == 'A'`/`'B'` em vez de `groupId` |
-| `ChallengesBloc._tryAutoStart` | Usa `p.team` para contar times |
-| `IsarChallengeRepo` serialization | Persiste `team` no JSON |
-| Tests (23/23 passando) | `_tp()` usa `team:` em vez de `groupId:` |
-
-#### Arquivos criados/modificados
-
-| Arquivo | Tipo |
-|---|---|
-| `supabase/functions/settle-challenge/index.ts` | MODIFICADO — `isCrossPrize` verifica `team_a != team_b`; scoring por `team` |
-| `supabase/functions/challenge-create/index.ts` | MODIFICADO — aceita `team_b_group_id` + seta `team='A'` |
-| `supabase/functions/challenge-join/index.ts` | MODIFICADO — team assignment cross/intra + capacity/auto-activate por `team` |
-| `supabase/functions/clearing-cron/index.ts` | NOVO — cron EF: agrega pending -> clearing_cases semanais + expira vencidos |
-| `supabase/migrations/20260221_clearing_cron.sql` | NOVO — pg_cron schedule diario 02:00 UTC |
-| `supabase/migrations/20260221_challenge_team_column.sql` | NOVO — coluna `team` em challenge_participants |
-| `supabase/config.toml` | MODIFICADO — registra `clearing-cron` |
-| `omni_runner/lib/domain/entities/challenge_participant_entity.dart` | MODIFICADO — campo `team` |
-| `omni_runner/lib/domain/usecases/gamification/challenge_evaluator.dart` | MODIFICADO — filtra por `team` |
-| `omni_runner/lib/presentation/blocs/challenges/challenges_bloc.dart` | MODIFICADO — parse/merge/autostart por `team` |
-| `omni_runner/lib/data/repositories_impl/isar_challenge_repo.dart` | MODIFICADO — serializa `team` |
-| `test/.../challenge_evaluator_test.dart` | MODIFICADO — usa `team:` |
-
----
-
-## Phase 97.3.0 — Dispute UX (amigável, sem acusação)
-
-**Data:** 2026-02-21
-
-### Objetivo
-
-Garantir que toda UX de dispute/invalidação seja amigável, sem acusação, com orientação clara para o usuário.
-
-### Auditoria completa
-
-| Superfície | Linguagem | Resultado |
+| # | Gap | Por que importa |
 |---|---|---|
-| `InvalidatedRunCard` (corrida inválida) | "Não conseguimos validar esta atividade", razões neutras (GPS, sinal), dicas | OK — excelente |
-| `GpsTipsSheet` | Dicas práticas e amigáveis | OK |
-| `DisputeStatusCard` (atleta) | Todas as fases: tom neutro, orientações claras | OK (melhorado DISPUTED) |
-| `StaffDisputesScreen` (staff clearing) | OPEN/SENT_CONFIRMED OK | Melhorado DISPUTED + EXPIRED |
-| `ChallengeResultScreen` | "Boa tentativa!" (loss), "Não concluído" (DNF) | OK |
-| `ChallengesListScreen` | Labels neutros (Cancelado, Expirado) | OK |
-| `WalletScreen` | Ledger reasons sem termos de dinheiro | OK |
-| `ChampionshipManageScreen` | "Desqualificado" -> "Não elegível" | Corrigido |
-
-### Problemas encontrados e corrigidos
-
-| ID | Severidade | Problema | Correção |
-|---|---|---|---|
-| D-01 | MEDIUM | Staff DISPUTED: "Resolva diretamente..." sem orientação de COMO | Texto expandido com passos: combinar por telefone/mensagem, alinhar valores, confirmar normalmente |
-| D-02 | MEDIUM | Staff EXPIRED: "Resolva manualmente..." sem próximos passos | Texto expandido: contatar outra assessoria, OmniCoins reservados até resolução |
-| D-03 | LOW | "Desqualificado" em championship — tom acusatório | Renomeado para "Não elegível" |
-| D-04 | HIGH | `challenge_result_screen._buildTeamResults` e `_HeroSection` filtram por `groupId` — quebra intra-assessoria | Usa `p.team == 'A'`/`'B'` quando intra-assessoria; winner usa `participant.team` |
-
-### Melhorias de tom/ícone
-
-| Componente | Antes | Depois |
-|---|---|---|
-| Ícone DISPUTED (staff + atleta) | `Icons.report_outlined` (denúncia) | `Icons.rate_review_rounded` (revisão) |
-| Cor DISPUTED (atleta card) | Vermelho (erro/acusação) | Laranja (atenção amigável) |
-| Texto DISPUTED (atleta) | "abriu uma revisão sobre este desafio" | "estão verificando os detalhes... Isso é normal" |
-| `_HeroSection` winner team | Usava `groupId` (quebra intra) | Usa `participant.team` |
-
-### Regras confirmadas (sem alteração necessária)
-
-- Loss outcome: "Boa tentativa!" (nunca "Você perdeu")
-- DNF outcome: "Não concluído" (nunca "Desistência")
-- Anti-cheat display: "Padrão (GPS + anti-cheat)" — neutro
-- Clearing pending: "Seu prêmio está reservado" — tranquilizador
-- Expired clearing: "Entre em contato com o professor" — orientador
-
-### Arquivos modificados
-
-| Arquivo | Tipo |
-|---|---|
-| `omni_runner/lib/presentation/screens/staff_disputes_screen.dart` | MODIFICADO — DISPUTED/EXPIRED com guidance detalhado, ícone `rate_review` |
-| `omni_runner/lib/presentation/widgets/dispute_status_card.dart` | MODIFICADO — DISPUTED: ícone laranja, tom neutro |
-| `omni_runner/lib/presentation/screens/challenge_result_screen.dart` | MODIFICADO — team filtering por `team` + winner por `team` |
-| `omni_runner/lib/presentation/screens/staff_championship_manage_screen.dart` | MODIFICADO — "Desqualificado" -> "Não elegível" |
-
-### Verificação
-
-- `dart analyze`: 0 erros, 0 warnings
-- Todas as mensagens em PT-BR
-- Zero termos acusatórios ("fraude", "trapaceou", "violação", "denúncia")
-- Zero ícones agressivos em contexto de dispute
+| F-1 | **Notificações push** — existem no código (`PushNotificationService`) mas não há evidência de triggers nos fluxos críticos: desafio aceito, match encontrado, campeonato começou, join request recebido. | Usuário não volta ao app sem push. |
+| F-2 | **Compartilhamento social** — após corrida, não há "Compartilhar no Instagram/WhatsApp" com card visual bonito. | Perda de viralidade orgânica. |
+| F-3 | **Métricas de melhoria pessoal** — o app rastreia corridas mas não mostra evolução (gráfico de pace ao longo do tempo, PR, records). | Falta de motivação para continuar. |
+| F-4 | **Friends / Social graph** — tem `InviteFriendsScreen` e `FriendsScreen`, mas não há feed de atividades dos amigos. | Feature social superficial. |
+| F-5 | **Recuperação de sessão após crash** — RecoveryScreen existe e é boa. Mas o texto dos botões confunde ("Retomar" deveria ser "Salvar"). | Detalhe de copy. |
 
 ---
 
-## Phase 98.1.0 — Auditoria Billing B2B (Portal + Gateway + Webhook + Auto Top-Up)
+## 15. PRIORIZAÇÃO RECOMENDADA
 
-**Data:** 2026-02-21
+### P0 — Fazer IMEDIATAMENTE (bloqueiam uso real)
+1. **X-1** Onboarding contextual (primeiro uso sem guia = perda de 80% dos usuários)
+2. **O-6** Mock mode silencioso → substituir por tela de erro com retry
+3. **X-2** Tratamento de "sem internet" consistente
+4. **P-3** Opção de deletar conta (LGPD)
+5. **B-2** Rate limit vs polling no matchmaking (corrigir intervalo para 15-30s)
 
-### Resultado: TUDO EXISTE E ESTÁ IMPLEMENTADO
+### P1 — Fazer no próximo Sprint
+6. **O-1** Login por email/senha como fallback
+7. **N-3** Esconder "Operações QR" do menu do atleta (B-1)
+8. **V-1** Verificação acessível proativamente (dashboard card)
+9. **M-2** Consentimento do segundo participante no matchmaking
+10. **C-1** CTA "Publicar para matchmaking" no invite screen
 
-O repositório possui uma infraestrutura de billing B2B **completa e funcional**. Nenhum componente está faltando.
+### P2 — Fazer quando possível
+11. **O-2** Permitir troca de role
+12. **S-1** Staff que também corre (dual-role)
+13. **W-1** Formas de ganhar coins sem assessoria
+14. **C-2** Unificar formulário de criação + matchmaking
+15. **X-6** Dark mode
 
-### 1. Portal B2B — EXISTE
-
-**Stack:** Next.js 14 (App Router) + Tailwind + Supabase SSR
-
-**Diretório:** `portal/`
-
-| Página | Rota | Funcionalidade |
-|---|---|---|
-| Login | `/login` | Auth via Supabase (same user base do app) |
-| Seletor de grupo | `/select-group` | Multi-grupo: staff de várias assessorias escolhe qual |
-| No Access | `/no-access` | Gate para quem não é staff |
-| Dashboard | `/dashboard` | KPIs: créditos, atletas, compras realizadas, total adquirido |
-| Créditos | `/credits` | Saldo atual + catálogo de pacotes com BuyButton → checkout |
-| Faturamento | `/billing` | Histórico de compras: data, créditos, valor (BRL), método, status, recibo |
-| Billing Success | `/billing/success` | Retorno pós-checkout Stripe |
-| Billing Cancelled | `/billing/cancelled` | Retorno se usuário cancela checkout |
-| Configurações | `/settings` | Portal Stripe, recarga automática, equipe (invite/remove) |
-| Engajamento | `/engagement` | Métricas de engajamento |
-| Atletas | `/athletes` | Lista de atletas da assessoria |
-
-**Autenticação/RBAC (middleware.ts):**
-- Public routes: `/login`, `/no-access`, `/api/auth/callback`
-- Admin-only: `/billing`, `/settings`, `/credits/history`, `/credits/request`
-- Admin+Professor: `/engagement/export`, `/settings/invite`
-- Role cookies: `portal_group_id` + `portal_role` (httpOnly, 8h TTL)
-
-**API Routes:**
-- `POST /api/checkout` — proxy para `create-checkout-session` EF
-- `POST /api/billing-portal` — proxy para `create-portal-session` EF
-- `POST /api/auto-topup` — save auto-topup settings
-- `POST /api/team/invite` — invite staff member
-- `POST /api/team/remove` — remove staff member
-- `GET /api/auth/callback` — OAuth callback
-
-### 2. Gateway (Stripe) — EXISTE
-
-| Edge Function | Funcionalidade |
-|---|---|
-| `create-checkout-session` | Cria `billing_purchase` (pending) + Stripe Checkout Session (card/pix/boleto). Rate-limited, admin_master only. 30min TTL. |
-| `create-portal-session` | Cria Stripe Customer Portal session para admin_master ver faturas/recibos e gerenciar cartões. Auto-cria Customer se necessário. |
-| `list-purchases` | Lista compras do grupo |
-
-**Checkout flow:**
-1. Admin seleciona pacote no portal → `BuyButton` → `POST /api/checkout`
-2. API route chama `create-checkout-session` EF
-3. EF insere `billing_purchases(status=pending)` + cria Stripe Checkout Session
-4. Retorna `checkout_url` → redirect para Stripe
-5. Success/cancel → retorno para `/billing/success` ou `/billing/cancelled`
-
-**Payment methods:** `card`, `pix`, `boleto` (BRL); `card` only (outras moedas)
-
-### 3. Webhook — EXISTE
-
-| Edge Function | Eventos tratados |
-|---|---|
-| `webhook-payments` | `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created` |
-
-**Lifecycle:**
-- `pending → paid` (via webhook `payment_confirmed`)
-- `paid → fulfilled` (via `fn_fulfill_purchase` RPC — atomic credit allocation)
-- `pending → cancelled` (via webhook `session_expired` ou `payment_failed`)
-
-**Idempotência (3 camadas):**
-- L1: `billing_events.stripe_event_id` UNIQUE partial index
-- L2: Conditional UPDATE (`WHERE status = 'pending'`)
-- L3: `fn_fulfill_purchase` checks `status = 'paid'` with `FOR UPDATE` lock
-
-**Signature verification:** `stripe.webhooks.constructEventAsync` com `STRIPE_WEBHOOK_SECRET`
-
-### 4. Auto Top-Up — EXISTE
-
-| Edge Function | Funcionalidade |
-|---|---|
-| `auto-topup-cron` | Scheduled via pg_cron (hourly). Busca todos os grupos com auto top-up habilitado e chama `auto-topup-check` para cada. |
-| `auto-topup-check` | Decision tree: (1) enabled? (2) balance < threshold? (3) monthly cap? (4) 24h cooldown? (5) Stripe customer + PM? → cria billing_purchase(source=auto_topup) + PaymentIntent off-session. |
-
-**Config UX:** `portal/src/app/(portal)/settings/auto-topup-form.tsx`
-- Threshold (créditos mínimos)
-- Produto para recarregar
-- Máximo recargas por mês
-
-**Safeguards:**
-- 24h cooldown entre top-ups
-- Monthly cap (max_per_month)
-- Fallback: se cartão recusar (3DS, declined) → cancela purchase + log
-
-### 5. Refund — EXISTE
-
-| Edge Function | Funcionalidade |
-|---|---|
-| `process-refund` | Service-role only. Valida refund_request(approved) → verifica purchase(fulfilled) → check inventory balance → Stripe Refunds API → debit credits via `decrement_token_inventory` RPC → update statuses. Full + partial refunds. |
-
-### 6. Migrations (Schema)
-
-| Migration | Conteúdo |
-|---|---|
-| `20260221_billing_portal_tables.sql` | `billing_customers`, `billing_products`, `billing_purchases`, `billing_events`, `fn_fulfill_purchase` RPC. RLS: admin_master read. |
-| `20260221_billing_customers_stripe.sql` | `stripe_customer_id`, `stripe_default_pm` em `billing_customers` |
-| `20260221_billing_auto_topup_settings.sql` | `billing_auto_topup_settings` table (enabled, threshold, product_id, max_per_month, last_triggered_at) |
-| `20260221_billing_webhook_dedup.sql` | `stripe_event_id` UNIQUE partial index em `billing_events` |
-| `20260221_billing_refund_requests.sql` | `billing_refund_requests` table (pending→approved→processed) |
-| `20260221_billing_limits.sql` | Rate limits / spending limits |
-
-### 7. Environment Variables
-
-| Variável | Onde | Uso |
-|---|---|---|
-| `STRIPE_SECRET_KEY` | `.env` / EF secrets | Stripe API calls |
-| `STRIPE_WEBHOOK_SECRET` | `.env` / EF secrets | Webhook signature verification |
-| `PORTAL_URL` | `.env` / EF secrets | Checkout success/cancel URLs |
-| `NEXT_PUBLIC_SUPABASE_URL` | `portal/.env.local` | Portal SSR auth |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `portal/.env.local` | Portal SSR auth |
-| `SUPABASE_SERVICE_ROLE_KEY` | `portal/.env.local` | Service client for admin ops |
-
-### 8. Sobre Mercado Pago
-
-O gateway utilizado é **Stripe** (não Mercado Pago). Porém, Stripe suporta nativamente **Pix** e **Boleto** para BRL — que são os métodos de pagamento do Mercado Pago. Na prática, o resultado é equivalente:
-- Pix: disponível via Stripe Checkout
-- Boleto: disponível via Stripe Checkout
-- Cartão: disponível via Stripe Checkout
-
-Se for necessário adicionar Mercado Pago como gateway separado, seria um novo EF (`create-mp-checkout-session`) + webhook handler (`webhook-mp`), mas isso **não é necessário** dado que Stripe já cobre Pix/Boleto/Card.
-
-### Conclusão
-
-| Componente | Existe? | Status |
-|---|---|---|
-| Portal B2B (Next.js) | SIM | Completo: 11 páginas, RBAC, SSR auth |
-| Gateway (Stripe) | SIM | Checkout Session + Customer Portal |
-| Webhook | SIM | 6 event types, 3 camadas idempotência |
-| Auto Top-Up | SIM | Cron hourly + decision tree + safeguards |
-| Refund | SIM | Full + partial, inventory debit |
-| Migrations | SIM | 6 billing migrations |
-| Env vars | SIM | Documentadas em `.env.example` |
-
-**Zero lacunas encontradas. Infra de billing B2B está completa.**
+### P3 — Nice to have
+16. **P-2** Foto de perfil
+17. **M-4** Posição na fila
+18. **F-2** Compartilhamento social pós-corrida
+19. **O-4** Animação na WelcomeScreen
+20. **X-5** Versão dinâmica
 
 ---
 
-## Phase 98.2.0 — Plano de criação do portal
+## 16. RESUMO EXECUTIVO
 
-**Resultado: N/A** — O portal já existe completo (`portal/`). Nenhum plano de criação necessário.
+O app tem uma **base sólida**: arquitetura limpa (BLoC, Clean Architecture), backend robusto (Supabase RLS, Edge Functions, triggers), e features avançadas (matchmaking, verificação de atleta, campeonatos, ghost runs, anti-cheat).
 
----
+Os **pontos fortes** são:
+- Monetization gate impenetrável (4 camadas)
+- Offline-first com sync inteligente
+- Gamification completa (XP, badges, missões, streaks, leaderboards, coins)
+- Matchmaking queue-based (design superior)
 
-## Phase 98.3.0 — Loja-Safe Checklist (App Store / Play Store Compliance)
+Os **pontos fracos** são:
+- **Onboarding zero**: novo usuário é largado no app sem orientação
+- **Conectividade frágil**: mock mode silencioso, tratamento de erro inconsistente
+- **Features escondidas**: verificação, feed, campeonatos difíceis de encontrar
+- **Gaps de notificação**: sem push nos momentos críticos
+- **Staff limitado**: não pode correr, sem push para join requests
 
-**Data:** 2026-02-21
-
-### Checklist de compliance
-
-| # | Regra | Verificação | Resultado |
-|---|---|---|---|
-| 1 | App NÃO mostra preços (R$, BRL, centavos) | `grep -ri 'R\$\|BRL\|reais\|centavos\|price_cents\|formatBRL' omni_runner/lib/` | **0 ocorrências** |
-| 2 | App NÃO faz compra in-app | Sem deps: `in_app_purchase`, `revenue_cat`, `purchases_flutter` no `pubspec.yaml` | **0 deps IAP** |
-| 3 | App NÃO menciona dinheiro/saque/aposta | `grep -ri 'dinheiro\|money\|cash\|saque\|withdraw\|aposta\|bet\|gambl' lib/` | **0 ocorrências** |
-| 4 | Sem permissão BILLING no Android | `grep -ri 'BILLING\|com.android.vending' android/` | **0 ocorrências** |
-| 5 | Sem StoreKit/IAP entitlement no iOS | `grep -ri 'StoreKit\|IAP' ios/` | **0 ocorrências** |
-| 6 | Sem Stripe/Mercado Pago SDK no app | `grep -ri 'stripe\|mercadopago\|checkout' lib/` | **0 ocorrências** |
-| 7 | Portal abre no browser externo | `_PortalCta` usa `launchUrl(uri, mode: LaunchMode.externalApplication)` | **OK** |
-| 8 | `StaffCreditsScreen` não mostra valores monetários | Comentário explícito: "No monetary values, no purchase flow, no payment references" | **OK** |
-| 9 | `AppConfig.portalUrl` documentado como browser-only | Comentário: "Never load checkout inside the app — App Store / Play Store safe" | **OK** |
-| 10 | Ledger reasons sem menção a dinheiro | `cosmeticPurchase` → "Personalização desbloqueada", `crossAssessoriaPending` → "Pendente (entre assessorias)" | **OK** |
-| 11 | Wallet screen sem conversão monetária | Zero refs a R$, taxa, cotação, valor monetário | **OK** |
-| 12 | OmniCoins tratados como gamificação | Apenas "créditos", "OmniCoins", "tokens" — nunca "moeda", "dinheiro", "valor" | **OK** |
-
-### Onde vive o fluxo de pagamento
-
-| Componente | Localização | Acessível pelo app? |
-|---|---|---|
-| Checkout (preços, cartão, pix, boleto) | `portal/` (Next.js, browser) | NÃO — browser externo apenas |
-| Stripe SDK | `supabase/functions/` (server-side EFs) | NÃO — nunca no client |
-| Billing tables | Supabase PostgreSQL | NÃO — RLS bloqueia acesso do app (admin_master only via portal) |
-| Portal CTA no app | `StaffCreditsScreen._PortalCta` | SIM — mas apenas redireciona para browser externo |
-
-### Conclusão
-
-**Compliance 100%.** O app mobile:
-- Nunca mostra preços
-- Nunca processa pagamentos
-- Nunca menciona dinheiro, saque, ou aposta
-- Nunca carrega checkout dentro do app
-- Não tem dependências de IAP
-- OmniCoins são gamificação pura (earn by running, spend on cosmetics/challenges)
-- Todo fluxo B2B vive no portal web (browser externo)
+O app está **funcional para early adopters** que já entendem o conceito, mas **não está pronto para "dummies"** — falta a camada de orientação e hand-holding que transforma um produto técnico em um produto acessível.
 
 ---
 
-## DEPLOY CONFIG AUDIT (Pre-APK)
+## 17. CORREÇÕES APLICADAS (2026-02-24)
 
-### Correções aplicadas:
+| # | ID | Severidade | Correção | Arquivo(s) |
+|---|---|---|---|---|
+| 1 | B-1/N-3 | **BUG CONFIRMADO** | QR Operations removido do menu do atleta e movido para bloco staff-only. Antes estava invertido (visível só para atletas). | `more_screen.dart` |
+| 2 | B-2/M-3 | **BUG CRÍTICO** | Polling de matchmaking alterado de 5s → 20s para não exceder rate limit (20 req/60s). | `matchmaking_screen.dart` |
+| 3 | O-6 | **CRÍTICO** | Mock mode não vai mais direto para Home. Redireciona para WelcomeScreen e mostra erro ao tentar login sem conexão. | `auth_gate.dart`, `login_screen.dart`, `main.dart` |
+| 4 | B-5/M-5 | **ALTO** | Após match no matchmaking, navega automaticamente para ChallengeDetailsScreen em vez de só recarregar lista. | `challenges_list_screen.dart` |
+| 5 | V-1/N-2 | **ALTO** | Card "Verificação" adicionado ao dashboard principal, substituindo "Convidar amigos" (que já está em Mais). | `athlete_dashboard_screen.dart` |
+| 6 | V-3 | **MÉDIO** | Botão "Reavaliar agora" tem cooldown de 30s após pressionar, impedindo spam. | `athlete_verification_screen.dart` |
+| 7 | W-2 | **MÉDIO** | Coins pendentes agora mostram explicação detalhada: o que são, por que existem e quando serão liberados. | `wallet_screen.dart` |
+| 8 | C-1 | **ALTO** | Diálogo de confirmação ao fechar ChallengeInviteScreen sem compartilhar o link. Intercepta botão voltar via PopScope. | `challenge_invite_screen.dart` |
+| 9 | O-3 | **MÉDIO** | "Continuar sem assessoria" renomeado para "Pular — posso entrar depois" com texto explicando o que se perde/ganha. | `join_assessoria_screen.dart` |
+| 10 | T-4 | **MÉDIO** | RunSummary agora mostra nota "Verificação final pelo servidor ao sincronizar" para esclarecer que isVerified é provisório. | `run_summary_screen.dart` |
+| 11 | P-1 | **ALTO** | Botão "Sair da conta" adicionado ao menu Mais (mais visível), com diálogo de confirmação. | `more_screen.dart` |
+| 12 | P-3 | **CRÍTICO (LGPD)** | Opção "Excluir minha conta" adicionada no ProfileScreen com diálogo duplo de confirmação e chamada a edge function. | `profile_screen.dart` |
+| 13 | X-4 | **MÉDIO** | Pull-to-refresh adicionado em ChallengesListScreen e WalletScreen. | `challenges_list_screen.dart`, `wallet_screen.dart` |
+| 14 | X-1 | **CRÍTICO** | Onboarding contextual: TipBanner no dashboard reescrito com 4 passos claros (correr, assessoria, desafio, verificação). | `athlete_dashboard_screen.dart` |
 
-| # | Correção | Arquivo |
-|---|---|---|
-| CFG-01 | Google Services Gradle plugin adicionado (condicional: só aplica se `google-services.json` existir) | `android/settings.gradle`, `android/app/build.gradle` |
-| CFG-02 | `GoogleSignIn` agora recebe `serverClientId` via `GOOGLE_WEB_CLIENT_ID` (--dart-define) | `remote_auth_datasource.dart`, `app_config.dart` |
-| CFG-03 | `.env.example` atualizado com `GOOGLE_WEB_CLIENT_ID` | `.env.example` |
-| CFG-04 | Script `preflight_check.sh` criado — valida todas as dependências antes do build | `scripts/preflight_check.sh` |
-
-### Checklist de configuração externa (ações do operador):
-
-| # | Ação | Status |
-|---|---|---|
-| 1 | Criar projeto Firebase + baixar `google-services.json` | FEITO |
-| 2 | Criar `.env.dev` com SUPABASE_URL + SUPABASE_ANON_KEY reais | FEITO |
-| 3 | Configurar GOOGLE_WEB_CLIENT_ID no `.env.dev` | FEITO |
-| 4 | Habilitar Google OAuth no Supabase Dashboard | FEITO |
-| 5 | `supabase db push` (aplicar 38 migrations) | FEITO |
-| 6 | `supabase functions deploy` (40 Edge Functions) | FEITO |
-| 7 | (Opcional) MAPTILER_API_KEY | FEITO |
-| 8 | (Opcional) SENTRY_DSN | FEITO |
-| 9 | `.env` files movidos para `omni_runner/` (Flutter resolve paths relativos ao project root) | FEITO (v1.0.1) |
-
-### Validação pós-correção:
-- `flutter analyze`: 0 errors
-- `flutter test`: 913/913 passando
-
-### APK Release (99.6.0):
-- Keystore: `omnirunner-release.keystore` (SHA-1: `72:5A:90:7B:...`)
-- Build: `flutter build apk --flavor prod --release --dart-define-from-file=../.env.dev`
-- Output: `omni_runner_v1.0.0.apk` — 121 MB
-- Status: BUILD SUCCEEDED
-- **NOTA:** env vars estavam vazias neste build (path `../.env.dev` incorreto para Flutter)
-
-### APK Hotfix (100.2.0 — v1.0.1):
-- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
-- Output: `omni_runner_v1.0.1.apk` — 121 MB
-- Status: BUILD SUCCEEDED
-- Env vars: SUPABASE_URL, SUPABASE_ANON_KEY, MAPTILER_API_KEY, SENTRY_DSN, GOOGLE_WEB_CLIENT_ID — todas presentes
-- Fixes: BUG-01 (auth flow), BUG-02 (login modal), BUG-03 (mapa SP + crash tracking)
-
-### APK Hotfix (100.2.1 — v1.0.2):
-- `google-services.json` atualizado: adicionado SHA-1 do release keystore (`72:5A:90:7B:...`) no Firebase
-- Fix: Google Sign-In retornava `DEVELOPER_ERROR (10)` porque release SHA-1 não estava registrado
-
-### APK Hotfix (100.3.3 — v1.0.3):
-- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
-- Output: `omni_runner_v1.0.3.apk` — 121 MB
-- Status: BUILD SUCCEEDED
-- Fixes:
-  - BUG-05: `foregroundServiceType` mudado de `location|connectedDevice` → `location` (crash SecurityException no Android 14+)
-  - BUG-06: RLS policy `coaching_members_group_read` self-reference → fn `SECURITY DEFINER` `user_coaching_group_ids()`
-  - Removida permissão `FOREGROUND_SERVICE_CONNECTED_DEVICE` (desnecessária sem tipo connectedDevice)
-
-### APK Hotfix (100.4.5 — v1.0.4):
-- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
-- Output: `omni_runner_v1.0.4.apk` — 121 MB
-- Status: BUILD SUCCEEDED
-- Fixes:
-  - BUG-07: `_accumDist` stuck `_prevPt` → distância sempre 0m. Fix: avança `_prevPt` quando filter aceita ≥1 ponto
-  - BUG-08: Timer com gaps. Fix: `TimerTick` periódico 1s + elapsed via wall-clock
-  - `maxAccuracyMeters` relaxado de 15m → 25m (FilterLocationPoints + AccumulateDistance)
-  - BUG-09: `HistoryScreen` não recarregava ao trocar aba (`IndexedStack`). Fix: `isVisible` + `didUpdateWidget`
-
-### APK Hotfix (100.5.4 — v1.0.5):
-- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
-- Output: `omni_runner_v1.0.5.apk` — 126 MB
-- Status: BUILD SUCCEEDED
-- Fixes:
-  - BUG-10: Logout auto-logava de volta (Google Sign-In cache). Fix: `GoogleSignIn().signOut()` antes de `_auth.signOut()`
-  - BUG-11: "Sequências" naming confuso. Fix: renomeado para "Consistência" + textos atualizados
-  - BUG-12: `group_members` RLS infinite recursion (rankings). Fix: fn `SECURITY DEFINER` `user_social_group_ids()` + `is_group_admin_or_mod()`
-  - BUG-13: Criar assessoria falha por `ClientException: connection abort`. Fix: `await _completeSocialProfile()` + retry 3x com backoff exponencial em chamadas críticas
-  - BUG-14: Botão voltar fecha o app nas telas de onboarding. Fix: `PopScope` + `onBack` callback (sign-out → welcome) + botão ← visual
-  - BUG-15: Criar assessoria sempre falha (NOT NULL `created_at_ms`). Fix: adicionado `created_at_ms` ao INSERT de `fn_create_assessoria` (server-side, sem novo APK)
-  - BUG-16: Dashboard staff quebrado (botões inativos, tabs de atleta, menu misto). Fix: `StaffDashboardScreen` query Supabase direto; `HomeScreen` role-aware (2 tabs staff / 4 tabs atleta); `MoreScreen` filtra itens por role
-- Migrations SQL aplicadas via Management API: `20260223160000` (group_members RLS), `20260223170000` (fn_create_assessoria)
-  - BUG-17: Tela "Atletas" crash `CoachingGroupNotFound`. Fix: sync Supabase → Isar (grupo + todos membros) no `_loadStatus()` do dashboard. Auditoria: 8 de 9 botões já usavam Supabase direto; apenas "Atletas" dependia do Isar
-- APK v1.0.6 gerado com fix do dashboard staff + tabs role-aware + menu cleanup + sync Isar
-
-### APK Hotfix (100.7.0 — v1.0.7):
-- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
-- Output: `omni_runner_v1.0.7.apk` — 126 MB
-- Status: BUILD SUCCEEDED
-- Fixes:
-  - BUG-18: Labels confusos no dashboard — "Atletas" → "Atletas e Staff" / "Ver e gerenciar membros"; "Desafios" subtitle → "Convites de outras assessorias"
-  - BUG-19: "Erro ao salvar modelo" — `championship_templates` sem INSERT/UPDATE/DELETE RLS policies. Fix: migration `20260223180000` com 3 policies para admin_master/professor
-  - BUG-20: Campeonato UX confuso — removido "Sessões" como métrica; RadioListTile com descrições (ex: "Quem correr mais km"); duração: Corrida única (1 dia) / 1 semana / 2 semanas / 1 mês / Personalizado com input
-  - BUG-21: Portal "Abrir" não fazia nada — `portal.omnirunner.app` não existe. Dashboard: SnackBar "em breve"; Credits: card informativo "está sendo desenvolvido", removido botão quebrado
-- Migrations SQL aplicadas via Management API: `20260223180000` (championship_templates INSERT/UPDATE/DELETE RLS)
-
-### APK Hotfix (100.8.0 — v1.0.8):
-- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
-- Output: `omni_runner_v1.0.8.apk` — 126 MB
-- Status: BUILD SUCCEEDED
-- Fixes:
-  - BUG-22: Role string mismatch `'athlete'`→`'atleta'` em 4 telas (Performance, Retention, Streaks, Weekly Report). Performance agora mostra "X de Y atletas" (exclui staff da contagem)
-  - BUG-23: Card "Desafios" removido do dashboard staff — desafios são entre atletas, não assessorias. Assessorias distribuem OmniCoins e gerenciam atletas, não fazem desafios
-  - UX: Card "Atletas e Staff" agora mostra contagem de membros ("X membros")
-  - UX: Ao abrir "Atletas e Staff", re-sincroniza membros do Supabase→Isar para garantir dados atualizados
-- Nota sobre fluxo de entrada: ~~atletas entram na assessoria automaticamente~~ → CORRIGIDO em v1.0.9 (BUG-24)
-
-### APK Hotfix (100.9.0 — v1.0.9):
-- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
-- Output: `omni_runner_v1.0.9.apk` — 121 MB
-- Status: BUILD SUCCEEDED
-- Fixes:
-  - BUG-24: Fluxo de entrada em assessoria sem aprovação. Atletas entravam automaticamente via `fn_switch_assessoria`. Assessorias reais precisam aprovar quem entra.
-    - Nova tabela `coaching_join_requests` com status (pending/approved/rejected)
-    - RPC `fn_request_join` — atleta solicita entrada (não entra direto)
-    - RPCs `fn_approve_join_request` / `fn_reject_join_request` — staff aprova/rejeita
-    - `JoinAssessoriaScreen`: "Entrar" → "Solicitar entrada", dialog de confirmação, feedback visual (solicitação enviada/já enviada)
-    - Novo card "Solicitações" no dashboard staff com badge de pendentes
-    - Nova tela `StaffJoinRequestsScreen`: lista de solicitações pendentes com botões Aprovar/Rejeitar, histórico de aprovados/rejeitados
-    - RLS policies: atleta vê suas próprias solicitações; staff vê solicitações do seu grupo; staff pode aprovar/rejeitar
-- Migration aplicada via Management API: `20260223190000` (coaching_join_requests + RPCs + RLS)
-
-### APK Hotfix (100.10.0 — v1.0.10):
-- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
-- Output: `omni_runner_v1.0.10.apk` — 121 MB
-- Status: BUILD SUCCEEDED
-- Fixes:
-  - FEATURE: Remoção de membros da assessoria pelo staff
-    - RPC `fn_remove_member(p_target_user_id, p_group_id)` — SECURITY DEFINER com regras:
-      - Caller deve ser staff (admin_master, professor, ou assistente)
-      - Não pode remover admin_master (owner)
-      - Assistente não pode remover outros staff
-      - Não pode remover a si mesmo
-      - Limpa `active_coaching_group_id` do profile do membro removido
-    - UI na tela "Atletas e Staff": ícone de remover (person_remove) aparece nos tiles de membros que o caller pode remover
-    - Dialog de confirmação com aviso sobre perda de acesso
-    - Após remoção: re-sync Supabase→Isar + refresh automático da lista
-    - Mensagens de erro traduzidas para cada caso (admin_master, permissão, etc.)
-- Migration aplicada via Management API: `20260223200000` (fn_remove_member)
-
-### APK Hotfix (100.11.0 — v1.0.11):
-- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
-- Output: `omni_runner_v1.0.11.apk` — 121 MB
-- Status: BUILD SUCCEEDED
-- Fixes:
-  - BUG-25: Performance screen "não foi possível carregar os dados" — RLS `sessions_own_read` e `challenge_parts_own_read` só permitiam leitura dos próprios dados. Staff não conseguia ler sessions/challenges dos atletas. Fix: helper fn `staff_group_member_ids()` (SECURITY DEFINER) + novas policies `sessions_staff_read` e `challenge_parts_staff_read`
-  - BUG-26: Tela "Atletas e Staff" mostra 2 membros no badge mas só exibe admin_master — BLoC lia do Isar (cache local, dados incompletos/stale). Fix: tela reescrita para query Supabase diretamente (sem BLoC/Isar). Pull-to-refresh, erro detalhado, RefreshIndicator
-  - BUG-27: Solicitação de entrada não chega na assessoria — O atleta `cabralandre@yahoo.com.br` foi adicionado pelo fluxo antigo (v1.0.8, `fn_switch_assessoria`). `fn_request_join` corretamente retorna `already_member`. Não é bug, é estado pré-existente
-  - UX: Campeonatos — fluxo de criação redesenhado:
-    - Formulário dividido em 5 seções numeradas (Identificação, Formato, Ranking, Local, Extras)
-    - Formato: cards visuais "Corrida única" vs "Período" (não mais chips confusos)
-    - Métricas com ícones e descrições contextuais (mudam se é corrida única ou período)
-    - Campo de distância mínima para pace
-    - Campo de local/percurso (opcional)
-    - Resumo visual no final do formulário
-    - Dialog de criação: time picker para corrida única, date picker para período
-- Migrations aplicadas via Management API: `20260223210000` (staff_group_member_ids + sessions_staff_read + challenge_parts_staff_read)
-
-### APK Hotfix (100.12.0 — v1.0.12):
-- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
-- Output: `omni_runner_v1.0.12.apk` — 126 MB
-- Status: BUILD SUCCEEDED
-- Fixes:
-  - BUG-28: Performance screen still failing — catch-all `catch(_)` was eating the real error and showing generic message. Fix: per-section try-catch with `AppLogger.warn()` so one failing query doesn't kill the entire screen. Changed `championship_participants` query to filter by `user_id` (athlete IDs) instead of `group_id` for RLS compatibility
-  - BUG-29: Championship manage screen crash (FunctionException 404 "not found or not visible") — `champ-participant-list` EF excluded "draft" from status filter. Newly created championships are "draft" → 404. Fix: (1) added "draft" to EF status filter and redeployed, (2) manage screen skips participant load for draft championships
-  - BUG-30: Dashboard "Atletas e Staff" card showed stale member count after removing a member — `_openAtletas()` didn't refresh dashboard on return. Fix: added `.then((_) => _loadStatus())` to navigation push
-  - BUG-31: Join request error "column 'email' does not exist" — `fn_request_join` referenced `email` column in `profiles` table, but `profiles` only has `display_name`. Email lives in `auth.users`. Fix: changed `COALESCE(display_name, email, 'Atleta')` → `COALESCE(display_name, 'Atleta')` in RPC
-- Migrations applied via Management API: `20260223220000` (fix fn_request_join email column)
-- Edge Function redeployed: `champ-participant-list` (include "draft" status)
-
-### APK Hotfix (100.13.0 — v1.0.13):
-- Build: `flutter build apk --flavor prod --release --dart-define-from-file=.env.dev`
-- Output: `omni_runner_v1.0.13.apk` — 127 MB
-- Status: BUILD SUCCEEDED
-- Fixes:
-  - BUG-32: Atleta aprovado mas "Minha Assessoria" vazia — `MyAssessoriaBloc._onLoad()` lia memberships do Isar local, que nunca era atualizado após `fn_approve_join_request` rodar no servidor. Fix: BLoC reescrito para query Supabase direto (`coaching_members` + `coaching_groups` por user_id), parseia para entities, sync para Isar (offline access), e emite estado com dados frescos
-  - BUG-33: Corrida desapareceu do histórico do atleta (mas visível no Performance da assessoria) — `HistoryScreen._loadSessions()` lia apenas do Isar local. Ao trocar de conta Google (logout/login), o Isar perdia as sessions que já haviam sido sincronizadas ao Supabase. Fix: antes de ler do Isar, o HistoryScreen agora puxa as últimas 30 sessions do Supabase (tabela `sessions`) para o user atual, salva no Isar as que não existem localmente, e então exibe a lista completa. Fallback silencioso se Supabase estiver offline
+### Items já corretos (sem alteração necessária)
+- **T-3**: RecoveryScreen já diz "Salvar e continuar" com ícone correto.
+- **T-1**: Map timeout já exibe mensagem "Mapa indisponível offline" com explicação.
+- **V-2**: Checklist no app mostra apenas itens implementados (corridas, integridade, consistência, trust score).

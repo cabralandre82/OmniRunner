@@ -27572,6 +27572,6 @@ automaticamente um oponente compatível. Zero browsing.
    - Tela "Oponente encontrado!" com nome
 5. **Se ninguém na fila:**
    - Entra na fila (expira em 24h)
-   - Polling a cada 5s
+   - Polling a cada 20s (ajustado de 5s para respeitar rate limit)
    - Quando alguém compatível entrar, match automático
 6. Usuário pode cancelar a qualquer momento

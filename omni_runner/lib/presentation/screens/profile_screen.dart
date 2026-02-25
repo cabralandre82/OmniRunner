@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/auth_repository.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
@@ -118,6 +119,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
       MaterialPageRoute<void>(builder: (_) => const AuthGate()),
       (_) => false,
     );
+  }
+
+  Future<void> _requestDeleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: Icon(Icons.warning_rounded, color: Colors.red.shade700, size: 40),
+        title: const Text('Excluir conta permanentemente?'),
+        content: const Text(
+          'Todos os seus dados serão apagados permanentemente: '
+          'corridas, desafios, OmniCoins e progresso.\n\n'
+          'Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Excluir conta'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await Supabase.instance.client.functions.invoke(
+        'delete-account',
+        body: {},
+      );
+      if (!mounted) return;
+      await sl<AuthRepository>().signOut();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => const AuthGate()),
+        (_) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Não foi possível excluir a conta. '
+            'Entre em contato: suporte@omnirunner.com.br\n'
+            'Erro: ${_friendlyError(e)}',
+          ),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
   }
 
   String _friendlyError(Object e) {
@@ -243,6 +297,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red,
                         side: const BorderSide(color: Colors.red),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton.icon(
+                      onPressed: _requestDeleteAccount,
+                      icon: const Icon(Icons.delete_forever_rounded, size: 18),
+                      label: const Text('Excluir minha conta'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.red.shade300,
                       ),
                     ),
                   ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/ledger_entry_entity.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_bloc.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_event.dart';
@@ -29,7 +31,13 @@ class WalletScreen extends StatelessWidget {
           WalletLoading() => const Center(
               child: CircularProgressIndicator(),
             ),
-          WalletLoaded(:final wallet, :final history) => ListView(
+          WalletLoaded(:final wallet, :final history) => RefreshIndicator(
+              onRefresh: () async {
+                final uid = sl<UserIdentityProvider>().userId;
+                context.read<WalletBloc>().add(LoadWallet(uid));
+                await Future<void>.delayed(const Duration(milliseconds: 500));
+              },
+              child: ListView(
               children: [
                 _BalanceCard(
                   total: wallet.totalCoins,
@@ -85,6 +93,7 @@ class WalletScreen extends StatelessWidget {
                 else
                   ...history.map(_LedgerTile.new),
               ],
+            ),
             ),
           WalletError(:final message) => Center(
               child: Text(message),
@@ -159,11 +168,28 @@ class _BalanceCard extends StatelessWidget {
           ),
           if (pending > 0) ...[
             const SizedBox(height: 8),
-            Text(
-              'Aguardando confirmação entre assessorias',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.orange.shade800,
-                fontStyle: FontStyle.italic,
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, size: 16,
+                      color: Colors.orange.shade800),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Coins pendentes são prêmios de desafios entre assessorias '
+                      'diferentes. Serão liberados automaticamente após confirmação '
+                      'do staff da assessoria adversária (até 48h).',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.orange.shade800,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

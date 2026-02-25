@@ -25,6 +25,7 @@ class ChallengeInviteScreen extends StatefulWidget {
 
 class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
   late ChallengeEntity _challenge;
+  bool _shared = false;
 
   String get _deepLink =>
       'https://omnirunner.app/challenge/${_challenge.id}';
@@ -33,6 +34,36 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
   void initState() {
     super.initState();
     _challenge = widget.challenge;
+  }
+
+  void _confirmClose(BuildContext context) {
+    if (_shared || _challenge.acceptedCount > 1) {
+      Navigator.of(context).pop();
+      return;
+    }
+    showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Sair sem compartilhar?'),
+        content: const Text(
+          'Você ainda não compartilhou o link. '
+          'Sem oponentes, o desafio ficará pendente e poderá expirar.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Voltar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.of(context).pop();
+            },
+            child: const Text('Sair mesmo assim'),
+          ),
+        ],
+      ),
+    );
   }
 
   int get _pendingSlots {
@@ -46,12 +77,17 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    return Scaffold(
+    return PopScope(
+      canPop: _shared || _challenge.acceptedCount > 1,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmClose(context);
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Convidar Oponente'),
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => _confirmClose(context),
         ),
       ),
       body: BlocListener<ChallengesBloc, ChallengesState>(
@@ -141,6 +177,7 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
                 final title = _challenge.title ?? _defaultTitle();
                 final metric = _metricLabel(_challenge.rules.metric);
                 final window = _formatWindow(_challenge.rules.windowMs);
+                _shared = true;
                 SharePlus.instance.share(
                   ShareParams(
                     text: 'Participe do meu desafio "$title" no Omni Runner!\n'
@@ -209,6 +246,7 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 

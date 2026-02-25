@@ -667,7 +667,16 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
                           height: 22,
                           child: CircularProgressIndicator(strokeWidth: 2.5),
                         )
-                      : const Text('Continuar sem assessoria'),
+                      : const Text('Pular — posso entrar depois'),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Você pode usar o app normalmente. Assessoria desbloqueia '
+                'ranking de grupo e desafios em equipe.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.outline,
                 ),
               ),
               const SizedBox(height: 24),

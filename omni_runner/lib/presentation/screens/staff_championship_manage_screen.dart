@@ -204,6 +204,60 @@ class _StaffChampionshipManageScreenState
     ));
   }
 
+  Future<void> _cancelChampionship() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancelar campeonato?'),
+        content: const Text(
+          'Essa ação é irreversível. Todos os participantes inscritos '
+          'serão retirados e convites pendentes serão revogados.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Voltar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Cancelar campeonato'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final res = await _db.functions.invoke('champ-cancel', body: {
+        'championship_id': widget.championshipId,
+      });
+      final data = res.data as Map<String, dynamic>? ?? {};
+      if (data['ok'] == true) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Campeonato cancelado.')),
+          );
+        }
+        _loadAll();
+      } else {
+        final err = data['error'] as Map<String, dynamic>?;
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(err?['message'] as String? ?? 'Erro ao cancelar.')),
+          );
+        }
+      }
+    } on Exception catch (e) {
+      AppLogger.error('Cancel championship failed: $e', tag: _tag, error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro ao cancelar campeonato.')),
+        );
+      }
+    }
+  }
+
   Future<void> _inviteGroup() async {
     // Fetch available groups (excluding host + already invited)
     List<Map<String, String>> availableGroups = [];
@@ -376,6 +430,21 @@ class _StaffChampionshipManageScreenState
               const SizedBox(height: 16),
             ],
 
+            // ── Cancel action ──
+            if (c.status == 'draft' || c.status == 'open' || c.status == 'active') ...[
+              OutlinedButton.icon(
+                icon: const Icon(Icons.cancel_outlined, size: 18),
+                label: const Text('Cancelar campeonato'),
+                onPressed: _cancelChampionship,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  side: const BorderSide(color: Colors.red),
+                  minimumSize: const Size.fromHeight(44),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
             // ── Badge QR generation (for requires_badge championships) ──
             if (c.requiresBadge && (c.status == 'open' || c.status == 'active')) ...[
               Card(
@@ -436,6 +505,19 @@ class _StaffChampionshipManageScreenState
               ],
             ),
             const SizedBox(height: 8),
+            if (c.startAt != null && (isDraft || c.status == 'open'))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(children: [
+                  Icon(Icons.info_outline_rounded, size: 16, color: cs.outline),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text(
+                    'As assessorias precisam aceitar o convite antes do início '
+                    '(${_fmtDate(c.startAt!)}), caso contrário seus atletas não poderão se inscrever.',
+                    style: theme.textTheme.bodySmall?.copyWith(color: cs.outline, fontSize: 11),
+                  )),
+                ]),
+              ),
             if (_invites.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),

@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 
 import 'package:omni_runner/core/auth/auth_repository.dart';
+import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/failures/auth_failure.dart';
 
@@ -34,6 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
   AuthRepository get _auth => sl<AuthRepository>();
 
   Future<void> _signInWithGoogle() async {
+    if (!_checkConnection()) return;
     _clearError();
     setState(() => _busy = true);
     final result = await _auth.signInWithGoogle();
@@ -48,6 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signInWithApple() async {
+    if (!_checkConnection()) return;
     _clearError();
     setState(() => _busy = true);
     final result = await _auth.signInWithApple();
@@ -61,7 +64,17 @@ class _LoginScreenState extends State<LoginScreen> {
     widget.onSuccess();
   }
 
+  bool _checkConnection() {
+    if (!AppConfig.isSupabaseReady) {
+      setState(() => _errorMessage =
+          'Sem conexão com o servidor. Verifique sua internet e tente novamente.');
+      return false;
+    }
+    return true;
+  }
+
   Future<void> _signInWithInstagram() async {
+    if (!_checkConnection()) return;
     _clearError();
     setState(() => _busy = true);
     final result = await _auth.signInWithInstagram();

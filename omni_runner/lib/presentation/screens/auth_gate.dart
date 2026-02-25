@@ -192,9 +192,8 @@ class _AuthGateState extends State<AuthGate> {
   // ── State resolution ────────────────────────────────────────────────────
 
   Future<void> _resolve() async {
-    // Mock mode: go straight to home (offline development).
     if (!AppConfig.isSupabaseReady) {
-      _go(_GateDestination.home);
+      _go(_GateDestination.welcome);
       return;
     }
 

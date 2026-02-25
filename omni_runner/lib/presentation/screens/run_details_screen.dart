@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/utils/calculate_moving_ms.dart';
 import 'package:omni_runner/domain/usecases/filter_location_points.dart';
@@ -57,7 +61,13 @@ class _RunDetailsScreenState extends State<RunDetailsScreen> {
   void dispose() { _mapTimeout?.cancel(); super.dispose(); }
 
   Future<void> _loadPoints() async {
-    final points = await sl<IPointsRepo>().getBySessionId(widget.session.id);
+    final pointsRepo = sl<IPointsRepo>();
+    var points = await pointsRepo.getBySessionId(widget.session.id);
+
+    if (points.isEmpty && widget.session.isSynced) {
+      points = await _downloadPointsFromStorage(pointsRepo);
+    }
+
     if (!mounted) return;
     final filt = const FilterLocationPoints()(points);
     setState(() {
@@ -66,6 +76,48 @@ class _RunDetailsScreenState extends State<RunDetailsScreen> {
       _movingMs = calculateMovingMs(filt); _loading = false;
     });
     if (_mapReady) await _drawRoute();
+  }
+
+  Future<List<LocationPointEntity>> _downloadPointsFromStorage(
+    IPointsRepo pointsRepo,
+  ) async {
+    if (!AppConfig.isSupabaseReady) return const [];
+    final uid = widget.session.userId ??
+        Supabase.instance.client.auth.currentUser?.id;
+    if (uid == null) return const [];
+
+    try {
+      final path = '$uid/${widget.session.id}.json';
+      final bytes = await Supabase.instance.client.storage
+          .from('session-points')
+          .download(path);
+      final jsonStr = utf8.decode(bytes);
+      final list = (jsonDecode(jsonStr) as List).cast<Map<String, dynamic>>();
+
+      final points = list.map((m) => LocationPointEntity(
+        lat: (m['lat'] as num).toDouble(),
+        lng: (m['lng'] as num).toDouble(),
+        alt: (m['alt'] as num?)?.toDouble(),
+        accuracy: (m['accuracy'] as num?)?.toDouble(),
+        speed: (m['speed'] as num?)?.toDouble(),
+        bearing: (m['bearing'] as num?)?.toDouble(),
+        timestampMs: (m['timestampMs'] as num).toInt(),
+      )).toList();
+
+      if (points.isNotEmpty) {
+        await pointsRepo.savePoints(widget.session.id, points);
+      }
+
+      AppLogger.info(
+        'Downloaded ${points.length} points from Storage for ${widget.session.id}',
+        tag: 'RunDetails',
+      );
+      return points;
+    } on Exception catch (e) {
+      AppLogger.warn('Failed to download points from Storage: $e',
+          tag: 'RunDetails');
+      return const [];
+    }
   }
 
   Future<void> _onStyleLoaded() async {
@@ -116,7 +168,7 @@ class _RunDetailsScreenState extends State<RunDetailsScreen> {
   ],};
 
   LatLng get _center => _coords.isNotEmpty
-      ? _coords[_coords.length ~/ 2] : const LatLng(-23.5505, -46.6333);
+      ? _coords[_coords.length ~/ 2] : const LatLng(-15.7975, -47.8919);
 
   int get _elapsedMs {
     final e = widget.session.endTimeMs;

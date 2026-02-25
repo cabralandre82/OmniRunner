@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:omni_runner/core/auth/auth_repository.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
@@ -73,15 +74,6 @@ class MoreScreen extends StatelessWidget {
                 ));
               },
             ),
-            _ActionTile(
-              icon: Icons.qr_code,
-              title: 'Operações QR (Staff)',
-              subtitle: 'Emitir ou recolher OmniCoins, ativar badge',
-              onTap: (ctx) {
-                if (LoginRequiredSheet.guard(ctx, feature: 'Operações QR')) return;
-                _openStaffQrHub(ctx);
-              },
-            ),
           ],
 
           _header(context, 'Social'),
@@ -123,8 +115,19 @@ class MoreScreen extends StatelessWidget {
             ),
           ],
 
-          if (_isStaff)
+          if (_isStaff) ...[
+            _header(context, 'Administração'),
+            _ActionTile(
+              icon: Icons.qr_code,
+              title: 'Operações QR',
+              subtitle: 'Emitir ou recolher OmniCoins, ativar badge',
+              onTap: (ctx) {
+                if (LoginRequiredSheet.guard(ctx, feature: 'Operações QR')) return;
+                _openStaffQrHub(ctx);
+              },
+            ),
             _header(context, 'Informações'),
+          ],
 
           _ActionTile(
             icon: Icons.info_outline,
@@ -198,9 +201,60 @@ class MoreScreen extends StatelessWidget {
                 ),
               ),
             ),
+          if (!sl<UserIdentityProvider>().isAnonymous) ...[
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _signOut(context),
+                  icon: const Icon(Icons.logout_rounded),
+                  label: const Text('Sair da conta'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
         ],
       ),
+    );
+  }
+
+  Future<void> _signOut(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: Icon(Icons.logout_rounded, color: Colors.red.shade600, size: 40),
+        title: const Text('Sair da conta?'),
+        content: const Text(
+          'Você será redirecionado para a tela de login. '
+          'Seus dados não serão perdidos.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sair'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await sl<AuthRepository>().signOut();
+    if (!context.mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const AuthGate()),
+      (_) => false,
     );
   }
 

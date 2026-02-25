@@ -754,4 +754,12 @@ Sem pular. Sem paralelizar.
 
 ---
 
+### Sprint 24.0.0 — CORREÇÃO DE BUGS DO AUDIT (P0-P3)  ✅ CONCLUIDA
+
+14 correções aplicadas cobrindo bugs críticos (mock mode, LGPD, QR staff leak, rate limit) e melhorias de UX (onboarding, pull-to-refresh, logout visível, pending coins, invite warning, verification dashboard).
+
+Ver `AUDIT_REPORT.md` seção 17 para lista completa.
+
+---
+
 *Documento gerado na Sprint 1.2*
