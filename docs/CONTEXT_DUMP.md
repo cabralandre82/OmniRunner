@@ -27714,3 +27714,14 @@ automaticamente um oponente compatível. Zero browsing.
 **Infra:**
 - Vercel: Env vars `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` configuradas.
 - `next.config.mjs`: Headers `Content-Type: application/json` + cache 1h para `.well-known`.
+
+### W-6: Integração Strava funcional
+**Problema:** Botão "Conectar" do Strava era apenas placeholder visual, sem funcionalidade.
+
+**Solução completa:**
+- **Conta Strava Developer** criada com Client ID `205793`.
+- **Credenciais** adicionadas ao `.env.dev` (`STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`), injetadas via `--dart-define-from-file`.
+- **Deep link callback** `omnirunner://strava/callback?code=XXX`: novo `StravaCallbackAction` no `DeepLinkHandler` + handler no `AuthGate` que chama `StravaConnectController.handleCallback()` para trocar o código por tokens.
+- **Tela Integrações no Settings**: seção "Integrações" com `_StravaIntegrationTile` — mostra estado (desconectado / conectado como X / reconexão necessária), botão "Conectar" (laranja Strava #FC4C02) ou "Desconectar" com confirmação.
+- **Auto-upload pós-corrida**: no `SyncRepo._syncOne()`, após `markSynced`, roda fire-and-forget: verifica se Strava está conectado → gera FIT via `FitEncoder` → faz upload via `IStravaUploadRepository.uploadAndWait()`. Falhas não bloqueiam o sync.
+- **Infraestrutura já existia**: `StravaAuthRepositoryImpl` (OAuth2 completo), `StravaSecureStore` (flutter_secure_storage), `StravaHttpClient` (retry, rate-limit, 429), `StravaUploadRepositoryImpl` (upload + polling), `StravaConnectController`.

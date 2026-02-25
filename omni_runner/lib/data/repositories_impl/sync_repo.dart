@@ -1,13 +1,24 @@
+import 'dart:typed_data';
+
 import 'package:isar/isar.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/data/datasources/sync_service.dart';
 import 'package:omni_runner/data/models/isar/workout_session_record.dart';
 import 'package:omni_runner/data/models/proto/workout_proto_mapper.dart';
 import 'package:omni_runner/domain/entities/location_point_entity.dart';
+import 'package:omni_runner/domain/entities/workout_session_entity.dart';
+import 'package:omni_runner/domain/entities/workout_status.dart';
 import 'package:omni_runner/domain/failures/sync_failure.dart';
 import 'package:omni_runner/domain/repositories/i_points_repo.dart';
 import 'package:omni_runner/domain/repositories/i_sync_repo.dart';
+import 'package:omni_runner/features/integrations_export/data/fit/fit_encoder.dart';
+import 'package:omni_runner/features/strava/domain/i_strava_auth_repository.dart';
+import 'package:omni_runner/features/strava/domain/i_strava_upload_repository.dart';
+import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
+import 'package:omni_runner/features/strava/domain/strava_upload_request.dart';
+import 'package:omni_runner/features/integrations_export/domain/export_format.dart';
 
 /// Implements [ISyncRepo] using Supabase (via [SyncService]) and Isar.
 ///
@@ -116,8 +127,10 @@ class SyncRepo implements ISyncRepo {
       await markSynced(record.sessionUuid);
 
       // 4. Server-side verification (fire-and-forget)
-      // verify-session validates integrity and triggers eval_athlete_verification
       _triggerVerification(record, userId, points);
+
+      // 5. Auto-upload to Strava (fire-and-forget)
+      _autoUploadStrava(record, points);
 
       return null;
     } on Exception catch (e, st) {
@@ -128,6 +141,52 @@ class SyncRepo implements ISyncRepo {
       }
       return SyncServerError(msg);
     }
+  }
+
+  void _autoUploadStrava(
+    WorkoutSessionRecord record,
+    List<LocationPointEntity> points,
+  ) {
+    Future<void>(() async {
+      try {
+        final authRepo = sl<IStravaAuthRepository>();
+        final state = await authRepo.getAuthState();
+        if (state is! StravaConnected) return;
+
+        final session = WorkoutSessionEntity(
+          id: record.sessionUuid,
+          userId: record.userId,
+          startTimeMs: record.startTimeMs,
+          endTimeMs: record.endTimeMs ?? record.startTimeMs,
+          totalDistanceM: record.totalDistanceM,
+          status: WorkoutStatus.completed,
+          route: points,
+          isSynced: true,
+        );
+
+        final fitBytes = const FitEncoder().encode(
+          session: session,
+          route: points,
+        );
+
+        final uploadRepo = sl<IStravaUploadRepository>();
+        final status = await uploadRepo.uploadAndWait(
+          StravaUploadRequest(
+            sessionId: record.sessionUuid,
+            fileBytes: Uint8List.fromList(fitBytes),
+            format: ExportFormat.fit,
+            activityName: 'Corrida — Omni Runner',
+          ),
+        );
+
+        AppLogger.info(
+          'Strava auto-upload: ${status.runtimeType}',
+          tag: _tag,
+        );
+      } catch (e) {
+        AppLogger.warn('Strava auto-upload failed (non-blocking): $e', tag: _tag);
+      }
+    });
   }
 
   void _triggerVerification(

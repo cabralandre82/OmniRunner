@@ -8,11 +8,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/errors/strava_failures.dart';
 import 'package:omni_runner/core/service_locator.dart';
-import 'package:omni_runner/core/theme/theme_notifier.dart';
 import 'package:omni_runner/domain/entities/coach_settings_entity.dart';
 import 'package:omni_runner/domain/entities/hr_zone.dart';
 import 'package:omni_runner/domain/repositories/i_coach_settings_repo.dart';
+import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
+import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/main.dart' show themeNotifier;
 
 /// Screen for toggling audio coach announcement categories.
@@ -115,6 +117,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                 ],
+                const Divider(height: 32),
+                _header('Integrações'),
+                const _StravaIntegrationTile(),
                 const Divider(height: 32),
                 _header('Aparência'),
                 ValueListenableBuilder<ThemeMode>(
@@ -287,6 +292,132 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
         ),
       );
+}
+
+class _StravaIntegrationTile extends StatefulWidget {
+  const _StravaIntegrationTile();
+
+  @override
+  State<_StravaIntegrationTile> createState() => _StravaIntegrationTileState();
+}
+
+class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
+  StravaAuthState _state = const StravaDisconnected();
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadState();
+  }
+
+  Future<void> _loadState() async {
+    final controller = sl<StravaConnectController>();
+    final s = await controller.getState();
+    if (mounted) setState(() => _state = s);
+  }
+
+  Future<void> _connect() async {
+    setState(() => _busy = true);
+    try {
+      final controller = sl<StravaConnectController>();
+      await controller.startConnect();
+    } on IntegrationFailure catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao conectar: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _disconnect() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Desconectar Strava'),
+        content: const Text(
+          'Suas corridas não serão mais enviadas automaticamente para o Strava.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Desconectar'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    setState(() => _busy = true);
+    try {
+      final controller = sl<StravaConnectController>();
+      await controller.disconnect();
+      await _loadState();
+    } on IntegrationFailure catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final connected = _state is StravaConnected;
+    final athleteName =
+        _state is StravaConnected ? (_state as StravaConnected).athleteName : null;
+    final needsReauth = _state is StravaReauthRequired;
+
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: connected ? const Color(0xFFFC4C02) : Colors.grey.shade300,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Icon(Icons.directions_run, color: Colors.white, size: 22),
+      ),
+      title: const Text('Strava'),
+      subtitle: Text(
+        connected
+            ? 'Conectado como $athleteName'
+            : needsReauth
+                ? 'Reconexão necessária'
+                : 'Envie corridas automaticamente',
+      ),
+      trailing: _busy
+          ? const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : connected
+              ? TextButton(
+                  onPressed: _disconnect,
+                  child: const Text('Desconectar'),
+                )
+              : FilledButton.icon(
+                  onPressed: _connect,
+                  icon: const Icon(Icons.link, size: 18),
+                  label: const Text('Conectar'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFFC4C02),
+                  ),
+                ),
+    );
+  }
 }
 
 /// Card displaying current auth state for debugging.

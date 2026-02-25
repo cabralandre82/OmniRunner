@@ -35,6 +35,12 @@ class ReferralAction extends DeepLinkAction {
   const ReferralAction(this.referrerId);
 }
 
+/// Strava OAuth callback: `omnirunner://strava/callback?code=XXX`
+class StravaCallbackAction extends DeepLinkAction {
+  final String code;
+  const StravaCallbackAction(this.code);
+}
+
 /// Unrecognized link — logged but ignored.
 class UnknownLinkAction extends DeepLinkAction {
   final Uri uri;
@@ -114,6 +120,16 @@ class DeepLinkHandler {
     // omnirunner://auth-callback (handled by supabase_flutter internally)
     if (uri.scheme == 'omnirunner' && uri.host == 'auth-callback') {
       return AuthCallbackAction(uri);
+    }
+
+    // omnirunner://strava/callback?code=XXX
+    if (uri.scheme == 'omnirunner' &&
+        uri.host == 'strava' &&
+        uri.path.contains('callback')) {
+      final code = uri.queryParameters['code'];
+      if (code != null && code.isNotEmpty) {
+        return StravaCallbackAction(code);
+      }
     }
 
     return UnknownLinkAction(uri);

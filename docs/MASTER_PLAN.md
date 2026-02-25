@@ -687,6 +687,7 @@ Transformar o Omni Runner de um aplicativo centrado no usuário individual para 
 | 23.2.1 | F-4 Feed de atividades dos amigos: RPC `fn_friends_activity_feed` (SECURITY DEFINER, join friendships+sessions+profiles); `FriendsActivityFeedScreen` com cards (avatar, métricas, tempo relativo); paginação 30/vez; integrado no menu Mais | CONCLUIDA |
 | 23.2.2 | F-2 Compartilhamento social pós-corrida: `RunShareCard` (gradiente, métricas hero, badge verificada); captura PNG via RepaintBoundary; share sheet nativo via share_plus; botão no RunSummaryScreen | CONCLUIDA |
 | 23.3.0 | C-4 Deep link + Portal web: Portal Next.js deployado em `omnirunner.app` (Vercel + Cloudflare DNS). Landing pages `/challenge/[id]` e `/invite/[code]` (auto-redirect 3s + badges store + OG metadata). Android App Links (`assetlinks.json` SHA256). iOS Universal Links (`apple-app-site-association`, TEAM_ID placeholder). Middleware atualizado (rotas públicas). Env vars configuradas na Vercel. | CONCLUIDA |
+| 23.4.0 | W-6 Integração Strava funcional: Conta developer criada (Client ID 205793). Credenciais em `.env.dev`. `StravaCallbackAction` no DeepLinkHandler + handler no AuthGate. Seção "Integrações" no Settings com tile Conectar/Desconectar. Auto-upload FIT fire-and-forget no SyncRepo após sync. Toda infraestrutura OAuth/upload/polling já existia. | CONCLUIDA |
 | 23.9.0 | QA Phase 23 + update docs finais | TODO |
 
 **Bugs corrigidos (100.1.0):**

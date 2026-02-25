@@ -8,6 +8,7 @@ import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/deep_links/deep_link_handler.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/domain/entities/profile_entity.dart';
 import 'package:omni_runner/domain/repositories/i_profile_repo.dart';
 import 'package:omni_runner/presentation/screens/challenge_join_screen.dart';
@@ -79,6 +80,11 @@ class _AuthGateState extends State<AuthGate> {
       return;
     }
 
+    if (action is StravaCallbackAction) {
+      _handleStravaCallback(action.code);
+      return;
+    }
+
     if (action is! InviteAction) return;
 
     final code = action.code;
@@ -88,6 +94,35 @@ class _AuthGateState extends State<AuthGate> {
       _autoJoinFromHome(code);
     } else if (_dest == _GateDestination.welcome) {
       _go(_GateDestination.login);
+    }
+  }
+
+  Future<void> _handleStravaCallback(String code) async {
+    if (!mounted) return;
+    try {
+      final controller = sl<StravaConnectController>();
+      final connected = await controller.handleCallback(code);
+      AppLogger.info(
+        'Strava connected: ${connected.athleteName}',
+        tag: 'AuthGate',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Strava conectado como ${connected.athleteName}!',
+            ),
+            backgroundColor: const Color(0xFFFC4C02),
+          ),
+        );
+      }
+    } catch (e) {
+      AppLogger.warn('Strava callback failed: $e', tag: 'AuthGate');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao conectar Strava: $e')),
+        );
+      }
     }
   }
 
