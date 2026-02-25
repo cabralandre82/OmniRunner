@@ -2,7 +2,6 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { trackBillingEvent } from "@/lib/analytics";
 import Link from "next/link";
-import { ManageBillingButton } from "./manage-billing-button";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   pending:   { label: "Pendente",   color: "bg-yellow-100 text-yellow-800" },
@@ -96,7 +95,12 @@ export default async function BillingPage() {
             Histórico de compras e recibos da assessoria
           </p>
         </div>
-        <ManageBillingButton />
+        <Link
+          href="/credits"
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700"
+        >
+          Adquirir Créditos
+        </Link>
       </div>
 
       {/* Summary cards */}

@@ -20,6 +20,7 @@ import 'package:omni_runner/presentation/screens/my_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/profile_screen.dart';
 import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_qr_hub_screen.dart';
+import 'package:omni_runner/presentation/screens/partner_assessorias_screen.dart';
 import 'package:omni_runner/features/wearables_ble/debug_hrm_screen.dart';
 
 /// Hub screen for secondary features: coaching, social, integrations, settings.
@@ -64,23 +65,35 @@ class MoreScreen extends StatelessWidget {
           ],
 
           _header(context, 'Social'),
-          _ActionTile(
-            icon: Icons.people_alt_rounded,
-            title: 'Convidar amigos',
-            subtitle: 'Compartilhe o app com outros corredores',
-            onTap: (ctx) {
-              if (LoginRequiredSheet.guard(ctx, feature: 'Convites')) return;
-              Navigator.of(ctx).push(MaterialPageRoute<void>(
-                builder: (_) => const InviteFriendsScreen(),
-              ));
-            },
-          ),
-          const _ActionTile(
-            icon: Icons.dynamic_feed_rounded,
-            title: 'Atividade dos amigos',
-            subtitle: 'Corridas recentes dos seus amigos',
-            pushScreen: FriendsActivityFeedScreen(),
-          ),
+          if (_isStaff)
+            _ActionTile(
+              icon: Icons.handshake,
+              title: 'Assessorias Parceiras',
+              subtitle: 'Parcerias e campeonatos entre assessorias',
+              onTap: (ctx) {
+                if (LoginRequiredSheet.guard(ctx, feature: 'Parceiras')) return;
+                _openPartnerAssessorias(ctx);
+              },
+            ),
+          if (!_isStaff) ...[
+            _ActionTile(
+              icon: Icons.people_alt_rounded,
+              title: 'Convidar amigos',
+              subtitle: 'Compartilhe o app com outros corredores',
+              onTap: (ctx) {
+                if (LoginRequiredSheet.guard(ctx, feature: 'Convites')) return;
+                Navigator.of(ctx).push(MaterialPageRoute<void>(
+                  builder: (_) => const InviteFriendsScreen(),
+                ));
+              },
+            ),
+            const _ActionTile(
+              icon: Icons.dynamic_feed_rounded,
+              title: 'Atividade dos amigos',
+              subtitle: 'Corridas recentes dos seus amigos',
+              pushScreen: FriendsActivityFeedScreen(),
+            ),
+          ],
 
           _header(context, 'Conta'),
           const _ActionTile(
@@ -253,6 +266,35 @@ class MoreScreen extends StatelessWidget {
       MaterialPageRoute<void>(builder: (_) => const AuthGate()),
       (_) => false,
     );
+  }
+
+  Future<void> _openPartnerAssessorias(BuildContext context) async {
+    final uid = sl<UserIdentityProvider>().userId;
+    try {
+      final rows = await Supabase.instance.client
+          .from('coaching_members')
+          .select('group_id, role')
+          .eq('user_id', uid);
+      final staffRow = (rows as List).cast<Map<String, dynamic>>().where((r) {
+        final role = r['role'] as String? ?? '';
+        return role == 'admin_master' || role == 'professor' || role == 'assistente';
+      }).firstOrNull;
+      if (!context.mounted) return;
+      if (staffRow == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Acesso restrito a staff.')),
+        );
+        return;
+      }
+      Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => PartnerAssessoriasScreen(groupId: staffRow['group_id'] as String),
+      ));
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro ao carregar. Tente novamente.')),
+      );
+    }
   }
 
   Future<void> _openStaffQrHub(BuildContext context) async {

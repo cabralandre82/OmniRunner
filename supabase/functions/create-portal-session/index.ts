@@ -113,20 +113,45 @@ serve(async (req: Request) => {
       httpClient: Stripe.createFetchHttpClient(),
     });
 
-    // ── 5. Ensure Stripe Customer exists ────────────────────────────────
-    const { data: customer } = await db
+    // ── 5. Ensure billing_customers + Stripe Customer exist ─────────────
+    let { data: customer } = await db
       .from("billing_customers")
       .select("group_id, stripe_customer_id, email, legal_name")
       .eq("group_id", group_id)
       .maybeSingle();
 
     if (!customer) {
-      status = 404;
-      return jsonErr(
-        404, "NO_BILLING_CUSTOMER",
-        "Billing profile not found. Complete billing setup first.",
-        requestId,
-      );
+      const { data: profile } = await db
+        .from("profiles")
+        .select("display_name, email")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const { data: group } = await db
+        .from("coaching_groups")
+        .select("name")
+        .eq("id", group_id)
+        .maybeSingle();
+
+      const email = profile?.email ?? (user as { email?: string }).email ?? "admin@omnirunner.app";
+      const legalName = group?.name ?? profile?.display_name ?? "Assessoria";
+
+      const { data: newCustomer, error: insertErr } = await db
+        .from("billing_customers")
+        .insert({
+          group_id,
+          legal_name: legalName,
+          email,
+        })
+        .select("group_id, stripe_customer_id, email, legal_name")
+        .single();
+
+      if (insertErr) {
+        status = 500;
+        errorCode = "BILLING_CUSTOMER_CREATE_FAILED";
+        return jsonErr(500, "INTERNAL", "Failed to create billing profile", requestId);
+      }
+      customer = newCustomer;
     }
 
     let stripeCustomerId = customer.stripe_customer_id;
