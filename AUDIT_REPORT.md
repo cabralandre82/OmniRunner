@@ -341,6 +341,15 @@ O app está **funcional para early adopters** que já entendem o conceito, mas *
 |---|----|-----------|----------|----------|
 | 48 | BILLING-1 | **CRÍTICO** | Compra de créditos funcional. Seed 5 pacotes billing_products. Edge Functions `create-checkout-mercadopago` e `webhook-mercadopago` implementadas. Stripe webhook registrado. Portal atualizado com botão MercadoPago. Secrets configurados. Testado end-to-end com sucesso. | `create-checkout-mercadopago/index.ts`, `webhook-mercadopago/index.ts`, `portal/credits/buy-button.tsx`, `portal/api/checkout/route.ts`, `seed_billing_products.sql` |
 
+### STRAVA WEBHOOK: Importação automática de corridas via relógio (Garmin, Coros, Suunto, etc.)
+
+| # | ID | Severidade | Correção | Arquivos |
+|---|----|-----------|----------|----------|
+| 49 | STRAVA-IMPORT | **CRÍTICO** | Corridas feitas apenas com relógio (sem celular) agora contam para desafios. Strava Webhook recebe atividades automaticamente, verifica anti-cheat via GPS streams (8 de 11 flags: SPEED_IMPOSSIBLE, GPS_JUMP, TELEPORT, TOO_FEW_POINTS, TOO_SHORT_DISTANCE, TOO_SHORT_DURATION, IMPLAUSIBLE_PACE, BACKGROUND_GPS_GAP, NO_MOTION_PATTERN, VEHICLE_SUSPECTED), cria session com source='strava', vincula a desafios ativos. | `strava-webhook/index.ts`, `strava-register-webhook/index.ts`, `20260225200000_strava_import.sql` |
+| 50 | STRAVA-SCOPE | **ALTO** | OAuth scope atualizado de `activity:write` para `activity:read_all,activity:write`. Tokens salvos server-side em `strava_connections` para webhook funcionar sem o app aberto. | `strava_http_client.dart`, `strava_connect_controller.dart` |
+| 51 | STRAVA-UI | **MÉDIO** | Tela de conexão Strava explica claramente: "Corra só com seu Garmin, Coros, Suunto ou Apple Watch!". Histórico mostra badge STRAVA com nome do dispositivo. Entity e Isar model atualizados com `source` e `deviceName`. | `settings_screen.dart`, `history_screen.dart`, `workout_session_entity.dart`, `workout_session_record.dart` |
+| 52 | STRAVA-CHALLENGE | **ALTO** | Sessões importadas via Strava são automaticamente vinculadas a desafios ativos no server-side (não depende do app estar aberto). | `strava-webhook/index.ts` |
+
 ### Items já corretos (sem alteração necessária)
 - **T-3**: RecoveryScreen já diz "Salvar e continuar" com ícone correto.
 - **T-1**: Map timeout já exibe mensagem "Mapa indisponível offline" com explicação.

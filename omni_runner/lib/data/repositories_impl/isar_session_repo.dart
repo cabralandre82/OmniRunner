@@ -168,7 +168,9 @@ final class IsarSessionRepo implements ISessionRepo {
       ..ghostSessionId = entity.ghostSessionId
       ..integrityFlags = List.of(entity.integrityFlags)
       ..avgBpm = entity.avgBpm
-      ..maxBpm = entity.maxBpm;
+      ..maxBpm = entity.maxBpm
+      ..source = entity.source
+      ..deviceName = entity.deviceName;
   }
 
   WorkoutSessionEntity _toEntity(WorkoutSessionRecord record) {
@@ -186,6 +188,8 @@ final class IsarSessionRepo implements ISessionRepo {
       isSynced: record.isSynced,
       avgBpm: record.avgBpm,
       maxBpm: record.maxBpm,
+      source: record.source,
+      deviceName: record.deviceName,
     );
   }
 

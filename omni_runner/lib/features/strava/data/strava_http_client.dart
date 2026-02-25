@@ -46,7 +46,7 @@ class StravaHttpClient {
   Uri buildAuthorizationUrl({
     required String clientId,
     String redirectUri = 'omnirunner://strava/callback',
-    String scope = 'activity:write',
+    String scope = 'activity:read_all,activity:write',
   }) {
     return Uri.parse('$_oauthBase/mobile/authorize').replace(
       queryParameters: {

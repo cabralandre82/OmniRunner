@@ -63,4 +63,10 @@ class WorkoutSessionRecord {
 
   /// Maximum heart rate in BPM. Null if no HR data was collected.
   int? maxBpm;
+
+  /// Origin: 'app', 'strava', 'watch', 'manual'.
+  String source = 'app';
+
+  /// Device that recorded the session (e.g. "Garmin Forerunner 265").
+  String? deviceName;
 }

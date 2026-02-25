@@ -49,6 +49,12 @@ final class WorkoutSessionEntity extends Equatable {
   /// Maximum heart rate in BPM. Null if no HR data was collected.
   final int? maxBpm;
 
+  /// Where this session originated: 'app', 'strava', 'watch', 'manual'.
+  final String source;
+
+  /// Device that recorded the session (e.g. "Garmin Forerunner 265").
+  final String? deviceName;
+
   const WorkoutSessionEntity({
     required this.id,
     this.userId,
@@ -63,6 +69,8 @@ final class WorkoutSessionEntity extends Equatable {
     this.isSynced = false,
     this.avgBpm,
     this.maxBpm,
+    this.source = 'app',
+    this.deviceName,
   });
 
   @override
@@ -80,5 +88,7 @@ final class WorkoutSessionEntity extends Equatable {
         isSynced,
         avgBpm,
         maxBpm,
+        source,
+        deviceName,
       ];
 }

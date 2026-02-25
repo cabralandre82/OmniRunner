@@ -58,7 +58,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             .from('sessions')
             .select('id, user_id, status, start_time_ms, end_time_ms, '
                 'total_distance_m, moving_ms, is_verified, integrity_flags, '
-                'ghost_session_id')
+                'ghost_session_id, source, device_name')
             .eq('user_id', uid)
             .order('start_time_ms', ascending: false)
             .range(offset, offset + _pageSize - 1);
@@ -93,6 +93,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
             isVerified: (r['is_verified'] as bool?) ?? true,
             integrityFlags: flags,
             isSynced: true,
+            source: (r['source'] as String?) ?? 'app',
+            deviceName: r['device_name'] as String?,
           );
           await repo.save(session);
         }
@@ -206,14 +208,22 @@ class _SessionTile extends StatelessWidget {
     final (statusLabel, statusColor) = _statusInfo(session.status);
     final canGhost = pickGhostMode && session.status == WorkoutStatus.completed;
 
+    final (sourceIcon, sourceColor, sourceTooltip) = _sourceInfo(session.source);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: Icon(
-          canGhost ? Icons.person_add_alt_1 : Icons.directions_run,
+          canGhost ? Icons.person_add_alt_1 : sourceIcon,
           color: canGhost ? Colors.purple : statusColor, size: 32,
         ),
-        title: Text('$dateStr  $timeStr'),
+        title: Row(children: [
+          Text('$dateStr  $timeStr'),
+          if (session.source != 'app') ...[
+            const SizedBox(width: 6),
+            _SourceBadge(source: session.source, deviceName: session.deviceName),
+          ],
+        ]),
         subtitle: Row(children: [
           Expanded(child: Text('$distStr  •  $durStr  •  $statusLabel')),
           if (!canGhost && session.status == WorkoutStatus.completed)
@@ -258,6 +268,45 @@ class _SessionTile extends StatelessWidget {
     WorkoutStatus.discarded => ('Descartada', Colors.grey),
     WorkoutStatus.initial => ('Inicial', Colors.grey),
   };
+
+  static (IconData, Color, String) _sourceInfo(String source) => switch (source) {
+    'strava' => (Icons.watch, const Color(0xFFFC4C02), 'Via Strava'),
+    'watch' => (Icons.watch, Colors.blueGrey, 'Relógio'),
+    'manual' => (Icons.edit, Colors.grey, 'Manual'),
+    _ => (Icons.directions_run, Colors.green, 'OmniRunner'),
+  };
+}
+
+class _SourceBadge extends StatelessWidget {
+  final String source;
+  final String? deviceName;
+  const _SourceBadge({required this.source, this.deviceName});
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, bgColor) = switch (source) {
+      'strava' => (deviceName ?? 'Strava', const Color(0xFFFC4C02)),
+      'watch' => (deviceName ?? 'Relógio', Colors.blueGrey),
+      'manual' => ('Manual', Colors.grey),
+      _ => ('App', Colors.green),
+    };
+
+    return Tooltip(
+      message: deviceName != null ? 'Gravado no $deviceName via Strava' : 'Importado via $source',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+        decoration: BoxDecoration(
+          color: bgColor.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: bgColor.withOpacity(0.4), width: 0.5),
+        ),
+        child: Text(
+          source == 'strava' ? 'STRAVA' : label.toUpperCase(),
+          style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: bgColor),
+        ),
+      ),
+    );
+  }
 }
 
 class _SyncBadge extends StatelessWidget {

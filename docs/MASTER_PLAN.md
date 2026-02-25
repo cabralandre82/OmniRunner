@@ -22,7 +22,7 @@
 | 10 | Build e Release | APK final, testes em device real, release | TODO |
 | 12 | Watch Apps | Apple Watch + WearOS standalone tracking, sync com phone | EM ANDAMENTO |
 | 13 | Gamification Engine | Desafios 1v1/grupo, OmniCoins, rankings, auditoria (loja-safe) | EM ANDAMENTO |
-| 14 | Integracoes Externas | Strava Upload, Export FIT/GPX/TCX, Share Sheet, Offline Queue | EM ANDAMENTO |
+| 14 | Integracoes Externas | Strava Upload + Import (Webhook), Export FIT/GPX/TCX, Share Sheet, Offline Queue | EM ANDAMENTO |
 | 15 | Social & Events | Amigos, grupos, leaderboards, eventos virtuais | EM ANDAMENTO |
 | 16 | Assessoria Mode (Coaching Intelligence Engine) | Grupos de assessoria, rankings internos, análise de evolução, gamificação de eventos reais, insights para coach | EM ANDAMENTO |
 | 17 | Supabase Backend (Full Stack) | Schema SQL completo, RLS, Edge Functions, RPC helpers, seed data, mock-first init, handoff doc | EM ANDAMENTO |
@@ -550,8 +550,8 @@ Transformar o Omni Runner de um aplicativo centrado no usuário individual para 
 | 90.2.0 | Confidence check: 4 problemas adicionais (schema mismatches, wrong group source, Isar query gap, non-exhaustive switch) | CONCLUIDA |
 | 90.3.0 | Eliminar 4 riscos residuais: lifecycle-cron (pg_cron), notify-rules +2 handlers + auth fix, completed challenges na lista, 5 testes teamVsTeam | CONCLUIDA |
 | 90.3.1 | Fix colateral: doc comment evaluator (time=higher wins), 2 testes pré-existentes corrigidos, Set→List no Isar | CONCLUIDA |
-| 90.4.0 | TODO: Configurar pg_cron settings no Supabase Dashboard (app.settings.supabase_url + service_role_key) | TODO |
-| 90.4.1 | TODO: Verificar send-push EF deployado + notification_log table com RLS | TODO |
+| 90.4.0 | Configurar pg_cron — 4 cron jobs recriados com URL e service_role_key hardcoded (ALTER DATABASE SET bloqueado no Supabase hosted): lifecycle-cron (*/5min), clearing-cron (seg 03:00), auto-topup-cron (hora em hora), eval-verification-cron (03:00 diário). Todos usando extensions.http → Edge Functions. | CONCLUIDA |
+| 90.4.1 | Verificar send-push EF deployado + notification_log table com RLS — send-push ACTIVE (v5), notification_log migration aplicada com RLS (select own) | CONCLUIDA |
 | 90.4.2 | TODO: Teste de integração com Supabase real (challenge lifecycle completo) | TODO |
 | 90.4.3 | TODO: Monitorar logs lifecycle-cron nas primeiras 24h pós-deploy | TODO |
 
@@ -690,6 +690,7 @@ Transformar o Omni Runner de um aplicativo centrado no usuário individual para 
 | 23.2.2 | F-2 Compartilhamento social pós-corrida: `RunShareCard` (gradiente, métricas hero, badge verificada); captura PNG via RepaintBoundary; share sheet nativo via share_plus; botão no RunSummaryScreen | CONCLUIDA |
 | 23.3.0 | C-4 Deep link + Portal web: Portal Next.js deployado em `omnirunner.app` (Vercel + Cloudflare DNS). Landing pages `/challenge/[id]` e `/invite/[code]` (auto-redirect 3s + badges store + OG metadata). Android App Links (`assetlinks.json` SHA256). iOS Universal Links (`apple-app-site-association`, TEAM_ID placeholder). Middleware atualizado (rotas públicas). Env vars configuradas na Vercel. | CONCLUIDA |
 | 23.4.0 | W-6 Integração Strava funcional: Conta developer criada (Client ID 205793). Credenciais em `.env.dev`. `StravaCallbackAction` no DeepLinkHandler + handler no AuthGate. Seção "Integrações" no Settings com tile Conectar/Desconectar. Auto-upload FIT fire-and-forget no SyncRepo após sync. Toda infraestrutura OAuth/upload/polling já existia. | CONCLUIDA |
+| 23.5.0 | Strava Webhook Import — Corridas do relógio contam para desafios: Migration `20260225200000_strava_import.sql` (source, strava_activity_id, device_name em sessions + tabela strava_connections); Edge Function `strava-webhook` (recebe eventos Strava, busca atividade + GPS streams, anti-cheat 8 flags, cria session source='strava', vincula a desafios ativos); Edge Function `strava-register-webhook` (setup one-time); OAuth scope atualizado para `activity:read_all,activity:write`; tokens sincronizados server-side em strava_connections; UI: badge STRAVA no histórico, tela de conexão explica uso com relógio; Isar/Entity atualizados com source/deviceName; webhook registrado (ID 332234) | CONCLUIDA |
 | 23.9.0 | QA Phase 23 + update docs finais | TODO |
 
 **Bugs corrigidos (100.1.0):**

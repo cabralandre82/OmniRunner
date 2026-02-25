@@ -48,6 +48,8 @@ abstract final class WorkoutProtoMapper {
       'integrity_flags': record.integrityFlags,
       'ghost_session_id': record.ghostSessionId,
       'points_path': pointsPath,
+      'source': record.source,
+      if (record.deviceName != null) 'device_name': record.deviceName,
     };
   }
 

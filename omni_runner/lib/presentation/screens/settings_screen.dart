@@ -339,7 +339,9 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
       builder: (ctx) => AlertDialog(
         title: const Text('Desconectar Strava'),
         content: const Text(
-          'Suas corridas não serão mais enviadas automaticamente para o Strava.',
+          'Suas corridas do relógio (Garmin, Coros, etc.) não serão mais '
+          'importadas automaticamente e não contarão para desafios. '
+          'Corridas feitas no app continuam funcionando normalmente.',
         ),
         actions: [
           TextButton(
@@ -379,43 +381,84 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
         _state is StravaConnected ? (_state as StravaConnected).athleteName : null;
     final needsReauth = _state is StravaReauthRequired;
 
-    return ListTile(
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: connected ? const Color(0xFFFC4C02) : Colors.grey.shade300,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Icon(Icons.directions_run, color: Colors.white, size: 22),
-      ),
-      title: const Text('Strava'),
-      subtitle: Text(
-        connected
-            ? 'Conectado como $athleteName'
-            : needsReauth
-                ? 'Reconexão necessária'
-                : 'Envie corridas automaticamente',
-      ),
-      trailing: _busy
-          ? const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : connected
-              ? TextButton(
-                  onPressed: _disconnect,
-                  child: const Text('Desconectar'),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: connected ? const Color(0xFFFC4C02) : Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.watch, color: Colors.white, size: 22),
+          ),
+          title: const Text('Strava'),
+          subtitle: Text(
+            connected
+                ? 'Conectado como $athleteName'
+                : needsReauth
+                    ? 'Reconexão necessária'
+                    : 'Conecte para correr só com o relógio',
+          ),
+          trailing: _busy
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : FilledButton.icon(
-                  onPressed: _connect,
-                  icon: const Icon(Icons.link, size: 18),
-                  label: const Text('Conectar'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFFFC4C02),
-                  ),
-                ),
+              : connected
+                  ? TextButton(
+                      onPressed: _disconnect,
+                      child: const Text('Desconectar'),
+                    )
+                  : FilledButton.icon(
+                      onPressed: _connect,
+                      icon: const Icon(Icons.link, size: 18),
+                      label: const Text('Conectar'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFFFC4C02),
+                      ),
+                    ),
+        ),
+        if (!connected && !needsReauth)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(72, 0, 16, 12),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3E0),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFFCC80), width: 0.5),
+              ),
+              child: const Text(
+                'Corra só com seu Garmin, Coros, Suunto ou Apple Watch! '
+                'Conectando ao Strava, suas corridas são importadas '
+                'automaticamente e contam para os desafios. '
+                'GPS e ritmo cardíaco são verificados pelo anti-cheat.',
+                style: TextStyle(fontSize: 12, color: Color(0xFF5D4037)),
+              ),
+            ),
+          ),
+        if (connected)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(72, 0, 16, 12),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFA5D6A7), width: 0.5),
+              ),
+              child: const Text(
+                'Suas corridas gravadas no relógio serão importadas '
+                'automaticamente via Strava e contarão para seus desafios.',
+                style: TextStyle(fontSize: 12, color: Color(0xFF2E7D32)),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
