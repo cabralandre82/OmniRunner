@@ -24,6 +24,9 @@ abstract interface class IAuthDataSource {
   /// Sign in with TikTok (custom OAuth via Edge Function). Returns the user.
   Future<AuthUser> signInWithTikTok();
 
+  /// Send a password reset email.
+  Future<void> resetPassword({required String email});
+
   /// Sign out the current user.
   Future<void> signOut();
 

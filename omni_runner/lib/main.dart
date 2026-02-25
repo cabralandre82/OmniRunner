@@ -15,8 +15,11 @@ import 'package:omni_runner/features/watch_bridge/watch_bridge_init.dart';
 import 'package:omni_runner/domain/usecases/discard_session.dart';
 import 'package:omni_runner/domain/usecases/finish_session.dart';
 import 'package:omni_runner/domain/usecases/recover_active_session.dart';
+import 'package:omni_runner/core/theme/theme_notifier.dart';
 import 'package:omni_runner/presentation/screens/auth_gate.dart';
 import 'package:omni_runner/presentation/screens/recovery_screen.dart';
+
+final themeNotifier = ThemeNotifier();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -96,6 +99,8 @@ Future<void> _bootstrap() async {
   final autoSync = AutoSyncManager(syncRepo: sl<ISyncRepo>());
   await autoSync.init();
 
+  await themeNotifier.load();
+
   // Check for an active session to recover.
   final recovery = await sl<RecoverActiveSession>()();
 
@@ -109,15 +114,26 @@ class OmniRunnerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Omni Runner',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeNotifier,
+      builder: (_, mode, __) => MaterialApp(
+        title: 'Omni Runner',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        darkTheme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.deepPurple,
+            brightness: Brightness.dark,
+          ),
+          useMaterial3: true,
+        ),
+        themeMode: mode,
+        home: recovery != null
+            ? _RecoveryWrapper(recovery: recovery!)
+            : const AuthGate(),
       ),
-      home: recovery != null
-          ? _RecoveryWrapper(recovery: recovery!)
-          : const AuthGate(),
     );
   }
 }

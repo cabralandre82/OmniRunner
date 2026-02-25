@@ -170,7 +170,7 @@ class _StatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final (icon, color, label, subtitle) = _statusVisual(v.status);
+    final (icon, color, label, subtitle) = _statusVisual(v);
 
     return Card(
       elevation: 0,
@@ -213,37 +213,46 @@ class _StatusCard extends StatelessWidget {
   }
 
   static (IconData, Color, String, String) _statusVisual(
-      VerificationStatus s) {
-    return switch (s) {
+      AthleteVerificationEntity v) {
+    final remaining = v.requiredValidRuns - v.validRunsCount;
+    final runsMsg = remaining > 0
+        ? 'Mais $remaining corrida${remaining == 1 ? '' : 's'} válida${remaining == 1 ? '' : 's'} e você estará verificado!'
+        : 'Corridas suficientes! Aguarde a avaliação.';
+
+    return switch (v.status) {
       VerificationStatus.unverified => (
           Icons.hourglass_empty,
           Colors.grey,
           'Não Verificado',
-          'Complete corridas para iniciar sua verificação.'
+          remaining > 0
+              ? 'Faça $remaining corrida${remaining == 1 ? '' : 's'} para começar a calibração.'
+              : 'Complete corridas para iniciar sua verificação.',
         ),
       VerificationStatus.calibrating => (
           Icons.trending_up,
           Colors.blue,
           'Em Calibração',
-          'Estamos analisando suas corridas. Continue treinando!'
+          runsMsg,
         ),
       VerificationStatus.monitored => (
           Icons.visibility,
           Colors.orange,
           'Em Observação',
-          'Quase lá! Melhore seu score de confiança.'
+          'Seu score está em ${v.trustScore}/100 (mínimo: ${v.requiredTrustScore}). '
+              'Continue treinando para aumentar!',
         ),
       VerificationStatus.verified => (
           Icons.verified,
           Colors.green,
           'Atleta Verificado',
-          'Você pode criar e participar de desafios com stake!'
+          'Você pode criar e participar de desafios com stake!',
         ),
       VerificationStatus.downgraded => (
           Icons.warning_amber_rounded,
           Colors.red,
           'Rebaixado',
-          'Problemas de integridade detectados. Continue treinando limpo.'
+          'Problemas de integridade detectados. Continue treinando limpo para '
+              'recuperar seu status.',
         ),
     };
   }

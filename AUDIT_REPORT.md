@@ -291,6 +291,19 @@ O app está **funcional para early adopters** que já entendem o conceito, mas *
 | 13 | X-4 | **MÉDIO** | Pull-to-refresh adicionado em ChallengesListScreen e WalletScreen. | `challenges_list_screen.dart`, `wallet_screen.dart` |
 | 14 | X-1 | **CRÍTICO** | Onboarding contextual: TipBanner no dashboard reescrito com 4 passos claros (correr, assessoria, desafio, verificação). | `athlete_dashboard_screen.dart` |
 
+| 15 | W-3 | **CRÍTICO** | BLE HR e Export eram inacessíveis. Tela "Wearables e Saúde" transformada de informativa para funcional com botão "Conectar sensor". Botão "Exportar" adicionado no detalhe de cada corrida. | `more_screen.dart`, `run_details_screen.dart` |
+| 16 | W-5 | **ALTO** | Settings não tinha seção de wearables. Adicionado: toggle alertas FC por zona, editor de FC máxima com validação, visualização das 5 zonas de FC com faixas de BPM calculadas em tempo real. | `settings_screen.dart`, `more_screen.dart` |
+| 17 | W-4 | **MÉDIO** | FIT encoder implementado — formato binário completo com file_id, events, records (GPS+HR+speed+altitude+distance), lap, session, activity. CRC-16 correto. ExportScreen habilitado para FIT. 15 testes unitários. | `fit_encoder.dart`, `export_screen.dart`, `export_service_impl.dart` |
+| 18 | X-2 | **CRÍTICO** | NoConnectionBanner global: widget que detecta conectividade via `connectivity_plus` e mostra banner laranja "Sem conexão" no topo. Integrado no HomeScreen para ambos shells (atleta + staff). | `no_connection_banner.dart`, `home_screen.dart` |
+| 19 | O-1 | **ALTO** | Login por email/senha adicionado como fallback universal. Formulário expansível com validação, toggle login/cadastro, campos email e senha, fluxo "Esqueci a senha" com resetPasswordForEmail do Supabase. Backend já suportava (signIn/signUp existiam no AuthRepository). | `login_screen.dart`, `auth_repository.dart`, `i_auth_datasource.dart`, `remote_auth_datasource.dart`, `mock_auth_datasource.dart` |
+| 20 | X-5 | **MÉDIO** | Versão do app agora é dinâmica via `package_info_plus`. About dialog mostra versão real + build number. | `more_screen.dart` |
+| 21 | X-6 | **MÉDIO** | Dark mode implementado: ThemeNotifier com persistência (SharedPreferences), 3 opções (Sistema/Claro/Escuro) no SettingsScreen, darkTheme configurado no MaterialApp. | `theme_notifier.dart`, `main.dart`, `settings_screen.dart` |
+| 22 | V-4 | **BAIXO** | CTA motivacional dinâmico: mensagens de status agora incluem contagem de corridas faltantes para CALIBRATING e trust score atual para MONITORED. | `athlete_verification_screen.dart` |
+| 23 | W-3 | **BAIXO** | Filtro por tipo no histórico do wallet: chips "Todos", "Ganhos", "Gastos" para filtrar transações. | `wallet_screen.dart` |
+| 24 | M-6 | **BAIXO** | Skill bracket com explicação: tooltip "Seu nível é calculado pelo pace médio das suas últimas 10 corridas" ao tocar no chip de nível. | `matchmaking_screen.dart` |
+| 25 | B-3 | **BAIXO** | typeStr corrigido: switch exaustivo que mapeia ChallengeType para strings snake_case corretas (`one_vs_one`, `group`, `team_vs_team`). | `challenge_create_screen.dart` |
+| 26 | T-2 | **MÉDIO** | Permissão GPS permanentemente negada agora mostra botão "Abrir Configurações" que leva às settings do SO (via `Geolocator.openAppSettings()`). | `tracking_bottom_panel.dart` |
+
 ### Items já corretos (sem alteração necessária)
 - **T-3**: RecoveryScreen já diz "Salvar e continuar" com ícone correto.
 - **T-1**: Map timeout já exibe mensagem "Mapa indisponível offline" com explicação.

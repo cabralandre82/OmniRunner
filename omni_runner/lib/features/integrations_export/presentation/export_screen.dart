@@ -47,13 +47,6 @@ class _ExportScreenState extends State<ExportScreen> {
 
       await _showPostExportSheet(result.format);
       await _maybeShowStravaEducation();
-    } on ExportNotImplemented catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Formato FIT em desenvolvimento.'),
-        ),
-      );
     } on IntegrationFailure catch (e) {
       AppLogger.warn('Export failed: $e', tag: 'ExportScreen');
       if (!mounted) return;
@@ -242,12 +235,11 @@ class _ExportScreenState extends State<ExportScreen> {
             const SizedBox(height: 8),
             _FormatCard(
               format: ExportFormat.fit,
-              title: 'FIT  (em breve)',
+              title: 'FIT',
               subtitle: 'Mais completo: HR, pace,\ncalorias. Garmin, Coros, '
                   'TrainingPeaks.',
               selected: _selected == ExportFormat.fit,
-              enabled: false,
-              onTap: () {},
+              onTap: () => setState(() => _selected = ExportFormat.fit),
             ),
             const Spacer(),
             FilledButton.icon(
@@ -277,7 +269,6 @@ class _FormatCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final bool selected;
-  final bool enabled;
   final VoidCallback onTap;
 
   const _FormatCard({
@@ -285,7 +276,6 @@ class _FormatCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.selected,
-    this.enabled = true,
     required this.onTap,
   });
 
@@ -294,58 +284,54 @@ class _FormatCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final borderColor =
         selected ? colorScheme.primary : colorScheme.outlineVariant;
-    final opacity = enabled ? 1.0 : 0.45;
 
-    return Opacity(
-      opacity: opacity,
-      child: GestureDetector(
-        onTap: enabled ? onTap : null,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: borderColor, width: selected ? 2 : 1),
-            color: selected
-                ? colorScheme.primaryContainer.withAlpha(60)
-                : Colors.transparent,
-          ),
-          child: Row(
-            children: [
-              Icon(
-                selected
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_unchecked,
-                color: selected
-                    ? colorScheme.primary
-                    : colorScheme.onSurfaceVariant,
-                size: 22,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor, width: selected ? 2 : 1),
+          color: selected
+              ? colorScheme.primaryContainer.withAlpha(60)
+              : Colors.transparent,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              selected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              color: selected
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
+              size: 22,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
-                      ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -31,8 +31,76 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool _busy = false;
   String? _errorMessage;
+  bool _showEmailForm = false;
+  bool _isSignUp = false;
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
 
   AuthRepository get _auth => sl<AuthRepository>();
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _signInWithEmail() async {
+    if (!_checkConnection()) return;
+    final email = _emailCtrl.text.trim();
+    final pass = _passCtrl.text;
+    if (email.isEmpty || pass.isEmpty) {
+      setState(() => _errorMessage = 'Preencha email e senha.');
+      return;
+    }
+    if (pass.length < 6) {
+      setState(() => _errorMessage = 'A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+    _clearError();
+    setState(() => _busy = true);
+
+    final result = _isSignUp
+        ? await _auth.signUp(email: email, password: pass)
+        : await _auth.signIn(email: email, password: pass);
+
+    if (!mounted) return;
+    setState(() => _busy = false);
+
+    if (result.failure != null) {
+      _handleFailure(result.failure!);
+      return;
+    }
+    widget.onSuccess();
+  }
+
+  Future<void> _resetPassword() async {
+    if (!_checkConnection()) return;
+    final email = _emailCtrl.text.trim();
+    if (email.isEmpty) {
+      setState(() => _errorMessage = 'Digite seu email acima para recuperar a senha.');
+      return;
+    }
+    _clearError();
+    setState(() => _busy = true);
+
+    final failure = await _auth.resetPassword(email: email);
+
+    if (!mounted) return;
+    setState(() => _busy = false);
+
+    if (failure != null) {
+      _handleFailure(failure);
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Email de recuperação enviado para $email'),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
 
   Future<void> _signInWithGoogle() async {
     if (!_checkConnection()) return;
@@ -244,7 +312,103 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 14),
 
-                // TikTok — hidden until validate-social-login EF is deployed
+                // Email/password
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        setState(() => _showEmailForm = !_showEmailForm),
+                    icon: const Icon(Icons.email_outlined, size: 22),
+                    label: const Text('Continuar com Email'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.grey.shade700,
+                      side: BorderSide(color: Colors.grey.shade400),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+
+                if (_showEmailForm) ...[
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _emailCtrl,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      prefixIcon: const Icon(Icons.email_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _passCtrl,
+                    obscureText: true,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _signInWithEmail(),
+                    decoration: InputDecoration(
+                      labelText: 'Senha',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: FilledButton(
+                      onPressed: _signInWithEmail,
+                      style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(_isSignUp ? 'Criar conta' : 'Entrar'),
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TextButton(
+                        onPressed: () => setState(() => _isSignUp = !_isSignUp),
+                        child: Text(
+                          _isSignUp
+                              ? 'Já tem conta? Entrar'
+                              : 'Não tem conta? Criar agora',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                      if (!_isSignUp) ...[
+                        Text('·',
+                            style: TextStyle(color: Colors.grey.shade400)),
+                        TextButton(
+                          onPressed: _resetPassword,
+                          child: Text(
+                            'Esqueci a senha',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
               ],
 
               // Error message

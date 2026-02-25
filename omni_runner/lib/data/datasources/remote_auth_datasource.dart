@@ -358,6 +358,18 @@ class RemoteAuthDataSource implements IAuthDataSource {
   }
 
   @override
+  Future<void> resetPassword({required String email}) async {
+    try {
+      await _auth.resetPasswordForEmail(email);
+      AppLogger.info('Password reset email sent to $email', tag: _tag);
+    } on AuthException catch (e) {
+      throw AuthUnknownError(e.message);
+    } catch (e) {
+      _rethrow(e);
+    }
+  }
+
+  @override
   Future<void> signOut() async {
     try {
       try { await GoogleSignIn().signOut(); } catch (_) {}

@@ -5,6 +5,7 @@ import 'package:omni_runner/presentation/screens/history_screen.dart';
 import 'package:omni_runner/presentation/screens/more_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_dashboard_screen.dart';
 import 'package:omni_runner/presentation/screens/tracking_screen.dart';
+import 'package:omni_runner/presentation/widgets/no_connection_banner.dart';
 
 /// Root navigation shell with bottom tab bar.
 ///
@@ -32,12 +33,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildAthleteShell() {
     return Scaffold(
-      body: IndexedStack(index: _tab, children: [
+      body: NoConnectionBanner(
+        child: IndexedStack(index: _tab, children: [
         const AthleteDashboardScreen(),
         const TrackingScreen(),
         HistoryScreen(isVisible: _tab == 2),
         const MoreScreen(userRole: 'ATLETA'),
       ]),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
         onDestinationSelected: (i) => setState(() => _tab = i),
@@ -71,10 +74,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildStaffShell() {
     return Scaffold(
-      body: IndexedStack(index: _tab, children: const [
+      body: NoConnectionBanner(
+        child: IndexedStack(index: _tab, children: const [
         StaffDashboardScreen(),
         MoreScreen(userRole: 'ASSESSORIA_STAFF'),
       ]),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
         onDestinationSelected: (i) => setState(() => _tab = i),

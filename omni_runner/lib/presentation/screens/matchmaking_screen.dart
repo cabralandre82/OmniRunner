@@ -482,10 +482,18 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
             ),
             const SizedBox(height: 8),
             if (_skillBracket != null)
-              Chip(
-                avatar: Icon(Icons.trending_up, size: 16, color: cs.primary),
-                label: Text('Nível: ${_bracketLabel(_skillBracket!)}'),
-                backgroundColor: cs.surfaceContainerHighest,
+              Tooltip(
+                message: 'Seu nível é calculado pelo pace médio '
+                    'das suas últimas 10 corridas.',
+                triggerMode: TooltipTriggerMode.tap,
+                child: Chip(
+                  avatar: Icon(Icons.trending_up, size: 16, color: cs.primary),
+                  label: Text('Nível: ${_bracketLabel(_skillBracket!)}'),
+                  backgroundColor: cs.surfaceContainerHighest,
+                  deleteIcon: Icon(Icons.help_outline, size: 14,
+                      color: cs.onSurfaceVariant),
+                  onDeleted: () {},
+                ),
               ),
             const SizedBox(height: 16),
             Text(

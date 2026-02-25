@@ -423,17 +423,21 @@ void main() {
       expect(result.filename, endsWith('.tcx'));
     });
 
-    test('ExportServiceImpl.exportWorkout throws ExportNotImplemented for FIT',
+    test('ExportServiceImpl.exportWorkout produces valid FIT binary',
         () async {
       final request = ExportRequest(
         session: _session(),
         route: _route(),
         format: ExportFormat.fit,
       );
-      expect(
-        () => service.exportWorkout(request),
-        throwsA(isA<ExportNotImplemented>()),
-      );
+      final result = await service.exportWorkout(request);
+
+      expect(result.bytes, isNotEmpty);
+      expect(result.format, ExportFormat.fit);
+      expect(result.mimeType, 'application/vnd.ant.fit');
+      expect(result.filename, endsWith('.fit'));
+      // Verify .FIT signature at offset 8
+      expect(String.fromCharCodes(result.bytes.sublist(8, 12)), '.FIT');
     });
   });
 

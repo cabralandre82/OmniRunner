@@ -7,8 +7,25 @@ import 'package:omni_runner/presentation/blocs/wallet/wallet_bloc.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_event.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_state.dart';
 
-class WalletScreen extends StatelessWidget {
+enum _WalletFilter { all, earned, spent }
+
+class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
+
+  @override
+  State<WalletScreen> createState() => _WalletScreenState();
+}
+
+class _WalletScreenState extends State<WalletScreen> {
+  _WalletFilter _filter = _WalletFilter.all;
+
+  List<LedgerEntryEntity> _applyFilter(List<LedgerEntryEntity> entries) {
+    return switch (_filter) {
+      _WalletFilter.all => entries,
+      _WalletFilter.earned => entries.where((e) => e.isCredit).toList(),
+      _WalletFilter.spent => entries.where((e) => !e.isCredit).toList(),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,12 +65,40 @@ class WalletScreen extends StatelessWidget {
                 ),
                 const Divider(height: 1),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
                   child: Text(
                     'Histórico',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
+                if (history.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Wrap(
+                      spacing: 8,
+                      children: [
+                        FilterChip(
+                          label: const Text('Todos'),
+                          selected: _filter == _WalletFilter.all,
+                          onSelected: (_) =>
+                              setState(() => _filter = _WalletFilter.all),
+                        ),
+                        FilterChip(
+                          label: const Text('Ganhos'),
+                          selected: _filter == _WalletFilter.earned,
+                          onSelected: (_) =>
+                              setState(() => _filter = _WalletFilter.earned),
+                        ),
+                        FilterChip(
+                          label: const Text('Gastos'),
+                          selected: _filter == _WalletFilter.spent,
+                          onSelected: (_) =>
+                              setState(() => _filter = _WalletFilter.spent),
+                        ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 8),
                 if (history.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -91,7 +136,7 @@ class WalletScreen extends StatelessWidget {
                     ),
                   )
                 else
-                  ...history.map(_LedgerTile.new),
+                  ..._applyFilter(history).map(_LedgerTile.new),
               ],
             ),
             ),

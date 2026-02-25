@@ -9,8 +9,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/theme_notifier.dart';
 import 'package:omni_runner/domain/entities/coach_settings_entity.dart';
+import 'package:omni_runner/domain/entities/hr_zone.dart';
 import 'package:omni_runner/domain/repositories/i_coach_settings_repo.dart';
+import 'package:omni_runner/main.dart' show themeNotifier;
 
 /// Screen for toggling audio coach announcement categories.
 class SettingsScreen extends StatefulWidget {
@@ -71,11 +74,170 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onChanged: (v) => _update(_settings.copyWith(periodicEnabled: v)),
                 ),
                 const Divider(height: 32),
+                _header('Frequência Cardíaca'),
+                SwitchListTile(
+                  title: const Text('Alertas de zona de FC'),
+                  subtitle: const Text('Anuncia mudanças de zona por voz'),
+                  secondary: const Icon(Icons.favorite),
+                  value: _settings.hrZoneEnabled,
+                  onChanged: (v) => _update(_settings.copyWith(hrZoneEnabled: v)),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.monitor_heart),
+                  title: const Text('FC Máxima'),
+                  subtitle: Text(
+                    '${_settings.maxHr} bpm (usado para calcular zonas)',
+                  ),
+                  trailing: const Icon(Icons.edit, size: 18),
+                  onTap: () => _editMaxHr(),
+                ),
+                if (_settings.hrZoneEnabled) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Card(
+                      color: Colors.red.shade50,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Suas zonas de FC',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: Colors.red.shade800,
+                                )),
+                            const SizedBox(height: 8),
+                            ..._buildZoneRows(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                const Divider(height: 32),
+                _header('Aparência'),
+                ValueListenableBuilder<ThemeMode>(
+                  valueListenable: themeNotifier,
+                  builder: (_, mode, __) => Column(
+                    children: [
+                      RadioListTile<ThemeMode>(
+                        title: const Text('Seguir sistema'),
+                        secondary: const Icon(Icons.brightness_auto),
+                        value: ThemeMode.system,
+                        groupValue: mode,
+                        onChanged: (v) => themeNotifier.setMode(v!),
+                      ),
+                      RadioListTile<ThemeMode>(
+                        title: const Text('Claro'),
+                        secondary: const Icon(Icons.light_mode),
+                        value: ThemeMode.light,
+                        groupValue: mode,
+                        onChanged: (v) => themeNotifier.setMode(v!),
+                      ),
+                      RadioListTile<ThemeMode>(
+                        title: const Text('Escuro'),
+                        secondary: const Icon(Icons.dark_mode),
+                        value: ThemeMode.dark,
+                        groupValue: mode,
+                        onChanged: (v) => themeNotifier.setMode(v!),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 32),
                 _header('Auth Debug'),
                 const _AuthDebugCard(),
               ],
             ),
     );
+  }
+
+  Future<void> _editMaxHr() async {
+    final controller = TextEditingController(text: '${_settings.maxHr}');
+    final result = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('FC Máxima'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'BPM',
+                hintText: 'Ex: 190',
+                suffixText: 'bpm',
+              ),
+              autofocus: true,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Fórmula simples: 220 - sua idade.\n'
+              'Para um resultado mais preciso, faça um teste de esforço.',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final val = int.tryParse(controller.text);
+              if (val != null && val >= 100 && val <= 230) {
+                Navigator.pop(ctx, val);
+              }
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+    if (result != null) {
+      _update(_settings.copyWith(maxHr: result));
+    }
+  }
+
+  List<Widget> _buildZoneRows() {
+    final calc = HrZoneCalculator(maxHr: _settings.maxHr);
+    final zones = [
+      HrZone.zone1, HrZone.zone2, HrZone.zone3, HrZone.zone4, HrZone.zone5,
+    ];
+    final colors = [
+      Colors.blue, Colors.green, Colors.amber, Colors.orange, Colors.red,
+    ];
+    return zones.asMap().entries.map((e) {
+      final zone = e.value;
+      final color = colors[e.key];
+      final range = calc.bpmRangeFor(zone);
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          children: [
+            Container(
+              width: 10, height: 10,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(zone.label,
+                  style: const TextStyle(fontSize: 12)),
+            ),
+            if (range != null)
+              Text('${range.low}–${range.high} bpm',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  )),
+          ],
+        ),
+      );
+    }).toList();
   }
 
   Widget _header(String text) => Padding(

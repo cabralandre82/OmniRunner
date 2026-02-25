@@ -123,6 +123,20 @@ class AuthRepository {
     }
   }
 
+  Future<AuthFailure?> resetPassword({required String email}) async {
+    try {
+      await _ds.resetPassword(email: email);
+      AppLogger.info('resetPassword sent for $email', tag: _tag);
+      return null;
+    } on AuthFailure catch (f) {
+      AppLogger.warn('resetPassword failed: $f', tag: _tag);
+      return f;
+    } catch (e) {
+      AppLogger.error('resetPassword unexpected: $e', tag: _tag, error: e);
+      return AuthUnknownError(e.toString());
+    }
+  }
+
   Future<AuthFailure?> signOut() async {
     try {
       await _ds.signOut();

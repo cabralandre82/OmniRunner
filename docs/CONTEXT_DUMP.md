@@ -27573,5 +27573,37 @@ automaticamente um oponente compatível. Zero browsing.
 5. **Se ninguém na fila:**
    - Entra na fila (expira em 24h)
    - Polling a cada 20s (ajustado de 5s para respeitar rate limit)
+
+### WEARABLES-FIX-1: BLE HR e Export acessíveis na UI
+- Tela "Wearables e Saúde" (more_screen) transformada de informativa para funcional
+- Botão "Conectar sensor" leva ao DebugHrmScreen (scan BLE + connect + live BPM)
+- Botão "Exportar corrida" adicionado na TopBar do RunDetailsScreen
+- ExportScreen suporta GPX, TCX e FIT (todos os 3 formatos funcionais)
+
+### WEARABLES-FIX-2: Settings de FC e Zonas
+- SettingsScreen agora tem seção "Frequência Cardíaca"
+- Toggle on/off para alertas de zona de FC por voz
+- Editor de FC máxima (diálogo com validação 100-230 bpm)
+- Visualização das 5 zonas com faixas calculadas em tempo real
+- Zonas: Recuperação (50-60%), Aeróbico leve (60-70%), Aeróbico (70-80%), Limiar (80-90%), VO2 máx (90-100%)
+
+### AUDIT-FIX BATCH 2 (Sprint 25)
+- X-2: NoConnectionBanner global (connectivity_plus) integrado no HomeScreen
+- O-1: Login por email/senha como fallback universal (AuthRepository já suportava) + fluxo "Esqueci a senha" (resetPasswordForEmail via Supabase)
+- X-5: Versão dinâmica via package_info_plus no About dialog
+- X-6: Dark mode com ThemeNotifier (system/light/dark) persistido em SharedPreferences
+- V-4: Mensagens motivacionais dinâmicas na tela de verificação (corridas faltantes, trust score)
+- W-3: Filtro por tipo (Todos/Ganhos/Gastos) no histórico do wallet
+- M-6: Tooltip explicando cálculo do skill bracket no matchmaking
+- B-3: typeStr com switch exaustivo e snake_case correto para backend
+- T-2: Botão "Abrir Configurações" quando permissão GPS é permanentemente negada
+
+### WEARABLES-FIX-3: FIT Encoder
+- FitEncoder implementado em `lib/features/integrations_export/data/fit/fit_encoder.dart`
+- Formato binário completo com: file_id, event (start/stop), record (trackpoints), lap, session, activity
+- Conversões: semicircles (coordenadas), Garmin epoch (timestamps), scale+offset (altitude/distance/speed)
+- CRC-16 com tabela de lookup (FIT SDK nibble-processing)
+- 15 testes unitários cobrindo: header, CRC, idempotência, HR, null fields, empty route
+- ExportScreen agora habilita FIT como opção selecionável (não mais "em breve")
    - Quando alguém compatível entrar, match automático
 6. Usuário pode cancelar a qualquer momento

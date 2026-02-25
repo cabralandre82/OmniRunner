@@ -79,6 +79,11 @@ class MockAuthDataSource implements IAuthDataSource {
   }
 
   @override
+  Future<void> resetPassword({required String email}) async {
+    throw const AuthNotConfigured();
+  }
+
+  @override
   Future<void> signOut() async {
     throw const AuthNotConfigured();
   }

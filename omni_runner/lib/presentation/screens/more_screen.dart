@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/auth_repository.dart';
@@ -18,6 +19,7 @@ import 'package:omni_runner/presentation/screens/my_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/profile_screen.dart';
 import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_qr_hub_screen.dart';
+import 'package:omni_runner/features/wearables_ble/debug_hrm_screen.dart';
 
 /// Hub screen for secondary features: coaching, social, integrations, settings.
 ///
@@ -108,9 +110,9 @@ class MoreScreen extends StatelessWidget {
 
             _header(context, 'Configurações'),
             const _ActionTile(
-              icon: Icons.record_voice_over,
-              title: 'Áudio durante a corrida',
-              subtitle: 'Preferências de anúncio por voz',
+              icon: Icons.tune,
+              title: 'Configurações',
+              subtitle: 'Áudio, FC, tema e mais',
               pushScreen: SettingsScreen(),
             ),
           ],
@@ -132,13 +134,17 @@ class MoreScreen extends StatelessWidget {
           _ActionTile(
             icon: Icons.info_outline,
             title: 'Sobre',
-            subtitle: 'Omni Runner v1.0.0',
-            onTap: (ctx) => showAboutDialog(
-              context: ctx,
-              applicationName: 'Omni Runner',
-              applicationVersion: '1.0.0',
-              applicationLegalese: '\u00a9 2026 Omni Runner',
-            ),
+            subtitle: 'Omni Runner',
+            onTap: (ctx) async {
+              final info = await PackageInfo.fromPlatform();
+              if (!ctx.mounted) return;
+              showAboutDialog(
+                context: ctx,
+                applicationName: 'Omni Runner',
+                applicationVersion: '${info.version} (${info.buildNumber})',
+                applicationLegalese: '\u00a9 2026 Omni Runner',
+              );
+            },
           ),
 
           const SizedBox(height: 16),
@@ -392,38 +398,89 @@ class _ComingSoonTile extends StatelessWidget {
   }
 }
 
-/// Info screen about wearable/health integrations.
+/// Wearables & Health screen with actionable items.
 class _IntegrationsInfoScreen extends StatelessWidget {
   const _IntegrationsInfoScreen();
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('Wearables e Saúde')),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: const [
-          _InfoCard(
+        children: [
+          _ActionableCard(
             icon: Icons.bluetooth,
-            title: 'Monitor Cardíaco Bluetooth',
-            body: 'Conecte um monitor de frequência cardíaca (Garmin, Polar, '
-                'Wahoo) durante a corrida. O pareamento acontece '
-                'automaticamente ao iniciar o treino.',
+            iconColor: Colors.blue,
+            title: 'Sensor de Frequência Cardíaca',
+            body: 'Conecte uma cinta ou relógio BLE (Garmin HRM, Polar H10, '
+                'Wahoo TICKR, Coros). Os dados de FC aparecem em tempo real '
+                'durante a corrida.',
+            actionLabel: 'Conectar sensor',
+            actionIcon: Icons.bluetooth_searching,
+            onAction: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const DebugHrmScreen(),
+              ),
+            ),
           ),
-          SizedBox(height: 12),
-          _InfoCard(
+          const SizedBox(height: 12),
+          _ActionableCard(
             icon: Icons.favorite,
+            iconColor: Colors.red,
             title: 'Apple Health / Health Connect',
             body: 'Treinos, frequência cardíaca, passos e rotas GPS são '
                 'exportados automaticamente para Apple Health (iOS) ou '
                 'Health Connect (Android) após cada corrida.',
+            actionLabel: null,
+            onAction: null,
           ),
-          SizedBox(height: 12),
-          _InfoCard(
+          const SizedBox(height: 12),
+          _ActionableCard(
             icon: Icons.watch,
-            title: 'Apple Watch / WearOS',
-            body: 'Inicie corridas diretamente no relógio. As sessões '
-                'sincronizam automaticamente com o celular.',
+            iconColor: Colors.teal,
+            title: 'Apple Watch',
+            body: 'Inicie corridas diretamente no Apple Watch. As sessões '
+                'sincronizam automaticamente com o celular, incluindo '
+                'GPS e frequência cardíaca do relógio.',
+            actionLabel: null,
+            onAction: null,
+          ),
+          const SizedBox(height: 12),
+          _ActionableCard(
+            icon: Icons.file_upload_outlined,
+            iconColor: Colors.orange,
+            title: 'Exportar corridas',
+            body: 'Exporte suas corridas em GPX ou TCX para importar no '
+                'Garmin Connect, Strava, Coros, Suunto ou TrainingPeaks. '
+                'Acesse o botão "Exportar" no detalhe de cada corrida.',
+            actionLabel: null,
+            onAction: null,
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, size: 18,
+                    color: theme.colorScheme.outline),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'O sensor BLE conecta automaticamente ao iniciar a corrida '
+                    'se já foi pareado anteriormente.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -431,15 +488,23 @@ class _IntegrationsInfoScreen extends StatelessWidget {
   }
 }
 
-class _InfoCard extends StatelessWidget {
+class _ActionableCard extends StatelessWidget {
   final IconData icon;
+  final Color iconColor;
   final String title;
   final String body;
+  final String? actionLabel;
+  final IconData? actionIcon;
+  final VoidCallback? onAction;
 
-  const _InfoCard({
+  const _ActionableCard({
     required this.icon,
+    required this.iconColor,
     required this.title,
     required this.body,
+    required this.actionLabel,
+    required this.onAction,
+    this.actionIcon,
   });
 
   @override
@@ -451,15 +516,27 @@ class _InfoCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              Icon(icon,
-                  size: 20, color: Theme.of(context).colorScheme.primary),
-              const SizedBox(width: 8),
-              Text(title,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 15)),
+              Icon(icon, size: 22, color: iconColor),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 15)),
+              ),
             ]),
             const SizedBox(height: 8),
-            Text(body, style: const TextStyle(fontSize: 13)),
+            Text(body, style: const TextStyle(fontSize: 13, height: 1.4)),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: onAction,
+                  icon: Icon(actionIcon ?? Icons.arrow_forward, size: 18),
+                  label: Text(actionLabel!),
+                ),
+              ),
+            ],
           ],
         ),
       ),

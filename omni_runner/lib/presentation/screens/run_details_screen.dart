@@ -16,6 +16,7 @@ import 'package:omni_runner/domain/entities/workout_session_entity.dart';
 import 'package:omni_runner/domain/repositories/i_points_repo.dart';
 import 'package:omni_runner/presentation/map/map_style.dart';
 import 'package:omni_runner/presentation/map/polyline_builder.dart';
+import 'package:omni_runner/features/integrations_export/presentation/export_screen.dart';
 import 'package:omni_runner/presentation/widgets/invalidated_run_card.dart';
 import 'package:omni_runner/presentation/widgets/summary_metrics_panel.dart';
 
@@ -265,7 +266,15 @@ class _TopBar extends StatelessWidget {
           color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold,
         ),),
         const Spacer(),
-        const SizedBox(width: 48),
+        IconButton(
+          icon: const Icon(Icons.file_upload_outlined, color: Colors.white),
+          tooltip: 'Exportar corrida',
+          onPressed: () {
+            Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => ExportScreen(session: session),
+            ));
+          },
+        ),
       ],),
     );
   }

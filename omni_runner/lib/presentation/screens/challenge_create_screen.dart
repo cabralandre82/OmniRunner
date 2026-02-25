@@ -611,7 +611,11 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
           : null,
     );
 
-    final typeStr = _type == ChallengeType.group ? 'group' : 'oneVsOne';
+    final typeStr = switch (_type) {
+      ChallengeType.oneVsOne => 'one_vs_one',
+      ChallengeType.group => 'group',
+      ChallengeType.teamVsTeam => 'team_vs_team',
+    };
 
     if (!mounted) return;
 

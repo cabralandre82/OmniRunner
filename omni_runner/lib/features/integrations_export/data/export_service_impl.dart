@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:omni_runner/core/errors/integrations_failures.dart';
 import 'package:omni_runner/features/integrations_export/data/fit/fit_encoder.dart';
 import 'package:omni_runner/features/integrations_export/data/gpx/gpx_encoder.dart';
 import 'package:omni_runner/features/integrations_export/data/tcx/tcx_encoder.dart';
@@ -48,16 +47,12 @@ final class ExportServiceImpl implements IExportService {
           activityName: request.activityName,
         );
       case ExportFormat.fit:
-        try {
-          bytes = _fitEncoder.encode(
-            session: request.session,
-            route: request.route,
-            hrSamples: request.hrSamples,
-            activityName: request.activityName,
-          );
-        } on ExportNotImplemented {
-          rethrow;
-        }
+        bytes = _fitEncoder.encode(
+          session: request.session,
+          route: request.route,
+          hrSamples: request.hrSamples,
+          activityName: request.activityName,
+        );
     }
 
     final filename = _buildFilename(request);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart' as geo;
 
 import 'package:omni_runner/core/utils/format_pace.dart';
 import 'package:omni_runner/presentation/blocs/tracking/tracking_bloc.dart';
@@ -161,7 +162,10 @@ class _ActionButton extends StatelessWidget {
               'Permitir GPS', Icons.lock_open, Colors.orange,
               () => bloc.add(const RequestPermission()),
             )
-          : const SizedBox.shrink(),
+          : _btn(
+              'Abrir Configurações', Icons.settings, Colors.orange,
+              () => geo.Geolocator.openAppSettings(),
+            ),
       TrackingActive() => _btn(
           'Parar', Icons.stop, Colors.red,
           () => bloc.add(const StopTracking()),
