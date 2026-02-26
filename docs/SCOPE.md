@@ -101,6 +101,7 @@ visualizar metricas basicas e competir contra si mesmo atraves de um Ghost Runne
 | E7 | Park Segments | Segmentos com recordes (KOM-style) | ✅ |
 | E8 | Park Matchmaking | Prioriza adversários do mesmo parque | ✅ |
 | E9 | Matchmaking UX | Explicação, Strava required, park hint | ✅ |
+| E10 | Platform Approval | Assessorias precisam de aprovação da plataforma para ficarem visíveis | ✅ |
 
 **Impacto no MVP original:**
 - F1 (GPS Tracking) e F4 (Mapa ao vivo): permanecem no código mas inacessíveis na navegação
@@ -109,4 +110,4 @@ visualizar metricas basicas e competir contra si mesmo atraves de um Ghost Runne
 
 ---
 
-*Documento gerado na Sprint 0.1 — Atualizado em 26/02/2026 (Sprint 25.0.0)*
+*Documento gerado na Sprint 0.1 — Atualizado em 26/02/2026 (Sprint 25.0.0 + DECISAO 061)*

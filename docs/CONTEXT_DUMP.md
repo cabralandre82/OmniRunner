@@ -27813,3 +27813,32 @@ automaticamente um oponente compatível. Zero browsing.
 - `park_activities` (user_id, park_id, distance_m, start_time, display_name)
 - `park_leaderboard` (park_id, user_id, category, rank, value, period, display_name)
 - `park_segments` (id, park_id, name, length_m, record_holder_name, record_pace_sec_per_km)
+
+---
+
+#### S-5: Platform Approval de Assessorias (DECISAO 061)
+**Problema:** Qualquer staff podia criar uma assessoria e ela ficava imediatamente acessível. Sem curadoria.
+
+**Solução:**
+- `coaching_groups.approval_status` (pending_approval/approved/rejected/suspended) + `approval_reviewed_at`, `approval_reviewed_by`, `approval_reject_reason`
+- `profiles.platform_role` ('admin' para o dono da plataforma)
+- RPCs SECURITY DEFINER: `fn_platform_approve_assessoria`, `fn_platform_reject_assessoria`, `fn_platform_suspend_assessoria`
+- `fn_create_assessoria` agora insere com `approval_status = 'pending_approval'`
+- `fn_search_coaching_groups` e `fn_lookup_group_by_invite_code` filtram `approval_status = 'approved'` (exceto platform admin)
+- RLS policy `coaching_groups_platform_admin_read` para leitura completa pelo platform admin
+
+**Portal (Next.js):**
+- `/platform/assessorias` — página admin com stats (pendentes/aprovadas/rejeitadas/suspensas) + cards por assessoria + botões aprovar/rejeitar/suspender/reaprovar
+- `/platform/layout.tsx` — layout isolado com verificação `platform_role = 'admin'`
+- `actions.tsx` — componente client com `window.prompt` para motivo + `window.confirm` + fetch POST
+- `POST /api/platform/assessorias` — route handler que valida platform admin e executa UPDATE via admin client (service_role)
+- `middleware.ts` — atualizado para: (1) permitir acesso sem membership de staff se `platform_role = 'admin'`, (2) proteger rotas `/platform/*` contra non-admins
+- `sidebar.tsx` — link "Admin Plataforma" visível apenas para platform admin via prop `isPlatformAdmin`
+- `(portal)/layout.tsx`, `select-group/page.tsx`, `no-access/page.tsx` — redirect para `/platform/assessorias` se platform admin sem grupo
+
+**Flutter:**
+- `StaffDashboardScreen`: `_approvalStatus` e `_approvalRejectReason` lidos de `coaching_groups`. Quando `approval_status != 'approved'`, exibe tela dedicada (`_buildPlatformApprovalPending`) com ícone, mensagem e botão "Verificar status" por estado (pending/rejected/suspended)
+- `StaffSetupScreen`: `showDialog` pós-criação informando que a assessoria aguarda aprovação da plataforma
+
+**Migration:** `20260226110000_platform_approval_assessorias.sql`
+- Assessorias existentes foram marcadas como `approved` na migration (backward compatible)

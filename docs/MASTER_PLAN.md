@@ -822,6 +822,14 @@ Compra de créditos OmniCoins pelo portal agora funcional. MercadoPago como gate
 - TipBanner na lista de desafios explicando matchmaking
 - Aviso de Strava não conectado (challenges + matchmaking)
 
+**Platform Approval de Assessorias (DECISAO 061):**
+- `coaching_groups.approval_status` (pending_approval/approved/rejected/suspended)
+- `profiles.platform_role` ('admin') para o dono da plataforma
+- RPCs: `fn_platform_approve/reject/suspend_assessoria` (SECURITY DEFINER)
+- Portal: `/platform/assessorias` com dashboard de aprovação
+- Flutter: tela de status de aprovação no `StaffDashboardScreen`
+- `fn_search_coaching_groups` e `fn_lookup_group_by_invite_code` filtram apenas `approved`
+
 **Navegação:** Início | **Hoje** | Histórico | Mais (antes: Início | Correr | Histórico | Mais)
 
 **Tabelas Supabase necessárias:**
@@ -830,15 +838,21 @@ Compra de créditos OmniCoins pelo portal agora funcional. MercadoPago como gate
 - `park_leaderboard` (park_id, user_id, category, rank, value, period, display_name)
 - `park_segments` (id, park_id, name, length_m, record_holder_name, record_pace_sec_per_km)
 
-**Arquivos criados (7):**
+**Arquivos criados (13):**
 - `lib/presentation/screens/today_screen.dart`
 - `lib/features/parks/domain/park_entity.dart`
 - `lib/features/parks/data/park_detection_service.dart`
 - `lib/features/parks/data/parks_seed.dart`
 - `lib/features/parks/presentation/park_screen.dart`
 - `lib/features/parks/presentation/my_parks_screen.dart`
+- `supabase/migrations/20260226110000_platform_approval_assessorias.sql`
+- `portal/src/app/platform/layout.tsx`
+- `portal/src/app/platform/assessorias/page.tsx`
+- `portal/src/app/platform/assessorias/actions.tsx`
+- `portal/src/app/api/platform/assessorias/route.ts`
+- `portal/src/lib/supabase/admin.ts`
 
-**Arquivos modificados (9):**
+**Arquivos modificados (14+):**
 - `lib/presentation/screens/home_screen.dart` (TrackingScreen → TodayScreen, ícone "Hoje")
 - `lib/presentation/screens/athlete_dashboard_screen.dart` (+card Parques)
 - `lib/presentation/screens/challenges_list_screen.dart` (Strava banner + matchmaking tip)
@@ -847,7 +861,12 @@ Compra de créditos OmniCoins pelo portal agora funcional. MercadoPago como gate
 - `lib/features/strava/presentation/strava_connect_controller.dart` (+importStravaHistory, +httpClient)
 - `lib/core/service_locator.dart` (+httpClient no controller)
 - `lib/core/tips/first_use_tips.dart` (+matchmakingHowTo, +stravaConnect)
+- `portal/src/middleware.ts` (+platform admin bypass)
+- `portal/src/components/sidebar.tsx` (+link admin plataforma)
+- `portal/src/app/(portal)/layout.tsx` (+redirect platform admin)
+- `portal/src/app/select-group/page.tsx` (+redirect platform admin)
+- `portal/src/app/no-access/page.tsx` (+redirect platform admin)
 
 ---
 
-*Documento gerado na Sprint 1.2*
+*Documento gerado na Sprint 1.2 — Atualizado em 26/02/2026 (DECISAO 061)*

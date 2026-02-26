@@ -220,7 +220,7 @@ DESAFIOS (4)
 └── challenge_run_bindings — Auditoria sessão↔desafio
 
 COACHING — Assessoria (12)
-├── coaching_groups        — Grupos de assessoria (invite_code, invite_enabled)
+├── coaching_groups        — Grupos de assessoria (invite_code, invite_enabled, approval_status)
 ├── coaching_members       — Membros (admin_master/professor/assistente/atleta)
 ├── coaching_invites       — Convites para grupos de coaching
 ├── coaching_token_inventory — Estoque de tokens por grupo (never negative)
@@ -391,6 +391,8 @@ billing_purchases (id)
 | `supabase/migrations/20260224000002_verification_checklist_rpc.sql` | Updated eval_athlete_verification (N=7, trust=80, scoring recalibrado) + get_verification_state RPC (read-only checklist + counts + thresholds) |
 | `supabase/migrations/20260224000003_verification_monetization_gate.sql` | Monetization gate: RLS INSERT policy atualizada (challenges); DB triggers `fn_enforce_verified_stake_gate` (challenges INSERT/UPDATE) + `fn_enforce_verified_join_gate` (challenge_participants INSERT); impossível burlar mesmo com service_role |
 | `supabase/migrations/20260224000004_verification_cron.sql` | pg_cron schedule: `eval-verification-cron` diário 03:00 UTC via pg_net HTTP |
+| `supabase/migrations/20260226100000_join_request_approval_required.sql` | Approval obrigatório para join requests: requested_role column, fn_request_join com p_role, fn_approve_join_request role-aware, DROP fn_join_as_professor, status 'cancelled' |
+| `supabase/migrations/20260226110000_platform_approval_assessorias.sql` | Platform approval: profiles.platform_role, coaching_groups.approval_status + review columns, fn_platform_approve/reject/suspend, fn_search/fn_lookup filtram approved, RLS platform_admin_read. DECISAO 061 |
 
 ---
 
@@ -424,7 +426,7 @@ billing_purchases (id)
 | `leaderboard_entries` | Via leaderboard | Server | Server | - |
 | `events` | Todos | Auth | Server | - |
 | `event_participations` | Próprio + Co-participantes | Próprio | Server | - |
-| `coaching_groups` | Membros | Coach | Coach | - |
+| `coaching_groups` | Membros + Platform Admin | Coach | Coach | - |
 | `coaching_members` | Membros do grupo | Server | Server | - |
 | `coaching_invites` | Convidado ou Coach/Assistant | Server | Convidado | - |
 | `coaching_token_inventory` | Staff do grupo | Server/RPC | Server/RPC | - |
@@ -1282,10 +1284,12 @@ cd portal/ && npm run build && vercel --prod
 | `fn_fulfill_purchase(purchase_id)` | paid → fulfilled + fn_credit_institution |
 | `fn_credit_institution(group_id, amount, ...)` | Audit + inventory increment |
 | `fn_switch_assessoria(user_id, group_id)` | Burn coins + switch group |
-| `fn_search_coaching_groups(query)` | Search by name ou UUID array |
-| `fn_create_assessoria(name, ...)` | Create group + admin + invite_code |
-| `fn_join_as_professor(group_id)` | Join group as professor |
-| `fn_lookup_group_by_invite_code(code)` | Lookup by 8-char code |
+| `fn_search_coaching_groups(query)` | Search by name ou UUID array (filtra approved) |
+| `fn_create_assessoria(name, ...)` | Create group + admin + invite_code (status: pending_approval) |
+| `fn_lookup_group_by_invite_code(code)` | Lookup by 8-char code (filtra approved) |
+| `fn_platform_approve_assessoria(group_id)` | Platform admin aprova assessoria |
+| `fn_platform_reject_assessoria(group_id, reason)` | Platform admin rejeita assessoria |
+| `fn_platform_suspend_assessoria(group_id, reason)` | Platform admin suspende assessoria |
 | `get_billing_limits(group_id)` | Daily limits com fallback defaults |
 | `check_daily_token_usage(group_id, type)` | Remaining capacity today |
 
@@ -1300,4 +1304,4 @@ cd portal/ && npm run build && vercel --prod
 
 ---
 
-*Gerado em 2026-02-18, atualizado em 2026-02-26 (Sprint 25.0.0) — 65 tabelas, 27 Edge Functions, 34 migrations*
+*Gerado em 2026-02-18, atualizado em 2026-02-26 (Sprint 25.0.0 + Platform Approval) — 65 tabelas, 27 Edge Functions, 36 migrations, DECISAO 061*

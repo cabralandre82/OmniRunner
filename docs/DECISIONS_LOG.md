@@ -1164,3 +1164,59 @@ usam Supabase direto ou parametros passados.
 (buscar todos membros do grupo) mas e necessario para a tela de detalhes funcionar.
 
 ---
+
+## DECISAO 061 — Fluxo de aprovacao de assessorias pela plataforma
+
+**Data:** 2026-02-26
+**Contexto:** Qualquer pessoa com role `ASSESSORIA_STAFF` podia criar uma assessoria via
+`fn_create_assessoria` e ela ficava imediatamente visivel para atletas buscarem e entrarem.
+Nao havia controle de qualidade nem curadoria por parte da plataforma.
+
+**Decisao:** Toda assessoria criada agora inicia com `approval_status = 'pending_approval'`
+e so se torna visivel/operacional apos aprovacao do administrador da plataforma.
+
+**Mecanismo:**
+1. `coaching_groups` recebeu colunas: `approval_status`, `approval_reviewed_at`,
+   `approval_reviewed_by`, `approval_reject_reason`
+2. `profiles` recebeu coluna `platform_role` (valor `'admin'` para o dono da plataforma)
+3. Novas RPCs SECURITY DEFINER:
+   - `fn_platform_approve_assessoria(group_id)` — marca como `approved`
+   - `fn_platform_reject_assessoria(group_id, reason)` — marca como `rejected`
+   - `fn_platform_suspend_assessoria(group_id, reason)` — marca como `suspended`
+4. `fn_search_coaching_groups` e `fn_lookup_group_by_invite_code` filtram
+   `approval_status = 'approved'` (exceto para platform admin)
+5. `fn_create_assessoria` agora insere com `approval_status = 'pending_approval'`
+6. Assessorias existentes foram marcadas como `approved` automaticamente na migration
+
+**Portal (Next.js):**
+- Nova rota `/platform/assessorias` com layout dedicado para platform admin
+- API route `POST /api/platform/assessorias` para approve/reject/suspend
+- `middleware.ts` atualizado para permitir acesso de platform admin sem membership de staff
+- Sidebar do portal mostra link "Admin Plataforma" para quem tem `platform_role = 'admin'`
+
+**Flutter:**
+- `StaffDashboardScreen`: exibe tela de "Aguardando aprovacao" / "Nao aprovada" / "Suspensa"
+  em vez do dashboard quando `approval_status != 'approved'`
+- `StaffSetupScreen`: dialog pos-criacao informando que a assessoria aguarda aprovacao
+
+**Arquivos criados (6):**
+- `portal/src/app/platform/layout.tsx`
+- `portal/src/app/platform/assessorias/page.tsx`
+- `portal/src/app/platform/assessorias/actions.tsx`
+- `portal/src/app/api/platform/assessorias/route.ts`
+- `portal/src/lib/supabase/admin.ts`
+- `omni_runner/supabase/migrations/20260226110000_platform_approval_assessorias.sql`
+
+**Arquivos modificados (7):**
+- `portal/src/middleware.ts` (+platform admin bypass)
+- `portal/src/components/sidebar.tsx` (+link admin plataforma)
+- `portal/src/app/(portal)/layout.tsx` (+redirect platform admin)
+- `portal/src/app/select-group/page.tsx` (+redirect platform admin)
+- `portal/src/app/no-access/page.tsx` (+redirect platform admin)
+- `omni_runner/lib/presentation/screens/staff_dashboard_screen.dart` (+tela approval pending)
+- `omni_runner/lib/presentation/screens/staff_setup_screen.dart` (+dialog pos-criacao)
+
+**Risco:** Baixo. Assessorias existentes foram migradas como `approved`. Novas assessorias
+ficam bloqueadas ate aprovacao manual. RPCs protegidas por `platform_role = 'admin'`.
+
+---

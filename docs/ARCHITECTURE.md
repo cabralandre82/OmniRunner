@@ -276,8 +276,8 @@ ParkDetectionService
 
 | Domínio | Tabelas |
 |---------|---------|
-| Auth/Profile | `profiles`, `auth.users` |
-| Coaching | `coaching_groups`, `coaching_members`, `coaching_invites`, `coaching_join_requests` |
+| Auth/Profile | `profiles` (+ `platform_role`), `auth.users` |
+| Coaching | `coaching_groups` (+ `approval_status`), `coaching_members`, `coaching_invites`, `coaching_join_requests` |
 | Tracking | `sessions`, `session_points` |
 | Challenges | `challenges`, `challenge_participants`, `challenge_results` |
 | Championships | `championships`, `championship_templates`, `championship_participants`, `championship_invitations` |
@@ -303,6 +303,9 @@ ParkDetectionService
 | `fn_remove_member` | Staff remove membro (limpa profile) |
 | `fn_search_coaching_groups` | Busca assessorias por nome |
 | `fn_lookup_group_by_invite_code` | Busca por código de convite |
+| `fn_platform_approve_assessoria` | Platform admin aprova assessoria |
+| `fn_platform_reject_assessoria` | Platform admin rejeita assessoria |
+| `fn_platform_suspend_assessoria` | Platform admin suspende assessoria |
 | `fn_join_as_professor` | Staff entra como professor |
 | `fn_fulfill_purchase` | Processa compra (atomic credit allocation) |
 | `release_pending_to_balance` | Clearing: libera pendentes → disponível |
@@ -406,6 +409,7 @@ Retry: 3x exponential backoff em chamadas críticas (auth, create assessoria)
 | F22 — Today Tab ("Hoje") | presentation/screens/today_screen | Streak, CTA, recap, comparison, journal | ✅ |
 | F23 — Parks & Leaderboards | features/parks | Detection, tiers, community, segments | ✅ |
 | F24 — Park Matchmaking | presentation/screens/matchmaking_screen | Preferred park auto-detect, priority match | ✅ |
+| F25 — Platform Approval | portal/platform + migration | Assessorias pending/approved/rejected/suspended | ✅ |
 
 ---
 
@@ -438,7 +442,10 @@ Next.js portal. Stripe (card/pix/boleto). Auto top-up. Refund. Nunca no app mobi
 ### 12.9 Parks Context
 Detecção de parque via GPS (ray-casting polygon), leaderboards multi-tier (Rei/Elite/Destaque/Pelotão/Frequentador), 6 categorias de ranking (pace/distância/frequência/streak/evolução/maior corrida), comunidade por parque ("Quem corre aqui"), segmentos com recordes, matchmaking por parque preferido, shadow racing (futuro). Seed inicial com 10 parques brasileiros. Entities: `ParkEntity`, `ParkLeaderboardEntry`, `ParkActivityEntity`, `ParkSegmentEntity`. UI: `ParkScreen` (tabs: Ranking/Comunidade/Segmentos), `MyParksScreen`.
 
-### 12.10 Verification Context (Atleta Verificado)
+### 12.10 Platform Admin Context
+Aprovação de assessorias pela plataforma. Toda assessoria criada inicia como `pending_approval`. O dono da plataforma (`profiles.platform_role = 'admin'`) aprova, rejeita ou suspende via portal (`/platform/assessorias`). RPCs: `fn_platform_approve_assessoria`, `fn_platform_reject_assessoria`, `fn_platform_suspend_assessoria`. Funções de busca (`fn_search_coaching_groups`, `fn_lookup_group_by_invite_code`) filtram `approval_status = 'approved'`. Middleware do portal permite acesso de platform admin sem membership de staff. Flutter: `StaffDashboardScreen` exibe estado de aprovação; `StaffSetupScreen` informa pós-criação.
+
+### 12.11 Verification Context (Atleta Verificado)
 State machine de verificação de atleta (`athlete_verification` table). UNVERIFIED→CALIBRATING→MONITORED→VERIFIED→DOWNGRADED. Gate de monetização: stake>0 exige VERIFIED. Trust score (0..100) computado server-side. ZERO override admin. Avaliação via RPC SECURITY DEFINER `eval_athlete_verification` (thresholds: N=7, trust>=80). Leitura via RPC `get_verification_state` (checklist booleans + contagens). EF `eval-athlete-verification` (POST, JWT, idempotente). RLS: own-read-only. Enforcement: 4 camadas — Flutter UX gate (verification_gate.dart modal) + EF validation + RLS INSERT policy + DB triggers (`trg_challenges_verified_stake_gate`, `trg_participants_verified_join_gate`) que bloqueiam mesmo service_role. Flutter: `AthleteVerificationEntity`, `VerificationBloc` (load/eval), `AthleteVerificationScreen` (status+progress+checklist), gate integrado em `ChallengeCreateScreen._submit()` e `ChallengeDetailsScreen._AcceptDeclineCard._onAccept()`. Reavaliação automática: event-driven (SyncRepo→verify-session→eval RPC fire-and-forget) + cron diário (`eval-verification-cron` EF via pg_cron 03:00 UTC, batch 100 candidatos).
 
 ---
@@ -506,4 +513,4 @@ SECURITY DEFINER + validações server-side.
 
 ---
 
-*Documento atualizado em 26/02/2026 — Sprint 25.0.0 (Strava-Only + Parks)*
+*Documento atualizado em 26/02/2026 — Sprint 25.0.0 (Strava-Only + Parks + Platform Approval)*
