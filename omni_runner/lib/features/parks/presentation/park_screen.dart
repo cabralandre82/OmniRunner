@@ -73,7 +73,8 @@ class _ParkScreenState extends State<ParkScreen>
     } on Exception catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = 'Ainda não há dados para este parque. '
+              'Corra aqui e seja o primeiro no ranking!';
           _loading = false;
         });
       }

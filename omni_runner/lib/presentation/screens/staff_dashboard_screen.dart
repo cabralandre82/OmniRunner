@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/logging/logger.dart';
@@ -17,6 +18,7 @@ import 'package:omni_runner/presentation/screens/staff_credits_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_disputes_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_join_requests_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_performance_screen.dart';
+import 'package:omni_runner/presentation/screens/support_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_qr_hub_screen.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 
@@ -284,13 +286,17 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
   }
 
   void _openPortal() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Portal de Assessorias em breve. '
-            'Acompanhe as novidades pelo app.'),
-        duration: Duration(seconds: 3),
-      ),
+    launchUrl(
+      Uri.parse('https://omnirunner.app'),
+      mode: LaunchMode.externalApplication,
     );
+  }
+
+  void _openSupport() {
+    if (_groupId.isEmpty) return;
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => SupportScreen(groupId: _groupId),
+    ));
   }
 
   // ── Build ────────────────────────────────────────────────────────────────
@@ -642,6 +648,14 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                     bgColor: Colors.blue.shade50,
                     iconColor: Colors.blue.shade700,
                     onTap: _openPortal,
+                  ),
+                  _StaffCard(
+                    icon: Icons.support_agent,
+                    title: 'Suporte',
+                    subtitle: 'Falar com a equipe',
+                    bgColor: Colors.teal.shade50,
+                    iconColor: Colors.teal.shade700,
+                    onTap: _openSupport,
                   ),
                 ],
               ),

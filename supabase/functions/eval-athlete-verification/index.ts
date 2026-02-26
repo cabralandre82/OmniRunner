@@ -127,13 +127,15 @@ serve(async (req: Request) => {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - RECENT_WINDOW_DAYS);
 
-    // Count verified sessions
+    const MIN_VALID_DISTANCE_M = 1000;
+
+    // Count verified sessions (only real runs ≥ 1 km)
     const { count: verifiedCount } = await db
       .from("sessions")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .eq("is_verified", true)
-      .gte("total_distance_m", 200);
+      .gte("total_distance_m", MIN_VALID_DISTANCE_M);
 
     // Count recent flagged sessions
     const { count: recentFlaggedCount } = await db
@@ -149,7 +151,7 @@ serve(async (req: Request) => {
       .select("total_distance_m")
       .eq("user_id", user.id)
       .eq("is_verified", true)
-      .gte("total_distance_m", 200);
+      .gte("total_distance_m", MIN_VALID_DISTANCE_M);
 
     const distances: number[] = (distRows ?? []).map(
       (r: { total_distance_m: number }) => r.total_distance_m,

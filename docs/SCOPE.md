@@ -117,6 +117,18 @@ visualizar metricas basicas e competir contra si mesmo atraves de um Ghost Runne
 | E13 | Guided Onboarding | Tour de 6 slides para novos atletas (pós-signup, 1x) | ✅ |
 | E14 | Polish / UX | Shimmer loading, confetti, empty/error states, haptics, page transitions | ✅ |
 
+### Sprint 25.0.0 (cont.) — Bugfixes, Suporte, Cleanup (26/02/2026)
+
+| # | Funcionalidade | Descrição | Status |
+|---|---|---|---|
+| E15 | Bugfix: Nome na home | Dashboard mostrava email ao invés de nome; fallback inteligente | ✅ |
+| E16 | Bugfix: Wrapped/DNA/Liga | Erros genéricos substituídos por estados amigáveis (dados insuficientes) | ✅ |
+| E17 | Bugfix: Parques | Erro técnico → mensagem amigável; lista expandida (10→40+ parques) + busca | ✅ |
+| E18 | Bugfix: Verificação | Distância mínima para corrida válida aumentada de 200m para 1km | ✅ |
+| E19 | Cleanup legado | Removidos: Wearables/Saúde, Anúncios por Voz, FC (tudo via Strava) | ✅ |
+| E20 | Portal assessoria | Botão Portal abre https://omnirunner.app ao invés de "em breve" | ✅ |
+| E21 | Suporte assessoria ↔ plataforma | Tickets de suporte no app (staff) + painel admin no portal | ✅ |
+
 ---
 
-*Documento gerado na Sprint 0.1 — Atualizado em 26/02/2026 (Sprint 25.0.0 + DECISAO 061-075)*
+*Documento gerado na Sprint 0.1 — Atualizado em 26/02/2026 (Sprint 25.0.0 + DECISAO 061-076)*

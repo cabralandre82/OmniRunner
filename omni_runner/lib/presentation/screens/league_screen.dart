@@ -64,7 +64,8 @@ class _LeagueScreenState extends State<LeagueScreen> {
       AppLogger.warn('League load failed: $e', tag: _tag);
       setState(() {
         _loading = false;
-        _error = 'Não foi possível carregar a liga';
+        _season = null;
+        _ranking = [];
       });
     }
   }

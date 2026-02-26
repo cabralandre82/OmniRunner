@@ -1866,3 +1866,92 @@ aplicá-los sistematicamente nas telas mais acessadas.
 - `lib/presentation/screens/athlete_championships_screen.dart`
 
 ---
+
+## DECISÃO 076 — Bugfixes, Cleanup Legado, Suporte Assessoria ↔ Plataforma
+
+**Data:** 26/02/2026
+**Contexto:** Testes em device real revelaram bugs e features legadas sem sentido
+no fluxo atual (Strava-only).
+
+### Bugfixes
+
+1. **Nome na home** — `_loadDisplayName` agora detecta se `display_name` é um
+   email e extrai apenas a parte local capitalizada. EF `complete-social-profile`
+   também atualizado para não salvar email como nome.
+
+2. **Wrapped / DNA / Liga** — Erros de EF (network, 500, etc.) agora direcionam
+   para estado "dados insuficientes" ao invés de mostrar ícone de erro genérico.
+
+3. **Parques** — Mensagem técnica substituída por mensagem amigável. Lista
+   expandida de 10 para 40+ parques brasileiros (20 cidades). Adicionado campo
+   de busca por nome, cidade ou estado.
+
+4. **Verificação** — Distância mínima para "corrida válida" aumentada de 200m
+   para 1km na EF `eval-athlete-verification`, evitando que caminhadas curtas
+   contem como corridas.
+
+### Cleanup Legado
+
+Removidos do app (não fazem sentido com Strava como fonte única):
+- Aba "Wearables e Saúde" no menu Mais
+- Seção "Anúncios por voz" nas Configurações
+- Seção "Frequência Cardíaca" nas Configurações
+- Classes mortas: `_IntegrationsInfoScreen`, `_ActionableCard`, `_editMaxHr`,
+  `_buildZoneRows`
+
+### Portal Assessoria
+
+- Botão "Portal" no staff dashboard agora abre `https://omnirunner.app` no
+  navegador via `url_launcher` (antes mostrava "em breve").
+
+### Suporte Assessoria ↔ Plataforma
+
+**Modelo:** sistema de tickets com chat bidirecional.
+
+**Banco de dados:**
+- `support_tickets` (id, group_id, subject, status, timestamps)
+- `support_messages` (id, ticket_id, sender_id, sender_role, body, created_at)
+- Trigger `trg_support_message_touch` atualiza `updated_at` do ticket
+- RLS: staff lê/escreve do seu grupo; platform_admin lê/escreve todos
+
+**App (assessoria staff):**
+- `SupportScreen` — lista de tickets, FAB "Novo chamado", dialog com assunto +
+  mensagem, pull-to-refresh
+- `SupportTicketScreen` — thread estilo chat, bolhas diferenciadas por role,
+  barra de envio, indicador de chamado encerrado
+- Botão "Suporte" adicionado ao staff dashboard
+
+**Portal (admin plataforma):**
+- `/platform/support` — lista com filtros (todos/abertos/respondidos/fechados)
+- `/platform/support/[id]` — thread de chat + enviar + fechar + reabrir
+- API route `/api/platform/support` (reply, close, reopen)
+- Link "Suporte" na sidebar do admin
+
+**Fluxo:** staff abre → status:open → admin responde → status:answered →
+staff responde → status:open → admin fecha → status:closed (reabrir possível).
+
+### Arquivos criados:
+- `supabase/migrations/20260226120000_support_tickets.sql`
+- `lib/presentation/screens/support_screen.dart`
+- `lib/presentation/screens/support_ticket_screen.dart`
+- `portal/src/app/platform/support/page.tsx`
+- `portal/src/app/platform/support/[id]/page.tsx`
+- `portal/src/app/platform/support/[id]/ticket-chat.tsx`
+- `portal/src/app/api/platform/support/route.ts`
+
+### Arquivos modificados:
+- `lib/presentation/screens/athlete_dashboard_screen.dart`
+- `lib/presentation/screens/staff_dashboard_screen.dart`
+- `lib/presentation/screens/more_screen.dart`
+- `lib/presentation/screens/settings_screen.dart`
+- `lib/presentation/screens/wrapped_screen.dart`
+- `lib/presentation/screens/running_dna_screen.dart`
+- `lib/presentation/screens/league_screen.dart`
+- `lib/features/parks/presentation/park_screen.dart`
+- `lib/features/parks/presentation/my_parks_screen.dart`
+- `lib/features/parks/data/parks_seed.dart`
+- `supabase/functions/complete-social-profile/index.ts`
+- `supabase/functions/eval-athlete-verification/index.ts`
+- `portal/src/app/platform/platform-sidebar.tsx`
+
+---

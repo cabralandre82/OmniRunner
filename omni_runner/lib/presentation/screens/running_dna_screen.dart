@@ -68,7 +68,7 @@ class _RunningDnaScreenState extends State<RunningDnaScreen> {
       AppLogger.warn('DNA load failed: $e', tag: _tag);
       setState(() {
         _loading = false;
-        _error = 'Não foi possível gerar seu DNA de corredor';
+        _insufficientReason = 'no_data';
       });
     }
   }

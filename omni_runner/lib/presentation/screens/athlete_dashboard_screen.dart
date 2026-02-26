@@ -86,9 +86,14 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
           .eq('id', uid)
           .maybeSingle();
       if (mounted && row != null) {
-        setState(() {
-          _displayName = row['display_name'] as String?;
-        });
+        var name = row['display_name'] as String?;
+        if (name != null && name.contains('@')) {
+          name = name.split('@').first;
+          if (name.isNotEmpty) {
+            name = name[0].toUpperCase() + name.substring(1);
+          }
+        }
+        setState(() => _displayName = name);
       }
     } catch (_) {}
   }

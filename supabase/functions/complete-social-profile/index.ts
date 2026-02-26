@@ -43,11 +43,22 @@ function detectProvider(user: { id: string; [key: string]: unknown }): string {
 
 function extractDisplayName(user: { id: string; [key: string]: unknown }): string {
   const meta = user.user_metadata as Record<string, unknown> | undefined;
-  return (
+  let name =
     (meta?.full_name as string) ??
     (meta?.name as string) ??
-    "Runner"
-  );
+    null;
+
+  if (!name || name.includes("@")) {
+    const email = (user as Record<string, unknown>).email as string | undefined;
+    if (email) {
+      const local = email.split("@")[0];
+      name = local.charAt(0).toUpperCase() + local.slice(1);
+    } else {
+      name = "Runner";
+    }
+  }
+
+  return name;
 }
 
 function extractAvatarUrl(user: { id: string; [key: string]: unknown }): string | null {

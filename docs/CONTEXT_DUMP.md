@@ -27928,3 +27928,35 @@ Tour de 6 slides para novos atletas, integrado ao AuthGate:
 - Dashboard personalizado com nome do atleta + fade-in stagger
 - HapticFeedback em cards e ações sociais
 - Pull-to-refresh em FriendsScreen
+
+---
+
+## Sprint — Bugfixes + Cleanup + Suporte (26/02/2026)
+
+**Status:** CONCLUÍDA
+**Ref:** DECISÃO 076
+
+### Bugfixes corrigidos
+
+1. Nome na home mostrava email → fallback inteligente (extrai parte local)
+2. Wrapped/DNA/Liga mostravam erro genérico → estado "dados insuficientes"
+3. Parques: erro técnico → mensagem amigável; 10→40+ parques; busca adicionada
+4. Verificação: distância mínima 200m→1km (caminhadas não contam)
+
+### Cleanup legado (Strava-only)
+
+- Removida aba Wearables/Saúde do menu Mais
+- Removidas seções Anúncios por Voz e FC das Configurações
+- Removido dead code (_IntegrationsInfoScreen, _editMaxHr, _buildZoneRows)
+
+### Portal assessoria
+
+- Botão Portal agora abre https://omnirunner.app (antes: "em breve")
+
+### Suporte assessoria ↔ plataforma
+
+- DB: support_tickets + support_messages (RLS completo)
+- App: SupportScreen (lista) + SupportTicketScreen (chat) no staff dashboard
+- Portal: /platform/support (lista + filtros) + /platform/support/[id] (chat)
+- API: /api/platform/support (reply, close, reopen)
+- Fluxo: open → answered → open → closed (com reabrir)

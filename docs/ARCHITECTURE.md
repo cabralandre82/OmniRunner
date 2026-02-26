@@ -52,7 +52,7 @@
 │   Supabase Backend   │              │    Portal B2B        │
 │                      │              │    (Next.js)         │
 │  PostgreSQL (RLS)    │              │                      │
-│  41 Edge Functions   │              │  12 páginas          │
+│  41 Edge Functions   │              │  14 páginas          │
 │  8 SQL Migrations    │              │  Stripe checkout     │
 │  RPCs (SECURITY DEF) │              │  RBAC middleware     │
 │  pg_cron schedules   │              │  SSR auth            │
@@ -297,6 +297,7 @@ ParkDetectionService
 | Parks | `park_activities`, `park_leaderboard`, `park_segments` |
 | Notifications | `notification_log`, `push_tokens` |
 | Friends | `friendships` |
+| Support | `support_tickets`, `support_messages` |
 
 ### 8.2 RPC Functions (SECURITY DEFINER)
 

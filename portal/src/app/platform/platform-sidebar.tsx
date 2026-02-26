@@ -50,6 +50,16 @@ export function PlatformSidebar({ email }: { email: string }) {
           Assessorias
         </Link>
         <Link
+          href="/platform/support"
+          className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+            pathname.startsWith("/platform/support")
+              ? "bg-red-50 text-red-700"
+              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          }`}
+        >
+          Suporte
+        </Link>
+        <Link
           href="/dashboard"
           className="block rounded-lg px-3 py-2.5 text-sm font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600"
         >

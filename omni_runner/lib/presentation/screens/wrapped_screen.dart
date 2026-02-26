@@ -90,7 +90,7 @@ class _WrappedScreenState extends State<WrappedScreen> {
       AppLogger.warn('Wrapped load failed: $e', tag: _tag);
       setState(() {
         _loading = false;
-        _error = 'Não foi possível gerar sua retrospectiva';
+        _insufficientReason = 'no_data';
       });
     }
   }

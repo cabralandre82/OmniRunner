@@ -7,12 +7,9 @@ import 'package:omni_runner/core/auth/auth_repository.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
-import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_bloc.dart';
-import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_event.dart';
 import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_bloc.dart';
 import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_event.dart';
 import 'package:omni_runner/presentation/screens/auth_gate.dart';
-import 'package:omni_runner/presentation/screens/coaching_groups_screen.dart';
 import 'package:omni_runner/presentation/widgets/login_required_sheet.dart';
 
 import 'package:omni_runner/presentation/blocs/friends/friends_bloc.dart';
@@ -24,7 +21,7 @@ import 'package:omni_runner/presentation/screens/profile_screen.dart';
 import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_qr_hub_screen.dart';
 import 'package:omni_runner/presentation/screens/partner_assessorias_screen.dart';
-import 'package:omni_runner/features/wearables_ble/debug_hrm_screen.dart';
+
 
 /// Hub screen for secondary features: coaching, social, integrations, settings.
 ///
@@ -122,19 +119,11 @@ class MoreScreen extends StatelessWidget {
           ),
 
           if (!_isStaff) ...[
-            _header(context, 'Integrações'),
-            const _ActionTile(
-              icon: Icons.watch,
-              title: 'Wearables e Saúde',
-              subtitle: 'Monitor cardíaco, Apple Health, Health Connect',
-              pushScreen: _IntegrationsInfoScreen(),
-            ),
-
             _header(context, 'Configurações'),
             const _ActionTile(
               icon: Icons.tune,
               title: 'Configurações',
-              subtitle: 'Áudio, FC, tema e mais',
+              subtitle: 'Strava, tema e unidades',
               pushScreen: SettingsScreen(),
             ),
           ],
@@ -449,148 +438,3 @@ class _ComingSoonTile extends StatelessWidget {
   }
 }
 
-/// Wearables & Health screen with actionable items.
-class _IntegrationsInfoScreen extends StatelessWidget {
-  const _IntegrationsInfoScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(title: const Text('Wearables e Saúde')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _ActionableCard(
-            icon: Icons.bluetooth,
-            iconColor: Colors.blue,
-            title: 'Sensor de Frequência Cardíaca',
-            body: 'Conecte uma cinta ou relógio BLE (Garmin HRM, Polar H10, '
-                'Wahoo TICKR, Coros). Os dados de FC aparecem em tempo real '
-                'durante a corrida.',
-            actionLabel: 'Conectar sensor',
-            actionIcon: Icons.bluetooth_searching,
-            onAction: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const DebugHrmScreen(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          _ActionableCard(
-            icon: Icons.favorite,
-            iconColor: Colors.red,
-            title: 'Apple Health / Health Connect',
-            body: 'Treinos, frequência cardíaca, passos e rotas GPS são '
-                'exportados automaticamente para Apple Health (iOS) ou '
-                'Health Connect (Android) após cada corrida.',
-            actionLabel: null,
-            onAction: null,
-          ),
-          const SizedBox(height: 12),
-          _ActionableCard(
-            icon: Icons.watch,
-            iconColor: Colors.teal,
-            title: 'Apple Watch',
-            body: 'Inicie corridas diretamente no Apple Watch. As sessões '
-                'sincronizam automaticamente com o celular, incluindo '
-                'GPS e frequência cardíaca do relógio.',
-            actionLabel: null,
-            onAction: null,
-          ),
-          const SizedBox(height: 12),
-          _ActionableCard(
-            icon: Icons.file_upload_outlined,
-            iconColor: Colors.orange,
-            title: 'Exportar corridas',
-            body: 'Exporte suas corridas em GPX ou TCX para importar no '
-                'Garmin Connect, Strava, Coros, Suunto ou TrainingPeaks. '
-                'Acesse o botão "Exportar" no detalhe de cada corrida.',
-            actionLabel: null,
-            onAction: null,
-          ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, size: 18,
-                    color: theme.colorScheme.outline),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'O sensor BLE conecta automaticamente ao iniciar a corrida '
-                    'se já foi pareado anteriormente.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.outline,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActionableCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String body;
-  final String? actionLabel;
-  final IconData? actionIcon;
-  final VoidCallback? onAction;
-
-  const _ActionableCard({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.body,
-    required this.actionLabel,
-    required this.onAction,
-    this.actionIcon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Icon(icon, size: 22, color: iconColor),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(title,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 15)),
-              ),
-            ]),
-            const SizedBox(height: 8),
-            Text(body, style: const TextStyle(fontSize: 13, height: 1.4)),
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: onAction,
-                  icon: Icon(actionIcon ?? Icons.arrow_forward, size: 18),
-                  label: Text(actionLabel!),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}

@@ -23,6 +23,8 @@ class MyParksScreen extends StatefulWidget {
 class _MyParksScreenState extends State<MyParksScreen> {
   bool _loading = true;
   List<_ParkSummary> _myParks = [];
+  String _search = '';
+  final _searchCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -85,41 +87,80 @@ class _MyParksScreenState extends State<MyParksScreen> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                children: [
-                  // My parks
-                  if (_myParks.isNotEmpty) ...[
-                    const _SectionTitle(
-                      title: 'Seus parques',
-                      icon: Icons.favorite,
-                    ),
-                    const SizedBox(height: 8),
-                    ..._myParks.map((s) => _MyParkCard(
-                          summary: s,
-                          onTap: () => _openPark(s.park),
-                        )),
-                    const SizedBox(height: 20),
-                  ],
-
-                  // Discover
-                  const _SectionTitle(
-                    title: 'Descobrir parques',
-                    icon: Icons.explore,
-                  ),
-                  const SizedBox(height: 8),
-                  ...kBrazilianParksSeed.map((park) {
-                    final isMine =
-                        _myParks.any((s) => s.park.id == park.id);
-                    return _DiscoverParkTile(
-                      park: park,
-                      isMine: isMine,
-                      onTap: () => _openPark(park),
-                    );
-                  }),
-                ],
-              ),
+              child: _buildContent(cs),
             ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  Widget _buildContent(ColorScheme cs) {
+    final q = _search.toLowerCase();
+    final filtered = q.isEmpty
+        ? kBrazilianParksSeed
+        : kBrazilianParksSeed
+            .where((p) =>
+                p.name.toLowerCase().contains(q) ||
+                p.city.toLowerCase().contains(q) ||
+                p.state.toLowerCase().contains(q))
+            .toList();
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      children: [
+        if (_myParks.isNotEmpty && q.isEmpty) ...[
+          const _SectionTitle(title: 'Seus parques', icon: Icons.favorite),
+          const SizedBox(height: 8),
+          ..._myParks.map((s) => _MyParkCard(
+                summary: s,
+                onTap: () => _openPark(s.park),
+              )),
+          const SizedBox(height: 20),
+        ],
+        const _SectionTitle(title: 'Descobrir parques', icon: Icons.explore),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _searchCtrl,
+          decoration: InputDecoration(
+            hintText: 'Buscar por nome, cidade ou estado...',
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: _search.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      _searchCtrl.clear();
+                      setState(() => _search = '');
+                    },
+                  )
+                : null,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            isDense: true,
+          ),
+          onChanged: (v) => setState(() => _search = v),
+        ),
+        const SizedBox(height: 12),
+        if (filtered.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(32),
+            child: Center(
+              child: Text('Nenhum parque encontrado',
+                  style: TextStyle(color: Colors.grey)),
+            ),
+          )
+        else
+          ...filtered.map((park) {
+            final isMine = _myParks.any((s) => s.park.id == park.id);
+            return _DiscoverParkTile(
+              park: park,
+              isMine: isMine,
+              onTap: () => _openPark(park),
+            );
+          }),
+      ],
     );
   }
 
