@@ -27,6 +27,7 @@ class FriendsBloc extends Bloc<FriendsEvent, FriendsState> {
     on<AcceptFriendEvent>(_onAccept);
     on<DeclineFriendEvent>(_onDecline);
     on<SendFriendRequest>(_onSend);
+    on<RemoveFriend>(_onRemove);
   }
 
   Future<void> _onLoad(LoadFriends event, Emitter<FriendsState> emit) async {
@@ -82,6 +83,16 @@ class FriendsBloc extends Bloc<FriendsEvent, FriendsState> {
       await _fetch(emit);
     } on Exception catch (e) {
       emit(FriendsError('Erro ao enviar convite: $e'));
+    }
+  }
+
+  Future<void> _onRemove(
+      RemoveFriend event, Emitter<FriendsState> emit) async {
+    try {
+      await _friendshipRepo.deleteById(event.friendshipId);
+      await _fetch(emit);
+    } on Exception catch (e) {
+      emit(FriendsError('Erro ao remover amigo: $e'));
     }
   }
 

@@ -264,28 +264,71 @@ class _AcceptedTile extends StatelessWidget {
     this.info,
   });
 
+  Future<void> _confirmRemove(BuildContext context) async {
+    final name = info?.displayName ?? 'este amigo';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remover amigo'),
+        content: Text('Deseja remover $name da sua lista de amigos?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Remover'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      context.read<FriendsBloc>().add(RemoveFriend(friendship.id));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$name removido da lista de amigos')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final otherId = friendship.otherUserId(userId);
     final name = info?.displayName ?? otherId.substring(0, 8);
 
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: cs.primaryContainer,
-        backgroundImage:
-            info?.avatarUrl != null ? NetworkImage(info!.avatarUrl!) : null,
-        child: info?.avatarUrl == null
-            ? Icon(Icons.person, color: cs.primary)
-            : null,
+    return Dismissible(
+      key: ValueKey(friendship.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        await _confirmRemove(context);
+        return false;
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        color: cs.error,
+        child: const Icon(Icons.person_remove, color: Colors.white),
       ),
-      title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: _socialSubtitle(info),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => FriendProfileScreen(userId: otherId),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: cs.primaryContainer,
+          backgroundImage:
+              info?.avatarUrl != null ? NetworkImage(info!.avatarUrl!) : null,
+          child: info?.avatarUrl == null
+              ? Icon(Icons.person, color: cs.primary)
+              : null,
         ),
+        title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
+        subtitle: _socialSubtitle(info),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => FriendProfileScreen(userId: otherId),
+          ),
+        ),
+        onLongPress: () => _confirmRemove(context),
       ),
     );
   }
@@ -352,6 +395,7 @@ class _PendingSentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final otherId = friendship.otherUserId(userId);
     final name = info?.displayName ?? otherId.substring(0, 8);
 
@@ -363,6 +407,16 @@ class _PendingSentTile extends StatelessWidget {
       title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
       subtitle: const Text('Aguardando resposta',
           style: TextStyle(color: Colors.grey, fontSize: 12)),
+      trailing: IconButton(
+        icon: Icon(Icons.close_rounded, color: cs.error, size: 20),
+        tooltip: 'Cancelar convite',
+        onPressed: () {
+          context.read<FriendsBloc>().add(RemoveFriend(friendship.id));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Convite cancelado')),
+          );
+        },
+      ),
     );
   }
 }

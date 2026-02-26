@@ -42,3 +42,11 @@ final class SendFriendRequest extends FriendsEvent {
   @override
   List<Object?> get props => [toUserId];
 }
+
+final class RemoveFriend extends FriendsEvent {
+  final String friendshipId;
+  const RemoveFriend(this.friendshipId);
+
+  @override
+  List<Object?> get props => [friendshipId];
+}
