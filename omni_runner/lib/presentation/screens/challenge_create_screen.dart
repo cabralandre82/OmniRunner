@@ -193,8 +193,8 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Convide vários atletas de qualquer assessoria. '
-                            'Cada um corre no seu local. Quem tiver o melhor resultado ganha!',
+                            'Crie um desafio cooperativo! O grupo trabalha junto '
+                            'para atingir a meta coletiva. Se o grupo alcançar, todos ganham!',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: cs.onSurfaceVariant,
                             ),

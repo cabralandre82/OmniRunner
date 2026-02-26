@@ -21,7 +21,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Queue-based matchmaking screen.
 ///
 /// Flow:
-///   1. User configures intent (metric, target, duration, stake)
+///   1. User configures intent (metric, target, duration, entry fee)
 ///   2. Taps "Buscar Oponente"
 ///   3. Shows searching animation + polls for match
 ///   4. Match found → navigates to challenge details
@@ -45,7 +45,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
     ..add(const LoadVerificationState());
 
   ChallengeMetric _metric = ChallengeMetric.distance;
-  int _windowMin = 60;
+  int _windowMin = 180;
   _MatchState _state = _MatchState.setup;
   String? _errorMsg;
   String? _queueId;
@@ -466,7 +466,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
                   'O matchmaking analisa seu pace médio das últimas '
                   'corridas e encontra um oponente do mesmo nível. '
                   'Vocês competem na mesma métrica, com o mesmo prazo '
-                  'e mesma aposta — garantindo uma disputa justa.',
+                  'e mesma inscrição — garantindo uma disputa justa.',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: cs.onSurfaceVariant,
                     height: 1.4,
@@ -551,11 +551,11 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
           Wrap(
             spacing: 8,
             children: [
-              _chip('30 min', 30),
               _chip('1 hora', 60),
+              _chip('3 horas', 180),
+              _chip('6 horas', 360),
+              _chip('12 horas', 720),
               _chip('24 horas', 1440),
-              _chip('3 dias', 4320),
-              _chip('7 dias', 10080),
             ],
           ),
           const SizedBox(height: 16),
@@ -564,7 +564,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
           TextFormField(
             controller: _feeCtrl,
             decoration: const InputDecoration(
-              labelText: 'Aposta (OmniCoins)',
+              labelText: 'Inscrição (OmniCoins)',
               border: OutlineInputBorder(),
               helperText: '0 = desafio gratuito',
             ),
@@ -586,7 +586,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
                 Expanded(
                   child: Text(
                     'Você será pareado com alguém do seu nível, '
-                    'mesma métrica e mesma aposta. Se não houver '
+                    'mesma métrica e mesma inscrição. Se não houver '
                     'oponente imediato, ficará na fila (expira em 24h).',
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: cs.onSurfaceVariant),
@@ -807,7 +807,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
                     const Divider(height: 20),
                     _ConfirmRow(
                       icon: Icons.toll,
-                      label: 'Aposta',
+                      label: 'Inscrição',
                       value: '$fee OmniCoins',
                       valueColor: Colors.orange.shade700,
                     ),

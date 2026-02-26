@@ -142,7 +142,7 @@ class _BodyState extends State<_Body> {
                 const SizedBox(height: 8),
                 Text(
                   'Desafios gratuitos (0 OmniCoins) estao sempre disponíveis '
-                  'para todos. Para desafios com stake (OmniCoins > 0), '
+                  'para todos. Para desafios com inscrição (OmniCoins > 0), '
                   'você precisa ser um Atleta Verificado.\n\n'
                   'Complete as corridas e mantenha um bom histórico — '
                   'o sistema avalia automaticamente.',
@@ -245,7 +245,7 @@ class _StatusCard extends StatelessWidget {
           Icons.verified,
           Colors.green,
           'Atleta Verificado',
-          'Você pode criar e participar de desafios com stake!',
+          'Você pode criar e participar de desafios com inscrição!',
         ),
       VerificationStatus.downgraded => (
           Icons.warning_amber_rounded,

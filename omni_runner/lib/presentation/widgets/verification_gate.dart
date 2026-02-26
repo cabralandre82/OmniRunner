@@ -83,7 +83,7 @@ class _VerificationGateSheet extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Desafios com OmniCoins em jogo exigem que você seja um '
+            'Desafios com inscrição de OmniCoins exigem que você seja um '
             'Atleta Verificado. Isso garante competições justas para todos.',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium
