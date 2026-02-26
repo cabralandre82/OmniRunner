@@ -27,6 +27,7 @@ import 'package:omni_runner/presentation/screens/personal_evolution_screen.dart'
 import 'package:omni_runner/presentation/screens/progression_screen.dart';
 import 'package:omni_runner/presentation/screens/streaks_leaderboard_screen.dart';
 import 'package:omni_runner/presentation/screens/wallet_screen.dart';
+import 'package:omni_runner/presentation/screens/wrapped_screen.dart';
 
 /// Hub listing all gamification / progress features.
 ///
@@ -52,6 +53,12 @@ class ProgressHubScreen extends StatelessWidget {
             title: 'Nível e XP',
             subtitle: 'Seu nível, sequência e meta semanal',
             target: _Target.progression,
+          ),
+          _Tile(
+            icon: Icons.auto_awesome_rounded,
+            title: 'Minha Retrospectiva',
+            subtitle: 'OmniWrapped — seu resumo do período',
+            target: _Target.wrapped,
           ),
           _Tile(
             icon: Icons.show_chart_rounded,
@@ -113,7 +120,7 @@ class ProgressHubScreen extends StatelessWidget {
   }
 }
 
-enum _Target { progression, evolution, streaks, badges, missions, challenges, championships, wallet, leaderboards, feed }
+enum _Target { progression, wrapped, evolution, streaks, badges, missions, challenges, championships, wallet, leaderboards, feed }
 
 class _Tile extends StatelessWidget {
   final IconData icon;
@@ -142,6 +149,11 @@ class _Tile extends StatelessWidget {
   void _navigate(BuildContext context) {
     if (target == _Target.feed) {
       _navigateToFeed(context);
+      return;
+    }
+
+    if (target == _Target.wrapped) {
+      _navigateToWrapped(context);
       return;
     }
 
@@ -174,10 +186,103 @@ class _Tile extends StatelessWidget {
           create: (_) => sl<LeaderboardsBloc>(),
           child: const LeaderboardsScreen(),
         ),
+      _Target.wrapped => const SizedBox.shrink(),
       _Target.feed => const SizedBox.shrink(),
     };
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
   }
+
+  Future<void> _navigateToWrapped(BuildContext context) async {
+    final now = DateTime.now();
+    final periodType = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Escolha o período',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_month),
+              title: const Text('Este mês'),
+              subtitle: Text(_monthName(now.month)),
+              onTap: () => Navigator.pop(ctx, 'month'),
+            ),
+            if (now.month > 1)
+              ListTile(
+                leading: const Icon(Icons.calendar_month),
+                title: const Text('Mês passado'),
+                subtitle: Text(_monthName(now.month - 1 == 0 ? 12 : now.month - 1)),
+                onTap: () => Navigator.pop(ctx, 'last_month'),
+              ),
+            ListTile(
+              leading: const Icon(Icons.date_range),
+              title: const Text('Este trimestre'),
+              subtitle: Text('Q${((now.month - 1) ~/ 3) + 1} ${now.year}'),
+              onTap: () => Navigator.pop(ctx, 'quarter'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: const Text('Este ano'),
+              subtitle: Text('${now.year}'),
+              onTap: () => Navigator.pop(ctx, 'year'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+
+    if (periodType == null || !context.mounted) return;
+
+    String pType;
+    String pKey;
+    String pLabel;
+
+    switch (periodType) {
+      case 'month':
+        pType = 'month';
+        pKey = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+        pLabel = '${_monthName(now.month)} ${now.year}';
+      case 'last_month':
+        final lm = now.month == 1 ? 12 : now.month - 1;
+        final ly = now.month == 1 ? now.year - 1 : now.year;
+        pType = 'month';
+        pKey = '$ly-${lm.toString().padLeft(2, '0')}';
+        pLabel = '${_monthName(lm)} $ly';
+      case 'quarter':
+        final q = ((now.month - 1) ~/ 3) + 1;
+        pType = 'quarter';
+        pKey = '${now.year}-Q$q';
+        pLabel = 'Q$q ${now.year}';
+      case 'year':
+        pType = 'year';
+        pKey = '${now.year}';
+        pLabel = 'Ano ${now.year}';
+      default:
+        return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => WrappedScreen(
+          periodType: pType,
+          periodKey: pKey,
+          periodLabel: pLabel,
+        ),
+      ),
+    );
+  }
+
+  static String _monthName(int m) => const [
+        '', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+      ][m];
 
   Future<void> _navigateToFeed(BuildContext context) async {
     final nav = Navigator.of(context);

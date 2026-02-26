@@ -1508,6 +1508,39 @@ esforço para vencer por margem mínima.
 
 ---
 
+### DECISAO 069 — OmniWrapped (Retrospectiva do Corredor)
+
+**Data:** 2026-02-26
+**Contexto:** Feature #1 do roadmap, aprovada pelo usuário.
+
+Implementação completa do OmniWrapped — tela de retrospectiva estilo "stories"
+que mostra estatísticas de corrida de um período (mês/trimestre/ano).
+
+**Componentes implementados:**
+1. Migration `20260226200000_user_wrapped.sql` — tabela de cache com RLS
+2. Edge Function `generate-wrapped` — calcula e cacheia métricas (24h TTL)
+3. Flutter `WrappedScreen` — PageView com 6 slides temáticos:
+   - Slide 1: Números gerais (km, sessões, tempo)
+   - Slide 2: Evolução de pace (LineChart + % melhoria)
+   - Slide 3: Desafios (vitórias, derrotas, taxa)
+   - Slide 4: Badges e progressão (XP, streak)
+   - Slide 5: Curiosidades (dia favorito, horário, histograma)
+   - Slide 6: Compartilhar (card PNG via share_plus)
+4. Share card visual (RepaintBoundary + PNG) seguindo padrão de `run_share_card.dart`
+5. Seletor de período (bottom sheet) no `ProgressHubScreen`
+
+**Mínimo para gerar:** 3 sessões verificadas no período.
+**Cache:** 24h no servidor (tabela `user_wrapped`).
+
+**Arquivos:**
+- `supabase/migrations/20260226200000_user_wrapped.sql`
+- `supabase/functions/generate-wrapped/index.ts`
+- `omni_runner/lib/presentation/screens/wrapped_screen.dart`
+- `omni_runner/lib/presentation/screens/progress_hub_screen.dart`
+- `supabase/config.toml`
+
+---
+
 ### IDEIA DESCARTADA: Corrida Fantasma (Ghost Rival)
 ~~O app usa dados GPS de corridas anteriores do atleta para criar um "fantasma"
 de si mesmo.~~ **DESCARTADA:** O tracking nativo do app foi removido. Todas as

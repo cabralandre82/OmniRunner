@@ -505,6 +505,9 @@ verify_jwt = false
 [functions.token-create-intent]
 verify_jwt = false
 
+[functions.generate-wrapped]
+verify_jwt = false
+
 [functions.matchmake]
 verify_jwt = true
 

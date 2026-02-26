@@ -10,8 +10,8 @@
 
 | # | Feature | Prioridade | Complexidade | Dependência |
 |---|---------|:----------:|:------------:|:-----------:|
-| 0 | Regra de visibilidade em desafios | **URGENTE** | Baixa | Nenhuma |
-| 1 | OmniWrapped (Retrospectiva) | Média | Média | Dados históricos |
+| 0 | ~~Regra de visibilidade em desafios~~ | ~~URGENTE~~ | ~~Baixa~~ | ~~FEITO~~ |
+| 1 | ~~OmniWrapped (Retrospectiva)~~ | ~~Média~~ | ~~Média~~ | ~~FEITO~~ |
 | 2 | Liga de Assessorias | Média | Alta | Assessorias existentes |
 | 3 | DNA do Corredor (Running DNA) | Baixa | Alta | Dados históricos + ML |
 
@@ -111,7 +111,7 @@ PASSO 4: Testes
 
 ---
 
-## 1. OMNIWRAPPED (RETROSPECTIVA DO CORREDOR)
+## 1. OMNIWRAPPED (RETROSPECTIVA DO CORREDOR) — IMPLEMENTADO
 
 ### Dados disponíveis no Supabase (verificados)
 
@@ -558,13 +558,11 @@ PASSO 6: Atualização periódica
 ## ORDEM DE IMPLEMENTAÇÃO
 
 ```
-Fase 1 (Urgente — pré-release):
-  └── #0 Regra de visibilidade em desafios         ~2-3h
-        4 passos: EF → front participantTile → front grupo → testes
+Fase 1 (Urgente — pré-release):          ✅ FEITO
+  └── #0 Regra de visibilidade em desafios
 
-Fase 2 (Engajamento — viralidade):
-  └── #1 OmniWrapped                               ~6-8h
-        6 passos: EF → migration → entity → tela → share → integração
+Fase 2 (Engajamento — viralidade):       ✅ FEITO
+  └── #1 OmniWrapped
 
 Fase 3 (Escala — competição):
   └── #2 Liga de Assessorias                       ~10-15h
