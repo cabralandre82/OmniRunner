@@ -1438,3 +1438,62 @@ OmniCoins no app.
 com stake mantido inalterado. LedgerService já protege contra fee=0.
 
 ---
+
+## DECISAO 066 — Regra de visibilidade em desafios ativos
+
+**Data:** 2026-02-26
+**Contexto:** Regra anti-gaming para desafios 1v1.
+
+**Regra:** Enquanto um desafio 1v1 está ativo, cada atleta pode ver APENAS se o
+oponente completou ou não. Nenhum detalhe (pace, distância, tempo parcial) é
+visível antes que ambos completem ou o período expire. Isso impede que um atleta
+espere o outro terminar para ajustar seu esforço (ex: "ele fez 45min, vou tentar
+44:59"). Após ambos completarem, os detalhes completos são revelados.
+
+**Impacto:** UI do `ChallengeDetailsScreen` deve ocultar progressValue do oponente
+enquanto o desafio estiver ativo. Mostrar apenas: "Completou" / "Ainda não completou".
+
+**Status:** Regra documentada em GAMIFICATION_POLICY.md §4.1. Implementação
+pendente no front-end.
+
+---
+
+## DECISAO 067 — Ideias futuras aprovadas para roadmap
+
+**Data:** 2026-02-26
+
+### IDEIA APROVADA 1: OmniWrapped (Retrospectiva anual do corredor)
+No fim do ano (ou a cada trimestre), o app gera automaticamente um resumo visual
+estilo "Spotify Wrapped" com as estatísticas do atleta: total de km, tempo correndo,
+desafios disputados, vitórias, evolução de pace, parques visitados, badges
+conquistados, posição em rankings. Formato visual stories-friendly para compartilhar
+no Instagram/WhatsApp. Alto potencial viral.
+
+### IDEIA APROVADA 2: Liga de Assessorias
+Competição sazonal (mensal/trimestral) entre assessorias. Ranking baseado em
+métricas agregadas (km totais, participação em desafios, frequência de treinos).
+As assessorias competem como unidades. Premiação simbólica (troféu digital,
+badge exclusivo). Cria senso de comunidade e pertencimento.
+
+### IDEIA APROVADA 3: Corrida Fantasma (Ghost Rival)
+O app usa dados GPS de corridas anteriores do atleta para criar um "fantasma"
+de si mesmo. Ao correr a mesma rota, o atleta vê em tempo real se está à frente
+ou atrás da sua melhor performance. Feedback por áudio e linha fantasma no mapa.
+Estilo ghost mode de Mario Kart/Gran Turismo na vida real. Usa dados já existentes.
+Loop viciante de auto-superação. Altamente compartilhável.
+
+### IDEIA APROVADA 4: DNA do Corredor (Running DNA)
+Análise de ML/estatística sobre todo o histórico do atleta gerando um perfil
+único visual (radar chart/mandala). Identifica padrões invisíveis: horário ideal,
+terreno ideal, recuperação ótima, previsão de PR com data estimada e ações para
+acelerar. DNA evolui com o tempo, é compartilhável nas redes sociais, e a
+assessoria pode usar para personalizar treinos. Diferencial competitivo absoluto.
+
+### IDEIA APROVADA 5: Marketplace de OmniCoins na Assessoria
+Cada assessoria cria uma "loja" com recompensas resgatáveis por OmniCoins
+(treino premium, prioridade em eventos, merchandise, etc.). O professor define
+os itens e preços. Cria um loop econômico completo: assessoria distribui coins →
+atleta ganha em desafios → atleta resgata na loja → professor entrega. Dá valor
+real às OmniCoins e transforma cada assessoria em uma micro-economia.
+
+---

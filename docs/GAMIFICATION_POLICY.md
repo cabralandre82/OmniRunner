@@ -82,6 +82,7 @@ OmniCoins existem **somente em duas formas de aquisição**:
 | Empate (grátis) | **Zero coins** |
 | Empate (com fee) | Cada um recebe o fee de volta (refund) |
 | Validação | Apenas sessões com `isVerified == true` contam |
+| **Visibilidade** | Enquanto o desafio está ativo, cada atleta pode ver **apenas** se o oponente completou ou não. **Nenhum detalhe** (pace, distância, tempo) é visível antes de ambos completarem. Após ambos completarem (ou o período expirar), os detalhes são revelados. Isso impede que um atleta espere o outro terminar para ajustar seu esforço. |
 
 ### 4.2 Desafios de Grupo
 
