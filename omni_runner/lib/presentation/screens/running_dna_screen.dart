@@ -315,16 +315,28 @@ class _ScoresBreakdown extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   SizedBox(
-                    width: 32,
-                    child: Text(
-                      '${value.round()}',
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: _barColor(value),
-                      ),
+                    width: 72,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${value.round()}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: _barColor(value),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _levelLabel(value),
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: _barColor(value).withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -342,6 +354,14 @@ class _ScoresBreakdown extends StatelessWidget {
     if (v >= 40) return Colors.amber;
     if (v >= 20) return Colors.orange;
     return Colors.redAccent;
+  }
+
+  static String _levelLabel(double v) {
+    if (v >= 80) return 'Elite';
+    if (v >= 60) return 'Avançado';
+    if (v >= 40) return 'Intermediário';
+    if (v >= 20) return 'Iniciante';
+    return 'Iniciante';
   }
 }
 
@@ -539,7 +559,7 @@ class _StatsCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Base de análise (últimos 6 meses)',
+              'Base de análise — ${_dateRange()}',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -920,6 +940,16 @@ class _ShareStat extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────
+
+String _dateRange() {
+  const months = [
+    '', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+    'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
+  ];
+  final now = DateTime.now();
+  final sixAgo = DateTime(now.year, now.month - 6, now.day);
+  return '${months[sixAgo.month]}/${sixAgo.year} – ${months[now.month]}/${now.year}';
+}
 
 String _formatPace(double secPerKm) {
   final mins = secPerKm ~/ 60;

@@ -1072,7 +1072,7 @@ class _CtaBar extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.leaderboard_rounded, size: 16),
-                  label: const Text('Ver ranking'),
+                  label: const Text('Ranking'),
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
@@ -1082,12 +1082,26 @@ class _CtaBar extends StatelessWidget {
                   },
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.person_add_rounded, size: 16),
-                  label: const Text('Adicionar amigo'),
+                  label: const Text('Amigo'),
                   onPressed: () => _addFriend(context),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.share_rounded, size: 16),
+                  label: const Text('Enviar'),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Compartilhamento em breve!'),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],

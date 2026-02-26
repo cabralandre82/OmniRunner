@@ -186,6 +186,7 @@ class _WrappedScreenState extends State<WrappedScreen> {
         PageView(
           controller: _pageCtrl,
           onPageChanged: (i) => setState(() => _currentPage = i),
+          physics: const BouncingScrollPhysics(),
           children: [
             _SlideNumbers(data: _data!),
             _SlidePace(data: _data!),
@@ -198,6 +199,26 @@ class _WrappedScreenState extends State<WrappedScreen> {
             ),
           ],
         ),
+        if (_currentPage == 0)
+          Positioned(
+            bottom: 90,
+            left: 0,
+            right: 0,
+            child: AnimatedOpacity(
+              opacity: _currentPage == 0 ? 1 : 0,
+              duration: const Duration(milliseconds: 300),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Deslize para ver mais',
+                      style: TextStyle(color: Colors.white38, fontSize: 13)),
+                  SizedBox(width: 6),
+                  Icon(Icons.chevron_right_rounded,
+                      color: Colors.white38, size: 18),
+                ],
+              ),
+            ),
+          ),
         // Dots indicator
         Positioned(
           bottom: 48,
@@ -368,7 +389,7 @@ class _PaceChart extends StatelessWidget {
     final spots = <FlSpot>[];
     for (int i = 0; i < evolution.length; i++) {
       final pace = (evolution[i]['avgPace'] as num?)?.toDouble() ?? 0;
-      spots.add(FlSpot(i.toDouble(), pace));
+      spots.add(FlSpot(i.toDouble(), -pace));
     }
 
     final minY = spots.map((s) => s.y).reduce((a, b) => a < b ? a : b) - 20;
@@ -383,7 +404,7 @@ class _PaceChart extends StatelessWidget {
               showTitles: true,
               reservedSize: 50,
               getTitlesWidget: (v, _) => Text(
-                _formatPace(v),
+                _formatPace(-v),
                 style: const TextStyle(color: Colors.white38, fontSize: 10),
               ),
             ),

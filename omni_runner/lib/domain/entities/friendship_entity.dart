@@ -43,6 +43,10 @@ final class FriendshipEntity extends Equatable {
   /// Null if [status] is not [FriendshipStatus.accepted].
   final int? acceptedAtMs;
 
+  /// The user who initiated the friend request.
+  /// May differ from [userIdA] because the DB enforces `user_id_a < user_id_b`.
+  final String? invitedBy;
+
   const FriendshipEntity({
     required this.id,
     required this.userIdA,
@@ -50,6 +54,7 @@ final class FriendshipEntity extends Equatable {
     required this.status,
     required this.createdAtMs,
     this.acceptedAtMs,
+    this.invitedBy,
   });
 
   /// Whether this friendship is currently active.
@@ -58,6 +63,9 @@ final class FriendshipEntity extends Equatable {
   /// Returns the other user's ID given [myUserId].
   String otherUserId(String myUserId) =>
       myUserId == userIdA ? userIdB : userIdA;
+
+  /// Whether [myUserId] is the one who sent the invite.
+  bool isSentBy(String myUserId) => invitedBy == myUserId;
 
   FriendshipEntity copyWith({
     FriendshipStatus? status,
@@ -70,6 +78,7 @@ final class FriendshipEntity extends Equatable {
         status: status ?? this.status,
         createdAtMs: createdAtMs,
         acceptedAtMs: acceptedAtMs ?? this.acceptedAtMs,
+        invitedBy: invitedBy,
       );
 
   @override
@@ -80,5 +89,6 @@ final class FriendshipEntity extends Equatable {
         status,
         createdAtMs,
         acceptedAtMs,
+        invitedBy,
       ];
 }

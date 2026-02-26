@@ -109,6 +109,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _saveAll() async {
+    await _save();
+    await _saveSocial();
+  }
+
   Future<void> _saveSocial() async {
     setState(() { _saving = true; _error = null; });
     try {
@@ -420,18 +425,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onSubmitted: (_) => _save(),
                 ),
                 const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: _saving ? null : _save,
-                  icon: _saving
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.save),
-                  label: const Text('Salvar nome'),
-                ),
-
                 const SizedBox(height: 28),
 
                 // ── Social handles ──
@@ -468,11 +461,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   maxLength: 30,
                   textInputAction: TextInputAction.done,
                 ),
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: _saving ? null : _saveSocial,
-                  icon: const Icon(Icons.share_rounded),
-                  label: const Text('Salvar redes sociais'),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _saving ? null : _saveAll,
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.save),
+                    label: const Text('Salvar perfil'),
+                  ),
                 ),
 
                 // ── Error ──

@@ -17,6 +17,7 @@ class SupabaseFriendshipRepo implements IFriendshipRepo {
         status: _parseStatus(r['status'] as String? ?? 'pending'),
         createdAtMs: r['created_at_ms'] as int,
         acceptedAtMs: r['accepted_at_ms'] as int?,
+        invitedBy: r['invited_by'] as String?,
       );
 
   static FriendshipStatus _parseStatus(String s) => switch (s) {

@@ -152,6 +152,7 @@ class _LeagueScreenState extends State<LeagueScreen> {
               ranking: _ranking,
               myGroupId: _myGroupId!,
             ),
+          const _HowItWorksCard(),
           if (_ranking.isEmpty)
             const Padding(
               padding: EdgeInsets.all(32),
@@ -333,6 +334,41 @@ class _ContribStat extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// How it works
+// ─────────────────────────────────────────────────────────────────────
+
+class _HowItWorksCard extends StatelessWidget {
+  const _HowItWorksCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      color: cs.secondaryContainer.withValues(alpha: 0.3),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.info_outline_rounded, size: 18, color: cs.secondary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'A liga rankeia as assessorias por km corridos, '
+                'sessões, membros ativos e desafios vencidos. '
+                'Contribua correndo para subir sua assessoria!',
+                style: TextStyle(fontSize: 12, color: cs.onSecondaryContainer),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Ranking tile
 // ─────────────────────────────────────────────────────────────────────
 
@@ -432,8 +468,8 @@ class _RankingTile extends StatelessWidget {
         subtitle: Text(
           [
             if (city != null) city,
-            '$activeMembers/$totalMembers ativos',
-            '${totalKm.toStringAsFixed(0)} km/sem',
+            '$activeMembers de $totalMembers correram',
+            '${totalKm.toStringAsFixed(0)} km/semana',
           ].join(' · '),
           style: const TextStyle(fontSize: 12),
         ),

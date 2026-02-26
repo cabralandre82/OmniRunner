@@ -4,7 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/domain/repositories/i_friendship_repo.dart';
+import 'package:omni_runner/domain/usecases/social/send_friend_invite.dart';
+import 'package:uuid/uuid.dart';
 
 const _tag = 'FriendProfileScreen';
 
@@ -25,6 +30,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
   Map<String, dynamic>? _profile;
   Map<String, dynamic>? _progress;
   Map<String, dynamic>? _dna;
+  String? _friendshipStatus;
+  bool _inviteSending = false;
 
   @override
   void initState() {
@@ -57,11 +64,22 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
       final results = await Future.wait<Map<String, dynamic>?>(
           [profileFuture, progressFuture, dnaFuture]);
 
+      String? fStatus;
+      try {
+        final myId = sl<UserIdentityProvider>().userId;
+        final existing =
+            await sl<IFriendshipRepo>().findBetween(myId, widget.userId);
+        fStatus = existing?.status.name;
+      } on Exception {
+        // best effort
+      }
+
       setState(() {
         _loading = false;
         _profile = results[0];
         _progress = results[1];
         _dna = results[2];
+        _friendshipStatus = fStatus;
       });
     } on Exception catch (e) {
       AppLogger.warn('Friend profile load failed: $e', tag: _tag);
@@ -89,12 +107,107 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
                     padding: const EdgeInsets.only(bottom: 32),
                     children: [
                       _ProfileHeader(profile: _profile!, progress: _progress),
+                      _FriendActionButton(
+                        status: _friendshipStatus,
+                        sending: _inviteSending,
+                        onAdd: _sendInvite,
+                      ),
                       if (_dna != null) _DnaPreview(dna: _dna!),
                       _SocialLinks(profile: _profile!),
                       _StatsCard(progress: _progress),
                     ],
                   ),
                 ),
+    );
+  }
+
+  Future<void> _sendInvite() async {
+    setState(() => _inviteSending = true);
+    try {
+      final myId = sl<UserIdentityProvider>().userId;
+      final sendInvite =
+          SendFriendInvite(friendshipRepo: sl<IFriendshipRepo>());
+      await sendInvite.call(
+        fromUserId: myId,
+        toUserId: widget.userId,
+        uuidGenerator: () => const Uuid().v4(),
+        nowMs: DateTime.now().millisecondsSinceEpoch,
+      );
+      if (mounted) {
+        setState(() {
+          _inviteSending = false;
+          _friendshipStatus = 'pending';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Convite de amizade enviado!')),
+        );
+      }
+    } on Exception catch (e) {
+      if (mounted) {
+        setState(() => _inviteSending = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$e')),
+        );
+      }
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Friend action button
+// ─────────────────────────────────────────────────────────────────────
+
+class _FriendActionButton extends StatelessWidget {
+  final String? status;
+  final bool sending;
+  final VoidCallback onAdd;
+
+  const _FriendActionButton({
+    required this.status,
+    required this.sending,
+    required this.onAdd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (status == 'accepted') {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Chip(
+          avatar: const Icon(Icons.check_circle, color: Colors.green, size: 18),
+          label: const Text('Amigos'),
+          backgroundColor: Colors.green.shade50,
+        ),
+      );
+    }
+
+    if (status == 'pending') {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Chip(
+          avatar: const Icon(Icons.hourglass_top, color: Colors.orange, size: 18),
+          label: const Text('Convite pendente'),
+          backgroundColor: Colors.orange.shade50,
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: SizedBox(
+        width: double.infinity,
+        child: FilledButton.icon(
+          onPressed: sending ? null : onAdd,
+          icon: sending
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child:
+                      CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Icon(Icons.person_add_rounded),
+          label: const Text('Adicionar como amigo'),
+        ),
+      ),
     );
   }
 }

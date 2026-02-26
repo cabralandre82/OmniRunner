@@ -229,13 +229,12 @@ class _Tile extends StatelessWidget {
               subtitle: Text(_monthName(now.month)),
               onTap: () => Navigator.pop(ctx, 'month'),
             ),
-            if (now.month > 1)
-              ListTile(
-                leading: const Icon(Icons.calendar_month),
-                title: const Text('Mês passado'),
-                subtitle: Text(_monthName(now.month - 1 == 0 ? 12 : now.month - 1)),
-                onTap: () => Navigator.pop(ctx, 'last_month'),
-              ),
+            ListTile(
+              leading: const Icon(Icons.calendar_month),
+              title: const Text('Mês passado'),
+              subtitle: Text(_monthName(now.month == 1 ? 12 : now.month - 1)),
+              onTap: () => Navigator.pop(ctx, 'last_month'),
+            ),
             ListTile(
               leading: const Icon(Icons.date_range),
               title: const Text('Este trimestre'),

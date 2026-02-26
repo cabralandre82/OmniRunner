@@ -105,11 +105,11 @@ class FriendsBloc extends Bloc<FriendsEvent, FriendsState> {
           .toList();
       final pendingReceived = all
           .where((f) =>
-              f.status == FriendshipStatus.pending && f.userIdB == _userId)
+              f.status == FriendshipStatus.pending && !f.isSentBy(_userId))
           .toList();
       final pendingSent = all
           .where((f) =>
-              f.status == FriendshipStatus.pending && f.userIdA == _userId)
+              f.status == FriendshipStatus.pending && f.isSentBy(_userId))
           .toList();
 
       emit(FriendsLoaded(

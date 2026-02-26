@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/friendship_entity.dart';
+import 'package:omni_runner/domain/repositories/i_friendship_repo.dart';
 import 'package:omni_runner/presentation/blocs/friends/friends_bloc.dart';
 import 'package:omni_runner/presentation/blocs/friends/friends_event.dart';
 import 'package:omni_runner/presentation/blocs/friends/friends_state.dart';
@@ -69,14 +70,12 @@ class FriendsScreen extends StatelessWidget {
   }
 
   void _showSearch(BuildContext context) {
+    final bloc = context.read<FriendsBloc>();
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => _FriendSearchScreen(
           onInvite: (userId) {
-            context.read<FriendsBloc>().add(SendFriendRequest(userId));
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Convite enviado!')),
-            );
+            bloc.add(SendFriendRequest(userId));
           },
         ),
       ),
@@ -225,16 +224,12 @@ class _BodyState extends State<_Body> {
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: () {
+              final bloc = context.read<FriendsBloc>();
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => _FriendSearchScreen(
                     onInvite: (userId) {
-                      context
-                          .read<FriendsBloc>()
-                          .add(SendFriendRequest(userId));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Convite enviado!')),
-                      );
+                      bloc.add(SendFriendRequest(userId));
                     },
                   ),
                 ),
@@ -493,11 +488,36 @@ class _FriendSearchScreenState extends State<_FriendSearchScreen> {
   List<Map<String, dynamic>> _results = [];
   bool _loading = false;
   final _sentIds = <String>{};
+  final _existingFriendIds = <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExistingFriends();
+  }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadExistingFriends() async {
+    try {
+      final uid = sl<UserIdentityProvider>().userId;
+      final repo = sl<IFriendshipRepo>();
+      final all = await repo.getByUserId(uid);
+      final ids = <String>{};
+      for (final f in all) {
+        if (f.status == FriendshipStatus.accepted ||
+            f.status == FriendshipStatus.pending) {
+          ids.add(f.otherUserId(uid));
+        }
+      }
+      if (mounted) setState(() => _existingFriendIds.addAll(ids));
+    } on Exception {
+      // best effort
+    }
   }
 
   Future<void> _search(String query) async {
@@ -570,6 +590,7 @@ class _FriendSearchScreenState extends State<_FriendSearchScreen> {
                       final avatar = r['avatar_url'] as String?;
                       final insta = r['instagram_handle'] as String?;
                       final sent = _sentIds.contains(uid);
+                      final alreadyFriend = _existingFriendIds.contains(uid);
 
                       return ListTile(
                         leading: CircleAvatar(
@@ -586,19 +607,28 @@ class _FriendSearchScreenState extends State<_FriendSearchScreen> {
                                 style: const TextStyle(
                                     fontSize: 12, color: Colors.grey))
                             : null,
-                        trailing: sent
-                            ? Chip(
-                                label: const Text('Enviado'),
-                                backgroundColor: cs.secondaryContainer,
+                        trailing: alreadyFriend
+                            ? const Chip(
+                                label: Text('Amigo'),
+                                avatar: Icon(Icons.check, size: 16),
                               )
-                            : IconButton(
-                                icon: Icon(Icons.person_add,
-                                    color: cs.primary),
-                                onPressed: () {
-                                  widget.onInvite(uid);
-                                  setState(() => _sentIds.add(uid));
-                                },
-                              ),
+                            : sent
+                                ? Chip(
+                                    label: const Text('Enviado'),
+                                    backgroundColor: cs.secondaryContainer,
+                                  )
+                                : IconButton(
+                                    icon: Icon(Icons.person_add,
+                                        color: cs.primary),
+                                    onPressed: () {
+                                      widget.onInvite(uid);
+                                      setState(() => _sentIds.add(uid));
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                            content: Text('Convite enviado!')),
+                                      );
+                                    },
+                                  ),
                       );
                     },
                   ),

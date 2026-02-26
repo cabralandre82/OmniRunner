@@ -1035,7 +1035,7 @@ class _ParticipantsCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
-          hasSubmitted ? 'Completou' : 'Aguardando',
+          hasSubmitted ? 'Correu' : 'Aguardando',
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
