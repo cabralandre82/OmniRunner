@@ -1256,9 +1256,11 @@ e em 1v1 o perdedor sempre ganhava 25 coins de participacao mesmo com entry fee.
 - Ninguem correu (com fee): todos DNF, refund do fee
 
 **Team vs Team:**
-- Quem nao correu = DNF individual, 0 coins, mesmo se time ganhou
-- Score do time conta apenas membros que correram
-- Pool dividido apenas entre membros do time vencedor que correram
+- O time ganha ou perde como unidade
+- Score do time conta apenas membros que correram (para determinar vencedor)
+- Pool dividido igualmente entre TODOS os membros do time vencedor
+  (correu ou nao — o entry fee eh por pessoa, o pool pertence ao time inteiro)
+- Empate: pool dividido entre todos os participantes
 - Ninguem correu em nenhum time: todos DNF, refund
 
 **Arquivos modificados (3):**

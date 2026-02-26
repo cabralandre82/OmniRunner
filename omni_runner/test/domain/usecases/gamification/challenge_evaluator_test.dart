@@ -622,7 +622,7 @@ void main() {
       expect(results.every((r) => r.coinsEarned == 10), isTrue);
     });
 
-    test('non-runner on winning team is DNF, no pool share', () {
+    test('non-runner on winning team still shares pool', () {
       final results = evaluator.evaluate(_teamChallenge(
         entryFeeCoins: 10,
         participants: [
@@ -633,14 +633,14 @@ void main() {
         ],
       ));
 
-      // Pool = 10 * 4 = 40. Only u1 ran on winning team -> u1 gets 40.
+      // Pool = 10 * 4 = 40. Team A wins (2 members) → 40/2 = 20 each.
       final u1 = results.firstWhere((r) => r.userId == 'u1');
       expect(u1.outcome, ParticipantOutcome.won);
-      expect(u1.coinsEarned, 40);
+      expect(u1.coinsEarned, 20);
 
       final u2 = results.firstWhere((r) => r.userId == 'u2');
-      expect(u2.outcome, ParticipantOutcome.didNotFinish);
-      expect(u2.coinsEarned, 0);
+      expect(u2.outcome, ParticipantOutcome.won);
+      expect(u2.coinsEarned, 20);
 
       final losers = results.where((r) => r.outcome == ParticipantOutcome.lost);
       expect(losers.every((r) => r.coinsEarned == 0), isTrue);

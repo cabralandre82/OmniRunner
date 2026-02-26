@@ -327,9 +327,11 @@ final class ChallengeEvaluator {
 
   /// Team vs Team evaluation.
   ///
-  /// Score per team = sum of progressValues of members who actually ran.
-  /// Members who didn't run are DNF (0 coins, regardless of team outcome).
-  /// Pool is split only among winning team members who ran.
+  /// The team wins or loses as a unit.
+  /// Score per team = sum of progressValues of members who ran.
+  /// Pool is split equally among ALL members of the winning team
+  /// (runners and non-runners alike — the entry fee is per person,
+  /// so the pool belongs to the whole team).
   /// If nobody on either team ran → everyone DNF, refund stakes.
   ///
   /// Pool = entry_fee_coins * total_accepted_participants.
@@ -399,46 +401,28 @@ final class ChallengeEvaluator {
       bool isWinner,
       bool tied,
     ) {
-      final runners = team.where(
-        (p) => p.contributingSessionIds.isNotEmpty,
-      ).toList();
-
-      final int coinsPerRunner;
+      final int coinsPerMember;
       if (tied) {
-        final totalRunners = ranked
-            .where((p) => p.contributingSessionIds.isNotEmpty)
-            .length;
-        coinsPerRunner = totalRunners > 0 ? pool ~/ totalRunners : 0;
-      } else if (isWinner && runners.isNotEmpty) {
-        coinsPerRunner = pool ~/ runners.length;
+        coinsPerMember = ranked.isNotEmpty ? pool ~/ ranked.length : 0;
+      } else if (isWinner && team.isNotEmpty) {
+        coinsPerMember = pool ~/ team.length;
       } else {
-        coinsPerRunner = 0;
+        coinsPerMember = 0;
       }
 
-      return team.map((p) {
-        final ran = p.contributingSessionIds.isNotEmpty;
-        if (!ran) {
-          return ParticipantResult(
-            userId: p.userId,
-            finalValue: 0,
-            outcome: ParticipantOutcome.didNotFinish,
-            coinsEarned: 0,
-            sessionIds: p.contributingSessionIds,
-          );
-        }
-        final outcome = tied
-            ? ParticipantOutcome.tied
-            : isWinner
-                ? ParticipantOutcome.won
-                : ParticipantOutcome.lost;
-        return ParticipantResult(
-          userId: p.userId,
-          finalValue: p.progressValue,
-          outcome: outcome,
-          coinsEarned: coinsPerRunner,
-          sessionIds: p.contributingSessionIds,
-        );
-      }).toList();
+      final outcome = tied
+          ? ParticipantOutcome.tied
+          : isWinner
+              ? ParticipantOutcome.won
+              : ParticipantOutcome.lost;
+
+      return team.map((p) => ParticipantResult(
+        userId: p.userId,
+        finalValue: p.progressValue,
+        outcome: outcome,
+        coinsEarned: coinsPerMember,
+        sessionIds: p.contributingSessionIds,
+      )).toList();
     }
 
     return [
