@@ -1475,25 +1475,24 @@ métricas agregadas (km totais, participação em desafios, frequência de trein
 As assessorias competem como unidades. Premiação simbólica (troféu digital,
 badge exclusivo). Cria senso de comunidade e pertencimento.
 
-### IDEIA APROVADA 3: Corrida Fantasma (Ghost Rival)
-O app usa dados GPS de corridas anteriores do atleta para criar um "fantasma"
-de si mesmo. Ao correr a mesma rota, o atleta vê em tempo real se está à frente
-ou atrás da sua melhor performance. Feedback por áudio e linha fantasma no mapa.
-Estilo ghost mode de Mario Kart/Gran Turismo na vida real. Usa dados já existentes.
-Loop viciante de auto-superação. Altamente compartilhável.
+### IDEIA DESCARTADA: Corrida Fantasma (Ghost Rival)
+~~O app usa dados GPS de corridas anteriores do atleta para criar um "fantasma"
+de si mesmo.~~ **DESCARTADA:** O tracking nativo do app foi removido. Todas as
+corridas vêm do Strava (pós-corrida). O Ghost precisa de GPS em tempo real
+durante a corrida, o que não existe mais. Inviável.
 
-### IDEIA APROVADA 4: DNA do Corredor (Running DNA)
+### IDEIA APROVADA 3: DNA do Corredor (Running DNA)
 Análise de ML/estatística sobre todo o histórico do atleta gerando um perfil
 único visual (radar chart/mandala). Identifica padrões invisíveis: horário ideal,
 terreno ideal, recuperação ótima, previsão de PR com data estimada e ações para
 acelerar. DNA evolui com o tempo, é compartilhável nas redes sociais, e a
 assessoria pode usar para personalizar treinos. Diferencial competitivo absoluto.
 
-### IDEIA APROVADA 5: Marketplace de OmniCoins na Assessoria
-Cada assessoria cria uma "loja" com recompensas resgatáveis por OmniCoins
-(treino premium, prioridade em eventos, merchandise, etc.). O professor define
-os itens e preços. Cria um loop econômico completo: assessoria distribui coins →
-atleta ganha em desafios → atleta resgata na loja → professor entrega. Dá valor
-real às OmniCoins e transforma cada assessoria em uma micro-economia.
+### IDEIA DESCARTADA: Marketplace de OmniCoins na Assessoria
+~~Cada assessoria cria uma "loja" com recompensas resgatáveis por OmniCoins.~~
+**DESCARTADA:** Risco de rejeição nas lojas (App Store / Play Store) — produtos
+físicos via moeda virtual podem ser interpretados como desvio do sistema de IAP.
+Além disso, coins cross-assessoria criam obrigações econômicas entre assessorias
+sem consentimento mútuo. Inviável sem reestruturação profunda da economia.
 
 ---

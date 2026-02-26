@@ -11,11 +11,12 @@
 | # | Feature | Prioridade | Complexidade | Dependência |
 |---|---------|:----------:|:------------:|:-----------:|
 | 0 | Regra de visibilidade em desafios | **URGENTE** | Baixa | Nenhuma |
-| 1 | Marketplace de OmniCoins na Assessoria | Alta | Média | Nenhuma |
-| 2 | OmniWrapped (Retrospectiva) | Média | Média | Dados históricos |
-| 3 | Liga de Assessorias | Média | Alta | Assessorias existentes |
-| 4 | Corrida Fantasma (Ghost Rival) | Média | Baixa | Ghost system existente |
-| 5 | DNA do Corredor (Running DNA) | Baixa | Alta | Dados históricos + ML |
+| 1 | OmniWrapped (Retrospectiva) | Média | Média | Dados históricos |
+| 2 | Liga de Assessorias | Média | Alta | Assessorias existentes |
+| 3 | DNA do Corredor (Running DNA) | Baixa | Alta | Dados históricos + ML |
+
+> **DESCARTADAS:** Corrida Fantasma (tracking nativo removido) e Marketplace
+> (risco App Store/Play Store + economia cross-assessoria inviável).
 
 ---
 
@@ -68,115 +69,7 @@ dele, e ajuste seu esforço para vencer por margem mínima. Isso é injusto.
 
 ---
 
-## 1. MARKETPLACE DE OMNICOINS NA ASSESSORIA
-
-### Conceito
-Cada assessoria cria uma "loja" com recompensas resgatáveis por OmniCoins.
-O professor define os itens e preços. O atleta gasta seus OmniCoins para
-resgatar recompensas reais oferecidas pelo coach.
-
-### Plano técnico
-
-#### Database (Supabase/PostgreSQL)
-
-```sql
--- Itens da loja de cada assessoria
-CREATE TABLE marketplace_items (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  coaching_group_id UUID NOT NULL REFERENCES coaching_groups(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  description TEXT,
-  price_coins INT NOT NULL CHECK (price_coins > 0),
-  image_url TEXT,
-  stock INT,                     -- NULL = ilimitado
-  is_active BOOLEAN DEFAULT true,
-  created_at_ms BIGINT NOT NULL,
-  updated_at_ms BIGINT NOT NULL
-);
-
--- Resgates feitos por atletas
-CREATE TABLE marketplace_redemptions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  item_id UUID NOT NULL REFERENCES marketplace_items(id),
-  user_id UUID NOT NULL REFERENCES auth.users(id),
-  coaching_group_id UUID NOT NULL REFERENCES coaching_groups(id),
-  price_paid INT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending'
-    CHECK (status IN ('pending', 'confirmed', 'delivered', 'cancelled')),
-  created_at_ms BIGINT NOT NULL,
-  confirmed_at_ms BIGINT
-);
-```
-
-RLS:
-- Staff do grupo: CRUD em `marketplace_items` do seu grupo
-- Atletas do grupo: SELECT em `marketplace_items` ativos do seu grupo
-- Atletas: INSERT em `marketplace_redemptions` (para si mesmos)
-- Staff: UPDATE status em `marketplace_redemptions` do seu grupo
-
-#### Domain (Flutter)
-
-```
-entities/
-  marketplace_item_entity.dart
-  marketplace_redemption_entity.dart
-
-repositories/
-  i_marketplace_repo.dart
-
-usecases/
-  marketplace/
-    redeem_item.dart          -- Debita coins, cria redemption, atualiza stock
-    list_available_items.dart
-```
-
-`redeem_item.dart`:
-1. Verificar saldo do atleta >= preço
-2. Verificar stock (se aplicável)
-3. Debitar OmniCoins via `LedgerService` (novo `LedgerReason.marketplaceRedemption`)
-4. Criar `marketplace_redemptions` com status 'pending'
-5. Notificar staff via push notification
-
-#### Presentation (Flutter)
-
-```
-screens/
-  marketplace_screen.dart         -- Lista itens disponíveis na assessoria
-  marketplace_item_detail.dart    -- Detalhe + botão "Resgatar"
-  staff_marketplace_manage.dart   -- Staff: criar/editar/desativar itens
-  staff_redemptions_screen.dart   -- Staff: ver pedidos, confirmar/entregar
-```
-
-`marketplace_screen.dart`:
-- Grid de cards com imagem, título, preço em OmniCoins
-- Badge "Esgotado" se stock == 0
-- Filtro por categoria (futuro)
-- Saldo do atleta visível no topo
-
-`staff_marketplace_manage.dart`:
-- CRUD de itens (formulário com título, descrição, preço, imagem, stock)
-- Toggle ativo/inativo
-- Lista de resgates pendentes
-
-#### Fluxo do atleta
-1. Entra em "Assessoria" → "Loja" (novo tab/card)
-2. Vê itens disponíveis com preço
-3. Toca em item → tela de detalhe
-4. "Resgatar por X OmniCoins" → confirmação → débito
-5. Status muda para "Pendente" → professor recebe notificação
-6. Professor confirma entrega → status "Entregue"
-
-#### Fluxo do staff
-1. Dashboard → "Gerenciar Loja"
-2. Cria itens com título, preço, descrição, foto
-3. Vê lista de resgates pendentes
-4. Confirma entrega
-
-### Estimativa: 8-12 horas
-
----
-
-## 2. OMNIWRAPPED (RETROSPECTIVA DO CORREDOR)
+## 1. OMNIWRAPPED (RETROSPECTIVA DO CORREDOR)
 
 ### Conceito
 Resumo visual periódico (mensal/trimestral/anual) das estatísticas do atleta.
@@ -235,7 +128,7 @@ screens/
 
 ---
 
-## 3. LIGA DE ASSESSORIAS
+## 2. LIGA DE ASSESSORIAS
 
 ### Conceito
 Competição sazonal entre assessorias. Ranking baseado em métricas agregadas.
@@ -318,50 +211,7 @@ screens/
 
 ---
 
-## 4. CORRIDA FANTASMA (GHOST RIVAL) — MELHORIAS
-
-### Estado atual
-O sistema de Ghost Runner já existe e está funcional:
-- `GhostSessionEntity` — entidade com rota e duração
-- `ghost_position_at.dart` — interpola posição do ghost no tempo
-- `calculate_ghost_delta.dart` — calcula diferença de distância/tempo
-- `ghost_voice_trigger.dart` — feedback por áudio
-- `ghost_picker_sheet.dart` — seletor de ghost antes de correr
-- `ghost_marker.dart` — marcador no mapa
-- `ghost_comparison_card.dart` — card de comparação pós-corrida
-- `challenge_ghost_overlay.dart` — overlay de ghost em desafios
-
-### O que falta (melhorias aprovadas)
-
-#### 4.1 Auto-sugestão de ghost
-Hoje o atleta precisa escolher manualmente. O app deveria:
-- Detectar automaticamente se o atleta está numa rota similar a uma corrida anterior
-- Sugerir: "Você está correndo uma rota similar à sua corrida de 15/02. Ativar Ghost?"
-- Usar algoritmo de similaridade de rota (Hausdorff distance ou DTW simplificado)
-
-**Arquivo:** `tracking_bloc.dart`
-- Ao receber primeiros 5-10 pontos GPS, comparar com rotas salvas
-- Se similaridade > 80%, emitir evento `GhostSuggested`
-- UI: bottom sheet com "Correr contra você mesmo? Sua melhor vez: 24:30"
-
-#### 4.2 Leaderboard de ghost por rota
-- Agrupar corridas por rota similar
-- Ranking pessoal: "Suas 5 melhores nesta rota"
-- Ao selecionar ghost, ver lista ranqueada das tentativas
-
-**Arquivo novo:** `route_similarity_service.dart`
-
-#### 4.3 Compartilhamento de resultado ghost
-- Após vencer o ghost: card compartilhável
-  "Venci meu fantasma de 3 meses atrás! 🏃‍♂️ Novo recorde: 23:45 (-0:45)"
-
-**Arquivo:** `run_summary_screen.dart` — adicionar seção ghost comparison
-
-### Estimativa: 4-6 horas (melhorias incrementais sobre sistema existente)
-
----
-
-## 5. DNA DO CORREDOR (RUNNING DNA)
+## 3. DNA DO CORREDOR (RUNNING DNA)
 
 ### Conceito
 Perfil atlético gerado por análise estatística de todo o histórico do corredor.
@@ -465,21 +315,17 @@ screens/
 Fase 1 (Urgente — pré-release):
   └── #0 Regra de visibilidade em desafios         ~2-3h
 
-Fase 2 (Pós-release — economia):
-  └── #1 Marketplace de OmniCoins                  ~8-12h
+Fase 2 (Engajamento — viralidade):
+  └── #1 OmniWrapped                               ~6-8h
 
-Fase 3 (Engajamento — social):
-  ├── #2 OmniWrapped                               ~6-8h
-  └── #4 Ghost Rival melhorias                     ~4-6h
+Fase 3 (Escala — competição):
+  └── #2 Liga de Assessorias                       ~10-15h
 
-Fase 4 (Escala — competição):
-  └── #3 Liga de Assessorias                       ~10-15h
-
-Fase 5 (Diferencial — inteligência):
-  └── #5 DNA do Corredor                           ~12-18h
+Fase 4 (Diferencial — inteligência):
+  └── #3 DNA do Corredor                           ~12-18h
 ```
 
-**Total estimado: 42-62 horas de desenvolvimento**
+**Total estimado: 30-44 horas de desenvolvimento**
 
 ---
 
@@ -487,9 +333,13 @@ Fase 5 (Diferencial — inteligência):
 
 - A regra de visibilidade (#0) é a única que bloqueia release. As demais são
   incrementais e podem ser entregues em sprints separados.
-- O Marketplace (#1) é prioridade alta porque dá valor real às OmniCoins e
-  completa o loop econômico do app.
-- Ghost Rival (#4) tem complexidade baixa porque o sistema base já existe.
-  São melhorias incrementais.
-- DNA do Corredor (#5) é o mais complexo mas é o maior diferencial competitivo.
+- DNA do Corredor (#3) é o mais complexo mas é o maior diferencial competitivo.
   Pode ser entregue em fases (radar básico → insights → previsão de PR).
+
+## IDEIAS DESCARTADAS
+
+- **Corrida Fantasma (Ghost Rival):** tracking nativo removido, todas as corridas
+  vêm do Strava (pós-corrida). Ghost precisa de GPS em tempo real. Inviável.
+- **Marketplace de OmniCoins:** risco de rejeição App Store/Play Store (moeda
+  virtual + bens reais = desvio de IAP). Economia cross-assessoria cria obrigações
+  sem consentimento entre coaches. Inviável sem reestruturação profunda.
