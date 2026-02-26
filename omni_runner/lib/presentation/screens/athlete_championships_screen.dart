@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/presentation/screens/athlete_championship_ranking_screen.dart';
+import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 
 /// Athlete-facing screen to browse and join open championships.
 ///
@@ -177,7 +178,7 @@ class _AthleteChampionshipsScreenState
     return Scaffold(
       appBar: AppBar(title: const Text('Campeonatos')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const ShimmerListLoader()
           : _error != null
               ? _ErrorBody(message: _error!, onRetry: _load)
               : RefreshIndicator(

@@ -76,6 +76,74 @@ class NotificationRulesService {
     });
   }
 
+  /// Notify a user that someone sent them a friend request.
+  void notifyFriendRequestReceived({
+    required String toUserId,
+    required String fromUserId,
+  }) {
+    _invoke('friend_request_received', {
+      'to_user_id': toUserId,
+      'from_user_id': fromUserId,
+    });
+  }
+
+  /// Notify the original sender that their friend request was accepted.
+  void notifyFriendRequestAccepted({
+    required String accepterUserId,
+    required String originalSenderId,
+  }) {
+    _invoke('friend_request_accepted', {
+      'accepter_user_id': accepterUserId,
+      'original_sender_id': originalSenderId,
+    });
+  }
+
+  /// Notify participants that a challenge has been settled.
+  void notifyChallengeSettled({required String challengeId}) {
+    _invoke('challenge_settled', {
+      'challenge_id': challengeId,
+    });
+  }
+
+  /// Notify a user that a badge was earned.
+  void notifyBadgeEarned({
+    required String userId,
+    required String badgeId,
+    required String badgeName,
+  }) {
+    _invoke('badge_earned', {
+      'user_id': userId,
+      'badge_id': badgeId,
+      'badge_name': badgeName,
+    });
+  }
+
+  /// Notify an athlete that their join request was approved.
+  void notifyJoinRequestApproved({
+    required String userId,
+    required String groupId,
+  }) {
+    _invoke('join_request_approved', {
+      'user_id': userId,
+      'group_id': groupId,
+    });
+  }
+
+  /// Notify members of a league rank change.
+  void notifyLeagueRankChange({
+    required String groupId,
+    required int newRank,
+    required int oldRank,
+    String? seasonName,
+  }) {
+    _invoke('league_rank_change', {
+      'group_id': groupId,
+      'new_rank': newRank,
+      'old_rank': oldRank,
+      if (seasonName != null) 'season_name': seasonName,
+    });
+  }
+
   /// Evaluate all notification rules (streak_at_risk, etc.).
   /// Typically called by a server-side cron, but available for manual trigger.
   void evaluateAll() {

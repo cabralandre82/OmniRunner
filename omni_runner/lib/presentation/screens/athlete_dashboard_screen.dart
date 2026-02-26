@@ -26,6 +26,8 @@ import 'package:omni_runner/presentation/screens/progress_hub_screen.dart';
 import 'package:omni_runner/presentation/screens/wallet_screen.dart';
 import 'package:omni_runner/presentation/widgets/assessoria_required_sheet.dart';
 import 'package:omni_runner/presentation/widgets/login_required_sheet.dart';
+import 'package:flutter/services.dart';
+import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
@@ -47,18 +49,48 @@ class AthleteDashboardScreen extends StatefulWidget {
       _AthleteDashboardScreenState();
 }
 
-class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
+class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
+    with SingleTickerProviderStateMixin {
   String? _assessoriaName;
   String? _assessoriaGroupId;
   String? _pendingRequestGroupName;
+  String? _displayName;
   bool _loading = true;
   bool _stravaConnected = true;
+  late final AnimationController _staggerCtrl;
 
   @override
   void initState() {
     super.initState();
+    _staggerCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
     _loadAssessoriaStatus();
     _checkStrava();
+    _loadDisplayName();
+  }
+
+  @override
+  void dispose() {
+    _staggerCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadDisplayName() async {
+    try {
+      final uid = sl<UserIdentityProvider>().userId;
+      final row = await Supabase.instance.client
+          .from('profiles')
+          .select('display_name')
+          .eq('id', uid)
+          .maybeSingle();
+      if (mounted && row != null) {
+        setState(() {
+          _displayName = row['display_name'] as String?;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _checkStrava() async {
@@ -83,14 +115,20 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
             _assessoriaGroupId = membership.groupId;
             _loading = false;
           });
+          _staggerCtrl.forward();
         }
       } else {
-        // No membership — check for pending join request
         await _checkPendingRequest(uid);
-        if (mounted) setState(() => _loading = false);
+        if (mounted) {
+          setState(() => _loading = false);
+          _staggerCtrl.forward();
+        }
       }
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        _staggerCtrl.forward();
+      }
     }
   }
 
@@ -209,7 +247,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Olá, atleta!',
+              _displayName != null ? 'Olá, $_displayName!' : 'Olá, atleta!',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -304,12 +342,28 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
               const SizedBox(height: 8),
             ],
             Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                mainAxisSpacing: 14,
-                crossAxisSpacing: 14,
-                childAspectRatio: 0.95,
-                children: [
+              child: _loading
+                ? ShimmerLoading(
+                    child: GridView.count(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 14,
+                      crossAxisSpacing: 14,
+                      childAspectRatio: 0.95,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: List.generate(6, (_) => const SkeletonCard()),
+                    ),
+                  )
+                : FadeTransition(
+                    opacity: CurvedAnimation(
+                      parent: _staggerCtrl,
+                      curve: Curves.easeOut,
+                    ),
+                    child: GridView.count(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 14,
+                      crossAxisSpacing: 14,
+                      childAspectRatio: 0.95,
+                      children: [
                   _DashCard(
                     icon: Icons.sports_kabaddi_rounded,
                     title: 'Meus desafios',
@@ -384,8 +438,9 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
                     iconColor: Colors.amber.shade800,
                     onTap: _openWallet,
                   ),
-                ],
-              ),
+                      ],
+                    ),
+                  ),
             ),
           ],
         ),
@@ -428,7 +483,10 @@ class _DashCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       color: bgColor,
       child: InkWell(
-        onTap: onTap,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
         borderRadius: BorderRadius.circular(20),
         child: Padding(
           padding: const EdgeInsets.all(18),

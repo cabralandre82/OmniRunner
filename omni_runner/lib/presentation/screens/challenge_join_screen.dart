@@ -5,6 +5,7 @@ import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/presentation/widgets/login_required_sheet.dart';
+import 'package:omni_runner/presentation/widgets/success_overlay.dart';
 
 /// Screen shown when a user opens a challenge deep link.
 ///
@@ -130,15 +131,11 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
       if (data['ok'] == true) {
         if (mounted) {
           final newStatus = data['status'] as String? ?? 'pending';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                newStatus == 'active'
-                    ? 'Desafio aceito e iniciado! Boa corrida!'
-                    : 'Desafio aceito! Aguardando início.',
-              ),
-              backgroundColor: Colors.green,
-            ),
+          showSuccessOverlay(
+            context,
+            message: newStatus == 'active'
+                ? 'Desafio aceito e iniciado!'
+                : 'Desafio aceito!',
           );
           setState(() {
             _alreadyJoined = true;

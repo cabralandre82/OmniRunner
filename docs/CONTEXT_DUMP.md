@@ -27849,3 +27849,82 @@ automaticamente um oponente compatível. Zero browsing.
 - Root Directory do projeto Vercel deve ser `portal` (monorepo com `omni_runner/` e `portal/`)
 - Sem essa config, builds falham silenciosamente (0ms, status Error)
 - `SUPABASE_SERVICE_ROLE_KEY` necessario nas env vars do Vercel (usado pelo admin client em `/api/platform/assessorias`)
+
+---
+
+## Sprint — Push Notifications (26/02/2026)
+
+**Status:** CONCLUÍDA
+**Ref:** DECISÃO 073
+
+### Implementação
+
+8 novos tipos de push notification implementados:
+- `friend_request_received`, `friend_request_accepted`
+- `challenge_settled`, `challenge_expiring`
+- `inactivity_nudge`, `streak_at_risk`
+- `badge_earned`, `league_rank_change`, `join_request_approved`
+
+**Arquivos criados:**
+- `omni_runner/lib/core/push/push_navigation_handler.dart` — in-app MaterialBanner + deep linking
+
+**Arquivos modificados:**
+- `supabase/functions/notify-rules/index.ts` — 8 novas regras
+- `supabase/functions/settle-challenge/index.ts` — trigger challenge_settled
+- `supabase/functions/evaluate-badges/index.ts` — trigger badge_earned
+- `supabase/functions/league-snapshot/index.ts` — trigger league_rank_change
+- `supabase/functions/lifecycle-cron/index.ts` — cron triggers (challenge_expiring, inactivity_nudge, streak_at_risk)
+- `omni_runner/lib/core/push/notification_rules_service.dart` — novos métodos client-side
+- `omni_runner/lib/presentation/blocs/friends/friends_bloc.dart` — push em accept/send
+- `omni_runner/lib/core/service_locator.dart` — wiring NotificationRulesService
+- `omni_runner/lib/presentation/screens/staff_join_requests_screen.dart` — push join_request_approved
+- `omni_runner/lib/main.dart` — PushNavigationHandler init
+
+---
+
+## Sprint — Guided Onboarding (26/02/2026)
+
+**Status:** CONCLUÍDA
+**Ref:** DECISÃO 074
+
+### Implementação
+
+Tour de 6 slides para novos atletas, integrado ao AuthGate:
+1. Strava connection, 2. Desafios, 3. Assessoria, 4. Streak, 5. DNA/Wrapped, 6. Amigos
+
+**Arquivos criados:**
+- `omni_runner/lib/presentation/screens/onboarding_tour_screen.dart`
+
+**Arquivos modificados:**
+- `omni_runner/lib/core/tips/first_use_tips.dart` — novo TipKey.onboardingTour
+- `omni_runner/lib/presentation/screens/auth_gate.dart` — tour destination + routing
+
+---
+
+## Sprint — Polish / UX (26/02/2026)
+
+**Status:** CONCLUÍDA
+**Ref:** DECISÃO 075
+
+### Implementação
+
+5 widgets reutilizáveis de polimento (zero dependências externas):
+
+| Widget | Arquivo | Propósito |
+|---|---|---|
+| `ShimmerLoading` / `SkeletonTile` / `SkeletonCard` / `ShimmerListLoader` | `shimmer_loading.dart` | Shimmer loading puro-Flutter |
+| `EmptyState` | `empty_state.dart` | Empty state com ícone + título + CTA |
+| `ErrorState` | `error_state.dart` | Erro humanizado (pt-BR) + retry |
+| `AnimatedCheckmark` / `ConfettiBurst` / `showSuccessOverlay` | `success_overlay.dart` | Celebração com confetti |
+| `StaggeredList` | `staggered_list.dart` | Animação escalonada fade+slide |
+
+### Melhorias aplicadas em 11 telas:
+
+- Shimmer loading substituiu CircularProgressIndicator em 8 telas
+- Empty states amigáveis em HistoryScreen e FriendsScreen
+- Error states humanizados com retry em 3 telas
+- Celebração com confetti ao criar/aceitar desafio
+- Page transitions nativas (PredictiveBack Android, Cupertino iOS)
+- Dashboard personalizado com nome do atleta + fade-in stagger
+- HapticFeedback em cards e ações sociais
+- Pull-to-refresh em FriendsScreen

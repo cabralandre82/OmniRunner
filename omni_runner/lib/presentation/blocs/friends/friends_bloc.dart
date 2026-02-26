@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omni_runner/core/push/notification_rules_service.dart';
 import 'package:omni_runner/domain/entities/friendship_entity.dart';
 import 'package:omni_runner/domain/repositories/i_friendship_repo.dart';
 import 'package:omni_runner/domain/usecases/social/accept_friend.dart';
@@ -11,6 +12,7 @@ class FriendsBloc extends Bloc<FriendsEvent, FriendsState> {
   final IFriendshipRepo _friendshipRepo;
   final SendFriendInvite _sendInvite;
   final AcceptFriend _acceptFriend;
+  final NotificationRulesService _notifyRules;
 
   String _userId = '';
 
@@ -18,9 +20,11 @@ class FriendsBloc extends Bloc<FriendsEvent, FriendsState> {
     required IFriendshipRepo friendshipRepo,
     required SendFriendInvite sendInvite,
     required AcceptFriend acceptFriend,
+    required NotificationRulesService notifyRules,
   })  : _friendshipRepo = friendshipRepo,
         _sendInvite = sendInvite,
         _acceptFriend = acceptFriend,
+        _notifyRules = notifyRules,
         super(const FriendsInitial()) {
     on<LoadFriends>(_onLoad);
     on<RefreshFriends>(_onRefresh);
@@ -45,11 +49,18 @@ class FriendsBloc extends Bloc<FriendsEvent, FriendsState> {
   Future<void> _onAccept(
       AcceptFriendEvent event, Emitter<FriendsState> emit) async {
     try {
+      final friendship = await _friendshipRepo.getById(event.friendshipId);
       await _acceptFriend.call(
         friendshipId: event.friendshipId,
         acceptingUserId: _userId,
         nowMs: DateTime.now().millisecondsSinceEpoch,
       );
+      if (friendship != null && friendship.invitedBy != null) {
+        _notifyRules.notifyFriendRequestAccepted(
+          accepterUserId: _userId,
+          originalSenderId: friendship.invitedBy!,
+        );
+      }
       await _fetch(emit);
     } on Exception catch (e) {
       emit(FriendsError('Erro ao aceitar convite: $e'));
@@ -79,6 +90,10 @@ class FriendsBloc extends Bloc<FriendsEvent, FriendsState> {
         toUserId: event.toUserId,
         uuidGenerator: () => const Uuid().v4(),
         nowMs: DateTime.now().millisecondsSinceEpoch,
+      );
+      _notifyRules.notifyFriendRequestReceived(
+        toUserId: event.toUserId,
+        fromUserId: _userId,
       );
       await _fetch(emit);
     } on Exception catch (e) {

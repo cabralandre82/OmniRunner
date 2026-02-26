@@ -713,6 +713,7 @@ Future<void> setupServiceLocator() async {
       friendshipRepo: sl<IFriendshipRepo>(),
       sendInvite: sl<SendFriendInvite>(),
       acceptFriend: sl<AcceptFriend>(),
+      notifyRules: sl<NotificationRulesService>(),
     ),
   );
   // TODO(phase-15): GroupsBloc and EventsBloc when repos are implemented.

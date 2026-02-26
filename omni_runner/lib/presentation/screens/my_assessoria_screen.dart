@@ -18,6 +18,8 @@ import 'package:omni_runner/presentation/screens/athlete_championships_screen.da
 import 'package:omni_runner/presentation/screens/challenges_list_screen.dart';
 import 'package:omni_runner/presentation/screens/join_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/league_screen.dart';
+import 'package:omni_runner/presentation/widgets/error_state.dart';
+import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 
 /// "Minha Assessoria" screen for athletes.
 ///
@@ -53,10 +55,8 @@ class MyAssessoriaScreen extends StatelessWidget {
           }
         },
         builder: (context, state) => switch (state) {
-          MyAssessoriaInitial() =>
-            const Center(child: Text('Carregando...')),
-          MyAssessoriaLoading() =>
-            const Center(child: CircularProgressIndicator()),
+          MyAssessoriaInitial() || MyAssessoriaLoading() =>
+            const ShimmerListLoader(itemCount: 4),
           MyAssessoriaSwitching() => const Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -79,20 +79,12 @@ class MyAssessoriaScreen extends StatelessWidget {
             ),
           MyAssessoriaSwitched() =>
             const Center(child: Icon(Icons.check_circle, size: 64)),
-          MyAssessoriaError(:final message) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.error_outline,
-                        size: 48,
-                        color: Theme.of(context).colorScheme.error),
-                    const SizedBox(height: 12),
-                    Text(message, textAlign: TextAlign.center),
-                  ],
-                ),
-              ),
+          MyAssessoriaError(:final message) => ErrorState(
+              message: message,
+              onRetry: () {
+                final uid = sl<UserIdentityProvider>().userId;
+                context.read<MyAssessoriaBloc>().add(LoadMyAssessoria(uid));
+              },
             ),
         },
       ),
@@ -584,7 +576,7 @@ class _NoAssessoriaBodyState extends State<_NoAssessoriaBody> {
     final theme = widget.theme;
 
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const ShimmerListLoader(itemCount: 3);
     }
 
     return Center(

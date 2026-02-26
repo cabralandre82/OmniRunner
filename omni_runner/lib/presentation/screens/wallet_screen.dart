@@ -6,6 +6,7 @@ import 'package:omni_runner/domain/entities/ledger_entry_entity.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_bloc.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_event.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_state.dart';
+import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 
 enum _WalletFilter { all, earned, spent }
 
@@ -42,12 +43,8 @@ class _WalletScreenState extends State<WalletScreen> {
       ),
       body: BlocBuilder<WalletBloc, WalletState>(
         builder: (context, state) => switch (state) {
-          WalletInitial() => const Center(
-              child: Text('Carregando...'),
-            ),
-          WalletLoading() => const Center(
-              child: CircularProgressIndicator(),
-            ),
+          WalletInitial() || WalletLoading() =>
+            const ShimmerListLoader(itemCount: 5),
           WalletLoaded(:final wallet, :final history) => RefreshIndicator(
               onRefresh: () async {
                 final uid = sl<UserIdentityProvider>().userId;

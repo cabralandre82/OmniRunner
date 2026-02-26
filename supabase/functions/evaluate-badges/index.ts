@@ -23,6 +23,7 @@ import { requireJson, requireFields, ValidationError } from "../_shared/validate
 
 interface BadgeRow {
   id: string;
+  name: string;
   category: string;
   tier: string;
   xp_reward: number;
@@ -302,6 +303,34 @@ serve(async (req: Request) => {
       p_user_id: user_id,
       p_delta: totalCoinsAwarded,
     });
+  }
+
+  // Push notifications for newly earned badges
+  if (newAwards.length > 0) {
+    try {
+      const svcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SERVICE_ROLE_KEY");
+      const svcUrl = Deno.env.get("SUPABASE_URL");
+      if (svcKey && svcUrl) {
+        for (const award of newAwards) {
+          const badgeDef = allBadges.find((b) => b.id === award.badge_id);
+          fetch(`${svcUrl}/functions/v1/notify-rules`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${svcKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              rule: "badge_earned",
+              context: {
+                user_id: user_id,
+                badge_id: award.badge_id,
+                badge_name: badgeDef?.name ?? award.badge_id,
+              },
+            }),
+          }).catch(() => {});
+        }
+      }
+    } catch { /* fire-and-forget */ }
   }
 
   return jsonOk({

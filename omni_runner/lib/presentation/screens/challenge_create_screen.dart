@@ -14,6 +14,7 @@ import 'package:omni_runner/presentation/blocs/verification/verification_bloc.da
 import 'package:omni_runner/presentation/blocs/verification/verification_event.dart';
 import 'package:omni_runner/presentation/screens/challenge_invite_screen.dart';
 import 'package:omni_runner/presentation/screens/matchmaking_screen.dart';
+import 'package:omni_runner/presentation/widgets/success_overlay.dart';
 import 'package:omni_runner/presentation/widgets/verification_gate.dart';
 
 class ChallengeCreateScreen extends StatefulWidget {
@@ -115,6 +116,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
             sl<NotificationRulesService>().notifyChallengeReceived(
               challengeId: state.challenge.id,
             );
+            showSuccessOverlay(context, message: 'Desafio criado!');
             Navigator.of(context).pushReplacement(
               MaterialPageRoute<void>(
                 builder: (_) => BlocProvider.value(

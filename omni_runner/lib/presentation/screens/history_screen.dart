@@ -8,6 +8,8 @@ import 'package:omni_runner/domain/entities/workout_status.dart';
 import 'package:omni_runner/domain/repositories/i_session_repo.dart';
 import 'package:omni_runner/domain/repositories/i_sync_repo.dart';
 import 'package:omni_runner/presentation/screens/run_details_screen.dart';
+import 'package:omni_runner/presentation/widgets/empty_state.dart';
+import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 
 /// History screen listing the last 20 sessions.
 ///
@@ -156,13 +158,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const ShimmerListLoader()
           : _sessions == null || _sessions!.isEmpty
-              ? const Center(child: Text(
-                  'Nenhuma corrida ainda.\nVá correr!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, color: Colors.grey),
-                ),)
+              ? const EmptyState(
+                  icon: Icons.directions_run_rounded,
+                  title: 'Nenhuma corrida ainda',
+                  subtitle: 'Conecte o Strava e faça sua primeira corrida.\n'
+                      'Ela aparecerá aqui automaticamente!',
+                )
               : RefreshIndicator(
                   onRefresh: _loadSessions,
                   child: ListView.builder(
@@ -296,9 +299,9 @@ class _SourceBadge extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
         decoration: BoxDecoration(
-          color: bgColor.withOpacity(0.12),
+          color: bgColor.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: bgColor.withOpacity(0.4), width: 0.5),
+          border: Border.all(color: bgColor.withValues(alpha: 0.4), width: 0.5),
         ),
         child: Text(
           source == 'strava' ? 'STRAVA' : label.toUpperCase(),

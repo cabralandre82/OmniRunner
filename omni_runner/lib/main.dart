@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/deep_links/deep_link_handler.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/push/push_navigation_handler.dart';
 import 'package:omni_runner/core/push/push_notification_service.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/sync/auto_sync_manager.dart';
@@ -20,6 +21,7 @@ import 'package:omni_runner/presentation/screens/auth_gate.dart';
 import 'package:omni_runner/presentation/screens/recovery_screen.dart';
 
 final themeNotifier = ThemeNotifier();
+final _navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -92,7 +94,12 @@ Future<void> _bootstrap() async {
 
   // Initialize push notifications (requires Firebase + Supabase).
   if (AppConfig.isSupabaseReady) {
-    await sl<PushNotificationService>().init();
+    final pushService = sl<PushNotificationService>();
+    final pushNav = PushNavigationHandler(navigatorKey: _navigatorKey);
+
+    pushService.onForegroundMessage = pushNav.showForegroundBanner;
+    await pushService.init();
+    await pushNav.init();
   }
 
   // Auto-sync pending sessions on startup and when connectivity restores.
@@ -117,10 +124,17 @@ class OmniRunnerApp extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: themeNotifier,
       builder: (_, mode, __) => MaterialApp(
+        navigatorKey: _navigatorKey,
         title: 'Omni Runner',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           useMaterial3: true,
+          pageTransitionsTheme: const PageTransitionsTheme(
+            builders: {
+              TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            },
+          ),
         ),
         darkTheme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
@@ -128,6 +142,12 @@ class OmniRunnerApp extends StatelessWidget {
             brightness: Brightness.dark,
           ),
           useMaterial3: true,
+          pageTransitionsTheme: const PageTransitionsTheme(
+            builders: {
+              TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            },
+          ),
         ),
         themeMode: mode,
         home: recovery != null

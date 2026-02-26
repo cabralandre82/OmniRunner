@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
@@ -14,6 +15,8 @@ import 'package:omni_runner/presentation/screens/challenge_create_screen.dart';
 import 'package:omni_runner/presentation/screens/challenge_details_screen.dart';
 import 'package:omni_runner/presentation/screens/matchmaking_screen.dart';
 import 'package:omni_runner/presentation/screens/settings_screen.dart';
+import 'package:omni_runner/presentation/widgets/error_state.dart';
+import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 
 void _openMatchmaking(BuildContext context) async {
@@ -93,28 +96,20 @@ class _ChallengesListScreenState extends State<ChallengesListScreen> {
           Expanded(
             child: BlocBuilder<ChallengesBloc, ChallengesState>(
               builder: (context, state) => switch (state) {
-                ChallengesInitial() => const Center(
-                    child: Text('Carregando...'),
-                  ),
-                ChallengesLoading() => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                ChallengesInitial() || ChallengesLoading() =>
+                  const ShimmerListLoader(),
                 ChallengesLoaded(:final challenges) => challenges.isEmpty
                     ? _empty(context)
                     : _listWithTip(context, challenges),
                 ChallengeCreated(:final challenge) =>
                   _list(context, [challenge]),
                 ChallengeDetailLoaded() => const SizedBox.shrink(),
-                ChallengesError(:final message) => Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        message,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            color: Theme.of(context).colorScheme.error),
-                      ),
-                    ),
+                ChallengesError(:final message) => ErrorState(
+                    message: message,
+                    onRetry: () {
+                      final uid = sl<UserIdentityProvider>().userId;
+                      context.read<ChallengesBloc>().add(LoadChallenges(uid));
+                    },
                   ),
               },
             ),
@@ -283,6 +278,7 @@ class _ChallengeListTile extends StatelessWidget {
             )
           : null,
       onTap: () {
+        HapticFeedback.selectionClick();
         context
             .read<ChallengesBloc>()
             .add(ViewChallengeDetails(challenge.id));

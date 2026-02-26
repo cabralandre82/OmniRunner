@@ -195,10 +195,75 @@ serve(async (req: Request) => {
       }
     }
 
+    // ── 6. Push: challenge expiring (< 24h left, once per cycle) ──────
+    let challengeExpiringNotifs = false;
+    {
+      try {
+        const res = await fetch(`${supabaseUrl}/functions/v1/notify-rules`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${serviceKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ rule: "challenge_expiring" }),
+        });
+        challengeExpiringNotifs = res.ok;
+      } catch {
+        // best-effort
+      }
+    }
+
+    // ── 7. Push: inactivity nudge (5+ days, once daily) ───────────────
+    let inactivityNudge = false;
+    {
+      const hour = now.getUTCHours();
+      if (hour >= 17 && hour < 18) {
+        try {
+          const res = await fetch(`${supabaseUrl}/functions/v1/notify-rules`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${serviceKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ rule: "inactivity_nudge" }),
+          });
+          inactivityNudge = res.ok;
+        } catch {
+          // best-effort
+        }
+      }
+    }
+
+    // ── 8. Push: streak at risk (evening, once daily) ─────────────────
+    let streakAtRiskNotifs = false;
+    {
+      const hour = now.getUTCHours();
+      if (hour >= 20 && hour < 21) {
+        try {
+          const res = await fetch(`${supabaseUrl}/functions/v1/notify-rules`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${serviceKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ rule: "streak_at_risk" }),
+          });
+          streakAtRiskNotifs = res.ok;
+        } catch {
+          // best-effort
+        }
+      }
+    }
+
     return jsonOk({
       championships: { activated: champsActivated, completed: champsCompleted },
       challenges: { settled: challengesSettled, expired: challengesExpired },
       league: { snapshot_triggered: leagueSnapshot },
+      push: {
+        challenge_expiring: challengeExpiringNotifs,
+        inactivity_nudge: inactivityNudge,
+        streak_at_risk: streakAtRiskNotifs,
+      },
     }, requestId);
   } catch (_err) {
     status = 500;

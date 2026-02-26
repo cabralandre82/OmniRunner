@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:omni_runner/core/push/notification_rules_service.dart';
+import 'package:omni_runner/core/service_locator.dart';
+
 /// Staff screen to view and approve/reject athlete join requests.
 class StaffJoinRequestsScreen extends StatefulWidget {
   final String groupId;
@@ -95,6 +98,10 @@ class _StaffJoinRequestsScreenState extends State<StaffJoinRequestsScreen> {
       await Supabase.instance.client.rpc(
         'fn_approve_join_request',
         params: {'p_request_id': req.id},
+      );
+      sl<NotificationRulesService>().notifyJoinRequestApproved(
+        userId: req.userId,
+        groupId: widget.groupId,
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

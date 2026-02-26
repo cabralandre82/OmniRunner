@@ -11,11 +11,13 @@ import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/domain/entities/profile_entity.dart';
 import 'package:omni_runner/domain/repositories/i_profile_repo.dart';
+import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/presentation/screens/challenge_join_screen.dart';
 import 'package:omni_runner/presentation/screens/home_screen.dart';
 import 'package:omni_runner/presentation/screens/join_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/login_screen.dart';
 import 'package:omni_runner/presentation/screens/onboarding_role_screen.dart';
+import 'package:omni_runner/presentation/screens/onboarding_tour_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_setup_screen.dart';
 import 'package:omni_runner/presentation/screens/welcome_screen.dart';
 
@@ -47,6 +49,7 @@ enum _GateDestination {
   onboarding,
   joinAssessoria,
   staffSetup,
+  tour,
   home,
 }
 
@@ -298,7 +301,7 @@ class _AuthGateState extends State<AuthGate> {
             _autoJoinFromHome(code);
           });
         } else {
-          _go(_GateDestination.home);
+          await _goHomeOrTour();
         }
       } else if (profile.onboardingState == OnboardingState.roleSelected &&
           profile.userRole == 'ATLETA') {
@@ -335,7 +338,7 @@ class _AuthGateState extends State<AuthGate> {
       _onboardingState = profile.onboardingState;
       _userRole = profile.userRole;
       if (profile.isOnboardingComplete) {
-        _go(_GateDestination.home);
+        await _goHomeOrTour();
       } else {
         _go(_GateDestination.onboarding);
       }
@@ -343,6 +346,19 @@ class _AuthGateState extends State<AuthGate> {
       AppLogger.error('AuthGate retry #$_retryCount failed: $e', tag: _tag, error: e);
       await _retryResolve();
     }
+  }
+
+  Future<void> _goHomeOrTour() async {
+    final shouldTour = await FirstUseTips.shouldShow(TipKey.onboardingTour);
+    if (shouldTour && _userRole != 'ASSESSORIA_STAFF') {
+      _go(_GateDestination.tour);
+    } else {
+      _go(_GateDestination.home);
+    }
+  }
+
+  void _onTourComplete() {
+    _go(_GateDestination.home);
   }
 
   void _go(_GateDestination d) {
@@ -396,6 +412,9 @@ class _AuthGateState extends State<AuthGate> {
       _GateDestination.staffSetup => StaffSetupScreen(
           onComplete: _onOnboardingComplete,
           onBack: _onBackToLogin,
+        ),
+      _GateDestination.tour => OnboardingTourScreen(
+          onComplete: _onTourComplete,
         ),
       _GateDestination.home => HomeScreen(userRole: _userRole),
     };

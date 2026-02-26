@@ -72,7 +72,7 @@ lib/
 │   ├── deep_links/                # Deep link handling
 │   ├── errors/                    # CoachingFailures, etc.
 │   ├── logging/                   # AppLogger → Sentry
-│   ├── push/                      # NotificationRulesService
+│   ├── push/                      # PushNotificationService, NotificationRulesService, PushNavigationHandler
 │   ├── sync/                      # AutoSyncManager
 │   ├── tips/                      # FirstUseTips
 │   └── utils/                     # Helpers genéricos
@@ -117,6 +117,12 @@ lib/
 │   ├── map/                       # MapLibre helpers
 │   ├── screens/                   # 66 telas
 │   └── widgets/                   # Componentes reutilizáveis
+│       ├── shimmer_loading.dart   # Shimmer / skeleton loaders
+│       ├── success_overlay.dart   # Checkmark + confetti celebração
+│       ├── staggered_list.dart    # Animação escalonada p/ listas
+│       ├── empty_state.dart       # Empty state com ícone + CTA
+│       ├── error_state.dart       # Erro humanizado + retry
+│       └── (outros widgets)
 │
 ├── core/service_locator.dart      # get_it — único ponto de DI
 └── main.dart                      # Entry point (Sentry + Supabase init)
@@ -144,7 +150,7 @@ AuthGate
     │       ├─ PopScope intercepta back → sign-out → Welcome
     │       └─ Botão ← visual em todas as telas
     │
-    ├─ Role = ATLETA → HomeScreen (4 tabs: Início, Hoje, Histórico, Mais)
+    ├─ Role = ATLETA → OnboardingTourScreen (first time) → HomeScreen (4 tabs)
     │
     └─ Role = ASSESSORIA_STAFF → HomeScreen (2 tabs: Início, Mais)
                                     └─ StaffDashboardScreen
@@ -289,7 +295,8 @@ ParkDetectionService
 | Verification | `athlete_verification` |
 | Strava | `strava_connections`, `strava_activity_history` |
 | Parks | `park_activities`, `park_leaderboard`, `park_segments` |
-| Notifications | `notification_log` |
+| Notifications | `notification_log`, `push_tokens` |
+| Friends | `friendships` |
 
 ### 8.2 RPC Functions (SECURITY DEFINER)
 
@@ -319,7 +326,7 @@ ParkDetectionService
 | `is_group_admin_or_mod()` | Helper RLS (social admin check) |
 | `staff_group_member_ids()` | Helper RLS (member IDs para staff leitura) |
 
-### 8.3 Edge Functions (41)
+### 8.3 Edge Functions (42+)
 
 | Categoria | Funções |
 |-----------|---------|
@@ -410,6 +417,10 @@ Retry: 3x exponential backoff em chamadas críticas (auth, create assessoria)
 | F23 — Parks & Leaderboards | features/parks | Detection, tiers, community, segments | ✅ |
 | F24 — Park Matchmaking | presentation/screens/matchmaking_screen | Preferred park auto-detect, priority match | ✅ |
 | F25 — Platform Approval | portal/platform + migration | Assessorias pending/approved/rejected/suspended | ✅ |
+| F26 — Friends / Social | domain + data + EFs | Amizades cross-assessoria, busca, perfil, CTAs | ✅ |
+| F27 — Push Notifications | core/push + EFs + FCM | 8 tipos de push, in-app banner, deep linking | ✅ |
+| F28 — Guided Onboarding | presentation/screens | Tour de 6 slides para novos atletas | ✅ |
+| F29 — Polish / UX | presentation/widgets | Shimmer, confetti, empty/error states, haptics | ✅ |
 
 ---
 
@@ -434,7 +445,7 @@ OmniCoins (gamificação, nunca monetário). Ledger append-only. Clearing semana
 XP, níveis (N^1.5), badges (30 tipos, 4 tiers), missions diárias, streaks (diário/semanal/mensal), goals semanais. Pertence ao atleta, não à assessoria.
 
 ### 12.7 Social Context
-Amigos, grupos sociais, eventos, rankings, leaderboards.
+Amigos (cross-assessoria), grupos sociais, eventos, rankings, leaderboards. Friendships com accept/decline/remove. Busca por nome (`fn_search_users`). Perfil com Instagram/TikTok. CTAs pós-desafio e em rankings. Push notifications para pedidos de amizade.
 
 ### 12.8 Billing Context (Portal only)
 Next.js portal. Stripe (card/pix/boleto). Auto top-up. Refund. Nunca no app mobile.
@@ -513,4 +524,4 @@ SECURITY DEFINER + validações server-side.
 
 ---
 
-*Documento atualizado em 26/02/2026 — Sprint 25.0.0 (Strava-Only + Parks + Platform Approval)*
+*Documento atualizado em 26/02/2026 — Sprint 25.0.0 (Strava-Only + Parks + Platform Approval + Friends + Push + Onboarding + Polish)*

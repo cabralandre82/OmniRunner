@@ -108,6 +108,15 @@ visualizar metricas basicas e competir contra si mesmo atraves de um Ghost Runne
 - F5 (Ghost Runner local): substituído pelo Shadow Racing de parque (futuro)
 - F7 (Sync manual): substituído por sync automático via Strava webhook
 
+### Sprint 25.0.0 (cont.) — Friends, Push, Onboarding, Polish (26/02/2026)
+
+| # | Funcionalidade | Descrição | Status |
+|---|---|---|---|
+| E11 | Friends / Social | Amizades cross-assessoria, busca por nome, perfil social | ✅ |
+| E12 | Push Notifications | 8 tipos (friend, challenge, badge, streak, etc.) + in-app banner + deep linking | ✅ |
+| E13 | Guided Onboarding | Tour de 6 slides para novos atletas (pós-signup, 1x) | ✅ |
+| E14 | Polish / UX | Shimmer loading, confetti, empty/error states, haptics, page transitions | ✅ |
+
 ---
 
-*Documento gerado na Sprint 0.1 — Atualizado em 26/02/2026 (Sprint 25.0.0 + DECISAO 061)*
+*Documento gerado na Sprint 0.1 — Atualizado em 26/02/2026 (Sprint 25.0.0 + DECISAO 061-075)*

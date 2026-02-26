@@ -426,6 +426,26 @@ serve(async (req: Request) => {
     }
 
     await db.from("challenges").update({ status: "completed" }).eq("id", ch.id);
+
+    // Push notification: challenge settled
+    try {
+      const svcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SERVICE_ROLE_KEY");
+      const svcUrl = Deno.env.get("SUPABASE_URL");
+      if (svcKey && svcUrl) {
+        fetch(`${svcUrl}/functions/v1/notify-rules`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${svcKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            rule: "challenge_settled",
+            context: { challenge_id: ch.id },
+          }),
+        }).catch(() => {});
+      }
+    } catch { /* fire-and-forget */ }
+
     settled++;
   }
 

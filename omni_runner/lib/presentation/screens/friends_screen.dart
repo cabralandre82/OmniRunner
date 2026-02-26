@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -10,6 +11,9 @@ import 'package:omni_runner/presentation/blocs/friends/friends_bloc.dart';
 import 'package:omni_runner/presentation/blocs/friends/friends_event.dart';
 import 'package:omni_runner/presentation/blocs/friends/friends_state.dart';
 import 'package:omni_runner/presentation/screens/friend_profile_screen.dart';
+import 'package:omni_runner/presentation/widgets/empty_state.dart';
+import 'package:omni_runner/presentation/widgets/error_state.dart';
+import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 
 class FriendsScreen extends StatelessWidget {
   const FriendsScreen({super.key});
@@ -34,35 +38,12 @@ class FriendsScreen extends StatelessWidget {
       ),
       body: BlocBuilder<FriendsBloc, FriendsState>(
         builder: (context, state) => switch (state) {
-          FriendsInitial() =>
-            const Center(child: Text('Carregue sua lista de amigos.')),
-          FriendsLoading() =>
-            const Center(child: CircularProgressIndicator()),
+          FriendsInitial() || FriendsLoading() => const ShimmerListLoader(),
           FriendsLoaded() => _Body(state: state),
-          FriendsError(:final message) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.error_outline,
-                        size: 48, color: Theme.of(context).colorScheme.error),
-                    const SizedBox(height: 12),
-                    Text(message,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            color: Theme.of(context).colorScheme.error)),
-                    const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: () => context
-                          .read<FriendsBloc>()
-                          .add(const RefreshFriends()),
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Tentar novamente'),
-                    ),
-                  ],
-                ),
-              ),
+          FriendsError(:final message) => ErrorState(
+              message: message,
+              onRetry: () =>
+                  context.read<FriendsBloc>().add(const RefreshFriends()),
             ),
         },
       ),
@@ -154,7 +135,12 @@ class _BodyState extends State<_Body> {
       return _empty(context);
     }
 
-    return ListView(
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<FriendsBloc>().add(const RefreshFriends());
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      },
+      child: ListView(
       children: [
         if (s.pendingReceived.isNotEmpty) ...[
           _SectionHeader(
@@ -202,44 +188,30 @@ class _BodyState extends State<_Body> {
           ),
         const SizedBox(height: 24),
       ],
+    ),
     );
   }
 
   Widget _empty(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.people_outline, size: 64, color: cs.outline),
-          const SizedBox(height: 16),
-          const Text('Nenhum amigo ainda',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text(
-            'Busque corredores pelo nome\nou adicione após desafios e campeonatos!',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: cs.outline),
+    return EmptyState(
+      icon: Icons.people_outline_rounded,
+      title: 'Nenhum amigo ainda',
+      subtitle: 'Busque corredores pelo nome ou adicione '
+          'após desafios e campeonatos!',
+      actionLabel: 'Buscar corredores',
+      actionIcon: Icons.person_search_rounded,
+      onAction: () {
+        final bloc = context.read<FriendsBloc>();
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => _FriendSearchScreen(
+              onInvite: (userId) {
+                bloc.add(SendFriendRequest(userId));
+              },
+            ),
           ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: () {
-              final bloc = context.read<FriendsBloc>();
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => _FriendSearchScreen(
-                    onInvite: (userId) {
-                      bloc.add(SendFriendRequest(userId));
-                    },
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.person_search_rounded),
-            label: const Text('Buscar corredores'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -360,16 +332,18 @@ class _PendingReceivedTile extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.check_circle, color: cs.primary),
             tooltip: 'Aceitar',
-            onPressed: () => context
-                .read<FriendsBloc>()
-                .add(AcceptFriendEvent(friendship.id)),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              context.read<FriendsBloc>().add(AcceptFriendEvent(friendship.id));
+            },
           ),
           IconButton(
             icon: Icon(Icons.cancel_outlined, color: cs.error),
             tooltip: 'Recusar',
-            onPressed: () => context
-                .read<FriendsBloc>()
-                .add(DeclineFriendEvent(friendship.id)),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              context.read<FriendsBloc>().add(DeclineFriendEvent(friendship.id));
+            },
           ),
         ],
       ),

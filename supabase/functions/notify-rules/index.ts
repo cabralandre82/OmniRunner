@@ -15,6 +15,14 @@ import { startTimer, logRequest, logError } from "../_shared/obs.ts";
  *   1. challenge_received  — notify user when invited to a challenge
  *   2. streak_at_risk      — notify users whose streak expires today
  *   3. championship_starting — notify participants of championships starting soon
+ *   4. friend_request_received — notify user of incoming friend invite
+ *   5. friend_request_accepted — notify inviter that friend accepted
+ *   6. challenge_settled — notify participants of challenge result
+ *   7. challenge_expiring — remind participants of approaching deadline
+ *   8. inactivity_nudge — nudge users inactive for 5+ days
+ *   9. badge_earned — notify user of new badge
+ *  10. league_rank_change — notify assessoria members of rank change
+ *  11. join_request_approved — notify athlete their join was approved
  *
  * POST /notify-rules
  * Body: {
@@ -98,6 +106,9 @@ serve(async (req: Request) => {
       "challenge_received", "challenge_accepted", "join_request_received",
       "streak_at_risk", "championship_starting",
       "championship_invite_received", "challenge_team_invite_received",
+      "friend_request_received", "friend_request_accepted",
+      "challenge_settled", "challenge_expiring", "inactivity_nudge",
+      "badge_earned", "league_rank_change", "join_request_approved",
     ];
     const rulesToRun = body.rule ? [body.rule] : allRules;
 
@@ -126,6 +137,30 @@ serve(async (req: Request) => {
           break;
         case "low_credits_alert":
           results[rule] = await evaluateLowCreditsAlert(db, supabaseUrl, serviceKey, body.context);
+          break;
+        case "friend_request_received":
+          results[rule] = await evaluateFriendRequestReceived(db, supabaseUrl, serviceKey, body.context);
+          break;
+        case "friend_request_accepted":
+          results[rule] = await evaluateFriendRequestAccepted(db, supabaseUrl, serviceKey, body.context);
+          break;
+        case "challenge_settled":
+          results[rule] = await evaluateChallengeSettled(db, supabaseUrl, serviceKey, body.context);
+          break;
+        case "challenge_expiring":
+          results[rule] = await evaluateChallengeExpiring(db, supabaseUrl, serviceKey);
+          break;
+        case "inactivity_nudge":
+          results[rule] = await evaluateInactivityNudge(db, supabaseUrl, serviceKey);
+          break;
+        case "badge_earned":
+          results[rule] = await evaluateBadgeEarned(db, supabaseUrl, serviceKey, body.context);
+          break;
+        case "league_rank_change":
+          results[rule] = await evaluateLeagueRankChange(db, supabaseUrl, serviceKey, body.context);
+          break;
+        case "join_request_approved":
+          results[rule] = await evaluateJoinRequestApproved(db, supabaseUrl, serviceKey, body.context);
           break;
         default:
           results[rule] = { evaluated: 0, sent: 0 };
@@ -588,8 +623,454 @@ async function evaluateJoinRequestReceived(
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Helpers
+// Rule 8: Friend Request Received
 // ═════════════════════════════════════════════════════════════════════════════
+
+async function evaluateFriendRequestReceived(
+  // deno-lint-ignore no-explicit-any
+  db: any,
+  supabaseUrl: string,
+  serviceKey: string,
+  context?: { to_user_id?: string; from_user_id?: string },
+): Promise<{ evaluated: number; sent: number }> {
+  if (!context?.to_user_id || !context?.from_user_id) {
+    return { evaluated: 0, sent: 0 };
+  }
+
+  const { data: sender } = await db
+    .from("profiles")
+    .select("display_name")
+    .eq("id", context.from_user_id)
+    .maybeSingle();
+
+  const senderName = sender?.display_name ?? "Alguém";
+  const dedupKey = `${context.from_user_id}:${context.to_user_id}`;
+
+  if (await wasRecentlyNotified(db, context.to_user_id, "friend_request_received", dedupKey)) {
+    return { evaluated: 1, sent: 0 };
+  }
+
+  const ok = await dispatchPush(supabaseUrl, serviceKey, {
+    user_ids: [context.to_user_id],
+    title: "Novo pedido de amizade!",
+    body: `${senderName} quer ser seu amigo de corrida.`,
+    data: { type: "friend_request_received", from_user_id: context.from_user_id },
+  });
+
+  if (ok) {
+    await logNotification(db, context.to_user_id, "friend_request_received", dedupKey);
+  }
+
+  return { evaluated: 1, sent: ok ? 1 : 0 };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Rule 9: Friend Request Accepted
+// ═════════════════════════════════════════════════════════════════════════════
+
+async function evaluateFriendRequestAccepted(
+  // deno-lint-ignore no-explicit-any
+  db: any,
+  supabaseUrl: string,
+  serviceKey: string,
+  context?: { accepter_user_id?: string; original_sender_id?: string },
+): Promise<{ evaluated: number; sent: number }> {
+  if (!context?.accepter_user_id || !context?.original_sender_id) {
+    return { evaluated: 0, sent: 0 };
+  }
+
+  const { data: accepter } = await db
+    .from("profiles")
+    .select("display_name")
+    .eq("id", context.accepter_user_id)
+    .maybeSingle();
+
+  const accepterName = accepter?.display_name ?? "Alguém";
+  const dedupKey = `${context.accepter_user_id}:${context.original_sender_id}`;
+
+  if (await wasRecentlyNotified(db, context.original_sender_id, "friend_request_accepted", dedupKey)) {
+    return { evaluated: 1, sent: 0 };
+  }
+
+  const ok = await dispatchPush(supabaseUrl, serviceKey, {
+    user_ids: [context.original_sender_id],
+    title: "Pedido aceito!",
+    body: `${accepterName} aceitou sua amizade. Vejam os perfis!`,
+    data: { type: "friend_request_accepted", accepter_user_id: context.accepter_user_id },
+  });
+
+  if (ok) {
+    await logNotification(db, context.original_sender_id, "friend_request_accepted", dedupKey);
+  }
+
+  return { evaluated: 1, sent: ok ? 1 : 0 };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Rule 10: Challenge Settled (results ready)
+// ═════════════════════════════════════════════════════════════════════════════
+
+async function evaluateChallengeSettled(
+  // deno-lint-ignore no-explicit-any
+  db: any,
+  supabaseUrl: string,
+  serviceKey: string,
+  context?: { challenge_id?: string },
+): Promise<{ evaluated: number; sent: number }> {
+  if (!context?.challenge_id) return { evaluated: 0, sent: 0 };
+
+  const challengeId = context.challenge_id;
+
+  const { data: challenge } = await db
+    .from("challenges")
+    .select("title")
+    .eq("id", challengeId)
+    .maybeSingle();
+
+  if (!challenge) return { evaluated: 0, sent: 0 };
+
+  const challName = challenge.title ?? "Desafio";
+
+  const { data: participants } = await db
+    .from("challenge_participants")
+    .select("user_id")
+    .eq("challenge_id", challengeId)
+    .in("status", ["accepted", "completed"])
+    .limit(100);
+
+  if (!participants || participants.length === 0) return { evaluated: 0, sent: 0 };
+
+  let sent = 0;
+
+  for (const p of participants) {
+    const userId = p.user_id as string;
+
+    if (await wasRecentlyNotified(db, userId, "challenge_settled", challengeId)) {
+      continue;
+    }
+
+    const { data: result } = await db
+      .from("challenge_results")
+      .select("outcome")
+      .eq("challenge_id", challengeId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const outcome = result?.outcome as string | null;
+    let bodyText = `O desafio "${challName}" foi encerrado. Veja o resultado!`;
+    if (outcome === "win") {
+      bodyText = `Você venceu "${challName}"! Confira seus ganhos!`;
+    } else if (outcome === "loss") {
+      bodyText = `O desafio "${challName}" terminou. Veja os detalhes.`;
+    }
+
+    const ok = await dispatchPush(supabaseUrl, serviceKey, {
+      user_ids: [userId],
+      title: "Resultado do desafio!",
+      body: bodyText,
+      data: { type: "challenge_settled", challenge_id: challengeId },
+    });
+
+    if (ok) {
+      await logNotification(db, userId, "challenge_settled", challengeId);
+      sent++;
+    }
+  }
+
+  return { evaluated: participants.length, sent };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Rule 11: Challenge Expiring (deadline < 24h)
+// ═════════════════════════════════════════════════════════════════════════════
+
+async function evaluateChallengeExpiring(
+  // deno-lint-ignore no-explicit-any
+  db: any,
+  supabaseUrl: string,
+  serviceKey: string,
+): Promise<{ evaluated: number; sent: number }> {
+  const nowMs = Date.now();
+  const soonMs = nowMs + MS_PER_DAY;
+
+  const { data: expiring } = await db
+    .from("challenges")
+    .select("id, title, ends_at_ms")
+    .eq("status", "active")
+    .gt("ends_at_ms", nowMs)
+    .lte("ends_at_ms", soonMs)
+    .limit(100);
+
+  if (!expiring || expiring.length === 0) return { evaluated: 0, sent: 0 };
+
+  let totalSent = 0;
+
+  for (const ch of expiring) {
+    const challengeId = ch.id as string;
+    const challName = ch.title ?? "Desafio";
+    const endsMs = ch.ends_at_ms as number;
+    const hoursLeft = Math.max(1, Math.round((endsMs - nowMs) / MS_PER_HOUR));
+
+    const { data: participants } = await db
+      .from("challenge_participants")
+      .select("user_id, contributing_session_ids")
+      .eq("challenge_id", challengeId)
+      .eq("status", "accepted")
+      .limit(100);
+
+    if (!participants) continue;
+
+    // Only notify participants who haven't contributed yet
+    const needsReminder = participants.filter(
+      (p: { contributing_session_ids: string[] | null }) =>
+        !p.contributing_session_ids || p.contributing_session_ids.length === 0,
+    );
+
+    for (const p of needsReminder) {
+      const userId = p.user_id as string;
+
+      if (await wasRecentlyNotified(db, userId, "challenge_expiring", challengeId)) {
+        continue;
+      }
+
+      const ok = await dispatchPush(supabaseUrl, serviceKey, {
+        user_ids: [userId],
+        title: "Desafio expirando!",
+        body: `"${challName}" termina em ${hoursLeft}h. Corra agora!`,
+        data: { type: "challenge_expiring", challenge_id: challengeId },
+      });
+
+      if (ok) {
+        await logNotification(db, userId, "challenge_expiring", challengeId);
+        totalSent++;
+      }
+    }
+  }
+
+  return { evaluated: expiring.length, sent: totalSent };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Rule 12: Inactivity Nudge (5+ days without running)
+// ═════════════════════════════════════════════════════════════════════════════
+
+async function evaluateInactivityNudge(
+  // deno-lint-ignore no-explicit-any
+  db: any,
+  supabaseUrl: string,
+  serviceKey: string,
+): Promise<{ evaluated: number; sent: number }> {
+  const nowMs = Date.now();
+  const fiveDaysAgoMs = nowMs - 5 * MS_PER_DAY;
+  const thirtyDaysAgoMs = nowMs - 30 * MS_PER_DAY;
+  const todayKey = new Date().toISOString().slice(0, 10);
+
+  // Users who ran in the last 30 days (still active users) but NOT in the last 5
+  const { data: recentUsers } = await db
+    .from("sessions")
+    .select("user_id")
+    .gte("start_time_ms", thirtyDaysAgoMs)
+    .eq("is_verified", true);
+
+  if (!recentUsers || recentUsers.length === 0) return { evaluated: 0, sent: 0 };
+
+  const allUserIds = [...new Set(recentUsers.map((s: { user_id: string }) => s.user_id))];
+
+  // Check who ran in the last 5 days
+  const { data: activeRecent } = await db
+    .from("sessions")
+    .select("user_id")
+    .in("user_id", allUserIds)
+    .gte("start_time_ms", fiveDaysAgoMs)
+    .eq("is_verified", true);
+
+  const activeSet = new Set(
+    (activeRecent ?? []).map((s: { user_id: string }) => s.user_id),
+  );
+
+  const inactiveUsers = allUserIds.filter((uid: string) => !activeSet.has(uid));
+  if (inactiveUsers.length === 0) return { evaluated: 0, sent: 0 };
+
+  let sent = 0;
+
+  for (const userId of inactiveUsers) {
+    if (await wasRecentlyNotified(db, userId, "inactivity_nudge", todayKey)) {
+      continue;
+    }
+
+    // Find how many days since last run
+    const { data: lastSession } = await db
+      .from("sessions")
+      .select("start_time_ms")
+      .eq("user_id", userId)
+      .eq("is_verified", true)
+      .order("start_time_ms", { ascending: false })
+      .limit(1);
+
+    const lastMs = lastSession?.[0]?.start_time_ms as number | undefined;
+    const daysSince = lastMs ? Math.floor((nowMs - lastMs) / MS_PER_DAY) : 5;
+
+    const ok = await dispatchPush(supabaseUrl, serviceKey, {
+      user_ids: [userId],
+      title: "Sentimos sua falta!",
+      body: `Faz ${daysSince} dias que você não corre. Uma corridinha leve?`,
+      data: { type: "inactivity_nudge", days: String(daysSince) },
+    });
+
+    if (ok) {
+      await logNotification(db, userId, "inactivity_nudge", todayKey);
+      sent++;
+    }
+  }
+
+  return { evaluated: inactiveUsers.length, sent };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Rule 13: Badge Earned
+// ═════════════════════════════════════════════════════════════════════════════
+
+async function evaluateBadgeEarned(
+  // deno-lint-ignore no-explicit-any
+  db: any,
+  supabaseUrl: string,
+  serviceKey: string,
+  context?: { user_id?: string; badge_id?: string; badge_name?: string },
+): Promise<{ evaluated: number; sent: number }> {
+  if (!context?.user_id || !context?.badge_id) {
+    return { evaluated: 0, sent: 0 };
+  }
+
+  const userId = context.user_id;
+  const badgeName = context.badge_name ?? "uma conquista";
+  const dedupKey = `${userId}:${context.badge_id}`;
+
+  if (await wasRecentlyNotified(db, userId, "badge_earned", dedupKey)) {
+    return { evaluated: 1, sent: 0 };
+  }
+
+  const ok = await dispatchPush(supabaseUrl, serviceKey, {
+    user_ids: [userId],
+    title: "Nova conquista!",
+    body: `Você desbloqueou "${badgeName}". Confira no seu perfil!`,
+    data: { type: "badge_earned", badge_id: context.badge_id },
+  });
+
+  if (ok) {
+    await logNotification(db, userId, "badge_earned", dedupKey);
+  }
+
+  return { evaluated: 1, sent: ok ? 1 : 0 };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Rule 14: League Rank Change
+// ═════════════════════════════════════════════════════════════════════════════
+
+async function evaluateLeagueRankChange(
+  // deno-lint-ignore no-explicit-any
+  db: any,
+  supabaseUrl: string,
+  serviceKey: string,
+  context?: { group_id?: string; new_rank?: number; old_rank?: number; season_name?: string },
+): Promise<{ evaluated: number; sent: number }> {
+  if (!context?.group_id || context.new_rank == null || context.old_rank == null) {
+    return { evaluated: 0, sent: 0 };
+  }
+
+  const groupId = context.group_id;
+  const newRank = context.new_rank;
+  const oldRank = context.old_rank;
+  const seasonName = context.season_name ?? "Liga OmniRunner";
+
+  if (newRank === oldRank) return { evaluated: 0, sent: 0 };
+
+  const wentUp = newRank < oldRank;
+  const title = wentUp ? "Sua assessoria subiu!" : "Atenção na Liga!";
+  const bodyText = wentUp
+    ? `Sua assessoria subiu para #${newRank} na ${seasonName}!`
+    : `Sua assessoria caiu para #${newRank} na ${seasonName}. Mobilize o time!`;
+
+  // Notify all members of the group
+  const { data: members } = await db
+    .from("coaching_members")
+    .select("user_id")
+    .eq("group_id", groupId)
+    .in("role", ["admin_master", "professor", "athlete"])
+    .limit(200);
+
+  if (!members || members.length === 0) return { evaluated: 0, sent: 0 };
+
+  const dedupKey = `${groupId}:${newRank}`;
+  let sent = 0;
+
+  for (const m of members) {
+    const userId = m.user_id as string;
+
+    if (await wasRecentlyNotified(db, userId, "league_rank_change", dedupKey)) {
+      continue;
+    }
+
+    const ok = await dispatchPush(supabaseUrl, serviceKey, {
+      user_ids: [userId],
+      title,
+      body: bodyText,
+      data: { type: "league_rank_change", group_id: groupId, rank: String(newRank) },
+    });
+
+    if (ok) {
+      await logNotification(db, userId, "league_rank_change", dedupKey);
+      sent++;
+    }
+  }
+
+  return { evaluated: members.length, sent };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Rule 15: Join Request Approved (athlete accepted into assessoria)
+// ═════════════════════════════════════════════════════════════════════════════
+
+async function evaluateJoinRequestApproved(
+  // deno-lint-ignore no-explicit-any
+  db: any,
+  supabaseUrl: string,
+  serviceKey: string,
+  context?: { user_id?: string; group_id?: string },
+): Promise<{ evaluated: number; sent: number }> {
+  if (!context?.user_id || !context?.group_id) {
+    return { evaluated: 0, sent: 0 };
+  }
+
+  const userId = context.user_id;
+  const groupId = context.group_id;
+
+  const { data: group } = await db
+    .from("coaching_groups")
+    .select("name")
+    .eq("id", groupId)
+    .maybeSingle();
+
+  const groupName = group?.name ?? "uma assessoria";
+  const dedupKey = `${groupId}:${userId}`;
+
+  if (await wasRecentlyNotified(db, userId, "join_request_approved", dedupKey)) {
+    return { evaluated: 1, sent: 0 };
+  }
+
+  const ok = await dispatchPush(supabaseUrl, serviceKey, {
+    user_ids: [userId],
+    title: "Você foi aceito!",
+    body: `Bem-vindo à "${groupName}"! Seus treinos agora contam para o grupo.`,
+    data: { type: "join_request_approved", group_id: groupId },
+  });
+
+  if (ok) {
+    await logNotification(db, userId, "join_request_approved", dedupKey);
+  }
+
+  return { evaluated: 1, sent: ok ? 1 : 0 };
+}
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Rule: Low Credits Alert (hybrid auto-topup fallback)

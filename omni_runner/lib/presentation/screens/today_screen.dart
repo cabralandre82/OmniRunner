@@ -84,6 +84,7 @@ import 'package:omni_runner/features/strava/presentation/strava_connect_controll
 import 'package:omni_runner/presentation/screens/challenge_details_screen.dart';
 import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/widgets/run_share_card.dart';
+import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 
 class TodayScreen extends StatefulWidget {
@@ -217,7 +218,47 @@ class _TodayScreenState extends State<TodayScreen> {
         backgroundColor: cs.inversePrimary,
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              child: ShimmerLoading(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 12),
+                    Container(
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      height: 160,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(

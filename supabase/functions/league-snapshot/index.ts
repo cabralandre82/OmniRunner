@@ -252,7 +252,36 @@ serve(async (req: Request) => {
           created_at_ms: Date.now(),
         }, { onConflict: "season_id,group_id,week_key" });
 
-      if (!error) snapshots++;
+      if (!error) {
+        snapshots++;
+
+        // Push notification for rank changes
+        const prevRank = prevSnapshots[g.groupId];
+        if (prevRank != null && prevRank !== rank) {
+          try {
+            const svcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SERVICE_ROLE_KEY");
+            const svcUrl = Deno.env.get("SUPABASE_URL");
+            if (svcKey && svcUrl) {
+              fetch(`${svcUrl}/functions/v1/notify-rules`, {
+                method: "POST",
+                headers: {
+                  "Authorization": `Bearer ${svcKey}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  rule: "league_rank_change",
+                  context: {
+                    group_id: g.groupId,
+                    new_rank: rank,
+                    old_rank: prevRank,
+                    season_name: season.name,
+                  },
+                }),
+              }).catch(() => {});
+            }
+          } catch { /* fire-and-forget */ }
+        }
+      }
     }
 
     return jsonOk({

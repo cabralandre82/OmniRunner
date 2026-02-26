@@ -1692,3 +1692,177 @@ sem consentimento mútuo. Inviável sem reestruturação profunda da economia.
   - `omni_runner/lib/core/service_locator.dart`
 
 ---
+
+## DECISÃO 073 — Push Notifications Completo (26/02/2026)
+
+- **Contexto:** O app tinha 8 regras de push (challenge_received, challenge_accepted,
+  streak_at_risk, championship_starting, championship_invite_received,
+  challenge_team_invite_received, join_request_received, low_credits_alert), mas
+  faltavam notificações para funcionalidades recentes e infraestrutura de UX
+  (banner in-app e navegação ao tocar na notificação).
+- **Decisão:** Implementar 8 novas regras de push + infraestrutura completa.
+
+### Novas regras adicionadas ao `notify-rules` EF:
+
+| # | Regra | Trigger | Destinatário |
+|---|-------|---------|-------------|
+| 9 | `friend_request_received` | Client (FriendsBloc) | Destinatário do convite |
+| 10 | `friend_request_accepted` | Client (FriendsBloc) | Remetente original |
+| 11 | `challenge_settled` | Server (settle-challenge EF) | Todos os participantes |
+| 12 | `challenge_expiring` | Cron (lifecycle-cron) | Participantes sem sessão |
+| 13 | `inactivity_nudge` | Cron (lifecycle-cron, 17h UTC) | Inativos 5+ dias |
+| 14 | `badge_earned` | Server (evaluate-badges EF) | O usuário |
+| 15 | `league_rank_change` | Server (league-snapshot EF) | Membros da assessoria |
+| 16 | `join_request_approved` | Client (StaffJoinRequestsScreen) | Atleta aprovado |
+
+### Infraestrutura de UX:
+
+- **In-app banner:** `PushNavigationHandler.showForegroundBanner()` mostra
+  `MaterialBanner` quando push chega com app aberto, com botões FECHAR/VER.
+  Auto-dismiss após 6s.
+- **Push-tap navigation:** `onMessageOpenedApp` + `getInitialMessage` leem
+  `data.type` e navegam para a tela correta (ChallengeJoinScreen,
+  ChallengeDetailsScreen, FriendsScreen, etc.).
+- **Navigator key:** `GlobalKey<NavigatorState>` adicionada ao `MaterialApp`
+  para permitir navegação programática sem contexto.
+
+### Cron (lifecycle-cron):
+
+- `challenge_expiring`: avalia a cada ciclo (5 min), dedup 12h.
+- `inactivity_nudge`: avalia entre 17h-18h UTC, dedup 12h.
+- `streak_at_risk`: avalia entre 20h-21h UTC (server-side, complementa client-side).
+
+### Arquivos criados:
+- `omni_runner/lib/core/push/push_navigation_handler.dart`
+
+### Arquivos modificados:
+- `supabase/functions/notify-rules/index.ts` (8 novas regras)
+- `supabase/functions/settle-challenge/index.ts` (trigger challenge_settled)
+- `supabase/functions/evaluate-badges/index.ts` (trigger badge_earned)
+- `supabase/functions/league-snapshot/index.ts` (trigger league_rank_change)
+- `supabase/functions/lifecycle-cron/index.ts` (cron: expiring, inactivity, streak)
+- `omni_runner/lib/core/push/notification_rules_service.dart` (6 novos métodos)
+- `omni_runner/lib/presentation/blocs/friends/friends_bloc.dart` (push triggers)
+- `omni_runner/lib/presentation/screens/staff_join_requests_screen.dart` (push trigger)
+- `omni_runner/lib/core/service_locator.dart` (notifyRules no FriendsBloc)
+- `omni_runner/lib/main.dart` (navigatorKey + PushNavigationHandler)
+
+---
+
+## DECISÃO 074 — Onboarding Guiado (26/02/2026)
+
+- **Contexto:** O app tinha apenas uma `WelcomeScreen` com 4 bullets genéricos e
+  um fluxo de role selection + assessoria. Após completar o cadastro, o atleta
+  caía direto no dashboard sem nenhuma explicação de como usar as features.
+  Isso gerava fricção de primeiro uso e redução de ativação.
+- **Decisão:** Implementar tour guiado com 6 slides interativos, mostrado uma
+  única vez entre o onboarding estrutural e o HomeScreen.
+
+### Slides do tour:
+
+| # | Título | Feature |
+|---|--------|---------|
+| 1 | Conecte seu Strava | Integração Strava |
+| 2 | Desafie outros corredores | Desafios 1v1/equipe |
+| 3 | Treine com sua assessoria | Assessoria + campeonatos |
+| 4 | Mantenha sua sequência | Streak + XP + badges |
+| 5 | Acompanhe sua evolução | DNA, Wrapped, Liga, PR |
+| 6 | Encontre amigos | Social / Friends |
+
+### Comportamento:
+
+- Aparece **uma vez** para atletas (não staff), após `isOnboardingComplete`
+- Usa `FirstUseTips.onboardingTour` para persistir se já foi visto
+- Botão "Pular" sempre visível para skip imediato
+- Botão CTA dinâmico: "PRÓXIMO" → "COMEÇAR A CORRER" no último slide
+- Dots animados com cor do slide ativo
+- Integrado ao `AuthGate` como novo `_GateDestination.tour`
+
+### Arquivos criados:
+- `omni_runner/lib/presentation/screens/onboarding_tour_screen.dart`
+
+### Arquivos modificados:
+- `omni_runner/lib/core/tips/first_use_tips.dart` (novo TipKey.onboardingTour)
+- `omni_runner/lib/presentation/screens/auth_gate.dart` (tour destination + routing)
+
+---
+
+## DECISÃO 075 — Polimento visual e UX
+
+**Data:** 2026-02-26
+
+**Contexto:** Terceiro item do relatório de pré-release: falta de polimento.
+CircularProgressIndicators nuas, ausência de animações, empty states
+genéricas, mensagens de erro técnicas, e nenhuma celebração nos
+momentos de sucesso.
+
+**Decisão:** Criar um conjunto de widgets reutilizáveis de polimento e
+aplicá-los sistematicamente nas telas mais acessadas.
+
+### Widgets criados:
+
+| Widget | Arquivo | Propósito |
+|---|---|---|
+| `ShimmerLoading` | `shimmer_loading.dart` | Efeito shimmer puro-Flutter |
+| `SkeletonTile` | `shimmer_loading.dart` | Placeholder tipo lista |
+| `SkeletonCard` | `shimmer_loading.dart` | Placeholder tipo grid card |
+| `ShimmerListLoader` | `shimmer_loading.dart` | Lista skeleton completa |
+| `EmptyState` | `empty_state.dart` | Empty state com ícone, título, CTA |
+| `ErrorState` | `error_state.dart` | Erro humanizado com retry |
+| `AnimatedCheckmark` | `success_overlay.dart` | Check animado com bounce |
+| `ConfettiBurst` | `success_overlay.dart` | Confetti puro CustomPainter |
+| `showSuccessOverlay` | `success_overlay.dart` | Overlay de sucesso fullscreen |
+| `StaggeredList` | `staggered_list.dart` | Animação escalonada para listas |
+
+### Melhorias aplicadas:
+
+1. **Shimmer loading** — substituiu `CircularProgressIndicator` nas telas:
+   ChallengesListScreen, TodayScreen, HistoryScreen, FriendsScreen,
+   MyAssessoriaScreen, WalletScreen, AthleteDashboardScreen,
+   AthleteChampionshipsScreen
+
+2. **Empty states amigáveis** — HistoryScreen, FriendsScreen agora usam
+   `EmptyState` com ícone decorativo, texto orientador e CTA
+
+3. **Error states humanizados** — `ErrorState.humanize()` traduz
+   exceptions (network, timeout, 401, 500) para mensagens amigáveis em
+   português com botão "Tentar novamente"
+
+4. **Celebrações** — `showSuccessOverlay` com checkmark + confetti nos
+   momentos de criação e aceite de desafio
+
+5. **Page transitions** — `PredictiveBackPageTransitionsBuilder` (Android)
+   e `CupertinoPageTransitionsBuilder` (iOS) configurados no theme
+
+6. **Stagger animation** — Dashboard grid cards surgem com fade-in ao carregar
+
+7. **Dashboard personalizado** — Saudação com nome real do atleta
+
+8. **HapticFeedback** — `selectionClick` no toque de cards do dashboard e
+   challenge tiles; `lightImpact` em ações sociais (aceitar/recusar amigo)
+
+9. **Pull-to-refresh** — Adicionado RefreshIndicator ao FriendsScreen
+
+### Zero dependências externas — todos os efeitos visuais são pure-Flutter.
+
+### Arquivos criados:
+- `lib/presentation/widgets/shimmer_loading.dart`
+- `lib/presentation/widgets/success_overlay.dart`
+- `lib/presentation/widgets/staggered_list.dart`
+- `lib/presentation/widgets/empty_state.dart`
+- `lib/presentation/widgets/error_state.dart`
+
+### Arquivos modificados:
+- `lib/main.dart` (page transitions no theme)
+- `lib/presentation/screens/challenges_list_screen.dart`
+- `lib/presentation/screens/today_screen.dart`
+- `lib/presentation/screens/athlete_dashboard_screen.dart`
+- `lib/presentation/screens/history_screen.dart`
+- `lib/presentation/screens/friends_screen.dart`
+- `lib/presentation/screens/my_assessoria_screen.dart`
+- `lib/presentation/screens/challenge_create_screen.dart`
+- `lib/presentation/screens/challenge_join_screen.dart`
+- `lib/presentation/screens/wallet_screen.dart`
+- `lib/presentation/screens/athlete_championships_screen.dart`
+
+---
