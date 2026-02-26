@@ -993,8 +993,12 @@ class _ParticipantsCard extends StatelessWidget {
                   ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            ...challenge.participants.map((p) =>
-                _participantTile(context, p, p.userId == currentUserId)),
+            ...challenge.participants.map((p) => _participantTile(
+                  context,
+                  p,
+                  isMe: p.userId == currentUserId,
+                  hideProgress: challenge.status == ChallengeStatus.active,
+                )),
           ],
         ),
       ),
@@ -1002,7 +1006,11 @@ class _ParticipantsCard extends StatelessWidget {
   }
 
   Widget _participantTile(
-      BuildContext context, ChallengeParticipantEntity p, bool isMe) {
+    BuildContext context,
+    ChallengeParticipantEntity p, {
+    required bool isMe,
+    required bool hideProgress,
+  }) {
     final theme = Theme.of(context);
 
     final (statusIcon, statusColor) = switch (p.status) {
@@ -1011,6 +1019,38 @@ class _ParticipantsCard extends StatelessWidget {
       ParticipantStatus.declined => (Icons.cancel, Colors.red),
       ParticipantStatus.withdrawn => (Icons.exit_to_app, Colors.grey),
     };
+
+    // During active challenges, only show own progress.
+    // For opponents: show "Completou" or "Aguardando" only.
+    Widget? trailing;
+    if (hideProgress && !isMe) {
+      final hasSubmitted = p.contributingSessionIds.isNotEmpty ||
+          p.progressValue > 0;
+      trailing = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: hasSubmitted
+              ? Colors.green.shade50
+              : Colors.orange.shade50,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          hasSubmitted ? 'Completou' : 'Aguardando',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: hasSubmitted
+                ? Colors.green.shade700
+                : Colors.orange.shade700,
+          ),
+        ),
+      );
+    } else if (p.progressValue > 0) {
+      trailing = Text(
+        _formatProgress(p.progressValue, challenge.rules.metric),
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      );
+    }
 
     return ListTile(
       dense: true,
@@ -1037,12 +1077,7 @@ class _ParticipantsCard extends StatelessWidget {
           ],
         ],
       ),
-      trailing: p.progressValue > 0
-          ? Text(
-              _formatProgress(p.progressValue, challenge.rules.metric),
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            )
-          : null,
+      trailing: trailing,
     );
   }
 

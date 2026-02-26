@@ -1475,6 +1475,39 @@ métricas agregadas (km totais, participação em desafios, frequência de trein
 As assessorias competem como unidades. Premiação simbólica (troféu digital,
 badge exclusivo). Cria senso de comunidade e pertencimento.
 
+---
+
+## DECISAO 068 — Regra de visibilidade em desafios ativos (anti-gaming)
+
+**Data:** 2026-02-26
+**Contexto:** Atletas podiam ver o progresso (pace, distância, tempo) dos oponentes
+durante desafios ativos. Isso permitia esperar o adversário terminar e ajustar o
+esforço para vencer por margem mínima.
+
+**Regra implementada:**
+- Desafio ativo: cada atleta vê APENAS seu próprio progresso
+- Oponente: só aparece "Completou" (verde) ou "Aguardando" (laranja)
+- Nenhum valor numérico (pace, distância, tempo) é visível
+- Após ambos completarem ou período expirar: detalhes revelados
+
+**Implementação:**
+- **Server-side (challenge-get EF):** `progress_value` é enviado como `null` para
+  participantes que não são o caller quando `challenge.status == 'active'`. Campo
+  `has_submitted` (boolean) adicionado para indicar se oponente submeteu corrida.
+- **Client-side (_participantTile):** chip "Completou"/"Aguardando" no lugar do
+  valor numérico quando desafio ativo e participante != eu.
+- **Grupo cooperativo:** progresso coletivo visível (todos do mesmo time).
+- **Team vs team:** progresso individual do time adversário oculto.
+
+**Arquivos modificados:**
+- `supabase/functions/challenge-get/index.ts`
+- `omni_runner/lib/presentation/screens/challenge_details_screen.dart`
+- `omni_runner/lib/presentation/blocs/challenges/challenges_bloc.dart`
+
+**Risco:** Baixo. Proteção dupla (server + client). Dados nunca saem do servidor.
+
+---
+
 ### IDEIA DESCARTADA: Corrida Fantasma (Ghost Rival)
 ~~O app usa dados GPS de corridas anteriores do atleta para criar um "fantasma"
 de si mesmo.~~ **DESCARTADA:** O tracking nativo do app foi removido. Todas as

@@ -94,9 +94,9 @@ serve(async (req: Request) => {
       return jsonErr(404, "NOT_FOUND", "Desafio não encontrado", requestId);
     }
 
-    const { data: participants, error: partErr } = await db
+    const { data: rawParticipants, error: partErr } = await db
       .from("challenge_participants")
-      .select("user_id, display_name, status, progress_value, responded_at_ms, group_id")
+      .select("user_id, display_name, status, progress_value, responded_at_ms, group_id, contributing_session_ids")
       .eq("challenge_id", challenge_id)
       .order("responded_at_ms", { ascending: true, nullsFirst: false });
 
@@ -106,6 +106,36 @@ serve(async (req: Request) => {
       errorCode = classified.code;
       return jsonErr(classified.httpStatus, classified.code, classified.message, requestId);
     }
+
+    // Anti-gaming: while a challenge is active, hide opponent's progress details.
+    // Each athlete can only see IF the opponent submitted, not their actual values.
+    const participants = (rawParticipants ?? []).map((p: Record<string, unknown>) => {
+      const sessionIds = (p.contributing_session_ids as string[] | null) ?? [];
+      const isCallerRow = p.user_id === user.id;
+      const isActive = challenge.status === "active";
+
+      if (isActive && !isCallerRow) {
+        return {
+          user_id: p.user_id,
+          display_name: p.display_name,
+          status: p.status,
+          progress_value: null,
+          responded_at_ms: p.responded_at_ms,
+          group_id: p.group_id,
+          has_submitted: sessionIds.length > 0,
+        };
+      }
+
+      return {
+        user_id: p.user_id,
+        display_name: p.display_name,
+        status: p.status,
+        progress_value: p.progress_value,
+        responded_at_ms: p.responded_at_ms,
+        group_id: p.group_id,
+        has_submitted: sessionIds.length > 0,
+      };
+    });
 
     // Resolve caller's group
     let callerGroupId: string | null = null;
@@ -159,7 +189,7 @@ serve(async (req: Request) => {
         team_a_group_name: teamAGroupName,
         team_b_group_name: teamBGroupName,
       },
-      participants: participants ?? [],
+      participants: participants,
       caller_user_id: user.id,
       caller_group_id: callerGroupId,
     }, requestId);

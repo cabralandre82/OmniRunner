@@ -219,12 +219,15 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
         'withdrawn' => ParticipantStatus.withdrawn,
         _ => ParticipantStatus.invited,
       };
+      final hasSubmitted = pm['has_submitted'] as bool? ?? false;
       return ChallengeParticipantEntity(
         userId: pm['user_id'] as String? ?? '',
         displayName: pm['display_name'] as String? ?? '',
         status: pStatus,
         respondedAtMs: pm['responded_at_ms'] as int?,
         progressValue: (pm['progress_value'] as num?)?.toDouble() ?? 0.0,
+        contributingSessionIds:
+            hasSubmitted ? const ['_submitted'] : const [],
         groupId: pm['group_id'] as String?,
         team: pm['team'] as String?,
       );
