@@ -32,7 +32,7 @@
 ///
 /// ### 6. Park Events / Flash Challenges
 /// Push notification: "Desafio no Ibirapuera: quem correr mais nos
-/// próximos 60 minutos ganha 100 coins". Geo-fenced challenges.
+/// próximos 60 minutos!" Geo-fenced challenges.
 /// Requires minimum 3 users at the park recently to trigger.
 ///
 /// ### 7. Territory / Heat Map

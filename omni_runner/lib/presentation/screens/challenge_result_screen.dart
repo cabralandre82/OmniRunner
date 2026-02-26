@@ -867,6 +867,11 @@ class _RewardCard extends StatelessWidget {
     final isCompleted = challenge.status == ChallengeStatus.completed;
     final myCoins = myResult?.coinsEarned ?? 0;
     final totalPool = result.totalCoinsDistributed;
+    final hasStake = challenge.rules.entryFeeCoins > 0;
+
+    if (!hasStake && isCompleted) {
+      return const SizedBox.shrink();
+    }
 
     final IconData statusIcon;
     final Color statusColor;
@@ -878,16 +883,16 @@ class _RewardCard extends StatelessWidget {
       statusIcon = Icons.check_circle;
       statusColor = Colors.green;
       statusTextColor = Colors.green.shade800;
-      statusLabel = 'Recompensa liberada';
+      statusLabel = 'OmniCoins';
       statusSub = myCoins > 0
-          ? 'Você recebeu $myCoins OmniCoins'
-          : 'Nenhuma recompensa neste desafio';
+          ? 'Você ganhou $myCoins OmniCoins do desafio'
+          : 'Você perdeu sua inscrição neste desafio';
     } else {
       statusIcon = Icons.hourglass_top_rounded;
       statusColor = Colors.orange;
       statusTextColor = Colors.orange.shade800;
-      statusLabel = 'Recompensa pendente';
-      statusSub = 'O resultado está sendo processado. As OmniCoins serão creditadas em breve.';
+      statusLabel = 'Resultado pendente';
+      statusSub = 'O resultado está sendo processado.';
     }
 
     return Card(

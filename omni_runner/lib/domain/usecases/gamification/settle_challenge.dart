@@ -7,16 +7,17 @@ import 'package:omni_runner/domain/repositories/i_challenge_repo.dart';
 import 'package:omni_runner/domain/repositories/i_ledger_repo.dart';
 import 'package:omni_runner/domain/repositories/i_wallet_repo.dart';
 
-/// Distributes Coins to participants based on [ChallengeResultEntity].
+/// Distributes entry-fee pool to winners of staked challenges.
+///
+/// Free challenges (entryFeeCoins == 0) produce zero coin movements.
+/// OmniCoins are only acquired via assessoria or won in staked challenges.
 ///
 /// Transitions the challenge to [ChallengeStatus.completed].
-/// Creates one [LedgerEntryEntity] per participant reward.
-/// Updates each participant's [WalletEntity].
+/// Creates one [LedgerEntryEntity] per winner reward.
+/// Updates each winner's [WalletEntity].
 ///
 /// Idempotent — checks if result already exists and challenge is
 /// already completed before writing.
-///
-/// Conforms to [O4]: single `call()` method.
 final class SettleChallenge {
   final IChallengeRepo _challengeRepo;
   final ILedgerRepo _ledgerRepo;

@@ -1398,3 +1398,43 @@ o formulario (usado por rematch e sugestao de oponentes).
 (idempotente). Demais mudancas sao de UI/UX sem alteracao de logica de negocio.
 
 ---
+
+## DECISAO 065 — Economia de OmniCoins: aquisição exclusiva via assessoria
+
+**Data:** 2026-02-26
+**Contexto:** A economia de OmniCoins foi redesenhada. OmniCoins são adquiridas
+**exclusivamente** via assessoria (professor distribui) e só mudam de mãos em
+desafios com inscrição (entry fee > 0). Não existe nenhuma outra forma de ganhar
+OmniCoins no app.
+
+**Regras definitivas:**
+1. Assessoria é a única fonte de criação de OmniCoins no sistema
+2. Desafios com entry fee: vencedor leva o pool (fees de todos). Empate: refund. Ninguém correu: refund
+3. Desafios gratuitos (fee = 0): ZERO movimentação de coins para qualquer resultado
+4. Sessões de corrida: NÃO dão OmniCoins (dão XP e badges)
+5. Streaks, PRs, badges, missões: NÃO dão OmniCoins (dão XP/reconhecimento visual)
+
+**Alterações realizadas:**
+- `ChallengeEvaluator`: coinsEarned = 0 em todos os desafios gratuitos
+- `RewardSessionCoins`: desabilitado (retorna 0 coins sempre)
+- `ClaimRewards`: removida creditação de coins para badges e missões
+- `SettleChallenge`: docstring atualizada para refletir modelo correto
+- `LedgerReason`: enums legados marcados como DEPRECATED
+- `GAMIFICATION_POLICY.md`: seção 3 reescrita completamente
+- UI: `_RewardCard` oculta em desafios gratuitos, textos corrigidos
+- Testes: 33 testes atualizados e passando
+
+**Arquivos modificados (8):**
+- `omni_runner/lib/domain/usecases/gamification/challenge_evaluator.dart`
+- `omni_runner/lib/domain/usecases/gamification/reward_session_coins.dart`
+- `omni_runner/lib/domain/usecases/gamification/settle_challenge.dart`
+- `omni_runner/lib/domain/usecases/progression/claim_rewards.dart`
+- `omni_runner/lib/domain/entities/ledger_entry_entity.dart`
+- `omni_runner/lib/presentation/screens/challenge_result_screen.dart`
+- `omni_runner/lib/presentation/screens/wallet_screen.dart`
+- `docs/GAMIFICATION_POLICY.md`
+
+**Risco:** Baixo. Remoção de distribuição automática de coins. Pool de desafios
+com stake mantido inalterado. LedgerService já protege contra fee=0.
+
+---

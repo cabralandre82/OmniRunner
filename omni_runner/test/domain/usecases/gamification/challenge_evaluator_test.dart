@@ -64,10 +64,10 @@ void main() {
       final loser = active.firstWhere((r) => r.rank == 2);
       expect(winner.userId, 'u1');
       expect(winner.outcome, ParticipantOutcome.won);
-      expect(winner.coinsEarned, 40);
+      expect(winner.coinsEarned, 0);
       expect(loser.userId, 'u2');
       expect(loser.outcome, ParticipantOutcome.lost);
-      expect(loser.coinsEarned, 25);
+      expect(loser.coinsEarned, 0);
     });
 
     test('tie broken by earliestFinish', () {
@@ -111,7 +111,7 @@ void main() {
       );
       expect(active.every((r) => r.rank == 1), isTrue);
       expect(active.every((r) => r.outcome == ParticipantOutcome.tied), isTrue);
-      expect(active.every((r) => r.coinsEarned == 40), isTrue);
+      expect(active.every((r) => r.coinsEarned == 0), isTrue);
     });
 
     test('true tie when same value and both null timestamps', () {
@@ -147,7 +147,7 @@ void main() {
       final winner = active.firstWhere((r) => r.rank == 1);
       expect(winner.userId, 'u1');
       expect(winner.outcome, ParticipantOutcome.won);
-      expect(winner.coinsEarned, 40);
+      expect(winner.coinsEarned, 0);
     });
 
     test('time tie broken by earliestFinish', () {
@@ -211,7 +211,7 @@ void main() {
 
       expect(results.length, 1);
       expect(results[0].outcome, ParticipantOutcome.won);
-      expect(results[0].coinsEarned, 40);
+      expect(results[0].coinsEarned, 0);
     });
 
     test('nobody submitted anything: both DNF with 0 coins (free)', () {
@@ -280,7 +280,7 @@ void main() {
       expect(dnf.coinsEarned, 0);
     });
 
-    test('one runs other does not: runner wins (free)', () {
+    test('one runs other does not: runner wins (free, 0 coins)', () {
       final results = evaluator.evaluate(_challenge(
         participants: [
           _p('u1', progress: 5000, sessions: ['s1']),
@@ -295,7 +295,7 @@ void main() {
         (r) => r.outcome == ParticipantOutcome.didNotFinish,
       );
       expect(winner.userId, 'u1');
-      expect(winner.coinsEarned, 40);
+      expect(winner.coinsEarned, 0);
       expect(dnf.userId, 'u2');
       expect(dnf.coinsEarned, 0);
     });
@@ -320,8 +320,7 @@ void main() {
   // ── GROUP (cooperative — group wins/loses as a unit) ──────────
 
   group('group distance (cooperative)', () {
-    test('collective sum meets target: everyone gets 30 coins', () {
-      // target = 30000. sum = 15000+12000+8000 = 35000 ≥ 30000 → met
+    test('collective sum meets target: 0 coins (free)', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
         target: 30000,
@@ -335,7 +334,7 @@ void main() {
       expect(results.length, 3);
       expect(results.every((r) => r.outcome == ParticipantOutcome.completedTarget),
           isTrue);
-      expect(results.every((r) => r.coinsEarned == 30), isTrue);
+      expect(results.every((r) => r.coinsEarned == 0), isTrue);
     });
 
     test('collective sum does not meet target: 0 coins', () {
@@ -355,9 +354,7 @@ void main() {
       expect(results.every((r) => r.coinsEarned == 0), isTrue);
     });
 
-    test('non-runner shares reward when group meets target', () {
-      // target = 10000. sum = 8000+5000 = 13000 ≥ 10000 → met
-      // u3 didn't run but still gets 30 coins
+    test('non-runner shares result when group meets target (free, 0 coins)', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
         target: 10000,
@@ -370,7 +367,7 @@ void main() {
 
       expect(results.every((r) => r.outcome == ParticipantOutcome.completedTarget),
           isTrue);
-      expect(results.every((r) => r.coinsEarned == 30), isTrue);
+      expect(results.every((r) => r.coinsEarned == 0), isTrue);
     });
 
     test('group with stake: pool split equally among all', () {
@@ -399,7 +396,7 @@ void main() {
       expect(results.every((r) => r.coinsEarned == 20), isTrue);
     });
 
-    test('no target: group succeeds if anyone ran, all share', () {
+    test('no target: group succeeds if anyone ran (free, 0 coins)', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
         participants: [
@@ -410,7 +407,7 @@ void main() {
 
       expect(results.every((r) => r.outcome == ParticipantOutcome.completedTarget),
           isTrue);
-      expect(results.every((r) => r.coinsEarned == 30), isTrue);
+      expect(results.every((r) => r.coinsEarned == 0), isTrue);
     });
 
     test('nobody ran with stake: all DNF, refund', () {
@@ -457,8 +454,7 @@ void main() {
   // ── GROUP PACE (cooperative — avg of runners ≤ target) ────────
 
   group('group pace (cooperative)', () {
-    test('avg pace meets target: all share reward', () {
-      // avg = (270+290)/2 = 280 ≤ 300 → met
+    test('avg pace meets target (free, 0 coins)', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
         metric: ChallengeMetric.pace,
@@ -471,7 +467,7 @@ void main() {
 
       expect(results.every((r) => r.outcome == ParticipantOutcome.completedTarget),
           isTrue);
-      expect(results.every((r) => r.coinsEarned == 30), isTrue);
+      expect(results.every((r) => r.coinsEarned == 0), isTrue);
     });
 
     test('avg pace too slow: no reward', () {
@@ -495,8 +491,7 @@ void main() {
   // ── GROUP TIME (cooperative — sum of runners ≥ target) ────────
 
   group('group time (cooperative)', () {
-    test('collective time meets target: all share reward', () {
-      // sum = 1500000+2000000+1200000 = 4700000 ≥ 4000000 → met
+    test('collective time meets target (free, 0 coins)', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
         metric: ChallengeMetric.time,
@@ -510,7 +505,7 @@ void main() {
 
       expect(results.every((r) => r.outcome == ParticipantOutcome.completedTarget),
           isTrue);
-      expect(results.every((r) => r.coinsEarned == 30), isTrue);
+      expect(results.every((r) => r.coinsEarned == 0), isTrue);
     });
 
     test('collective time not enough: no reward', () {

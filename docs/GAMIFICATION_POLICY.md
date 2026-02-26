@@ -30,23 +30,37 @@ Moedas internas (Coins) existem apenas como unidade de progresso no app.
 
 ---
 
-## 3. COMO COINS SÃO GANHOS
+## 3. COMO COINS SÃO ADQUIRIDOS
 
-Coins são obtidos exclusivamente por **atividade física real validada pelo anti-cheat**:
+OmniCoins existem **somente em duas formas de aquisição**:
 
-| Fonte | Coins | Condição |
-|-------|:-----:|----------|
-| Completar sessão verificada (≥1 km) | 10 | `isVerified == true` |
-| Vencer desafio 1v1 (gratis) | 40 | Melhor resultado; sem stake |
-| Perder desafio 1v1 (gratis) | 25 | Completou mas perdeu; sem stake |
-| Vencer desafio 1v1 (com stake) | stake × 2 | Ganha o pool inteiro |
-| Completar desafio de grupo | 30 | Participante completa a meta |
-| Streak semanal (3+ corridas/semana) | 20 | Sessões verificadas na semana |
-| Streak mensal (12+ corridas/mês) | 50 | Sessões verificadas no mês |
-| Personal record (PR) de distância | 30 | Novo PR validado |
-| Personal record (PR) de pace | 30 | Novo PR validado em distância ≥1 km |
+| Forma | Descrição |
+|-------|-----------|
+| **Assessoria** | O professor/coach da assessoria distribui OmniCoins aos seus atletas. É a única fonte de criação de OmniCoins no sistema. |
+| **Desafios com inscrição** | Ao vencer um desafio com entry fee > 0, o vencedor recebe as OmniCoins do(s) perdedor(es). Não há criação de coins — é redistribuição do pool. |
 
-**Regra de ouro:** Coins nunca são ganhos por assistir anúncio, pagar, ou qualquer ação não-atlética.
+### 3.1 O que NÃO dá OmniCoins
+
+| Atividade | Recompensa |
+|-----------|-----------|
+| Completar sessão de corrida | XP, badges — **nunca OmniCoins** |
+| Desafio gratuito (entry fee = 0) | **Nada** (zero coins para todos) |
+| Streak semanal/mensal | XP, badges — **nunca OmniCoins** |
+| Personal record (PR) | XP, badges — **nunca OmniCoins** |
+| Badge desbloqueado | Reconhecimento visual — **nunca OmniCoins** |
+| Missão completada | XP — **nunca OmniCoins** |
+| Ranking/leaderboard | Posição — **nunca OmniCoins** |
+
+### 3.2 Fluxo de OmniCoins em desafios
+
+1. Cada participante paga o entry fee ao entrar (débito da wallet)
+2. As fees formam um pool (entry_fee × número de participantes)
+3. O vencedor recebe o pool inteiro
+4. Em caso de empate, cada um recebe seu fee de volta (refund)
+5. Se ninguém correu, todos recebem refund
+6. Desafios gratuitos (fee = 0): zero movimentação de coins
+
+**Regra de ouro:** OmniCoins só entram no sistema via assessoria. Dentro do app, só mudam de mão via desafios com inscrição.
 
 ---
 
@@ -60,12 +74,12 @@ Coins são obtidos exclusivamente por **atividade física real validada pelo ant
 | Aceitação | O desafiado aceita ou recusa (nunca automático) |
 | Tipo | Distância, pace, ou tempo em período definido (1h, 3h, 6h, 12h, 24h) |
 | Entry fee | OmniCoins (0 = gratuito). Fee pago ao entrar, vai pro pool |
-| Resultado (gratis) | Vencedor: 40 coins, perdedor: 25 coins |
+| Resultado (grátis) | **Zero coins** para todos — só vale a competição |
 | Resultado (com fee) | Vencedor: pool inteiro (fee × 2). Perdedor: 0 |
-| Nao completou | Quem nao correu no período = **perdeu** (DNF, 0 coins) |
-| Ambos nao correram | Ambos DNF. Se tinha fee, cada um recebe refund |
-| Um correu, outro nao | Quem correu ganha automaticamente |
-| Empate (gratis) | Ambos recebem 40 coins |
+| Não completou | Quem não correu no período = **perdeu** (DNF, 0 coins) |
+| Ambos não correram | Ambos DNF. Se tinha fee, cada um recebe refund |
+| Um correu, outro não | Quem correu ganha automaticamente |
+| Empate (grátis) | **Zero coins** |
 | Empate (com fee) | Cada um recebe o fee de volta (refund) |
 | Validação | Apenas sessões com `isVerified == true` contam |
 
@@ -75,12 +89,12 @@ Coins são obtidos exclusivamente por **atividade física real validada pelo ant
 |---------|-------|
 | Tamanho | 2-50 participantes |
 | Meta | Definida pelo criador (ex: "50 km coletivos em 7 dias") |
-| Logica | **Cooperativo** — o grupo ganha ou perde como unidade |
-| Contribuição | Sessões verificadas somam para o progresso coletivo (distancia/tempo: soma; pace: media) |
-| Meta atingida (gratis) | 30 coins para **todos** (correu ou nao) |
-| Meta atingida (com fee) | Pool dividido igualmente entre **todos** (correu ou nao) |
-| Meta nao atingida | 0 coins para todos (participaram mas falharam) |
-| Ninguem correu (com fee) | Todos DNF, refund do fee |
+| Lógica | **Cooperativo** — o grupo ganha ou perde como unidade |
+| Contribuição | Sessões verificadas somam para o progresso coletivo (distância/tempo: soma; pace: média) |
+| Meta atingida (grátis) | **Zero coins** — só vale a conquista coletiva |
+| Meta atingida (com fee) | Pool dividido igualmente entre **todos** (correu ou não) |
+| Meta não atingida | 0 coins para todos (participaram mas falharam) |
+| Ninguém correu (com fee) | Todos DNF, refund do fee |
 | Abandono | Sai do grupo sem penalidade; contribuição anterior permanece |
 
 ### 4.3 Rankings Locais

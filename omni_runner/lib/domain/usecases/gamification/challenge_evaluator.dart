@@ -17,13 +17,9 @@ import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
 ///   earliest (`lastSubmittedAtMs`) wins. If still tied, both share
 ///   the rank and get equal rewards.
 ///
-/// Coin rewards (from GAMIFICATION_POLICY.md §3/§4):
-/// - 1v1 winner: 25 (participation) + 15 (bonus) = 40
-/// - 1v1 loser:  25 (participation)
-/// - 1v1 tied:   25 + 15 = 40 each
-/// - Group met target: 30
-/// - Group did not meet target: 0
-/// - No sessions submitted: 0 (participated)
+/// OmniCoins are ONLY acquired via assessoria or won in staked challenges.
+/// Free challenges (entryFeeCoins == 0) award ZERO coins.
+/// Staked challenges: entry fees form a pool, winner takes the pool.
 final class ChallengeEvaluator {
   const ChallengeEvaluator();
 
@@ -100,7 +96,7 @@ final class ChallengeEvaluator {
     final stake = challenge.rules.entryFeeCoins;
     final hasStake = stake > 0;
 
-    // Nobody submitted anything → both lose. Refund entry fee if any.
+    // Nobody submitted anything → both DNF. Refund entry fee if staked.
     if (ranked.every((p) => p.contributingSessionIds.isEmpty)) {
       return ranked
           .map((p) => ParticipantResult(
@@ -122,7 +118,7 @@ final class ChallengeEvaluator {
           finalValue: ranked[0].progressValue,
           rank: 1,
           outcome: ParticipantOutcome.won,
-          coinsEarned: hasStake ? stake * 2 : 25 + 15,
+          coinsEarned: hasStake ? stake * 2 : 0,
           sessionIds: ranked[0].contributingSessionIds,
         ),
       ];
@@ -142,7 +138,7 @@ final class ChallengeEvaluator {
           finalValue: first.progressValue,
           rank: 1,
           outcome: ParticipantOutcome.won,
-          coinsEarned: hasStake ? stake * 2 : 25 + 15,
+          coinsEarned: hasStake ? stake * 2 : 0,
           sessionIds: first.contributingSessionIds,
         ),
         ParticipantResult(
@@ -162,7 +158,7 @@ final class ChallengeEvaluator {
           finalValue: second.progressValue,
           rank: 1,
           outcome: ParticipantOutcome.won,
-          coinsEarned: hasStake ? stake * 2 : 25 + 15,
+          coinsEarned: hasStake ? stake * 2 : 0,
           sessionIds: second.contributingSessionIds,
         ),
         ParticipantResult(
@@ -187,7 +183,7 @@ final class ChallengeEvaluator {
           finalValue: first.progressValue,
           rank: 1,
           outcome: ParticipantOutcome.tied,
-          coinsEarned: hasStake ? stake : 25 + 15,
+          coinsEarned: hasStake ? stake : 0,
           sessionIds: first.contributingSessionIds,
         ),
         ParticipantResult(
@@ -195,7 +191,7 @@ final class ChallengeEvaluator {
           finalValue: second.progressValue,
           rank: 1,
           outcome: ParticipantOutcome.tied,
-          coinsEarned: hasStake ? stake : 25 + 15,
+          coinsEarned: hasStake ? stake : 0,
           sessionIds: second.contributingSessionIds,
         ),
       ];
@@ -207,7 +203,7 @@ final class ChallengeEvaluator {
         finalValue: first.progressValue,
         rank: 1,
         outcome: ParticipantOutcome.won,
-        coinsEarned: hasStake ? stake * 2 : 25 + 15,
+        coinsEarned: hasStake ? stake * 2 : 0,
         sessionIds: first.contributingSessionIds,
       ),
       ParticipantResult(
@@ -215,7 +211,7 @@ final class ChallengeEvaluator {
         finalValue: second.progressValue,
         rank: 2,
         outcome: ParticipantOutcome.lost,
-        coinsEarned: hasStake ? 0 : 25,
+        coinsEarned: 0,
         sessionIds: second.contributingSessionIds,
       ),
     ];
@@ -272,7 +268,7 @@ final class ChallengeEvaluator {
     }
 
     if (groupMetTarget) {
-      final coinsEach = hasStake ? pool ~/ ranked.length : 30;
+      final coinsEach = hasStake ? pool ~/ ranked.length : 0;
       return ranked
           .map((p) => ParticipantResult(
                 userId: p.userId,
@@ -294,25 +290,6 @@ final class ChallengeEvaluator {
               sessionIds: p.contributingSessionIds,
             ))
         .toList();
-  }
-
-  /// Dense ranking: tied participants share the same rank.
-  /// e.g. [1, 1, 3] not [1, 1, 2].
-  List<int> _assignDenseRanks(
-    List<ChallengeParticipantEntity> sorted,
-    ChallengeMetric metric,
-  ) {
-    if (sorted.isEmpty) return [];
-    final ranks = List<int>.filled(sorted.length, 1);
-    for (var i = 1; i < sorted.length; i++) {
-      if (sorted[i].progressValue == sorted[i - 1].progressValue &&
-          _sameTiebreaker(sorted[i], sorted[i - 1])) {
-        ranks[i] = ranks[i - 1];
-      } else {
-        ranks[i] = i + 1;
-      }
-    }
-    return ranks;
   }
 
   /// Whether two participants cannot be differentiated by the tiebreaker.

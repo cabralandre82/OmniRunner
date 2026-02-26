@@ -4,28 +4,28 @@ import 'package:equatable/equatable.dart';
 ///
 /// Each reason maps to a rule in `docs/GAMIFICATION_POLICY.md` §3 / §4.
 enum LedgerReason {
-  /// Completed a verified session ≥1 km (+10 Coins).
+  /// DEPRECATED — sessions do not award coins. Kept for legacy ledger entries.
   sessionCompleted,
 
-  /// Completed a 1v1 challenge (+25 Coins).
+  /// DEPRECATED — free challenges award zero coins. Kept for legacy.
   challengeOneVsOneCompleted,
 
-  /// Won a 1v1 challenge (+15 bonus Coins).
+  /// Won a staked 1v1 challenge — receives the entry-fee pool.
   challengeOneVsOneWon,
 
-  /// Completed a group challenge (+30 Coins).
+  /// DEPRECATED — free group challenges award zero coins. Kept for legacy.
   challengeGroupCompleted,
 
-  /// Weekly streak: 3+ verified runs in a week (+20 Coins).
+  /// DEPRECATED — streaks do not award coins. Kept for legacy.
   streakWeekly,
 
-  /// Monthly streak: 12+ verified runs in a month (+50 Coins).
+  /// DEPRECATED — streaks do not award coins. Kept for legacy.
   streakMonthly,
 
-  /// New personal record — distance (+30 Coins).
+  /// DEPRECATED — PRs do not award coins. Kept for legacy.
   prDistance,
 
-  /// New personal record — pace (+30 Coins).
+  /// DEPRECATED — PRs do not award coins. Kept for legacy.
   prPace,
 
   /// Entry fee debited from participant when challenge starts (negative delta).
@@ -40,13 +40,13 @@ enum LedgerReason {
   /// Spent Coins on a cosmetic item (negative delta).
   cosmeticPurchase,
 
-  /// Manual adjustment by admin / system correction (positive or negative).
+  /// Manual adjustment by admin / assessoria distribution (positive or negative).
   adminAdjustment,
 
-  /// Badge unlocked — OmniCoins reward (+N Coins).
+  /// DEPRECATED — badges do not award coins. Kept for legacy.
   badgeReward,
 
-  /// Mission completed — OmniCoins reward (+N Coins).
+  /// DEPRECATED — missions do not award coins. Kept for legacy.
   missionReward,
 
   /// Cross-assessoria reward held pending clearing (positive delta to pending).
@@ -58,10 +58,10 @@ enum LedgerReason {
   /// Pending coins burned on assessoria switch before clearing.
   crossAssessoriaBurned,
 
-  /// Completed a team-vs-team challenge (+30 Coins).
+  /// Won a staked team-vs-team challenge — receives share of entry-fee pool.
   challengeTeamCompleted,
 
-  /// Won a team-vs-team challenge (+15 bonus Coins).
+  /// Won a staked team-vs-team challenge — receives share of entry-fee pool.
   challengeTeamWon,
 }
 

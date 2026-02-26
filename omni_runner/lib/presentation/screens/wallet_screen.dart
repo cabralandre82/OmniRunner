@@ -341,7 +341,7 @@ class _LedgerTile extends StatelessWidget {
         LedgerReason.challengePoolWon => 'Recompensa do desafio',
         LedgerReason.challengeEntryRefund => 'Devolução da inscrição',
         LedgerReason.cosmeticPurchase => 'Personalização desbloqueada',
-        LedgerReason.adminAdjustment => 'Ajuste do sistema',
+        LedgerReason.adminAdjustment => 'Distribuição da assessoria',
         LedgerReason.badgeReward => 'Conquista desbloqueada',
         LedgerReason.missionReward => 'Missão completada',
         LedgerReason.crossAssessoriaPending => 'Pendente (entre assessorias)',
