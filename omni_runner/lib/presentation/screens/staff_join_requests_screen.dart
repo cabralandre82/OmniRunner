@@ -34,7 +34,7 @@ class _StaffJoinRequestsScreenState extends State<StaffJoinRequestsScreen> {
       final db = Supabase.instance.client;
       final rows = await db
           .from('coaching_join_requests')
-          .select('id, user_id, display_name, status, requested_at')
+          .select('id, user_id, display_name, status, requested_at, requested_role')
           .eq('group_id', widget.groupId)
           .order('requested_at', ascending: false);
 
@@ -48,6 +48,7 @@ class _StaffJoinRequestsScreenState extends State<StaffJoinRequestsScreen> {
                 requestedAt: DateTime.tryParse(
                         (r['requested_at'] as String?) ?? '') ??
                     DateTime.now(),
+                requestedRole: (r['requested_role'] as String?) ?? 'atleta',
               ))
           .toList();
 
@@ -265,6 +266,7 @@ class _JoinRequest {
   final String displayName;
   final String status;
   final DateTime requestedAt;
+  final String requestedRole;
 
   const _JoinRequest({
     required this.id,
@@ -272,6 +274,7 @@ class _JoinRequest {
     required this.displayName,
     required this.status,
     required this.requestedAt,
+    this.requestedRole = 'atleta',
   });
 }
 
@@ -317,9 +320,16 @@ class _RequestCard extends StatelessWidget {
                             ?.copyWith(fontWeight: FontWeight.w600),
                       ),
                       Text(
-                        'Solicitou entrada $ago',
+                        request.requestedRole == 'professor'
+                            ? 'Solicitou entrada como professor · $ago'
+                            : 'Solicitou entrada · $ago',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                          color: request.requestedRole == 'professor'
+                              ? Colors.deepPurple
+                              : theme.colorScheme.onSurfaceVariant,
+                          fontWeight: request.requestedRole == 'professor'
+                              ? FontWeight.w600
+                              : null,
                         ),
                       ),
                     ],

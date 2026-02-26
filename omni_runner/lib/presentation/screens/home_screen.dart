@@ -4,7 +4,7 @@ import 'package:omni_runner/presentation/screens/athlete_dashboard_screen.dart';
 import 'package:omni_runner/presentation/screens/history_screen.dart';
 import 'package:omni_runner/presentation/screens/more_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_dashboard_screen.dart';
-import 'package:omni_runner/presentation/screens/tracking_screen.dart';
+import 'package:omni_runner/presentation/screens/today_screen.dart';
 import 'package:omni_runner/presentation/widgets/no_connection_banner.dart';
 
 /// Root navigation shell with bottom tab bar.
@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: NoConnectionBanner(
         child: IndexedStack(index: _tab, children: [
         const AthleteDashboardScreen(),
-        const TrackingScreen(),
+        const TodayScreen(),
         HistoryScreen(isVisible: _tab == 2),
         const MoreScreen(userRole: 'ATLETA'),
       ]),
@@ -53,9 +53,9 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Início',
           ),
           NavigationDestination(
-            icon: Icon(Icons.directions_run_outlined),
-            selectedIcon: Icon(Icons.directions_run),
-            label: 'Correr',
+            icon: Icon(Icons.today_outlined),
+            selectedIcon: Icon(Icons.today),
+            label: 'Hoje',
           ),
           NavigationDestination(
             icon: Icon(Icons.history_outlined),

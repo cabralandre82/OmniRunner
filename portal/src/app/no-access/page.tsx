@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/actions";
 
@@ -8,6 +9,18 @@ export default async function NoAccessPage() {
   } = await supabase.auth.getUser();
 
   const email = user?.email;
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("platform_role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.platform_role === "admin") {
+      redirect("/platform/assessorias");
+    }
+  }
 
   let reason = "Sua conta não possui permissão de staff em nenhuma assessoria.";
 

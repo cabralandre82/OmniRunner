@@ -1,0 +1,1097 @@
+// ignore_for_file: dangling_library_doc_comments
+
+/// ## Product Roadmap: Park / Same-Space Features
+///
+/// Brazil has a strong park-running culture (Ibirapuera, Aterro, Barigui, etc.).
+/// Multiple Omni Runner athletes often run at the same park. Ideas to explore:
+///
+/// ### 1. Park Leaderboard ("Rei do Parque")
+/// Auto-detect which park the athlete ran in (GPS polygon matching on
+/// Strava polyline). Weekly ranking: fastest lap, longest distance, most
+/// visits. Weekly crown holder gets XP bonus + exclusive badge.
+///
+/// ### 2. Park Check-in & Community
+/// When Strava syncs a run inside a known park, auto check-in.
+/// Show: "12 atletas do Omni Runner correram no Ibirapuera hoje".
+/// Auto-create micro-communities per park with their own feed.
+///
+/// ### 3. Shadow Racing (Corrida Fantasma)
+/// Two athletes ran the same park at different times? Let them "race"
+/// each other's ghost. "João correu Ibirapuera às 7h com pace 5:20.
+/// Desafie a rota dele!" Reconstructs ghost from Strava polyline.
+///
+/// ### 4. Park Segments & Records
+/// Define popular segments within parks (e.g. "Volta do lago Ibirapuera",
+/// "Reta da Faria Lima"). Track KOM-style records. Leaderboard per segment.
+/// Badges for breaking segment PRs.
+///
+/// ### 5. Social Run Detection
+/// If two+ users ran at the same park at overlapping times (within 30min),
+/// suggest: "Parece que você e @Maria correram juntos no Ibirapuera!
+/// Quer adicionar como amiga?" Builds organic social connections.
+///
+/// ### 6. Park Events / Flash Challenges
+/// Push notification: "Desafio no Ibirapuera: quem correr mais nos
+/// próximos 60 minutos ganha 100 coins". Geo-fenced challenges.
+/// Requires minimum 3 users at the park recently to trigger.
+///
+/// ### 7. Territory / Heat Map
+/// Athletes "paint" the city map by running through different areas.
+/// Park = high-density territory. Show aggregate heat map of all
+/// Omni Runner users at a park. Badges for exploring new parks.
+///
+/// ### 8. Park Relay
+/// Virtual relay at a shared park: team of 4, each runs their leg
+/// at any time during the day. Combined time counts. Creates
+/// coordination and team spirit among assessoria members.
+///
+/// ### 9. "Quem Corre Aqui" Discovery
+/// Profile card showing "Parques favoritos" based on run frequency.
+/// Users can discover and follow other runners who train at the
+/// same parks. Great for assessorias that train in specific parks.
+///
+/// ### 10. Park-Based Matchmaking
+/// Prefer matching opponents who run at the same park. A 1v1 challenge
+/// between two Ibirapuera runners feels more personal and competitive
+/// than random pairing. "Seu oponente também corre no Ibirapuera!"
+///
+/// Technical: All features work with Strava data (summary_polyline +
+/// start_latlng). Park polygon database can be seeded from OpenStreetMap
+/// leisure=park data for Brazilian cities. No real-time tracking needed.
+
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/tips/first_use_tips.dart';
+import 'package:omni_runner/domain/entities/profile_progress_entity.dart';
+import 'package:omni_runner/domain/entities/workout_session_entity.dart';
+import 'package:omni_runner/domain/entities/workout_status.dart';
+import 'package:omni_runner/domain/repositories/i_profile_progress_repo.dart';
+import 'package:omni_runner/domain/repositories/i_session_repo.dart';
+import 'package:omni_runner/features/parks/data/park_detection_service.dart';
+import 'package:omni_runner/features/parks/data/parks_seed.dart';
+import 'package:omni_runner/features/parks/domain/park_entity.dart';
+import 'package:omni_runner/features/parks/presentation/park_screen.dart';
+import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
+import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
+import 'package:omni_runner/presentation/screens/settings_screen.dart';
+import 'package:omni_runner/presentation/widgets/run_share_card.dart';
+import 'package:omni_runner/presentation/widgets/tip_banner.dart';
+
+class TodayScreen extends StatefulWidget {
+  const TodayScreen({super.key});
+
+  @override
+  State<TodayScreen> createState() => _TodayScreenState();
+}
+
+class _TodayScreenState extends State<TodayScreen> {
+  ProfileProgressEntity? _profile;
+  WorkoutSessionEntity? _lastRun;
+  WorkoutSessionEntity? _previousRun;
+  bool _stravaConnected = false;
+  bool _loading = true;
+  ParkEntity? _detectedPark;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final uid = sl<UserIdentityProvider>().userId;
+      final profile = await sl<IProfileProgressRepo>().getByUserId(uid);
+      final completed =
+          await sl<ISessionRepo>().getByStatus(WorkoutStatus.completed);
+
+      final stravaState = await sl<StravaConnectController>().getState();
+
+      // Detect park from last run's GPS data
+      ParkEntity? park;
+      final lastRun = completed.isNotEmpty ? completed.first : null;
+      if (lastRun != null && lastRun.route.isNotEmpty) {
+        final detector = ParkDetectionService(kBrazilianParksSeed);
+        final firstPoint = lastRun.route.first;
+        park = detector.detectPark(firstPoint.lat, firstPoint.lng);
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _profile = profile;
+        _lastRun = lastRun;
+        _previousRun = completed.length > 1 ? completed[1] : null;
+        _stravaConnected = stravaState is StravaConnected;
+        _detectedPark = park;
+        _loading = false;
+      });
+    } on Exception catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  bool get _ranToday {
+    if (_lastRun == null) return false;
+    final now = DateTime.now();
+    final runDate = DateTime.fromMillisecondsSinceEpoch(_lastRun!.startTimeMs);
+    return runDate.year == now.year &&
+        runDate.month == now.month &&
+        runDate.day == now.day;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Hoje'),
+        backgroundColor: cs.inversePrimary,
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                children: [
+                  const TipBanner(
+                    tipKey: TipKey.stravaConnect,
+                    icon: Icons.watch,
+                    text: 'O Omni Runner funciona com o Strava: corra com '
+                        'qualquer relógio (Garmin, Coros, Apple Watch) e '
+                        'suas corridas serão importadas automaticamente. '
+                        'Conecte em Configurações → Integrações.',
+                  ),
+
+                  // Streak banner
+                  if (_profile != null) _StreakBanner(profile: _profile!),
+                  const SizedBox(height: 14),
+
+                  // Strava CTA or "bora correr"
+                  _BoraCorrerCard(
+                    stravaConnected: _stravaConnected,
+                    ranToday: _ranToday,
+                    onOpenSettings: () {
+                      Navigator.of(context)
+                          .push(MaterialPageRoute<void>(
+                            builder: (_) => const SettingsScreen(),
+                          ))
+                          .then((_) => _load());
+                    },
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Run recap (if there's a last run)
+                  if (_lastRun != null) ...[
+                    _RunRecapCard(
+                      run: _lastRun!,
+                      previousRun: _previousRun,
+                      onShare: () => _shareRun(_lastRun!),
+                      onJournal: () => _openJournal(_lastRun!),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+
+                  // Park check-in
+                  if (_detectedPark != null) ...[
+                    _ParkCheckinCard(
+                      park: _detectedPark!,
+                      onTap: () {
+                        Navigator.of(context).push(MaterialPageRoute<void>(
+                          builder: (_) =>
+                              ParkScreen(park: _detectedPark!),
+                        ));
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+
+                  // Quick stats
+                  if (_profile != null) _QuickStatsRow(profile: _profile!),
+                ],
+              ),
+            ),
+    );
+  }
+
+  void _shareRun(WorkoutSessionEntity run) {
+    final distKm = (run.totalDistanceM ?? 0) / 1000;
+    final elapsed = (run.endTimeMs ?? run.startTimeMs) - run.startTimeMs;
+    final paceSecPerKm = distKm > 0 ? elapsed / 1000 / distKm : 0.0;
+    final paceMin = paceSecPerKm ~/ 60;
+    final paceSec = (paceSecPerKm % 60).round();
+    final durMin = elapsed ~/ 60000;
+    final durSec = (elapsed % 60000) ~/ 1000;
+    final date = DateTime.fromMillisecondsSinceEpoch(run.startTimeMs);
+
+    shareRunCard(
+      context,
+      distanceKm: distKm,
+      pace: '$paceMin:${paceSec.toString().padLeft(2, '0')}',
+      duration: '$durMin:${durSec.toString().padLeft(2, '0')}',
+      date: '${date.day}/${date.month}/${date.year}',
+      avgBpm: run.avgBpm,
+    );
+  }
+
+  Future<void> _openJournal(WorkoutSessionEntity run) async {
+    final controller = TextEditingController();
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          MediaQuery.of(ctx).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Diário de corrida',
+              style: Theme.of(ctx)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Como foi essa corrida? Anote o que sentiu, '
+              'o clima, seu humor...',
+              style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              maxLines: 4,
+              autofocus: true,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Hoje acordei cedo e corri no parque...',
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Text('Humor:'),
+                const SizedBox(width: 8),
+                ..._moodOptions(ctx),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.pop(ctx, controller.text),
+                child: const Text('Salvar'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result != null && result.isNotEmpty && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Anotação salva!')),
+      );
+    }
+  }
+
+  List<Widget> _moodOptions(BuildContext ctx) {
+    const moods = ['😴', '😐', '😊', '💪', '🔥'];
+    return moods
+        .map((m) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: GestureDetector(
+                onTap: () {},
+                child: Text(m, style: const TextStyle(fontSize: 24)),
+              ),
+            ))
+        .toList();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Streak Banner
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _StreakBanner extends StatelessWidget {
+  final ProfileProgressEntity profile;
+  const _StreakBanner({required this.profile});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final streak = profile.dailyStreakCount;
+    final best = profile.streakBest;
+    final hasFreeze = profile.hasFreezeAvailable;
+
+    final isActive = streak > 0;
+    final streakColor =
+        isActive ? Colors.orange.shade700 : Colors.grey.shade500;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: isActive
+            ? LinearGradient(
+                colors: [
+                  Colors.orange.shade100,
+                  Colors.red.shade50,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null,
+        color: isActive ? null : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isActive
+              ? Colors.orange.shade300
+              : Colors.grey.shade300,
+          width: isActive ? 1.5 : 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: streakColor.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                isActive ? '🔥' : '❄️',
+                style: const TextStyle(fontSize: 28),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      isActive
+                          ? '$streak dia${streak > 1 ? 's' : ''} seguido${streak > 1 ? 's' : ''}!'
+                          : 'Sem sequência ativa',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: streakColor,
+                      ),
+                    ),
+                    if (hasFreeze) ...[
+                      const SizedBox(width: 6),
+                      Tooltip(
+                        message: 'Freeze disponível: protege 1 dia sem correr',
+                        child: Icon(Icons.ac_unit,
+                            size: 16, color: Colors.blue.shade400),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  isActive
+                      ? 'Corra hoje para manter! Recorde: $best dias'
+                      : 'Corra hoje para iniciar uma nova sequência!',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                if (isActive && streak >= 3) ...[
+                  const SizedBox(height: 6),
+                  _StreakMilestones(current: streak),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StreakMilestones extends StatelessWidget {
+  final int current;
+  const _StreakMilestones({required this.current});
+
+  @override
+  Widget build(BuildContext context) {
+    const milestones = [7, 14, 30, 60, 100];
+    final next = milestones.firstWhere((m) => m > current, orElse: () => 0);
+    if (next == 0) return const SizedBox.shrink();
+
+    final progress = current / next;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 6,
+                  backgroundColor: Colors.orange.shade100,
+                  valueColor:
+                      AlwaysStoppedAnimation(Colors.orange.shade600),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '$current/$next',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Colors.orange.shade700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'Próximo marco: $next dias → +${_xpForMilestone(next)} XP',
+          style: TextStyle(fontSize: 10, color: Colors.orange.shade600),
+        ),
+      ],
+    );
+  }
+
+  static int _xpForMilestone(int days) => switch (days) {
+        7 => 100,
+        14 => 200,
+        30 => 500,
+        60 => 1000,
+        100 => 2000,
+        _ => 50,
+      };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bora Correr CTA
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _BoraCorrerCard extends StatelessWidget {
+  final bool stravaConnected;
+  final bool ranToday;
+  final VoidCallback onOpenSettings;
+
+  const _BoraCorrerCard({
+    required this.stravaConnected,
+    required this.ranToday,
+    required this.onOpenSettings,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    if (!stravaConnected) {
+      return _buildStravaPrompt(context, theme);
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: ranToday
+              ? [Colors.green.shade100, Colors.teal.shade50]
+              : [cs.primaryContainer, cs.tertiaryContainer],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            ranToday ? Icons.check_circle_rounded : Icons.directions_run,
+            size: 40,
+            color: ranToday ? Colors.green.shade700 : cs.primary,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            ranToday ? 'Boa! Você já correu hoje!' : 'Bora correr?',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: ranToday ? Colors.green.shade800 : null,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            ranToday
+                ? 'Sua corrida foi registrada. Veja o recap abaixo!'
+                : 'Abra o Strava, corra com seu relógio, '
+                    'e sua atividade será importada automaticamente.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: cs.onSurfaceVariant,
+            ),
+          ),
+          if (!ranToday) ...[
+            const SizedBox(height: 14),
+            FilledButton.icon(
+              onPressed: () => _openStrava(context),
+              icon: const Icon(Icons.open_in_new, size: 18),
+              label: const Text('Abrir Strava'),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFFC4C02),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 12),
+                textStyle: theme.textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStravaPrompt(BuildContext context, ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3E0),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFFCC80)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFC4C02),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.watch, color: Colors.white, size: 28),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Conecte o Strava para começar',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFFBF360C),
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'O Omni Runner importa suas corridas direto do Strava. '
+            'Funciona com qualquer relógio: Garmin, Coros, Apple Watch, '
+            'Polar, Suunto, ou até correndo só com o celular.\n\n'
+            'Ao conectar, suas últimas corridas são importadas '
+            'automaticamente para calibrar seu nível.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: Color(0xFF5D4037)),
+          ),
+          const SizedBox(height: 14),
+          FilledButton.icon(
+            onPressed: onOpenSettings,
+            icon: const Icon(Icons.link, size: 18),
+            label: const Text('Conectar Strava'),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFFC4C02),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 24, vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openStrava(BuildContext context) async {
+    const stravaUri = 'strava://';
+    const stravaWeb = 'https://www.strava.com/record';
+
+    final uri = Uri.parse(stravaUri);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      await launchUrl(
+        Uri.parse(stravaWeb),
+        mode: LaunchMode.externalApplication,
+      );
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Run Recap Card
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _RunRecapCard extends StatelessWidget {
+  final WorkoutSessionEntity run;
+  final WorkoutSessionEntity? previousRun;
+  final VoidCallback onShare;
+  final VoidCallback onJournal;
+
+  const _RunRecapCard({
+    required this.run,
+    this.previousRun,
+    required this.onShare,
+    required this.onJournal,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    final distKm = (run.totalDistanceM ?? 0) / 1000;
+    final elapsed = (run.endTimeMs ?? run.startTimeMs) - run.startTimeMs;
+    final paceSecPerKm = distKm > 0 ? elapsed / 1000 / distKm : 0.0;
+    final paceMin = paceSecPerKm ~/ 60;
+    final paceSec = (paceSecPerKm % 60).round();
+    final durMin = elapsed ~/ 60000;
+    final durSec = (elapsed % 60000) ~/ 1000;
+    final date = DateTime.fromMillisecondsSinceEpoch(run.startTimeMs);
+    final isToday = _isToday(date);
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            decoration: BoxDecoration(
+              color: cs.primaryContainer.withValues(alpha: 0.4),
+              borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.directions_run, color: cs.primary, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  isToday
+                      ? 'Corrida de hoje'
+                      : 'Última corrida — ${date.day}/${date.month}',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                if (run.source != 'app')
+                  Chip(
+                    label: Text(
+                      run.source == 'strava' ? 'Strava' : run.source,
+                      style: const TextStyle(fontSize: 10),
+                    ),
+                    avatar: const Icon(Icons.watch, size: 14),
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+              ],
+            ),
+          ),
+
+          // Metrics
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Row(
+              children: [
+                _MetricTile(
+                  label: 'Distância',
+                  value: '${distKm.toStringAsFixed(2)} km',
+                  icon: Icons.straighten,
+                ),
+                _MetricTile(
+                  label: 'Pace',
+                  value: '$paceMin:${paceSec.toString().padLeft(2, '0')} /km',
+                  icon: Icons.speed,
+                ),
+                _MetricTile(
+                  label: 'Tempo',
+                  value: '$durMin:${durSec.toString().padLeft(2, '0')}',
+                  icon: Icons.timer,
+                ),
+              ],
+            ),
+          ),
+
+          if (run.avgBpm != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+              child: Row(
+                children: [
+                  Icon(Icons.favorite, size: 14, color: Colors.red.shade400),
+                  const SizedBox(width: 4),
+                  Text(
+                    'FC média: ${run.avgBpm} bpm',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                  if (run.maxBpm != null) ...[
+                    Text(
+                      ' · máx: ${run.maxBpm} bpm',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+          // Comparison with previous run
+          if (previousRun != null)
+            _ComparisonRow(current: run, previous: previousRun!),
+
+          // Action buttons
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+            child: Row(
+              children: [
+                TextButton.icon(
+                  onPressed: onShare,
+                  icon: const Icon(Icons.share, size: 18),
+                  label: const Text('Compartilhar'),
+                ),
+                const SizedBox(width: 4),
+                TextButton.icon(
+                  onPressed: onJournal,
+                  icon: const Icon(Icons.edit_note, size: 18),
+                  label: const Text('Diário'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static bool _isToday(DateTime d) {
+    final now = DateTime.now();
+    return d.year == now.year && d.month == now.month && d.day == now.day;
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+
+  const _MetricTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, size: 18, color: theme.colorScheme.primary),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Comparison with previous run
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _ComparisonRow extends StatelessWidget {
+  final WorkoutSessionEntity current;
+  final WorkoutSessionEntity previous;
+
+  const _ComparisonRow({required this.current, required this.previous});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final curDist = current.totalDistanceM ?? 0;
+    final prevDist = previous.totalDistanceM ?? 0;
+    final curElapsed =
+        (current.endTimeMs ?? current.startTimeMs) - current.startTimeMs;
+    final prevElapsed =
+        (previous.endTimeMs ?? previous.startTimeMs) - previous.startTimeMs;
+
+    final curPace = curDist > 0 ? curElapsed / curDist : 0.0;
+    final prevPace = prevDist > 0 ? prevElapsed / prevDist : 0.0;
+
+    // Pace difference (negative = faster = better)
+    final paceDiff = prevPace > 0 ? ((curPace - prevPace) / prevPace * 100) : 0.0;
+    final distDiff = prevDist > 0 ? ((curDist - prevDist) / prevDist * 100) : 0.0;
+
+    final paceImproved = paceDiff < -0.5;
+    final paceWorsened = paceDiff > 0.5;
+    final distImproved = distDiff > 0.5;
+
+    if (!paceImproved && !paceWorsened && !distImproved) {
+      return const SizedBox.shrink();
+    }
+
+    final buffer = StringBuffer();
+    if (paceImproved) {
+      buffer.write('${paceDiff.abs().toStringAsFixed(1)}% mais rápido');
+    } else if (paceWorsened) {
+      buffer.write('${paceDiff.toStringAsFixed(1)}% mais lento');
+    }
+    if (distImproved) {
+      if (buffer.isNotEmpty) buffer.write(' · ');
+      buffer.write('+${distDiff.toStringAsFixed(1)}% mais longe');
+    }
+
+    final color = paceImproved
+        ? Colors.green.shade700
+        : paceWorsened
+            ? Colors.orange.shade700
+            : Colors.blue.shade700;
+    final icon = paceImproved
+        ? Icons.trending_up
+        : paceWorsened
+            ? Icons.trending_down
+            : Icons.trending_flat;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'vs. corrida anterior: $buffer',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Quick Stats Row
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _QuickStatsRow extends StatelessWidget {
+  final ProfileProgressEntity profile;
+  const _QuickStatsRow({required this.profile});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Resumo',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              _StatChip(
+                icon: Icons.star,
+                label: 'Nível ${profile.level}',
+                color: Colors.amber,
+              ),
+              const SizedBox(width: 8),
+              _StatChip(
+                icon: Icons.bolt,
+                label: '${profile.totalXp} XP',
+                color: Colors.blue,
+              ),
+              const SizedBox(width: 8),
+              _StatChip(
+                icon: Icons.calendar_today,
+                label: '${profile.weeklySessionCount} esta semana',
+                color: Colors.green,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _StatChip(
+                icon: Icons.straighten,
+                label: '${profile.lifetimeDistanceKm.toStringAsFixed(0)} km total',
+                color: Colors.purple,
+              ),
+              const SizedBox(width: 8),
+              _StatChip(
+                icon: Icons.directions_run,
+                label: '${profile.lifetimeSessionCount} corridas',
+                color: Colors.teal,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final MaterialColor color;
+
+  const _StatChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.shade50,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: color.shade700),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: color.shade800,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Park Check-in Card
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _ParkCheckinCard extends StatelessWidget {
+  final ParkEntity park;
+  final VoidCallback onTap;
+
+  const _ParkCheckinCard({required this.park, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      color: Colors.green.shade50,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade200,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.park, color: Colors.green.shade800, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Check-in: ${park.name}',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Toque para ver o ranking e quem mais corre aqui',
+                      style: TextStyle(
+                          fontSize: 12, color: Colors.green.shade700),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.green.shade700),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

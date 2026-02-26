@@ -19,10 +19,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_join_requests_one_pending
 
 ALTER TABLE public.coaching_join_requests ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "join_requests_select_own" ON public.coaching_join_requests;
 CREATE POLICY "join_requests_select_own"
   ON public.coaching_join_requests FOR SELECT
   USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "join_requests_select_staff" ON public.coaching_join_requests;
 CREATE POLICY "join_requests_select_staff"
   ON public.coaching_join_requests FOR SELECT
   USING (
@@ -34,10 +36,12 @@ CREATE POLICY "join_requests_select_staff"
     )
   );
 
+DROP POLICY IF EXISTS "join_requests_insert_own" ON public.coaching_join_requests;
 CREATE POLICY "join_requests_insert_own"
   ON public.coaching_join_requests FOR INSERT
   WITH CHECK (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "join_requests_update_staff" ON public.coaching_join_requests;
 CREATE POLICY "join_requests_update_staff"
   ON public.coaching_join_requests FOR UPDATE
   USING (

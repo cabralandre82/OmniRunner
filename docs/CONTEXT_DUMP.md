@@ -27748,3 +27748,68 @@ automaticamente um oponente compatível. Zero browsing.
 - **Portal `BuyButton`**: Botão "Pagar com Pix, Cartão ou Boleto" (cor MercadoPago #009ee3).
 - **Secrets Supabase**: `MERCADOPAGO_ACCESS_TOKEN`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PORTAL_URL` configurados.
 - **Fluxo testado end-to-end**: checkout → pagamento sandbox → redirect success → créditos alocados automaticamente (50 OmniCoins).
+
+### Sprint 25.0.0 — Strava-Only Strategy + Aba "Hoje" + Parks Feature
+
+#### S-1: Strava como fonte única de dados (decisão de produto)
+**Problema:** O app tinha tracking GPS próprio (TrackingScreen + TrackingBloc) mas a maioria dos atletas já usa Strava. Manter tracking próprio era complexo e redundante.
+
+**Decisão:** Strava é a fonte primária e única de dados de atividade. A aba "Correr" foi removida. Atletas que usam outros apps (Nike, adidas) sincronizam ao Strava. Scope `activity:read_all` fornece GPS, HR, pace — tudo que o anti-cheat precisa. Ver DECISIONS_LOG.md § DECISAO 057.
+
+**Implementação:**
+- `StravaHttpClient.getAthleteActivities()`: busca últimas N atividades via API
+- `StravaConnectController.importStravaHistory()`: ao conectar, importa últimas 20 corridas → `strava_activity_history` (Supabase upsert)
+- `handleCallback()` modificado para chamar `importStravaHistory().ignore()` fire-and-forget após token exchange
+- `service_locator.dart`: `StravaConnectController` recebe `StravaHttpClient` como dependência
+
+#### S-2: Aba "Hoje" (TodayScreen) substitui "Correr"
+**Problema:** Sem tracking próprio, a aba "Correr" não faz sentido. Precisa de hub de gamificação.
+
+**Solução — `TodayScreen`:**
+- **StreakBanner**: sequência de dias, recorde pessoal, freeze disponível, marcos (7/14/30/60/100 dias = XP)
+- **BoraCorrerCard**: CTA dinâmico — se Strava desconectado: prompt de conexão; se conectado: "Abrir Strava" (deep link `strava://`); se já correu hoje: "Parabéns!"
+- **RunRecapCard**: última corrida com distância, pace, tempo, HR, fonte (Strava/GPS), badges conquistados; comparação com corrida anterior (% mais rápido/lento em pace, HR, distância)
+- **Botão Compartilhar**: gera PNG via share sheet
+- **Botão Diário**: bottom sheet com TextFormField (anotações) + ChoiceChip (humor: 😤😕😐🙂🤩)
+- **ParkCheckinCard**: aparece se última corrida foi em parque detectado; link para ParkScreen
+- **QuickStatsRow**: nível, XP total, corridas na semana, km total, sessões lifetime
+
+**Navegação atualizada:** Início | **Hoje** | Histórico | Mais (ícone `Icons.today`)
+
+#### S-3: Parks Feature completa
+**Problema:** No Brasil muita gente corre em parques — oportunidade de comunidade e competição local.
+
+**Solução:**
+
+**Domain (`features/parks/domain/park_entity.dart`):**
+- `LatLng`, `ParkEntity` (id, name, city, state, polygon, center, areaSqM)
+- `ParkLeaderboardTier` (rei/elite/destaque/pelotao/frequentador) com `tierFromRank()`
+- `ParkLeaderboardCategory` (pace/distance/frequency/streak/evolution/longestRun)
+- `ParkLeaderboardEntry`, `ParkActivityEntity`, `ParkSegmentEntity`
+
+**Data (`features/parks/data/`):**
+- `ParkDetectionService`: ray-casting point-in-polygon + Haversine distance
+- `parks_seed.dart`: 10 parques brasileiros (Ibirapuera, Villa-Lobos, Aterro do Flamengo, Tijuca, Barigui, Bacacheri, Cidade, Taquaral, Parque da Cidade, Farroupilha)
+
+**Presentation (`features/parks/presentation/`):**
+- `ParkScreen`: 3 tabs (Ranking/Comunidade/Segmentos). Ranking com FilterChip por categoria, tier legend, RankingTile com tier badge. Comunidade com lista de runners + botão "Desafiar". Segmentos com nome, distância, recordista.
+- `MyParksScreen`: parques frequentados pelo usuário + discovery de novos parques.
+
+**Integrações:**
+- `athlete_dashboard_screen.dart`: card "Parques" → MyParksScreen
+- `today_screen.dart`: ParkCheckinCard (auto-detect park da última corrida)
+- `matchmaking_screen.dart`: auto-detect parque preferido (análise das últimas 20 corridas), `preferred_park_id` enviado ao EF `matchmake`
+
+#### S-4: Matchmaking melhorado
+**Problema:** Matchmaking era opaco. Atleta não entendia como funciona nem via necessidade do Strava.
+
+**Solução:**
+- `ChallengesListScreen`: `_StravaConnectBanner` (se Strava desconectado) + `TipBanner` para `TipKey.matchmakingHowTo` explicando matchmaking
+- `MatchmakingScreen`: card "Como funciona?" com regras; warning se Strava não conectado; hint visual do parque preferido; `preferred_park_id` no body do EF
+- `first_use_tips.dart`: novos `TipKey.matchmakingHowTo` e `TipKey.stravaConnect`
+
+**Tabelas Supabase necessárias:**
+- `strava_activity_history` (user_id, strava_activity_id, distance_m, moving_time_s, average_heartrate, summary_polyline, ...)
+- `park_activities` (user_id, park_id, distance_m, start_time, display_name)
+- `park_leaderboard` (park_id, user_id, category, rank, value, period, display_name)
+- `park_segments` (id, park_id, name, length_m, record_holder_name, record_pace_sec_per_km)

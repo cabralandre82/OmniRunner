@@ -1,6 +1,7 @@
 -- Fix: championship_templates only had a SELECT policy.
 -- INSERT/UPDATE/DELETE were blocked by RLS, causing "Erro ao salvar modelo".
 
+DROP POLICY IF EXISTS "championship_templates_insert" ON public.championship_templates;
 CREATE POLICY "championship_templates_insert"
   ON public.championship_templates
   FOR INSERT
@@ -13,6 +14,7 @@ CREATE POLICY "championship_templates_insert"
     )
   );
 
+DROP POLICY IF EXISTS "championship_templates_update" ON public.championship_templates;
 CREATE POLICY "championship_templates_update"
   ON public.championship_templates
   FOR UPDATE
@@ -25,6 +27,7 @@ CREATE POLICY "championship_templates_update"
     )
   );
 
+DROP POLICY IF EXISTS "championship_templates_delete" ON public.championship_templates;
 CREATE POLICY "championship_templates_delete"
   ON public.championship_templates
   FOR DELETE

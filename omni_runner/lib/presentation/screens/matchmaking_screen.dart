@@ -4,9 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
+import 'package:omni_runner/domain/entities/workout_status.dart';
+import 'package:omni_runner/domain/repositories/i_session_repo.dart';
+import 'package:omni_runner/features/parks/data/park_detection_service.dart';
+import 'package:omni_runner/features/parks/data/parks_seed.dart';
+import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
+import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_bloc.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_event.dart';
+import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/widgets/verification_gate.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -48,6 +56,9 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
   int? _queuePosition;
   Timer? _pollTimer;
   late AnimationController _pulseCtrl;
+  bool _stravaConnected = true;
+  String? _preferredParkId;
+  String? _preferredParkName;
 
   @override
   void initState() {
@@ -56,6 +67,53 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
+    _checkStrava();
+    _detectPreferredPark();
+  }
+
+  Future<void> _checkStrava() async {
+    try {
+      final state = await sl<StravaConnectController>().getState();
+      if (mounted) {
+        setState(() => _stravaConnected = state is StravaConnected);
+      }
+    } on Exception catch (_) {}
+  }
+
+  Future<void> _detectPreferredPark() async {
+    try {
+      final runs =
+          await sl<ISessionRepo>().getByStatus(WorkoutStatus.completed);
+      if (runs.isEmpty) return;
+
+      final detector = ParkDetectionService(kBrazilianParksSeed);
+      final parkCounts = <String, int>{};
+
+      for (final run in runs.take(20)) {
+        if (run.route.isEmpty) continue;
+        final pt = run.route.first;
+        final park = detector.detectPark(pt.lat, pt.lng);
+        if (park != null) {
+          parkCounts[park.id] = (parkCounts[park.id] ?? 0) + 1;
+        }
+      }
+
+      if (parkCounts.isNotEmpty) {
+        final topParkId =
+            (parkCounts.entries.toList()
+                  ..sort((a, b) => b.value.compareTo(a.value)))
+                .first
+                .key;
+        final park =
+            kBrazilianParksSeed.where((p) => p.id == topParkId).firstOrNull;
+        if (park != null && mounted) {
+          setState(() {
+            _preferredParkId = park.id;
+            _preferredParkName = park.name;
+          });
+        }
+      }
+    } on Exception catch (_) {}
   }
 
   @override
@@ -113,6 +171,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
           'target': target,
           'entry_fee_coins': fee,
           'window_ms': _windowMin * 60 * 1000,
+          if (_preferredParkId != null) 'preferred_park_id': _preferredParkId,
         },
       );
 
@@ -320,7 +379,134 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+
+          if (!_stravaConnected)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded,
+                      size: 20, color: Colors.orange.shade700),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Strava não conectado',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Colors.orange.shade800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Suas corridas precisam ser registradas via Strava '
+                          'para contar no desafio. Conecte nas Configurações.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.orange.shade700,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context)
+                                .push(MaterialPageRoute<void>(
+                                  builder: (_) => const SettingsScreen(),
+                                ))
+                                .then((_) => _checkStrava());
+                          },
+                          child: const Text(
+                            'Ir para Configurações →',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFFC4C02),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          const SizedBox(height: 16),
+
+          // How matchmaking works
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Icon(Icons.help_outline, size: 16, color: cs.primary),
+                  const SizedBox(width: 6),
+                  Text('Como funciona?',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: cs.primary,
+                      )),
+                ]),
+                const SizedBox(height: 6),
+                Text(
+                  'O matchmaking analisa seu pace médio das últimas '
+                  'corridas e encontra um oponente do mesmo nível. '
+                  'Vocês competem na mesma métrica, com o mesmo prazo '
+                  'e mesma aposta — garantindo uma disputa justa.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_preferredParkName != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.park,
+                        size: 16, color: Colors.green.shade700),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Prioridade: oponentes do $_preferredParkName',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.green.shade800,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          const SizedBox(height: 16),
 
           // Metric
           Text('O que vai contar?',

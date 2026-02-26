@@ -228,7 +228,23 @@ Coins são obtidos exclusivamente por **atividade física real validada pelo ant
 
 ---
 
-## 10. REVISÃO E ATUALIZAÇÃO
+## 10. PARK LEADERBOARDS — COMPLIANCE (Sprint 25.0.0)
+
+A feature "Parks" introduz leaderboards locais por parque. Compliance com esta policy:
+
+| Aspecto | Status |
+|---------|--------|
+| Park tiers são reconhecimento, não moeda | ✅ Tiers (Rei/Elite/Destaque/Pelotão/Frequentador) são labels visuais |
+| Leaderboard não gera Coins diretamente | ✅ Rankings são informativos; XP de parque é futuro e segue caps existentes |
+| Vocabulário: "Rei do Parque", "Elite", "Destaque" | ✅ Termos de conquista esportiva, sem conotação monetária |
+| Anti-exploit: atividades devem vir do Strava | ✅ GPS validado pelo Strava, não pelo app |
+| Matchmaking por parque é fairness-first | ✅ Prioriza adversários do mesmo parque para justiça geográfica |
+| Shadow Racing não envolve apostas | ✅ Corrida fantasma é referência de pace, sem stake |
+| Park community não é marketplace | ✅ "Quem corre aqui" é discovery social, sem transações |
+
+---
+
+## 11. REVISÃO E ATUALIZAÇÃO
 
 | Trigger de revisão | Ação |
 |--------------------|------|
@@ -239,4 +255,4 @@ Coins são obtidos exclusivamente por **atividade física real validada pelo ant
 
 ---
 
-*Documento criado no Sprint 12.0.0 — Guardrails Loja-Safe*
+*Documento criado no Sprint 12.0.0 — Atualizado em 26/02/2026 (Sprint 25.0.0 — Parks Compliance)*

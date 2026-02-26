@@ -258,6 +258,38 @@ class StravaHttpClient {
     return _decodeJsonMap(response);
   }
 
+  // ── Activity Endpoints ───────────────────────────────────────
+
+  /// Fetch the athlete's recent activities.
+  ///
+  /// GET /api/v3/athlete/activities?per_page=perPage&page=1
+  /// Returns a list of activity summaries (JSON maps).
+  Future<List<Map<String, dynamic>>> getAthleteActivities({
+    required String accessToken,
+    int perPage = 20,
+    int page = 1,
+  }) async {
+    final uri = Uri.parse('$_apiBase/athlete/activities').replace(
+      queryParameters: {
+        'per_page': '$perPage',
+        'page': '$page',
+      },
+    );
+
+    final response = await _get(
+      uri.toString(),
+      headers: {'Authorization': 'Bearer $accessToken'},
+      timeout: _defaultTimeout,
+      tag: 'GetActivities',
+    );
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is List) {
+      return decoded.cast<Map<String, dynamic>>();
+    }
+    return [];
+  }
+
   // ── Internal HTTP helpers ─────────────────────────────────────
 
   Future<http.Response> _get(

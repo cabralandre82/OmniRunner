@@ -1188,6 +1188,67 @@ cd portal/ && npm run build && vercel --prod
 | — | `billing_auto_topup_settings` | `group_id` (UUID) | Portal-only; 1:1 PK |
 | — | `billing_refund_requests` | `id` (UUID) | Portal-only; UNIQUE open per purchase |
 | — | `billing_limits` | `group_id` (UUID) | Portal-only; daily caps |
+| — | `strava_activity_history` | `user_id` (UUID), `strava_activity_id` (BIGINT) | Histórico importado do Strava; upsert por strava_activity_id |
+| — | `park_activities` | `user_id` (UUID), `park_id` (TEXT) | Atividades detectadas em parques |
+| — | `park_leaderboard` | `park_id` (TEXT), `user_id` (UUID), `category` (TEXT) | Rankings por parque; categorias: pace/distance/frequency/streak/evolution/longestRun |
+| — | `park_segments` | `id` (UUID), `park_id` (TEXT) | Segmentos dentro de parques com recordes |
+
+---
+
+## 12b. TABELAS NOVAS — Sprint 25.0.0 (Strava-Only + Parks)
+
+### `strava_activity_history`
+
+| Coluna | Tipo | Notas |
+|--------|------|-------|
+| `user_id` | UUID | FK → profiles.id; RLS: own read/write |
+| `strava_activity_id` | BIGINT | Unique; ID do Strava |
+| `name` | TEXT | Nome da atividade |
+| `distance_m` | DOUBLE | Distância em metros |
+| `moving_time_s` | INT | Tempo em movimento (segundos) |
+| `elapsed_time_s` | INT | Tempo total (segundos) |
+| `total_elevation_gain_m` | DOUBLE | Elevação total |
+| `average_speed_mps` | DOUBLE | Velocidade média (m/s) |
+| `max_speed_mps` | DOUBLE | Velocidade máxima (m/s) |
+| `average_heartrate` | DOUBLE | FC média |
+| `max_heartrate` | DOUBLE | FC máxima |
+| `start_date_utc` | TIMESTAMPTZ | Data/hora UTC |
+| `summary_polyline` | TEXT | Polyline encoded (Google format) |
+| `imported_at` | TIMESTAMPTZ | Data de importação |
+
+### `park_activities`
+
+| Coluna | Tipo | Notas |
+|--------|------|-------|
+| `id` | UUID | PK |
+| `user_id` | UUID | FK → profiles.id |
+| `park_id` | TEXT | ID do parque (do seed) |
+| `distance_m` | DOUBLE | Distância dentro do parque |
+| `start_time` | TIMESTAMPTZ | Início da atividade |
+| `display_name` | TEXT | Nome do usuário (desnormalizado) |
+
+### `park_leaderboard`
+
+| Coluna | Tipo | Notas |
+|--------|------|-------|
+| `park_id` | TEXT | ID do parque |
+| `user_id` | UUID | FK → profiles.id |
+| `category` | TEXT | pace/distance/frequency/streak/evolution/longestRun |
+| `rank` | INT | Posição no ranking |
+| `value` | DOUBLE | Valor da métrica |
+| `period` | TEXT | all_time / weekly / monthly |
+| `display_name` | TEXT | Nome do usuário (desnormalizado) |
+
+### `park_segments`
+
+| Coluna | Tipo | Notas |
+|--------|------|-------|
+| `id` | UUID | PK |
+| `park_id` | TEXT | ID do parque |
+| `name` | TEXT | Nome do segmento |
+| `length_m` | DOUBLE | Comprimento em metros |
+| `record_holder_name` | TEXT | Nome do recordista |
+| `record_pace_sec_per_km` | DOUBLE | Pace do recorde |
 
 ---
 
@@ -1204,7 +1265,7 @@ cd portal/ && npm run build && vercel --prod
 7. **Billing NUNCA aparece no app mobile** — preços, checkout, pagamentos são exclusivos do portal web.
 8. **O frontend mobile é offline-first** — dados locais (Isar) são sincronizados em background.
 9. **Referências de specs**: `GAMIFICATION_POLICY.md`, `PROGRESSION_SPEC.md`, `SOCIAL_SPEC.md`, `contracts/analytics_api.md`.
-10. **Decisões arquiteturais**: `docs/DECISIONS.md` (52 decisões documentadas, incluindo billing, auto top-up, refunds, limites).
+10. **Decisões arquiteturais**: `docs/DECISIONS.md` (60 decisões documentadas, incluindo billing, auto top-up, refunds, limites, strava-only, parks).
 
 ### RPCs disponíveis (funções SQL SECURITY DEFINER):
 
@@ -1239,4 +1300,4 @@ cd portal/ && npm run build && vercel --prod
 
 ---
 
-*Gerado em 2026-02-18, atualizado em 2026-02-21 (Phase 35.99.0) — 61 tabelas, 27 Edge Functions, 34 migrations*
+*Gerado em 2026-02-18, atualizado em 2026-02-26 (Sprint 25.0.0) — 65 tabelas, 27 Edge Functions, 34 migrations*

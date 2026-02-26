@@ -498,7 +498,58 @@ cosmético exclusivo). Total: **10 milestones por temporada**.
 
 ---
 
-## 15. GLOSSÁRIO
+## 15. PARK LEADERBOARD TIERS (Sprint 25.0.0)
+
+O sistema de progressão agora inclui reconhecimento em parques com tiers e categorias:
+
+### 15.1 Tiers de Reconhecimento
+
+| Tier | Rank | Emoji | Descrição |
+|------|------|-------|-----------|
+| Rei do Parque | #1 | 👑 | Melhor atleta na categoria para aquele parque |
+| Elite | #2-3 | ⭐ | Top 3 do parque |
+| Destaque | #4-10 | 🏅 | Top 10 do parque |
+| Pelotão | #11-20 | 🎯 | Top 20 do parque |
+| Frequentador | #21+ | 🏃 | Corre regularmente no parque |
+
+### 15.2 Categorias de Ranking
+
+| Categoria | Métrica | Unidade |
+|-----------|---------|---------|
+| Pace | Melhor pace médio | sec/km |
+| Distância | Km total no parque | km |
+| Frequência | Total de corridas | contagem |
+| Sequência | Maior streak no parque | dias |
+| Evolução | Melhoria de pace (%) | percentual |
+| Maior Corrida | Corrida mais longa | km |
+
+### 15.3 Fontes de XP de Parque (futuro)
+
+| Ação | XP |
+|------|----|
+| Primeira corrida no parque | 50 XP |
+| Subir de tier | 100 XP |
+| Conquistar "Rei do Parque" | 200 XP |
+| Quebrar recorde de segmento | 150 XP |
+
+### 15.4 Entities
+
+- `ParkLeaderboardTier` (enum: rei, elite, destaque, pelotao, frequentador)
+- `ParkLeaderboardCategory` (enum: pace, distance, frequency, streak, evolution, longestRun)
+- `ParkLeaderboardEntry` (parkId, userId, displayName, rank, tier, category, value, period)
+- `ParkActivityEntity` (id, parkId, userId, distanceM, startTime, displayName)
+
+### 15.5 Anti-Exploit
+
+| Vetor | Mitigação |
+|-------|-----------|
+| GPS spoofing para park detection | Atividades devem vir do Strava (não do app); Strava valida GPS |
+| Farm de frequência com runs curtas | Mínimo 1 km dentro do polygon para contar |
+| Multi-account para monopolizar leaderboard | Vinculado ao Strava account (unique athlete_id) |
+
+---
+
+## 16. GLOSSÁRIO
 
 | Termo | Definição |
 |-------|-----------|
@@ -512,7 +563,10 @@ cosmético exclusivo). Total: **10 milestones por temporada**.
 | Temporada | Ciclo de 90 dias com ranking e recompensas exclusivas |
 | Season XP | XP ganho durante a temporada (subconjunto do XP total) |
 | Season Pass | Track de 10 milestones por temporada (gratuito) |
+| Park Tier | Nível de reconhecimento em um parque (Rei/Elite/Destaque/Pelotão/Frequentador) |
+| Park Category | Dimensão de ranking (pace/distância/frequência/sequência/evolução/maior corrida) |
+| Park Check-in | Registro automático de atividade em parque detectado por GPS polygon |
 
 ---
 
-*Documento criado no Sprint 13.1.0 — Especificação Progressão*
+*Documento criado no Sprint 13.1.0 — Atualizado em 26/02/2026 (Sprint 25.0.0 — Parks)*

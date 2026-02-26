@@ -1,5 +1,6 @@
 import 'package:omni_runner/core/errors/strava_failures.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/features/strava/data/strava_http_client.dart';
 import 'package:omni_runner/features/strava/data/strava_secure_store.dart';
 import 'package:omni_runner/features/strava/domain/i_strava_auth_repository.dart';
 import 'package:omni_runner/features/strava/domain/i_strava_upload_repository.dart';
@@ -14,10 +15,52 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Stateless — delegates all state to [IStravaAuthRepository].
 ///
 /// Designed to be used by a BLoC or directly by a widget.
+///
+/// ## Integration Strategy: Strava as Primary Data Source
+///
+/// **Decision:** Athletes run with any device/app they want, but all activity
+/// data flows through Strava to Omni Runner. Strava is the single source of
+/// truth for anti-cheat and challenge validation.
+///
+/// **Why Strava only (for now):**
+///
+/// 1. **Universal compatibility** — Garmin, Coros, Suunto, Polar, Apple Watch,
+///    and even phone-only runners all sync to Strava natively.
+/// 2. **Rich free-tier API** — `activity:read_all` scope gives us: GPS streams,
+///    heart rate, cadence, elapsed vs moving time, splits, summary polyline.
+///    All required for anti-cheat validation without needing Strava Summit.
+/// 3. **Anti-cheat data on free tier:**
+///    - GPS coordinates (polyline + detailed stream) → teleportation detection
+///    - Heart rate data → effort-vs-pace plausibility
+///    - Elapsed time vs moving time → pause manipulation
+///    - Pace consistency → bike-as-run detection
+///    - Elevation data → terrain cross-reference
+/// 4. **Webhook support** — `strava_connections` table enables automatic import
+///    of new activities without the athlete needing the phone/app open.
+/// 5. **Single integration to maintain** — One OAuth flow, one webhook, one
+///    data format. Nike Run Club, adidas Running, etc. would each require a
+///    separate integration with less data availability.
+/// 6. **Strong adoption** — Strava is dominant in the running community,
+///    especially in Brazil among assessoria-linked athletes.
+///
+/// **Why NOT Nike Run Club / adidas Running / others (for now):**
+///
+/// - Nike Run Club API is not publicly available (no OAuth, no webhook).
+/// - adidas Running (Runtastic) has limited API access.
+/// - MapMyRun, Under Armour — same issue.
+/// - Fragmenting effort across multiple integrations with less data would
+///   weaken the anti-cheat system.
+/// - Athletes using these apps can still sync them to Strava, which then
+///   syncs to us — one extra step but zero data loss.
+///
+/// **Future extensibility:** The architecture (domain interfaces, sealed
+/// states) allows adding new data sources later if needed. The anti-cheat
+/// engine works on normalized activity data, not Strava-specific formats.
 final class StravaConnectController {
   final IStravaAuthRepository _authRepo;
   final IStravaUploadRepository _uploadRepo;
   final StravaSecureStore _store;
+  final StravaHttpClient _httpClient;
 
   static const _tag = 'StravaController';
 
@@ -25,9 +68,11 @@ final class StravaConnectController {
     required IStravaAuthRepository authRepo,
     required IStravaUploadRepository uploadRepo,
     required StravaSecureStore store,
+    required StravaHttpClient httpClient,
   })  : _authRepo = authRepo,
         _uploadRepo = uploadRepo,
-        _store = store;
+        _store = store,
+        _httpClient = httpClient;
 
   // ── Auth Actions ──────────────────────────────────────────────
 
@@ -60,6 +105,10 @@ final class StravaConnectController {
     AppLogger.info('Callback received, exchanging code', tag: _tag);
     final connected = await _authRepo.exchangeCode(code);
     await _syncTokensToServer(connected);
+
+    // Fire-and-forget: import last 20 runs for verification bootstrapping
+    importStravaHistory().ignore();
+
     return connected;
   }
 
@@ -137,5 +186,66 @@ final class StravaConnectController {
   Future<bool> get isConnected async {
     final state = await _authRepo.getAuthState();
     return state is StravaConnected && !state.isExpired;
+  }
+
+  // ── History Import ──────────────────────────────────────────────
+
+  /// Fetch the athlete's last [count] running activities from Strava
+  /// and save them to `strava_activity_history` for anti-cheat
+  /// baseline bootstrapping.
+  ///
+  /// Called automatically after a successful Strava connect.
+  /// Non-critical — failures are logged but do not block the user.
+  Future<int> importStravaHistory({int count = 20}) async {
+    try {
+      final token = await _authRepo.getValidAccessToken();
+      final activities = await _httpClient.getAthleteActivities(
+        accessToken: token,
+        perPage: count,
+      );
+
+      final runs = activities
+          .where((a) => a['type'] == 'Run' || a['type'] == 'VirtualRun')
+          .toList();
+
+      if (runs.isEmpty) {
+        AppLogger.info('No running activities found in Strava history',
+            tag: _tag);
+        return 0;
+      }
+
+      final uid = Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) return 0;
+
+      final rows = runs.map((a) => {
+        'user_id': uid,
+        'strava_activity_id': a['id'],
+        'name': a['name'],
+        'distance_m': (a['distance'] as num?)?.toDouble() ?? 0.0,
+        'moving_time_s': a['moving_time'] ?? 0,
+        'elapsed_time_s': a['elapsed_time'] ?? 0,
+        'average_speed': (a['average_speed'] as num?)?.toDouble(),
+        'max_speed': (a['max_speed'] as num?)?.toDouble(),
+        'average_heartrate': (a['average_heartrate'] as num?)?.toDouble(),
+        'max_heartrate': (a['max_heartrate'] as num?)?.toDouble(),
+        'start_date': a['start_date'],
+        'summary_polyline': (a['map'] as Map?)?['summary_polyline'],
+        'activity_type': a['type'],
+        'imported_at': DateTime.now().toUtc().toIso8601String(),
+      }).toList();
+
+      await Supabase.instance.client
+          .from('strava_activity_history')
+          .upsert(rows, onConflict: 'user_id,strava_activity_id');
+
+      AppLogger.info(
+        'Imported ${rows.length} running activities from Strava history',
+        tag: _tag,
+      );
+      return rows.length;
+    } on Exception catch (e) {
+      AppLogger.warn('Failed to import Strava history: $e', tag: _tag);
+      return 0;
+    }
   }
 }

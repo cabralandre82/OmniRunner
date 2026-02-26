@@ -1019,6 +1019,128 @@ A alternativa seria implementar sync bidirecional Isar↔Supabase, mas e muito m
 
 ---
 
+## DECISAO 057 — Strava como fonte unica de dados de atividade
+
+**Data:** 2026-02-26
+**Contexto:** O app tinha tracking GPS proprio (TrackingScreen + TrackingBloc + mapa MapLibre + botao "Correr").
+Porem, a maioria dos atletas ja usa Strava com seus relogios. Manter tracking proprio adiciona
+complexidade (GPS, foreground service, BLE, audio coach) com pouco beneficio. Alem disso, o
+Strava gratuito fornece todos os dados necessarios para anti-cheat: GPS completo, HR, pace,
+elapsed/moving time, summary_polyline.
+
+**Decisao:**
+1. Strava e a fonte primaria e unica de dados de atividade
+2. A aba "Correr" (TrackingScreen) foi substituida pela aba "Hoje" (TodayScreen)
+3. Atletas que usam Nike Run Club, adidas Running, etc. podem sincronizar esses apps ao Strava
+4. Ao conectar Strava, as ultimas 20 corridas sao importadas para calibrar nivel do atleta
+5. Scope `activity:read_all` usado para acessar historico completo
+6. Arquitetura extensivel: `IStravaAuthRepository` abstrai; novos provedores podem ser adicionados
+7. TrackingScreen/TrackingBloc permanecem no codigo mas inacessiveis na navegacao
+
+**Vantagens:**
+- Strava funciona com qualquer relogio/app (universalidade)
+- Dados ricos (GPS, HR, cadencia) sem custo de implementacao
+- Webhooks para importacao automatica
+- Comunidade ja estabelecida (menos atrito para o atleta)
+- Menos manutencao de GPS, BLE, foreground service
+
+**Desvantagens:**
+- Dependencia de terceiro (mitigado: arquitetura extensivel)
+- Rate limits do Strava (mitigado: StravaHttpClient com retry + 429 handling)
+- Atletas sem Strava precisam criar conta (aceito: Strava e gratuito)
+
+**Arquivos modificados (4):**
+- `lib/presentation/screens/home_screen.dart` (TrackingScreen → TodayScreen)
+- `lib/features/strava/data/strava_http_client.dart` (+getAthleteActivities)
+- `lib/features/strava/presentation/strava_connect_controller.dart` (+importStravaHistory)
+- `lib/core/service_locator.dart` (+httpClient no controller)
+
+**Risco:** Medio. Dependencia de API terceira, porem Strava e o padrao da industria e a arquitetura
+permite adicionar outros provedores sem refatoracao significativa.
+
+---
+
+## DECISAO 058 — Aba "Hoje" (TodayScreen) substitui "Correr" (TrackingScreen)
+
+**Data:** 2026-02-26
+**Contexto:** Com a remocao do tracking GPS proprio (Decisao 057), a aba "Correr" perdeu sentido.
+O app precisa manter engajamento e gamificacao sem oferecer tracking proprio.
+
+**Decisao:**
+1. Nova aba "Hoje" como hub diario de gamificacao
+2. Componentes: StreakBanner, BoraCorrerCard (CTA → abre Strava), RunRecapCard (ultima corrida),
+   comparacao com corrida anterior (% mais rapido/lento), botao compartilhar, diario de corrida
+   (anotacao + humor), QuickStatsRow, ParkCheckinCard
+3. Navegacao: Inicio | Hoje | Historico | Mais
+4. Icone: `Icons.today_outlined` / `Icons.today`
+
+**Arquivos criados (1):**
+- `lib/presentation/screens/today_screen.dart`
+
+**Arquivos modificados (1):**
+- `lib/presentation/screens/home_screen.dart`
+
+**Risco:** Nenhum. E uma tela nova sem dependencias criticas.
+
+---
+
+## DECISAO 059 — Parks Feature (leaderboard multi-tier, comunidade, segmentos)
+
+**Data:** 2026-02-26
+**Contexto:** No Brasil, muitos atletas correm em parques. O app pode aproveitar essa concentracao
+geografica para criar comunidade, competicao local e engajamento.
+
+**Decisao:**
+1. Deteccao de parque via GPS polygon (ray-casting point-in-polygon)
+2. 10 parques brasileiros seedados (Ibirapuera, Aterro do Flamengo, Barigui, etc.)
+3. Leaderboard multi-tier com 5 niveis: Rei (top 1), Elite (top 3), Destaque (top 10),
+   Pelotao (top 20), Frequentador (demais). Inspiracao em Strava KOM mas mais inclusivo.
+4. 6 categorias de ranking: Pace, Distancia, Frequencia, Sequencia, Evolucao, Maior Corrida
+5. Comunidade por parque: lista de corredores, corridas sociais (overlap de horario)
+6. Segmentos com recordes (KOM-style dentro de parques)
+7. Matchmaking prioriza oponentes do mesmo parque (campo preferred_park_id)
+8. Park check-in automatico no TodayScreen quando ultima corrida foi em parque detectado
+
+**Arquivos criados (5):**
+- `lib/features/parks/domain/park_entity.dart`
+- `lib/features/parks/data/park_detection_service.dart`
+- `lib/features/parks/data/parks_seed.dart`
+- `lib/features/parks/presentation/park_screen.dart`
+- `lib/features/parks/presentation/my_parks_screen.dart`
+
+**Arquivos modificados (3):**
+- `lib/presentation/screens/athlete_dashboard_screen.dart` (+card Parques)
+- `lib/presentation/screens/today_screen.dart` (+ParkCheckinCard)
+- `lib/presentation/screens/matchmaking_screen.dart` (+preferred_park_id)
+
+**Tabelas Supabase necessarias:**
+- `park_activities`, `park_leaderboard`, `park_segments`
+
+**Risco:** Baixo. Feature puramente aditiva, nao altera fluxos existentes.
+
+---
+
+## DECISAO 060 — Matchmaking: explicacao + Strava obrigatorio + park preference
+
+**Data:** 2026-02-26
+**Contexto:** Matchmaking era opaco para o atleta — nao explicava como funcionava nem exigia Strava.
+
+**Decisao:**
+1. TipBanner em ChallengesListScreen explicando matchmaking automatico
+2. Banner de Strava nao conectado em ChallengesListScreen e MatchmakingScreen
+3. Card "Como funciona?" no MatchmakingScreen com regras claras
+4. Auto-deteccao de parque preferido (analise das ultimas 20 corridas)
+5. Campo `preferred_park_id` enviado ao EF `matchmake` para priorizar adversarios do mesmo parque
+
+**Arquivos modificados (3):**
+- `lib/presentation/screens/challenges_list_screen.dart`
+- `lib/presentation/screens/matchmaking_screen.dart`
+- `lib/core/tips/first_use_tips.dart` (+matchmakingHowTo, +stravaConnect)
+
+**Risco:** Nenhum. Melhoria de UX sem breaking changes.
+
+---
+
 ## DECISAO 056 — Sync Supabase → Isar no dashboard staff (BUG-17)
 
 **Data:** 2026-02-23

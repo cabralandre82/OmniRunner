@@ -455,6 +455,7 @@ Future<void> setupServiceLocator() async {
       authRepo: sl<IStravaAuthRepository>(),
       uploadRepo: sl<IStravaUploadRepository>(),
       store: sl<StravaSecureStore>(),
+      httpClient: sl<StravaHttpClient>(),
     ),
   );
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
@@ -15,6 +16,7 @@ import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_bloc.dart';
 import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_event.dart';
 import 'package:omni_runner/presentation/screens/assessoria_feed_screen.dart';
+import 'package:omni_runner/features/parks/presentation/my_parks_screen.dart';
 import 'package:omni_runner/presentation/screens/athlete_championships_screen.dart';
 import 'package:omni_runner/presentation/screens/athlete_verification_screen.dart';
 import 'package:omni_runner/presentation/screens/challenges_list_screen.dart';
@@ -46,6 +48,7 @@ class AthleteDashboardScreen extends StatefulWidget {
 class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
   String? _assessoriaName;
   String? _assessoriaGroupId;
+  String? _pendingRequestGroupName;
   bool _loading = true;
 
   @override
@@ -71,10 +74,39 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
           });
         }
       } else {
+        // No membership — check for pending join request
+        await _checkPendingRequest(uid);
         if (mounted) setState(() => _loading = false);
       }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _checkPendingRequest(String uid) async {
+    try {
+      final rows = await Supabase.instance.client
+          .from('coaching_join_requests')
+          .select('group_id')
+          .eq('user_id', uid)
+          .eq('status', 'pending')
+          .limit(1);
+      if ((rows as List).isNotEmpty) {
+        final groupId = rows.first['group_id'] as String;
+        final groupRows = await Supabase.instance.client
+            .from('coaching_groups')
+            .select('name')
+            .eq('id', groupId)
+            .limit(1);
+        if (mounted && (groupRows as List).isNotEmpty) {
+          setState(() {
+            _pendingRequestGroupName =
+                (groupRows.first['name'] as String?) ?? 'Assessoria';
+          });
+        }
+      }
+    } catch (_) {
+      // Non-critical — just won't show the banner
     }
   }
 
@@ -183,11 +215,55 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
               tipKey: TipKey.dashboardWelcome,
               icon: Icons.rocket_launch_rounded,
               text: 'Primeiros passos:\n'
-                  '1. Faça sua primeira corrida (aba Correr)\n'
+                  '1. Conecte seu Strava e faça sua primeira corrida\n'
                   '2. Entre em uma assessoria (peça o código ao professor)\n'
                   '3. Crie ou encontre um desafio para competir\n'
                   '4. Complete corridas para se tornar Atleta Verificado',
             ),
+            if (_pendingRequestGroupName != null && !hasAssessoria) ...[
+              const SizedBox(height: 8),
+              Card(
+                color: Colors.orange.shade50,
+                margin: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: Colors.orange.shade200),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      Icon(Icons.hourglass_top_rounded,
+                          color: Colors.orange.shade700, size: 28),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Solicitação pendente',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.orange.shade900,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Aguardando aprovação da assessoria '
+                              '"$_pendingRequestGroupName". Você será '
+                              'notificado quando a assessoria aprovar.',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: Colors.orange.shade800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             if (hasAssessoria && _assessoriaGroupId != null) ...[
               const SizedBox(height: 8),
               Card(
@@ -275,6 +351,18 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
                     bgColor: Colors.orange.shade50,
                     iconColor: Colors.orange.shade800,
                     onTap: _openChampionships,
+                  ),
+                  _DashCard(
+                    icon: Icons.park_rounded,
+                    title: 'Parques',
+                    subtitle: 'Rankings e comunidade',
+                    bgColor: Colors.green.shade50,
+                    iconColor: Colors.green.shade700,
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute<void>(
+                        builder: (_) => const MyParksScreen(),
+                      ));
+                    },
                   ),
                   _DashCard(
                     icon: Icons.verified_user_rounded,

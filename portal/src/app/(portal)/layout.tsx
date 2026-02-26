@@ -20,7 +20,19 @@ export default async function PortalLayout({
   const groupId = cookieStore.get("portal_group_id")?.value;
   const role = cookieStore.get("portal_role")?.value ?? "assistente";
 
-  if (!groupId) redirect("/select-group");
+  if (!groupId) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("platform_role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.platform_role === "admin") {
+      redirect("/platform/assessorias");
+    }
+
+    redirect("/select-group");
+  }
 
   const { data: memberships } = await supabase
     .from("coaching_members")
@@ -30,17 +42,25 @@ export default async function PortalLayout({
 
   const multiGroup = (memberships?.length ?? 0) > 1;
 
-  const { data: group } = await supabase
-    .from("coaching_groups")
-    .select("name")
-    .eq("id", groupId)
-    .single();
+  const [groupRes, profileRes] = await Promise.all([
+    supabase
+      .from("coaching_groups")
+      .select("name")
+      .eq("id", groupId)
+      .single(),
+    supabase
+      .from("profiles")
+      .select("platform_role")
+      .eq("id", user.id)
+      .single(),
+  ]);
 
-  const groupName = group?.name ?? "Assessoria";
+  const groupName = groupRes.data?.name ?? "Assessoria";
+  const isPlatformAdmin = profileRes.data?.platform_role === "admin";
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar role={role} />
+      <Sidebar role={role} isPlatformAdmin={isPlatformAdmin} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header
           groupName={groupName}

@@ -1,0 +1,265 @@
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/features/parks/data/parks_seed.dart';
+import 'package:omni_runner/features/parks/domain/park_entity.dart';
+import 'package:omni_runner/features/parks/presentation/park_screen.dart';
+
+/// Listing of parks the athlete frequents + discovery of nearby parks.
+///
+/// Shows:
+///   1. "Seus parques" — parks where the user has run
+///   2. "Descobrir" — all seeded parks for browsing
+class MyParksScreen extends StatefulWidget {
+  const MyParksScreen({super.key});
+
+  @override
+  State<MyParksScreen> createState() => _MyParksScreenState();
+}
+
+class _MyParksScreenState extends State<MyParksScreen> {
+  bool _loading = true;
+  List<_ParkSummary> _myParks = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      if (AppConfig.isSupabaseReady) {
+        final uid = sl<UserIdentityProvider>().userId;
+        final res = await Supabase.instance.client
+            .from('park_activities')
+            .select('park_id, distance_m')
+            .eq('user_id', uid);
+
+        final byPark = <String, _ParkAgg>{};
+        for (final r in res as List) {
+          final pid = r['park_id'] as String;
+          byPark.putIfAbsent(pid, () => _ParkAgg());
+          byPark[pid]!.count++;
+          byPark[pid]!.totalDistM +=
+              (r['distance_m'] as num?)?.toDouble() ?? 0;
+        }
+
+        _myParks = byPark.entries
+            .map((e) {
+              final park = kBrazilianParksSeed
+                  .where((p) => p.id == e.key)
+                  .firstOrNull;
+              if (park == null) return null;
+              return _ParkSummary(
+                park: park,
+                runCount: e.value.count,
+                totalDistKm: e.value.totalDistM / 1000,
+              );
+            })
+            .whereType<_ParkSummary>()
+            .toList()
+          ..sort((a, b) => b.runCount.compareTo(a.runCount));
+      }
+
+      if (mounted) setState(() => _loading = false);
+    } on Exception catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Parques'),
+        backgroundColor: cs.inversePrimary,
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                children: [
+                  // My parks
+                  if (_myParks.isNotEmpty) ...[
+                    const _SectionTitle(
+                      title: 'Seus parques',
+                      icon: Icons.favorite,
+                    ),
+                    const SizedBox(height: 8),
+                    ..._myParks.map((s) => _MyParkCard(
+                          summary: s,
+                          onTap: () => _openPark(s.park),
+                        )),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // Discover
+                  const _SectionTitle(
+                    title: 'Descobrir parques',
+                    icon: Icons.explore,
+                  ),
+                  const SizedBox(height: 8),
+                  ...kBrazilianParksSeed.map((park) {
+                    final isMine =
+                        _myParks.any((s) => s.park.id == park.id);
+                    return _DiscoverParkTile(
+                      park: park,
+                      isMine: isMine,
+                      onTap: () => _openPark(park),
+                    );
+                  }),
+                ],
+              ),
+            ),
+    );
+  }
+
+  void _openPark(ParkEntity park) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ParkScreen(park: park),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  const _SectionTitle({required this.title, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: theme.colorScheme.primary),
+        const SizedBox(width: 8),
+        Text(title,
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+}
+
+class _MyParkCard extends StatelessWidget {
+  final _ParkSummary summary;
+  final VoidCallback onTap;
+
+  const _MyParkCard({required this.summary, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.park, color: Colors.green.shade700, size: 26),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(summary.park.name,
+                        style: theme.textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${summary.park.city} · '
+                      '${summary.runCount} corrida${summary.runCount > 1 ? 's' : ''} · '
+                      '${summary.totalDistKm.toStringAsFixed(1)} km',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: cs.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DiscoverParkTile extends StatelessWidget {
+  final ParkEntity park;
+  final bool isMine;
+  final VoidCallback onTap;
+
+  const _DiscoverParkTile({
+    required this.park,
+    required this.isMine,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return ListTile(
+      dense: true,
+      leading: CircleAvatar(
+        backgroundColor:
+            isMine ? Colors.green.shade100 : cs.surfaceContainerHighest,
+        child: Icon(
+          isMine ? Icons.check : Icons.park,
+          color: isMine ? Colors.green.shade700 : cs.onSurfaceVariant,
+          size: 20,
+        ),
+      ),
+      title: Text(park.name),
+      subtitle: Text('${park.city}, ${park.state}'),
+      trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+      onTap: onTap,
+    );
+  }
+}
+
+// ── Data helpers ─────────────────────────────────────────────────────────────
+
+class _ParkSummary {
+  final ParkEntity park;
+  final int runCount;
+  final double totalDistKm;
+
+  const _ParkSummary({
+    required this.park,
+    required this.runCount,
+    required this.totalDistKm,
+  });
+}
+
+class _ParkAgg {
+  int count = 0;
+  double totalDistM = 0;
+}

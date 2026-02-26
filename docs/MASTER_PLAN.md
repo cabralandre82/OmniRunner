@@ -785,4 +785,69 @@ Compra de créditos OmniCoins pelo portal agora funcional. MercadoPago como gate
 
 ---
 
+### Sprint 25.0.0 — Strava-Only Strategy + Aba "Hoje" + Parks Feature  🔧 EM PROGRESSO
+
+**Decisão de produto:** O app deixa de ter tracking GPS próprio. O atleta corre com qualquer relógio/app e todos os dados fluem pelo Strava. A aba "Correr" (mapa + botão iniciar) foi substituída pela aba **"Hoje"** — um briefing diário de gamificação.
+
+**Strava como fonte única de dados:**
+- `activity:read_all` scope fornece GPS, HR, pace, elapsed/moving time — tudo que o anti-cheat precisa
+- Webhook via `strava_connections` importa atividades automaticamente
+- Ao conectar, últimas 20 corridas são importadas para calibrar o nível do atleta (`strava_activity_history`)
+- Nike Run Club / adidas Running / outros não têm API pública — atletas que usam esses apps podem sincronizá-los ao Strava
+- Arquitetura extensível para novos provedores no futuro
+
+**Aba "Hoje" (TodayScreen):**
+- Streak banner (sequência de dias, recorde, freeze, marcos com XP)
+- CTA "Bora Correr" (abre Strava via deep link `strava://`)
+- Run Recap Card (última corrida com métricas, fonte, badges)
+- Comparação com corrida anterior (% mais rápido/lento)
+- Botão Compartilhar (PNG via share sheet)
+- Diário de corrida (anotação + humor)
+- Quick Stats (nível, XP, corridas na semana, km total)
+- Park check-in (detecção automática de parque via GPS polygon)
+
+**Parks Feature (features/parks/):**
+- Detecção de parque por GPS (ray-casting point-in-polygon)
+- 10 parques brasileiros seedados (Ibirapuera, Aterro, Barigui, etc.)
+- "Rei do Parque" — leaderboard multi-tier (👑 Rei / ⭐ Elite / 🏅 Destaque / 🎯 Pelotão / 🏃 Frequentador)
+- 6 categorias (Pace, Distância, Frequência, Sequência, Evolução, Maior corrida)
+- Comunidade por parque ("Quem corre aqui")
+- Detecção de corridas sociais (overlap de horário)
+- Shadow Racing (ghost de outro atleta no mesmo parque)
+- Segmentos com recordes (KOM-style)
+- Matchmaking por parque (prioriza oponentes do mesmo parque)
+
+**Matchmaking melhorado:**
+- Explicação "Como funciona?" no setup
+- TipBanner na lista de desafios explicando matchmaking
+- Aviso de Strava não conectado (challenges + matchmaking)
+
+**Navegação:** Início | **Hoje** | Histórico | Mais (antes: Início | Correr | Histórico | Mais)
+
+**Tabelas Supabase necessárias:**
+- `strava_activity_history` (user_id, strava_activity_id, distance_m, moving_time_s, average_heartrate, summary_polyline, ...)
+- `park_activities` (user_id, park_id, distance_m, start_time, display_name, ...)
+- `park_leaderboard` (park_id, user_id, category, rank, value, period, display_name)
+- `park_segments` (id, park_id, name, length_m, record_holder_name, record_pace_sec_per_km)
+
+**Arquivos criados (7):**
+- `lib/presentation/screens/today_screen.dart`
+- `lib/features/parks/domain/park_entity.dart`
+- `lib/features/parks/data/park_detection_service.dart`
+- `lib/features/parks/data/parks_seed.dart`
+- `lib/features/parks/presentation/park_screen.dart`
+- `lib/features/parks/presentation/my_parks_screen.dart`
+
+**Arquivos modificados (9):**
+- `lib/presentation/screens/home_screen.dart` (TrackingScreen → TodayScreen, ícone "Hoje")
+- `lib/presentation/screens/athlete_dashboard_screen.dart` (+card Parques)
+- `lib/presentation/screens/challenges_list_screen.dart` (Strava banner + matchmaking tip)
+- `lib/presentation/screens/matchmaking_screen.dart` (Strava check + park preference + "Como funciona")
+- `lib/features/strava/data/strava_http_client.dart` (+getAthleteActivities)
+- `lib/features/strava/presentation/strava_connect_controller.dart` (+importStravaHistory, +httpClient)
+- `lib/core/service_locator.dart` (+httpClient no controller)
+- `lib/core/tips/first_use_tips.dart` (+matchmakingHowTo, +stravaConnect)
+
+---
+
 *Documento gerado na Sprint 1.2*

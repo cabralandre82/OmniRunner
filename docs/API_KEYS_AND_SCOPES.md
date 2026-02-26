@@ -1,8 +1,8 @@
 # API_KEYS_AND_SCOPES.md — Política de Segredos e Chaves de API
 
-> **Data:** 2026-02-17
+> **Data:** 2026-02-26
 > **Status:** Ativo
-> **Referência:** DECISIONS.md (DECISAO 005, DECISAO 011, DECISAO 013)
+> **Referência:** DECISIONS.md (DECISAO 005, DECISAO 011, DECISAO 013, DECISAO 057)
 
 ---
 
@@ -48,12 +48,13 @@ Authorization Callback Domain: omnirunner
 | Scope | Obrigatório | Por quê | Sprint |
 |-------|:-----------:|---------|--------|
 | `activity:write` | **SIM** | Upload de arquivos GPX/FIT/TCX para `/api/v3/uploads`. Sem este scope, o POST retorna 403. | 14.3.1 |
-| `activity:read` | NÃO (MVP) | Permite `GET /api/v3/athlete/activities` para verificar duplicatas antes de upload. **Não necessário** porque `external_id` no upload já previne duplicatas server-side. Adiar para pós-MVP. | — |
-| `read` | NÃO | Lê perfil do atleta. Não necessário para upload. Evitar solicitar scopes desnecessários (princípio de menor privilégio). | — |
-| `read_all` | NÃO | Lê atividades privadas de outros. Nunca necessário. | — |
+| `activity:read_all` | **SIM** | Permite `GET /api/v3/athlete/activities` para importar histórico (últimas 20 corridas) e calibrar nível do atleta. Necessário desde Sprint 25.0.0 (Strava como fonte única). | 25.0.0 |
+| `activity:read` | NÃO | Substituído por `activity:read_all` que cobre o mesmo + atividades privadas do próprio atleta. | — |
+| `read` | NÃO | Lê perfil do atleta. Não necessário para importação de atividades. | — |
+| `read_all` | NÃO | Lê atividades de outros atletas. Nunca necessário. | — |
 | `profile:write` | NÃO | Altera perfil. Nunca necessário. | — |
 
-**Decisão:** Solicitar APENAS `activity:write`. Scope mínimo = menor fricção de consentimento = maior taxa de conversão.
+**Decisão (atualizada Sprint 25.0.0):** Solicitar `activity:write` + `activity:read_all`. O scope `activity:read_all` é necessário para importar o histórico de corridas do atleta ao conectar o Strava, usado para calibração de nível e verificação. Ver DECISIONS_LOG.md § DECISAO 057.
 
 ### 3.3 Fluxo OAuth2 — Authorization Code (sem PKCE*)
 
@@ -448,4 +449,4 @@ const stravaClientSecret = String.fromEnvironment('STRAVA_CLIENT_SECRET');
 
 ---
 
-*Documento criado em Sprint 14.0.1. Atualizar a cada nova chave/serviço adicionado.*
+*Documento criado em Sprint 14.0.1. Atualizado em 26/02/2026 (Sprint 25.0.0 — Strava activity:read_all).*

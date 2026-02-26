@@ -18,7 +18,19 @@ export default async function SelectGroupPage() {
 
   const memberships = data ?? [];
 
-  if (memberships.length === 0) redirect("/no-access");
+  if (memberships.length === 0) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("platform_role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.platform_role === "admin") {
+      redirect("/platform/assessorias");
+    }
+
+    redirect("/no-access");
+  }
   if (memberships.length === 1) {
     const m = memberships[0];
     await setPortalGroup(m.group_id as string, m.role as string);

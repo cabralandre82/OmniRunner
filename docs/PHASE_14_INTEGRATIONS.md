@@ -1031,4 +1031,48 @@ Baixa  | Q10    | Q3     |        |
 
 ---
 
-*Documento criado em Sprint 14.0.1. Atualizado a cada micro-passo.*
+---
+
+## Sprint 25.0.0 — Strava como Fonte Única + History Import
+
+### Decisão: Strava-Only
+
+O app não faz mais tracking GPS próprio. Todas as atividades vêm do Strava.
+Ver DECISIONS_LOG.md § DECISAO 057 para justificativa completa.
+
+### Strava History Import
+
+Ao conectar o Strava, as últimas 20 corridas do atleta são importadas automaticamente:
+
+1. `StravaConnectController.handleCallback()` recebe o authorization code
+2. Troca por tokens via `exchangeCode()`
+3. Fire-and-forget: `importStravaHistory(count: 20)`
+4. `StravaHttpClient.getAthleteActivities(accessToken, perPage: 20)`
+5. Filtra `type == 'Run' || type == 'VirtualRun'`
+6. Upsert em `strava_activity_history` (Supabase)
+
+**Campos armazenados:**
+- `user_id`, `strava_activity_id`, `name`, `distance_m`, `moving_time_s`
+- `elapsed_time_s`, `total_elevation_gain_m`, `average_speed_mps`
+- `max_speed_mps`, `average_heartrate`, `max_heartrate`
+- `start_date_utc`, `summary_polyline`, `imported_at`
+
+**Scope necessário:** `activity:read_all` (já configurado no OAuth)
+
+### Park Detection Service
+
+`ParkDetectionService` detecta se uma atividade ocorreu dentro de um parque:
+- Ray-casting point-in-polygon algorithm
+- Haversine distance para busca por proximidade
+- 10 parques brasileiros seedados (São Paulo, Rio, Curitiba, Brasília, BH, Porto Alegre)
+- Entidade: `ParkEntity` com polygon (List<LatLng>), center, area
+
+**Tabelas Supabase novas:**
+- `strava_activity_history` (importação histórica)
+- `park_activities` (atividades por parque)
+- `park_leaderboard` (rankings por parque/categoria)
+- `park_segments` (segmentos com recordes)
+
+---
+
+*Documento criado em Sprint 14.0.1. Atualizado em 26/02/2026 (Sprint 25.0.0).*

@@ -135,19 +135,17 @@ class _AuthGateState extends State<AuthGate> {
     ));
   }
 
-  /// Auto-join flow for READY users already on the home screen.
-  /// Looks up the group, shows a confirmation dialog, then joins.
+  /// Deep-link join flow: looks up the group, shows confirmation, then
+  /// sends a join **request** (requires staff approval — no instant entry).
   Future<void> _autoJoinFromHome(String code) async {
     if (!mounted) return;
 
-    // Clear persisted code — we're handling it now.
     _pendingInviteCode = null;
     sl<DeepLinkHandler>().consumePendingInvite();
 
     final client = Supabase.instance.client;
 
     try {
-      // Lookup group by invite code
       final res = await client.rpc(
         'fn_lookup_group_by_invite_code',
         params: {'p_code': code},
@@ -159,7 +157,7 @@ class _AuthGateState extends State<AuthGate> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Código de convite inválido ou assessoria não aceita novos membros.',
+              'Código de convite inválido ou assessoria não encontrada.',
             ),
           ),
         );
@@ -172,12 +170,14 @@ class _AuthGateState extends State<AuthGate> {
 
       if (!mounted) return;
 
-      // Confirmation dialog
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Entrar na assessoria?'),
-          content: Text(groupName),
+          title: const Text('Solicitar entrada?'),
+          content: Text(
+            'Sua solicitação será enviada para a assessoria '
+            '"$groupName". Você será adicionado quando a assessoria aprovar.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -185,7 +185,7 @@ class _AuthGateState extends State<AuthGate> {
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Entrar'),
+              child: const Text('Solicitar'),
             ),
           ],
         ),
@@ -193,31 +193,53 @@ class _AuthGateState extends State<AuthGate> {
 
       if (confirmed != true || !mounted) return;
 
-      await client.rpc(
-        'fn_switch_assessoria',
-        params: {'p_new_group_id': groupId},
+      final joinRes = await client.rpc(
+        'fn_request_join',
+        params: {'p_group_id': groupId},
       );
-
-      AppLogger.info('Auto-joined group $groupId from invite link', tag: _tag);
+      final status = (joinRes as Map<String, dynamic>?)?['status'] as String?;
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Você entrou na assessoria $groupName!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (status == 'already_member') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Você já é membro da assessoria $groupName.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else if (status == 'already_requested') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Você já tem uma solicitação pendente para "$groupName". '
+              'Aguarde a aprovação.',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Solicitação enviada para "$groupName"! '
+              'Aguarde a aprovação da assessoria.',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
 
-      // Re-resolve to refresh the home screen state
-      setState(() => _dest = _GateDestination.loading);
-      _resolve();
+      AppLogger.info(
+        'Join request sent for group $groupId via invite link (status: $status)',
+        tag: _tag,
+      );
     } catch (e) {
-      AppLogger.error('Auto-join failed: $e', tag: _tag, error: e);
+      AppLogger.error('Auto-join request failed: $e', tag: _tag, error: e);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Não foi possível entrar na assessoria.'),
+          content: const Text('Não foi possível enviar a solicitação.'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

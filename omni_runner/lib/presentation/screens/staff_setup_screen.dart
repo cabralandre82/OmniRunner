@@ -126,6 +126,29 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
         'method': 'create_assessoria',
       });
       if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          icon: Icon(Icons.check_circle_outline,
+              size: 48, color: Colors.green.shade600),
+          title: const Text('Assessoria criada!'),
+          content: const Text(
+            'Sua assessoria foi criada com sucesso e está '
+            'aguardando aprovação da plataforma Omni Runner.\n\n'
+            'Você será notificado quando a aprovação for concluída. '
+            'Enquanto isso, atletas ainda não poderão encontrar '
+            'sua assessoria na busca.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Entendi'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted) return;
       widget.onComplete();
     } catch (e) {
       AppLogger.error('Create assessoria failed: $e', tag: _tag, error: e);
@@ -180,8 +203,11 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Entrar como professor?'),
-        content: Text(groupName),
+        title: const Text('Solicitar entrada como professor?'),
+        content: Text(
+          'Sua solicitação será enviada para a assessoria '
+          '"$groupName". O administrador precisará aprovar sua entrada.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -189,7 +215,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Entrar'),
+            child: const Text('Solicitar'),
           ),
         ],
       ),
@@ -202,26 +228,79 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
     });
 
     try {
-      await _client.rpc(
-        'fn_join_as_professor',
-        params: {'p_group_id': groupId},
+      final res = await _client.rpc(
+        'fn_request_join',
+        params: {'p_group_id': groupId, 'p_role': 'professor'},
       );
-      AppLogger.info('Joined group $groupId as professor', tag: _tag);
-      await _setReady();
+      final status = (res as Map<String, dynamic>?)?['status'] as String?;
+
+      if (status == 'already_member') {
+        AppLogger.info('Already a member of $groupId', tag: _tag);
+        await _setReady();
+        if (!mounted) return;
+        widget.onComplete();
+        return;
+      }
+
+      if (status == 'already_requested') {
+        if (!mounted) return;
+        setState(() => _busy = false);
+        _showRequestSent(groupName, alreadyExists: true);
+        return;
+      }
+
+      AppLogger.info('Requested to join $groupId as professor', tag: _tag);
       sl<ProductEventTracker>().track(ProductEvents.onboardingCompleted, {
         'role': 'ASSESSORIA_STAFF',
-        'method': 'join_as_professor',
+        'method': 'request_join_professor',
       });
+      await _setReady();
       if (!mounted) return;
-      widget.onComplete();
+      _showRequestSent(groupName, alreadyExists: false);
     } catch (e) {
-      AppLogger.error('Join as professor failed: $e', tag: _tag, error: e);
+      AppLogger.error('Join request as professor failed: $e', tag: _tag, error: e);
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = 'Não foi possível entrar. Tente novamente.';
+        _error = 'Não foi possível enviar a solicitação. Tente novamente.';
       });
     }
+  }
+
+  void _showRequestSent(String groupName, {required bool alreadyExists}) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        icon: Icon(
+          alreadyExists ? Icons.info_outline : Icons.check_circle_outline,
+          size: 48,
+          color: alreadyExists ? Colors.orange : Colors.green,
+        ),
+        title: Text(
+          alreadyExists
+              ? 'Solicitação já enviada'
+              : 'Solicitação enviada!',
+        ),
+        content: Text(
+          alreadyExists
+              ? 'Você já tem uma solicitação pendente para "$groupName". '
+                'Aguarde a aprovação do administrador.'
+              : 'Sua solicitação para entrar como professor em '
+                '"$groupName" foi enviada. O administrador da assessoria '
+                'irá analisar e aprovar sua entrada.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              widget.onComplete();
+            },
+            child: const Text('Entendi'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _scanQr() async {

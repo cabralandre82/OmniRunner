@@ -4,6 +4,8 @@ import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
+import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
+import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_event.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_state.dart';
@@ -11,6 +13,7 @@ import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/presentation/screens/challenge_create_screen.dart';
 import 'package:omni_runner/presentation/screens/challenge_details_screen.dart';
 import 'package:omni_runner/presentation/screens/matchmaking_screen.dart';
+import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 
 void _openMatchmaking(BuildContext context) async {
@@ -32,8 +35,30 @@ void _openMatchmaking(BuildContext context) async {
   }
 }
 
-class ChallengesListScreen extends StatelessWidget {
+class ChallengesListScreen extends StatefulWidget {
   const ChallengesListScreen({super.key});
+
+  @override
+  State<ChallengesListScreen> createState() => _ChallengesListScreenState();
+}
+
+class _ChallengesListScreenState extends State<ChallengesListScreen> {
+  bool _stravaConnected = true; // assume connected until proven otherwise
+
+  @override
+  void initState() {
+    super.initState();
+    _checkStrava();
+  }
+
+  Future<void> _checkStrava() async {
+    try {
+      final state = await sl<StravaConnectController>().getState();
+      if (mounted) {
+        setState(() => _stravaConnected = state is StravaConnected);
+      }
+    } on Exception catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,30 +85,41 @@ class ChallengesListScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: BlocBuilder<ChallengesBloc, ChallengesState>(
-        builder: (context, state) => switch (state) {
-          ChallengesInitial() => const Center(
-              child: Text('Carregando...'),
+      body: Column(
+        children: [
+          if (!_stravaConnected) _StravaConnectBanner(onConnected: () {
+            _checkStrava();
+          }),
+          Expanded(
+            child: BlocBuilder<ChallengesBloc, ChallengesState>(
+              builder: (context, state) => switch (state) {
+                ChallengesInitial() => const Center(
+                    child: Text('Carregando...'),
+                  ),
+                ChallengesLoading() => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                ChallengesLoaded(:final challenges) => challenges.isEmpty
+                    ? _empty(context)
+                    : _listWithTip(context, challenges),
+                ChallengeCreated(:final challenge) =>
+                  _list(context, [challenge]),
+                ChallengeDetailLoaded() => const SizedBox.shrink(),
+                ChallengesError(:final message) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        message,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error),
+                      ),
+                    ),
+                  ),
+              },
             ),
-          ChallengesLoading() => const Center(
-              child: CircularProgressIndicator(),
-            ),
-          ChallengesLoaded(:final challenges) => challenges.isEmpty
-              ? _empty(context)
-              : _listWithTip(context, challenges),
-          ChallengeCreated(:final challenge) => _list(context, [challenge]),
-          ChallengeDetailLoaded() => const SizedBox.shrink(),
-          ChallengesError(:final message) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-            ),
-        },
+          ),
+        ],
       ),
     );
   }
@@ -91,7 +127,7 @@ class ChallengesListScreen extends StatelessWidget {
   Widget _empty(BuildContext context) {
     final theme = Theme.of(context);
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -161,6 +197,19 @@ class ChallengesListScreen extends StatelessWidget {
               text: 'Toque no "+" para criar um novo desafio. '
                   'Escolha distância, pace ou tempo, defina o prazo '
                   'e convide seus amigos!',
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
+            child: TipBanner(
+              tipKey: TipKey.matchmakingHowTo,
+              icon: Icons.sports_mma_rounded,
+              text: 'Matchmaking automático: toque no ícone de luta '
+                  'para encontrar um oponente do seu nível. '
+                  'O sistema analisa seu pace médio das últimas corridas '
+                  'e te pareia com alguém compatível — mesma métrica, '
+                  'mesma faixa de habilidade. Desafios justos e '
+                  'competitivos!',
             ),
           ),
           Expanded(child: _list(context, challenges)),
@@ -327,6 +376,113 @@ class _SectionHeader extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Strava connection banner — shown when the athlete hasn't connected Strava
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _StravaConnectBanner extends StatelessWidget {
+  final VoidCallback onConnected;
+
+  const _StravaConnectBanner({required this.onConnected});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFFC4C02).withValues(alpha: 0.12),
+            const Color(0xFFFC4C02).withValues(alpha: 0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFFFC4C02).withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFC4C02),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.watch, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Conecte o Strava para participar',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFBF360C),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Para que suas corridas contem nos desafios, você precisa '
+            'conectar o Strava. Funciona com qualquer relógio (Garmin, '
+            'Coros, Apple Watch, etc.). Seus dados de GPS e frequência '
+            'cardíaca são verificados pelo anti-cheat para garantir '
+            'competições justas.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: const Color(0xFF5D4037),
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Ao conectar, importamos suas últimas corridas '
+                  'para calibrar seu nível automaticamente.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF8D6E63),
+                    fontStyle: FontStyle.italic,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.of(context)
+                      .push(MaterialPageRoute<void>(
+                        builder: (_) => const SettingsScreen(),
+                      ))
+                      .then((_) => onConnected());
+                },
+                icon: const Icon(Icons.link, size: 16),
+                label: const Text('Conectar'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFFC4C02),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 8),
+                  textStyle: const TextStyle(fontSize: 13),
+                ),
+              ),
+            ],
           ),
         ],
       ),

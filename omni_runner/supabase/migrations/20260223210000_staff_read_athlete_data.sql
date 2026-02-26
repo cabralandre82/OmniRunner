@@ -12,10 +12,12 @@ RETURNS SETOF UUID LANGUAGE sql SECURITY DEFINER STABLE AS $$
   );
 $$;
 
+DROP POLICY IF EXISTS "sessions_staff_read" ON public.sessions;
 CREATE POLICY "sessions_staff_read"
   ON public.sessions FOR SELECT
   USING (user_id IN (SELECT staff_group_member_ids()));
 
+DROP POLICY IF EXISTS "challenge_parts_staff_read" ON public.challenge_participants;
 CREATE POLICY "challenge_parts_staff_read"
   ON public.challenge_participants FOR SELECT
   USING (user_id IN (SELECT staff_group_member_ids()));

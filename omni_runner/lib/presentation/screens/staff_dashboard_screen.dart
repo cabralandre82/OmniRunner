@@ -46,6 +46,9 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
   int _memberCount = 0;
   int _pendingJoinRequests = 0;
   String? _inviteCode;
+  String? _pendingProfessorGroupName;
+  String _approvalStatus = 'approved';
+  String? _approvalRejectReason;
 
   @override
   void initState() {
@@ -167,11 +170,37 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
             _groupId = gid;
             _membership = membership;
             _inviteCode = groupRow?['invite_code'] as String?;
+            _approvalStatus =
+                (groupRow?['approval_status'] as String?) ?? 'approved';
+            _approvalRejectReason =
+                groupRow?['approval_reject_reason'] as String?;
             _loading = false;
           });
         }
       } else {
         AppLogger.warn('No staff membership found for user', tag: 'StaffDash');
+        // Check if there's a pending professor join request
+        try {
+          final joinRows = await db
+              .from('coaching_join_requests')
+              .select('group_id')
+              .eq('user_id', uid)
+              .eq('status', 'pending')
+              .eq('requested_role', 'professor')
+              .limit(1);
+          if ((joinRows as List).isNotEmpty) {
+            final gid = joinRows.first['group_id'] as String;
+            final groupRow = await db
+                .from('coaching_groups')
+                .select('name')
+                .eq('id', gid)
+                .maybeSingle();
+            if (mounted) {
+              _pendingProfessorGroupName =
+                  (groupRow?['name'] as String?) ?? 'Assessoria';
+            }
+          }
+        } catch (_) {}
         if (mounted) setState(() => _loading = false);
       }
     } catch (e) {
@@ -280,11 +309,81 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
           ? const Center(child: CircularProgressIndicator())
           : _groupId.isEmpty
               ? _buildNoGroup(theme)
-              : _buildDashboard(theme, cs),
+              : _approvalStatus != 'approved'
+                  ? _buildPlatformApprovalPending(theme)
+                  : _buildDashboard(theme, cs),
     );
   }
 
   Widget _buildNoGroup(ThemeData theme) {
+    if (_pendingProfessorGroupName != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.hourglass_top_rounded,
+                  size: 72, color: Colors.orange.shade400),
+              const SizedBox(height: 20),
+              Text('Solicitação pendente',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  )),
+              const SizedBox(height: 12),
+              Text(
+                'Sua solicitação para entrar como professor na assessoria '
+                '"$_pendingProfessorGroupName" está aguardando aprovação '
+                'do administrador.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.info_outline,
+                        size: 18, color: Colors.orange.shade700),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Você será notificado quando o administrador '
+                        'aprovar sua entrada.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.orange.shade800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              OutlinedButton.icon(
+                onPressed: () {
+                  setState(() => _loading = true);
+                  _loadStatus();
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Verificar status'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -313,6 +412,107 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
               },
               icon: const Icon(Icons.refresh),
               label: const Text('Tentar novamente'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlatformApprovalPending(ThemeData theme) {
+    final isSuspended = _approvalStatus == 'suspended';
+    final isRejected = _approvalStatus == 'rejected';
+
+    final IconData icon;
+    final Color iconColor;
+    final String title;
+    final String message;
+
+    if (isSuspended) {
+      icon = Icons.block_rounded;
+      iconColor = Colors.red.shade400;
+      title = 'Assessoria suspensa';
+      message = 'A assessoria "$_groupName" foi suspensa pela plataforma.'
+          '${_approvalRejectReason != null && _approvalRejectReason!.isNotEmpty ? '\n\nMotivo: $_approvalRejectReason' : ''}'
+          '\n\nEntre em contato com o suporte para mais informações.';
+    } else if (isRejected) {
+      icon = Icons.cancel_outlined;
+      iconColor = Colors.red.shade400;
+      title = 'Assessoria não aprovada';
+      message = 'A solicitação de cadastro da assessoria "$_groupName" '
+          'não foi aprovada pela plataforma.'
+          '${_approvalRejectReason != null && _approvalRejectReason!.isNotEmpty ? '\n\nMotivo: $_approvalRejectReason' : ''}'
+          '\n\nVocê pode entrar em contato com o suporte para mais informações.';
+    } else {
+      icon = Icons.hourglass_top_rounded;
+      iconColor = Colors.orange.shade400;
+      title = 'Aguardando aprovação da plataforma';
+      message = 'A assessoria "$_groupName" foi criada com sucesso e está '
+          'aguardando aprovação da plataforma Omni Runner.\n\n'
+          'Você será notificado assim que a aprovação for concluída. '
+          'Enquanto isso, seus atletas ainda não poderão encontrar '
+          'a assessoria na busca.';
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 72, color: iconColor),
+            const SizedBox(height: 20),
+            Text(title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 24),
+            if (!isRejected && !isSuspended)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.info_outline,
+                        size: 18, color: Colors.blue.shade700),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Código de convite: ${_inviteCode ?? "..."}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue.shade800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: () {
+                setState(() => _loading = true);
+                _loadStatus();
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Verificar status'),
             ),
           ],
         ),

@@ -82,4 +82,31 @@ visualizar metricas basicas e competir contra si mesmo atraves de um Ghost Runne
 
 ---
 
-*Documento gerado na Sprint 0.1 — Definicao de Escopo Funcional*
+---
+
+## 6. EXPANSOES POS-MVP (Implementadas)
+
+> Adicionadas via Sprints de revisão de escopo conforme regra §5.
+
+### Sprint 25.0.0 — Strava-Only + Aba "Hoje" + Parks (26/02/2026)
+
+| # | Funcionalidade | Descrição | Status |
+|---|---|---|---|
+| E1 | Strava como fonte única | Tracking GPS removido; dados via Strava API | ✅ |
+| E2 | Strava History Import | Importa últimas 20 corridas ao conectar | ✅ |
+| E3 | Aba "Hoje" (TodayScreen) | Hub de gamificação diário (streak, recap, diário) | ✅ |
+| E4 | Park Detection | Ray-casting polygon para detectar parque | ✅ |
+| E5 | Park Leaderboard | Multi-tier (Rei/Elite/Destaque/Pelotão/Frequentador) × 6 categorias | ✅ |
+| E6 | Park Community | "Quem corre aqui" + corridas sociais | ✅ |
+| E7 | Park Segments | Segmentos com recordes (KOM-style) | ✅ |
+| E8 | Park Matchmaking | Prioriza adversários do mesmo parque | ✅ |
+| E9 | Matchmaking UX | Explicação, Strava required, park hint | ✅ |
+
+**Impacto no MVP original:**
+- F1 (GPS Tracking) e F4 (Mapa ao vivo): permanecem no código mas inacessíveis na navegação
+- F5 (Ghost Runner local): substituído pelo Shadow Racing de parque (futuro)
+- F7 (Sync manual): substituído por sync automático via Strava webhook
+
+---
+
+*Documento gerado na Sprint 0.1 — Atualizado em 26/02/2026 (Sprint 25.0.0)*

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
@@ -114,43 +115,7 @@ class _LoadedBody extends StatelessWidget {
     final theme = Theme.of(context);
 
     if (currentGroup == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.groups_outlined,
-                  size: 72, color: theme.colorScheme.outline),
-              const SizedBox(height: 20),
-              Text('Sem assessoria',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  )),
-              const SizedBox(height: 8),
-              Text(
-                'Você ainda não está em nenhuma assessoria.\n'
-                'Busque pelo nome, QR ou aceite um convite.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute<void>(
-                    builder: (_) => JoinAssessoriaScreen(
-                      onComplete: () => Navigator.of(context).pop(),
-                    ),
-                  ));
-                },
-                icon: const Icon(Icons.search_rounded),
-                label: const Text('Entrar em uma assessoria'),
-              ),
-            ],
-          ),
-        ),
-      );
+      return _NoAssessoriaBody(theme: theme);
     }
 
     final roleLabel = switch (membership!.role) {
@@ -531,6 +496,194 @@ class _ImpactRow extends StatelessWidget {
             child: Text(text, style: const TextStyle(fontSize: 13)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// No assessoria body — checks for pending requests
+// ---------------------------------------------------------------------------
+
+class _NoAssessoriaBody extends StatefulWidget {
+  final ThemeData theme;
+  const _NoAssessoriaBody({required this.theme});
+
+  @override
+  State<_NoAssessoriaBody> createState() => _NoAssessoriaBodyState();
+}
+
+class _NoAssessoriaBodyState extends State<_NoAssessoriaBody> {
+  String? _pendingGroupName;
+  String? _pendingStatus;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkPendingRequest();
+  }
+
+  Future<void> _checkPendingRequest() async {
+    try {
+      final uid = Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) {
+        if (mounted) setState(() => _loading = false);
+        return;
+      }
+
+      final rows = await Supabase.instance.client
+          .from('coaching_join_requests')
+          .select('group_id, status')
+          .eq('user_id', uid)
+          .order('requested_at', ascending: false)
+          .limit(1);
+
+      if ((rows as List).isNotEmpty) {
+        final status = rows.first['status'] as String?;
+        final groupId = rows.first['group_id'] as String;
+
+        final groupRows = await Supabase.instance.client
+            .from('coaching_groups')
+            .select('name')
+            .eq('id', groupId)
+            .limit(1);
+
+        if (mounted) {
+          setState(() {
+            _pendingGroupName =
+                (groupRows as List).isNotEmpty
+                    ? (groupRows.first['name'] as String?) ?? 'Assessoria'
+                    : 'Assessoria';
+            _pendingStatus = status;
+            _loading = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _loading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = widget.theme;
+
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_pendingStatus == 'pending') ...[
+              Icon(Icons.hourglass_top_rounded,
+                  size: 72, color: Colors.orange.shade400),
+              const SizedBox(height: 20),
+              Text('Solicitação pendente',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  )),
+              const SizedBox(height: 8),
+              Text(
+                'Sua solicitação para entrar na assessoria '
+                '"$_pendingGroupName" está aguardando aprovação.\n\n'
+                'O responsável pela assessoria irá analisar e aprovar '
+                'sua entrada. Você será notificado.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.info_outline,
+                        size: 18, color: Colors.orange.shade700),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Enquanto isso, explore o app normalmente.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.orange.shade800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else if (_pendingStatus == 'rejected') ...[
+              Icon(Icons.cancel_outlined,
+                  size: 72, color: theme.colorScheme.error),
+              const SizedBox(height: 20),
+              Text('Solicitação não aprovada',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  )),
+              const SizedBox(height: 8),
+              Text(
+                'Sua solicitação para "$_pendingGroupName" não foi aprovada. '
+                'Você pode tentar outra assessoria.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute<void>(
+                    builder: (_) => JoinAssessoriaScreen(
+                      onComplete: () => Navigator.of(context).pop(),
+                    ),
+                  ));
+                },
+                icon: const Icon(Icons.search_rounded),
+                label: const Text('Buscar outra assessoria'),
+              ),
+            ] else ...[
+              Icon(Icons.groups_outlined,
+                  size: 72, color: theme.colorScheme.outline),
+              const SizedBox(height: 20),
+              Text('Sem assessoria',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  )),
+              const SizedBox(height: 8),
+              Text(
+                'Você ainda não está em nenhuma assessoria.\n'
+                'Busque pelo nome, QR ou aceite um convite.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute<void>(
+                    builder: (_) => JoinAssessoriaScreen(
+                      onComplete: () => Navigator.of(context).pop(),
+                    ),
+                  ));
+                },
+                icon: const Icon(Icons.search_rounded),
+                label: const Text('Entrar em uma assessoria'),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

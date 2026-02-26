@@ -47,6 +47,21 @@ export async function middleware(request: NextRequest) {
       .in("role", ["admin_master", "professor", "assistente"]);
 
     if (!memberships || memberships.length === 0) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("platform_role")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.platform_role === "admin") {
+        if (!pathname.startsWith("/platform")) {
+          const url = request.nextUrl.clone();
+          url.pathname = "/platform/assessorias";
+          return NextResponse.redirect(url);
+        }
+        return supabaseResponse;
+      }
+
       const url = request.nextUrl.clone();
       url.pathname = "/no-access";
       return NextResponse.redirect(url);
@@ -76,6 +91,22 @@ export async function middleware(request: NextRequest) {
       }
       return supabaseResponse;
     }
+  }
+
+  // Platform admin routes — allow if platform_role = admin
+  if (pathname.startsWith("/platform")) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("platform_role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.platform_role !== "admin") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/no-access";
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
   }
 
   // Step 3: role-based route protection

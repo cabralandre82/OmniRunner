@@ -240,14 +240,36 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
   // ── Join / Skip ──────────────────────────────────────────────────────────
 
   Future<void> _joinGroup(String groupId, String groupName) async {
+    // Check if there's an existing pending request for another group
+    bool hasPendingElsewhere = false;
+    try {
+      final uid = _client.auth.currentUser?.id;
+      if (uid != null) {
+        final pending = await _client
+            .from('coaching_join_requests')
+            .select('group_id')
+            .eq('user_id', uid)
+            .eq('status', 'pending')
+            .neq('group_id', groupId)
+            .limit(1);
+        hasPendingElsewhere = (pending as List).isNotEmpty;
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    final message = hasPendingElsewhere
+        ? 'Você já tem uma solicitação pendente em outra assessoria. '
+          'Ao solicitar entrada em "$groupName", a solicitação anterior '
+          'será cancelada automaticamente.'
+        : 'Sua solicitação será enviada para a assessoria '
+          '"$groupName". Você será adicionado quando a assessoria aprovar.';
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Solicitar entrada?'),
-        content: Text(
-          'Sua solicitação será enviada para a assessoria '
-          '"$groupName". Você será adicionado quando a assessoria aprovar.',
-        ),
+        content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -272,7 +294,8 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
         'fn_request_join',
         params: {'p_group_id': groupId},
       );
-      final status = (res as Map<String, dynamic>?)?['status'] as String?;
+      final data = res as Map<String, dynamic>?;
+      final status = data?['status'] as String?;
 
       if (status == 'already_member') {
         AppLogger.info('Already a member of $groupId', tag: _tag);
@@ -292,7 +315,11 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
         return;
       }
 
-      AppLogger.info('Requested to join $groupId', tag: _tag);
+      final cancelled = (data?['cancelled_previous'] as num?)?.toInt() ?? 0;
+      AppLogger.info(
+        'Requested to join $groupId (cancelled $cancelled previous)',
+        tag: _tag,
+      );
       sl<ProductEventTracker>().track(ProductEvents.onboardingCompleted, {
         'role': 'ATLETA',
         'method': 'request_join',

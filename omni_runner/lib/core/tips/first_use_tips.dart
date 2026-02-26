@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 enum TipKey {
   dashboardWelcome,
   challengeHowTo,
+  matchmakingHowTo,
+  stravaConnect,
   assessoriaHowTo,
   campeonatosHowTo,
   staffWelcome,

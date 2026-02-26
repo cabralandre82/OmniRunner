@@ -1,8 +1,8 @@
 # ARCHITECTURE.md — Arquitetura Técnica do Omni Runner
 
-> **Atualizado:** 24/02/2026
+> **Atualizado:** 26/02/2026
 > **Status:** Ativo — Pré-lançamento (QA em device real)
-> **Código:** 451 arquivos Dart (lib/) · 55 arquivos de teste · ~114k linhas
+> **Código:** 458 arquivos Dart (lib/) · 55 arquivos de teste · ~116k linhas
 
 ---
 
@@ -104,7 +104,11 @@ lib/
 ├── features/                      # Feature modules (mini clean arch)
 │   ├── health_export/             # HealthKit / Health Connect
 │   ├── integrations_export/       # GPX, TCX, FIT export
-│   ├── strava/                    # Strava integration
+│   ├── parks/                     # Park detection, leaderboard, community
+│   │   ├── data/                  # ParkDetectionService, parks_seed
+│   │   ├── domain/                # ParkEntity, ParkLeaderboardEntry
+│   │   └── presentation/          # ParkScreen, MyParksScreen
+│   ├── strava/                    # Strava integration (sole data source)
 │   ├── watch_bridge/              # WearOS / Apple Watch
 │   └── wearables_ble/             # BLE heart rate monitors
 │
@@ -140,7 +144,7 @@ AuthGate
     │       ├─ PopScope intercepta back → sign-out → Welcome
     │       └─ Botão ← visual em todas as telas
     │
-    ├─ Role = ATLETA → HomeScreen (4 tabs: Início, Correr, Histórico, Mais)
+    ├─ Role = ATLETA → HomeScreen (4 tabs: Início, Hoje, Histórico, Mais)
     │
     └─ Role = ASSESSORIA_STAFF → HomeScreen (2 tabs: Início, Mais)
                                     └─ StaffDashboardScreen
@@ -218,41 +222,50 @@ Remoção de membro (staff):
 
 ---
 
-## 7. TRACKING (Corrida GPS)
+## 7. ATIVIDADE (Strava como Fonte Única)
+
+> **Decisão de produto (Sprint 25.0.0):** O app NÃO faz tracking GPS próprio.
+> O atleta corre com qualquer relógio/app compatível com Strava.
+> Dados fluem do Strava para o Omni Runner via API + webhook.
 
 ```
-TrackingScreen
+Strava Connect Flow
     │
-    ▼
-TrackingBloc (670 linhas — state machine)
+    ├─ OAuth2 → StravaConnectController.handleCallback(code)
+    │   ├─ exchangeCode → StravaConnected (tokens)
+    │   ├─ _syncTokensToServer → strava_connections table
+    │   └─ importStravaHistory (fire-and-forget)
+    │       └─ getAthleteActivities(last 20)
+    │           └─ filter type=Run/VirtualRun
+    │               └─ upsert → strava_activity_history table
     │
-    ├─ StartTracking
-    │   ├─ Verifica permissões (EnsureLocationReady)
-    │   ├─ Foreground service (flutter_foreground_task, type: location)
-    │   ├─ Location stream (Geolocator)
-    │   ├─ BLE heart rate (opcional, via SensorSourceResolver)
-    │   ├─ Timer tick (1s via wall-clock)
-    │   └─ Audio coach (flutter_tts, priority queue)
+    ├─ Webhook (push) ou poll → nova atividade detectada
+    │   ├─ Download activity via API
+    │   ├─ verify-session (anti-cheat)
+    │   ├─ AwardXpForWorkout (cap 1000 XP/dia)
+    │   ├─ EvaluateBadges → award XP por tier
+    │   ├─ UpdateMissionProgress
+    │   ├─ PostSessionChallengeDispatcher
+    │   └─ ParkDetectionService.detectPark(lat, lng)
+    │       └─ Se detectado → insert park_activities
     │
-    ├─ LocationPointReceived → buffer → flush to Isar
-    │   ├─ FilterLocationPoints (3 camadas: accuracy, speed, drift)
-    │   ├─ AccumulateDistance (incremental)
-    │   ├─ CalculatePace (segmented)
-    │   ├─ AutoPauseDetector
-    │   ├─ IntegrityDetectSpeed / Teleport / Vehicle
-    │   └─ Ghost runner (interpolation + hysteresis)
-    │
-    ├─ StopTracking → FinishSession → sync → HistoryScreen
-    │
-    └─ GPS loss → 60s reconnection timeout (não finaliza sessão)
+    └─ TodayScreen exibe recap, comparação, diário
 
-Pós-sessão:
-    ├─ SyncRepo → Supabase (offline-first, AutoSyncManager)
-    ├─ AwardXpForWorkout (cap 1000 XP/dia)
-    ├─ EvaluateBadges → award XP por tier
-    ├─ UpdateMissionProgress
-    ├─ PostSessionChallengeDispatcher
-    └─ ExportWorkoutToHealth (HealthKit/Health Connect)
+Tracking GPS legado (TrackingScreen/TrackingBloc) permanece no código mas
+NÃO é acessível pela navegação. Será removido em sprint futuro de cleanup.
+```
+
+### 7.1 Park Detection
+```
+ParkDetectionService
+    │
+    ├─ detectPark(lat, lng)
+    │   └─ Ray-casting point-in-polygon para cada ParkEntity
+    │       └─ Retorna ParkEntity? (primeiro match)
+    │
+    └─ findNearby(lat, lng, radiusM)
+        └─ Haversine distance < radiusM ao center de cada park
+            └─ Retorna List<ParkEntity>
 ```
 
 ---
@@ -274,6 +287,8 @@ Pós-sessão:
 | Social | `groups`, `group_members`, `friendships`, `events`, `event_participants` |
 | Progression | `badges`, `badge_awards`, `missions`, `mission_progress`, `xp_transactions`, `profile_progress` |
 | Verification | `athlete_verification` |
+| Strava | `strava_connections`, `strava_activity_history` |
+| Parks | `park_activities`, `park_leaderboard`, `park_segments` |
 | Notifications | `notification_log` |
 
 ### 8.2 RPC Functions (SECURITY DEFINER)
@@ -387,6 +402,10 @@ Retry: 3x exponential backoff em chamadas críticas (auth, create assessoria)
 | F18 — Crash Reporting | core (Sentry) | SentryFlutter.init + AppLogger hook | ✅ |
 | F19 — Join Request Flow | data + EFs | Solicitação → aprovação/rejeição | ✅ |
 | F20 — Member Management | data + EFs | Remover membros, role-based access | ✅ |
+| F21 — Strava-Only Data Source | features/strava | OAuth2, history import, activity webhook | ✅ |
+| F22 — Today Tab ("Hoje") | presentation/screens/today_screen | Streak, CTA, recap, comparison, journal | ✅ |
+| F23 — Parks & Leaderboards | features/parks | Detection, tiers, community, segments | ✅ |
+| F24 — Park Matchmaking | presentation/screens/matchmaking_screen | Preferred park auto-detect, priority match | ✅ |
 
 ---
 
@@ -416,7 +435,10 @@ Amigos, grupos sociais, eventos, rankings, leaderboards.
 ### 12.8 Billing Context (Portal only)
 Next.js portal. Stripe (card/pix/boleto). Auto top-up. Refund. Nunca no app mobile.
 
-### 12.9 Verification Context (Atleta Verificado)
+### 12.9 Parks Context
+Detecção de parque via GPS (ray-casting polygon), leaderboards multi-tier (Rei/Elite/Destaque/Pelotão/Frequentador), 6 categorias de ranking (pace/distância/frequência/streak/evolução/maior corrida), comunidade por parque ("Quem corre aqui"), segmentos com recordes, matchmaking por parque preferido, shadow racing (futuro). Seed inicial com 10 parques brasileiros. Entities: `ParkEntity`, `ParkLeaderboardEntry`, `ParkActivityEntity`, `ParkSegmentEntity`. UI: `ParkScreen` (tabs: Ranking/Comunidade/Segmentos), `MyParksScreen`.
+
+### 12.10 Verification Context (Atleta Verificado)
 State machine de verificação de atleta (`athlete_verification` table). UNVERIFIED→CALIBRATING→MONITORED→VERIFIED→DOWNGRADED. Gate de monetização: stake>0 exige VERIFIED. Trust score (0..100) computado server-side. ZERO override admin. Avaliação via RPC SECURITY DEFINER `eval_athlete_verification` (thresholds: N=7, trust>=80). Leitura via RPC `get_verification_state` (checklist booleans + contagens). EF `eval-athlete-verification` (POST, JWT, idempotente). RLS: own-read-only. Enforcement: 4 camadas — Flutter UX gate (verification_gate.dart modal) + EF validation + RLS INSERT policy + DB triggers (`trg_challenges_verified_stake_gate`, `trg_participants_verified_join_gate`) que bloqueiam mesmo service_role. Flutter: `AthleteVerificationEntity`, `VerificationBloc` (load/eval), `AthleteVerificationScreen` (status+progress+checklist), gate integrado em `ChallengeCreateScreen._submit()` e `ChallengeDetailsScreen._AcceptDeclineCard._onAccept()`. Reavaliação automática: event-driven (SyncRepo→verify-session→eval RPC fire-and-forget) + cron diário (`eval-verification-cron` EF via pg_cron 03:00 UTC, batch 100 candidatos).
 
 ---
@@ -484,4 +506,4 @@ SECURITY DEFINER + validações server-side.
 
 ---
 
-*Documento atualizado em 23/02/2026 — Sprint 100.13 (QA Phase)*
+*Documento atualizado em 26/02/2026 — Sprint 25.0.0 (Strava-Only + Parks)*
