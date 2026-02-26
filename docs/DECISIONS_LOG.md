@@ -1649,3 +1649,46 @@ Além disso, coins cross-assessoria criam obrigações econômicas entre assesso
 sem consentimento mútuo. Inviável sem reestruturação profunda da economia.
 
 ---
+
+### DECISÃO 072 — Amigos de Corrida (Friends & Social Community)
+- **Data:** 2026-02-26
+- **Contexto:** Construir rede social de corredores integrada ao ecossistema
+  de assessorias, desafios e campeonatos. Atletas podem adicionar amigos de
+  qualquer assessoria, compartilhar redes sociais (Instagram/TikTok), e o
+  convite de amizade é incentivado após desafios e campeonatos.
+- **Decisão:**
+  - Migration `20260226230000_social_profiles.sql`: adiciona `instagram_handle` e
+    `tiktok_handle` em `profiles`, `invited_by` em `friendships`, e cria
+    `fn_search_users` RPC para busca por nome.
+  - Repo Supabase: `SupabaseFriendshipRepo` — implementação concreta do
+    `IFriendshipRepo` usando Supabase diretamente.
+  - BLoC enriquecido: `FriendsBloc` agora recebe `SendFriendInvite` e
+    `AcceptFriend` use cases e suporta `AcceptFriendEvent`, `DeclineFriendEvent`,
+    `SendFriendRequest`.
+  - `FriendsScreen` remodelado: seções de pedidos recebidos (com aceitar/recusar),
+    amigos (com nomes e avatares), enviados. Botão de busca no AppBar.
+  - `_FriendSearchScreen`: busca por nome via `fn_search_users` RPC, convite inline.
+  - `FriendProfileScreen`: perfil público com avatar, nível, DNA (mini barras),
+    redes sociais (Instagram/TikTok com deep links), e estatísticas.
+  - CTA pós-desafio: botão "Adicionar amigo" no `_CtaBar` do
+    `ChallengeResultScreen`, com seleção de oponente quando há múltiplos.
+  - CTA pós-campeonato: tap em participante no ranking do campeonato abre
+    `FriendProfileScreen`.
+  - Edição de redes sociais: campos Instagram/TikTok no `ProfileScreen` com
+    save direto ao Supabase.
+  - Entry point: tile "Meus Amigos" no `MoreScreen`.
+- **Arquivos criados:**
+  - `supabase/migrations/20260226230000_social_profiles.sql`
+  - `omni_runner/lib/data/repositories_impl/supabase_friendship_repo.dart`
+  - `omni_runner/lib/presentation/screens/friend_profile_screen.dart`
+- **Arquivos modificados:**
+  - `omni_runner/lib/presentation/blocs/friends/friends_bloc.dart`
+  - `omni_runner/lib/presentation/blocs/friends/friends_event.dart`
+  - `omni_runner/lib/presentation/screens/friends_screen.dart`
+  - `omni_runner/lib/presentation/screens/challenge_result_screen.dart`
+  - `omni_runner/lib/presentation/screens/athlete_championship_ranking_screen.dart`
+  - `omni_runner/lib/presentation/screens/profile_screen.dart`
+  - `omni_runner/lib/presentation/screens/more_screen.dart`
+  - `omni_runner/lib/core/service_locator.dart`
+
+---

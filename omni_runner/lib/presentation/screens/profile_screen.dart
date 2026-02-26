@@ -24,6 +24,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   static const _tag = 'Profile';
   final _nameCtrl = TextEditingController();
+  final _instaCtrl = TextEditingController();
+  final _tiktokCtrl = TextEditingController();
   ProfileEntity? _profile;
   bool _loading = true;
   bool _saving = false;
@@ -39,6 +41,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _instaCtrl.dispose();
+    _tiktokCtrl.dispose();
     super.dispose();
   }
 
@@ -47,9 +51,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final p = await sl<IProfileRepo>().getMyProfile();
       if (!mounted) return;
+      String insta = '';
+      String tiktok = '';
+      if (p != null) {
+        try {
+          final row = await Supabase.instance.client
+              .from('profiles')
+              .select('instagram_handle, tiktok_handle')
+              .eq('id', p.id)
+              .maybeSingle();
+          insta = row?['instagram_handle'] as String? ?? '';
+          tiktok = row?['tiktok_handle'] as String? ?? '';
+        } on Exception {
+          // Best effort
+        }
+      }
       setState(() {
         _profile = p;
         _nameCtrl.text = p?.displayName ?? 'Runner';
+        _instaCtrl.text = insta;
+        _tiktokCtrl.text = tiktok;
         _loading = false;
       });
     } catch (e) {
@@ -76,6 +97,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Nome atualizado com sucesso'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = _friendlyError(e);
+        _saving = false;
+      });
+    }
+  }
+
+  Future<void> _saveSocial() async {
+    setState(() { _saving = true; _error = null; });
+    try {
+      final uid = sl<UserIdentityProvider>().userId;
+      await Supabase.instance.client.from('profiles').update({
+        'instagram_handle': _instaCtrl.text.trim(),
+        'tiktok_handle': _tiktokCtrl.text.trim(),
+      }).eq('id', uid);
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Redes sociais atualizadas'),
           duration: Duration(seconds: 2),
         ),
       );
@@ -384,6 +430,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               strokeWidth: 2, color: Colors.white))
                       : const Icon(Icons.save),
                   label: const Text('Salvar nome'),
+                ),
+
+                const SizedBox(height: 28),
+
+                // ── Social handles ──
+                Text('Redes sociais',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: cs.primary)),
+                const SizedBox(height: 4),
+                Text(
+                  'Compartilhe com seus amigos de corrida',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _instaCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Instagram',
+                    prefixIcon: Icon(Icons.camera_alt_outlined),
+                    hintText: 'seu_usuario',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLength: 30,
+                  textInputAction: TextInputAction.next,
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _tiktokCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'TikTok',
+                    prefixIcon: Icon(Icons.music_note_rounded),
+                    hintText: 'seu_usuario',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLength: 30,
+                  textInputAction: TextInputAction.done,
+                ),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: _saving ? null : _saveSocial,
+                  icon: const Icon(Icons.share_rounded),
+                  label: const Text('Salvar redes sociais'),
                 ),
 
                 // ── Error ──

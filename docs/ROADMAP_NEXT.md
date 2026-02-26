@@ -595,3 +595,29 @@ Fase 4 (Diferencial — inteligência):      ✅ FEITO
 - **Marketplace de OmniCoins:** risco de rejeição App Store/Play Store (moeda
   virtual + bens reais = desvio de IAP). Economia cross-assessoria cria obrigações
   sem consentimento entre coaches. Inviável sem reestruturação profunda.
+
+---
+
+## #4 — Amigos de Corrida (Friends & Social Community) — `FEITO`
+
+**Prioridade:** Alta
+**Complexidade:** Média
+
+### Escopo
+Rede social de corredores cross-assessoria. Buscar por nome, convidar,
+aceitar/recusar, ver perfil com DNA, compartilhar Instagram/TikTok.
+CTAs naturais após desafios e em rankings de campeonatos.
+
+### Implementação
+| Componente | Arquivo | Status |
+|---|---|---|
+| Migration (social handles + search fn) | `supabase/migrations/20260226230000_social_profiles.sql` | FEITO |
+| Supabase Friendship Repo | `lib/data/repositories_impl/supabase_friendship_repo.dart` | FEITO |
+| BLoC (accept/decline/send) | `lib/presentation/blocs/friends/friends_bloc.dart` | FEITO |
+| FriendsScreen (lista + busca) | `lib/presentation/screens/friends_screen.dart` | FEITO |
+| FriendProfileScreen | `lib/presentation/screens/friend_profile_screen.dart` | FEITO |
+| CTA pós-desafio | `lib/presentation/screens/challenge_result_screen.dart` | FEITO |
+| CTA campeonato | `lib/presentation/screens/athlete_championship_ranking_screen.dart` | FEITO |
+| Edição redes sociais | `lib/presentation/screens/profile_screen.dart` | FEITO |
+| Entry point (MoreScreen) | `lib/presentation/screens/more_screen.dart` | FEITO |
+| Service locator | `lib/core/service_locator.dart` | FEITO |

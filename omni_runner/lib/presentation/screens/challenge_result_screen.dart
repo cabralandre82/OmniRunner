@@ -5,8 +5,11 @@ import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_result_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
+import 'package:omni_runner/domain/repositories/i_friendship_repo.dart';
+import 'package:omni_runner/domain/usecases/social/send_friend_invite.dart';
 import 'package:omni_runner/presentation/screens/challenge_create_screen.dart';
 import 'package:omni_runner/presentation/screens/leaderboards_screen.dart';
+import 'package:uuid/uuid.dart';
 
 /// Post-challenge result screen.
 ///
@@ -962,6 +965,65 @@ class _CtaBar extends StatelessWidget {
 
   const _CtaBar({required this.challenge, required this.currentUserId});
 
+  Future<void> _addFriend(BuildContext context) async {
+    final opponents = challenge.participants
+        .where((p) => p.userId != currentUserId)
+        .toList();
+
+    if (opponents.isEmpty) return;
+
+    final targetId = opponents.length == 1
+        ? opponents.first.userId
+        : await showModalBottomSheet<String>(
+            context: context,
+            builder: (ctx) => SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text('Adicionar como amigo',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                  ),
+                  ...opponents.map((p) => ListTile(
+                        leading: const CircleAvatar(
+                            child: Icon(Icons.person)),
+                        title: Text(p.displayName),
+                        onTap: () => Navigator.pop(ctx, p.userId),
+                      )),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          );
+
+    if (targetId == null || !context.mounted) return;
+
+    try {
+      final sendInvite = SendFriendInvite(
+        friendshipRepo: sl<IFriendshipRepo>(),
+      );
+      await sendInvite.call(
+        fromUserId: currentUserId,
+        toUserId: targetId,
+        uuidGenerator: () => const Uuid().v4(),
+        nowMs: DateTime.now().millisecondsSinceEpoch,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Convite de amizade enviado!')),
+        );
+      }
+    } on Exception catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1023,15 +1085,9 @@ class _CtaBar extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton.icon(
-                  icon: const Icon(Icons.share_rounded, size: 16),
-                  label: const Text('Compartilhar'),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Compartilhamento em breve!'),
-                      ),
-                    );
-                  },
+                  icon: const Icon(Icons.person_add_rounded, size: 16),
+                  label: const Text('Adicionar amigo'),
+                  onPressed: () => _addFriend(context),
                 ),
               ),
             ],

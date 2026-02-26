@@ -62,7 +62,10 @@ import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_ranking_repo.dart';
 // TODO(phase-15): re-add when Isar impls are registered:
 // import 'package:omni_runner/domain/repositories/i_event_repo.dart';
-// import 'package:omni_runner/domain/repositories/i_friendship_repo.dart';
+import 'package:omni_runner/domain/repositories/i_friendship_repo.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_friendship_repo.dart';
+import 'package:omni_runner/domain/usecases/social/send_friend_invite.dart';
+import 'package:omni_runner/domain/usecases/social/accept_friend.dart';
 // import 'package:omni_runner/domain/repositories/i_group_repo.dart';
 // TODO(sprint-16.5+): re-add when Isar impls are registered:
 // import 'package:omni_runner/domain/repositories/i_race_event_repo.dart';
@@ -151,7 +154,7 @@ import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_b
 import 'package:omni_runner/presentation/blocs/coaching_rankings/coaching_rankings_bloc.dart';
 // TODO(phase-15): re-add when Social repos are registered:
 // import 'package:omni_runner/presentation/blocs/events/events_bloc.dart';
-// import 'package:omni_runner/presentation/blocs/friends/friends_bloc.dart';
+import 'package:omni_runner/presentation/blocs/friends/friends_bloc.dart';
 import 'package:omni_runner/presentation/blocs/group_evolution/group_evolution_bloc.dart';
 import 'package:omni_runner/presentation/blocs/coach_insights/coach_insights_bloc.dart';
 // TODO(phase-15): re-add when Social repos are registered:
@@ -695,12 +698,24 @@ Future<void> setupServiceLocator() async {
     ),
   );
 
-  // ── Social BLoCs ──
-  // TODO(phase-15): uncomment when Isar impls for IFriendshipRepo,
-  // IGroupRepo and IEventRepo are registered.
-  // sl.registerFactory<FriendsBloc>(
-  //   () => FriendsBloc(friendshipRepo: sl<IFriendshipRepo>()),
-  // );
+  // ── Social ──
+  sl.registerLazySingleton<IFriendshipRepo>(
+    () => SupabaseFriendshipRepo(),
+  );
+  sl.registerFactory<SendFriendInvite>(
+    () => SendFriendInvite(friendshipRepo: sl<IFriendshipRepo>()),
+  );
+  sl.registerFactory<AcceptFriend>(
+    () => AcceptFriend(friendshipRepo: sl<IFriendshipRepo>()),
+  );
+  sl.registerFactory<FriendsBloc>(
+    () => FriendsBloc(
+      friendshipRepo: sl<IFriendshipRepo>(),
+      sendInvite: sl<SendFriendInvite>(),
+      acceptFriend: sl<AcceptFriend>(),
+    ),
+  );
+  // TODO(phase-15): GroupsBloc and EventsBloc when repos are implemented.
   // sl.registerFactory<GroupsBloc>(
   //   () => GroupsBloc(groupRepo: sl<IGroupRepo>()),
   // );

@@ -15,6 +15,9 @@ import 'package:omni_runner/presentation/screens/auth_gate.dart';
 import 'package:omni_runner/presentation/screens/coaching_groups_screen.dart';
 import 'package:omni_runner/presentation/widgets/login_required_sheet.dart';
 
+import 'package:omni_runner/presentation/blocs/friends/friends_bloc.dart';
+import 'package:omni_runner/presentation/blocs/friends/friends_event.dart';
+import 'package:omni_runner/presentation/screens/friends_screen.dart';
 import 'package:omni_runner/presentation/screens/invite_friends_screen.dart';
 import 'package:omni_runner/presentation/screens/my_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/profile_screen.dart';
@@ -84,6 +87,21 @@ class MoreScreen extends StatelessWidget {
                 if (LoginRequiredSheet.guard(ctx, feature: 'Convites')) return;
                 Navigator.of(ctx).push(MaterialPageRoute<void>(
                   builder: (_) => const InviteFriendsScreen(),
+                ));
+              },
+            ),
+            _ActionTile(
+              icon: Icons.group_rounded,
+              title: 'Meus Amigos',
+              subtitle: 'Sua rede de corredores',
+              onTap: (ctx) {
+                if (LoginRequiredSheet.guard(ctx, feature: 'Amigos')) return;
+                Navigator.of(ctx).push(MaterialPageRoute<void>(
+                  builder: (_) => BlocProvider(
+                    create: (_) => sl<FriendsBloc>()
+                      ..add(LoadFriends(sl<UserIdentityProvider>().userId)),
+                    child: const FriendsScreen(),
+                  ),
                 ));
               },
             ),
