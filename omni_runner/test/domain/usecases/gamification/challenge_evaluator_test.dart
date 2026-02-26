@@ -214,7 +214,7 @@ void main() {
       expect(results[0].coinsEarned, 40);
     });
 
-    test('nobody submitted anything: both participated with 0 coins', () {
+    test('nobody submitted anything: both DNF with 0 coins (free)', () {
       final results = evaluator.evaluate(_challenge(
         participants: [
           _p('u1', progress: 0),
@@ -222,12 +222,82 @@ void main() {
         ],
       ));
 
-      final active = results.where(
-        (r) => r.outcome != ParticipantOutcome.didNotFinish,
-      );
-      expect(active.every((r) => r.outcome == ParticipantOutcome.participated),
+      expect(results.every((r) => r.outcome == ParticipantOutcome.didNotFinish),
           isTrue);
-      expect(active.every((r) => r.coinsEarned == 0), isTrue);
+      expect(results.every((r) => r.coinsEarned == 0), isTrue);
+    });
+
+    test('nobody submitted with stake: both DNF, coins refunded', () {
+      final results = evaluator.evaluate(ChallengeEntity(
+        id: 'c1',
+        creatorUserId: 'u1',
+        status: ChallengeStatus.active,
+        type: ChallengeType.oneVsOne,
+        rules: const ChallengeRulesEntity(
+          metric: ChallengeMetric.distance,
+          windowMs: 604800000,
+          entryFeeCoins: 50,
+        ),
+        participants: [
+          _p('u1', progress: 0),
+          _p('u2', progress: 0),
+        ],
+        createdAtMs: 1000,
+      ));
+
+      expect(results.every((r) => r.outcome == ParticipantOutcome.didNotFinish),
+          isTrue);
+      expect(results.every((r) => r.coinsEarned == 50), isTrue);
+    });
+
+    test('one runs other does not: runner wins (stake)', () {
+      final results = evaluator.evaluate(ChallengeEntity(
+        id: 'c1',
+        creatorUserId: 'u1',
+        status: ChallengeStatus.active,
+        type: ChallengeType.oneVsOne,
+        rules: const ChallengeRulesEntity(
+          metric: ChallengeMetric.distance,
+          windowMs: 604800000,
+          entryFeeCoins: 50,
+        ),
+        participants: [
+          _p('u1', progress: 5000, sessions: ['s1']),
+          _p('u2', progress: 0),
+        ],
+        createdAtMs: 1000,
+      ));
+
+      final winner = results.firstWhere(
+        (r) => r.outcome == ParticipantOutcome.won,
+      );
+      final dnf = results.firstWhere(
+        (r) => r.outcome == ParticipantOutcome.didNotFinish,
+      );
+      expect(winner.userId, 'u1');
+      expect(winner.coinsEarned, 100);
+      expect(dnf.userId, 'u2');
+      expect(dnf.coinsEarned, 0);
+    });
+
+    test('one runs other does not: runner wins (free)', () {
+      final results = evaluator.evaluate(_challenge(
+        participants: [
+          _p('u1', progress: 5000, sessions: ['s1']),
+          _p('u2', progress: 0),
+        ],
+      ));
+
+      final winner = results.firstWhere(
+        (r) => r.outcome == ParticipantOutcome.won,
+      );
+      final dnf = results.firstWhere(
+        (r) => r.outcome == ParticipantOutcome.didNotFinish,
+      );
+      expect(winner.userId, 'u1');
+      expect(winner.coinsEarned, 40);
+      expect(dnf.userId, 'u2');
+      expect(dnf.coinsEarned, 0);
     });
 
     test('non-accepted participants appear as DNF', () {
@@ -334,7 +404,7 @@ void main() {
       expect(second.userId, 'u1');
     });
 
-    test('group with no target: any session counts', () {
+    test('group with no target: runner completes, non-runner DNF', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
         participants: [
@@ -343,15 +413,53 @@ void main() {
         ],
       ));
 
-      final active = results.where(
-        (r) => r.outcome != ParticipantOutcome.didNotFinish,
-      );
-      final met = active.firstWhere((r) => r.userId == 'u1');
-      final notMet = active.firstWhere((r) => r.userId == 'u2');
-      expect(met.outcome, ParticipantOutcome.completedTarget);
-      expect(met.coinsEarned, 30);
-      expect(notMet.outcome, ParticipantOutcome.participated);
-      expect(notMet.coinsEarned, 0);
+      final runner = results.firstWhere((r) => r.userId == 'u1');
+      expect(runner.outcome, ParticipantOutcome.completedTarget);
+      expect(runner.coinsEarned, 30);
+
+      final dnf = results.firstWhere((r) => r.userId == 'u2');
+      expect(dnf.outcome, ParticipantOutcome.didNotFinish);
+      expect(dnf.coinsEarned, 0);
+    });
+
+    test('group nobody ran: all DNF, refund stakes', () {
+      final results = evaluator.evaluate(ChallengeEntity(
+        id: 'c1',
+        creatorUserId: 'u1',
+        status: ChallengeStatus.active,
+        type: ChallengeType.group,
+        rules: const ChallengeRulesEntity(
+          metric: ChallengeMetric.distance,
+          target: 5000,
+          windowMs: 604800000,
+          entryFeeCoins: 20,
+        ),
+        participants: [
+          _p('u1', progress: 0),
+          _p('u2', progress: 0),
+          _p('u3', progress: 0),
+        ],
+        createdAtMs: 1000,
+      ));
+
+      expect(results.every((r) => r.outcome == ParticipantOutcome.didNotFinish),
+          isTrue);
+      expect(results.every((r) => r.coinsEarned == 20), isTrue);
+    });
+
+    test('group nobody ran free: all DNF, 0 coins', () {
+      final results = evaluator.evaluate(_challenge(
+        type: ChallengeType.group,
+        target: 5000,
+        participants: [
+          _p('u1', progress: 0),
+          _p('u2', progress: 0),
+        ],
+      ));
+
+      expect(results.every((r) => r.outcome == ParticipantOutcome.didNotFinish),
+          isTrue);
+      expect(results.every((r) => r.coinsEarned == 0), isTrue);
     });
   });
 
@@ -511,6 +619,44 @@ void main() {
       ));
 
       // Pool = 10 * 2 = 20. All 2 get 20/2 = 10 each.
+      expect(results.every((r) => r.coinsEarned == 10), isTrue);
+    });
+
+    test('non-runner on winning team is DNF, no pool share', () {
+      final results = evaluator.evaluate(_teamChallenge(
+        entryFeeCoins: 10,
+        participants: [
+          _tp('u1', team: 'A', progress: 10000, sessions: ['s1']),
+          _tp('u2', team: 'A', progress: 0),
+          _tp('u3', team: 'B', progress: 5000, sessions: ['s3']),
+          _tp('u4', team: 'B', progress: 3000, sessions: ['s4']),
+        ],
+      ));
+
+      // Pool = 10 * 4 = 40. Only u1 ran on winning team -> u1 gets 40.
+      final u1 = results.firstWhere((r) => r.userId == 'u1');
+      expect(u1.outcome, ParticipantOutcome.won);
+      expect(u1.coinsEarned, 40);
+
+      final u2 = results.firstWhere((r) => r.userId == 'u2');
+      expect(u2.outcome, ParticipantOutcome.didNotFinish);
+      expect(u2.coinsEarned, 0);
+
+      final losers = results.where((r) => r.outcome == ParticipantOutcome.lost);
+      expect(losers.every((r) => r.coinsEarned == 0), isTrue);
+    });
+
+    test('nobody ran on either team: all DNF, refund', () {
+      final results = evaluator.evaluate(_teamChallenge(
+        entryFeeCoins: 10,
+        participants: [
+          _tp('u1', team: 'A', progress: 0),
+          _tp('u2', team: 'B', progress: 0),
+        ],
+      ));
+
+      expect(results.every((r) => r.outcome == ParticipantOutcome.didNotFinish),
+          isTrue);
       expect(results.every((r) => r.coinsEarned == 10), isTrue);
     });
   });

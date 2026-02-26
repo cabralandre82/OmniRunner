@@ -40,7 +40,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
   bool _created = false;
 
   /// For "Agora" mode: window in minutes after accept
-  int _quickWindowMin = 60;
+  int _quickWindowMin = 180;
 
   /// For group challenges: acceptance window in minutes
   int _acceptWindowMin = 10;
@@ -375,11 +375,11 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
         Wrap(
           spacing: 8,
           children: [
-            _windowChip('30 min', 30),
             _windowChip('1 hora', 60),
+            _windowChip('3 horas', 180),
+            _windowChip('6 horas', 360),
+            _windowChip('12 horas', 720),
             _windowChip('24 horas', 1440),
-            _windowChip('3 dias', 4320),
-            _windowChip('7 dias', 10080),
           ],
         ),
       ],

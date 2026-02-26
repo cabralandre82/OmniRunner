@@ -37,8 +37,9 @@ Coins são obtidos exclusivamente por **atividade física real validada pelo ant
 | Fonte | Coins | Condição |
 |-------|:-----:|----------|
 | Completar sessão verificada (≥1 km) | 10 | `isVerified == true` |
-| Completar desafio 1v1 | 25 | Ambos os participantes completam |
-| Vencer desafio 1v1 | 15 (bônus) | Melhor resultado entre os dois |
+| Vencer desafio 1v1 (gratis) | 40 | Melhor resultado; sem stake |
+| Perder desafio 1v1 (gratis) | 25 | Completou mas perdeu; sem stake |
+| Vencer desafio 1v1 (com stake) | stake × 2 | Ganha o pool inteiro |
 | Completar desafio de grupo | 30 | Participante completa a meta |
 | Streak semanal (3+ corridas/semana) | 20 | Sessões verificadas na semana |
 | Streak mensal (12+ corridas/mês) | 50 | Sessões verificadas no mês |
@@ -57,13 +58,16 @@ Coins são obtidos exclusivamente por **atividade física real validada pelo ant
 |---------|-------|
 | Criação | Qualquer usuário pode desafiar outro |
 | Aceitação | O desafiado aceita ou recusa (nunca automático) |
-| Tipo | Distância, pace, ou tempo em período definido (1 dia, 1 semana) |
-| Aposta | **PROIBIDA** — Nenhuma moeda, item ou valor é "apostado" |
-| Resultado | Participação gera Coins; vencer gera bônus |
-| Perdedor | Recebe Coins pela participação — nunca perde nada |
-| Empate | Ambos recebem bônus de vitória |
+| Tipo | Distância, pace, ou tempo em período definido (1h, 3h, 6h, 12h, 24h) |
+| Entry fee | OmniCoins (0 = gratuito). Fee pago ao entrar, vai pro pool |
+| Resultado (gratis) | Vencedor: 40 coins, perdedor: 25 coins |
+| Resultado (com fee) | Vencedor: pool inteiro (fee × 2). Perdedor: 0 |
+| Nao completou | Quem nao correu no período = **perdeu** (DNF, 0 coins) |
+| Ambos nao correram | Ambos DNF. Se tinha fee, cada um recebe refund |
+| Um correu, outro nao | Quem correu ganha automaticamente |
+| Empate (gratis) | Ambos recebem 40 coins |
+| Empate (com fee) | Cada um recebe o fee de volta (refund) |
 | Validação | Apenas sessões com `isVerified == true` contam |
-| Abandono | Desafio expira sem penalidade |
 
 ### 4.2 Desafios de Grupo
 
@@ -72,7 +76,9 @@ Coins são obtidos exclusivamente por **atividade física real validada pelo ant
 | Tamanho | 2-50 participantes |
 | Meta | Definida pelo criador (ex: "50 km coletivos em 7 dias") |
 | Contribuição | Cada sessão verificada soma para o grupo |
-| Recompensa | Coins para todos que contribuíram |
+| Recompensa | 30 coins para quem completou a meta |
+| Nao completou | Quem nao correu no período = **DNF, 0 coins** |
+| Ninguem correu (com fee) | Todos DNF, refund do fee |
 | Abandono | Sai do grupo sem penalidade; contribuição anterior permanece |
 
 ### 4.3 Rankings Locais

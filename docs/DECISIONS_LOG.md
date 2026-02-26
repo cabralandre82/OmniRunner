@@ -1224,3 +1224,55 @@ e so se torna visivel/operacional apos aprovacao do administrador da plataforma.
 ficam bloqueadas ate aprovacao manual. RPCs protegidas por `platform_role = 'admin'`.
 
 ---
+
+## DECISAO 062 — Tempos de desafio e regra universal "nao correu = perdeu"
+
+**Data:** 2026-02-26
+**Contexto:** Os tempos disponiveis para desafios no modo "Agora" eram 30min, 1h, 24h, 3dias,
+7dias. A logica de settlement tratava quem nao correu como "participou" (sem penalidade),
+e em 1v1 o perdedor sempre ganhava 25 coins de participacao mesmo com entry fee.
+
+**Decisao:**
+1. Tempos alterados para **1h, 3h, 6h, 12h, 24h** (default: 3h)
+2. Regra universal para todos os tipos: **nao completou no periodo = perdeu (DNF)**
+
+**Regras de settlement por tipo:**
+
+**1v1 (gratis / entry_fee = 0):**
+- Ambos correram: vencedor 40 coins, perdedor 25 coins
+- Um correu, outro nao: quem correu ganha 40, outro DNF 0
+- Ninguem correu: ambos DNF, 0 coins
+- Empate: ambos 40 coins
+
+**1v1 (com stake / entry_fee > 0):**
+- Ambos correram: vencedor leva pool (stake × 2), perdedor 0
+- Um correu, outro nao: quem correu leva pool (stake × 2), outro DNF 0
+- Ninguem correu: ambos DNF, **refund do stake** para cada um
+- Empate: cada um recebe stake de volta (refund)
+
+**Grupo:**
+- Quem nao correu = DNF, 0 coins, sem ranking
+- Quem correu = ranking normal + 30 coins se atingiu meta
+- Ninguem correu (com fee): todos DNF, refund do fee
+
+**Team vs Team:**
+- Quem nao correu = DNF individual, 0 coins, mesmo se time ganhou
+- Score do time conta apenas membros que correram
+- Pool dividido apenas entre membros do time vencedor que correram
+- Ninguem correu em nenhum time: todos DNF, refund
+
+**Arquivos modificados (3):**
+- `omni_runner/lib/domain/usecases/gamification/challenge_evaluator.dart`
+  (logica de settlement 1v1, grupo, team vs team)
+- `omni_runner/lib/presentation/screens/challenge_create_screen.dart`
+  (tempos: 1h/3h/6h/12h/24h, default 3h)
+- `omni_runner/test/domain/usecases/gamification/challenge_evaluator_test.dart`
+  (novos testes: DNF, refund, one-ran-other-didnt para todos os tipos)
+
+**Docs atualizados:**
+- `docs/GAMIFICATION_POLICY.md` (tabelas de coins e regras 1v1/grupo)
+
+**Risco:** Baixo. Mudanca puramente de logica no evaluator, coberta por 30 testes unitarios.
+Nao afeta schema do banco. Tempos de desafio sao opcoes de UI sem impacto em dados existentes.
+
+---

@@ -97,15 +97,18 @@ final class ChallengeEvaluator {
   ) {
     if (ranked.isEmpty) return [];
 
-    // Nobody submitted anything → both just participated.
+    final stake = challenge.rules.entryFeeCoins;
+    final hasStake = stake > 0;
+
+    // Nobody submitted anything → both lose. Refund entry fee if any.
     if (ranked.every((p) => p.contributingSessionIds.isEmpty)) {
       return ranked
           .map((p) => ParticipantResult(
                 userId: p.userId,
                 finalValue: p.progressValue,
                 rank: 1,
-                outcome: ParticipantOutcome.participated,
-                coinsEarned: 0,
+                outcome: ParticipantOutcome.didNotFinish,
+                coinsEarned: hasStake ? stake : 0,
                 sessionIds: p.contributingSessionIds,
               ))
           .toList();
@@ -119,7 +122,7 @@ final class ChallengeEvaluator {
           finalValue: ranked[0].progressValue,
           rank: 1,
           outcome: ParticipantOutcome.won,
-          coinsEarned: 25 + 15,
+          coinsEarned: hasStake ? stake * 2 : 25 + 15,
           sessionIds: ranked[0].contributingSessionIds,
         ),
       ];
@@ -128,8 +131,52 @@ final class ChallengeEvaluator {
     final first = ranked[0];
     final second = ranked[1];
 
-    // After sorting with tiebreaker, check if it's a true tie
-    // (same value AND same/null timestamps — no tiebreaker could resolve).
+    final firstRan = first.contributingSessionIds.isNotEmpty;
+    final secondRan = second.contributingSessionIds.isNotEmpty;
+
+    // One completed, the other didn't → completer wins automatically.
+    if (firstRan && !secondRan) {
+      return [
+        ParticipantResult(
+          userId: first.userId,
+          finalValue: first.progressValue,
+          rank: 1,
+          outcome: ParticipantOutcome.won,
+          coinsEarned: hasStake ? stake * 2 : 25 + 15,
+          sessionIds: first.contributingSessionIds,
+        ),
+        ParticipantResult(
+          userId: second.userId,
+          finalValue: second.progressValue,
+          rank: 2,
+          outcome: ParticipantOutcome.didNotFinish,
+          coinsEarned: 0,
+          sessionIds: second.contributingSessionIds,
+        ),
+      ];
+    }
+    if (!firstRan && secondRan) {
+      return [
+        ParticipantResult(
+          userId: second.userId,
+          finalValue: second.progressValue,
+          rank: 1,
+          outcome: ParticipantOutcome.won,
+          coinsEarned: hasStake ? stake * 2 : 25 + 15,
+          sessionIds: second.contributingSessionIds,
+        ),
+        ParticipantResult(
+          userId: first.userId,
+          finalValue: first.progressValue,
+          rank: 2,
+          outcome: ParticipantOutcome.didNotFinish,
+          coinsEarned: 0,
+          sessionIds: first.contributingSessionIds,
+        ),
+      ];
+    }
+
+    // Both ran — compare results normally.
     final isTrueTie = first.progressValue == second.progressValue &&
         _sameTiebreaker(first, second);
 
@@ -140,7 +187,7 @@ final class ChallengeEvaluator {
           finalValue: first.progressValue,
           rank: 1,
           outcome: ParticipantOutcome.tied,
-          coinsEarned: 25 + 15,
+          coinsEarned: hasStake ? stake : 25 + 15,
           sessionIds: first.contributingSessionIds,
         ),
         ParticipantResult(
@@ -148,20 +195,19 @@ final class ChallengeEvaluator {
           finalValue: second.progressValue,
           rank: 1,
           outcome: ParticipantOutcome.tied,
-          coinsEarned: 25 + 15,
+          coinsEarned: hasStake ? stake : 25 + 15,
           sessionIds: second.contributingSessionIds,
         ),
       ];
     }
 
-    // Sort resolved the winner (by value or by earliestFinish).
     return [
       ParticipantResult(
         userId: first.userId,
         finalValue: first.progressValue,
         rank: 1,
         outcome: ParticipantOutcome.won,
-        coinsEarned: 25 + 15,
+        coinsEarned: hasStake ? stake * 2 : 25 + 15,
         sessionIds: first.contributingSessionIds,
       ),
       ParticipantResult(
@@ -169,7 +215,7 @@ final class ChallengeEvaluator {
         finalValue: second.progressValue,
         rank: 2,
         outcome: ParticipantOutcome.lost,
-        coinsEarned: 25,
+        coinsEarned: hasStake ? 0 : 25,
         sessionIds: second.contributingSessionIds,
       ),
     ];
@@ -180,26 +226,50 @@ final class ChallengeEvaluator {
     ChallengeEntity challenge,
   ) {
     final target = challenge.rules.target;
+    final stake = challenge.rules.entryFeeCoins;
+    final hasStake = stake > 0;
     final lowerIsBetter = _isLowerBetter(challenge.rules.metric);
 
-    // Assign dense ranks with ties sharing the same rank.
-    final ranks = _assignDenseRanks(ranked, challenge.rules.metric);
+    final runners = ranked.where(
+      (p) => p.contributingSessionIds.isNotEmpty,
+    ).toList();
+    final noRun = ranked.where(
+      (p) => p.contributingSessionIds.isEmpty,
+    ).toList();
 
-    return ranked.asMap().entries.map((entry) {
-      final idx = entry.key;
-      final p = entry.value;
-      final rank = ranks[idx];
+    // Nobody ran → everyone DNF, refund stakes.
+    if (runners.isEmpty) {
+      return ranked
+          .map((p) => ParticipantResult(
+                userId: p.userId,
+                finalValue: 0,
+                outcome: ParticipantOutcome.didNotFinish,
+                coinsEarned: hasStake ? stake : 0,
+                sessionIds: p.contributingSessionIds,
+              ))
+          .toList();
+    }
+
+    // Rank only runners.
+    final sortedRunners = _sort(runners, challenge.rules.metric);
+    final ranks = _assignDenseRanks(sortedRunners, challenge.rules.metric);
+
+    final results = <ParticipantResult>[];
+
+    for (var i = 0; i < sortedRunners.length; i++) {
+      final p = sortedRunners[i];
+      final rank = ranks[i];
 
       final bool metTarget;
       if (target == null) {
-        metTarget = p.contributingSessionIds.isNotEmpty;
+        metTarget = true;
       } else if (lowerIsBetter) {
         metTarget = p.progressValue > 0 && p.progressValue <= target;
       } else {
         metTarget = p.progressValue >= target;
       }
 
-      return ParticipantResult(
+      results.add(ParticipantResult(
         userId: p.userId,
         finalValue: p.progressValue,
         rank: rank,
@@ -208,8 +278,21 @@ final class ChallengeEvaluator {
             : ParticipantOutcome.participated,
         coinsEarned: metTarget ? 30 : 0,
         sessionIds: p.contributingSessionIds,
-      );
-    }).toList();
+      ));
+    }
+
+    // Non-runners are DNF, 0 coins (they lost).
+    for (final p in noRun) {
+      results.add(ParticipantResult(
+        userId: p.userId,
+        finalValue: 0,
+        outcome: ParticipantOutcome.didNotFinish,
+        coinsEarned: 0,
+        sessionIds: p.contributingSessionIds,
+      ));
+    }
+
+    return results;
   }
 
   /// Dense ranking: tied participants share the same rank.
@@ -244,10 +327,10 @@ final class ChallengeEvaluator {
 
   /// Team vs Team evaluation.
   ///
-  /// Score per team = sum of individual progressValues of accepted participants.
-  /// Winning team members split the entire pool equally.
-  /// Losing team members get 0 from the pool but keep participation coins.
-  /// Tied teams split the pool across ALL participants.
+  /// Score per team = sum of progressValues of members who actually ran.
+  /// Members who didn't run are DNF (0 coins, regardless of team outcome).
+  /// Pool is split only among winning team members who ran.
+  /// If nobody on either team ran → everyone DNF, refund stakes.
   ///
   /// Pool = entry_fee_coins * total_accepted_participants.
   List<ParticipantResult> _evaluateTeamVsTeam(
@@ -256,20 +339,36 @@ final class ChallengeEvaluator {
   ) {
     if (ranked.isEmpty) return [];
 
+    final stake = challenge.rules.entryFeeCoins;
+    final hasStake = stake > 0;
+    final pool = stake * ranked.length;
+
     final teamA = ranked.where((p) => p.team == 'A').toList();
     final teamB = ranked.where((p) => p.team == 'B').toList();
+
+    // Nobody ran at all → everyone DNF, refund.
+    if (ranked.every((p) => p.contributingSessionIds.isEmpty)) {
+      return ranked
+          .map((p) => ParticipantResult(
+                userId: p.userId,
+                finalValue: 0,
+                outcome: ParticipantOutcome.didNotFinish,
+                coinsEarned: hasStake ? stake : 0,
+                sessionIds: p.contributingSessionIds,
+              ))
+          .toList();
+    }
 
     final lowerIsBetter = _isLowerBetter(challenge.rules.metric);
 
     double teamScore(List<ChallengeParticipantEntity> team) {
-      if (team.isEmpty) return 0;
+      final active = team.where((p) => p.contributingSessionIds.isNotEmpty);
+      if (active.isEmpty) return lowerIsBetter ? double.infinity : 0;
       if (lowerIsBetter) {
-        final active = team.where((p) => p.contributingSessionIds.isNotEmpty);
-        if (active.isEmpty) return double.infinity;
         return active.map((p) => p.progressValue).reduce((a, b) => a + b) /
             active.length;
       }
-      return team.map((p) => p.progressValue).reduce((a, b) => a + b);
+      return active.map((p) => p.progressValue).reduce((a, b) => a + b);
     }
 
     final scoreA = teamScore(teamA);
@@ -295,35 +394,51 @@ final class ChallengeEvaluator {
       isTied = true;
     }
 
-    final pool = challenge.rules.entryFeeCoins * ranked.length;
-
     List<ParticipantResult> buildTeamResults(
       List<ChallengeParticipantEntity> team,
       bool isWinner,
       bool tied,
     ) {
-      final int coinsPerMember;
+      final runners = team.where(
+        (p) => p.contributingSessionIds.isNotEmpty,
+      ).toList();
+
+      final int coinsPerRunner;
       if (tied) {
-        coinsPerMember = ranked.isNotEmpty ? pool ~/ ranked.length : 0;
-      } else if (isWinner && team.isNotEmpty) {
-        coinsPerMember = pool ~/ team.length;
+        final totalRunners = ranked
+            .where((p) => p.contributingSessionIds.isNotEmpty)
+            .length;
+        coinsPerRunner = totalRunners > 0 ? pool ~/ totalRunners : 0;
+      } else if (isWinner && runners.isNotEmpty) {
+        coinsPerRunner = pool ~/ runners.length;
       } else {
-        coinsPerMember = 0;
+        coinsPerRunner = 0;
       }
 
-      final outcome = tied
-          ? ParticipantOutcome.tied
-          : isWinner
-              ? ParticipantOutcome.won
-              : ParticipantOutcome.lost;
-
-      return team.map((p) => ParticipantResult(
-        userId: p.userId,
-        finalValue: p.progressValue,
-        outcome: outcome,
-        coinsEarned: coinsPerMember,
-        sessionIds: p.contributingSessionIds,
-      )).toList();
+      return team.map((p) {
+        final ran = p.contributingSessionIds.isNotEmpty;
+        if (!ran) {
+          return ParticipantResult(
+            userId: p.userId,
+            finalValue: 0,
+            outcome: ParticipantOutcome.didNotFinish,
+            coinsEarned: 0,
+            sessionIds: p.contributingSessionIds,
+          );
+        }
+        final outcome = tied
+            ? ParticipantOutcome.tied
+            : isWinner
+                ? ParticipantOutcome.won
+                : ParticipantOutcome.lost;
+        return ParticipantResult(
+          userId: p.userId,
+          finalValue: p.progressValue,
+          outcome: outcome,
+          coinsEarned: coinsPerRunner,
+          sessionIds: p.contributingSessionIds,
+        );
+      }).toList();
     }
 
     return [
