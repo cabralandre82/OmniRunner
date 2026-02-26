@@ -17,6 +17,7 @@ import 'package:omni_runner/presentation/screens/assessoria_feed_screen.dart';
 import 'package:omni_runner/presentation/screens/athlete_championships_screen.dart';
 import 'package:omni_runner/presentation/screens/challenges_list_screen.dart';
 import 'package:omni_runner/presentation/screens/join_assessoria_screen.dart';
+import 'package:omni_runner/presentation/screens/league_screen.dart';
 
 /// "Minha Assessoria" screen for athletes.
 ///
@@ -411,6 +412,17 @@ class _QuickAccessSection extends StatelessWidget {
           onTap: () {
             Navigator.of(context).push(MaterialPageRoute<void>(
               builder: (_) => const AthleteChampionshipsScreen(),
+            ));
+          },
+        ),
+        _QuickTile(
+          icon: Icons.shield_rounded,
+          iconColor: Colors.indigo,
+          title: 'Liga de Assessorias',
+          subtitle: 'Ranking entre assessorias da plataforma',
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => const LeagueScreen(),
             ));
           },
         ),

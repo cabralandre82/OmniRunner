@@ -175,9 +175,30 @@ serve(async (req: Request) => {
       }
     }
 
+    // ── 5. League snapshot (weekly, idempotent per week_key) ─────────
+    let leagueSnapshot = false;
+    {
+      const dayOfWeek = now.getUTCDay(); // 0=Sun, 1=Mon
+      if (dayOfWeek === 1 && now.getUTCHours() < 1) {
+        try {
+          const res = await fetch(`${supabaseUrl}/functions/v1/league-snapshot`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${serviceKey}`,
+            },
+          });
+          leagueSnapshot = res.ok;
+        } catch {
+          // Log but continue
+        }
+      }
+    }
+
     return jsonOk({
       championships: { activated: champsActivated, completed: champsCompleted },
       challenges: { settled: challengesSettled, expired: challengesExpired },
+      league: { snapshot_triggered: leagueSnapshot },
     }, requestId);
   } catch (_err) {
     status = 500;

@@ -508,6 +508,12 @@ verify_jwt = false
 [functions.generate-wrapped]
 verify_jwt = false
 
+[functions.league-list]
+verify_jwt = false
+
+[functions.league-snapshot]
+verify_jwt = false
+
 [functions.matchmake]
 verify_jwt = true
 

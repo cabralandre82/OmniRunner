@@ -12,7 +12,7 @@
 |---|---------|:----------:|:------------:|:-----------:|
 | 0 | ~~Regra de visibilidade em desafios~~ | ~~URGENTE~~ | ~~Baixa~~ | ~~FEITO~~ |
 | 1 | ~~OmniWrapped (Retrospectiva)~~ | ~~Média~~ | ~~Média~~ | ~~FEITO~~ |
-| 2 | Liga de Assessorias | Média | Alta | Assessorias existentes |
+| 2 | ~~Liga de Assessorias~~ | ~~Média~~ | ~~Alta~~ | ~~FEITO~~ |
 | 3 | DNA do Corredor (Running DNA) | Baixa | Alta | Dados históricos + ML |
 
 > **DESCARTADAS:** Corrida Fantasma (tracking nativo removido) e Marketplace
@@ -249,7 +249,7 @@ PASSO 6: Integrar — Entry point
 
 ---
 
-## 2. LIGA DE ASSESSORIAS
+## 2. LIGA DE ASSESSORIAS — IMPLEMENTADO
 
 ### Estrutura existente (verificada)
 
@@ -564,9 +564,8 @@ Fase 1 (Urgente — pré-release):          ✅ FEITO
 Fase 2 (Engajamento — viralidade):       ✅ FEITO
   └── #1 OmniWrapped
 
-Fase 3 (Escala — competição):
-  └── #2 Liga de Assessorias                       ~10-15h
-        6 passos: migration → EF cron → EF list → entity+tela → integração → enrollment
+Fase 3 (Escala — competição):                ✅ FEITO
+  └── #2 Liga de Assessorias
 
 Fase 4 (Diferencial — inteligência):
   └── #3 DNA do Corredor                           ~12-18h

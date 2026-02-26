@@ -1541,6 +1541,46 @@ que mostra estatísticas de corrida de um período (mês/trimestre/ano).
 
 ---
 
+### DECISAO 070 — Liga de Assessorias
+
+**Data:** 2026-02-26
+**Contexto:** Feature #2 do roadmap, competição sazonal entre assessorias.
+
+Implementação completa da Liga de Assessorias — sistema de ranking entre
+assessorias baseado em desempenho coletivo normalizado por número de membros.
+
+**Score semanal (por assessoria):**
+  `(total_km * 1.0 + total_sessions * 0.5 + pct_active * 200 + challenge_wins * 3.0) / num_members`
+  Normalização por membros garante competição justa entre assessorias de tamanhos diferentes.
+
+**Componentes implementados:**
+1. Migration `20260226210000_league_tables.sql`:
+   - `league_seasons` (temporadas com status upcoming/active/completed)
+   - `league_enrollments` (assessorias inscritas na temporada)
+   - `league_snapshots` (snapshot semanal com score, rank, delta)
+   - RLS: leitura pública (qualquer autenticado), insert por staff
+2. Edge Function `league-snapshot` — calcula scores semanais, gera ranking
+3. Edge Function `league-list` — retorna ranking + contribuição do caller
+4. Integração no `lifecycle-cron` (dispara snapshot às segundas-feiras)
+5. Flutter `LeagueScreen`:
+   - Header com nome da temporada e dias restantes
+   - Card "Sua contribuição" (km e sessões pessoais)
+   - Lista ranqueada com medalhas top-3, delta de posição, score
+   - Highlight na assessoria do usuário
+6. Entry points: `ProgressHubScreen` + `MyAssessoriaScreen`
+
+**Arquivos:**
+- `supabase/migrations/20260226210000_league_tables.sql`
+- `supabase/functions/league-snapshot/index.ts`
+- `supabase/functions/league-list/index.ts`
+- `supabase/functions/lifecycle-cron/index.ts`
+- `omni_runner/lib/presentation/screens/league_screen.dart`
+- `omni_runner/lib/presentation/screens/progress_hub_screen.dart`
+- `omni_runner/lib/presentation/screens/my_assessoria_screen.dart`
+- `supabase/config.toml`
+
+---
+
 ### IDEIA DESCARTADA: Corrida Fantasma (Ghost Rival)
 ~~O app usa dados GPS de corridas anteriores do atleta para criar um "fantasma"
 de si mesmo.~~ **DESCARTADA:** O tracking nativo do app foi removido. Todas as

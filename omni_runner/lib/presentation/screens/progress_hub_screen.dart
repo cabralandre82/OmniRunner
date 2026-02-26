@@ -26,6 +26,7 @@ import 'package:omni_runner/presentation/screens/missions_screen.dart';
 import 'package:omni_runner/presentation/screens/personal_evolution_screen.dart';
 import 'package:omni_runner/presentation/screens/progression_screen.dart';
 import 'package:omni_runner/presentation/screens/streaks_leaderboard_screen.dart';
+import 'package:omni_runner/presentation/screens/league_screen.dart';
 import 'package:omni_runner/presentation/screens/wallet_screen.dart';
 import 'package:omni_runner/presentation/screens/wrapped_screen.dart';
 
@@ -97,6 +98,12 @@ class ProgressHubScreen extends StatelessWidget {
             target: _Target.championships,
           ),
           _Tile(
+            icon: Icons.shield_rounded,
+            title: 'Liga de Assessorias',
+            subtitle: 'Ranking entre assessorias da plataforma',
+            target: _Target.league,
+          ),
+          _Tile(
             icon: Icons.toll_rounded,
             title: 'OmniCoins',
             subtitle: 'Créditos e movimentações',
@@ -120,7 +127,7 @@ class ProgressHubScreen extends StatelessWidget {
   }
 }
 
-enum _Target { progression, wrapped, evolution, streaks, badges, missions, challenges, championships, wallet, leaderboards, feed }
+enum _Target { progression, wrapped, evolution, streaks, badges, missions, challenges, championships, league, wallet, leaderboards, feed }
 
 class _Tile extends StatelessWidget {
   final IconData icon;
@@ -178,6 +185,7 @@ class _Tile extends StatelessWidget {
           child: const ChallengesListScreen(),
         ),
       _Target.championships => const AthleteChampionshipsScreen(),
+      _Target.league => const LeagueScreen(),
       _Target.wallet => BlocProvider<WalletBloc>(
           create: (_) => sl<WalletBloc>()..add(LoadWallet(uid)),
           child: const WalletScreen(),
