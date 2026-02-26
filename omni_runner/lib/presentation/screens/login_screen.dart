@@ -145,15 +145,25 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_checkConnection()) return;
     _clearError();
     setState(() => _busy = true);
-    final result = await _auth.signInWithInstagram();
-    if (!mounted) return;
-    setState(() => _busy = false);
+    try {
+      final result = await _auth.signInWithInstagram();
+      if (!mounted) return;
+      setState(() => _busy = false);
 
-    if (result.failure != null) {
-      _handleFailure(result.failure!);
-      return;
+      if (result.failure != null) {
+        _handleFailure(result.failure!);
+        return;
+      }
+      widget.onSuccess();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _errorMessage =
+            'Login com Instagram não está disponível no momento. '
+            'Tente outro método.';
+      });
     }
-    widget.onSuccess();
   }
 
   void _handleFailure(AuthFailure f) {

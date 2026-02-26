@@ -268,7 +268,9 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                   decoration: InputDecoration(
                     labelText: 'Meta ${_targetUnit()}',
                     border: const OutlineInputBorder(),
-                    helperText: 'Deixe vazio = quem fizer mais ganha',
+                    helperText: _type == ChallengeType.group
+                        ? 'Soma coletiva do grupo. Vazio = qualquer corrida vale'
+                        : 'Deixe vazio = quem fizer mais ganha',
                   ),
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
@@ -303,12 +305,43 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                   ],
+                  onChanged: (_) => setState(() {}),
                   validator: (v) {
                     final fee = int.tryParse(v ?? '0') ?? 0;
                     if (fee < 0) return 'Valor inválido';
                     return null;
                   },
                 ),
+                if (_type == ChallengeType.group &&
+                    (int.tryParse(_feeCtrl.text) ?? 0) > 0) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning_amber_rounded,
+                            size: 18, color: Colors.orange.shade700),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Se o grupo não atingir a meta, a inscrição '
+                            'não será devolvida. Só há reembolso se '
+                            'ninguém correr.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.orange.shade800,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
 
                 // ── Validation rules summary ─────────────────────────

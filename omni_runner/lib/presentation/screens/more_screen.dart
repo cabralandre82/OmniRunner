@@ -14,7 +14,7 @@ import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_event
 import 'package:omni_runner/presentation/screens/auth_gate.dart';
 import 'package:omni_runner/presentation/screens/coaching_groups_screen.dart';
 import 'package:omni_runner/presentation/widgets/login_required_sheet.dart';
-import 'package:omni_runner/presentation/screens/friends_activity_feed_screen.dart';
+
 import 'package:omni_runner/presentation/screens/invite_friends_screen.dart';
 import 'package:omni_runner/presentation/screens/my_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/profile_screen.dart';
@@ -87,11 +87,11 @@ class MoreScreen extends StatelessWidget {
                 ));
               },
             ),
-            const _ActionTile(
+            const _ComingSoonTile(
               icon: Icons.dynamic_feed_rounded,
               title: 'Atividade dos amigos',
               subtitle: 'Corridas recentes dos seus amigos',
-              pushScreen: FriendsActivityFeedScreen(),
+              reason: 'O feed de amigos estará disponível em breve!',
             ),
           ],
 

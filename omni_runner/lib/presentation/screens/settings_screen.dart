@@ -53,24 +53,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
           : ListView(
               padding: const EdgeInsets.symmetric(vertical: 8),
               children: [
-                _header('Voice announcements'),
+                _header('Anúncios por voz'),
                 SwitchListTile(
-                  title: const Text('Kilometer announcements'),
-                  subtitle: const Text('Announce every km with pace'),
+                  title: const Text('Anúncio por quilômetro'),
+                  subtitle: const Text('Anuncia cada km com pace atual'),
                   secondary: const Icon(Icons.straighten),
                   value: _settings.kmEnabled,
                   onChanged: (v) => _update(_settings.copyWith(kmEnabled: v)),
                 ),
                 SwitchListTile(
-                  title: const Text('Ghost alerts'),
-                  subtitle: const Text('Alert when you pass or are passed by the ghost'),
+                  title: const Text('Alertas de ghost'),
+                  subtitle: const Text('Avisa quando você passa ou é passado pelo ghost'),
                   secondary: const Icon(Icons.people_alt),
                   value: _settings.ghostEnabled,
                   onChanged: (v) => _update(_settings.copyWith(ghostEnabled: v)),
                 ),
                 SwitchListTile(
-                  title: const Text('Periodic updates'),
-                  subtitle: const Text('Time-based updates every 5 min'),
+                  title: const Text('Atualizações periódicas'),
+                  subtitle: const Text('Atualização por voz a cada 5 min'),
                   secondary: const Icon(Icons.timer),
                   value: _settings.periodicEnabled,
                   onChanged: (v) => _update(_settings.copyWith(periodicEnabled: v)),

@@ -90,7 +90,19 @@ class _HeroSection extends StatelessWidget {
     final theme = Theme.of(context);
     final outcome = myResult?.outcome;
 
-    final (icon, color, headline) = _outcomeVisuals(outcome);
+    final isGroup = challenge.type == ChallengeType.group;
+    final (icon, color, baseHeadline) = _outcomeVisuals(outcome);
+    final headline = isGroup
+        ? switch (outcome) {
+            ParticipantOutcome.completedTarget =>
+              'O grupo atingiu a meta!',
+            ParticipantOutcome.participated =>
+              'O grupo não atingiu a meta',
+            ParticipantOutcome.didNotFinish =>
+              'Ninguém correu',
+            _ => baseHeadline,
+          }
+        : baseHeadline;
 
     final winners = result.winners;
     final isTeam = challenge.type == ChallengeType.teamVsTeam;
@@ -235,7 +247,175 @@ class _ParticipantResults extends StatelessWidget {
     if (challenge.type == ChallengeType.teamVsTeam) {
       return _buildTeamResults(context);
     }
+    if (challenge.type == ChallengeType.group) {
+      return _buildGroupResults(context);
+    }
     return _buildIndividualResults(context);
+  }
+
+  Widget _buildGroupResults(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final target = challenge.rules.target;
+    final metric = result.metric;
+    final lowerIsBetter = metric == ChallengeMetric.pace;
+
+    final runners = result.results.where((r) => r.finalValue > 0).toList();
+
+    final double collectiveValue;
+    if (lowerIsBetter) {
+      collectiveValue = runners.isEmpty
+          ? 0
+          : runners.map((r) => r.finalValue).reduce((a, b) => a + b) /
+              runners.length;
+    } else {
+      collectiveValue = result.results
+          .map((r) => r.finalValue)
+          .fold(0.0, (a, b) => a + b);
+    }
+
+    final bool metTarget;
+    if (target == null || target <= 0) {
+      metTarget = runners.isNotEmpty;
+    } else if (lowerIsBetter) {
+      metTarget = collectiveValue > 0 && collectiveValue <= target;
+    } else {
+      metTarget = collectiveValue >= target;
+    }
+
+    final double progressFraction;
+    if (target == null || target <= 0) {
+      progressFraction = metTarget ? 1.0 : 0.0;
+    } else if (lowerIsBetter) {
+      progressFraction =
+          collectiveValue <= 0 ? 0.0 : (target / collectiveValue).clamp(0.0, 1.0);
+    } else {
+      progressFraction = (collectiveValue / target).clamp(0.0, 1.0);
+    }
+
+    final progressColor = metTarget ? Colors.green : cs.primary;
+
+    return Column(
+      children: [
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.groups_rounded, size: 20, color: cs.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Progresso Coletivo',
+                      style: theme.textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: progressFraction,
+                    minHeight: 14,
+                    backgroundColor: cs.surfaceContainerHighest,
+                    color: progressColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      lowerIsBetter
+                          ? 'Média: ${_formatValue(collectiveValue, metric)}'
+                          : 'Total: ${_formatValue(collectiveValue, metric)}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (target != null && target > 0)
+                      Text(
+                        'Meta: ${_formatValue(target, metric)}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.outline,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: metTarget
+                        ? Colors.green.withAlpha(20)
+                        : Colors.orange.withAlpha(20),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        metTarget ? Icons.check_circle : Icons.cancel_outlined,
+                        size: 16,
+                        color: metTarget ? Colors.green.shade700 : Colors.orange.shade700,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        metTarget ? 'Meta atingida pelo grupo!' : 'Meta não atingida',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: metTarget
+                              ? Colors.green.shade700
+                              : Colors.orange.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.person_outline_rounded,
+                        size: 20, color: cs.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Contribuições',
+                      style: theme.textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ...result.results.map((pr) => _ResultRow(
+                      pr: pr,
+                      metric: result.metric,
+                      isMe: pr.userId == currentUserId,
+                      displayName:
+                          _displayName(challenge, pr.userId, currentUserId),
+                    )),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildIndividualResults(BuildContext context) {

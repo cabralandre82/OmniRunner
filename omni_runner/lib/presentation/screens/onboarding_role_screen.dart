@@ -65,7 +65,8 @@ class _OnboardingRoleScreenState extends State<OnboardingRoleScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Essa escolha é permanente e não pode ser alterada depois.',
+                      'Essa escolha é permanente e não pode ser alterada depois. '
+                      'Se precisar trocar, entre em contato com o suporte.',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,

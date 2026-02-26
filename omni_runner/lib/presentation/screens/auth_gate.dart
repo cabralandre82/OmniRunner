@@ -311,7 +311,37 @@ class _AuthGateState extends State<AuthGate> {
       }
     } catch (e) {
       AppLogger.error('AuthGate profile fetch failed: $e', tag: _tag, error: e);
+      await _retryResolve();
+    }
+  }
+
+  int _retryCount = 0;
+
+  Future<void> _retryResolve() async {
+    if (_retryCount >= 2) {
+      AppLogger.warn('AuthGate retries exhausted, falling back to home', tag: _tag);
       _go(_GateDestination.home);
+      return;
+    }
+    _retryCount++;
+    await Future<void>.delayed(Duration(seconds: _retryCount * 2));
+    if (!mounted) return;
+    try {
+      final profile = await sl<IProfileRepo>().getMyProfile();
+      if (profile == null) {
+        _go(_GateDestination.onboarding);
+        return;
+      }
+      _onboardingState = profile.onboardingState;
+      _userRole = profile.userRole;
+      if (profile.isOnboardingComplete) {
+        _go(_GateDestination.home);
+      } else {
+        _go(_GateDestination.onboarding);
+      }
+    } catch (e) {
+      AppLogger.error('AuthGate retry #$_retryCount failed: $e', tag: _tag, error: e);
+      await _retryResolve();
     }
   }
 

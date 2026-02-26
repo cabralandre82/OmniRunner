@@ -1281,3 +1281,61 @@ e em 1v1 o perdedor sempre ganhava 25 coins de participacao mesmo com entry fee.
 Nao afeta schema do banco. Tempos de desafio sao opcoes de UI sem impacto em dados existentes.
 
 ---
+
+## DECISAO 063 — Revisao Pre-Release: Correcoes de UX, Compliance e Resiliencia
+
+**Data:** 2026-02-26
+**Sprint:** Pre-Launch QA — Revisao de fluxo total
+**Contexto:**
+Revisao pre-release completa avaliou 38+ funcionalidades, 66 telas, todos os fluxos happy/error path.
+Identificou 7 correcoes (2 alta, 3 media, 2 baixa) + 1 item para backlog (TODO).
+
+**Correcoes aplicadas:**
+
+1. **SettingsScreen em PT-BR (ALTA):** Labels de voz estavam em ingles ("Voice announcements",
+   "Kilometer announcements", etc.). Traduzidos para PT-BR ("Anuncios por voz", "Anuncio por
+   quilometro", etc.) para consistencia com o resto do app.
+
+2. **FriendsActivityFeedScreen desativada (ALTA):** Tela acessivel via MoreScreen mas dependente
+   de RPC `fn_friends_activity_feed` (Phase 15 nao implementada). Substituida por `_ComingSoonTile`
+   com mensagem "Em breve".
+
+3. **Warning grupo+stake+meta nao atingida (MEDIA):** Adicionado banner de alerta na
+   ChallengeCreateScreen quando tipo=grupo e fee>0: "Se o grupo nao atingir a meta, a inscricao
+   nao sera devolvida. So ha reembolso se ninguem correr."
+
+4. **AuthGate retry antes do fallback (MEDIA):** Antes, se o profile fetch falhasse, ia direto
+   para Home (risco de estado inconsistente). Agora faz ate 2 retries com backoff (2s, 4s)
+   antes do fallback.
+
+5. **Troca de role: mensagem de suporte (MEDIA):** Dialog de confirmacao de role agora menciona
+   "Se precisar trocar, entre em contato com o suporte."
+
+6. **Dashboard reorganizado (BAIXA):** Cards reordenados: Desafios, Assessoria, Progresso,
+   Verificacao, Campeonatos, Parques, Creditos. Verificacao subiu de 7o para 4o lugar.
+
+7. **Instagram OAuth resiliente (BAIXA):** `_signInWithInstagram()` agora tem catch adicional
+   que exibe "Login com Instagram nao esta disponivel no momento" em vez de erro generico.
+
+8. **Resultado de grupo: progresso coletivo (Fix 6/7 do review anterior):**
+   - ChallengeCreateScreen: helper text contextual "Soma coletiva do grupo" para tipo=grupo
+   - ChallengeResultScreen: builder dedicado `_buildGroupResults` com barra de progresso
+     coletivo vs meta + card "Contribuicoes" + hero text cooperativo
+
+**Backlog (TODO):**
+- Lista de assessorias populares/proximas no JoinAssessoriaScreen (discovery)
+
+**Arquivos modificados (8):**
+- `omni_runner/lib/presentation/screens/settings_screen.dart` (labels PT-BR)
+- `omni_runner/lib/presentation/screens/more_screen.dart` (FriendsActivityFeed → ComingSoon)
+- `omni_runner/lib/presentation/screens/challenge_create_screen.dart` (warning grupo+stake, helper text)
+- `omni_runner/lib/presentation/screens/auth_gate.dart` (retry antes do fallback)
+- `omni_runner/lib/presentation/screens/onboarding_role_screen.dart` (mensagem suporte)
+- `omni_runner/lib/presentation/screens/athlete_dashboard_screen.dart` (cards reordenados)
+- `omni_runner/lib/presentation/screens/login_screen.dart` (Instagram catch resiliente)
+- `omni_runner/lib/presentation/screens/challenge_result_screen.dart` (grupo: progresso coletivo)
+
+**Risco:** Baixo. Mudancas puramente de UI/UX e resiliencia. Nenhuma alteracao de logica de negocio,
+schema de banco ou Edge Functions.
+
+---
