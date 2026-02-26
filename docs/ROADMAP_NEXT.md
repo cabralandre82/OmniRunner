@@ -13,7 +13,7 @@
 | 0 | ~~Regra de visibilidade em desafios~~ | ~~URGENTE~~ | ~~Baixa~~ | ~~FEITO~~ |
 | 1 | ~~OmniWrapped (Retrospectiva)~~ | ~~Média~~ | ~~Média~~ | ~~FEITO~~ |
 | 2 | ~~Liga de Assessorias~~ | ~~Média~~ | ~~Alta~~ | ~~FEITO~~ |
-| 3 | DNA do Corredor (Running DNA) | Baixa | Alta | Dados históricos + ML |
+| 3 | ~~DNA do Corredor (Running DNA)~~ | ~~Baixa~~ | ~~Alta~~ | ~~FEITO~~ |
 
 > **DESCARTADAS:** Corrida Fantasma (tracking nativo removido) e Marketplace
 > (risco App Store/Play Store + economia cross-assessoria inviável).
@@ -375,7 +375,7 @@ PASSO 6: Enrollment
 
 ---
 
-## 3. DNA DO CORREDOR (RUNNING DNA)
+## 3. DNA DO CORREDOR (RUNNING DNA) — IMPLEMENTADO
 
 ### Dados disponíveis (verificados)
 
@@ -567,9 +567,8 @@ Fase 2 (Engajamento — viralidade):       ✅ FEITO
 Fase 3 (Escala — competição):                ✅ FEITO
   └── #2 Liga de Assessorias
 
-Fase 4 (Diferencial — inteligência):
-  └── #3 DNA do Corredor                           ~12-18h
-        6 passos: EF → migration → tela → share → integração → cron
+Fase 4 (Diferencial — inteligência):      ✅ FEITO
+  └── #3 DNA do Corredor
 ```
 
 **Total estimado: 30-44 horas de desenvolvimento**

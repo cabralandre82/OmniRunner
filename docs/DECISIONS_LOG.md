@@ -1581,6 +1581,53 @@ assessorias baseado em desempenho coletivo normalizado por número de membros.
 
 ---
 
+### DECISAO 071 — DNA do Corredor (Running DNA)
+
+**Data:** 2026-02-26
+**Contexto:** Feature #3 do roadmap, perfil inteligente do atleta.
+
+Implementação completa do Running DNA — análise estatística sobre 6 meses de
+corridas, gerando um perfil visual radar com 6 eixos, insights em linguagem
+natural e previsão de PR por regressão linear.
+
+**6 eixos do radar:**
+1. Velocidade (pace médio último mês, 4:00/km=100, 8:00/km=0)
+2. Resistência (distância média, >15km=100, <2km=0)
+3. Consistência (sessões/semana, >=6=100, <1=0)
+4. Evolução (tendência de pace 3 meses, melhoria=100, piora=0)
+5. Versatilidade (desvio padrão de distâncias)
+6. Competitividade (win rate em desafios, >=3 desafios necessários)
+
+**Insights gerados (regras estáticas, sem ML):**
+- Dia da semana mais ativo + %
+- Perfil horário (matutino/vespertino/noturno) + %
+- Zona de conforto de distância + sugestão
+- Impacto do descanso no pace
+- Ponto forte e área para crescer
+
+**Previsão de PR:**
+- Regressão linear sobre melhores paces mensais por faixa (5K, 10K, Meia)
+- Só exibe se R² >= 0.3 (confiança mínima)
+- Previsão em semanas até próximo PR
+
+**Componentes:**
+1. Migration `20260226220000_running_dna.sql` — cache único por user
+2. EF `generate-running-dna` — cálculo completo, cache 7 dias
+3. `RunningDnaScreen` — RadarChart (fl_chart), breakdown, insights, PR, share
+4. Share card (RepaintBoundary + PNG) com barras de score + branding
+5. Entry point no `ProgressHubScreen`
+
+**Mínimo:** 10 sessões verificadas nos últimos 6 meses.
+
+**Arquivos:**
+- `supabase/migrations/20260226220000_running_dna.sql`
+- `supabase/functions/generate-running-dna/index.ts`
+- `omni_runner/lib/presentation/screens/running_dna_screen.dart`
+- `omni_runner/lib/presentation/screens/progress_hub_screen.dart`
+- `supabase/config.toml`
+
+---
+
 ### IDEIA DESCARTADA: Corrida Fantasma (Ghost Rival)
 ~~O app usa dados GPS de corridas anteriores do atleta para criar um "fantasma"
 de si mesmo.~~ **DESCARTADA:** O tracking nativo do app foi removido. Todas as

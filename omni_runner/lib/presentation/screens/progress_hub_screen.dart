@@ -27,6 +27,7 @@ import 'package:omni_runner/presentation/screens/personal_evolution_screen.dart'
 import 'package:omni_runner/presentation/screens/progression_screen.dart';
 import 'package:omni_runner/presentation/screens/streaks_leaderboard_screen.dart';
 import 'package:omni_runner/presentation/screens/league_screen.dart';
+import 'package:omni_runner/presentation/screens/running_dna_screen.dart';
 import 'package:omni_runner/presentation/screens/wallet_screen.dart';
 import 'package:omni_runner/presentation/screens/wrapped_screen.dart';
 
@@ -60,6 +61,12 @@ class ProgressHubScreen extends StatelessWidget {
             title: 'Minha Retrospectiva',
             subtitle: 'OmniWrapped — seu resumo do período',
             target: _Target.wrapped,
+          ),
+          _Tile(
+            icon: Icons.hexagon_outlined,
+            title: 'Meu DNA de Corredor',
+            subtitle: 'Perfil radar, insights e previsão de PR',
+            target: _Target.dna,
           ),
           _Tile(
             icon: Icons.show_chart_rounded,
@@ -127,7 +134,7 @@ class ProgressHubScreen extends StatelessWidget {
   }
 }
 
-enum _Target { progression, wrapped, evolution, streaks, badges, missions, challenges, championships, league, wallet, leaderboards, feed }
+enum _Target { progression, wrapped, dna, evolution, streaks, badges, missions, challenges, championships, league, wallet, leaderboards, feed }
 
 class _Tile extends StatelessWidget {
   final IconData icon;
@@ -166,6 +173,7 @@ class _Tile extends StatelessWidget {
 
     final uid = sl<UserIdentityProvider>().userId;
     final Widget page = switch (target) {
+      _Target.dna => const RunningDnaScreen(),
       _Target.evolution => const PersonalEvolutionScreen(),
       _Target.progression => BlocProvider<ProgressionBloc>(
           create: (_) => sl<ProgressionBloc>()..add(LoadProgression(uid)),
