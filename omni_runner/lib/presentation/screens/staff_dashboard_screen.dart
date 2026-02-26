@@ -285,10 +285,10 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
     ));
   }
 
-  void _openPortal() {
-    launchUrl(
+  Future<void> _openPortal() async {
+    await launchUrl(
       Uri.parse('https://omnirunner.app'),
-      mode: LaunchMode.externalApplication,
+      mode: LaunchMode.inAppBrowserView,
     );
   }
 

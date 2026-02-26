@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import { signOut } from "@/lib/actions";
 
 export function PlatformSidebar({ email }: { email: string }) {
   const pathname = usePathname();
@@ -67,8 +68,16 @@ export function PlatformSidebar({ email }: { email: string }) {
         </Link>
       </nav>
 
-      <div className="border-t border-gray-200 px-4 py-3">
+      <div className="border-t border-gray-200 px-4 py-3 space-y-2">
         <p className="truncate text-xs text-gray-400">{email}</p>
+        <form action={signOut}>
+          <button
+            type="submit"
+            className="w-full rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 text-left"
+          >
+            Sair
+          </button>
+        </form>
       </div>
     </>
   );
