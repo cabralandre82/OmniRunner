@@ -1,4 +1,7 @@
+"use client";
+
 import { signOut, clearPortalGroup } from "@/lib/actions";
+import { SidebarTrigger } from "@/components/sidebar";
 
 interface HeaderProps {
   groupName: string;
@@ -8,14 +11,17 @@ interface HeaderProps {
 
 export function Header({ groupName, userEmail, multiGroup }: HeaderProps) {
   return (
-    <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-6">
-      <div className="flex items-center gap-3">
-        <h3 className="text-sm font-semibold text-gray-900">{groupName}</h3>
+    <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-6">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <SidebarTrigger />
+        <h3 className="truncate text-sm font-semibold text-gray-900">
+          {groupName}
+        </h3>
         {multiGroup && (
           <form action={clearPortalGroup}>
             <button
               type="submit"
-              className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-200"
+              className="flex-shrink-0 rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-200"
             >
               trocar
             </button>
@@ -23,8 +29,10 @@ export function Header({ groupName, userEmail, multiGroup }: HeaderProps) {
         )}
       </div>
 
-      <div className="flex items-center gap-4">
-        <span className="text-xs text-gray-500">{userEmail}</span>
+      <div className="flex items-center gap-2 sm:gap-4">
+        <span className="hidden text-xs text-gray-500 sm:inline">
+          {userEmail}
+        </span>
         <form action={signOut}>
           <button
             type="submit"

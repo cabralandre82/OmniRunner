@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import Link from "next/link";
+import { PlatformSidebar } from "./platform-sidebar";
 
 export const dynamic = "force-dynamic";
 
@@ -28,39 +28,26 @@ export default async function PlatformLayout({
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      <aside className="flex h-screen w-56 flex-col border-r border-gray-200 bg-white">
-        <div className="border-b border-gray-200 px-4 py-5">
-          <h2 className="text-lg font-bold text-gray-900">Omni Runner</h2>
-          <p className="text-xs text-red-500 font-semibold">Admin Plataforma</p>
-        </div>
+      <PlatformSidebar email={user.email ?? ""} />
 
-        <nav className="flex-1 space-y-1 px-2 py-4">
-          <Link
-            href="/platform/assessorias"
-            className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-          >
-            Assessorias
-          </Link>
-          <Link
-            href="/dashboard"
-            className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600"
-          >
-            ← Portal Staff
-          </Link>
-        </nav>
-
-        <div className="border-t border-gray-200 px-4 py-3">
-          <p className="truncate text-xs text-gray-400">{user.email}</p>
-        </div>
-      </aside>
-
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-6">
-          <h3 className="text-sm font-semibold text-gray-900">
-            Administração da Plataforma
-          </h3>
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+        <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-6">
+          <div className="flex items-center gap-2">
+            <button
+              id="platform-menu-btn"
+              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden"
+              aria-label="Abrir menu"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+            </button>
+            <h3 className="text-sm font-semibold text-gray-900">
+              Administração da Plataforma
+            </h3>
+          </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
       </div>
     </div>
   );

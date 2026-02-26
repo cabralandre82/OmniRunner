@@ -70,7 +70,7 @@ export default async function AssessoriasPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         <StatCard
           label="Pendentes"
           value={pending.length}
@@ -209,11 +209,11 @@ function AssessoriaCard({
   );
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="text-base font-semibold text-gray-900">
+    <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm sm:text-base font-semibold text-gray-900">
               {assessoria.name}
             </h3>
             <span
@@ -225,11 +225,11 @@ function AssessoriaCard({
                 assessoria.approval_status}
             </span>
           </div>
-          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-            {assessoria.city && <span>📍 {assessoria.city}</span>}
-            <span>👤 {assessoria.coach_name}</span>
-            <span>👥 {assessoria.member_count} membros</span>
-            <span>📅 {createdAt}</span>
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
+            {assessoria.city && <span>{assessoria.city}</span>}
+            <span>{assessoria.coach_name}</span>
+            <span>{assessoria.member_count} membros</span>
+            <span>{createdAt}</span>
           </div>
           {assessoria.approval_reject_reason && (
             <p className="mt-2 text-xs text-red-600">
@@ -238,7 +238,7 @@ function AssessoriaCard({
           )}
         </div>
 
-        <div className="ml-4 flex shrink-0 gap-2">
+        <div className="flex shrink-0 flex-wrap gap-2">
           {showActions && (
             <>
               <AssessoriaActions
