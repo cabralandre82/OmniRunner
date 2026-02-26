@@ -68,6 +68,14 @@ class NotificationRulesService {
     });
   }
 
+  /// Notify an athlete their streak is about to expire (no run today yet).
+  void notifyStreakAtRisk({required String userId, required int currentStreak}) {
+    _invoke('streak_at_risk', {
+      'user_id': userId,
+      'current_streak': currentStreak,
+    });
+  }
+
   /// Evaluate all notification rules (streak_at_risk, etc.).
   /// Typically called by a server-side cron, but available for manual trigger.
   void evaluateAll() {

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_participant_entity.dart';
@@ -49,11 +50,54 @@ class ChallengeDetailsScreen extends StatelessWidget {
   }
 }
 
-class _Body extends StatelessWidget {
+class _Body extends StatefulWidget {
   final ChallengeEntity challenge;
   final ChallengeResultEntity? result;
 
   const _Body({required this.challenge, this.result});
+
+  @override
+  State<_Body> createState() => _BodyState();
+}
+
+class _BodyState extends State<_Body> {
+  bool _settlementTriggered = false;
+
+  ChallengeEntity get challenge => widget.challenge;
+  ChallengeResultEntity? get result => widget.result;
+
+  @override
+  void initState() {
+    super.initState();
+    _tryAutoSettle();
+  }
+
+  void _tryAutoSettle() {
+    if (_settlementTriggered) return;
+    if (challenge.status != ChallengeStatus.active) return;
+    if (challenge.endsAtMs == null) return;
+    if (result != null) return;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now <= challenge.endsAtMs!) return;
+
+    _settlementTriggered = true;
+    AppLogger.info(
+      'Challenge ${challenge.id} window expired, triggering settlement',
+      tag: 'ChallengeDetails',
+    );
+    Supabase.instance.client.functions
+        .invoke('settle-challenge', body: {'challenge_id': challenge.id})
+        .then((_) {
+      if (!mounted) return;
+      final uid = sl<UserIdentityProvider>().userId;
+      context.read<ChallengesBloc>().add(ViewChallengeDetails(challenge.id));
+      context.read<ChallengesBloc>().add(LoadChallenges(uid));
+    })
+        .catchError((e) {
+      AppLogger.warn('Auto-settle failed: $e', tag: 'ChallengeDetails');
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +110,11 @@ class _Body extends StatelessWidget {
     final isCreator = challenge.creatorUserId == uid;
     final isPending = challenge.status == ChallengeStatus.pending;
     final isInvited = myParticipant?.status == ParticipantStatus.invited;
+
+    final windowExpired = challenge.status == ChallengeStatus.active &&
+        challenge.endsAtMs != null &&
+        DateTime.now().millisecondsSinceEpoch > challenge.endsAtMs! &&
+        result == null;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -151,12 +200,71 @@ class _Body extends StatelessWidget {
         _RulesCard(challenge: challenge),
         const SizedBox(height: 12),
 
+        // ── Group live progress ─────────────────────────────────────
+        if (challenge.type == ChallengeType.group &&
+            challenge.status == ChallengeStatus.active &&
+            challenge.rules.target != null &&
+            challenge.rules.target! > 0) ...[
+          _GroupLiveProgressCard(challenge: challenge),
+          const SizedBox(height: 12),
+        ],
+
         // ── Participants ─────────────────────────────────────────────
         _ParticipantsCard(
           challenge: challenge,
           currentUserId: uid,
         ),
         const SizedBox(height: 12),
+
+        // ── Settling indicator ─────────────────────────────────────────
+        if (windowExpired) ...[
+          Card(
+            elevation: 0,
+            color: Colors.orange.shade50,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(color: Colors.orange.shade200),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.orange.shade700,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Calculando resultado...',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange.shade800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'O período do desafio terminou. O resultado será exibido em instantes.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.orange.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
 
         // ── Results ──────────────────────────────────────────────────
         if (result != null) ...[
@@ -1038,6 +1146,147 @@ class _ResultsCard extends StatelessWidget {
 // ═════════════════════════════════════════════════════════════════════════════
 // Clearing info (async lookup for cross-assessoria challenges)
 // ═════════════════════════════════════════════════════════════════════════════
+
+class _GroupLiveProgressCard extends StatelessWidget {
+  final ChallengeEntity challenge;
+  const _GroupLiveProgressCard({required this.challenge});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final target = challenge.rules.target!;
+    final metric = challenge.rules.metric;
+    final lowerIsBetter = metric == ChallengeMetric.pace;
+
+    final accepted = challenge.participants
+        .where((p) => p.status == ParticipantStatus.accepted)
+        .toList();
+
+    final double collective;
+    if (lowerIsBetter) {
+      final runners = accepted.where((p) => p.progressValue > 0).toList();
+      collective = runners.isEmpty
+          ? 0
+          : runners.map((p) => p.progressValue).reduce((a, b) => a + b) /
+              runners.length;
+    } else {
+      collective =
+          accepted.map((p) => p.progressValue).fold(0.0, (a, b) => a + b);
+    }
+
+    final double fraction;
+    if (lowerIsBetter) {
+      fraction = collective <= 0
+          ? 0.0
+          : (target / collective).clamp(0.0, 1.0);
+    } else {
+      fraction = (collective / target).clamp(0.0, 1.0);
+    }
+
+    final metTarget = lowerIsBetter
+        ? (collective > 0 && collective <= target)
+        : (collective >= target);
+    final progressColor = metTarget ? Colors.green : cs.primary;
+    final pct = (fraction * 100).toStringAsFixed(0);
+
+    String formatVal(double v) => switch (metric) {
+          ChallengeMetric.distance => '${(v / 1000).toStringAsFixed(1)} km',
+          ChallengeMetric.pace => '${(v / 60).toStringAsFixed(1)} min/km',
+          ChallengeMetric.time => '${(v / 60000).toStringAsFixed(0)} min',
+        };
+
+    return Card(
+      elevation: 0,
+      color: cs.primaryContainer.withValues(alpha: 0.3),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.groups_rounded, size: 20, color: cs.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Progresso do Grupo',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '$pct%',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: progressColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: fraction,
+                minHeight: 12,
+                backgroundColor: cs.surfaceContainerHighest,
+                color: progressColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  lowerIsBetter
+                      ? 'Média: ${formatVal(collective)}'
+                      : 'Total: ${formatVal(collective)}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  'Meta: ${formatVal(target)}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.outline,
+                  ),
+                ),
+              ],
+            ),
+            if (metTarget) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.green.withAlpha(20),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_circle,
+                        size: 15, color: Colors.green.shade700),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Meta atingida!',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _ClearingInfo extends StatefulWidget {
   final String challengeId;

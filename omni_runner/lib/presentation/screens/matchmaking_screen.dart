@@ -2,12 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
 import 'package:omni_runner/domain/entities/workout_status.dart';
+import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
 import 'package:omni_runner/domain/repositories/i_session_repo.dart';
+import 'package:omni_runner/presentation/screens/challenge_create_screen.dart';
 import 'package:omni_runner/features/parks/data/park_detection_service.dart';
 import 'package:omni_runner/features/parks/data/parks_seed.dart';
 import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
@@ -59,6 +63,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
   bool _stravaConnected = true;
   String? _preferredParkId;
   String? _preferredParkName;
+  List<Map<String, dynamic>> _assessoriaMembers = const [];
 
   @override
   void initState() {
@@ -69,6 +74,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
     )..repeat(reverse: true);
     _checkStrava();
     _detectPreferredPark();
+    _loadAssessoriaMembers();
   }
 
   Future<void> _checkStrava() async {
@@ -78,6 +84,38 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
         setState(() => _stravaConnected = state is StravaConnected);
       }
     } on Exception catch (_) {}
+  }
+
+  Future<void> _loadAssessoriaMembers() async {
+    try {
+      final uid = sl<UserIdentityProvider>().userId;
+      final memberships = await sl<ICoachingMemberRepo>().getByUserId(uid);
+      final myMembership =
+          memberships.where((m) => m.isAtleta).firstOrNull;
+      if (myMembership == null) return;
+
+      final rows = await Supabase.instance.client
+          .from('coaching_members')
+          .select('user_id, profiles(display_name)')
+          .eq('group_id', myMembership.groupId)
+          .eq('role', 'atleta')
+          .neq('user_id', uid)
+          .limit(10);
+
+      if (mounted && (rows as List).isNotEmpty) {
+        setState(() {
+          _assessoriaMembers = rows
+              .map((r) => <String, dynamic>{
+                    'user_id': r['user_id'] as String,
+                    'display_name':
+                        ((r['profiles'] as Map?)?['display_name']
+                                as String?) ??
+                            'Atleta',
+                  })
+              .toList();
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _detectPreferredPark() async {
@@ -607,6 +645,62 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
                   ?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
+
+          if (_assessoriaMembers.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 12),
+            Text(
+              'Desafiar colegas da assessoria',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Crie um desafio direto com alguém da sua assessoria',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ..._assessoriaMembers.take(5).map((m) => ListTile(
+                  dense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                  leading: CircleAvatar(
+                    radius: 18,
+                    backgroundColor: cs.primaryContainer,
+                    child: Text(
+                      (m['display_name'] as String).isNotEmpty
+                          ? (m['display_name'] as String)[0].toUpperCase()
+                          : '?',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: cs.primary,
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    m['display_name'] as String,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  trailing: TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute<void>(
+                          builder: (_) => ChallengeCreateScreen(
+                            initialType: ChallengeType.oneVsOne,
+                            initialMetric: _metric,
+                            initialWindowMin: _windowMin,
+                            initialFee: int.tryParse(_feeCtrl.text),
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text('Desafiar'),
+                  ),
+                )),
+          ],
         ],
       ),
     );

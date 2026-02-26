@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/athlete_verification_entity.dart';
+import 'package:omni_runner/domain/entities/workout_session_entity.dart';
+import 'package:omni_runner/domain/entities/workout_status.dart';
+import 'package:omni_runner/domain/repositories/i_session_repo.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_bloc.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_event.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_state.dart';
@@ -47,6 +51,23 @@ class _Body extends StatefulWidget {
 
 class _BodyState extends State<_Body> {
   DateTime? _lastEvalTap;
+  List<WorkoutSessionEntity> _recentSessions = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSessions();
+  }
+
+  Future<void> _loadSessions() async {
+    try {
+      final sessions =
+          await sl<ISessionRepo>().getByStatus(WorkoutStatus.completed);
+      if (mounted) {
+        setState(() => _recentSessions = sessions.take(10).toList());
+      }
+    } catch (_) {}
+  }
 
   bool get _inCooldown {
     if (_lastEvalTap == null) return false;
@@ -84,7 +105,13 @@ class _BodyState extends State<_Body> {
 
           // ── Stats ────────────────────────────────────────────────────
           _StatsCard(v: v),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+          // ── Recent sessions ───────────────────────────────────────────
+          if (_recentSessions.isNotEmpty) ...[
+            _RecentSessionsCard(sessions: _recentSessions),
+            const SizedBox(height: 16),
+          ],
 
           // ── Re-evaluate button ───────────────────────────────────────
           FilledButton.icon(
@@ -504,6 +531,106 @@ class _StatTile extends StatelessWidget {
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.outline)),
       ],
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Recent sessions card
+// ═════════════════════════════════════════════════════════════════════════════
+
+class _RecentSessionsCard extends StatelessWidget {
+  final List<WorkoutSessionEntity> sessions;
+  const _RecentSessionsCard({required this.sessions});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.history, size: 20, color: cs.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Corridas recentes',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...sessions.map((s) {
+              final date =
+                  DateTime.fromMillisecondsSinceEpoch(s.startTimeMs);
+              final distKm = (s.totalDistanceM ?? 0) / 1000;
+              final elapsed =
+                  (s.endTimeMs ?? s.startTimeMs) - s.startTimeMs;
+              final paceSecPerKm =
+                  distKm > 0 ? elapsed / 1000 / distKm : 0.0;
+              final paceMin = paceSecPerKm ~/ 60;
+              final paceSec = (paceSecPerKm % 60).round();
+              final durMin = elapsed ~/ 60000;
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 44,
+                      child: Text(
+                        '${date.day}/${date.month}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.outline,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        '${distKm.toStringAsFixed(2)} km',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '$paceMin:${paceSec.toString().padLeft(2, '0')} /km',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '${durMin}min',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.outline,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      s.source == 'strava'
+                          ? Icons.watch
+                          : Icons.phone_android,
+                      size: 14,
+                      color: cs.outline,
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
     );
   }
 }

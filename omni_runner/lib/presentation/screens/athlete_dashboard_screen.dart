@@ -27,6 +27,8 @@ import 'package:omni_runner/presentation/screens/wallet_screen.dart';
 import 'package:omni_runner/presentation/widgets/assessoria_required_sheet.dart';
 import 'package:omni_runner/presentation/widgets/login_required_sheet.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
+import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
+import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
 
 /// Athlete home dashboard — 6 cards providing quick access to the main features.
 ///
@@ -50,11 +52,20 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
   String? _assessoriaGroupId;
   String? _pendingRequestGroupName;
   bool _loading = true;
+  bool _stravaConnected = true;
 
   @override
   void initState() {
     super.initState();
     _loadAssessoriaStatus();
+    _checkStrava();
+  }
+
+  Future<void> _checkStrava() async {
+    try {
+      final state = await sl<StravaConnectController>().getState();
+      if (mounted) setState(() => _stravaConnected = state is StravaConnected);
+    } catch (_) {}
   }
 
   Future<void> _loadAssessoriaStatus() async {
@@ -334,6 +345,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen> {
                     subtitle: 'XP, badges e missões',
                     bgColor: cs.tertiaryContainer,
                     iconColor: cs.onTertiaryContainer,
+                    badge: _stravaConnected ? null : 'Conecte Strava',
                     onTap: _openProgress,
                   ),
                   _DashCard(
@@ -393,6 +405,7 @@ class _DashCard extends StatelessWidget {
   final Color bgColor;
   final Color iconColor;
   final bool isEmpty;
+  final String? badge;
   final VoidCallback onTap;
 
   const _DashCard({
@@ -402,6 +415,7 @@ class _DashCard extends StatelessWidget {
     required this.bgColor,
     required this.iconColor,
     this.isEmpty = false,
+    this.badge,
     required this.onTap,
   });
 
@@ -421,14 +435,42 @@ class _DashCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, size: 26, color: iconColor),
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: iconColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(icon, size: 26, color: iconColor),
+                  ),
+                  if (badge != null) ...[
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          badge!,
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.orange.shade800,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               const Spacer(),
               Text(

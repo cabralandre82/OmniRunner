@@ -984,9 +984,16 @@ class _CtaBar extends StatelessWidget {
               icon: const Icon(Icons.replay_rounded, size: 18),
               label: const Text('Desafiar novamente'),
               onPressed: () {
+                final windowMin = challenge.rules.windowMs ~/ 60000;
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute<void>(
-                    builder: (_) => const ChallengeCreateScreen(),
+                    builder: (_) => ChallengeCreateScreen(
+                      initialType: challenge.type,
+                      initialMetric: challenge.rules.metric,
+                      initialWindowMin: windowMin,
+                      initialFee: challenge.rules.entryFeeCoins,
+                      initialTarget: challenge.rules.target,
+                    ),
                   ),
                 );
               },

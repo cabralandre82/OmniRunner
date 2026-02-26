@@ -1339,3 +1339,62 @@ Identificou 7 correcoes (2 alta, 3 media, 2 baixa) + 1 item para backlog (TODO).
 schema de banco ou Edge Functions.
 
 ---
+
+## DECISAO 064 — UX inteligente: 9 melhorias de fluxo
+
+**Data:** 2026-02-26
+**Contexto:** Revisao de oportunidades de melhoria em todos os fluxos, priorizando impacto
+vs esforco. Foco em experiencia do usuario, reducao de fricao e aumento de engagement.
+
+### Melhorias implementadas
+
+1. **Card de desafio ativo na TodayScreen:** Mostra desafios ativos do usuario com tempo
+   restante e link direto para detalhes. Torna o desafio visivel no fluxo principal.
+
+2. **Rematch pre-preenchido no ChallengeResultScreen:** "Desafiar novamente" agora preenche
+   tipo, metrica, duracao, fee e target do desafio anterior. Reduz fricao de re-criacao.
+
+3. **Badge "Conecte Strava" no dashboard:** Card "Meu progresso" exibe badge laranja
+   "Conecte Strava" se Strava nao estiver conectado. Aumenta conversao de conexao.
+
+4. **Settlement client-triggered na ChallengeDetailsScreen:** Quando o usuario abre um desafio
+   cujo periodo expirou, o app automaticamente chama `settle-challenge` e exibe
+   "Calculando resultado..." enquanto aguarda. Elimina espera por cron.
+
+5. **Sugestao de oponentes da assessoria no Matchmaking:** Secao "Desafiar colegas da assessoria"
+   exibe membros da assessoria do usuario com botao "Desafiar" que abre ChallengeCreateScreen
+   pre-preenchido. Combina matchmaking automatico com desafio direto.
+
+6. **Push de streak em risco:** Quando o usuario abre a TodayScreen apos 18h sem ter corrido,
+   e tem streak >= 3 dias, dispara regra `streak_at_risk` via `notify-rules` EF.
+   Incentiva o usuario a manter a sequencia.
+
+7. **Lista de sessoes na AthleteVerificationScreen:** Exibe as 10 corridas recentes com
+   data, distancia, pace e duracao. Contextualiza o progresso de verificacao.
+
+8. **Barra coletiva ao vivo na ChallengeDetailsScreen:** Para desafios de grupo ativos com
+   meta, exibe card "Progresso do Grupo" com barra de progresso, total/media vs meta,
+   e porcentagem. Cooperacao visivel durante o desafio.
+
+9. **Card de campeonato ativo na TodayScreen:** Mostra campeonatos ativos em que o usuario
+   esta inscrito com link para a tela de campeonatos.
+
+**ChallengeCreateScreen refatorada:** Agora aceita parametros opcionais `initialType`,
+`initialMetric`, `initialWindowMin`, `initialFee`, `initialTarget` para pre-preencher
+o formulario (usado por rematch e sugestao de oponentes).
+
+**Arquivos modificados (9):**
+- `omni_runner/lib/presentation/screens/challenge_details_screen.dart` (auto-settle + grupo progress)
+- `omni_runner/lib/presentation/screens/challenge_result_screen.dart` (rematch pre-preenchido)
+- `omni_runner/lib/presentation/screens/challenge_create_screen.dart` (parametros iniciais)
+- `omni_runner/lib/presentation/screens/athlete_dashboard_screen.dart` (badge Strava)
+- `omni_runner/lib/presentation/screens/today_screen.dart` (desafios + campeonatos + streak)
+- `omni_runner/lib/presentation/screens/athlete_verification_screen.dart` (sessoes recentes)
+- `omni_runner/lib/presentation/screens/matchmaking_screen.dart` (oponentes da assessoria)
+- `omni_runner/lib/core/push/notification_rules_service.dart` (streak_at_risk rule)
+- `docs/DECISIONS_LOG.md` (esta decisao)
+
+**Risco:** Baixo-Medio. Settlement client-triggered depende da EF `settle-challenge` ja existente
+(idempotente). Demais mudancas sao de UI/UX sem alteracao de logica de negocio.
+
+---

@@ -65,17 +65,23 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
+import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/profile_progress_entity.dart';
 import 'package:omni_runner/domain/entities/workout_session_entity.dart';
 import 'package:omni_runner/domain/entities/workout_status.dart';
+import 'package:omni_runner/domain/repositories/i_challenge_repo.dart';
 import 'package:omni_runner/domain/repositories/i_profile_progress_repo.dart';
 import 'package:omni_runner/domain/repositories/i_session_repo.dart';
 import 'package:omni_runner/features/parks/data/park_detection_service.dart';
 import 'package:omni_runner/features/parks/data/parks_seed.dart';
 import 'package:omni_runner/features/parks/domain/park_entity.dart';
 import 'package:omni_runner/features/parks/presentation/park_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/push/notification_rules_service.dart';
+import 'package:omni_runner/presentation/screens/athlete_championships_screen.dart';
 import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
+import 'package:omni_runner/presentation/screens/challenge_details_screen.dart';
 import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/widgets/run_share_card.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
@@ -94,6 +100,8 @@ class _TodayScreenState extends State<TodayScreen> {
   bool _stravaConnected = false;
   bool _loading = true;
   ParkEntity? _detectedPark;
+  List<ChallengeEntity> _activeChallenges = const [];
+  List<Map<String, dynamic>> _activeChampionships = const [];
 
   @override
   void initState() {
@@ -109,6 +117,34 @@ class _TodayScreenState extends State<TodayScreen> {
           await sl<ISessionRepo>().getByStatus(WorkoutStatus.completed);
 
       final stravaState = await sl<StravaConnectController>().getState();
+
+      List<ChallengeEntity> active = const [];
+      try {
+        final all = await sl<IChallengeRepo>().getByUserId(uid);
+        active = all
+            .where((c) => c.status == ChallengeStatus.active)
+            .toList();
+      } catch (_) {}
+
+      List<Map<String, dynamic>> champs = const [];
+      try {
+        final db = Supabase.instance.client;
+        final parts = await db
+            .from('championship_participants')
+            .select('championship_id')
+            .eq('user_id', uid);
+        if ((parts as List).isNotEmpty) {
+          final ids = parts
+              .map((r) => r['championship_id'] as String)
+              .toList();
+          final rows = await db
+              .from('championships')
+              .select('id, name, status')
+              .inFilter('id', ids)
+              .eq('status', 'active');
+          champs = List<Map<String, dynamic>>.from(rows as List);
+        }
+      } catch (_) {}
 
       // Detect park from last run's GPS data
       ParkEntity? park;
@@ -126,10 +162,38 @@ class _TodayScreenState extends State<TodayScreen> {
         _previousRun = completed.length > 1 ? completed[1] : null;
         _stravaConnected = stravaState is StravaConnected;
         _detectedPark = park;
+        _activeChallenges = active;
+        _activeChampionships = champs;
         _loading = false;
       });
+
+      _checkStreakAtRisk(uid, profile, lastRun);
     } on Exception catch (_) {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _checkStreakAtRisk(
+    String uid,
+    ProfileProgressEntity? profile,
+    WorkoutSessionEntity? lastRun,
+  ) {
+    if (profile == null || profile.dailyStreakCount < 3) return;
+    final now = DateTime.now();
+    if (lastRun != null) {
+      final runDate =
+          DateTime.fromMillisecondsSinceEpoch(lastRun.startTimeMs);
+      if (runDate.year == now.year &&
+          runDate.month == now.month &&
+          runDate.day == now.day) {
+        return;
+      }
+    }
+    if (now.hour >= 18) {
+      sl<NotificationRulesService>().notifyStreakAtRisk(
+        userId: uid,
+        currentStreak: profile.dailyStreakCount,
+      );
     }
   }
 
@@ -171,6 +235,35 @@ class _TodayScreenState extends State<TodayScreen> {
                   // Streak banner
                   if (_profile != null) _StreakBanner(profile: _profile!),
                   const SizedBox(height: 14),
+
+                  // Active challenges
+                  if (_activeChallenges.isNotEmpty) ...[
+                    _ActiveChallengesCard(
+                      challenges: _activeChallenges,
+                      onTap: (c) {
+                        Navigator.of(context).push(MaterialPageRoute<void>(
+                          builder: (_) => ChallengeDetailsScreen(
+                            challengeId: c.id,
+                          ),
+                        ));
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+
+                  // Active championships
+                  if (_activeChampionships.isNotEmpty) ...[
+                    _ActiveChampionshipsCard(
+                      championships: _activeChampionships,
+                      onTap: () {
+                        Navigator.of(context).push(MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const AthleteChampionshipsScreen(),
+                        ));
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                  ],
 
                   // Strava CTA or "bora correr"
                   _BoraCorrerCard(
@@ -1088,6 +1181,251 @@ class _ParkCheckinCard extends StatelessWidget {
                 ),
               ),
               Icon(Icons.chevron_right, color: Colors.green.shade700),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Active Challenges Card
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _ActiveChallengesCard extends StatelessWidget {
+  final List<ChallengeEntity> challenges;
+  final ValueChanged<ChallengeEntity> onTap;
+
+  const _ActiveChallengesCard({
+    required this.challenges,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: cs.primaryContainer.withValues(alpha: 0.35),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.sports_kabaddi_rounded,
+                    size: 20, color: cs.primary),
+                const SizedBox(width: 8),
+                Text(
+                  challenges.length == 1
+                      ? 'Desafio ativo'
+                      : '${challenges.length} desafios ativos',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ...challenges.take(3).map((c) => _ActiveChallengeRow(
+                  challenge: c,
+                  onTap: () => onTap(c),
+                  theme: theme,
+                )),
+            if (challenges.length > 3)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '+${challenges.length - 3} mais',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActiveChallengeRow extends StatelessWidget {
+  final ChallengeEntity challenge;
+  final VoidCallback onTap;
+  final ThemeData theme;
+
+  const _ActiveChallengeRow({
+    required this.challenge,
+    required this.onTap,
+    required this.theme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = theme.colorScheme;
+    final title = challenge.title ?? _challengeDefaultTitle(challenge);
+    final remaining = _timeRemaining(challenge);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        margin: const EdgeInsets.only(bottom: 4),
+        decoration: BoxDecoration(
+          color: cs.surface.withValues(alpha: 0.8),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              _iconForType(challenge.type),
+              size: 18,
+              color: cs.primary,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (remaining != null)
+                    Text(
+                      remaining,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                        fontSize: 11,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (challenge.rules.entryFeeCoins > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '${challenge.rules.entryFeeCoins} OC',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.amber.shade800,
+                  ),
+                ),
+              ),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right, size: 18, color: cs.outline),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static String? _timeRemaining(ChallengeEntity c) {
+    if (c.endsAtMs == null) return null;
+    final diff = c.endsAtMs! - DateTime.now().millisecondsSinceEpoch;
+    if (diff <= 0) return 'Encerrado';
+    final hours = diff ~/ 3600000;
+    final minutes = (diff % 3600000) ~/ 60000;
+    if (hours > 0) return 'Faltam ${hours}h${minutes > 0 ? ' ${minutes}min' : ''}';
+    return 'Faltam ${minutes}min';
+  }
+
+  static IconData _iconForType(ChallengeType t) => switch (t) {
+        ChallengeType.oneVsOne => Icons.person,
+        ChallengeType.group => Icons.groups,
+        ChallengeType.teamVsTeam => Icons.shield,
+      };
+}
+
+String _challengeDefaultTitle(ChallengeEntity c) => switch (c.type) {
+      ChallengeType.oneVsOne => 'Desafio 1v1',
+      ChallengeType.teamVsTeam => 'Desafio de Equipe',
+      ChallengeType.group => 'Desafio em Grupo',
+    };
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Active Championships Card
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _ActiveChampionshipsCard extends StatelessWidget {
+  final List<Map<String, dynamic>> championships;
+  final VoidCallback onTap;
+
+  const _ActiveChampionshipsCard({
+    required this.championships,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: Colors.orange.shade50,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade200,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.emoji_events_rounded,
+                    color: Colors.orange.shade800, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      championships.length == 1
+                          ? 'Campeonato ativo'
+                          : '${championships.length} campeonatos ativos',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange.shade800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      championships
+                          .take(2)
+                          .map((c) => c['name'] as String? ?? 'Campeonato')
+                          .join(', '),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.orange.shade700,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.orange.shade700),
             ],
           ),
         ),

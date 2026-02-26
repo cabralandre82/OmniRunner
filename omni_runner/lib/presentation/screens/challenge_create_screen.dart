@@ -17,7 +17,20 @@ import 'package:omni_runner/presentation/screens/matchmaking_screen.dart';
 import 'package:omni_runner/presentation/widgets/verification_gate.dart';
 
 class ChallengeCreateScreen extends StatefulWidget {
-  const ChallengeCreateScreen({super.key});
+  final ChallengeType? initialType;
+  final ChallengeMetric? initialMetric;
+  final int? initialWindowMin;
+  final int? initialFee;
+  final double? initialTarget;
+
+  const ChallengeCreateScreen({
+    super.key,
+    this.initialType,
+    this.initialMetric,
+    this.initialWindowMin,
+    this.initialFee,
+    this.initialTarget,
+  });
 
   @override
   State<ChallengeCreateScreen> createState() => _ChallengeCreateScreenState();
@@ -26,8 +39,8 @@ class ChallengeCreateScreen extends StatefulWidget {
 class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleCtrl = TextEditingController();
-  final _targetCtrl = TextEditingController();
-  final _feeCtrl = TextEditingController(text: '0');
+  late final TextEditingController _targetCtrl;
+  late final TextEditingController _feeCtrl;
 
   final _verificationBloc = VerificationBloc()
     ..add(const LoadVerificationState());
@@ -35,18 +48,34 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
   /// 0 = Agora, 1 = Agendado
   int _mode = 0;
 
-  ChallengeType _type = ChallengeType.oneVsOne;
-  ChallengeMetric _metric = ChallengeMetric.distance;
+  late ChallengeType _type;
+  late ChallengeMetric _metric;
   bool _created = false;
 
   /// For "Agora" mode: window in minutes after accept
-  int _quickWindowMin = 180;
+  late int _quickWindowMin;
 
   /// For group challenges: acceptance window in minutes
   int _acceptWindowMin = 10;
 
   /// Max participants for group challenges
   int _maxParticipants = 10;
+
+  @override
+  void initState() {
+    super.initState();
+    _type = widget.initialType ?? ChallengeType.oneVsOne;
+    _metric = widget.initialMetric ?? ChallengeMetric.distance;
+    _quickWindowMin = widget.initialWindowMin ?? 180;
+    _feeCtrl = TextEditingController(
+      text: '${widget.initialFee ?? 0}',
+    );
+    _targetCtrl = TextEditingController(
+      text: widget.initialTarget != null && widget.initialTarget! > 0
+          ? '${widget.initialTarget}'
+          : '',
+    );
+  }
 
   /// For "Agendado" mode
   DateTime? _scheduledDate;
