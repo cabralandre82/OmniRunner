@@ -3,7 +3,12 @@ import { updateSession } from "@/lib/supabase/middleware";
 
 const PUBLIC_ROUTES = new Set(["/login", "/no-access", "/api/auth/callback"]);
 
-const PUBLIC_PREFIXES = ["/challenge/", "/invite/"];
+const PUBLIC_PREFIXES = [
+  "/challenge/",
+  "/invite/",
+  "/platform/",
+  "/api/platform/",
+];
 
 const ADMIN_ONLY_ROUTES = [
   "/credits/history",
@@ -22,7 +27,8 @@ export async function middleware(request: NextRequest) {
     PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 
   if (isPublic) {
-    return NextResponse.next();
+    const { supabaseResponse } = await updateSession(request);
+    return supabaseResponse;
   }
 
   // Step 1: verify session
@@ -47,21 +53,6 @@ export async function middleware(request: NextRequest) {
       .in("role", ["admin_master", "professor", "assistente"]);
 
     if (!memberships || memberships.length === 0) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("platform_role")
-        .eq("id", user.id)
-        .single();
-
-      if (profile?.platform_role === "admin") {
-        if (!pathname.startsWith("/platform")) {
-          const url = request.nextUrl.clone();
-          url.pathname = "/platform/assessorias";
-          return NextResponse.redirect(url);
-        }
-        return supabaseResponse;
-      }
-
       const url = request.nextUrl.clone();
       url.pathname = "/no-access";
       return NextResponse.redirect(url);
@@ -83,7 +74,6 @@ export async function middleware(request: NextRequest) {
         maxAge: 60 * 60 * 8,
       });
     } else {
-      // Multi-group — redirect to selector if not already there
       if (pathname !== "/select-group") {
         const url = request.nextUrl.clone();
         url.pathname = "/select-group";
@@ -91,22 +81,6 @@ export async function middleware(request: NextRequest) {
       }
       return supabaseResponse;
     }
-  }
-
-  // Platform admin routes — allow if platform_role = admin
-  if (pathname.startsWith("/platform")) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("platform_role")
-      .eq("id", user.id)
-      .single();
-
-    if (profile?.platform_role !== "admin") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/no-access";
-      return NextResponse.redirect(url);
-    }
-    return supabaseResponse;
   }
 
   // Step 3: role-based route protection

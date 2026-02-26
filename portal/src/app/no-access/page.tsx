@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function NoAccessPage() {
   const supabase = createClient();
   const {

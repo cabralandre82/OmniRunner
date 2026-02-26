@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { AssessoriaActions } from "./actions";
 
+export const dynamic = "force-dynamic";
+
 interface Assessoria {
   id: string;
   name: string;
