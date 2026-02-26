@@ -27832,7 +27832,9 @@ automaticamente um oponente compatível. Zero browsing.
 - `/platform/layout.tsx` — layout isolado com verificação `platform_role = 'admin'`
 - `actions.tsx` — componente client com `window.prompt` para motivo + `window.confirm` + fetch POST
 - `POST /api/platform/assessorias` — route handler que valida platform admin e executa UPDATE via admin client (service_role)
-- `middleware.ts` — atualizado para: (1) permitir acesso sem membership de staff se `platform_role = 'admin'`, (2) proteger rotas `/platform/*` contra non-admins
+- `middleware.ts` — rotas `/platform/*` e `/api/platform/*` em PUBLIC_PREFIXES (bypass middleware).
+  Auth delegada ao `platform/layout.tsx` (server component Node.js). Edge Runtime do middleware
+  nao consegue fazer queries Supabase confiavelmente, entao auth de platform admin roda no layout.
 - `sidebar.tsx` — link "Admin Plataforma" visível apenas para platform admin via prop `isPlatformAdmin`
 - `(portal)/layout.tsx`, `select-group/page.tsx`, `no-access/page.tsx` — redirect para `/platform/assessorias` se platform admin sem grupo
 
@@ -27842,3 +27844,8 @@ automaticamente um oponente compatível. Zero browsing.
 
 **Migration:** `20260226110000_platform_approval_assessorias.sql`
 - Assessorias existentes foram marcadas como `approved` na migration (backward compatible)
+
+**Deploy Vercel:**
+- Root Directory do projeto Vercel deve ser `portal` (monorepo com `omni_runner/` e `portal/`)
+- Sem essa config, builds falham silenciosamente (0ms, status Error)
+- `SUPABASE_SERVICE_ROLE_KEY` necessario nas env vars do Vercel (usado pelo admin client em `/api/platform/assessorias`)

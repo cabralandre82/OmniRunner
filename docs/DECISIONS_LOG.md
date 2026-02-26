@@ -1191,8 +1191,12 @@ e so se torna visivel/operacional apos aprovacao do administrador da plataforma.
 **Portal (Next.js):**
 - Nova rota `/platform/assessorias` com layout dedicado para platform admin
 - API route `POST /api/platform/assessorias` para approve/reject/suspend
-- `middleware.ts` atualizado para permitir acesso de platform admin sem membership de staff
+- `middleware.ts`: rotas `/platform/*` e `/api/platform/*` adicionadas a PUBLIC_PREFIXES
+  (auth delegada ao `platform/layout.tsx` server component, evitando limitacoes do Edge Runtime)
+- `platform/layout.tsx`: verifica `platform_role = 'admin'` com `force-dynamic`
+- `no-access/page.tsx`: redireciona platform admins para `/platform/assessorias` com `force-dynamic`
 - Sidebar do portal mostra link "Admin Plataforma" para quem tem `platform_role = 'admin'`
+- **Deploy:** Vercel Root Directory configurado como `portal` (monorepo)
 
 **Flutter:**
 - `StaffDashboardScreen`: exibe tela de "Aguardando aprovacao" / "Nao aprovada" / "Suspensa"

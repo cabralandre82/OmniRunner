@@ -473,7 +473,7 @@ O modelo de receita é **B2B SaaS** (plataforma → assessoria). O app **nunca p
 | Keystore | `omnirunner-release.keystore` |
 | APK atual | `v1.0.13` (127 MB) |
 | Supabase | 42 Edge Functions + 11 migrations |
-| Portal | `portal/` (Next.js 14, não deployado ainda) |
+| Portal | `portal/` (Next.js 14, Vercel, Root Directory: `portal`) |
 | CI/CD | Manual (flutter build apk) |
 | Min Android SDK | 21 (Android 5.0) |
 | Target SDK | 36 |

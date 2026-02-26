@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const PUBLIC_ROUTES = new Set(["/login", "/no-access", "/api/auth/callback", "/api/debug-auth"]);
+const PUBLIC_ROUTES = new Set(["/login", "/no-access", "/api/auth/callback"]);
 
 const PUBLIC_PREFIXES = [
   "/challenge/",
