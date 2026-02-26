@@ -1250,9 +1250,12 @@ e em 1v1 o perdedor sempre ganhava 25 coins de participacao mesmo com entry fee.
 - Ninguem correu: ambos DNF, **refund do stake** para cada um
 - Empate: cada um recebe stake de volta (refund)
 
-**Grupo:**
-- Quem nao correu = DNF, 0 coins, sem ranking
-- Quem correu = ranking normal + 30 coins se atingiu meta
+**Grupo (cooperativo — mesma logica de team vs team):**
+- O grupo ganha ou perde junto como unidade
+- Progresso coletivo: soma (distancia/tempo) ou media (pace) dos runners
+- Meta atingida: TODOS recebem reward igualmente (30 coins se free, pool/N se fee)
+  incluindo quem nao correu
+- Meta nao atingida: todos recebem 0 (participaram mas falharam)
 - Ninguem correu (com fee): todos DNF, refund do fee
 
 **Team vs Team:**

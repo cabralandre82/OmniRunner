@@ -221,6 +221,15 @@ final class ChallengeEvaluator {
     ];
   }
 
+  /// Group evaluation — cooperative.
+  ///
+  /// The group wins or loses as a unit (same logic as team vs team).
+  /// Collective progress = sum of all runners (distance/time) or
+  /// average (pace). If the group meets the target, ALL members
+  /// share the reward equally — runners and non-runners alike.
+  /// If nobody ran → everyone DNF, refund stakes.
+  ///
+  /// Pool = entry_fee_coins * total_accepted_participants.
   List<ParticipantResult> _evaluateGroup(
     List<ChallengeParticipantEntity> ranked,
     ChallengeEntity challenge,
@@ -228,13 +237,11 @@ final class ChallengeEvaluator {
     final target = challenge.rules.target;
     final stake = challenge.rules.entryFeeCoins;
     final hasStake = stake > 0;
+    final pool = stake * ranked.length;
     final lowerIsBetter = _isLowerBetter(challenge.rules.metric);
 
     final runners = ranked.where(
       (p) => p.contributingSessionIds.isNotEmpty,
-    ).toList();
-    final noRun = ranked.where(
-      (p) => p.contributingSessionIds.isEmpty,
     ).toList();
 
     // Nobody ran → everyone DNF, refund stakes.
@@ -250,49 +257,43 @@ final class ChallengeEvaluator {
           .toList();
     }
 
-    // Rank only runners.
-    final sortedRunners = _sort(runners, challenge.rules.metric);
-    final ranks = _assignDenseRanks(sortedRunners, challenge.rules.metric);
-
-    final results = <ParticipantResult>[];
-
-    for (var i = 0; i < sortedRunners.length; i++) {
-      final p = sortedRunners[i];
-      final rank = ranks[i];
-
-      final bool metTarget;
-      if (target == null) {
-        metTarget = true;
-      } else if (lowerIsBetter) {
-        metTarget = p.progressValue > 0 && p.progressValue <= target;
-      } else {
-        metTarget = p.progressValue >= target;
-      }
-
-      results.add(ParticipantResult(
-        userId: p.userId,
-        finalValue: p.progressValue,
-        rank: rank,
-        outcome: metTarget
-            ? ParticipantOutcome.completedTarget
-            : ParticipantOutcome.participated,
-        coinsEarned: metTarget ? 30 : 0,
-        sessionIds: p.contributingSessionIds,
-      ));
+    // Collective progress from runners.
+    final bool groupMetTarget;
+    if (target == null) {
+      groupMetTarget = true;
+    } else if (lowerIsBetter) {
+      final avg = runners.map((p) => p.progressValue).reduce((a, b) => a + b) /
+          runners.length;
+      groupMetTarget = avg > 0 && avg <= target;
+    } else {
+      final total =
+          runners.map((p) => p.progressValue).reduce((a, b) => a + b);
+      groupMetTarget = total >= target;
     }
 
-    // Non-runners are DNF, 0 coins (they lost).
-    for (final p in noRun) {
-      results.add(ParticipantResult(
-        userId: p.userId,
-        finalValue: 0,
-        outcome: ParticipantOutcome.didNotFinish,
-        coinsEarned: 0,
-        sessionIds: p.contributingSessionIds,
-      ));
+    if (groupMetTarget) {
+      final coinsEach = hasStake ? pool ~/ ranked.length : 30;
+      return ranked
+          .map((p) => ParticipantResult(
+                userId: p.userId,
+                finalValue: p.progressValue,
+                outcome: ParticipantOutcome.completedTarget,
+                coinsEarned: coinsEach,
+                sessionIds: p.contributingSessionIds,
+              ))
+          .toList();
     }
 
-    return results;
+    // Group didn't meet target — everyone participated but no reward.
+    return ranked
+        .map((p) => ParticipantResult(
+              userId: p.userId,
+              finalValue: p.progressValue,
+              outcome: ParticipantOutcome.participated,
+              coinsEarned: 0,
+              sessionIds: p.contributingSessionIds,
+            ))
+        .toList();
   }
 
   /// Dense ranking: tied participants share the same rank.

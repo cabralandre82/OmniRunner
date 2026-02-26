@@ -75,9 +75,11 @@ Coins são obtidos exclusivamente por **atividade física real validada pelo ant
 |---------|-------|
 | Tamanho | 2-50 participantes |
 | Meta | Definida pelo criador (ex: "50 km coletivos em 7 dias") |
-| Contribuição | Cada sessão verificada soma para o grupo |
-| Recompensa | 30 coins para quem completou a meta |
-| Nao completou | Quem nao correu no período = **DNF, 0 coins** |
+| Logica | **Cooperativo** — o grupo ganha ou perde como unidade |
+| Contribuição | Sessões verificadas somam para o progresso coletivo (distancia/tempo: soma; pace: media) |
+| Meta atingida (gratis) | 30 coins para **todos** (correu ou nao) |
+| Meta atingida (com fee) | Pool dividido igualmente entre **todos** (correu ou nao) |
+| Meta nao atingida | 0 coins para todos (participaram mas falharam) |
 | Ninguem correu (com fee) | Todos DNF, refund do fee |
 | Abandono | Sai do grupo sem penalidade; contribuição anterior permanece |
 

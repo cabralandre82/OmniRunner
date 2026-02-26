@@ -317,13 +317,14 @@ void main() {
     });
   });
 
-  // ── GROUP DISTANCE (higher sum wins) ──────────────────────────
+  // ── GROUP (cooperative — group wins/loses as a unit) ──────────
 
-  group('group distance', () {
-    test('highest sum wins rank 1', () {
+  group('group distance (cooperative)', () {
+    test('collective sum meets target: everyone gets 30 coins', () {
+      // target = 30000. sum = 15000+12000+8000 = 35000 ≥ 30000 → met
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
-        target: 10000,
+        target: 30000,
         participants: [
           _p('u1', progress: 15000, sessions: ['s1']),
           _p('u2', progress: 12000, sessions: ['s2']),
@@ -331,80 +332,74 @@ void main() {
         ],
       ));
 
-      final active = results.where(
-        (r) => r.outcome != ParticipantOutcome.didNotFinish,
-      );
-      expect(active.length, 3);
-
-      final first = active.firstWhere((r) => r.rank == 1);
-      expect(first.userId, 'u1');
-
-      final metTarget = active.where(
-        (r) => r.outcome == ParticipantOutcome.completedTarget,
-      );
-      expect(metTarget.length, 2);
-      expect(metTarget.every((r) => r.coinsEarned == 30), isTrue);
-
-      final didNot = active.firstWhere(
-        (r) => r.outcome == ParticipantOutcome.participated,
-      );
-      expect(didNot.userId, 'u3');
-      expect(didNot.coinsEarned, 0);
+      expect(results.length, 3);
+      expect(results.every((r) => r.outcome == ParticipantOutcome.completedTarget),
+          isTrue);
+      expect(results.every((r) => r.coinsEarned == 30), isTrue);
     });
 
-    test('group ties share same rank', () {
+    test('collective sum does not meet target: 0 coins', () {
+      // target = 50000. sum = 15000+12000+8000 = 35000 < 50000 → not met
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
-        target: 5000,
+        target: 50000,
         participants: [
-          _p('u1',
-              progress: 10000,
-              sessions: ['s1'],
-              lastSubmittedAtMs: 1000),
-          _p('u2',
-              progress: 10000,
-              sessions: ['s2'],
-              lastSubmittedAtMs: 1000),
-          _p('u3', progress: 6000, sessions: ['s3']),
+          _p('u1', progress: 15000, sessions: ['s1']),
+          _p('u2', progress: 12000, sessions: ['s2']),
+          _p('u3', progress: 8000, sessions: ['s3']),
         ],
       ));
 
-      final active = results.where(
-        (r) => r.outcome != ParticipantOutcome.didNotFinish,
-      );
-      final rankedOne = active.where((r) => r.rank == 1);
-      expect(rankedOne.length, 2);
-
-      final third = active.firstWhere((r) => r.userId == 'u3');
-      expect(third.rank, 3);
+      expect(results.every((r) => r.outcome == ParticipantOutcome.participated),
+          isTrue);
+      expect(results.every((r) => r.coinsEarned == 0), isTrue);
     });
 
-    test('group tie broken by earliestFinish gives different ranks', () {
+    test('non-runner shares reward when group meets target', () {
+      // target = 10000. sum = 8000+5000 = 13000 ≥ 10000 → met
+      // u3 didn't run but still gets 30 coins
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
-        target: 5000,
+        target: 10000,
         participants: [
-          _p('u1',
-              progress: 10000,
-              sessions: ['s1'],
-              lastSubmittedAtMs: 2000),
-          _p('u2',
-              progress: 10000,
-              sessions: ['s2'],
-              lastSubmittedAtMs: 1000),
+          _p('u1', progress: 8000, sessions: ['s1']),
+          _p('u2', progress: 5000, sessions: ['s2']),
+          _p('u3', progress: 0),
         ],
       ));
 
-      final active = results.where(
-        (r) => r.outcome != ParticipantOutcome.didNotFinish,
-      );
-      final first = active.firstWhere((r) => r.rank == 1);
-      final second = active.firstWhere((r) => r.rank == 2);
-      expect(first.userId, 'u2');
-      expect(second.userId, 'u1');
+      expect(results.every((r) => r.outcome == ParticipantOutcome.completedTarget),
+          isTrue);
+      expect(results.every((r) => r.coinsEarned == 30), isTrue);
     });
 
-    test('group with no target: runner completes, non-runner DNF', () {
+    test('group with stake: pool split equally among all', () {
+      // Pool = 20 * 3 = 60. target met → 60/3 = 20 each
+      final results = evaluator.evaluate(ChallengeEntity(
+        id: 'c1',
+        creatorUserId: 'u1',
+        status: ChallengeStatus.active,
+        type: ChallengeType.group,
+        rules: const ChallengeRulesEntity(
+          metric: ChallengeMetric.distance,
+          target: 10000,
+          windowMs: 604800000,
+          entryFeeCoins: 20,
+        ),
+        participants: [
+          _p('u1', progress: 6000, sessions: ['s1']),
+          _p('u2', progress: 5000, sessions: ['s2']),
+          _p('u3', progress: 0),
+        ],
+        createdAtMs: 1000,
+      ));
+
+      expect(results.every((r) => r.outcome == ParticipantOutcome.completedTarget),
+          isTrue);
+      expect(results.every((r) => r.coinsEarned == 20), isTrue);
+    });
+
+    test('no target: group succeeds if anyone ran, all share', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
         participants: [
@@ -413,16 +408,12 @@ void main() {
         ],
       ));
 
-      final runner = results.firstWhere((r) => r.userId == 'u1');
-      expect(runner.outcome, ParticipantOutcome.completedTarget);
-      expect(runner.coinsEarned, 30);
-
-      final dnf = results.firstWhere((r) => r.userId == 'u2');
-      expect(dnf.outcome, ParticipantOutcome.didNotFinish);
-      expect(dnf.coinsEarned, 0);
+      expect(results.every((r) => r.outcome == ParticipantOutcome.completedTarget),
+          isTrue);
+      expect(results.every((r) => r.coinsEarned == 30), isTrue);
     });
 
-    test('group nobody ran: all DNF, refund stakes', () {
+    test('nobody ran with stake: all DNF, refund', () {
       final results = evaluator.evaluate(ChallengeEntity(
         id: 'c1',
         creatorUserId: 'u1',
@@ -447,7 +438,7 @@ void main() {
       expect(results.every((r) => r.coinsEarned == 20), isTrue);
     });
 
-    test('group nobody ran free: all DNF, 0 coins', () {
+    test('nobody ran free: all DNF, 0 coins', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
         target: 5000,
@@ -463,41 +454,53 @@ void main() {
     });
   });
 
-  // ── GROUP PACE (lower wins) ───────────────────────────────────
+  // ── GROUP PACE (cooperative — avg of runners ≤ target) ────────
 
-  group('group pace', () {
-    test('lower pace gets rank 1 and meets target', () {
+  group('group pace (cooperative)', () {
+    test('avg pace meets target: all share reward', () {
+      // avg = (270+290)/2 = 280 ≤ 300 → met
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
         metric: ChallengeMetric.pace,
         target: 300,
         participants: [
           _p('u1', progress: 270, sessions: ['s1']),
-          _p('u2', progress: 310, sessions: ['s2']),
+          _p('u2', progress: 290, sessions: ['s2']),
         ],
       ));
 
-      final active = results.where(
-        (r) => r.outcome != ParticipantOutcome.didNotFinish,
-      );
-      final first = active.firstWhere((r) => r.rank == 1);
-      expect(first.userId, 'u1');
-      expect(first.outcome, ParticipantOutcome.completedTarget);
+      expect(results.every((r) => r.outcome == ParticipantOutcome.completedTarget),
+          isTrue);
+      expect(results.every((r) => r.coinsEarned == 30), isTrue);
+    });
 
-      final second = active.firstWhere((r) => r.rank == 2);
-      expect(second.userId, 'u2');
-      expect(second.outcome, ParticipantOutcome.participated);
+    test('avg pace too slow: no reward', () {
+      // avg = (270+350)/2 = 310 > 300 → not met
+      final results = evaluator.evaluate(_challenge(
+        type: ChallengeType.group,
+        metric: ChallengeMetric.pace,
+        target: 300,
+        participants: [
+          _p('u1', progress: 270, sessions: ['s1']),
+          _p('u2', progress: 350, sessions: ['s2']),
+        ],
+      ));
+
+      expect(results.every((r) => r.outcome == ParticipantOutcome.participated),
+          isTrue);
+      expect(results.every((r) => r.coinsEarned == 0), isTrue);
     });
   });
 
-  // ── GROUP TIME (higher wins — more running time = better) ────
+  // ── GROUP TIME (cooperative — sum of runners ≥ target) ────────
 
-  group('group time', () {
-    test('higher time gets rank 1', () {
+  group('group time (cooperative)', () {
+    test('collective time meets target: all share reward', () {
+      // sum = 1500000+2000000+1200000 = 4700000 ≥ 4000000 → met
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
         metric: ChallengeMetric.time,
-        target: 1800000,
+        target: 4000000,
         participants: [
           _p('u1', progress: 1500000, sessions: ['s1']),
           _p('u2', progress: 2000000, sessions: ['s2']),
@@ -505,18 +508,26 @@ void main() {
         ],
       ));
 
-      final active = results.where(
-        (r) => r.outcome != ParticipantOutcome.didNotFinish,
-      );
-      final first = active.firstWhere((r) => r.rank == 1);
-      expect(first.userId, 'u2');
+      expect(results.every((r) => r.outcome == ParticipantOutcome.completedTarget),
+          isTrue);
+      expect(results.every((r) => r.coinsEarned == 30), isTrue);
+    });
 
-      // Target = 1800000: u2 (2000000) exceeded, u1 (1500000) below, u3 (1200000) below
-      final metTarget = active.where(
-        (r) => r.outcome == ParticipantOutcome.completedTarget,
-      );
-      expect(metTarget.length, 1);
-      expect(metTarget.first.userId, 'u2');
+    test('collective time not enough: no reward', () {
+      // sum = 1500000+1200000 = 2700000 < 4000000 → not met
+      final results = evaluator.evaluate(_challenge(
+        type: ChallengeType.group,
+        metric: ChallengeMetric.time,
+        target: 4000000,
+        participants: [
+          _p('u1', progress: 1500000, sessions: ['s1']),
+          _p('u2', progress: 1200000, sessions: ['s2']),
+        ],
+      ));
+
+      expect(results.every((r) => r.outcome == ParticipantOutcome.participated),
+          isTrue);
+      expect(results.every((r) => r.coinsEarned == 0), isTrue);
     });
   });
 
