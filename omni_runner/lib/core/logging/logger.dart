@@ -11,7 +11,7 @@ enum LogLevel { debug, info, warn, error }
 ///
 /// Usage:
 /// ```dart
-/// AppLogger.info('Session started', tag: 'TrackingBloc');
+/// AppLogger.info('Session started', tag: 'SyncBloc');
 /// AppLogger.error('Upload failed', tag: 'SyncService', error: e);
 /// ```
 abstract final class AppLogger {

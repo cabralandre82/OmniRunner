@@ -53,7 +53,7 @@
 │                      │              │    (Next.js)         │
 │  PostgreSQL (RLS)    │              │                      │
 │  54 Edge Functions   │              │  14 páginas          │
-│  59 SQL Migrations   │              │  Stripe checkout     │
+│  60 SQL Migrations   │              │  Stripe checkout     │
 │  RPCs (SECURITY DEF) │              │  RBAC middleware     │
 │  pg_cron schedules   │              │  SSR auth            │
 └──────────────────────┘              └──────────────────────┘
@@ -257,8 +257,8 @@ Strava Connect Flow
     │
     └─ TodayScreen exibe recap, comparação, diário
 
-Tracking GPS legado (TrackingScreen/TrackingBloc) permanece no código mas
-NÃO é acessível pela navegação. Será removido em sprint futuro de cleanup.
+Tracking GPS legado (TrackingScreen/TrackingBloc) foi removido (DECISÃO 095).
+Toda a captura de corridas ocorre via sync Strava.
 ```
 
 ### 7.1 Park Detection

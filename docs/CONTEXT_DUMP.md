@@ -28128,3 +28128,24 @@ Auditoria final completa antes do lançamento identificou 4 vulnerabilidades cr�
 - Race condition guard: `UPDATE status='completing' WHERE status IN ('active','completing')` atômico antes de processar. Se 0 rows → skip.
 - Double-write guard: verifica `challenge_results` existentes antes de escrever.
 - Wallet updates paralelos: `for` sequencial → `Promise.all` (N×RTT → 1×RTT).
+
+---
+
+## Sprint — M4 + M6 + M7: Retention, legacy cleanup, wallet reconciliation (DECISÃO 095)
+
+**Data:** 2026-02-26
+
+### Mudanças
+
+**M6 — Legacy GPS tracking removido:**
+- 7 arquivos deletados (~75KB dead code): TrackingScreen, DebugTrackingScreen, TrackingBloc, TrackingEvent, TrackingState, TrackingBottomPanel, ChallengeGhostOverlay.
+- Registro DI removido de service_locator. Referências documentais atualizadas.
+
+**M7 — Wallet reconciliation RPCs:**
+- `reconcile_wallet(p_user_id)`: compara balance vs SUM(ledger), corrige drift, loga audit entry.
+- `reconcile_all_wallets()`: batch para cron periódico.
+- Reason `admin_correction` adicionada ao constraint e ao enum Dart (stableOrdinal 20).
+
+**M4 — Session retention policy:**
+- `sessions_archive` table + `archive_old_sessions(730)` RPC.
+- Move sessions > 2 anos para archive, idempotente.

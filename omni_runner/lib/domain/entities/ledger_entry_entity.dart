@@ -62,7 +62,10 @@ enum LedgerReason {
   challengeTeamCompleted,
 
   /// Won a staked team-vs-team challenge — receives share of entry-fee pool.
-  challengeTeamWon;
+  challengeTeamWon,
+
+  /// Zero-delta entry logged by reconcile_wallet when drift is detected.
+  adminCorrection;
 
   // ── Stable ordinals for Isar persistence ────────────────────────
   // RULE: never change existing values. Only append new entries at the end.
@@ -87,6 +90,7 @@ enum LedgerReason {
     crossAssessoriaBurned: 17,
     challengeTeamCompleted: 18,
     challengeTeamWon: 19,
+    adminCorrection: 20,
   };
 
   static final _fromInt = <int, LedgerReason>{

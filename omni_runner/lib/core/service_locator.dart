@@ -166,7 +166,7 @@ import 'package:omni_runner/presentation/blocs/coach_insights/coach_insights_blo
 import 'package:omni_runner/presentation/blocs/leaderboards/leaderboards_bloc.dart';
 import 'package:omni_runner/presentation/blocs/missions/missions_bloc.dart';
 import 'package:omni_runner/presentation/blocs/progression/progression_bloc.dart';
-import 'package:omni_runner/presentation/blocs/tracking/tracking_bloc.dart';
+// TrackingBloc import removed (legacy GPS — DECISÃO 095)
 import 'package:omni_runner/presentation/blocs/wallet/wallet_bloc.dart';
 
 final GetIt sl = GetIt.instance;
@@ -733,30 +733,6 @@ Future<void> setupServiceLocator() async {
     () => LeaderboardsBloc(),
   );
 
-  sl.registerFactory<TrackingBloc>(
-    () => TrackingBloc(
-      ensureLocationReady: sl<EnsureLocationReady>(),
-      locationStream: sl<ILocationStream>(),
-      filterPoints: sl<FilterLocationPoints>(),
-      accumulateDistance: sl<AccumulateDistance>(),
-      calculatePace: sl<CalculatePace>(),
-      autoPause: sl<AutoPauseDetector>(),
-      finishSession: sl<FinishSession>(),
-      ghostPositionAt: sl<GhostPositionAt>(),
-      calculateGhostDelta: sl<CalculateGhostDelta>(),
-      detectSpeed: sl<IntegrityDetectSpeed>(),
-      detectTeleport: sl<IntegrityDetectTeleport>(),
-      audioCoach: sl<IAudioCoach>(),
-      pointsRepo: sl<IPointsRepo>(),
-      sessionRepo: sl<ISessionRepo>(),
-      syncRepo: sl<ISyncRepo>(),
-      coachSettings: sl<ICoachSettingsRepo>(),
-      hrSource: sl<IHeartRateSource>(),
-      exportWorkout: sl<ExportWorkoutToHealth>(),
-      stepsSource: sl<IStepsSource>(),
-      progression: sl<PostSessionProgression>(),
-      challengeDispatcher: sl<PostSessionChallengeDispatcher>(),
-      rewardCoins: sl<RewardSessionCoins>(),
-    ),
-  );
+  // TrackingBloc removed (legacy GPS tracking — DECISÃO 095).
+  // All run data comes from Strava sync, not in-app GPS.
 }

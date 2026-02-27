@@ -2673,3 +2673,37 @@ Auditoria pré-launch identificou 4 vulnerabilidades críticas:
 - `supabase/functions/settle-challenge/index.ts`
 
 ---
+
+## DECISÃO 095 — M4 + M6 + M7: Retention, legacy cleanup, wallet reconciliation
+
+**Data:** 2026-02-26
+
+### Correções
+
+**M6 — Remoção do tracking GPS legado:**
+- Removidos 7 arquivos dead code (~75KB): `TrackingScreen`, `DebugTrackingScreen`, `TrackingBloc`, `TrackingEvent`, `TrackingState`, `TrackingBottomPanel`, `ChallengeGhostOverlay`.
+- Registro de `TrackingBloc` removido do service_locator.
+- Toda captura de corridas ocorre exclusivamente via Strava sync.
+- `ARCHITECTURE.md` atualizado para refletir remoção.
+
+**M7 — Reconciliação automática wallet vs ledger:**
+- `reconcile_wallet(p_user_id)` RPC: compara `wallet.balance_coins` com `SUM(coin_ledger.delta_coins)`. Se drift != 0, corrige o balance e insere entry de audit (`admin_correction`, delta=0, note com drift/old/new).
+- `reconcile_all_wallets()` RPC: batch para cron — itera todas as wallets e retorna `{ total_wallets, drifted, run_at }`.
+- Nova reason `admin_correction` adicionada ao `coin_ledger_reason_check` constraint.
+- `LedgerReason.adminCorrection` adicionada ao enum Dart com stableOrdinal 20.
+
+**M4 — Política de retenção de sessions:**
+- Tabela `sessions_archive` criada (espelho de `sessions` com RLS).
+- `archive_old_sessions(p_retention_days DEFAULT 730)` RPC: move sessions completed/synced > 2 anos para archive, deleta originais. Idempotente via `ON CONFLICT DO NOTHING`.
+
+### Arquivos alterados
+
+- `supabase/migrations/20260227500000_wallet_reconcile_and_session_retention.sql` (novo)
+- `lib/core/service_locator.dart` (TrackingBloc removido)
+- `lib/domain/entities/ledger_entry_entity.dart` (adminCorrection)
+- `lib/core/logging/logger.dart` (exemplo atualizado)
+- `lib/presentation/blocs/README.md` (referência atualizada)
+- `docs/ARCHITECTURE.md` (nota de legado atualizada)
+- 7 arquivos deletados (tracking legado)
+
+---
