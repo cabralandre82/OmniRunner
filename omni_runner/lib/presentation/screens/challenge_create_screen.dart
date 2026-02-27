@@ -212,11 +212,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                   onSelectionChanged: (v) {
                     setState(() {
                       _type = v.first;
-                      if (_type == ChallengeType.oneVsOne &&
-                          _goal == ChallengeGoal.collectiveDistance) {
-                        _goal = ChallengeGoal.fastestAtDistance;
-                      }
-                      if (_type == ChallengeType.team &&
+                      if (_type != ChallengeType.team &&
                           _goal == ChallengeGoal.collectiveDistance) {
                         _goal = ChallengeGoal.fastestAtDistance;
                       }
@@ -292,13 +288,13 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                   selected: _goal == ChallengeGoal.bestPaceAtDistance,
                   onTap: () => setState(() => _goal = ChallengeGoal.bestPaceAtDistance),
                 ),
-                if (_type == ChallengeType.group) ...[
+                if (_type == ChallengeType.team) ...[
                   const SizedBox(height: 8),
                   _GoalCard(
                     icon: Icons.handshake_rounded,
                     title: 'Completar X km juntos!',
-                    subtitle: 'Cooperativo — cada um corre o que puder e os km de todos somam. '
-                        'Se o grupo atingir a meta, todos ganham. Se não, todos perdem.',
+                    subtitle: 'Cooperativo por time — cada time soma seus km internamente. '
+                        'O time que acumular mais km (ou atingir a meta primeiro) vence e leva os coins do outro.',
                     selected: _goal == ChallengeGoal.collectiveDistance,
                     onTap: () => setState(() => _goal = ChallengeGoal.collectiveDistance),
                   ),
@@ -431,8 +427,8 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
         _ruleItem('Vence quem tiver o menor pace médio (min/km) nessa corrida'),
       ],
       ChallengeGoal.collectiveDistance => [
-        _ruleItem('Cada membro corre o que puder — todos os km somam'),
-        _ruleItem('Se o grupo atingir a meta, TODOS ganham. Se não, TODOS perdem'),
+        _ruleItem('Cada membro corre o que puder — os km do time somam'),
+        _ruleItem('O time com mais km totais vence e leva os coins do outro'),
       ],
     };
     if (_type == ChallengeType.team) {
@@ -1081,13 +1077,14 @@ class _WinnerExplainerBox extends StatelessWidget {
           'Pace do time = média dos paces de TODOS os membros. '
           'Ganha o time com o menor pace médio.',
         ChallengeGoal.collectiveDistance =>
-          'Desafio coletivo não está disponível para o modo Time. Use o modo Grupo.',
+          'Cada membro do time corre o que puder — os km de todos somam. '
+          'O time que acumular mais km no total vence e leva os coins do outro time.',
       };
     }
-    if (type == ChallengeType.group && goal == ChallengeGoal.collectiveDistance) {
-      return 'Cada membro corre o que puder — os km de todos somam. '
-          'Se o grupo atingir a meta juntos, TODOS recebem de volta sua inscrição. '
-          'Se não atingir, TODOS perdem.';
+    if (goal == ChallengeGoal.collectiveDistance) {
+      return 'Cooperativo por time: cada membro corre o que puder e os km de '
+          'todos no time somam. O time que acumular mais km totais vence e '
+          'leva os OmniCoins do time adversário.';
     }
     return switch (goal) {
       ChallengeGoal.fastestAtDistance =>
@@ -1103,8 +1100,8 @@ class _WinnerExplainerBox extends StatelessWidget {
         'Ganha quem tiver o menor pace médio (min/km) nessa corrida. '
         'Exemplo: distância = 5 km → ganha quem correr 5+ km com melhor pace.',
       ChallengeGoal.collectiveDistance =>
-        'Cada membro corre o que puder — os km de todos somam. '
-        'Se o grupo atingir a meta, todos ganham. Se não, todos perdem.',
+        'Cooperativo por time: cada membro corre o que puder e os km de '
+        'todos somam. O time com mais km vence e leva os coins do outro.',
     };
   }
 }

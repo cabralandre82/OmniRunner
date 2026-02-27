@@ -12,7 +12,7 @@ import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
 /// - **fastestAtDistance**: lower elapsed time wins (completed target distance).
 /// - **mostDistance**: higher accumulated distance wins.
 /// - **bestPaceAtDistance**: lower pace (sec/km) wins (at target distance).
-/// - **collectiveDistance**: group cooperative — everyone wins or loses together.
+/// - **collectiveDistance**: team cooperative — each team sums km, team with more wins.
 ///
 /// Tie-break: participant who submitted last session earliest wins.
 ///
@@ -27,12 +27,13 @@ final class ChallengeEvaluator {
         .toList();
 
     final List<ParticipantResult> results;
-    if (challenge.rules.goal == ChallengeGoal.collectiveDistance) {
-      results = _evaluateCollective(accepted, challenge);
-    } else if (challenge.type == ChallengeType.oneVsOne) {
+    if (challenge.type == ChallengeType.oneVsOne) {
       results = _evaluateOneVsOne(accepted, challenge);
     } else if (challenge.type == ChallengeType.team) {
       results = _evaluateTeam(accepted, challenge);
+    } else if (challenge.rules.goal == ChallengeGoal.collectiveDistance) {
+      // Legacy fallback: group + collectiveDistance created before this fix.
+      results = _evaluateCollective(accepted, challenge);
     } else {
       results = _evaluateGroupCompetitive(accepted, challenge);
     }
@@ -272,7 +273,7 @@ final class ChallengeEvaluator {
     return results;
   }
 
-  /// Group cooperative: everyone contributes toward a collective target.
+  /// Legacy group cooperative fallback (pre-team migration).
   List<ParticipantResult> _evaluateCollective(
     List<ChallengeParticipantEntity> accepted,
     ChallengeEntity challenge,

@@ -1,10 +1,10 @@
+import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:omni_runner/core/errors/strava_failures.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/features/strava/data/strava_http_client.dart';
 import 'package:omni_runner/features/strava/data/strava_secure_store.dart';
 import 'package:omni_runner/features/strava/domain/i_strava_auth_repository.dart';
 import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// Concrete implementation of [IStravaAuthRepository].
 ///
@@ -79,23 +79,34 @@ final class StravaAuthRepositoryImpl implements IStravaAuthRepository {
 
     final url = _httpClient.buildAuthorizationUrl(clientId: _clientId);
 
-    final launched = await launchUrl(
-      url,
-      mode: LaunchMode.externalApplication,
-    );
+    try {
+      final resultUrl = await FlutterWebAuth2.authenticate(
+        url: url.toString(),
+        callbackUrlScheme: 'omnirunner',
+      );
 
-    if (!launched) {
+      final resultUri = Uri.parse(resultUrl);
+      final code = resultUri.queryParameters['code'];
+
+      if (code == null || code.isEmpty) {
+        final error = resultUri.queryParameters['error'];
+        _cachedState = const StravaDisconnected();
+        if (error == 'access_denied') throw const AuthCancelled();
+        throw AuthFailed('No authorization code received: $error');
+      }
+
+      AppLogger.info('Authorization code received, exchanging', tag: _tag);
+      return await exchangeCode(code);
+    } on AuthCancelled {
       _cachedState = const StravaDisconnected();
-      throw const AuthFailed('Could not open browser for Strava login');
+      rethrow;
+    } on IntegrationFailure {
+      _cachedState = const StravaDisconnected();
+      rethrow;
+    } on Exception catch (e) {
+      _cachedState = const StravaDisconnected();
+      throw AuthFailed('OAuth flow failed: $e');
     }
-
-    // The actual code exchange happens in [exchangeCode] when the
-    // deep-link callback arrives. This method returns a future that
-    // the caller must resolve by calling exchangeCode separately.
-    //
-    // For now, indicate we're in the connecting state. The controller
-    // or BLoC will call exchangeCode when the callback fires.
-    throw const AuthCancelled();
   }
 
   @override

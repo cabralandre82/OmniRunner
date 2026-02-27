@@ -79,16 +79,18 @@ final class StravaConnectController {
   /// Get the current connection state.
   Future<StravaAuthState> getState() => _authRepo.getAuthState();
 
-  /// Start the OAuth2 connect flow.
+  /// Start the full OAuth2 connect flow.
   ///
-  /// Opens the system browser for Strava consent.
-  /// The actual token exchange happens when [handleCallback] is called
-  /// with the authorization code from the deep-link.
-  Future<void> startConnect() async {
+  /// Opens Chrome Custom Tab for Strava consent, waits for callback,
+  /// exchanges code for tokens, syncs to server, and imports history.
+  /// Returns [StravaConnected] on success.
+  Future<StravaConnected> startConnect() async {
     try {
-      await _authRepo.authenticate();
-    } on AuthCancelled {
-      AppLogger.info('Auth flow started — awaiting callback', tag: _tag);
+      final connected = await _authRepo.authenticate();
+      await _syncTokensToServer(connected);
+      importStravaHistory().ignore();
+      AppLogger.info('Strava connected: ${connected.athleteName}', tag: _tag);
+      return connected;
     } on IntegrationFailure catch (e) {
       AppLogger.warn('Auth failed: $e', tag: _tag);
       rethrow;

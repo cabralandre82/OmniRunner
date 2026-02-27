@@ -3075,3 +3075,38 @@ O `redirect_uri` era `omnirunner://strava/callback` — cujo host é `strava`. O
 Nenhuma — `localhost` é aceito automaticamente pelo Strava.
 
 ---
+
+## DECISÃO 107 — Desafio cooperativo movido de Grupo para Time (27/02/2026)
+
+### Contexto
+
+O desafio cooperativo (`collectiveDistance`) estava disponível apenas em modo Grupo. O texto dizia "se o grupo atingir a meta, todos ganham; se não, todos perdem." Problema: ganham de quem? Perdem de quem? Economicamente sem sentido — os coins desapareciam (atingir meta = receber de volta seu próprio stake; não atingir = perder para ninguém).
+
+### Causa raiz
+
+Desafio cooperativo sem adversário. Apostar coins contra si mesmo não é gamificação — é perda unilateral.
+
+### Decisão
+
+1. **`collectiveDistance` movido para `ChallengeType.team` exclusivamente** — só faz sentido com dois times
+2. **Cada time coopera internamente** (membros somam km) e **compete contra o outro time**
+3. **Time com mais km totais vence** e leva os coins do time adversário
+4. **Removido de `ChallengeType.group`** — não aparece mais como opção ao criar desafio de grupo
+5. **Evaluator**: prioridade mudada — se `type == team`, usa `_evaluateTeam` (que já soma distâncias por time corretamente), mesmo para `collectiveDistance`. Fallback legacy mantido para desafios cooperativos de grupo existentes.
+
+### Economia corrigida
+| Cenário | Antes (grupo) | Depois (time) |
+|---------|---------------|---------------|
+| Atingir meta | Recebe de volta o próprio stake (net zero) | Time vencedor leva pool do time adversário |
+| Não atingir | Perde stake para ninguém | Time perdedor paga ao vencedor |
+
+### Arquivos modificados
+- `lib/domain/entities/challenge_rules_entity.dart` (doc atualizado)
+- `lib/domain/entities/challenge_entity.dart` (doc atualizado)
+- `lib/domain/entities/challenge_result_entity.dart` (doc atualizado)
+- `lib/domain/usecases/gamification/challenge_evaluator.dart` (prioridade type > goal)
+- `lib/presentation/screens/challenge_create_screen.dart` (UI: cooperativo → só em Time)
+- `lib/presentation/screens/challenge_details_screen.dart` (textos corrigidos)
+- `lib/presentation/screens/challenge_join_screen.dart` (textos corrigidos)
+
+---

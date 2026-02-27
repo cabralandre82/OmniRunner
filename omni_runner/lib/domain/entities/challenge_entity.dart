@@ -28,7 +28,7 @@ enum ChallengeType {
   /// Head-to-head between exactly 2 participants.
   oneVsOne,
 
-  /// Group challenge with 2–50 participants (cooperative or competitive).
+  /// Group challenge with 2–50 participants (competitive).
   /// Individual ranking — best performer wins the pool.
   group,
 

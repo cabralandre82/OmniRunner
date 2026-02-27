@@ -939,7 +939,7 @@ class _RulesCard extends StatelessWidget {
         ChallengeGoal.bestPaceAtDistance =>
           'Cada corredor faz uma corrida cobrindo a distância mínima. Vence quem tiver o menor pace médio (min/km).',
         ChallengeGoal.collectiveDistance =>
-          'Cada membro corre o que puder — os km somam. Se atingir a meta, todos ganham.',
+          'Cada membro corre o que puder — os km do time somam. O time com mais km vence.',
       };
 
   static String _formatTarget(double value, ChallengeGoal metric) =>
@@ -978,11 +978,11 @@ class _RulesCard extends StatelessWidget {
         ChallengeGoal.bestPaceAtDistance =>
           'Pace do time = média dos paces dos membros. Time com menor pace vence.',
         ChallengeGoal.collectiveDistance =>
-          'Meta coletiva — todos somam km.',
+          'Km do time = soma de todos os membros. Time com mais km vence.',
       };
     }
     if (goal == ChallengeGoal.collectiveDistance) {
-      return 'Se o grupo atingir a meta, todos ganham. Se não, todos perdem.';
+      return 'Cooperativo por time — os km de cada time somam. O time com mais km vence.';
     }
     return switch (goal) {
       ChallengeGoal.fastestAtDistance =>
@@ -992,7 +992,7 @@ class _RulesCard extends StatelessWidget {
       ChallengeGoal.bestPaceAtDistance =>
         'Quem tiver o menor pace médio (min/km).',
       ChallengeGoal.collectiveDistance =>
-        'Meta coletiva — todos somam km.',
+        'Cooperativo por time — o time com mais km vence.',
     };
   }
 

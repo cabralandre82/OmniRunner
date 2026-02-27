@@ -189,7 +189,18 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
     setState(() => _busy = true);
     try {
       final controller = sl<StravaConnectController>();
-      await controller.startConnect();
+      final connected = await controller.startConnect();
+      if (mounted) {
+        setState(() => _state = connected);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Strava conectado como ${connected.athleteName}!'),
+            backgroundColor: const Color(0xFFFC4C02),
+          ),
+        );
+      }
+    } on AuthCancelled {
+      // User dismissed the browser — no error to show
     } on IntegrationFailure catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

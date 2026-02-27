@@ -12,7 +12,7 @@ enum ParticipantOutcome {
   /// Participants tied (equal results).
   tied,
 
-  /// Participant completed the cooperative group target.
+  /// Participant's team completed the cooperative target.
   completedTarget,
 
   /// Participant contributed but did not reach the group target.
@@ -30,7 +30,7 @@ final class ParticipantResult extends Equatable {
   /// Final value in the goal's unit.
   final double finalValue;
 
-  /// Rank among participants (1-based). Null for cooperative challenges.
+  /// Rank among participants (1-based). Null for legacy cooperative challenges.
   final int? rank;
 
   /// What happened.

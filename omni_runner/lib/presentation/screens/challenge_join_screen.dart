@@ -625,7 +625,7 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
       };
     }
     if (goal == 'collective_distance') {
-      return 'Cada membro corre o que puder - os km de todos somam. Se o grupo atingir a meta, TODOS ganham. Se nao, TODOS perdem.';
+      return 'Cooperativo por time: cada membro corre o que puder - os km do time somam. O time com mais km vence e leva os coins do adversário.';
     }
     return switch (goal) {
       'fastest_at_distance' =>

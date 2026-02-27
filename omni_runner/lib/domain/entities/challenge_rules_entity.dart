@@ -17,9 +17,10 @@ enum ChallengeGoal {
   /// Winner: lowest pace (sec/km).
   bestPaceAtDistance,
 
-  /// Group cooperative: collective distance toward a shared target.
-  /// Required: target (collective distance in meters).
-  /// All members contribute; everyone wins or loses together.
+  /// Team cooperative: each team's members contribute km collectively.
+  /// Required: target (collective distance in meters, informational).
+  /// Team with more total distance wins; losing team's coins go to winners.
+  /// Only valid with [ChallengeType.team].
   collectiveDistance,
 }
 

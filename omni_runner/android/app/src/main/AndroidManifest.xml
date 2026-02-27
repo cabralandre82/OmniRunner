@@ -67,9 +67,21 @@
                 <data android:scheme="https" android:host="omnirunner.app" android:pathPrefix="/invite"/>
                 <data android:scheme="https" android:host="omnirunner.app" android:pathPrefix="/challenge"/>
             </intent-filter>
-            <!-- Health Connect: show permissions rationale screen -->
-            <intent-filter>
-                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>
+        <!-- Health Connect: show permissions rationale screen -->
+        <intent-filter>
+            <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>
+        </intent-filter>
+    </activity>
+        <!-- flutter_web_auth_2: captures OAuth callback for Strava -->
+        <activity
+            android:name="com.linusu.flutter_web_auth_2.CallbackActivity"
+            android:exported="true"
+            android:taskAffinity="">
+            <intent-filter android:label="flutter_web_auth_2">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="omnirunner"/>
             </intent-filter>
         </activity>
         <!-- Foreground service for continuous GPS tracking during runs.
