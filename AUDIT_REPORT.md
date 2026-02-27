@@ -1,8 +1,8 @@
 # RELATÓRIO DE AUDITORIA COMPLETA — OMNI RUNNER
 
-> Data: 2026-02-24
+> Data: 2026-02-24 (atualizado 2026-02-27)
 > Perspectivas: Senior Product Designer + Senior QA Engineer + Senior Product Logic Expert
-> Escopo: Todos os fluxos do app (atleta + assessoria), caminhos felizes e de erro
+> Escopo: Todos os fluxos do app (atleta + assessoria), caminhos felizes e de erro + auditoria backend vs frontend
 
 ---
 
@@ -354,3 +354,35 @@ O app está **funcional para early adopters** que já entendem o conceito, mas *
 - **T-3**: RecoveryScreen já diz "Salvar e continuar" com ícone correto.
 - **T-1**: Map timeout já exibe mensagem "Mapa indisponível offline" com explicação.
 - **V-2**: Checklist no app mostra apenas itens implementados (corridas, integridade, consistência, trust score).
+
+---
+
+## 18. AUDITORIA BACKEND vs FRONTEND (2026-02-27)
+
+### Metodologia
+Cruzamento de todas as queries `.from()`, `.rpc()` e `functions.invoke()` do Flutter e do
+Portal Next.js contra as migrations existentes e edge functions no diretório `supabase/functions/`.
+
+### Lacunas encontradas e corrigidas
+
+| # | Tipo | Referência no código | Problema | Correção |
+|---|------|---------------------|----------|----------|
+| BE-1 | **Tabelas inexistentes** | `park_screen.dart`: `.from('park_leaderboard')`, `.from('park_activities')`, `.from('park_segments')` | Feature implementada no frontend com 47 parques seedados localmente, mas **nenhuma tabela** criada no Supabase. Todas as queries falhavam. | Migration `20260226300000_parks_tables.sql`: 4 tabelas + trigger + seed de 47 parques + `fn_refresh_park_leaderboard`. |
+| BE-2 | **Tabela inexistente** | `strava_connect_controller.dart`: `.from('strava_activity_history')` | Controller importava últimas 20 atividades do Strava ao conectar, mas tabela não existia. Upsert falhava silenciosamente. | Migration `20260226310000_strava_activity_history.sql`. |
+| BE-3 | **EF inexistente** | `profile_screen.dart`: `functions.invoke('delete-account')` | Botão "Excluir minha conta" chamava EF que nunca foi criada. Sempre falhava. | Edge Function `delete-account/index.ts` implementada. |
+| BE-4 | **EF inexistente** | `remote_auth_datasource.dart`: `functions.invoke('validate-social-login')` | Login TikTok chamava EF inexistente. Sempre falhava com 404. | Edge Function `validate-social-login/index.ts` implementada (preparação para quando TikTok for habilitado). |
+| BE-5 | **Webhook sem park detection** | `strava-webhook/index.ts` | Sessões criadas via Strava webhook não detectavam parques. `park_activities` nunca era populada. | Passo 11 `detectAndLinkPark()` adicionado ao webhook. |
+
+### Tabelas confirmadas OK (sem lacunas)
+
+Todas as demais queries do app foram verificadas contra as migrations existentes:
+- `profiles`, `sessions`, `challenges`, `challenge_participants`, `coaching_groups`,
+  `coaching_members`, `friendships`, `wallets`, `coin_ledger`, `badge_awards`,
+  `profile_progress`, `championships`, `championship_participants`, `billing_*`,
+  `support_tickets`, `support_messages`, `device_tokens`, `notification_log`,
+  `strava_connections`, `athlete_verification`, `assessoria_feed`, `user_wrapped`,
+  `league_*`, `running_dna`, `clearing_*`, `token_intents`, `coaching_token_inventory`
+
+### Edge Functions confirmadas OK
+Todas as 29 EFs anteriores estavam presentes e funcionais. Apenas `delete-account` e
+`validate-social-login` estavam faltando.

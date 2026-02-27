@@ -20,6 +20,7 @@ import 'package:omni_runner/presentation/screens/staff_join_requests_screen.dart
 import 'package:omni_runner/presentation/screens/staff_performance_screen.dart';
 import 'package:omni_runner/presentation/screens/support_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_qr_hub_screen.dart';
+import 'package:omni_runner/presentation/screens/league_screen.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 
 /// Staff home dashboard — 6 cards for assessoria management.
@@ -309,6 +310,12 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
     if (_groupId.isEmpty) return;
     Navigator.of(context).push(MaterialPageRoute<void>(
       builder: (_) => SupportScreen(groupId: _groupId),
+    ));
+  }
+
+  void _openLiga() {
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => const LeagueScreen(),
     ));
   }
 
@@ -653,6 +660,14 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                     bgColor: cs.tertiaryContainer,
                     iconColor: cs.onTertiaryContainer,
                     onTap: _openAdmin,
+                  ),
+                  _StaffCard(
+                    icon: Icons.shield_rounded,
+                    title: 'Liga',
+                    subtitle: 'Ranking entre assessorias',
+                    bgColor: Colors.indigo.shade50,
+                    iconColor: Colors.indigo.shade700,
+                    onTap: _openLiga,
                   ),
                   _StaffCard(
                     icon: Icons.open_in_browser_rounded,

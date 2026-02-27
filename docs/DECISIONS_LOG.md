@@ -2141,3 +2141,182 @@ foi migrado. Resultado: qualquer parque mostrava "Erro ao carregar dados do parq
 - `lib/features/parks/presentation/park_screen.dart`
 
 ---
+
+## DECISÃO 084 — Parks end-to-end + Auditoria backend vs frontend (27/02/2026)
+
+### Contexto:
+A feature de parques estava implementada apenas no frontend (seed local, telas, queries).
+As tabelas `parks`, `park_activities`, `park_leaderboard`, `park_segments` **nunca foram criadas**
+no Supabase. O webhook do Strava não detectava parques. Resultado: todas as queries falhavam.
+
+Uma auditoria completa cruzando **todas** as queries `.from()`, `.rpc()` e `functions.invoke()`
+do app contra as migrations e edge functions revelou **3 lacunas adicionais**:
+
+1. `strava_activity_history` — tabela referenciada pelo `strava_connect_controller.dart` nunca criada
+2. `delete-account` — edge function chamada pelo `profile_screen.dart` inexistente
+3. `validate-social-login` — edge function chamada pelo `remote_auth_datasource.dart` inexistente
+
+### Decisão:
+
+**Parks (end-to-end):**
+1. Migration `20260226300000_parks_tables.sql`:
+   - `parks` — catálogo de 47 parques brasileiros com centro + raio para detecção
+   - `park_activities` — atividades linkadas a parques (unique por session_id)
+   - `park_segments` — segmentos dentro de parques (preparado para futuro)
+   - `park_leaderboard` — rankings por categoria (pace, distance, frequency, longestRun)
+   - `fn_refresh_park_leaderboard()` — recalcula rankings de um parque
+   - Trigger `trg_park_activity_inserted` — recalcula leaderboard automaticamente
+   - Seed dos 47 parques do `parks_seed.dart`
+   - RLS: SELECT público, INSERT via service role
+
+2. `strava-webhook` atualizado:
+   - Passo 11 adicionado: `detectAndLinkPark()` após criar session com GPS
+   - Calcula distância haversine do ponto GPS de início até o centro de cada parque
+   - Se dentro do `radius_m`, insere em `park_activities` com display_name
+   - Trigger dispara e recalcula leaderboard automaticamente
+
+**Lacunas corrigidas:**
+3. Migration `20260226310000_strava_activity_history.sql`:
+   - Tabela para histórico de atividades Strava importadas na conexão
+   - Colunas: user_id, strava_activity_id, name, distance_m, moving_time_s, etc.
+   - Unique index em (user_id, strava_activity_id) para upsert
+   - RLS: own read/insert
+
+4. Edge Function `delete-account`:
+   - Remove de coaching groups, cancela desafios pendentes
+   - Anonimiza perfil, deleta strava connection
+   - Deleta auth user via admin API
+
+5. Edge Function `validate-social-login`:
+   - Gera auth_url para TikTok OAuth quando credenciais configuradas
+   - Retorna erro gracioso se TIKTOK_CLIENT_KEY não está configurado
+   - Preparado para quando TikTok for habilitado
+
+**Fluxo completo dos parques:**
+```
+Strava activity → webhook → session criada → GPS start checado contra parks
+  → match? → INSERT park_activities → trigger → refresh park_leaderboard
+  → App: MyParksScreen lê park_activities → ParkScreen lê leaderboard/community/segments
+```
+
+### Arquivos criados:
+- `supabase/migrations/20260226300000_parks_tables.sql`
+- `supabase/migrations/20260226310000_strava_activity_history.sql`
+- `supabase/functions/delete-account/index.ts`
+- `supabase/functions/validate-social-login/index.ts`
+
+### Arquivos modificados:
+- `supabase/functions/strava-webhook/index.ts` (park detection + detectAndLinkPark)
+
+### Risco:
+Baixo. Tabelas novas com RLS. Webhook falha graciosamente (catch isolado).
+Edge functions novas não afetam fluxos existentes.
+
+---
+
+## DECISÃO 085 — Liga de Assessorias: auto-enroll, portal admin, acesso staff (27/02/2026)
+
+### Contexto:
+A Liga de Assessorias (DECISAO 070) tinha três problemas operacionais:
+1. Nenhuma assessoria participava automaticamente — requer INSERT manual em `league_enrollments`
+2. Temporadas (`league_seasons`) precisavam ser criadas manualmente via SQL
+3. O staff (professor/admin da assessoria) não tinha acesso à tela de Liga no app
+
+### Decisão:
+
+**1. Auto-enroll automático:**
+O `league-snapshot` agora, antes de calcular scores, busca todas as `coaching_groups`
+com `approval_status = 'approved'` e insere automaticamente em `league_enrollments`
+as que ainda não estão inscritas na temporada ativa. Mesmo comportamento quando
+o admin ativa uma temporada via portal. Resultado: zero fricção — toda assessoria
+aprovada participa automaticamente.
+
+**2. Portal admin (`/platform/liga`):**
+- Página para o admin da plataforma gerenciar temporadas da liga
+- Criar nova temporada (nome, data início, data fim) com status `upcoming`
+- Ativar temporada: muda status para `active`, encerra temporada anterior se houver,
+  auto-enrolla todas as assessorias aprovadas
+- Encerrar temporada: muda status para `completed`
+- Gerar snapshot manualmente: chama `league-snapshot` EF sob demanda
+- Visualizar ranking da semana corrente com tabela detalhada
+- Cards de KPIs: assessorias inscritas, última semana processada, dias restantes
+- API route: `POST /api/platform/liga` (actions: create_season, activate_season,
+  complete_season, trigger_snapshot)
+- Link "Liga" adicionado à sidebar do admin
+
+**3. Acesso staff no app:**
+- Card "Liga" adicionado ao `StaffDashboardScreen` (entre Créditos e Portal)
+- Ícone `shield_rounded`, cor indigo, navega para `LeagueScreen`
+- Staff agora vê o mesmo ranking que os atletas + contribuição pessoal
+
+### Arquivos criados:
+- `portal/src/app/platform/liga/page.tsx`
+- `portal/src/app/platform/liga/league-admin.tsx`
+- `portal/src/app/api/platform/liga/route.ts`
+
+### Arquivos modificados:
+- `supabase/functions/league-snapshot/index.ts` (auto-enroll antes do cálculo)
+- `portal/src/app/platform/platform-sidebar.tsx` (+link Liga)
+- `omni_runner/lib/presentation/screens/staff_dashboard_screen.dart` (+card Liga)
+
+### Risco:
+Nenhum. Auto-enroll é idempotente (UNIQUE constraint em season_id + group_id).
+Portal protegido por `platform_role = 'admin'`. LeagueScreen já existia e funciona
+para qualquer usuário autenticado.
+
+---
+
+## DECISÃO 086 — Liga global + ligas estaduais (27/02/2026)
+
+### Contexto:
+A liga era global sem filtro geográfico — todas as assessorias num ranking único.
+Uma assessoria de Manaus competia com uma de Porto Alegre sem contexto local.
+A `coaching_groups` tinha `city` mas não tinha `state` (UF).
+
+### Decisão:
+Liga global sempre visível + ranking filtrado por estado como sub-seção.
+Mesmos dados, mesma temporada — o filtro é aplicado na leitura, não na escrita.
+
+### Implementação:
+
+**1. Migration `20260227100000_coaching_groups_state.sql`:**
+- Adicionado `state TEXT DEFAULT ''` em `coaching_groups`
+- Index parcial em `state` para queries filtradas
+- `fn_create_assessoria` atualizada para aceitar `p_state TEXT`
+
+**2. `league-list` EF — filtro por scope:**
+- `GET /league-list?scope=global` — ranking completo (default)
+- `GET /league-list?scope=state` — auto-detecta UF da assessoria do caller
+- `GET /league-list?scope=state&state=SP` — filtra por UF específica
+- Quando filtrado, o ranking é re-numerado (1, 2, 3...) dentro do estado
+- Response inclui `scope`, `state_filter` e campo `state` em cada entry
+
+**3. `LeagueScreen` — chips de filtro:**
+- `FilterChip` "Global" e "Meu Estado" no topo da lista
+- "Meu Estado" auto-detecta a UF da assessoria do usuário via server
+- Empty state diferenciado: "Nenhuma assessoria do seu estado participou ainda"
+
+**4. `StaffSetupScreen` — dropdown de UF:**
+- Dropdown com os 27 estados brasileiros ao criar assessoria
+- Valor enviado via `p_state` ao `fn_create_assessoria`
+- Armazenado em uppercase (ex: `SP`, `RJ`, `MG`)
+
+**5. Portal Liga — estado no ranking:**
+- Coluna "Local" mostra "Cidade, UF" quando ambos preenchidos
+
+### Arquivos criados:
+- `supabase/migrations/20260227100000_coaching_groups_state.sql`
+
+### Arquivos modificados:
+- `supabase/functions/league-list/index.ts` (scope + state filter + re-rank)
+- `omni_runner/lib/presentation/screens/league_screen.dart` (chips + state display)
+- `omni_runner/lib/presentation/screens/staff_setup_screen.dart` (dropdown UF)
+- `portal/src/app/platform/liga/page.tsx` (select state)
+- `portal/src/app/platform/liga/league-admin.tsx` (coluna Local)
+
+### Risco:
+Nenhum. Assessorias sem `state` preenchido aparecem normalmente no ranking global
+mas não aparecem no filtro estadual. O campo é opcional — assessorias existentes
+podem atualizar o estado via Supabase Dashboard ou futura tela de edição.
+
+---

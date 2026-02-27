@@ -27,6 +27,8 @@ class _LeagueScreenState extends State<LeagueScreen> {
   List<Map<String, dynamic>> _ranking = [];
   String? _myGroupId;
   Map<String, dynamic>? _myContribution;
+  String? _stateFilter;
+  String _scope = 'global';
 
   @override
   void initState() {
@@ -40,8 +42,12 @@ class _LeagueScreenState extends State<LeagueScreen> {
       _error = null;
     });
     try {
+      final queryParams = _scope == 'state'
+          ? '?scope=state${_stateFilter != null ? '&state=$_stateFilter' : ''}'
+          : '?scope=global';
+
       final res = await Supabase.instance.client.functions.invoke(
-        'league-list',
+        'league-list$queryParams',
         method: HttpMethod.get,
       );
 
@@ -52,6 +58,7 @@ class _LeagueScreenState extends State<LeagueScreen> {
           [];
       final myGroupId = body['my_group_id'] as String?;
       final myContribution = body['my_contribution'] as Map<String, dynamic>?;
+      final serverState = body['state_filter'] as String?;
 
       setState(() {
         _loading = false;
@@ -59,6 +66,9 @@ class _LeagueScreenState extends State<LeagueScreen> {
         _ranking = ranking;
         _myGroupId = myGroupId;
         _myContribution = myContribution;
+        if (_scope == 'state' && serverState != null) {
+          _stateFilter = serverState;
+        }
       });
     } on Exception catch (e) {
       AppLogger.warn('League load failed: $e', tag: _tag);
@@ -68,6 +78,12 @@ class _LeagueScreenState extends State<LeagueScreen> {
         _ranking = [];
       });
     }
+  }
+
+  void _setScope(String scope) {
+    if (scope == _scope) return;
+    _scope = scope;
+    _load();
   }
 
   @override
@@ -147,6 +163,26 @@ class _LeagueScreenState extends State<LeagueScreen> {
         padding: const EdgeInsets.only(bottom: 32),
         children: [
           _SeasonHeader(season: _season!),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Row(
+              children: [
+                _ScopeChip(
+                  label: 'Global',
+                  selected: _scope == 'global',
+                  onTap: () => _setScope('global'),
+                ),
+                const SizedBox(width: 8),
+                _ScopeChip(
+                  label: _stateFilter != null && _scope == 'state'
+                      ? 'Meu Estado ($_stateFilter)'
+                      : 'Meu Estado',
+                  selected: _scope == 'state',
+                  onTap: () => _setScope('state'),
+                ),
+              ],
+            ),
+          ),
           if (_myContribution != null && _myGroupId != null)
             _MyContributionCard(
               contribution: _myContribution!,
@@ -155,12 +191,14 @@ class _LeagueScreenState extends State<LeagueScreen> {
             ),
           const _HowItWorksCard(),
           if (_ranking.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(32),
+            Padding(
+              padding: const EdgeInsets.all(32),
               child: Text(
-                'O ranking será atualizado semanalmente.',
+                _scope == 'state'
+                    ? 'Nenhuma assessoria do seu estado participou ainda.'
+                    : 'O ranking será atualizado semanalmente.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+                style: const TextStyle(color: Colors.grey),
               ),
             )
           else
@@ -370,6 +408,38 @@ class _HowItWorksCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Scope chip
+// ─────────────────────────────────────────────────────────────────────
+
+class _ScopeChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ScopeChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return FilterChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onTap(),
+      selectedColor: cs.primaryContainer,
+      checkmarkColor: cs.onPrimaryContainer,
+      labelStyle: TextStyle(
+        fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+        color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Ranking tile
 // ─────────────────────────────────────────────────────────────────────
 
@@ -386,6 +456,7 @@ class _RankingTile extends StatelessWidget {
     final prevRank = entry['prev_rank'] as int?;
     final groupName = entry['group_name'] as String? ?? 'Assessoria';
     final city = entry['city'] as String?;
+    final state = entry['state'] as String?;
     final score = (entry['cumulative_score'] as num?)?.toDouble() ?? 0;
     final totalKm = (entry['total_km'] as num?)?.toDouble() ?? 0;
     final activeMembers = entry['active_members'] as int? ?? 0;
@@ -468,7 +539,12 @@ class _RankingTile extends StatelessWidget {
         ),
         subtitle: Text(
           [
-            if (city != null) city,
+            if (city != null && city.isNotEmpty && state != null && state.isNotEmpty)
+              '$city, $state'
+            else if (city != null && city.isNotEmpty)
+              city
+            else if (state != null && state.isNotEmpty)
+              state,
             '$activeMembers de $totalMembers correram',
             '${totalKm.toStringAsFixed(0)} km/semana',
           ].join(' · '),

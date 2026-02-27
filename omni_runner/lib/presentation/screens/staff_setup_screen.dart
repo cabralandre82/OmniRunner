@@ -73,6 +73,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
   // ── Create mode ──
   final _nameCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
+  String? _selectedState;
 
   // ── Join mode ──
   final _searchCtrl = TextEditingController();
@@ -111,6 +112,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
           await _client.rpc('fn_create_assessoria', params: {
             'p_name': name,
             'p_city': _cityCtrl.text.trim(),
+            'p_state': _selectedState ?? '',
           });
           break;
         } catch (e) {
@@ -521,6 +523,46 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _selectedState,
+              decoration: InputDecoration(
+                labelText: 'Estado (UF)',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'AC', child: Text('AC — Acre')),
+                DropdownMenuItem(value: 'AL', child: Text('AL — Alagoas')),
+                DropdownMenuItem(value: 'AP', child: Text('AP — Amapá')),
+                DropdownMenuItem(value: 'AM', child: Text('AM — Amazonas')),
+                DropdownMenuItem(value: 'BA', child: Text('BA — Bahia')),
+                DropdownMenuItem(value: 'CE', child: Text('CE — Ceará')),
+                DropdownMenuItem(value: 'DF', child: Text('DF — Distrito Federal')),
+                DropdownMenuItem(value: 'ES', child: Text('ES — Espírito Santo')),
+                DropdownMenuItem(value: 'GO', child: Text('GO — Goiás')),
+                DropdownMenuItem(value: 'MA', child: Text('MA — Maranhão')),
+                DropdownMenuItem(value: 'MT', child: Text('MT — Mato Grosso')),
+                DropdownMenuItem(value: 'MS', child: Text('MS — Mato Grosso do Sul')),
+                DropdownMenuItem(value: 'MG', child: Text('MG — Minas Gerais')),
+                DropdownMenuItem(value: 'PA', child: Text('PA — Pará')),
+                DropdownMenuItem(value: 'PB', child: Text('PB — Paraíba')),
+                DropdownMenuItem(value: 'PR', child: Text('PR — Paraná')),
+                DropdownMenuItem(value: 'PE', child: Text('PE — Pernambuco')),
+                DropdownMenuItem(value: 'PI', child: Text('PI — Piauí')),
+                DropdownMenuItem(value: 'RJ', child: Text('RJ — Rio de Janeiro')),
+                DropdownMenuItem(value: 'RN', child: Text('RN — Rio Grande do Norte')),
+                DropdownMenuItem(value: 'RS', child: Text('RS — Rio Grande do Sul')),
+                DropdownMenuItem(value: 'RO', child: Text('RO — Rondônia')),
+                DropdownMenuItem(value: 'RR', child: Text('RR — Roraima')),
+                DropdownMenuItem(value: 'SC', child: Text('SC — Santa Catarina')),
+                DropdownMenuItem(value: 'SP', child: Text('SP — São Paulo')),
+                DropdownMenuItem(value: 'SE', child: Text('SE — Sergipe')),
+                DropdownMenuItem(value: 'TO', child: Text('TO — Tocantins')),
+              ],
+              onChanged: _busy ? null : (v) => setState(() => _selectedState = v),
             ),
             if (_error != null) ...[
               const SizedBox(height: 16),

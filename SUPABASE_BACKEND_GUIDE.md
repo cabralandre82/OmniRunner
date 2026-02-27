@@ -32,11 +32,11 @@
                               │          Supabase Cloud           │
                               │  ┌──────────┐  ┌──────────────┐  │
                               │  │  Auth     │  │  Postgres DB │  │
-                              │  │ (JWT)     │  │ (61 tables)  │  │
+                              │  │ (JWT)     │  │ (66 tables)  │  │
                               │  └──────────┘  └──────────────┘  │
                               │  ┌──────────┐  ┌──────────────┐  │
                               │  │  Storage  │  │ Edge Funcs   │  │
-                              │  │ (GPS pts) │  │ (27 Deno/TS) │  │
+                              │  │ (GPS pts) │  │ (29 Deno/TS) │  │
                               │  └──────────┘  └──────────────┘  │
                               │  ┌──────────┐  ┌──────────────┐  │
                               │  │  pg_cron  │  │  Stripe      │  │
@@ -270,6 +270,15 @@ ANALYTICS & OBSERVABILITY (6)
 ├── product_events         — Eventos de produto (billing, onboarding, etc.)
 └── api_rate_limits        — Rate limiting per-user per-function (sliding window)
 
+PARKS (4)
+├── parks                  — Catálogo de 47 parques brasileiros (centro + raio para detecção)
+├── park_activities        — Atividades detectadas em parques (unique por session_id)
+├── park_leaderboard       — Rankings por parque por categoria (pace/distance/frequency/longestRun)
+└── park_segments          — Segmentos dentro de parques com recordes (preparado para futuro)
+
+STRAVA IMPORT (1)
+└── strava_activity_history — Histórico de atividades importadas do Strava na conexão
+
 STORAGE
 └── session-points (bucket) — Rotas GPS comprimidas (Protobuf)
 ```
@@ -348,6 +357,11 @@ billing_products (id)
 billing_purchases (id)
   ├──→ billing_events (purchase_id)
   └──→ billing_refund_requests (purchase_id)
+
+parks (id)
+  ├──→ park_activities (park_id)
+  ├──→ park_leaderboard (park_id)
+  └──→ park_segments (park_id)
 ```
 
 ### 3.3 Arquivos SQL
@@ -393,6 +407,14 @@ billing_purchases (id)
 | `supabase/migrations/20260224000004_verification_cron.sql` | pg_cron schedule: `eval-verification-cron` diário 03:00 UTC via pg_net HTTP |
 | `supabase/migrations/20260226100000_join_request_approval_required.sql` | Approval obrigatório para join requests: requested_role column, fn_request_join com p_role, fn_approve_join_request role-aware, DROP fn_join_as_professor, status 'cancelled' |
 | `supabase/migrations/20260226110000_platform_approval_assessorias.sql` | Platform approval: profiles.platform_role, coaching_groups.approval_status + review columns, fn_platform_approve/reject/suspend, fn_search/fn_lookup filtram approved, RLS platform_admin_read. DECISAO 061 |
+| `supabase/migrations/20260226120000_support_tickets.sql` | support_tickets + support_messages + trigger trg_support_message_touch + RLS (staff lê/escreve do grupo, platform_admin lê/escreve todos). DECISAO 076 |
+| `supabase/migrations/20260226200000_user_wrapped.sql` | user_wrapped table (cache com TTL 24h) + RLS. DECISAO 069 |
+| `supabase/migrations/20260226210000_league_tables.sql` | league_seasons + league_enrollments + league_snapshots + RLS. DECISAO 070 |
+| `supabase/migrations/20260226220000_running_dna.sql` | running_dna cache (unique por user, TTL 7 dias) + RLS. DECISAO 071 |
+| `supabase/migrations/20260226230000_social_profiles.sql` | profiles: instagram_handle + tiktok_handle; friendships: invited_by; fn_search_users RPC. DECISAO 072 |
+| `supabase/migrations/20260226300000_parks_tables.sql` | parks (47 parques seed) + park_activities + park_leaderboard + park_segments + fn_refresh_park_leaderboard + trigger. DECISAO 084 |
+| `supabase/migrations/20260226310000_strava_activity_history.sql` | strava_activity_history (upsert por strava_activity_id) + RLS own read/insert. DECISAO 084 |
+| `supabase/migrations/20260227100000_coaching_groups_state.sql` | coaching_groups.state (UF) + fn_create_assessoria com p_state. DECISAO 086 |
 
 ---
 
@@ -463,6 +485,18 @@ billing_purchases (id)
 | `api_rate_limits` | - | Server/RPC (`increment_rate_limit`) | Server/RPC | Server/RPC (`cleanup_rate_limits`) |
 | `assessoria_feed` | Membros do grupo | Server | - | - |
 | `weekly_goals` | Próprio | Server | Server | - |
+| `parks` | Todos | Server (seed) | - | - |
+| `park_activities` | Todos | Server/Trigger | - | - |
+| `park_leaderboard` | Todos | Server/Trigger | Server/Trigger | - |
+| `park_segments` | Todos | Server | Server | - |
+| `strava_activity_history` | Próprio | Próprio | - | - |
+| `support_tickets` | Staff do grupo + Platform Admin | Staff | Staff | - |
+| `support_messages` | Staff do grupo + Platform Admin | Staff + Platform Admin | - | - |
+| `user_wrapped` | Próprio | Server | Server | - |
+| `league_seasons` | Todos | Server | Server | - |
+| `league_enrollments` | Todos | Staff | - | - |
+| `league_snapshots` | Todos | Server | - | - |
+| `running_dna` | Próprio | Server | Server | - |
 
 > **"Server"** = Edge Function com `service_role` key, que bypassa RLS.
 > **"Admin"** = Operação via Supabase Dashboard ou migration.
@@ -480,7 +514,7 @@ billing_purchases (id)
 
 ## 5. EDGE FUNCTIONS
 
-### 5.1 Inventário (28 Edge Functions)
+### 5.1 Inventário (31 Edge Functions)
 
 | # | Function | Auth | Rate Limit | Descrição |
 |:-:|----------|------|:----------:|-----------|
@@ -513,6 +547,8 @@ billing_purchases (id)
 | 27 | `process-refund` | Service role | - | Executa refund aprovado: Stripe API + debit credits (DECISAO 051) |
 | 28 | `eval-athlete-verification` | JWT | 10/60s | Avalia verificação do atleta: session count + integrity + trust_score → state machine transition (idempotente); retorna checklist completo |
 | 29 | `eval-verification-cron` | Service role | - | Cron diário (03:00 UTC): reavalia candidatos (CALIBRATING/MONITORED/DOWNGRADED, flags recentes, não avaliados 24h); batch max 100; usa eval_athlete_verification RPC |
+| 30 | `delete-account` | JWT | - | Soft-delete: remove de coaching groups, cancela desafios pendentes, anonimiza perfil, deleta strava connection, deleta auth user via admin API |
+| 31 | `validate-social-login` | No JWT | - | Gera auth_url para TikTok OAuth (quando TIKTOK_CLIENT_KEY configurado); retorna erro gracioso se não configurado |
 
 ### 5.8 Clearing — Detalhes
 
@@ -813,7 +849,13 @@ portal/ (Next.js 14, App Router)
 │   └── api/
 │       ├── checkout/       — Proxy → create-checkout-session
 │       ├── billing-portal/ — Proxy → create-portal-session
-│       └── auto-topup/     — Upsert billing_auto_topup_settings (service client)
+│       ├── auto-topup/     — Upsert billing_auto_topup_settings (service client)
+│       └── platform/
+│           ├── assessorias/ — Approve/reject/suspend assessorias
+│           ├── products/    — CRUD billing products
+│           ├── refunds/     — Approve/reject/process refunds
+│           ├── liga/        — Create/activate/complete league seasons + trigger snapshot
+│           └── support/     — Reply/close/reopen support tickets
 ├── src/lib/
 │   ├── supabase/server.ts  — Server-side Supabase client
 │   └── supabase/service.ts — Service-role client (bypasses RLS)
@@ -1078,17 +1120,18 @@ INSERT INTO public.badges (id, category, tier, name, description, xp_reward, coi
 # 1. Link ao projeto remoto
 supabase link --project-ref <project_id>
 
-# 2. Push migrations (34 migration files)
+# 2. Push migrations (42+ migration files)
 supabase db push
 
-# 3. Deploy ALL Edge Functions (27 functions)
+# 3. Deploy ALL Edge Functions (31 functions)
 for fn in verify-session evaluate-badges calculate-progression settle-challenge \
   compute-leaderboard submit-analytics token-create-intent token-consume-intent \
   clearing-confirm-sent clearing-confirm-received clearing-open-dispute \
   champ-create champ-invite champ-activate-badge champ-list champ-participant-list \
   complete-social-profile set-user-role send-push notify-rules \
   create-checkout-session webhook-payments list-purchases \
-  auto-topup-check auto-topup-cron create-portal-session process-refund; do
+  auto-topup-check auto-topup-cron create-portal-session process-refund \
+  eval-athlete-verification eval-verification-cron delete-account validate-social-login; do
   supabase functions deploy "$fn"
 done
 
@@ -1191,8 +1234,9 @@ cd portal/ && npm run build && vercel --prod
 | — | `billing_refund_requests` | `id` (UUID) | Portal-only; UNIQUE open per purchase |
 | — | `billing_limits` | `group_id` (UUID) | Portal-only; daily caps |
 | — | `strava_activity_history` | `user_id` (UUID), `strava_activity_id` (BIGINT) | Histórico importado do Strava; upsert por strava_activity_id |
-| — | `park_activities` | `user_id` (UUID), `park_id` (TEXT) | Atividades detectadas em parques |
-| — | `park_leaderboard` | `park_id` (TEXT), `user_id` (UUID), `category` (TEXT) | Rankings por parque; categorias: pace/distance/frequency/streak/evolution/longestRun |
+| — | `parks` | `id` (TEXT) | Catálogo de parques; 47 seedados; center_lat, center_lng, radius_m para detecção |
+| — | `park_activities` | `id` (UUID) | Unique por session_id; FK → parks.id, profiles.id |
+| — | `park_leaderboard` | `park_id` + `user_id` + `category` | Rankings recalculados automaticamente via trigger |
 | — | `park_segments` | `id` (UUID), `park_id` (TEXT) | Segmentos dentro de parques com recordes |
 
 ---
@@ -1267,7 +1311,7 @@ cd portal/ && npm run build && vercel --prod
 7. **Billing NUNCA aparece no app mobile** — preços, checkout, pagamentos são exclusivos do portal web.
 8. **O frontend mobile é offline-first** — dados locais (Isar) são sincronizados em background.
 9. **Referências de specs**: `GAMIFICATION_POLICY.md`, `PROGRESSION_SPEC.md`, `SOCIAL_SPEC.md`, `contracts/analytics_api.md`.
-10. **Decisões arquiteturais**: `docs/DECISIONS.md` (60 decisões documentadas, incluindo billing, auto top-up, refunds, limites, strava-only, parks).
+10. **Decisões arquiteturais**: `docs/DECISIONS_LOG.md` (86 decisões documentadas, incluindo billing, auto top-up, refunds, limites, strava-only, parks, social, push, polimento, liga, wrapped, running dna, backend audit, liga estadual).
 
 ### RPCs disponíveis (funções SQL SECURITY DEFINER):
 
@@ -1292,6 +1336,8 @@ cd portal/ && npm run build && vercel --prod
 | `fn_platform_suspend_assessoria(group_id, reason)` | Platform admin suspende assessoria |
 | `get_billing_limits(group_id)` | Daily limits com fallback defaults |
 | `check_daily_token_usage(group_id, type)` | Remaining capacity today |
+| `fn_search_users(query)` | Busca por nome para adicionar amigos (SECURITY DEFINER) |
+| `fn_refresh_park_leaderboard(p_park_id)` | Recalcula rankings de um parque (chamado via trigger) |
 
 ### Tarefas típicas:
 
@@ -1304,4 +1350,4 @@ cd portal/ && npm run build && vercel --prod
 
 ---
 
-*Gerado em 2026-02-18, atualizado em 2026-02-26 (Sprint 25.0.0 + Platform Approval) — 65 tabelas, 27 Edge Functions, 36 migrations, DECISAO 061*
+*Gerado em 2026-02-18, atualizado em 2026-02-27 (Sprint 25.0.0 + Parks E2E + Backend Audit + Liga Admin + Liga Estadual) — 66 tabelas, 31 Edge Functions, 43+ migrations, DECISAO 086*

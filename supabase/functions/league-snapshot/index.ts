@@ -96,14 +96,45 @@ serve(async (req: Request) => {
       return jsonOk({ message: "No active league season", snapshots: 0 }, requestId);
     }
 
-    // Get enrolled groups
+    // Auto-enroll all approved assessorias not yet enrolled
+    let autoEnrolled = 0;
+    {
+      const { data: approvedGroups } = await db
+        .from("coaching_groups")
+        .select("id")
+        .eq("approval_status", "approved");
+
+      const { data: existingEnrollments } = await db
+        .from("league_enrollments")
+        .select("group_id")
+        .eq("season_id", season.id);
+
+      const enrolledIds = new Set(
+        (existingEnrollments ?? []).map((e: { group_id: string }) => e.group_id),
+      );
+
+      const toEnroll = (approvedGroups ?? []).filter(
+        (g: { id: string }) => !enrolledIds.has(g.id),
+      );
+
+      for (const g of toEnroll) {
+        const { error } = await db
+          .from("league_enrollments")
+          .insert({ season_id: season.id, group_id: g.id })
+          .select()
+          .maybeSingle();
+        if (!error) autoEnrolled++;
+      }
+    }
+
+    // Get enrolled groups (including newly auto-enrolled)
     const { data: enrollments } = await db
       .from("league_enrollments")
       .select("group_id")
       .eq("season_id", season.id);
 
     if (!enrollments || enrollments.length === 0) {
-      return jsonOk({ message: "No enrolled groups", snapshots: 0 }, requestId);
+      return jsonOk({ message: "No enrolled groups", snapshots: 0, auto_enrolled: autoEnrolled }, requestId);
     }
 
     // Get previous week's rankings for rank delta
@@ -289,6 +320,7 @@ serve(async (req: Request) => {
       week_key: weekKey,
       snapshots,
       groups_processed: ranked.length,
+      auto_enrolled: autoEnrolled,
     }, requestId);
 
   } catch (_err) {

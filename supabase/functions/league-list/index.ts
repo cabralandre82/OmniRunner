@@ -11,13 +11,17 @@ import { startTimer, logRequest, logError } from "../_shared/obs.ts";
  * Returns the active league season ranking plus the caller's assessoria
  * position and personal contribution.
  *
- * GET /league-list
+ * GET /league-list?scope=global          (default — all groups)
+ * GET /league-list?scope=state           (filter by caller's state)
+ * GET /league-list?scope=state&state=SP  (filter by specific state)
  *
  * Returns:
  *   - season: { id, name, start_at_ms, end_at_ms, status }
+ *   - scope: "global" | "state"
+ *   - state_filter: string | null
  *   - ranking: [{ group_id, group_name, logo_url, rank, prev_rank,
  *                 cumulative_score, week_score, total_km, total_sessions,
- *                 active_members, total_members }]
+ *                 active_members, total_members, state }]
  *   - my_group_id: string | null
  *   - my_contribution: { total_km, total_sessions } | null
  */
@@ -64,6 +68,11 @@ serve(async (req: Request) => {
       return rl.response!;
     }
 
+    // Parse scope filter from query string
+    const url = new URL(req.url);
+    const scopeParam = url.searchParams.get("scope") ?? "global";
+    let stateParam = url.searchParams.get("state")?.toUpperCase().trim() ?? null;
+
     // Get active season
     const { data: season } = await db
       .from("league_seasons")
@@ -72,8 +81,29 @@ serve(async (req: Request) => {
       .maybeSingle();
 
     if (!season) {
-      return jsonOk({ season: null, ranking: [], my_group_id: null, my_contribution: null }, requestId);
+      return jsonOk({ season: null, scope: scopeParam, state_filter: null, ranking: [], my_group_id: null, my_contribution: null }, requestId);
     }
+
+    // Caller's assessoria (need early for state auto-detect)
+    const { data: profile } = await db
+      .from("profiles")
+      .select("active_coaching_group_id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const myGroupId = profile?.active_coaching_group_id ?? null;
+
+    // Auto-detect state from caller's group if scope=state and no explicit state
+    if (scopeParam === "state" && !stateParam && myGroupId) {
+      const { data: myGroup } = await db
+        .from("coaching_groups")
+        .select("state")
+        .eq("id", myGroupId)
+        .maybeSingle();
+      stateParam = (myGroup?.state as string) || null;
+    }
+
+    const effectiveStateFilter = scopeParam === "state" ? stateParam : null;
 
     // Get latest snapshots for each group (latest week_key)
     const { data: latestWeek } = await db
@@ -94,15 +124,14 @@ serve(async (req: Request) => {
         .select("group_id, rank, prev_rank, cumulative_score, week_score, total_km, total_sessions, active_members, total_members, challenge_wins")
         .eq("season_id", season.id)
         .eq("week_key", weekKey)
-        .order("rank", { ascending: true });
+        .order("cumulative_score", { ascending: false });
 
       if (snapshots && snapshots.length > 0) {
-        // Enrich with group info
         const groupIds = snapshots.map((s: Record<string, unknown>) => s.group_id);
 
         const { data: groups } = await db
           .from("coaching_groups")
-          .select("id, name, logo_url, city")
+          .select("id, name, logo_url, city, state")
           .in("id", groupIds);
 
         const groupMap: Record<string, Record<string, unknown>> = {};
@@ -110,15 +139,15 @@ serve(async (req: Request) => {
           groupMap[g.id] = g;
         }
 
-        ranking = snapshots.map((s: Record<string, unknown>) => {
+        // Build full list, then filter by state if needed
+        let allEntries = snapshots.map((s: Record<string, unknown>) => {
           const group = groupMap[s.group_id as string] ?? {};
           return {
             group_id: s.group_id,
             group_name: group.name ?? "Assessoria",
             logo_url: group.logo_url ?? null,
             city: group.city ?? null,
-            rank: s.rank,
-            prev_rank: s.prev_rank,
+            state: group.state ?? null,
             cumulative_score: s.cumulative_score,
             week_score: s.week_score,
             total_km: s.total_km,
@@ -126,19 +155,28 @@ serve(async (req: Request) => {
             active_members: s.active_members,
             total_members: s.total_members,
             challenge_wins: s.challenge_wins,
+            // Original global rank for reference
+            global_rank: s.rank,
+            prev_rank: s.prev_rank,
           };
         });
+
+        if (effectiveStateFilter) {
+          allEntries = allEntries.filter(
+            (e: Record<string, unknown>) =>
+              (e.state as string)?.toUpperCase() === effectiveStateFilter,
+          );
+        }
+
+        // Re-rank within the filtered set
+        ranking = allEntries.map(
+          (e: Record<string, unknown>, i: number) => ({
+            ...e,
+            rank: i + 1,
+          }),
+        );
       }
     }
-
-    // Caller's assessoria
-    const { data: profile } = await db
-      .from("profiles")
-      .select("active_coaching_group_id")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    const myGroupId = profile?.active_coaching_group_id ?? null;
 
     // Caller's personal contribution this season
     let myContribution: Record<string, unknown> | null = null;
@@ -167,6 +205,8 @@ serve(async (req: Request) => {
 
     return jsonOk({
       season,
+      scope: scopeParam,
+      state_filter: effectiveStateFilter,
       week_key: weekKey ?? null,
       ranking,
       my_group_id: myGroupId,

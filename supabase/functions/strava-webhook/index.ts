@@ -389,7 +389,20 @@ serve(async (req: Request) => {
         db.rpc("eval_athlete_verification", { p_user_id: conn.user_id }).then(() => {}, () => {});
       }
 
-      // 11. Analytics
+      // 11. Park detection — match GPS start to known parks
+      if (latlng && latlng.length > 0) {
+        try {
+          await detectAndLinkPark(db, conn.user_id, sessionId, stravaActivityId, activity, latlng);
+        } catch (e) {
+          console.error(JSON.stringify({
+            request_id: requestId, fn: FN,
+            error_code: "PARK_DETECTION_FAILED",
+            detail: (e as Error).message,
+          }));
+        }
+      }
+
+      // 12. Analytics
       db.from("product_events").insert({
         user_id: conn.user_id,
         event_name: "strava_activity_imported",
@@ -546,6 +559,56 @@ async function linkSessionToChallenges(
       })
       .eq("challenge_id", ch.id)
       .eq("user_id", userId);
+  }
+}
+
+// ── Park detection ──────────────────────────────────────────────────────────
+
+async function detectAndLinkPark(
+  db: ReturnType<typeof createClient>,
+  userId: string,
+  sessionId: string,
+  stravaActivityId: number,
+  activity: { distance: number; moving_time: number; start_date: string; average_heartrate?: number },
+  latlng: number[][],
+): Promise<void> {
+  const startLat = latlng[0][0];
+  const startLng = latlng[0][1];
+
+  const { data: parks } = await db
+    .from("parks")
+    .select("id, center_lat, center_lng, radius_m");
+
+  if (!parks || parks.length === 0) return;
+
+  for (const park of parks) {
+    const dist = haversine(startLat, startLng, park.center_lat, park.center_lng);
+    if (dist <= park.radius_m) {
+      const { data: profile } = await db
+        .from("profiles")
+        .select("display_name")
+        .eq("id", userId)
+        .maybeSingle();
+
+      const avgPace = activity.distance > 0
+        ? activity.moving_time / (activity.distance / 1000)
+        : null;
+
+      await db.from("park_activities").insert({
+        park_id: park.id,
+        user_id: userId,
+        session_id: sessionId,
+        strava_activity_id: stravaActivityId,
+        display_name: profile?.display_name ?? null,
+        distance_m: activity.distance ?? 0,
+        moving_time_s: activity.moving_time ?? 0,
+        avg_pace_sec_km: avgPace,
+        avg_heartrate: activity.average_heartrate ?? null,
+        start_time: activity.start_date,
+      });
+
+      break; // One park per activity
+    }
   }
 }
 
