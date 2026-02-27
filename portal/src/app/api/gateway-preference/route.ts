@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { cookies } from "next/headers";
+import { auditLog } from "@/lib/audit";
 
 export async function GET() {
   const supabase = createClient();
@@ -109,5 +110,6 @@ export async function POST(request: Request) {
     }
   }
 
+  await auditLog({ actorId: user.id, groupId: groupId, action: "settings.gateway_preference", metadata: { preferred_gateway: gateway } });
   return NextResponse.json({ ok: true, preferred_gateway: gateway });
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { auditLog } from "@/lib/audit";
 
 async function requirePlatformAdmin() {
   const supabase = createClient();
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    await auditLog({ actorId: auth.user.id, action: "platform.create_product", targetType: "product", metadata: { name, credits_amount, price_cents } });
     return NextResponse.json({ status: "created" });
   }
 
@@ -81,6 +83,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    await auditLog({ actorId: auth.user.id, action: "platform.toggle_product", targetType: "product", targetId: product_id, metadata: { is_active } });
     return NextResponse.json({ status: "updated" });
   }
 
@@ -126,6 +129,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    await auditLog({ actorId: auth.user.id, action: "platform.delete_product", targetType: "product", targetId: product_id });
     return NextResponse.json({ status: "deleted" });
   }
 

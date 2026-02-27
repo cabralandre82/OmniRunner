@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { auditLog } from "@/lib/audit";
 
 async function requirePlatformAdmin() {
   const supabase = createClient();
@@ -66,6 +67,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    await auditLog({ actorId: auth.user.id, action: "platform.approve_refund", targetType: "refund", targetId: refund_id, metadata: { notes } });
     return NextResponse.json({ status: "approved" });
   }
 
@@ -92,6 +94,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    await auditLog({ actorId: auth.user.id, action: "platform.reject_refund", targetType: "refund", targetId: refund_id, metadata: { notes: notes!.trim() } });
     return NextResponse.json({ status: "rejected" });
   }
 
@@ -150,6 +153,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    await auditLog({ actorId: auth.user.id, action: "platform.process_refund", targetType: "refund", targetId: refund_id, metadata: { purchase_id: refund.purchase_id, credits_debited: refund.credits_to_debit } });
     return NextResponse.json({ status: "processed" });
   }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { auditLog } from "@/lib/audit";
 
 async function requirePlatformAdmin() {
   const supabase = createClient();
@@ -65,6 +66,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    await auditLog({ actorId: auth.user.id, action: "platform.approve_assessoria", targetType: "group", targetId: group_id });
     return NextResponse.json({ status: "approved", group_id });
   }
 
@@ -83,6 +85,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    await auditLog({ actorId: auth.user.id, action: "platform.reject_assessoria", targetType: "group", targetId: group_id, metadata: { reason } });
     return NextResponse.json({ status: "rejected", group_id });
   }
 
@@ -101,6 +104,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    await auditLog({ actorId: auth.user.id, action: "platform.suspend_assessoria", targetType: "group", targetId: group_id, metadata: { reason } });
     return NextResponse.json({ status: "suspended", group_id });
   }
 

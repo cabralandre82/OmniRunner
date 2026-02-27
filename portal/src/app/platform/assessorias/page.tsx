@@ -26,26 +26,39 @@ export default async function AssessoriasPage() {
     )
     .order("created_at", { ascending: false });
 
-  const assessorias: Assessoria[] = [];
+  const allGroups = groups ?? [];
+  const coachIds = Array.from(new Set(allGroups.map((g) => g.coach_user_id)));
+  const groupIds = allGroups.map((g) => g.id);
 
-  for (const g of groups ?? []) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", g.coach_user_id)
-      .maybeSingle();
+  const [profilesRes, membersRes] = await Promise.all([
+    coachIds.length > 0
+      ? supabase
+          .from("profiles")
+          .select("id, display_name")
+          .in("id", coachIds)
+      : Promise.resolve({ data: [] }),
+    groupIds.length > 0
+      ? supabase
+          .from("coaching_members")
+          .select("group_id")
+          .in("group_id", groupIds)
+      : Promise.resolve({ data: [] }),
+  ]);
 
-    const { count } = await supabase
-      .from("coaching_members")
-      .select("id", { count: "exact", head: true })
-      .eq("group_id", g.id);
-
-    assessorias.push({
-      ...g,
-      coach_name: profile?.display_name ?? "—",
-      member_count: count ?? 0,
-    });
+  const coachMap = new Map(
+    (profilesRes.data ?? []).map((p: { id: string; display_name: string }) => [p.id, p.display_name]),
+  );
+  const countMap = new Map<string, number>();
+  for (const m of membersRes.data ?? []) {
+    const gid = (m as { group_id: string }).group_id;
+    countMap.set(gid, (countMap.get(gid) ?? 0) + 1);
   }
+
+  const assessorias: Assessoria[] = allGroups.map((g) => ({
+    ...g,
+    coach_name: coachMap.get(g.coach_user_id) ?? "—",
+    member_count: countMap.get(g.id) ?? 0,
+  }));
 
   const pending = assessorias.filter(
     (a) => a.approval_status === "pending_approval",

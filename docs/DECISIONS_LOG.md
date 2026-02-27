@@ -2780,3 +2780,52 @@ Auditoria pré-launch identificou 4 vulnerabilidades críticas:
 - `supabase/functions/reconcile-wallets-cron/index.ts` (novo)
 
 ---
+
+## DECISÃO 099 — Auditoria Portal Web: bloqueadores B1/B2/B3
+
+**Data:** 2026-02-26
+**Contexto:** Auditoria completa do portal web B2B identificou 3 bloqueadores.
+**Decisão:** Corrigir os 3 bloqueadores antes de operação real.
+
+### B3 — Fix N+1 em /platform/assessorias
+
+Substituído loop sequencial (N queries para profiles + N queries para member count) por 2 batch queries com `IN` filter + Map lookup. De O(2N+1) queries para O(3).
+
+### B1 — Audit trail (portal_audit_log)
+
+- Nova migration `20260227600000_portal_audit_log.sql`: tabela append-only com RLS (platform admin lê tudo, staff lê do grupo).
+- `portal/src/lib/audit.ts`: helper fire-and-forget para logging.
+- Integrado em 10 API routes: team/invite, team/remove, verification/evaluate, auto-topup, gateway-preference, platform/assessorias (approve/reject/suspend), platform/refunds (approve/reject/process), platform/products (create/toggle/delete), platform/support (reply/close/reopen).
+
+### B2 — Páginas placeholder substituídas
+
+**Atletas** (`portal/src/app/(portal)/athletes/page.tsx`):
+- Lista real de atletas com métricas: nome, status verificação, trust score, total corridas, distância total, última corrida, data de entrada.
+- KPIs: total atletas, ativos (1+ corrida), verificados, km totais.
+- Batch queries (sem N+1): coaching_members + athlete_verification + sessions.
+
+**Engajamento** (`portal/src/app/(portal)/engagement/page.tsx`):
+- DAU/WAU/MAU calculados via sessions.
+- Retenção 30d (MAU/total atletas).
+- Corridas e km (7d e 30d), desafios (30d).
+- Gráfico de barras de atividade dos últimos 7 dias.
+- Alerta de atletas inativos (sem atividade 30d).
+
+### Arquivos alterados
+
+- `supabase/migrations/20260227600000_portal_audit_log.sql` (novo)
+- `portal/src/lib/audit.ts` (novo)
+- `portal/src/app/platform/assessorias/page.tsx` (batch queries)
+- `portal/src/app/(portal)/athletes/page.tsx` (reescrito)
+- `portal/src/app/(portal)/engagement/page.tsx` (reescrito)
+- `portal/src/app/api/team/invite/route.ts` (+audit)
+- `portal/src/app/api/team/remove/route.ts` (+audit)
+- `portal/src/app/api/verification/evaluate/route.ts` (+audit)
+- `portal/src/app/api/auto-topup/route.ts` (+audit)
+- `portal/src/app/api/gateway-preference/route.ts` (+audit)
+- `portal/src/app/api/platform/assessorias/route.ts` (+audit)
+- `portal/src/app/api/platform/refunds/route.ts` (+audit)
+- `portal/src/app/api/platform/products/route.ts` (+audit)
+- `portal/src/app/api/platform/support/route.ts` (+audit)
+
+---

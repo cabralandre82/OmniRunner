@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { cookies } from "next/headers";
+import { auditLog } from "@/lib/audit";
 
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -66,6 +67,15 @@ export async function POST(request: Request) {
   if (deleteErr) {
     return NextResponse.json({ error: deleteErr.message }, { status: 500 });
   }
+
+  await auditLog({
+    actorId: session.user.id,
+    groupId: groupId,
+    action: "team.remove",
+    targetType: "member",
+    targetId: memberId,
+    metadata: { removed_user_id: member.user_id, removed_role: member.role },
+  });
 
   return NextResponse.json({ ok: true });
 }

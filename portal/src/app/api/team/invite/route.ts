@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { cookies } from "next/headers";
+import { auditLog } from "@/lib/audit";
 
 const STAFF_ROLES = ["professor", "assistente"];
 
@@ -93,6 +94,15 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+
+  await auditLog({
+    actorId: session.user.id,
+    groupId: groupId,
+    action: "team.invite",
+    targetType: "user",
+    targetId: targetUser.id,
+    metadata: { email, role: memberRole },
+  });
 
   return NextResponse.json({ ok: true, user_id: targetUser.id, role: memberRole });
 }
