@@ -3048,3 +3048,30 @@ Padrão uniforme: cada BLoC agora executa `_syncFromServer()` no início de `_fe
 - `lib/presentation/screens/wallet_screen.dart` (+labels para novos reasons)
 
 ---
+
+## DECISÃO 106 — Fix Strava OAuth redirect_uri "invalid" (27/02/2026)
+
+### Contexto
+
+Ao tentar conectar o Strava, o app abria o browser e o Strava retornava `{"message":"Bad Request","errors":[{"resource":"Application","field":"redirect_uri","code":"invalid"}]}`. Nenhuma auditoria anterior detectou o problema.
+
+### Causa raiz
+
+O `redirect_uri` era `omnirunner://strava/callback` — cujo host é `strava`. O Strava valida que o host do redirect_uri bate com o "Authorization Callback Domain" registrado no painel da API. O valor `strava` como domínio é rejeitado ou não estava configurado.
+
+### Decisão
+
+1. **redirect_uri alterado** para `omnirunner://localhost/exchange_token`
+   - Host `localhost` é **whitelisted pelo Strava** ("localhost and 127.0.0.1 are white-listed" — docs oficiais) → não precisa de configuração no painel
+   - Scheme `omnirunner://` garante que o Android/iOS intercepta o redirect via intent filter
+2. **deep_link_handler.dart** atualizado para reconhecer tanto o novo padrão (`localhost/exchange_token`) quanto o legado (`strava/callback`)
+3. O scheme `omnirunner://` já está registrado no AndroidManifest — intercepta qualquer host
+
+### Arquivos modificados
+- `lib/features/strava/data/strava_http_client.dart` (redirect_uri → `omnirunner://localhost/exchange_token`)
+- `lib/core/deep_links/deep_link_handler.dart` (parser dual: new + legacy pattern)
+
+### Ação manual
+Nenhuma — `localhost` é aceito automaticamente pelo Strava.
+
+---

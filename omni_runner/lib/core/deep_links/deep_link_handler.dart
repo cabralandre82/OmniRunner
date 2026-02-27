@@ -122,13 +122,19 @@ class DeepLinkHandler {
       return AuthCallbackAction(uri);
     }
 
-    // omnirunner://strava/callback?code=XXX
-    if (uri.scheme == 'omnirunner' &&
-        uri.host == 'strava' &&
-        uri.path.contains('callback')) {
-      final code = uri.queryParameters['code'];
-      if (code != null && code.isNotEmpty) {
-        return StravaCallbackAction(code);
+    // Strava OAuth callback:
+    //   current: omnirunner://localhost/exchange_token?code=XXX
+    //   legacy:  omnirunner://strava/callback?code=XXX
+    if (uri.scheme == 'omnirunner') {
+      final isExchangeToken =
+          uri.host == 'localhost' && uri.path.contains('exchange_token');
+      final isLegacy =
+          uri.host == 'strava' && uri.path.contains('callback');
+      if (isExchangeToken || isLegacy) {
+        final code = uri.queryParameters['code'];
+        if (code != null && code.isNotEmpty) {
+          return StravaCallbackAction(code);
+        }
       }
     }
 
