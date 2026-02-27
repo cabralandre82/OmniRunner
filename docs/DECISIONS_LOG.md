@@ -2872,3 +2872,44 @@ Endpoint `update` no `/api/platform/products` usava spread do body (`...fields`)
 - `supabase/migrations/20260227600000_portal_audit_log.sql` (+RPC)
 
 ---
+
+## DECISÃO 101 — Portal: melhorias estratégicas E4/E6/E7/E8
+
+**Data:** 2026-02-26
+**Contexto:** Melhorias estratégicas identificadas na auditoria do portal.
+
+### E4 — Dashboard com gráficos e tendências
+
+Dashboard reescrito com:
+- KPIs: créditos, atletas, verificados, ativos 7d, corridas 7d, km 7d, desafios 30d, compras.
+- Tendências week-over-week (% variação corridas e km vs semana anterior).
+- Gráfico de barras: atividade diária dos últimos 7 dias.
+- Links rápidos expandidos.
+
+### E6 — Alertas de créditos baixos
+
+Alerta visual no dashboard quando créditos < 50: banner vermelho com mensagem e botão "Recarregar Agora" (admin_master).
+
+### E7 — Distribuição de OmniCoins individuais via portal
+
+- API route `POST /api/distribute-coins`: admin distribui OmniCoins do estoque para atleta individual.
+  - Valida membership (admin_master), verifica atleta no grupo, decrementa inventory, credita wallet, registra ledger (institution_token_issue), audit log.
+  - Rate limited (20/min), max 1000 por operação.
+- UI: botão "Distribuir" na tabela de atletas com input inline e feedback.
+
+### E8 — Exportação CSV de atletas
+
+- API route `GET /api/export/athletes`: gera CSV com BOM UTF-8.
+  - Colunas: Nome, Status Verificação, Trust Score, Corridas, Distância (km), Membro Desde.
+  - Batch queries (sem N+1). Rate limited (3/min). Audit logged.
+- Botão "Exportar CSV" na página de atletas.
+
+### Arquivos alterados
+
+- `portal/src/app/(portal)/dashboard/page.tsx` (reescrito)
+- `portal/src/app/(portal)/athletes/page.tsx` (+distribute button, +export link)
+- `portal/src/app/(portal)/athletes/distribute-button.tsx` (novo)
+- `portal/src/app/api/distribute-coins/route.ts` (novo)
+- `portal/src/app/api/export/athletes/route.ts` (novo)
+
+---

@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
+import { DistributeButton } from "./distribute-button";
 
 interface Athlete {
   user_id: string;
@@ -46,7 +47,9 @@ function formatJoinDate(ms: number): string {
 
 export default async function AthletesPage() {
   const groupId = cookies().get("portal_group_id")?.value;
+  const role = cookies().get("portal_role")?.value;
   if (!groupId) return null;
+  const isAdmin = role === "admin_master";
 
   const db = createServiceClient();
 
@@ -120,11 +123,21 @@ export default async function AthletesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Atletas</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Todos os atletas vinculados à assessoria
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Atletas</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Todos os atletas vinculados à assessoria
+          </p>
+        </div>
+        {athletes.length > 0 && (
+          <a
+            href="/api/export/athletes"
+            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+          >
+            Exportar CSV
+          </a>
+        )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -167,6 +180,11 @@ export default async function AthletesPage() {
                   <th className="px-4 py-3 text-left font-medium text-gray-500">
                     Membro Desde
                   </th>
+                  {isAdmin && (
+                    <th className="px-4 py-3 text-center font-medium text-gray-500">
+                      OmniCoins
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -204,6 +222,14 @@ export default async function AthletesPage() {
                       <td className="whitespace-nowrap px-4 py-3 text-gray-500">
                         {formatJoinDate(a.joined_at_ms)}
                       </td>
+                      {isAdmin && (
+                        <td className="whitespace-nowrap px-4 py-3 text-center">
+                          <DistributeButton
+                            athleteId={a.user_id}
+                            athleteName={a.display_name}
+                          />
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
