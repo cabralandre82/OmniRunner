@@ -484,7 +484,7 @@ O modelo de receita é **B2B SaaS** (plataforma → assessoria). O app **nunca p
 | Env vars | `--dart-define-from-file=.env.dev` |
 | Keystore | `omnirunner-release.keystore` |
 | APK atual | `v1.0.13` (127 MB) |
-| Supabase | 42 Edge Functions + 11 migrations |
+| Supabase | 54 Edge Functions + 60 migrations |
 | Portal | `portal/` (Next.js 14, Vercel, Root Directory: `portal`) |
 | CI/CD | Manual (flutter build apk) |
 | Min Android SDK | 21 (Android 5.0) |

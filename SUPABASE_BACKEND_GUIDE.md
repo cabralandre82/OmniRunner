@@ -713,8 +713,8 @@ Atleta finaliza corrida no device
    - Ordena participantes por `progress_value` (desc para distance/time, asc para pace)
    - Tiebreaker: `last_submitted_at_ms` (quem terminou primeiro vence empate)
    - Calcula outcome (won/lost/tied/completed_target/participated/did_not_finish)
-   - Distribui Coins: 1v1 = 25 participação + 15 vitória + pool; grupo = 30 completed / 10 participated
-   - **Cross-assessoria (1v1):** participação (25) vai direto para `balance_coins`; pool + won bonus entram como `pending_coins` (reason `challenge_prize_pending`) e só são liberados após clearing via `release_pending_to_balance`
+   - Distribui Coins: vencedor recebe o pool integral (soma dos entry fees reais coletados via `coin_ledger`). Empate divide igualmente. Ninguém correu = refund para todos.
+   - **Cross-assessoria (1v1):** pool entra como `pending_coins` (reason `challenge_prize_pending`) e só é liberado após clearing via `release_pending_to_balance`
    - **Same assessoria / sem grupo:** comportamento normal — tudo direto para `balance_coins`
 3. INSERT challenge_results + coin_ledger
 4. UPDATE wallets via `increment_wallet_balance` (imediato) e/ou `increment_wallet_pending` (cross)
@@ -1120,7 +1120,7 @@ INSERT INTO public.badges (id, category, tier, name, description, xp_reward, coi
 # 1. Link ao projeto remoto
 supabase link --project-ref <project_id>
 
-# 2. Push migrations (42+ migration files)
+# 2. Push migrations (60 migration files)
 supabase db push
 
 # 3. Deploy ALL Edge Functions (54 functions)
@@ -1302,7 +1302,7 @@ cd portal/ && npm run build && vercel --prod
 
 ### Ao receber este documento:
 
-1. **Leia as migrations SQL** em `supabase/migrations/` (34 arquivos) — elas são o schema definitivo.
+1. **Leia as migrations SQL** em `supabase/migrations/` (60 arquivos) — elas são o schema definitivo.
 2. **Leia as Edge Functions** em `supabase/functions/` (54 functions) — elas contêm toda a lógica server-side.
 3. **Leia o portal** em `portal/` — Next.js 14, App Router, Tailwind + shadcn/ui.
 4. **Use o mapeamento Entity→Table** (§12) para traduzir entre Dart e SQL.
@@ -1311,7 +1311,7 @@ cd portal/ && npm run build && vercel --prod
 7. **Billing NUNCA aparece no app mobile** — preços, checkout, pagamentos são exclusivos do portal web.
 8. **O frontend mobile é offline-first** — dados locais (Isar) são sincronizados em background.
 9. **Referências de specs**: `GAMIFICATION_POLICY.md`, `PROGRESSION_SPEC.md`, `SOCIAL_SPEC.md`, `contracts/analytics_api.md`.
-10. **Decisões arquiteturais**: `docs/DECISIONS_LOG.md` (86 decisões documentadas, incluindo billing, auto top-up, refunds, limites, strava-only, parks, social, push, polimento, liga, wrapped, running dna, backend audit, liga estadual).
+10. **Decisões arquiteturais**: `docs/DECISIONS_LOG.md` (96 decisões documentadas, incluindo billing, auto top-up, refunds, limites, strava-only, parks, social, push, polimento, liga, wrapped, running dna, backend audit, liga estadual, auditoria final).
 
 ### RPCs disponíveis (funções SQL SECURITY DEFINER):
 
@@ -1350,4 +1350,4 @@ cd portal/ && npm run build && vercel --prod
 
 ---
 
-*Gerado em 2026-02-18, atualizado em 2026-02-26 (Sprint 25.0.0 + Parks E2E + Backend Audit + Liga Admin + Liga Estadual + Auditoria Final) — 66 tabelas, 54 Edge Functions, 59 migrations, DECISAO 092*
+*Gerado em 2026-02-18, atualizado em 2026-02-26 (Sprint 25.0.0 + Parks E2E + Backend Audit + Liga Admin + Liga Estadual + Auditoria Final) — 67 tabelas, 54 Edge Functions, 60 migrations, DECISAO 096*

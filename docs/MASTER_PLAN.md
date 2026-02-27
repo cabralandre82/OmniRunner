@@ -1,7 +1,7 @@
 # MASTER_PLAN.md — Plano de Fases do Omni Runner
 
-> **Sprint:** 1.2
-> **Status:** Ativo
+> **Atualizado:** 2026-02-26
+> **Status:** Pre-launch — Auditoria final concluída (score 0.93)
 
 ---
 
@@ -10,27 +10,27 @@
 | Phase | Nome | Descricao | Status |
 |---|---|---|---|
 | 00 | Planejamento Estrategico | Escopo, stack, governanca, congelamento | CONCLUIDA |
-| 01 | Base do Projeto (Fundacao) | Flutter create, docs, estrutura de pastas, DI, Protobuf, Isar | EM ANDAMENTO |
-| 02 | GPS Tracking (F1) | Captura GPS em tempo real, start/pause/stop | TODO |
-| 03 | Metricas (F2) | Calculo de distancia, pace, tempo a partir dos pontos GPS | TODO |
-| 04 | Persistencia (F3) | Salvar corridas no Isar, persistencia incremental offline | TODO |
-| 05 | Anti-Cheat (F6) | Validacao de velocidade, deteccao de teleporte, score | TODO |
-| 06 | Ghost Runner (F5) | Selecao de corrida anterior, comparacao em tempo real | TODO |
-| 07 | Mapa (F4) | Exibicao do trajeto pos-corrida com MapLibre | TODO |
-| 08 | Sync (F7) | Sincronizacao manual com Supabase | TODO |
-| 09 | Integracao | Fluxo completo, testes E2E, polish | TODO |
-| 10 | Build e Release | APK final, testes em device real, release | TODO |
-| 12 | Watch Apps | Apple Watch + WearOS standalone tracking, sync com phone | EM ANDAMENTO |
-| 13 | Gamification Engine | Desafios 1v1/grupo, OmniCoins, rankings, auditoria (loja-safe) | EM ANDAMENTO |
-| 14 | Integracoes Externas | Strava Upload + Import (Webhook), Export FIT/GPX/TCX, Share Sheet, Offline Queue | EM ANDAMENTO |
-| 15 | Social & Events | Amigos, grupos, leaderboards, eventos virtuais | EM ANDAMENTO |
-| 16 | Assessoria Mode (Coaching Intelligence Engine) | Grupos de assessoria, rankings internos, análise de evolução, gamificação de eventos reais, insights para coach | EM ANDAMENTO |
-| 17 | Supabase Backend (Full Stack) | Schema SQL completo, RLS, Edge Functions, RPC helpers, seed data, mock-first init, handoff doc | EM ANDAMENTO |
-| 18 | Social Auth + Onboarding | Login social (Google/Apple), onboarding flow | EM ANDAMENTO |
-| 19 | Assessoria Ecosystem Core (EPIC-07) | Ecossistema institucional: assessorias como ator principal, tokens institucionais, clearing, campeonatos, coaching dashboard | PLANNED |
-| 20 | Gamification (Progression Final) | Modelo final de progressão: XP, Níveis, Streaks, Goals semanais, microcopy UX | EM ANDAMENTO |
-| 21 | Monetização (Loja-Safe) | Modelo B2B SaaS: venda de créditos para assessorias fora do app, compliance Apple/Google, zero IAP | EM ANDAMENTO |
-| 22 | Atleta Verificado & Monetization Gate | Sistema de verificação de atleta: state machine DB, server-side gate (stake>0 exige VERIFIED), sem override admin, avaliação automática por sessões | EM ANDAMENTO |
+| 01 | Base do Projeto (Fundacao) | Flutter create, docs, estrutura de pastas, DI, Protobuf, Isar | CONCLUIDA |
+| 02 | GPS Tracking (F1) | Captura GPS em tempo real, start/pause/stop | CONCLUIDA (removido — Strava-only) |
+| 03 | Metricas (F2) | Calculo de distancia, pace, tempo a partir dos pontos GPS | CONCLUIDA |
+| 04 | Persistencia (F3) | Salvar corridas no Isar, persistencia incremental offline | CONCLUIDA |
+| 05 | Anti-Cheat (F6) | Validacao de velocidade, deteccao de teleporte, score | CONCLUIDA |
+| 06 | Ghost Runner (F5) | Selecao de corrida anterior, comparacao em tempo real | CONCLUIDA (removido — Strava-only) |
+| 07 | Mapa (F4) | Exibicao do trajeto pos-corrida com MapLibre | CONCLUIDA |
+| 08 | Sync (F7) | Sincronizacao offline-first com Supabase | CONCLUIDA |
+| 09 | Integracao | Fluxo completo, testes E2E, polish | CONCLUIDA |
+| 10 | Build e Release | APK final, testes em device real, release | CONCLUIDA (v1.0.13) |
+| 12 | Watch Apps | Apple Watch + WearOS standalone tracking, sync com phone | CONCLUIDA |
+| 13 | Gamification Engine | Desafios 1v1/grupo/team, OmniCoins, rankings, auditoria (loja-safe) | CONCLUIDA |
+| 14 | Integracoes Externas | Strava Import (OAuth2 + Webhook), Export FIT/GPX/TCX, HealthKit/Health Connect | CONCLUIDA |
+| 15 | Social & Events | Amigos, grupos, leaderboards, eventos virtuais | CONCLUIDA |
+| 16 | Assessoria Mode (Coaching Intelligence Engine) | Grupos de assessoria, rankings, análise de evolução, insights, dashboard staff | CONCLUIDA |
+| 17 | Supabase Backend (Full Stack) | 60 migrations, 54 Edge Functions, RLS, RPCs, seed data, handoff doc | CONCLUIDA |
+| 18 | Social Auth + Onboarding | Login social (Google/Apple/Facebook), onboarding 9 slides | CONCLUIDA |
+| 19 | Assessoria Ecosystem Core (EPIC-07) | Tokens institucionais, clearing, campeonatos, coaching dashboard, liga | CONCLUIDA |
+| 20 | Gamification (Progression Final) | XP, Níveis, Streaks, Goals semanais, badges (30), missions | CONCLUIDA |
+| 21 | Monetização (Loja-Safe) | B2B SaaS portal, Stripe checkout, auto top-up, refunds, zero IAP | CONCLUIDA |
+| 22 | Atleta Verificado & Monetization Gate | State machine DB, 4-layer server-side gate, auto eval, cron diário | CONCLUIDA |
 
 ---
 

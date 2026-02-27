@@ -82,8 +82,8 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen> {
       color: Color(0xFFFFA000),
       title: 'OmniCoins',
       body:
-          'Sua assessoria distribui OmniCoins.\n'
-          'Use em desafios como inscrição — o vencedor leva o pool!\n'
+          'Suas OmniCoins vêm da sua assessoria de corrida.\n'
+          'Use como inscrição nos desafios — o vencedor leva o pool!\n'
           'Não têm valor monetário, são apenas para diversão.',
     ),
     _SlideData(
