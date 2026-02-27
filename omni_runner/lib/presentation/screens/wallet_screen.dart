@@ -353,6 +353,8 @@ class _LedgerTile extends StatelessWidget {
         LedgerReason.crossAssessoriaPending => 'Pendente (entre assessorias)',
         LedgerReason.crossAssessoriaCleared => 'Liberado (confirmado entre assessorias)',
         LedgerReason.crossAssessoriaBurned => 'Expirado (troca de assessoria)',
+        LedgerReason.institutionTokenIssue => 'Recebido da assessoria',
+        LedgerReason.institutionTokenBurn => 'Recolhido pela assessoria',
         LedgerReason.challengeTeamCompleted => 'Desafio de equipe',
         LedgerReason.challengeTeamWon => 'Vitória em equipe',
         LedgerReason.adminCorrection => 'Ajuste de reconciliação',

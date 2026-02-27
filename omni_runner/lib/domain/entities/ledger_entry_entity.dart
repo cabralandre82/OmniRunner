@@ -58,6 +58,12 @@ enum LedgerReason {
   /// Pending coins burned on assessoria switch before clearing.
   crossAssessoriaBurned,
 
+  /// Assessoria distributes coins to athlete (positive delta).
+  institutionTokenIssue,
+
+  /// Assessoria burns coins from inventory (negative delta, admin-only).
+  institutionTokenBurn,
+
   /// Won a staked team-vs-team challenge — receives share of entry-fee pool.
   challengeTeamCompleted,
 
@@ -88,6 +94,8 @@ enum LedgerReason {
     crossAssessoriaPending: 15,
     crossAssessoriaCleared: 16,
     crossAssessoriaBurned: 17,
+    institutionTokenIssue: 21,
+    institutionTokenBurn: 22,
     challengeTeamCompleted: 18,
     challengeTeamWon: 19,
     adminCorrection: 20,
@@ -108,6 +116,35 @@ enum LedgerReason {
     }
     return reason;
   }
+
+  static const _snakeMap = <String, LedgerReason>{
+    'session_completed': sessionCompleted,
+    'challenge_one_vs_one_completed': challengeOneVsOneCompleted,
+    'challenge_one_vs_one_won': challengeOneVsOneWon,
+    'challenge_group_completed': challengeGroupCompleted,
+    'streak_weekly': streakWeekly,
+    'streak_monthly': streakMonthly,
+    'pr_distance': prDistance,
+    'pr_pace': prPace,
+    'challenge_entry_fee': challengeEntryFee,
+    'challenge_pool_won': challengePoolWon,
+    'challenge_entry_refund': challengeEntryRefund,
+    'cosmetic_purchase': cosmeticPurchase,
+    'admin_adjustment': adminAdjustment,
+    'badge_reward': badgeReward,
+    'mission_reward': missionReward,
+    'cross_assessoria_pending': crossAssessoriaPending,
+    'cross_assessoria_cleared': crossAssessoriaCleared,
+    'cross_assessoria_burned': crossAssessoriaBurned,
+    'institution_token_issue': institutionTokenIssue,
+    'institution_token_burn': institutionTokenBurn,
+    'challenge_team_completed': challengeTeamCompleted,
+    'challenge_team_won': challengeTeamWon,
+    'admin_correction': adminCorrection,
+  };
+
+  /// Parse from snake_case string (as stored in Supabase). Returns null if unknown.
+  static LedgerReason? fromSnakeCase(String s) => _snakeMap[s];
 }
 
 /// A single, immutable, append-only transaction in the Coins ledger.

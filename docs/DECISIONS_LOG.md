@@ -2977,3 +2977,74 @@ Dois bugs reportados:
 - `docs/ARCHITECTURE.md` (atualização invariante OmniCoins + F28)
 
 ---
+
+## DECISÃO 104 — Wallet sync Supabase→Isar + Distribuições no portal + Profile name propagation (27/02/2026)
+
+### Contexto
+
+1. OmniCoins distribuídos via portal não apareciam no app mobile — o `WalletBloc` lia exclusivamente do Isar local, ignorando alterações server-side.
+2. Portal não tinha nenhuma visualização do histórico de distribuições — péssima gestão operacional.
+3. Nome salvo no perfil não propagava para a dashboard ("Olá, cabralandre") porque o `AthleteDashboardScreen` carregava o nome apenas no `initState` e nunca atualizava.
+
+### Decisão
+
+**Wallet sync:** `WalletBloc._fetch()` agora executa `_syncFromServer()` antes de ler Isar. Busca `balance_coins`, `lifetime_earned_coins`, `lifetime_spent_coins` da tabela `wallets` via Supabase (RLS: `wallets_own_read`). Persiste no Isar via `_walletRepo.save()`. Se offline, fallback silencioso para dados locais.
+
+**Distribuições no portal:** Nova página `/distributions` com:
+- 4 KPIs: saldo disponível, total distribuído, distribuído 30d, atletas únicos
+- Tabela: data/hora, atleta, quantidade, distribuído por (actor)
+- Dados: `portal_audit_log` filtrado por `action = 'coins.distribute'`
+- Link "Distribuições" no sidebar (admin_master + professor)
+
+**Profile name propagation:** Adicionado `ValueNotifier<String?> profileNameNotifier` ao `UserIdentityProvider`. O `ProfileScreen` notifica via `updateProfileName(name)` após save bem-sucedido. O `AthleteDashboardScreen` escuta o notifier e atualiza instantaneamente. O getter `displayName` prioriza o valor do notifier.
+
+**Profile save resilience:** Detecção de colunas sociais (`instagram_handle`, `tiktok_handle`) via flag `_socialColumnsAvailable`. Se colunas não existem no DB de produção, o save inclui apenas `display_name` e os campos sociais são ocultados na UI.
+
+### Arquivos modificados
+- `lib/presentation/blocs/wallet/wallet_bloc.dart` (sync Supabase→Isar)
+- `lib/core/auth/user_identity_provider.dart` (+profileNameNotifier, +updateProfileName)
+- `lib/presentation/screens/athlete_dashboard_screen.dart` (listener, auth UID)
+- `lib/presentation/screens/profile_screen.dart` (social columns flag, notifier)
+- `portal/src/app/(portal)/distributions/page.tsx` (novo)
+- `portal/src/components/sidebar.tsx` (+Distribuições link)
+
+---
+
+## DECISÃO 105 — Sync Supabase→Isar em todos os BLoCs críticos (27/02/2026)
+
+### Contexto
+
+Varredura completa revelou que 5 BLoCs liam exclusivamente do Isar local, ignorando dados criados/atualizados server-side por Edge Functions, cron jobs e portal. Dados como saldo de OmniCoins, histórico de movimentações, XP, streaks, badges e missões ficavam desatualizados no app.
+
+### Problema por BLoC
+
+| BLoC | Tabela Supabase | Quem altera server-side | Impacto |
+|------|----------------|------------------------|---------|
+| WalletBloc | `wallets` + `coin_ledger` | portal (distribuição), settle-challenge, challenge-join | Saldo e histórico de coins invisíveis |
+| ProgressionBloc | `profile_progress` + `xp_transactions` | verify-session (increment_profile_progress), calculate-progression | XP, streaks, stats desatualizados |
+| BadgesBloc | `badge_awards` | evaluate-badges EF | Conquistas desbloqueadas não aparecem |
+| MissionsBloc | `mission_progress` | EFs de progressão | Missões completadas server-side não refletem |
+
+### Decisão
+
+Padrão uniforme: cada BLoC agora executa `_syncFromServer()` no início de `_fetch()`:
+1. Busca dados da tabela Supabase via RLS (user pode ler seus próprios dados)
+2. Persiste no Isar via repo existente (upsert por ID)
+3. Se offline, fallback silencioso para dados locais (try/catch)
+4. Depois lê do Isar (agora atualizado) normalmente
+
+### Adições ao modelo
+
+- `LedgerReason.institutionTokenIssue` e `LedgerReason.institutionTokenBurn` — novos enum values + stable ordinals (21, 22) para representar distribuições da assessoria no histórico do app
+- `LedgerReason.fromSnakeCase()` — parser de snake_case (formato Supabase) para enum Dart
+- Label "Recebido da assessoria" / "Recolhido pela assessoria" no wallet_screen
+
+### Arquivos modificados
+- `lib/presentation/blocs/wallet/wallet_bloc.dart` (+_syncLedger)
+- `lib/presentation/blocs/progression/progression_bloc.dart` (+_syncProfileProgress, +_syncXpTransactions)
+- `lib/presentation/blocs/badges/badges_bloc.dart` (+_syncFromServer)
+- `lib/presentation/blocs/missions/missions_bloc.dart` (+_syncFromServer)
+- `lib/domain/entities/ledger_entry_entity.dart` (+institutionTokenIssue/Burn, +fromSnakeCase, +_snakeMap)
+- `lib/presentation/screens/wallet_screen.dart` (+labels para novos reasons)
+
+---

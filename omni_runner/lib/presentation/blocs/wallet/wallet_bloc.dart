@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/domain/entities/ledger_entry_entity.dart';
 import 'package:omni_runner/domain/entities/wallet_entity.dart';
 import 'package:omni_runner/domain/repositories/i_ledger_repo.dart';
 import 'package:omni_runner/domain/repositories/i_wallet_repo.dart';
@@ -44,6 +45,7 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
   Future<void> _fetch(Emitter<WalletState> emit) async {
     try {
       await _syncFromServer();
+      await _syncLedger();
       final wallet = await _walletRepo.getByUserId(_userId);
       final history = await _ledgerRepo.getByUserId(_userId);
       emit(WalletLoaded(wallet: wallet, history: history));
@@ -71,6 +73,35 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
       await _walletRepo.save(remote);
     } on Exception {
       // Offline or error — fall back to local Isar data
+    }
+  }
+
+  /// Pulls coin_ledger entries from Supabase and persists to Isar.
+  Future<void> _syncLedger() async {
+    if (!AppConfig.isSupabaseReady || _userId.isEmpty) return;
+    try {
+      final rows = await Supabase.instance.client
+          .from('coin_ledger')
+          .select('id, user_id, delta_coins, reason, ref_id, created_at_ms')
+          .eq('user_id', _userId)
+          .order('created_at_ms', ascending: false)
+          .limit(200);
+      for (final r in rows) {
+        final reasonStr = r['reason'] as String? ?? '';
+        final reason = LedgerReason.fromSnakeCase(reasonStr);
+        if (reason == null) continue;
+        final entry = LedgerEntryEntity(
+          id: r['id'] as String,
+          userId: r['user_id'] as String,
+          deltaCoins: (r['delta_coins'] as num).toInt(),
+          reason: reason,
+          refId: r['ref_id'] as String? ?? '',
+          createdAtMs: (r['created_at_ms'] as num).toInt(),
+        );
+        await _ledgerRepo.append(entry);
+      }
+    } on Exception {
+      // Offline — use local data
     }
   }
 }
