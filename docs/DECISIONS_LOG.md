@@ -1955,3 +1955,32 @@ staff responde → status:open → admin fecha → status:closed (reabrir possí
 - `portal/src/app/platform/platform-sidebar.tsx`
 
 ---
+
+## DECISÃO 077 — Dark Mode e Configurações para Staff
+
+**Data:** 26/02/2026
+**Contexto:** Dark mode ilegível nos cards dos dashboards (cores claras
+hardcoded sobre fundo escuro). Configurações inacessíveis para staff.
+
+### Correções
+
+1. **Configurações para staff** — a aba Configurações (Strava, tema, unidades)
+   agora aparece tanto para atletas quanto para staff no menu Mais.
+
+2. **Dark mode — Dashboard cards** — ambos os dashboards (atleta e staff) agora
+   detectam `Brightness.dark` e usam `surfaceContainerHighest` como fundo dos
+   cards ao invés de cores hardcoded (`shade50`/`shade100`). Texto usa
+   `onSurface`/`onSurfaceVariant` do ColorScheme para garantir contraste.
+
+3. **Dark mode — Suporte** — badges de status, bolhas de chat e barra de
+   "chamado encerrado" adaptam cores ao tema escuro usando variantes de alta
+   luminosidade (`shade300`/`shade900` com alpha).
+
+### Arquivos modificados:
+- `lib/presentation/screens/more_screen.dart`
+- `lib/presentation/screens/athlete_dashboard_screen.dart`
+- `lib/presentation/screens/staff_dashboard_screen.dart`
+- `lib/presentation/screens/support_screen.dart`
+- `lib/presentation/screens/support_ticket_screen.dart`
+
+---

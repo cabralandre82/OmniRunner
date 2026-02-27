@@ -27960,3 +27960,14 @@ Tour de 6 slides para novos atletas, integrado ao AuthGate:
 - Portal: /platform/support (lista + filtros) + /platform/support/[id] (chat)
 - API: /api/platform/support (reply, close, reopen)
 - Fluxo: open → answered → open → closed (com reabrir)
+
+---
+
+## Sprint — Dark Mode + Configurações Staff (26/02/2026)
+
+**Status:** CONCLUÍDA
+**Ref:** DECISÃO 077
+
+- Configurações (tema, unidades, Strava) agora acessível para staff no Mais
+- Dark mode: cards dos dashboards usam surfaceContainerHighest (não mais shade50)
+- Dark mode: suporte (badges, chat, barra encerrado) com cores adaptadas

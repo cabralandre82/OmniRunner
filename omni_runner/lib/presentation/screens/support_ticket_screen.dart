@@ -197,14 +197,14 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
           else
             Container(
               padding: const EdgeInsets.all(16),
-              color: Colors.grey.shade100,
+              color: cs.surfaceContainerHighest,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle, size: 18, color: Colors.grey.shade600),
+                  Icon(Icons.check_circle, size: 18, color: cs.onSurfaceVariant),
                   const SizedBox(width: 8),
                   Text('Chamado encerrado',
-                      style: TextStyle(color: Colors.grey.shade600)),
+                      style: TextStyle(color: cs.onSurfaceVariant)),
                 ],
               ),
             ),
@@ -230,6 +230,7 @@ class _MessageBubble extends StatelessWidget {
     final body = message['body'] as String? ?? '';
     final createdAt = DateTime.tryParse(message['created_at'] as String? ?? '');
     final isPlatform = message['sender_role'] == 'platform';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -243,7 +244,7 @@ class _MessageBubble extends StatelessWidget {
           color: isMe
               ? cs.primaryContainer
               : isPlatform
-                  ? Colors.blue.shade50
+                  ? (isDark ? Colors.blue.shade900.withValues(alpha: 0.4) : Colors.blue.shade50)
                   : cs.surfaceContainerHighest,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
@@ -264,7 +265,7 @@ class _MessageBubble extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: Colors.blue.shade700,
+                    color: isDark ? Colors.blue.shade300 : Colors.blue.shade700,
                   ),
                 ),
               ),
@@ -302,11 +303,24 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final (Color bg, Color fg, String label) = switch (status) {
-      'open' => (Colors.orange.shade100, Colors.orange.shade800, 'Aberto'),
-      'answered' => (Colors.blue.shade100, Colors.blue.shade800, 'Respondido'),
-      'closed' => (Colors.grey.shade200, Colors.grey.shade600, 'Fechado'),
-      _ => (Colors.grey.shade100, Colors.grey.shade600, status),
+      'open' => (
+        isDark ? Colors.orange.shade900.withValues(alpha: 0.4) : Colors.orange.shade100,
+        isDark ? Colors.orange.shade300 : Colors.orange.shade800,
+        'Aberto'),
+      'answered' => (
+        isDark ? Colors.blue.shade900.withValues(alpha: 0.4) : Colors.blue.shade100,
+        isDark ? Colors.blue.shade300 : Colors.blue.shade800,
+        'Respondido'),
+      'closed' => (
+        isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+        isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+        'Fechado'),
+      _ => (
+        isDark ? Colors.grey.shade800 : Colors.grey.shade100,
+        isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+        status),
     };
 
     return Container(

@@ -694,11 +694,21 @@ class _StaffCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark
+        ? theme.colorScheme.surfaceContainerHighest
+        : bgColor;
+    final titleColor = dimmed
+        ? (isDark ? Colors.grey.shade400 : Colors.grey.shade600)
+        : theme.colorScheme.onSurface;
+    final subtitleColor = dimmed
+        ? (isDark ? Colors.grey.shade500 : Colors.grey.shade500)
+        : theme.colorScheme.onSurfaceVariant;
 
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      color: bgColor,
+      color: cardBg,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
@@ -711,7 +721,7 @@ class _StaffCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.15),
+                  color: iconColor.withValues(alpha: isDark ? 0.25 : 0.15),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(icon, size: 26, color: iconColor),
@@ -721,16 +731,14 @@ class _StaffCard extends StatelessWidget {
                 title,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: dimmed ? Colors.grey.shade600 : null,
+                  color: titleColor,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 subtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: dimmed
-                      ? Colors.grey.shade500
-                      : theme.colorScheme.onSurfaceVariant,
+                  color: subtitleColor,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -740,13 +748,13 @@ class _StaffCard extends StatelessWidget {
                 Row(
                   children: [
                     Icon(Icons.info_outline_rounded,
-                        size: 14, color: Colors.orange.shade700),
+                        size: 14, color: Colors.orange.shade400),
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
                         alert!,
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: Colors.orange.shade700,
+                          color: Colors.orange.shade400,
                           fontWeight: FontWeight.w600,
                         ),
                         maxLines: 1,

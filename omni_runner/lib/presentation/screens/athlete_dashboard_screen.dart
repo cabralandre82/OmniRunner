@@ -482,11 +482,21 @@ class _DashCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark
+        ? theme.colorScheme.surfaceContainerHighest
+        : bgColor;
+    final titleColor = isEmpty
+        ? (isDark ? Colors.grey.shade400 : Colors.grey.shade600)
+        : theme.colorScheme.onSurface;
+    final subtitleColor = isEmpty
+        ? (isDark ? Colors.grey.shade500 : Colors.grey.shade500)
+        : theme.colorScheme.onSurfaceVariant;
 
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      color: bgColor,
+      color: cardBg,
       child: InkWell(
         onTap: () {
           HapticFeedback.selectionClick();
@@ -504,7 +514,7 @@ class _DashCard extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: iconColor.withValues(alpha: 0.15),
+                      color: iconColor.withValues(alpha: isDark ? 0.25 : 0.15),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(icon, size: 26, color: iconColor),
@@ -518,7 +528,9 @@ class _DashCard extends StatelessWidget {
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.orange.shade100,
+                          color: isDark
+                              ? Colors.orange.shade900.withValues(alpha: 0.4)
+                              : Colors.orange.shade100,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -526,7 +538,9 @@ class _DashCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
-                            color: Colors.orange.shade800,
+                            color: isDark
+                                ? Colors.orange.shade300
+                                : Colors.orange.shade800,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -540,16 +554,14 @@ class _DashCard extends StatelessWidget {
                 title,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: isEmpty ? Colors.grey.shade600 : null,
+                  color: titleColor,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 subtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: isEmpty
-                      ? Colors.grey.shade500
-                      : theme.colorScheme.onSurfaceVariant,
+                  color: subtitleColor,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

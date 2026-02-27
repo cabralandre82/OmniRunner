@@ -118,15 +118,13 @@ class MoreScreen extends StatelessWidget {
             pushScreen: ProfileScreen(),
           ),
 
-          if (!_isStaff) ...[
-            _header(context, 'Configurações'),
-            const _ActionTile(
-              icon: Icons.tune,
-              title: 'Configurações',
-              subtitle: 'Strava, tema e unidades',
-              pushScreen: SettingsScreen(),
-            ),
-          ],
+          _header(context, 'Configurações'),
+          const _ActionTile(
+            icon: Icons.tune,
+            title: 'Configurações',
+            subtitle: 'Strava, tema e unidades',
+            pushScreen: SettingsScreen(),
+          ),
 
           if (_isStaff) ...[
             _header(context, 'Administração'),

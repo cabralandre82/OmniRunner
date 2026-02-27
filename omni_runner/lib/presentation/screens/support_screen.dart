@@ -178,11 +178,24 @@ class _TicketCard extends StatelessWidget {
     final subject = ticket['subject'] as String? ?? '';
     final updatedAt = DateTime.tryParse(ticket['updated_at'] as String? ?? '');
 
+    final isDark = theme.brightness == Brightness.dark;
     final (Color bg, Color fg, String label, IconData icon) = switch (status) {
-      'open' => (Colors.orange.shade100, Colors.orange.shade800, 'Aberto', Icons.schedule),
-      'answered' => (Colors.blue.shade100, Colors.blue.shade800, 'Respondido', Icons.reply),
-      'closed' => (Colors.grey.shade200, Colors.grey.shade600, 'Fechado', Icons.check_circle_outline),
-      _ => (Colors.grey.shade100, Colors.grey.shade600, status, Icons.help_outline),
+      'open' => (
+        isDark ? Colors.orange.shade900.withValues(alpha: 0.4) : Colors.orange.shade100,
+        isDark ? Colors.orange.shade300 : Colors.orange.shade800,
+        'Aberto', Icons.schedule),
+      'answered' => (
+        isDark ? Colors.blue.shade900.withValues(alpha: 0.4) : Colors.blue.shade100,
+        isDark ? Colors.blue.shade300 : Colors.blue.shade800,
+        'Respondido', Icons.reply),
+      'closed' => (
+        isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+        isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+        'Fechado', Icons.check_circle_outline),
+      _ => (
+        isDark ? Colors.grey.shade800 : Colors.grey.shade100,
+        isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+        status, Icons.help_outline),
     };
 
     return Card(
