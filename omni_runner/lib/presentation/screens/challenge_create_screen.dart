@@ -19,7 +19,7 @@ import 'package:omni_runner/presentation/widgets/verification_gate.dart';
 
 class ChallengeCreateScreen extends StatefulWidget {
   final ChallengeType? initialType;
-  final ChallengeMetric? initialMetric;
+  final ChallengeGoal? initialGoal;
   final int? initialWindowMin;
   final int? initialFee;
   final double? initialTarget;
@@ -27,7 +27,7 @@ class ChallengeCreateScreen extends StatefulWidget {
   const ChallengeCreateScreen({
     super.key,
     this.initialType,
-    this.initialMetric,
+    this.initialGoal,
     this.initialWindowMin,
     this.initialFee,
     this.initialTarget,
@@ -50,23 +50,19 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
   int _mode = 0;
 
   late ChallengeType _type;
-  late ChallengeMetric _metric;
+  late ChallengeGoal _goal;
   bool _created = false;
 
-  /// For "Agora" mode: window in minutes after accept
   late int _quickWindowMin;
 
-  /// For group challenges: acceptance window in minutes
   int _acceptWindowMin = 10;
-
-  /// Max participants for group challenges
   int _maxParticipants = 10;
 
   @override
   void initState() {
     super.initState();
     _type = widget.initialType ?? ChallengeType.oneVsOne;
-    _metric = widget.initialMetric ?? ChallengeMetric.distance;
+    _goal = widget.initialGoal ?? ChallengeGoal.fastestAtDistance;
     _quickWindowMin = widget.initialWindowMin ?? 180;
     _feeCtrl = TextEditingController(
       text: '${widget.initialFee ?? 0}',
@@ -78,7 +74,6 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
     );
   }
 
-  /// For "Agendado" mode
   DateTime? _scheduledDate;
   TimeOfDay? _scheduledTime;
   int _windowDays = 7;
@@ -111,7 +106,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
             _created = true;
             sl<ProductEventTracker>().trackOnce(
               ProductEvents.firstChallengeCreated,
-              {'type': _type.name, 'metric': _metric.name},
+              {'type': _type.name, 'goal': _goal.name},
             );
             sl<NotificationRulesService>().notifyChallengeReceived(
               challengeId: state.challenge.id,
@@ -189,7 +184,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                 const SizedBox(height: 12),
 
                 // ── Type ─────────────────────────────────────────────
-                Text('Tipo',
+                Text('Quem participa?',
                     style: theme.textTheme.titleSmall
                         ?.copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
@@ -197,7 +192,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                   segments: const [
                     ButtonSegment(
                       value: ChallengeType.oneVsOne,
-                      label: Text('1v1'),
+                      label: Text('1 vs 1'),
                       icon: Icon(Icons.people),
                     ),
                     ButtonSegment(
@@ -205,41 +200,38 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                       label: Text('Grupo'),
                       icon: Icon(Icons.groups),
                     ),
+                    ButtonSegment(
+                      value: ChallengeType.team,
+                      label: Text('Time'),
+                      icon: Icon(Icons.shield_rounded),
+                    ),
                   ],
                   selected: {_type},
-                  onSelectionChanged: (v) =>
-                      setState(() => _type = v.first),
+                  onSelectionChanged: (v) {
+                    setState(() {
+                      _type = v.first;
+                      if (_type == ChallengeType.oneVsOne &&
+                          _goal == ChallengeGoal.collectiveDistance) {
+                        _goal = ChallengeGoal.fastestAtDistance;
+                      }
+                      if (_type == ChallengeType.team &&
+                          _goal == ChallengeGoal.collectiveDistance) {
+                        _goal = ChallengeGoal.fastestAtDistance;
+                      }
+                    });
+                  },
                 ),
-                if (_type == ChallengeType.group) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: cs.primaryContainer.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info_outline_rounded, size: 18, color: cs.primary),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Crie um desafio cooperativo! O grupo trabalha junto '
-                            'para atingir a meta coletiva. Se o grupo alcançar, todos ganham!',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                const SizedBox(height: 8),
+                _TypeInfoBox(type: _type),
+                if (_type == ChallengeType.group || _type == ChallengeType.team) ...[
                   const SizedBox(height: 12),
                   Row(
                     children: [
                       Icon(Icons.group, size: 20, color: cs.primary),
                       const SizedBox(width: 8),
-                      Text('Máximo de participantes',
+                      Text(_type == ChallengeType.team
+                          ? 'Atletas por time'
+                          : 'Máximo de participantes',
                           style: theme.textTheme.bodyMedium
                               ?.copyWith(fontWeight: FontWeight.w600)),
                       const Spacer(),
@@ -267,41 +259,60 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                 ],
                 const SizedBox(height: 16),
 
-                // ── Metric ───────────────────────────────────────────
-                Text('O que vai contar?',
+                // ── Goal ─────────────────────────────────────────────
+                Text('Objetivo do desafio',
                     style: theme.textTheme.titleSmall
                         ?.copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
-                SegmentedButton<ChallengeMetric>(
-                  segments: const [
-                    ButtonSegment(
-                      value: ChallengeMetric.distance,
-                      label: Text('Distância'),
-                    ),
-                    ButtonSegment(
-                      value: ChallengeMetric.pace,
-                      label: Text('Pace'),
-                    ),
-                    ButtonSegment(
-                      value: ChallengeMetric.time,
-                      label: Text('Tempo'),
-                    ),
-                  ],
-                  selected: {_metric},
-                  onSelectionChanged: (v) =>
-                      setState(() => _metric = v.first),
+                _GoalCard(
+                  icon: Icons.speed_rounded,
+                  title: 'Quem corre X km mais rápido?',
+                  subtitle: 'Você define a distância (ex: 10 km). '
+                      'Vence quem completar no menor tempo em uma única corrida.',
+                  selected: _goal == ChallengeGoal.fastestAtDistance,
+                  onTap: () => setState(() => _goal = ChallengeGoal.fastestAtDistance),
                 ),
+                const SizedBox(height: 8),
+                _GoalCard(
+                  icon: Icons.straighten_rounded,
+                  title: 'Quem corre mais km no período?',
+                  subtitle: 'Todas as corridas somam. '
+                      'Vence quem acumular mais quilômetros dentro do prazo.',
+                  selected: _goal == ChallengeGoal.mostDistance,
+                  onTap: () => setState(() => _goal = ChallengeGoal.mostDistance),
+                ),
+                const SizedBox(height: 8),
+                _GoalCard(
+                  icon: Icons.timer_rounded,
+                  title: 'Quem faz melhor pace nos X km?',
+                  subtitle: 'Você define a distância mínima (ex: 5 km). '
+                      'Vence quem tiver o melhor pace médio numa corrida que cubra essa distância.',
+                  selected: _goal == ChallengeGoal.bestPaceAtDistance,
+                  onTap: () => setState(() => _goal = ChallengeGoal.bestPaceAtDistance),
+                ),
+                if (_type == ChallengeType.group) ...[
+                  const SizedBox(height: 8),
+                  _GoalCard(
+                    icon: Icons.handshake_rounded,
+                    title: 'Completar X km juntos!',
+                    subtitle: 'Cooperativo — cada um corre o que puder e os km de todos somam. '
+                        'Se o grupo atingir a meta, todos ganham. Se não, todos perdem.',
+                    selected: _goal == ChallengeGoal.collectiveDistance,
+                    onTap: () => setState(() => _goal = ChallengeGoal.collectiveDistance),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                _WinnerExplainerBox(goal: _goal, type: _type),
                 const SizedBox(height: 16),
 
                 // ── Target distance ──────────────────────────────────
                 TextFormField(
                   controller: _targetCtrl,
                   decoration: InputDecoration(
-                    labelText: 'Meta ${_targetUnit()}',
+                    labelText: _targetLabel(),
                     border: const OutlineInputBorder(),
-                    helperText: _type == ChallengeType.group
-                        ? 'Soma coletiva do grupo. Vazio = qualquer corrida vale'
-                        : 'Deixe vazio = quem fizer mais ganha',
+                    helperText: _targetHelper(),
+                    suffixText: 'km',
                   ),
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
@@ -309,6 +320,12 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
                   ],
+                  validator: (v) {
+                    if (_goalRequiresTarget() && (v == null || v.isEmpty)) {
+                      return 'Distância obrigatória para esse tipo de desafio';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -317,7 +334,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                 if (_mode == 1) _buildScheduledFields(theme),
 
                 // ── Group acceptance window ──────────────────────────
-                if (_type == ChallengeType.group && _mode == 0) ...[
+                if ((_type == ChallengeType.group || _type == ChallengeType.team) && _mode == 0) ...[
                   const SizedBox(height: 16),
                   _buildAcceptWindowFields(theme),
                 ],
@@ -343,36 +360,6 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                     return null;
                   },
                 ),
-                if (_type == ChallengeType.group &&
-                    (int.tryParse(_feeCtrl.text) ?? 0) > 0) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.orange.shade200),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.warning_amber_rounded,
-                            size: 18, color: Colors.orange.shade700),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Se o grupo não atingir a meta, a inscrição '
-                            'não será devolvida. Só há reembolso se '
-                            'ninguém correr.',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.orange.shade800,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
                 const SizedBox(height: 16),
 
                 // ── Validation rules summary ─────────────────────────
@@ -393,12 +380,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                       _ruleItem('Distância mínima por corrida: 1 km'),
                       _ruleItem('Apenas corridas verificadas contam'),
                       _ruleItem('Anti-cheat padrão ativado'),
-                      if (_metric == ChallengeMetric.pace)
-                        _ruleItem('Melhor pace de uma única sessão vence'),
-                      if (_metric == ChallengeMetric.distance)
-                        _ruleItem('Soma de todas as corridas no período'),
-                      if (_metric == ChallengeMetric.time)
-                        _ruleItem('Soma do tempo em movimento no período'),
+                      ..._goalRules(),
                     ],
                   ),
                 ),
@@ -420,6 +402,65 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
       ),
     );
   }
+
+  // ── Goal-specific rules ──────────────────────────────────────────────
+
+  List<Widget> _goalRules() {
+    final base = switch (_goal) {
+      ChallengeGoal.fastestAtDistance => [
+        _ruleItem('Cada atleta faz UMA corrida cobrindo a distância'),
+        _ruleItem('Vence quem terminar essa corrida no menor tempo'),
+      ],
+      ChallengeGoal.mostDistance => [
+        _ruleItem('Pode correr quantas vezes quiser no período'),
+        _ruleItem('Vence quem acumular mais km somando todas as corridas'),
+      ],
+      ChallengeGoal.bestPaceAtDistance => [
+        _ruleItem('Cada atleta faz UMA corrida cobrindo a distância mínima'),
+        _ruleItem('Vence quem tiver o menor pace médio (min/km) nessa corrida'),
+      ],
+      ChallengeGoal.collectiveDistance => [
+        _ruleItem('Cada membro corre o que puder — todos os km somam'),
+        _ruleItem('Se o grupo atingir a meta, TODOS ganham. Se não, TODOS perdem'),
+      ],
+    };
+    if (_type == ChallengeType.team) {
+      base.add(_ruleItem('Times com o mesmo número de atletas'));
+      base.add(_ruleItem(
+        _goal == ChallengeGoal.fastestAtDistance
+            ? 'Tempo do time = tempo do último membro a completar'
+            : _goal == ChallengeGoal.mostDistance
+                ? 'Km do time = soma dos km de todos os membros'
+                : 'Pace do time = média dos paces de todos os membros',
+      ));
+    }
+    return base;
+  }
+
+  String _targetLabel() => switch (_goal) {
+    ChallengeGoal.fastestAtDistance => 'Distância da corrida (obrigatório)',
+    ChallengeGoal.mostDistance => 'Meta em km (opcional)',
+    ChallengeGoal.bestPaceAtDistance => 'Distância mínima da corrida (obrigatório)',
+    ChallengeGoal.collectiveDistance => 'Meta coletiva em km (obrigatório)',
+  };
+
+  String _targetHelper() => switch (_goal) {
+    ChallengeGoal.fastestAtDistance =>
+      'Ex: 10 = corrida de 10 km. Ganha quem completar essa distância no menor tempo.',
+    ChallengeGoal.mostDistance =>
+      'Opcional. Sem meta = ganha quem acumular mais km no período. '
+      'Com meta = ganha quem atingir primeiro.',
+    ChallengeGoal.bestPaceAtDistance =>
+      'Ex: 5 = corrida de no mínimo 5 km. Ganha quem tiver o menor pace médio.',
+    ChallengeGoal.collectiveDistance =>
+      'Ex: 200 = o grupo precisa somar 200 km entre todos os membros.',
+  };
+
+  bool _goalRequiresTarget() =>
+    _goal == ChallengeGoal.fastestAtDistance ||
+    _goal == ChallengeGoal.bestPaceAtDistance ||
+    _goal == ChallengeGoal.collectiveDistance;
+
 
   // ── Quick mode fields ──────────────────────────────────────────────────
 
@@ -641,12 +682,6 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
     );
   }
 
-  String _targetUnit() => switch (_metric) {
-        ChallengeMetric.distance => '(km)',
-        ChallengeMetric.pace => '(min/km)',
-        ChallengeMetric.time => '(min)',
-      };
-
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
@@ -662,7 +697,6 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
 
     final fee = int.tryParse(_feeCtrl.text) ?? 0;
 
-    // Monetization gate: stake > 0 requires VERIFIED status
     if (fee > 0) {
       final canProceed = await checkVerificationGate(
         context,
@@ -679,11 +713,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
     if (_targetCtrl.text.isNotEmpty) {
       final raw = double.tryParse(_targetCtrl.text);
       if (raw != null && raw > 0) {
-        target = switch (_metric) {
-          ChallengeMetric.distance => raw * 1000,
-          ChallengeMetric.pace => raw * 60,
-          ChallengeMetric.time => raw * 60000,
-        };
+        target = raw * 1000; // km → meters
       }
     }
 
@@ -708,23 +738,23 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
     }
 
     final rules = ChallengeRulesEntity(
-      metric: _metric,
+      goal: _goal,
       target: target,
       windowMs: windowMs,
       startMode: startMode,
       fixedStartMs: fixedStartMs,
       entryFeeCoins: fee,
-      acceptWindowMin: _type == ChallengeType.group && _mode == 0
+      acceptWindowMin: (_type == ChallengeType.group || _type == ChallengeType.team) && _mode == 0
           ? _acceptWindowMin
           : null,
       maxParticipants:
-          _type == ChallengeType.group ? _maxParticipants : null,
+          _type != ChallengeType.oneVsOne ? _maxParticipants : null,
     );
 
     final typeStr = switch (_type) {
       ChallengeType.oneVsOne => 'one_vs_one',
       ChallengeType.group => 'group',
-      ChallengeType.teamVsTeam => 'team_vs_team',
+      ChallengeType.team => 'team',
     };
 
     if (!mounted) return;
@@ -739,9 +769,80 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
   }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// Goal card
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _GoalCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _GoalCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    return Material(
+      color: selected ? cs.primaryContainer : cs.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected ? cs.primary : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 28,
+                  color: selected ? cs.primary : cs.outline),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: selected ? cs.primary : null,
+                        )),
+                    const SizedBox(height: 2),
+                    Text(subtitle,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: cs.outline, fontSize: 11)),
+                  ],
+                ),
+              ),
+              if (selected)
+                Icon(Icons.check_circle, size: 22, color: cs.primary),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Mode card
-// ═════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 
 class _ModeCard extends StatelessWidget {
   final IconData icon;
@@ -856,5 +957,143 @@ class _MatchmakingBanner extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _TypeInfoBox extends StatelessWidget {
+  final ChallengeType type;
+  const _TypeInfoBox({required this.type});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    final (icon, text) = switch (type) {
+      ChallengeType.oneVsOne => (
+        Icons.people,
+        'Duelo direto entre 2 corredores. '
+        'Quem tiver o melhor resultado ganha.',
+      ),
+      ChallengeType.group => (
+        Icons.groups,
+        'Cada corredor compete individualmente. '
+        'Ranking por desempenho — o 1.o lugar leva o prêmio todo.',
+      ),
+      ChallengeType.team => (
+        Icons.shield_rounded,
+        'Time A vs Time B. Você escolhe quem vai para cada time. '
+        'Os times devem ter o mesmo número de atletas. '
+        'O time vencedor divide o prêmio.',
+      ),
+    };
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: cs.tertiaryContainer.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: cs.tertiary),
+          const SizedBox(width: 8),
+          Expanded(child: Text(
+            text,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: cs.onTertiaryContainer),
+          )),
+        ],
+      ),
+    );
+  }
+}
+
+class _WinnerExplainerBox extends StatelessWidget {
+  final ChallengeGoal goal;
+  final ChallengeType type;
+  const _WinnerExplainerBox({required this.goal, required this.type});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    final explanation = _explain();
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: cs.secondaryContainer.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: cs.secondaryContainer),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.emoji_events_rounded, size: 16, color: cs.secondary),
+              const SizedBox(width: 6),
+              Text('Como o vencedor é decidido',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: cs.secondary,
+                )),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(explanation,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: cs.onSecondaryContainer,
+              height: 1.4,
+            )),
+        ],
+      ),
+    );
+  }
+
+  String _explain() {
+    if (type == ChallengeType.team) {
+      return switch (goal) {
+        ChallengeGoal.fastestAtDistance =>
+          'Cada membro do time corre a distância. '
+          'O tempo do time = tempo do ÚLTIMO membro a completar (todos precisam correr). '
+          'Ganha o time que completar mais rápido.',
+        ChallengeGoal.mostDistance =>
+          'Cada membro corre o que puder. '
+          'Km do time = soma dos km de TODOS os membros. '
+          'Ganha o time com mais km totais.',
+        ChallengeGoal.bestPaceAtDistance =>
+          'Cada membro corre a distância mínima. '
+          'Pace do time = média dos paces de TODOS os membros. '
+          'Ganha o time com o menor pace médio.',
+        ChallengeGoal.collectiveDistance =>
+          'Desafio coletivo não está disponível para o modo Time. Use o modo Grupo.',
+      };
+    }
+    if (type == ChallengeType.group && goal == ChallengeGoal.collectiveDistance) {
+      return 'Cada membro corre o que puder — os km de todos somam. '
+          'Se o grupo atingir a meta juntos, TODOS recebem de volta sua inscrição. '
+          'Se não atingir, TODOS perdem.';
+    }
+    return switch (goal) {
+      ChallengeGoal.fastestAtDistance =>
+        'Cada corredor faz uma corrida cobrindo a distância definida. '
+        'Ganha quem completar no menor tempo. '
+        'Exemplo: distância = 10 km → ganha quem correr 10 km mais rápido.',
+      ChallengeGoal.mostDistance =>
+        'Cada corredor pode fazer quantas corridas quiser dentro do prazo. '
+        'Todas as corridas somam. Ganha quem acumular mais km no total. '
+        'Exemplo: prazo = 7 dias → ganha quem somar mais km em 7 dias.',
+      ChallengeGoal.bestPaceAtDistance =>
+        'Cada corredor faz uma corrida que cubra pelo menos a distância mínima. '
+        'Ganha quem tiver o menor pace médio (min/km) nessa corrida. '
+        'Exemplo: distância = 5 km → ganha quem correr 5+ km com melhor pace.',
+      ChallengeGoal.collectiveDistance =>
+        'Cada membro corre o que puder — os km de todos somam. '
+        'Se o grupo atingir a meta, todos ganham. Se não, todos perdem.',
+    };
   }
 }

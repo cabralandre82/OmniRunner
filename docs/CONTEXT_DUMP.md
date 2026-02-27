@@ -27971,3 +27971,52 @@ Tour de 6 slides para novos atletas, integrado ao AuthGate:
 - Configurações (tema, unidades, Strava) agora acessível para staff no Mais
 - Dark mode: cards dos dashboards usam surfaceContainerHighest (não mais shade50)
 - Dark mode: suporte (badges, chat, barra encerrado) com cores adaptadas
+
+---
+
+## Sprint — UX Desafios: Clareza Total para Usuário Leigo (26/02/2026)
+
+**Status:** CONCLUÍDA
+**Ref:** DECISÃO 089
+
+Objetivo: Garantir que um usuário completamente leigo entenda perfeitamente o que cada tipo de desafio representa, qual é o objetivo, e como o vencedor é decidido — em TODAS as telas do fluxo de desafios.
+
+### Alterações por tela
+
+**`challenge_create_screen.dart`:**
+- Título "Tipo" → "Quem participa?" (mais intuitivo)
+- `_TypeInfoBox`: novo widget que mostra explicação contextual para cada tipo selecionado (1v1 = duelo direto, Grupo = ranking individual com pool, Time = A vs B com divisão do prêmio)
+- Goal cards: subtítulos expandidos com explicação completa (ex: "Você define a distância (ex: 10 km). Vence quem completar no menor tempo em uma única corrida.")
+- `_WinnerExplainerBox`: novo widget "Como o vencedor é decidido" — aparece para todos os tipos, adapta texto por goal + type (inclui scoring de time para team challenges)
+- `_targetHelper()`: textos revisados — removido "Vazio = quem fizer mais ganha" (confuso), substituído por explicações claras
+- `_targetLabel()`: "(obrigatório)" / "(opcional)" no label
+- `_goalRules()`: regras de validação expandidas com regras específicas de team
+- Removido `_teamGoalExplanation()` (substituído por `_WinnerExplainerBox`)
+
+**`challenge_details_screen.dart`:**
+- `_metricExplain()`: descrições expandidas (ex: "Cada corredor faz uma corrida cobrindo a distância. Vence quem completar no menor tempo.")
+- `_RulesCard`: nova seção "Vencedor" com `_winnerExplain()` — explica como o vencedor é decidido para cada combo type/goal
+- `_RulesCard`: nova seção "Prêmio" com `_prizeExplain()` — explica como OmniCoins são distribuídos
+- `_typeLabel()`: "1v1" → "1 vs 1", "Grupo" → "Grupo competitivo", "Time" → "Time A vs Time B"
+- `_metricLabel()`: "Coletivo" → "Meta coletiva"
+- Default titles: "Desafio 1v1" → "Desafio 1 vs 1", "Desafio de Time" → "Desafio Time A vs B"
+
+**`challenge_join_screen.dart`:**
+- Novo card "Como o vencedor é decidido" com `_winnerExplain()` + `_prizeExplain()`
+- `_goalLabel()`: labels expandidos (ex: "Mais rápido" → "Quem corre a distância mais rápido")
+- Type label: "1v1" → "1 vs 1 (duelo direto)", "Grupo" → "Grupo competitivo (ranking individual)"
+
+**`challenge_result_screen.dart`:**
+- Bug fix: `isTeam` variable was missing — adicionado
+- Hero section: novo box explicativo `_goalResultExplain()` — explica por que o vencedor ganhou (ex: "Venceu quem completou a distância no menor tempo.")
+
+**`challenges_list_screen.dart`:**
+- `_goalLabel()`: "Coletivo" → "Meta coletiva", "Mais rápido" → "Menor tempo"
+- Default titles: consistência com outras telas
+
+**`challenge_invite_screen.dart`, `today_screen.dart`:**
+- Default titles atualizados para consistência
+
+### Documentação atualizada
+- `docs/GAMIFICATION_POLICY.md` §4: Reescrito com nova seção 4.0 (ChallengeGoal), 4.1 (1v1), 4.2 (Grupo competitivo), 4.2b (Time A vs B) — regras claras de scoring e distribuição de coins
+- `docs/DECISIONS_LOG.md`: DECISÃO 089 adicionada

@@ -10,23 +10,30 @@ import { classifyError } from "../_shared/errors.ts";
 /**
  * challenge-create — Supabase Edge Function
  *
- * Syncs a locally-created challenge to the backend so opponents
- * can discover it via deep link and join.
+ * Syncs a locally-created challenge to the backend.
  *
  * POST /challenge-create
  * Body: {
- *   id, type, title?, metric, target?, window_ms, start_mode,
+ *   id, type, title?, goal, target?, window_ms, start_mode,
  *   fixed_start_ms?, entry_fee_coins?, min_session_distance_m?,
- *   anti_cheat_policy?, created_at_ms, creator_display_name
+ *   anti_cheat_policy?, created_at_ms, creator_display_name,
+ *   accept_window_min?, max_participants?
  * }
+ *
+ * Goal types:
+ *   - fastest_at_distance: target REQUIRED (distance in meters)
+ *   - most_distance: target optional
+ *   - best_pace_at_distance: target REQUIRED (qualifying distance in meters)
+ *   - collective_distance: target REQUIRED (collective distance in meters)
  */
 
 const FN = "challenge-create";
 
-const VALID_TYPES = ["one_vs_one", "group", "team_vs_team"];
-const VALID_METRICS = ["distance", "pace", "time"];
+const VALID_TYPES = ["one_vs_one", "group", "team"];
+const VALID_GOALS = ["fastest_at_distance", "most_distance", "best_pace_at_distance", "collective_distance"];
 const VALID_START_MODES = ["on_accept", "scheduled"];
 const VALID_ANTI_CHEAT = ["standard", "strict"];
+const GOALS_REQUIRING_TARGET = ["fastest_at_distance", "best_pace_at_distance", "collective_distance"];
 
 serve(async (req: Request) => {
   const cors = handleCors(req);
@@ -73,7 +80,7 @@ serve(async (req: Request) => {
     let body: Record<string, any>;
     try {
       body = await requireJson(req);
-      requireFields(body, ["id", "type", "metric", "window_ms", "created_at_ms", "creator_display_name"]);
+      requireFields(body, ["id", "goal", "window_ms", "created_at_ms", "creator_display_name"]);
     } catch (e) {
       status = 400;
       if (e instanceof ValidationError) {
@@ -84,9 +91,9 @@ serve(async (req: Request) => {
 
     const {
       id: challengeId,
-      type,
+      type = "one_vs_one",
       title,
-      metric,
+      goal,
       target,
       window_ms,
       start_mode = "on_accept",
@@ -96,8 +103,6 @@ serve(async (req: Request) => {
       anti_cheat_policy = "standard",
       created_at_ms,
       creator_display_name,
-      team_a_group_id,
-      team_b_group_id,
       accept_window_min,
     } = body;
 
@@ -105,9 +110,9 @@ serve(async (req: Request) => {
       status = 400;
       return jsonErr(400, "INVALID_TYPE", `type must be one of: ${VALID_TYPES.join(", ")}`, requestId);
     }
-    if (!VALID_METRICS.includes(metric)) {
+    if (!VALID_GOALS.includes(goal)) {
       status = 400;
-      return jsonErr(400, "INVALID_METRIC", `metric must be one of: ${VALID_METRICS.join(", ")}`, requestId);
+      return jsonErr(400, "INVALID_GOAL", `goal must be one of: ${VALID_GOALS.join(", ")}`, requestId);
     }
     if (!VALID_START_MODES.includes(start_mode)) {
       status = 400;
@@ -118,7 +123,28 @@ serve(async (req: Request) => {
       return jsonErr(400, "INVALID_ANTI_CHEAT", `anti_cheat_policy must be one of: ${VALID_ANTI_CHEAT.join(", ")}`, requestId);
     }
 
-    // ── Assessoria gate: all challenges require group membership ──────
+    if (GOALS_REQUIRING_TARGET.includes(goal) && (target == null || target <= 0)) {
+      status = 400;
+      return jsonErr(400, "TARGET_REQUIRED",
+        `O goal '${goal}' exige um target (distância em metros). Ex: 10000 para 10km.`,
+        requestId);
+    }
+
+    if (goal === "collective_distance" && type !== "group") {
+      status = 400;
+      return jsonErr(400, "INVALID_GOAL_TYPE",
+        "collective_distance só pode ser usado em desafios de grupo cooperativo.",
+        requestId);
+    }
+
+    if (type === "team" && goal === "collective_distance") {
+      status = 400;
+      return jsonErr(400, "INVALID_GOAL_TYPE",
+        "Desafios de time não suportam collective_distance. Use group para metas cooperativas.",
+        requestId);
+    }
+
+    // Assessoria gate
     const { data: memberRow } = await db
       .from("coaching_members")
       .select("id")
@@ -131,12 +157,12 @@ serve(async (req: Request) => {
       errorCode = "NO_ASSESSORIA";
       return jsonErr(
         403, "NO_ASSESSORIA",
-        "Você precisa estar em uma assessoria para criar desafios. Peça o código de convite ao seu professor.",
+        "Você precisa estar em uma assessoria para criar desafios.",
         requestId,
       );
     }
 
-    // ── Monetization gate: stake>0 requires VERIFIED ──────────────────
+    // Monetization gate
     if (entry_fee_coins > 0) {
       const { data: verifiedRow, error: verErr } = await db
         .rpc("is_user_verified", { p_user_id: user.id });
@@ -146,13 +172,13 @@ serve(async (req: Request) => {
         errorCode = "ATHLETE_NOT_VERIFIED";
         return jsonErr(
           403, "ATHLETE_NOT_VERIFIED",
-          "Apenas atletas verificados podem criar desafios com stake > 0. Complete sua verificação primeiro.",
+          "Apenas atletas verificados podem criar desafios com stake > 0.",
           requestId,
         );
       }
     }
 
-    // Idempotent: if challenge already exists, return it
+    // Idempotent
     const { data: existing } = await db
       .from("challenges")
       .select("id, status")
@@ -163,13 +189,6 @@ serve(async (req: Request) => {
       return jsonOk({ challenge_id: existing.id, already_exists: true }, requestId);
     }
 
-    // Validate team_a_group_id for team challenges
-    if (type === "team_vs_team" && !team_a_group_id) {
-      status = 400;
-      return jsonErr(400, "MISSING_TEAM", "team_a_group_id is required for team_vs_team challenges", requestId);
-    }
-
-    // Insert challenge
     // deno-lint-ignore no-explicit-any
     const insertData: Record<string, any> = {
       id: challengeId,
@@ -177,7 +196,7 @@ serve(async (req: Request) => {
       status: "pending",
       type,
       title: title || null,
-      metric,
+      goal,
       target: target ?? null,
       window_ms,
       start_mode,
@@ -188,16 +207,9 @@ serve(async (req: Request) => {
       created_at_ms,
     };
 
-    if (type === "group" && accept_window_min) {
+    if ((type === "group" || type === "team") && accept_window_min) {
       insertData.accept_window_min = accept_window_min;
       insertData.accept_deadline_ms = created_at_ms + accept_window_min * 60 * 1000;
-    }
-
-    if (type === "team_vs_team" && team_a_group_id) {
-      insertData.team_a_group_id = team_a_group_id;
-      if (team_b_group_id) {
-        insertData.team_b_group_id = team_b_group_id;
-      }
     }
 
     const { data: challenge, error: insertErr } = await db
@@ -213,18 +225,22 @@ serve(async (req: Request) => {
       return jsonErr(classified.httpStatus, classified.code, classified.message, requestId);
     }
 
-    // Insert creator as first participant (status: accepted)
+    // Creator as first participant (team A for team challenges)
+    // deno-lint-ignore no-explicit-any
+    const participantData: Record<string, any> = {
+      challenge_id: challengeId,
+      user_id: user.id,
+      display_name: creator_display_name,
+      status: "accepted",
+      responded_at_ms: created_at_ms,
+    };
+    if (type === "team") {
+      participantData.team = "A";
+    }
+
     const { error: partErr } = await db
       .from("challenge_participants")
-      .insert({
-        challenge_id: challengeId,
-        user_id: user.id,
-        display_name: creator_display_name,
-        status: "accepted",
-        responded_at_ms: created_at_ms,
-        group_id: type === "team_vs_team" ? team_a_group_id : null,
-        team: type === "team_vs_team" ? "A" : null,
-      });
+      .insert(participantData);
 
     if (partErr) {
       const classified = classifyError(partErr);

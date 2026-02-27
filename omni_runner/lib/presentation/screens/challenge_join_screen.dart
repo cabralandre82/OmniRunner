@@ -31,6 +31,7 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
   String _callerUserId = '';
   String? _callerGroupId;
   bool _alreadyJoined = false;
+  String? _selectedTeam;
 
   SupabaseClient get _db => Supabase.instance.client;
 
@@ -74,17 +75,13 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
         status: (cData['status'] as String?) ?? 'pending',
         type: (cData['type'] as String?) ?? 'one_vs_one',
         title: cData['title'] as String?,
-        metric: (cData['metric'] as String?) ?? 'distance',
+        goal: (cData['goal'] as String?) ?? (cData['metric'] as String?) ?? 'most_distance',
         target: (cData['target'] as num?)?.toDouble(),
         windowMs: (cData['window_ms'] as num?)?.toInt() ?? 0,
         startMode: (cData['start_mode'] as String?) ?? 'on_accept',
         fixedStartMs: (cData['fixed_start_ms'] as num?)?.toInt(),
         entryFeeCoins: (cData['entry_fee_coins'] as num?)?.toInt() ?? 0,
         minSessionDistanceM: (cData['min_session_distance_m'] as num?)?.toDouble() ?? 1000,
-        teamAGroupName: cData['team_a_group_name'] as String?,
-        teamBGroupName: cData['team_b_group_name'] as String?,
-        teamAGroupId: cData['team_a_group_id'] as String?,
-        teamBGroupId: cData['team_b_group_id'] as String?,
       );
 
       final parts = (data['participants'] as List<dynamic>?) ?? [];
@@ -121,10 +118,15 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
     try {
       final displayName = sl<UserIdentityProvider>().displayName;
 
-      final res = await _db.functions.invoke('challenge-join', body: {
+      final payload = <String, dynamic>{
         'challenge_id': widget.challengeId,
         'display_name': displayName,
-      });
+      };
+      if (_challenge?.type == 'team' && _selectedTeam != null) {
+        payload['team'] = _selectedTeam;
+      }
+
+      final res = await _db.functions.invoke('challenge-join', body: payload);
 
       final data = res.data as Map<String, dynamic>? ?? {};
 
@@ -208,16 +210,7 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
   Widget _buildContent(ThemeData theme, ColorScheme cs) {
     final c = _challenge!;
     final isCreator = c.creatorUserId == _callerUserId;
-    final bool teamOk;
-    if (c.isTeamVsTeam) {
-      final cData = _challenge!;
-      teamOk = _callerGroupId != null &&
-          (_callerGroupId == (cData.teamAGroupId) ||
-           _callerGroupId == (cData.teamBGroupId));
-    } else {
-      teamOk = true;
-    }
-    final canJoin = c.status == 'pending' && !isCreator && !_alreadyJoined && teamOk;
+    final canJoin = c.status == 'pending' && !isCreator && !_alreadyJoined;
     final creatorName = _participants
         .where((p) => p.userId == c.creatorUserId)
         .map((p) => p.displayName)
@@ -269,17 +262,14 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
                 ),
                 const SizedBox(height: 12),
                 _ruleRow(theme, 'Tipo', switch (c.type) {
-                  'one_vs_one' => '1v1',
-                  'team_vs_team' => 'Equipe vs Equipe',
+                  'one_vs_one' => '1 vs 1 (duelo direto)',
+                  'team' => 'Time A vs Time B',
+                  'group' => 'Grupo competitivo (ranking individual)',
                   _ => 'Grupo',
                 }),
-                if (c.isTeamVsTeam && c.teamAGroupName != null)
-                  _ruleRow(theme, 'Equipe A', c.teamAGroupName!),
-                if (c.isTeamVsTeam && c.teamBGroupName != null)
-                  _ruleRow(theme, 'Equipe B', c.teamBGroupName!),
-                _ruleRow(theme, 'Modalidade', _metricLabel(c.metric)),
+                _ruleRow(theme, 'Objetivo', _goalLabel(c.goal)),
                 if (c.target != null)
-                  _ruleRow(theme, 'Meta', _formatTarget(c.target!, c.metric)),
+                  _ruleRow(theme, 'Distância', '${(c.target! / 1000).toStringAsFixed(1)} km'),
                 _ruleRow(theme, 'Duração', _formatWindow(c.windowMs)),
                 _ruleRow(theme, 'Início',
                     c.startMode == 'on_accept'
@@ -325,6 +315,51 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: cs.onSurfaceVariant, height: 1.5),
                 ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Winner determination explainer
+        Card(
+          elevation: 0,
+          color: cs.secondaryContainer.withValues(alpha: 0.3),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: cs.secondaryContainer),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.emoji_events_rounded, size: 20, color: cs.secondary),
+                    const SizedBox(width: 8),
+                    Text('Como o vencedor é decidido',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold, color: cs.secondary)),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  _winnerExplain(c.type, c.goal),
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: cs.onSecondaryContainer, height: 1.5),
+                ),
+                if (c.entryFeeCoins > 0) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    _prizeExplain(c.type, c.entryFeeCoins),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSecondaryContainer,
+                      fontWeight: FontWeight.w600,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -376,10 +411,44 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
             )),
         const SizedBox(height: 24),
 
+        // Team selection for team challenges
+        if (canJoin && c.type == 'team') ...[
+          Text('Escolha seu time',
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _TeamButton(
+                  label: 'Time A',
+                  color: Colors.blue,
+                  selected: _selectedTeam == 'A',
+                  onTap: () => setState(() => _selectedTeam = 'A'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _TeamButton(
+                  label: 'Time B',
+                  color: Colors.red,
+                  selected: _selectedTeam == 'B',
+                  onTap: () => setState(() => _selectedTeam = 'B'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ],
+
         // Join button
         if (canJoin)
           FilledButton.icon(
-            onPressed: _joining ? null : _join,
+            onPressed: _joining
+                ? null
+                : (c.type == 'team' && _selectedTeam == null)
+                    ? null
+                    : _join,
             icon: _joining
                 ? const SizedBox(
                     width: 18,
@@ -440,29 +509,6 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
             ),
           ),
 
-        if (c.isTeamVsTeam && !teamOk && !isCreator && !_alreadyJoined && c.status == 'pending')
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.orange.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.shield_outlined, color: Colors.orange),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Sua assessoria não participa deste desafio. '
-                    'Apenas atletas das equipes convidadas podem entrar.',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
         if (c.status != 'pending')
           Container(
             padding: const EdgeInsets.all(16),
@@ -513,22 +559,18 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
 
   static String _defaultTitle(String type) => switch (type) {
         'one_vs_one' => 'Desafio 1v1',
-        'team_vs_team' => 'Desafio de Equipe',
+        'team' => 'Desafio de Time',
         _ => 'Desafio em Grupo',
       };
 
-  static String _metricLabel(String m) => switch (m) {
-        'distance' => 'Distância',
-        'pace' => 'Pace',
-        'time' => 'Tempo',
+  static String _goalLabel(String m) => switch (m) {
+        'fastest_at_distance' => 'Quem corre a distância mais rápido',
+        'most_distance' => 'Quem acumula mais km no período',
+        'best_pace_at_distance' => 'Quem faz o melhor pace na distância',
+        'collective_distance' => 'Meta coletiva (km somam)',
+        'distance' => 'Quem acumula mais km no período',
+        'pace' => 'Quem faz o melhor pace na distância',
         _ => m,
-      };
-
-  static String _formatTarget(double value, String metric) => switch (metric) {
-        'distance' => '${(value / 1000).toStringAsFixed(1)} km',
-        'pace' => '${(value / 60).toStringAsFixed(1)} min/km',
-        'time' => '${(value / 60000).toStringAsFixed(0)} min',
-        _ => value.toStringAsFixed(1),
       };
 
   static String _formatWindow(int ms) {
@@ -569,17 +611,54 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
         'expired' => Colors.grey,
         _ => Colors.grey,
       };
+
+  static String _winnerExplain(String type, String goal) {
+    if (type == 'team') {
+      return switch (goal) {
+        'fastest_at_distance' =>
+          'Cada membro do time corre a distância. O tempo do time = tempo do ULTIMO membro a completar. Ganha o time que completar mais rapido.',
+        'most_distance' =>
+          'Os km de todos os membros somam. Ganha o time com mais km totais.',
+        'best_pace_at_distance' =>
+          'Pace do time = media dos paces dos membros. Ganha o time com o menor pace medio.',
+        _ => 'O grupo soma km para atingir a meta.',
+      };
+    }
+    if (goal == 'collective_distance') {
+      return 'Cada membro corre o que puder - os km de todos somam. Se o grupo atingir a meta, TODOS ganham. Se nao, TODOS perdem.';
+    }
+    return switch (goal) {
+      'fastest_at_distance' =>
+        'Cada corredor faz uma corrida cobrindo a distancia. Ganha quem completar no menor tempo.',
+      'most_distance' =>
+        'Pode correr quantas vezes quiser no periodo. Ganha quem acumular mais km no total.',
+      'best_pace_at_distance' =>
+        'Cada corredor faz uma corrida cobrindo a distancia minima. Ganha quem tiver o menor pace medio (min/km).',
+      _ => 'O vencedor e decidido pelo resultado da corrida.',
+    };
+  }
+
+  static String _prizeExplain(String type, int fee) {
+    return switch (type) {
+      'one_vs_one' =>
+        'Premio: O vencedor leva $fee OmniCoins do oponente. Empate: todos recebem de volta.',
+      'group' =>
+        'Premio: O 1.o lugar leva todo o pool. Empate: divisao igual entre empatados.',
+      'team' =>
+        'Premio: Cada membro do time vencedor recebe o dobro da inscricao. Empate: todos recebem de volta.',
+      _ =>
+        'Premio: Distribuido conforme resultado.',
+    };
+  }
 }
 
 class _ChallengeData {
-  final String id, creatorUserId, status, type, metric, startMode;
+  final String id, creatorUserId, status, type, goal, startMode;
   final String? title;
   final double? target;
   final int windowMs, entryFeeCoins;
   final int? fixedStartMs;
   final double minSessionDistanceM;
-  final String? teamAGroupName, teamBGroupName;
-  final String? teamAGroupId, teamBGroupId;
 
   const _ChallengeData({
     required this.id,
@@ -587,20 +666,14 @@ class _ChallengeData {
     required this.status,
     required this.type,
     required this.title,
-    required this.metric,
+    required this.goal,
     required this.target,
     required this.windowMs,
     required this.startMode,
     required this.fixedStartMs,
     required this.entryFeeCoins,
     required this.minSessionDistanceM,
-    this.teamAGroupName,
-    this.teamBGroupName,
-    this.teamAGroupId,
-    this.teamBGroupId,
   });
-
-  bool get isTeamVsTeam => type == 'team_vs_team';
 }
 
 class _ParticipantData {
@@ -610,4 +683,49 @@ class _ParticipantData {
     required this.displayName,
     required this.status,
   });
+}
+
+class _TeamButton extends StatelessWidget {
+  final String label;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _TeamButton({
+    required this.label,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: selected ? color.withValues(alpha: 0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected ? color : Colors.grey.shade300,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.shield_rounded, size: 32,
+                color: selected ? color : Colors.grey),
+            const SizedBox(height: 6),
+            Text(label,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: selected ? color : Colors.grey,
+                )),
+          ],
+        ),
+      ),
+    );
+  }
 }

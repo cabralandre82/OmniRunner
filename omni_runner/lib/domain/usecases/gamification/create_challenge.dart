@@ -7,16 +7,12 @@ import 'package:omni_runner/domain/repositories/i_challenge_repo.dart';
 ///
 /// The creator is automatically added as the first participant with
 /// [ParticipantStatus.accepted].
-///
-/// Conforms to [O4]: single `call()` method.
 final class CreateChallenge {
   final IChallengeRepo _challengeRepo;
 
   const CreateChallenge({required IChallengeRepo challengeRepo})
       : _challengeRepo = challengeRepo;
 
-  /// [id] must be a pre-generated UUID v4.
-  /// [creatorUserId] / [creatorDisplayName] identify the creator.
   Future<ChallengeEntity> call({
     required String id,
     required String creatorUserId,
@@ -25,15 +21,12 @@ final class CreateChallenge {
     required ChallengeRulesEntity rules,
     required int createdAtMs,
     String? title,
-    String? teamAGroupId,
-    String? teamAGroupName,
   }) async {
     final creator = ChallengeParticipantEntity(
       userId: creatorUserId,
       displayName: creatorDisplayName,
       status: ParticipantStatus.accepted,
       respondedAtMs: createdAtMs,
-      groupId: type == ChallengeType.teamVsTeam ? teamAGroupId : null,
     );
 
     final int? acceptDeadlineMs = rules.acceptWindowMin != null
@@ -49,8 +42,6 @@ final class CreateChallenge {
       participants: [creator],
       createdAtMs: createdAtMs,
       title: title,
-      teamAGroupId: type == ChallengeType.teamVsTeam ? teamAGroupId : null,
-      teamAGroupName: type == ChallengeType.teamVsTeam ? teamAGroupName : null,
       acceptDeadlineMs: acceptDeadlineMs,
     );
 

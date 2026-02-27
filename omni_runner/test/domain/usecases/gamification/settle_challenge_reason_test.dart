@@ -12,7 +12,7 @@ void main() {
       expect(ChallengeType.values, containsAll([
         ChallengeType.oneVsOne,
         ChallengeType.group,
-        ChallengeType.teamVsTeam,
+        ChallengeType.team,
       ]));
     });
 

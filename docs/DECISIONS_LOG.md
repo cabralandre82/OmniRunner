@@ -2320,3 +2320,187 @@ mas não aparecem no filtro estadual. O campo é opcional — assessorias existe
 podem atualizar o estado via Supabase Dashboard ou futura tela de edição.
 
 ---
+
+## DECISAO 087 — Redesign completo dos Desafios: goal-based + remoção de team_vs_team
+
+**Data:** 2026-02-26
+
+### Contexto:
+O sistema de desafios usava `ChallengeMetric` (distance/pace/time) com um campo `target`
+opcional que, quando vazio, significava "quem fizer mais ganha". Isso gerava cenários absurdos:
+- Pace sem distância de referência: qual pace? em qual distância?
+- Tempo numa janela de 3h: quem correr 3h seguidas ganha
+- Distância com target vazio: OK mas mal documentado
+
+Além disso, `team_vs_team` (assessoria vs assessoria) não existe mais na UI do app.
+Só existem 1v1 e grupo. A confusão entre "team" e "group" não fazia sentido.
+
+### Decisão:
+1. Substituir `ChallengeMetric` por `ChallengeGoal` com 4 tipos claros:
+   - `fastest_at_distance`: quem completa X km no menor tempo (target obrigatório)
+   - `most_distance`: quem acumula mais km no período (target opcional)
+   - `best_pace_at_distance`: melhor pace numa sessão >= X km (target obrigatório)
+   - `collective_distance`: grupo cooperativo soma km para meta (target obrigatório, grupo only)
+
+2. Remover `ChallengeType.teamVsTeam` — apenas `oneVsOne` e `group`
+
+3. Remover campos `team` do participante e `teamAGroupId`/`teamBGroupId` do desafio
+
+4. Lógica de vencedor reescrita por goal type no evaluator e settle-challenge EF
+
+### Arquivos criados:
+- `supabase/migrations/20260227200000_challenge_goal_redesign.sql`
+
+### Arquivos modificados (domínio):
+- `challenge_rules_entity.dart` (ChallengeMetric → ChallengeGoal, metric → goal)
+- `challenge_entity.dart` (removido team fields, removido ChallengeType.teamVsTeam)
+- `challenge_participant_entity.dart` (removido campo team)
+- `challenge_result_entity.dart` (metric → goal)
+- `challenge_evaluator.dart` (reescrito: _evaluateCollective, _evaluateGroupCompetitive)
+- `create_challenge.dart` (removido team params)
+- `settle_challenge.dart` (removido team reasons)
+- `submit_run_to_challenge.dart` (lowerIsBetter por goal)
+- `post_session_challenge_dispatcher.dart` (_extractProgressValue por goal)
+- `evaluate_challenge.dart` (metric → goal)
+- `challenge_run_binding_entity.dart` (atualizado docs)
+
+### Arquivos modificados (data):
+- `isar_challenge_repo.dart` (goal mapping, legacy ordinal compat)
+- `challenge_record.dart` (docs atualizados, team fields mantidos para schema Isar)
+- `challenge_result_record.dart` (docs atualizados)
+
+### Arquivos modificados (presentation):
+- `challenge_create_screen.dart` (reescrito: 4 GoalCards, sem team)
+- `challenges_list_screen.dart` (_goalLabel)
+- `challenge_details_screen.dart` (goal formatting)
+- `challenge_result_screen.dart` (removido _buildTeamResults, goal labels)
+- `challenge_invite_screen.dart` (removido team invite)
+- `challenge_join_screen.dart` (removido team assignment, goal labels)
+- `today_screen.dart` (removido teamVsTeam)
+- `matchmaking_screen.dart` (ChallengeGoal)
+- `challenges_bloc.dart` (removido team, goal mapping)
+- `challenges_event.dart` (removido team params)
+
+### Arquivos modificados (backend):
+- `challenge-create/index.ts` (goal + validação target obrigatório)
+- `settle-challenge/index.ts` (reescrito: goal-based winner logic)
+- `challenge-join/index.ts` (removido team assignment)
+- `challenge-get/index.ts` (goal no response)
+- `challenge-list-mine/index.ts` (goal, removido team group resolution)
+- `clearing-cron/index.ts` (removido team logic)
+
+### Arquivos modificados (testes):
+- `challenge_evaluator_test.dart` (removido team tests, ChallengeGoal)
+- `settle_challenge_reason_test.dart` (removido teamVsTeam)
+- `ledger_service_test.dart` (ChallengeGoal)
+
+### Risco:
+- Desafios existentes com `metric` antigo são migrados para `goal` via migration SQL
+- Isar local: ordinals antigos mapeados gracefully (distance→mostDistance, pace→bestPaceAtDistance)
+- team_vs_team existentes convertidos para group na migration
+- EFs aceitam tanto `goal` quanto `metric` (fallback) no response para backward compat
+
+---
+
+## DECISAO 088 — Tipo "Time" (Team A vs Team B) nos desafios
+
+**Data:** 2026-02-26
+**Contexto:** Após remover `team_vs_team` (DECISAO 087), o usuário queria manter a opção de desafios de time, mas sem vínculo com assessoria. O criador do desafio atribui participantes livremente aos times A e B.
+
+### Regras:
+1. **3 tipos de desafio**: `oneVsOne`, `group` (ranking individual), `team` (Time A vs B)
+2. **Times iguais**: O desafio só inicia quando ambos os times têm o mesmo número de atletas aceitos
+3. **Qualquer participante em qualquer time**: Sem vínculo com assessoria — o criador e os próprios atletas escolhem o time
+4. **collective_distance NÃO é permitido em team**: Para metas cooperativas, usar `group`
+
+### Scoring por goal no tipo `team`:
+| Goal | Cálculo do time | Vencedor |
+|------|-----------------|----------|
+| `fastest_at_distance` | Tempo do time = tempo do **último** membro a completar. Todos devem correr. | Menor tempo de time |
+| `most_distance` | Distância do time = **soma** dos km de todos os membros | Mais km total |
+| `best_pace_at_distance` | Pace do time = **média** dos paces dos membros que correram | Menor pace médio |
+
+### OmniCoins no tipo `team`:
+- Cada membro do **time vencedor** recebe: `pool / qtd_membros_vencedor`
+- Cada membro do **time perdedor** recebe: 0
+- Empate: cada um recebe de volta sua inscrição
+
+### Alterações:
+
+**Entities Dart:**
+- `challenge_entity.dart`: Adicionado `ChallengeType.team` (ordinal 2)
+- `challenge_participant_entity.dart`: Adicionado campo `team` (`'A'`/`'B'`/`null`)
+
+**Domain use cases:**
+- `challenge_evaluator.dart`: Adicionado `_evaluateTeam()` e `_teamScore()` — lógica completa de scoring por time
+- `settle_challenge.dart`: `_reasonFor` inclui `ChallengeType.team` → `LedgerReason.challengeTeamWon`
+
+**Data layer:**
+- `isar_challenge_repo.dart`: `typeIndex` agora aceita 0-2 (team = 2), serializa/deserializa `team` no JSON do participante
+- `challenge_record.dart`: Comentário atualizado para novo mapeamento de type
+
+**BLoC:**
+- `challenges_bloc.dart`: `_mapRemoteToEntity`, `_mergeChallenge`, `_shouldAutoActivate`, `_tryAutoStart`, `_onCreate`, `_syncChallengeToBackend` — todos tratam `team`
+
+**UI screens:**
+- `challenge_create_screen.dart`: SegmentedButton com 3 opções (1v1/Grupo/Time), explicação de scoring por goal no team, info box de regras do time
+- `challenge_join_screen.dart`: Seleção de time (A/B) com `_TeamButton`, payload inclui `team`, botão desabilitado até selecionar time
+- `challenge_details_screen.dart`: Badge de time (A/B) por participante, defaultTitle e typeLabel para team
+- `challenge_result_screen.dart`: Team usa `_buildGroupResults`
+- `challenges_list_screen.dart`: defaultTitle para team
+- `challenge_invite_screen.dart`: defaultTitle para team
+- `today_screen.dart`: iconForType e defaultTitle para team
+
+**Backend Edge Functions:**
+- `challenge-create/index.ts`: Aceita `type = 'team'`, bloqueia `collective_distance + team`, criador entra como `team: 'A'`
+- `settle-challenge/index.ts`: Bloco `isTeam` com `computeTeamScore()`, distribuição de coins por time
+- `challenge-join/index.ts`: Aceita `team` no body, validação de equilíbrio de times, auto-ativação com times balanceados
+- `challenge-get/index.ts`: Inclui `team` no select e response dos participantes
+- `challenge-list-mine/index.ts`: Inclui `team` no select dos participantes
+
+**Migration SQL:**
+- `20260227300000_challenge_team_type.sql`: CHECK constraint `type IN ('one_vs_one', 'group', 'team')`, coluna `team` em `challenge_participants` com CHECK `IN ('A', 'B')`
+
+**Testes:**
+- `challenge_evaluator_test.dart`: Testes para team mostDistance, fastestAtDistance (last to finish), bestPaceAtDistance (average), nobody ran (refund)
+- `settle_challenge_reason_test.dart`: ChallengeType.team no containsAll
+
+---
+
+## DECISAO 089 — UX dos Desafios: Clareza Total para Usuário Leigo
+
+**Data:** 2026-02-26
+**Status:** Implementada
+
+### Problema
+
+Os textos e labels das telas de desafio usavam termos técnicos ou ambíguos que não deixavam claro para um usuário leigo:
+1. O que cada tipo de desafio significa na prática
+2. O que o atleta precisa fazer para cada goal
+3. Como exatamente o vencedor é decidido
+4. O que acontece com as OmniCoins
+
+### Decisão
+
+Reescrever todos os textos de UX em todas as telas do fluxo de desafios para que um "usuário dummy" entenda perfeitamente.
+
+### Princípios aplicados
+
+1. **Cada tipo tem explicação visível:** Info box aparece ao selecionar qualquer tipo (1v1 / Grupo / Time), não só Time
+2. **Goal cards auto-explicativos:** Subtítulos expandidos explicam em 1-2 frases o que o atleta faz e como ganha
+3. **"Como o vencedor é decidido":** Novo widget dedicado aparece na criação, nos detalhes, no convite e no resultado
+4. **Prêmio explícito:** Explicação de como OmniCoins são distribuídas (pool, divisão, refund)
+5. **Consistência:** Labels, títulos default e descrições iguais em todas as telas
+6. **Sem jargão:** "pace médio (min/km)" ao invés de só "pace", "ranking individual" ao invés de só "competitivo"
+
+### Arquivos alterados
+
+- `challenge_create_screen.dart`: _TypeInfoBox, _WinnerExplainerBox, goal cards, target helpers, goal rules
+- `challenge_details_screen.dart`: _RulesCard (Vencedor + Prêmio), _metricExplain, _typeLabel, _metricLabel
+- `challenge_join_screen.dart`: winner explainer card, _goalLabel, _prizeExplain, type labels
+- `challenge_result_screen.dart`: bug fix isTeam, _goalResultExplain
+- `challenges_list_screen.dart`, `challenge_invite_screen.dart`, `today_screen.dart`: labels e default titles
+- `docs/GAMIFICATION_POLICY.md` §4: Reescrito com seções 4.0/4.1/4.2/4.2b
+- `docs/CONTEXT_DUMP.md`: Nova sprint entry
+
+---

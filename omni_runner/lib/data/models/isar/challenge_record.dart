@@ -16,7 +16,7 @@ part 'challenge_record.g.dart';
 ///   3 = completed, 4 = cancelled, 5 = expired
 ///
 /// Type int mapping (matches [ChallengeType] enum ordinal):
-///   0 = oneVsOne, 1 = group, 2 = teamVsTeam
+///   0 = oneVsOne, 1 = group, 2 = team
 @collection
 class ChallengeRecord {
   Id isarId = Isar.autoIncrement;
@@ -41,7 +41,7 @@ class ChallengeRecord {
 
   // ── Rules (flattened) ──
 
-  /// ChallengeMetric ordinal: 0=distance, 1=pace, 2=time.
+  /// ChallengeGoal ordinal: 0=fastestAtDistance, 1=mostDistance, 2=bestPaceAtDistance, 3=collectiveDistance.
   late int metricOrdinal;
 
   /// Target value. Null for open-ended challenges.
@@ -74,7 +74,7 @@ class ChallengeRecord {
 
   int? endsAtMs;
 
-  // ── Team fields (teamVsTeam only) ──
+  // ── Legacy team fields (kept for Isar schema compat, no longer populated) ──
 
   String? teamAGroupId;
   String? teamBGroupId;

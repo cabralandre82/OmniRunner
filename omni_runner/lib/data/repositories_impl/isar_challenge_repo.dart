@@ -39,9 +39,6 @@ final class IsarChallengeRepo implements IChallengeRepo {
 
   @override
   Future<List<ChallengeEntity>> getByUserId(String userId) async {
-    // Isar cannot query inside JSON lists, so we load relevant
-    // challenges and filter in memory.
-    // Include pending, active, completing, and recently completed (last 30 days).
     final thirtyDaysAgoMs = DateTime.now()
         .subtract(const Duration(days: 30))
         .millisecondsSinceEpoch;
@@ -135,7 +132,7 @@ final class IsarChallengeRepo implements IChallengeRepo {
     ..status = _challengeStatusToInt(e.status)
     ..type = e.type.index
     ..title = e.title
-    ..metricOrdinal = e.rules.metric.index
+    ..metricOrdinal = e.rules.goal.index
     ..target = e.rules.target
     ..windowMs = e.rules.windowMs
     ..startModeOrdinal = e.rules.startMode.index
@@ -146,39 +143,45 @@ final class IsarChallengeRepo implements IChallengeRepo {
     ..createdAtMs = e.createdAtMs
     ..startsAtMs = e.startsAtMs
     ..endsAtMs = e.endsAtMs
-    ..teamAGroupId = e.teamAGroupId
-    ..teamBGroupId = e.teamBGroupId
-    ..teamAGroupName = e.teamAGroupName
-    ..teamBGroupName = e.teamBGroupName
     ..participantsJson = e.participants.map(_participantToJson).toList();
 
-  ChallengeEntity _toEntity(ChallengeRecord r) => ChallengeEntity(
-        id: r.challengeUuid,
-        creatorUserId: r.creatorUserId,
-        status: _challengeStatusFromInt(r.status),
-        type: ChallengeType.values[r.type.clamp(0, ChallengeType.values.length - 1)],
-        rules: ChallengeRulesEntity(
-          metric: ChallengeMetric.values[r.metricOrdinal],
-          target: r.target,
-          windowMs: r.windowMs,
-          startMode: ChallengeStartMode.values[r.startModeOrdinal],
-          fixedStartMs: r.fixedStartMs,
-          minSessionDistanceM: r.minSessionDistanceM,
-          antiCheatPolicy:
-              ChallengeAntiCheatPolicy.values[r.antiCheatPolicyOrdinal],
-          entryFeeCoins: r.entryFeeCoins,
-        ),
-        participants:
-            r.participantsJson.map(_participantFromJson).toList(),
-        createdAtMs: r.createdAtMs,
-        startsAtMs: r.startsAtMs,
-        endsAtMs: r.endsAtMs,
-        title: r.title,
-        teamAGroupId: r.teamAGroupId,
-        teamBGroupId: r.teamBGroupId,
-        teamAGroupName: r.teamAGroupName,
-        teamBGroupName: r.teamBGroupName,
-      );
+  ChallengeEntity _toEntity(ChallengeRecord r) {
+    // 0=oneVsOne, 1=group, 2=team
+    final typeIndex = r.type.clamp(0, 2);
+
+    return ChallengeEntity(
+      id: r.challengeUuid,
+      creatorUserId: r.creatorUserId,
+      status: _challengeStatusFromInt(r.status),
+      type: ChallengeType.values[typeIndex],
+      rules: ChallengeRulesEntity(
+        goal: _goalFromOrdinal(r.metricOrdinal),
+        target: r.target,
+        windowMs: r.windowMs,
+        startMode: ChallengeStartMode.values[r.startModeOrdinal],
+        fixedStartMs: r.fixedStartMs,
+        minSessionDistanceM: r.minSessionDistanceM,
+        antiCheatPolicy:
+            ChallengeAntiCheatPolicy.values[r.antiCheatPolicyOrdinal],
+        entryFeeCoins: r.entryFeeCoins,
+      ),
+      participants:
+          r.participantsJson.map(_participantFromJson).toList(),
+      createdAtMs: r.createdAtMs,
+      startsAtMs: r.startsAtMs,
+      endsAtMs: r.endsAtMs,
+      title: r.title,
+    );
+  }
+
+  /// Map ordinal to ChallengeGoal, handling legacy values gracefully.
+  static ChallengeGoal _goalFromOrdinal(int ordinal) => switch (ordinal) {
+        0 => ChallengeGoal.fastestAtDistance,
+        1 => ChallengeGoal.mostDistance,
+        2 => ChallengeGoal.bestPaceAtDistance,
+        3 => ChallengeGoal.collectiveDistance,
+        _ => ChallengeGoal.mostDistance,
+      };
 
   // ── Participant JSON serialization ──
 
@@ -218,7 +221,7 @@ final class IsarChallengeRepo implements IChallengeRepo {
   ) =>
       ChallengeResultRecord()
         ..challengeId = e.challengeId
-        ..metricOrdinal = e.metric.index
+        ..metricOrdinal = e.goal.index
         ..totalCoinsDistributed = e.totalCoinsDistributed
         ..calculatedAtMs = e.calculatedAtMs
         ..resultsJson = e.results.map(_prToJson).toList();
@@ -228,7 +231,7 @@ final class IsarChallengeRepo implements IChallengeRepo {
   ) =>
       ChallengeResultEntity(
         challengeId: r.challengeId,
-        metric: ChallengeMetric.values[r.metricOrdinal],
+        goal: _goalFromOrdinal(r.metricOrdinal),
         results: r.resultsJson.map(_prFromJson).toList(),
         totalCoinsDistributed: r.totalCoinsDistributed,
         calculatedAtMs: r.calculatedAtMs,

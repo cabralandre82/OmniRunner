@@ -74,9 +74,11 @@ final class SubmitRunToChallenge {
       throw SessionAlreadySubmitted(session.id, challengeId);
     }
 
-    // For pace metric, keep the best (lowest) value instead of accumulating.
+    // For goals where lower is better, keep the best value instead of accumulating.
     final double newProgress;
-    if (challenge.rules.metric == ChallengeMetric.pace) {
+    final lowerIsBetter = challenge.rules.goal == ChallengeGoal.fastestAtDistance ||
+                          challenge.rules.goal == ChallengeGoal.bestPaceAtDistance;
+    if (lowerIsBetter) {
       newProgress = participant.progressValue == 0.0
           ? metricValue
           : metricValue < participant.progressValue

@@ -1391,14 +1391,14 @@ class _ActiveChallengeRow extends StatelessWidget {
   static IconData _iconForType(ChallengeType t) => switch (t) {
         ChallengeType.oneVsOne => Icons.person,
         ChallengeType.group => Icons.groups,
-        ChallengeType.teamVsTeam => Icons.shield,
+        ChallengeType.team => Icons.shield_rounded,
       };
 }
 
 String _challengeDefaultTitle(ChallengeEntity c) => switch (c.type) {
-      ChallengeType.oneVsOne => 'Desafio 1v1',
-      ChallengeType.teamVsTeam => 'Desafio de Equipe',
+      ChallengeType.oneVsOne => 'Desafio 1 vs 1',
       ChallengeType.group => 'Desafio em Grupo',
+      ChallengeType.team => 'Desafio Time A vs B',
     };
 
 // ═══════════════════════════════════════════════════════════════════════════════

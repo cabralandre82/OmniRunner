@@ -3,22 +3,22 @@ import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
 
 /// Outcome for a single participant after a challenge completes.
 enum ParticipantOutcome {
-  /// Participant won (best result or met target first in 1v1).
+  /// Participant won (best result in competitive challenge).
   won,
 
-  /// Participant lost (worse result in 1v1).
+  /// Participant lost (worse result).
   lost,
 
-  /// Both participants tied (equal results).
+  /// Participants tied (equal results).
   tied,
 
-  /// Participant completed the group challenge target.
+  /// Participant completed the cooperative group target.
   completedTarget,
 
   /// Participant contributed but did not reach the group target.
   participated,
 
-  /// Participant withdrew or never accepted.
+  /// Participant withdrew or never ran.
   didNotFinish,
 }
 
@@ -27,10 +27,10 @@ final class ParticipantResult extends Equatable {
   /// User ID.
   final String userId;
 
-  /// Final value in the metric's unit (meters, sec/km, or ms).
+  /// Final value in the goal's unit.
   final double finalValue;
 
-  /// Rank among participants (1-based). Null for group challenges.
+  /// Rank among participants (1-based). Null for cooperative challenges.
   final int? rank;
 
   /// What happened.
@@ -66,14 +66,12 @@ final class ParticipantResult extends Equatable {
 ///
 /// Created once when a challenge transitions to [ChallengeStatus.completed].
 /// Immutable and append-only — never modified after creation.
-///
-/// See `docs/GAMIFICATION_POLICY.md` §4 for reward rules.
 final class ChallengeResultEntity extends Equatable {
   /// The challenge this result belongs to.
   final String challengeId;
 
-  /// The metric that was measured.
-  final ChallengeMetric metric;
+  /// The goal that was measured.
+  final ChallengeGoal goal;
 
   /// Individual results for each participant, ordered by rank.
   final List<ParticipantResult> results;
@@ -86,7 +84,7 @@ final class ChallengeResultEntity extends Equatable {
 
   const ChallengeResultEntity({
     required this.challengeId,
-    required this.metric,
+    required this.goal,
     required this.results,
     required this.totalCoinsDistributed,
     required this.calculatedAtMs,
@@ -100,7 +98,7 @@ final class ChallengeResultEntity extends Equatable {
   @override
   List<Object?> get props => [
         challengeId,
-        metric,
+        goal,
         results,
         totalCoinsDistributed,
         calculatedAtMs,

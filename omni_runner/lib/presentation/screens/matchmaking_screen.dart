@@ -48,7 +48,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
   final _verificationBloc = VerificationBloc()
     ..add(const LoadVerificationState());
 
-  ChallengeMetric _metric = ChallengeMetric.distance;
+  ChallengeGoal _goal = ChallengeGoal.fastestAtDistance;
   int _windowMin = 180;
   _MatchState _state = _MatchState.setup;
   String? _errorMsg;
@@ -187,10 +187,11 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
     if (_targetCtrl.text.isNotEmpty) {
       final raw = double.tryParse(_targetCtrl.text);
       if (raw != null && raw > 0) {
-        target = switch (_metric) {
-          ChallengeMetric.distance => raw * 1000,
-          ChallengeMetric.pace => raw * 60,
-          ChallengeMetric.time => raw * 60000,
+        target = switch (_goal) {
+          ChallengeGoal.fastestAtDistance => raw * 1000,
+          ChallengeGoal.mostDistance => raw * 1000,
+          ChallengeGoal.bestPaceAtDistance => raw * 1000,
+          ChallengeGoal.collectiveDistance => raw * 1000,
         };
       }
     }
@@ -205,7 +206,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
         'matchmake',
         body: {
           'action': 'queue',
-          'metric': _metric.name,
+          'goal': _goal.name,
           'target': target,
           'entry_fee_coins': fee,
           'window_ms': _windowMin * 60 * 1000,
@@ -551,17 +552,17 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          SegmentedButton<ChallengeMetric>(
+          SegmentedButton<ChallengeGoal>(
             segments: const [
               ButtonSegment(
-                  value: ChallengeMetric.distance, label: Text('Distância')),
+                  value: ChallengeGoal.fastestAtDistance, label: Text('Mais rápido')),
               ButtonSegment(
-                  value: ChallengeMetric.pace, label: Text('Pace')),
+                  value: ChallengeGoal.mostDistance, label: Text('Mais km')),
               ButtonSegment(
-                  value: ChallengeMetric.time, label: Text('Tempo')),
+                  value: ChallengeGoal.bestPaceAtDistance, label: Text('Melhor pace')),
             ],
-            selected: {_metric},
-            onSelectionChanged: (v) => setState(() => _metric = v.first),
+            selected: {_goal},
+            onSelectionChanged: (v) => setState(() => _goal = v.first),
           ),
           const SizedBox(height: 16),
 
@@ -690,7 +691,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
                         MaterialPageRoute<void>(
                           builder: (_) => ChallengeCreateScreen(
                             initialType: ChallengeType.oneVsOne,
-                            initialMetric: _metric,
+                            initialGoal: _goal,
                             initialWindowMin: _windowMin,
                             initialFee: int.tryParse(_feeCtrl.text),
                           ),
@@ -719,10 +720,11 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
     );
   }
 
-  String _targetUnit() => switch (_metric) {
-        ChallengeMetric.distance => '(km)',
-        ChallengeMetric.pace => '(min/km)',
-        ChallengeMetric.time => '(min)',
+  String _targetUnit() => switch (_goal) {
+        ChallengeGoal.fastestAtDistance => '(km)',
+        ChallengeGoal.mostDistance => '(km)',
+        ChallengeGoal.bestPaceAtDistance => '(km)',
+        ChallengeGoal.collectiveDistance => '(km)',
       };
 
   // ── Searching animation ────────────────────────────────────────────────
@@ -881,7 +883,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
                   _ConfirmRow(
                     icon: Icons.straighten,
                     label: 'Métrica',
-                    value: _metricLabel(_metric),
+                    value: _goalLabel(_goal),
                   ),
                   if (_targetCtrl.text.isNotEmpty) ...[
                     const Divider(height: 20),
@@ -1010,10 +1012,11 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
     });
   }
 
-  String _metricLabel(ChallengeMetric m) => switch (m) {
-        ChallengeMetric.distance => 'Distância',
-        ChallengeMetric.pace => 'Pace',
-        ChallengeMetric.time => 'Tempo',
+  String _goalLabel(ChallengeGoal m) => switch (m) {
+        ChallengeGoal.fastestAtDistance => 'Mais rápido',
+        ChallengeGoal.mostDistance => 'Mais km',
+        ChallengeGoal.bestPaceAtDistance => 'Melhor pace',
+        ChallengeGoal.collectiveDistance => 'Coletivo',
       };
 
   String _windowLabel(int minutes) {

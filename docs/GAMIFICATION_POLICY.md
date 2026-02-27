@@ -66,13 +66,24 @@ OmniCoins existem **somente em duas formas de aquisição**:
 
 ## 4. DESAFIOS — REGRAS LOJA-SAFE
 
-### 4.1 Desafios 1v1
+### 4.0 Objetivos dos Desafios (ChallengeGoal)
+
+| Goal | O que cada atleta faz | Como o vencedor é decidido |
+|------|----------------------|---------------------------|
+| **fastestAtDistance** | Corre UMA corrida cobrindo a distância definida (ex: 10 km) | Vence quem completar no menor tempo |
+| **mostDistance** | Corre quantas vezes quiser no período | Vence quem acumular mais km somando todas as corridas |
+| **bestPaceAtDistance** | Corre UMA corrida cobrindo no mínimo a distância definida (ex: 5 km) | Vence quem tiver o menor pace médio (min/km) |
+| **collectiveDistance** | Cada membro corre o que puder — km de todos somam | Grupo atinge a meta = todos ganham. Não atinge = todos perdem |
+
+`collectiveDistance` só está disponível para desafios do tipo **Grupo** (cooperativo).
+
+### 4.1 Desafios 1 vs 1
 
 | Aspecto | Regra |
 |---------|-------|
 | Criação | Qualquer usuário pode desafiar outro |
 | Aceitação | O desafiado aceita ou recusa (nunca automático) |
-| Tipo | Distância, pace, ou tempo em período definido (1h, 3h, 6h, 12h, 24h) |
+| Goals disponíveis | fastestAtDistance, mostDistance, bestPaceAtDistance |
 | Entry fee | OmniCoins (0 = gratuito). Fee pago ao entrar, vai pro pool |
 | Resultado (grátis) | **Zero coins** para todos — só vale a competição |
 | Resultado (com fee) | Vencedor: pool inteiro (fee × 2). Perdedor: 0 |
@@ -84,19 +95,32 @@ OmniCoins existem **somente em duas formas de aquisição**:
 | Validação | Apenas sessões com `isVerified == true` contam |
 | **Visibilidade** | Enquanto o desafio está ativo, cada atleta pode ver **apenas** se o oponente completou ou não. **Nenhum detalhe** (pace, distância, tempo) é visível antes de ambos completarem. Após ambos completarem (ou o período expirar), os detalhes são revelados. Isso impede que um atleta espere o outro terminar para ajustar seu esforço. |
 
-### 4.2 Desafios de Grupo
+### 4.2 Desafios de Grupo (competitivo)
 
 | Aspecto | Regra |
 |---------|-------|
-| Tamanho | 2-50 participantes |
-| Meta | Definida pelo criador (ex: "50 km coletivos em 7 dias") |
-| Lógica | **Cooperativo** — o grupo ganha ou perde como unidade |
-| Contribuição | Sessões verificadas somam para o progresso coletivo (distância/tempo: soma; pace: média) |
-| Meta atingida (grátis) | **Zero coins** — só vale a conquista coletiva |
-| Meta atingida (com fee) | Pool dividido igualmente entre **todos** (correu ou não) |
-| Meta não atingida | 0 coins para todos (participaram mas falharam) |
+| Tamanho | 3-100 participantes |
+| Goals disponíveis | fastestAtDistance, mostDistance, bestPaceAtDistance, collectiveDistance |
+| Lógica competitiva | Ranking individual — o 1.o lugar leva o pool todo |
+| Lógica cooperativa (collectiveDistance) | O grupo ganha ou perde como unidade |
+| Resultado competitivo (com fee) | 1.o lugar: pool inteiro. Empate no topo: divisão igual entre empatados |
+| Resultado cooperativo (com fee) | Meta atingida: cada um recebe seu fee de volta. Meta não atingida: 0 coins |
 | Ninguém correu (com fee) | Todos DNF, refund do fee |
-| Abandono | Sai do grupo sem penalidade; contribuição anterior permanece |
+| Validação | Apenas sessões com `isVerified == true` contam |
+
+### 4.2b Desafios de Time (Time A vs Time B)
+
+| Aspecto | Regra |
+|---------|-------|
+| Estrutura | Time A vs Time B, times com mesmo número de atletas |
+| Goals disponíveis | fastestAtDistance, mostDistance, bestPaceAtDistance |
+| Scoring fastestAtDistance | Tempo do time = tempo do ÚLTIMO membro a completar. Time mais rápido vence. |
+| Scoring mostDistance | Km do time = soma de todos os membros. Time com mais km vence. |
+| Scoring bestPaceAtDistance | Pace do time = média dos paces de todos os membros. Time com menor pace vence. |
+| Resultado (com fee) | Time vencedor: cada membro recebe o dobro da inscrição. Perdedor: 0 coins. Empate: refund. |
+| Ninguém correu (com fee) | Todos DNF, refund do fee |
+| Seleção de time | O criador entra automaticamente no Time A. Outros escolhem A ou B ao aceitar. Times devem permanecer balanceados. |
+| Validação | Apenas sessões com `isVerified == true` contam |
 
 ### 4.3 Rankings Locais
 

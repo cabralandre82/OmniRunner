@@ -150,11 +150,11 @@ serve(async (req: Request) => {
         // Fetch challenge details
         const { data: challenges } = await db
           .from("challenges")
-          .select("id, type, team_a_group_id, team_b_group_id")
+          .select("id, type")
           .in("id", challengeIds);
 
         const challengeMap = new Map(
-          (challenges ?? []).map((c: { id: string; type: string; team_a_group_id: string | null; team_b_group_id: string | null }) => [c.id, c])
+          (challenges ?? []).map((c: { id: string; type: string }) => [c.id, c])
         );
 
         // Fetch all participants for these challenges (to determine groups)
@@ -183,36 +183,19 @@ serve(async (req: Request) => {
         const clearingItems: ClearingItem[] = [];
 
         for (const entry of unmatchedEntries as { id: string; user_id: string; delta_coins: number; ref_id: string }[]) {
-          const ch = challengeMap.get(entry.ref_id) as { id: string; type: string; team_a_group_id: string | null; team_b_group_id: string | null } | undefined;
+          const ch = challengeMap.get(entry.ref_id) as { id: string; type: string } | undefined;
           if (!ch) continue;
 
           const winnerGroupId = partGroupMap.get(`${ch.id}::${entry.user_id}`);
           if (!winnerGroupId) continue;
 
-          let loserGroupId: string | null = null;
-          let loserUserId: string | null = null;
-
-          if (ch.type === "team_vs_team") {
-            // Losing group is the other team
-            loserGroupId = winnerGroupId === ch.team_a_group_id
-              ? ch.team_b_group_id
-              : ch.team_a_group_id;
-
-            // Pick representative loser: first participant from losing team
-            const loser = (participants ?? []).find(
-              (p: { challenge_id: string; group_id: string | null }) =>
-                p.challenge_id === ch.id && p.group_id === loserGroupId
-            ) as { user_id: string } | undefined;
-            loserUserId = loser?.user_id ?? "unknown";
-          } else {
-            // 1v1: loser is the other participant
-            const otherPart = (participants ?? []).find(
-              (p: { challenge_id: string; user_id: string }) =>
-                p.challenge_id === ch.id && p.user_id !== entry.user_id
-            ) as { user_id: string; group_id: string | null } | undefined;
-            loserGroupId = otherPart?.group_id ?? null;
-            loserUserId = otherPart?.user_id ?? "unknown";
-          }
+          // Find the loser: the other participant
+          const otherPart = (participants ?? []).find(
+            (p: { challenge_id: string; user_id: string }) =>
+              p.challenge_id === ch.id && p.user_id !== entry.user_id
+          ) as { user_id: string; group_id: string | null } | undefined;
+          const loserGroupId = otherPart?.group_id ?? null;
+          const loserUserId = otherPart?.user_id ?? "unknown";
 
           if (!loserGroupId || !loserUserId) continue;
 

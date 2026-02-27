@@ -96,7 +96,7 @@ serve(async (req: Request) => {
 
     const { data: rawParticipants, error: partErr } = await db
       .from("challenge_participants")
-      .select("user_id, display_name, status, progress_value, responded_at_ms, group_id, contributing_session_ids")
+      .select("user_id, display_name, status, progress_value, responded_at_ms, group_id, team, contributing_session_ids")
       .eq("challenge_id", challenge_id)
       .order("responded_at_ms", { ascending: true, nullsFirst: false });
 
@@ -122,6 +122,7 @@ serve(async (req: Request) => {
           progress_value: null,
           responded_at_ms: p.responded_at_ms,
           group_id: p.group_id,
+          team: p.team ?? null,
           has_submitted: sessionIds.length > 0,
         };
       }
@@ -133,6 +134,7 @@ serve(async (req: Request) => {
         progress_value: p.progress_value,
         responded_at_ms: p.responded_at_ms,
         group_id: p.group_id,
+        team: p.team ?? null,
         has_submitted: sessionIds.length > 0,
       };
     });
@@ -148,24 +150,6 @@ serve(async (req: Request) => {
       callerGroupId = profile?.active_coaching_group_id ?? null;
     }
 
-    // Resolve team group names for team_vs_team challenges
-    let teamAGroupName: string | null = null;
-    let teamBGroupName: string | null = null;
-
-    if (challenge.type === "team_vs_team") {
-      const teamIds = [challenge.team_a_group_id, challenge.team_b_group_id].filter(Boolean);
-      if (teamIds.length > 0) {
-        const { data: groups } = await db
-          .from("coaching_groups")
-          .select("id, name")
-          .in("id", teamIds);
-        for (const g of (groups ?? [])) {
-          if (g.id === challenge.team_a_group_id) teamAGroupName = g.name;
-          if (g.id === challenge.team_b_group_id) teamBGroupName = g.name;
-        }
-      }
-    }
-
     return jsonOk({
       challenge: {
         id: challenge.id,
@@ -173,7 +157,7 @@ serve(async (req: Request) => {
         status: challenge.status,
         type: challenge.type,
         title: challenge.title,
-        metric: challenge.metric,
+        goal: challenge.goal ?? challenge.metric,
         target: challenge.target,
         window_ms: challenge.window_ms,
         start_mode: challenge.start_mode,
@@ -184,10 +168,6 @@ serve(async (req: Request) => {
         created_at_ms: challenge.created_at_ms,
         starts_at_ms: challenge.starts_at_ms,
         ends_at_ms: challenge.ends_at_ms,
-        team_a_group_id: challenge.team_a_group_id ?? null,
-        team_b_group_id: challenge.team_b_group_id ?? null,
-        team_a_group_name: teamAGroupName,
-        team_b_group_name: teamBGroupName,
       },
       participants: participants,
       caller_user_id: user.id,

@@ -17,7 +17,7 @@ class ChallengeResultRecord {
   @Index(unique: true)
   late String challengeId;
 
-  /// ChallengeMetric ordinal: 0=distance, 1=pace, 2=time.
+  /// ChallengeGoal ordinal: 0=fastestAtDistance, 1=mostDistance, 2=bestPaceAtDistance, 3=collectiveDistance.
   late int metricOrdinal;
 
   /// Total Coins distributed across all participants.

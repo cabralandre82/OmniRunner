@@ -97,7 +97,7 @@ serve(async (req: Request) => {
     // 3. Fetch all participants for those challenges
     const { data: allParts, error: allPartErr } = await db
       .from("challenge_participants")
-      .select("challenge_id, user_id, display_name, status, progress_value, responded_at_ms, group_id")
+      .select("challenge_id, user_id, display_name, status, progress_value, responded_at_ms, group_id, team")
       .in("challenge_id", challengeIds)
       .order("responded_at_ms", { ascending: true, nullsFirst: false });
 
@@ -118,27 +118,7 @@ serve(async (req: Request) => {
       partsByChallenge[p.challenge_id].push(p);
     }
 
-    // 5. Resolve team group names
-    const teamGroupIds = new Set<string>();
-    // deno-lint-ignore no-explicit-any
-    for (const c of (challenges ?? []) as any[]) {
-      if (c.team_a_group_id) teamGroupIds.add(c.team_a_group_id);
-      if (c.team_b_group_id) teamGroupIds.add(c.team_b_group_id);
-    }
-
-    // deno-lint-ignore no-explicit-any
-    const groupNameMap: Record<string, string> = {};
-    if (teamGroupIds.size > 0) {
-      const { data: groups } = await db
-        .from("coaching_groups")
-        .select("id, name")
-        .in("id", [...teamGroupIds]);
-      for (const g of (groups ?? [])) {
-        groupNameMap[g.id] = g.name;
-      }
-    }
-
-    // 6. Assemble response
+    // 5. Assemble response
     // deno-lint-ignore no-explicit-any
     const enriched = (challenges ?? []).map((c: any) => ({
       id: c.id,
@@ -146,7 +126,7 @@ serve(async (req: Request) => {
       status: c.status,
       type: c.type,
       title: c.title,
-      metric: c.metric,
+      goal: c.goal ?? c.metric,
       target: c.target,
       window_ms: c.window_ms,
       start_mode: c.start_mode,
@@ -157,10 +137,6 @@ serve(async (req: Request) => {
       created_at_ms: c.created_at_ms,
       starts_at_ms: c.starts_at_ms,
       ends_at_ms: c.ends_at_ms,
-      team_a_group_id: c.team_a_group_id ?? null,
-      team_b_group_id: c.team_b_group_id ?? null,
-      team_a_group_name: c.team_a_group_id ? (groupNameMap[c.team_a_group_id] ?? null) : null,
-      team_b_group_name: c.team_b_group_id ? (groupNameMap[c.team_b_group_id] ?? null) : null,
       participants: partsByChallenge[c.id] ?? [],
     }));
 

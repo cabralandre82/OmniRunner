@@ -26,7 +26,7 @@ void main() {
 
   ChallengeEntity _challenge({
     ChallengeType type = ChallengeType.oneVsOne,
-    ChallengeMetric metric = ChallengeMetric.distance,
+    ChallengeGoal goal = ChallengeGoal.mostDistance,
     double? target,
     required List<ChallengeParticipantEntity> participants,
   }) =>
@@ -36,7 +36,7 @@ void main() {
         status: ChallengeStatus.active,
         type: type,
         rules: ChallengeRulesEntity(
-          metric: metric,
+          goal: goal,
           target: target,
           windowMs: 604800000,
         ),
@@ -134,7 +134,7 @@ void main() {
   group('1v1 time', () {
     test('higher duration wins', () {
       final results = evaluator.evaluate(_challenge(
-        metric: ChallengeMetric.time,
+        goal: ChallengeGoal.fastestAtDistance,
         participants: [
           _p('u1', progress: 1800000, sessions: ['s1']),
           _p('u2', progress: 1200000, sessions: ['s2']),
@@ -152,7 +152,7 @@ void main() {
 
     test('time tie broken by earliestFinish', () {
       final results = evaluator.evaluate(_challenge(
-        metric: ChallengeMetric.time,
+        goal: ChallengeGoal.fastestAtDistance,
         participants: [
           _p('u1',
               progress: 1200000,
@@ -178,7 +178,7 @@ void main() {
   group('1v1 pace', () {
     test('lower pace wins', () {
       final results = evaluator.evaluate(_challenge(
-        metric: ChallengeMetric.pace,
+        goal: ChallengeGoal.bestPaceAtDistance,
         participants: [
           _p('u1', progress: 300, sessions: ['s1']),
           _p('u2', progress: 270, sessions: ['s2']),
@@ -234,7 +234,7 @@ void main() {
         status: ChallengeStatus.active,
         type: ChallengeType.oneVsOne,
         rules: const ChallengeRulesEntity(
-          metric: ChallengeMetric.distance,
+          goal: ChallengeGoal.mostDistance,
           windowMs: 604800000,
           entryFeeCoins: 50,
         ),
@@ -257,7 +257,7 @@ void main() {
         status: ChallengeStatus.active,
         type: ChallengeType.oneVsOne,
         rules: const ChallengeRulesEntity(
-          metric: ChallengeMetric.distance,
+          goal: ChallengeGoal.mostDistance,
           windowMs: 604800000,
           entryFeeCoins: 50,
         ),
@@ -378,7 +378,7 @@ void main() {
         status: ChallengeStatus.active,
         type: ChallengeType.group,
         rules: const ChallengeRulesEntity(
-          metric: ChallengeMetric.distance,
+          goal: ChallengeGoal.mostDistance,
           target: 10000,
           windowMs: 604800000,
           entryFeeCoins: 20,
@@ -417,7 +417,7 @@ void main() {
         status: ChallengeStatus.active,
         type: ChallengeType.group,
         rules: const ChallengeRulesEntity(
-          metric: ChallengeMetric.distance,
+          goal: ChallengeGoal.mostDistance,
           target: 5000,
           windowMs: 604800000,
           entryFeeCoins: 20,
@@ -457,7 +457,7 @@ void main() {
     test('avg pace meets target (free, 0 coins)', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
-        metric: ChallengeMetric.pace,
+        goal: ChallengeGoal.bestPaceAtDistance,
         target: 300,
         participants: [
           _p('u1', progress: 270, sessions: ['s1']),
@@ -474,7 +474,7 @@ void main() {
       // avg = (270+350)/2 = 310 > 300 → not met
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
-        metric: ChallengeMetric.pace,
+        goal: ChallengeGoal.bestPaceAtDistance,
         target: 300,
         participants: [
           _p('u1', progress: 270, sessions: ['s1']),
@@ -494,7 +494,7 @@ void main() {
     test('collective time meets target (free, 0 coins)', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
-        metric: ChallengeMetric.time,
+        goal: ChallengeGoal.fastestAtDistance,
         target: 4000000,
         participants: [
           _p('u1', progress: 1500000, sessions: ['s1']),
@@ -512,7 +512,7 @@ void main() {
       // sum = 1500000+1200000 = 2700000 < 4000000 → not met
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
-        metric: ChallengeMetric.time,
+        goal: ChallengeGoal.fastestAtDistance,
         target: 4000000,
         participants: [
           _p('u1', progress: 1500000, sessions: ['s1']),
@@ -533,6 +533,7 @@ void main() {
     required String team,
     double progress = 0.0,
     List<String> sessions = const [],
+    int? lastSubmittedAtMs,
   }) =>
       ChallengeParticipantEntity(
         userId: userId,
@@ -540,150 +541,134 @@ void main() {
         status: ParticipantStatus.accepted,
         progressValue: progress,
         contributingSessionIds: sessions,
+        lastSubmittedAtMs: lastSubmittedAtMs,
         team: team,
       );
 
-  ChallengeEntity _teamChallenge({
-    ChallengeMetric metric = ChallengeMetric.distance,
-    int entryFeeCoins = 0,
-    required List<ChallengeParticipantEntity> participants,
-  }) =>
-      ChallengeEntity(
-        id: 'tc1',
-        creatorUserId: 'u1',
+  group('team mostDistance', () {
+    test('team with higher total distance wins', () {
+      final results = evaluator.evaluate(_challenge(
+        type: ChallengeType.team,
+        goal: ChallengeGoal.mostDistance,
+        participants: [
+          _tp('a1', team: 'A', progress: 5000, sessions: ['s1']),
+          _tp('a2', team: 'A', progress: 6000, sessions: ['s2']),
+          _tp('b1', team: 'B', progress: 4000, sessions: ['s3']),
+          _tp('b2', team: 'B', progress: 3000, sessions: ['s4']),
+        ],
+      ));
+
+      final teamAResults = results.where((r) => r.userId.startsWith('a'));
+      final teamBResults = results.where((r) => r.userId.startsWith('b'));
+      expect(teamAResults.every((r) => r.outcome == ParticipantOutcome.won), isTrue);
+      expect(teamBResults.every((r) => r.outcome == ParticipantOutcome.lost), isTrue);
+    });
+
+    test('team with staked coins — winner gets double', () {
+      final results = evaluator.evaluate(ChallengeEntity(
+        id: 'c1',
+        creatorUserId: 'a1',
         status: ChallengeStatus.active,
-        type: ChallengeType.teamVsTeam,
-        rules: ChallengeRulesEntity(
-          metric: metric,
+        type: ChallengeType.team,
+        rules: const ChallengeRulesEntity(
+          goal: ChallengeGoal.mostDistance,
           windowMs: 604800000,
-          entryFeeCoins: entryFeeCoins,
+          entryFeeCoins: 100,
         ),
-        participants: participants,
+        participants: [
+          _tp('a1', team: 'A', progress: 8000, sessions: ['s1']),
+          _tp('b1', team: 'B', progress: 3000, sessions: ['s2']),
+        ],
         createdAtMs: 1000,
-        teamAGroupId: 'gA',
-        teamBGroupId: 'gB',
-      );
-
-  group('team vs team distance', () {
-    test('team with higher total wins', () {
-      final results = evaluator.evaluate(_teamChallenge(
-        participants: [
-          _tp('u1', team: 'A', progress: 10000, sessions: ['s1']),
-          _tp('u2', team: 'A', progress: 8000, sessions: ['s2']),
-          _tp('u3', team: 'B', progress: 7000, sessions: ['s3']),
-          _tp('u4', team: 'B', progress: 5000, sessions: ['s4']),
-        ],
       ));
 
-      final winners = results.where((r) => r.outcome == ParticipantOutcome.won);
-      final losers = results.where((r) => r.outcome == ParticipantOutcome.lost);
-
-      expect(winners.length, 2);
-      expect(losers.length, 2);
-      expect(winners.every((r) => r.userId == 'u1' || r.userId == 'u2'), isTrue);
-      expect(losers.every((r) => r.userId == 'u3' || r.userId == 'u4'), isTrue);
-    });
-
-    test('tied teams produce tie outcome', () {
-      final results = evaluator.evaluate(_teamChallenge(
-        participants: [
-          _tp('u1', team: 'A', progress: 10000, sessions: ['s1']),
-          _tp('u2', team: 'B', progress: 10000, sessions: ['s2']),
-        ],
-      ));
-
-      expect(results.every((r) => r.outcome == ParticipantOutcome.tied), isTrue);
-    });
-
-    test('pool is split among winning team', () {
-      final results = evaluator.evaluate(_teamChallenge(
-        entryFeeCoins: 10,
-        participants: [
-          _tp('u1', team: 'A', progress: 10000, sessions: ['s1']),
-          _tp('u2', team: 'A', progress: 8000, sessions: ['s2']),
-          _tp('u3', team: 'B', progress: 5000, sessions: ['s3']),
-          _tp('u4', team: 'B', progress: 3000, sessions: ['s4']),
-        ],
-      ));
-
-      // Pool = 10 * 4 = 40. Winners (2 people) get 40/2 = 20 each.
-      final winners = results.where((r) => r.outcome == ParticipantOutcome.won);
-      expect(winners.every((r) => r.coinsEarned == 20), isTrue);
-
-      // Losers get 0 from pool
-      final losers = results.where((r) => r.outcome == ParticipantOutcome.lost);
-      expect(losers.every((r) => r.coinsEarned == 0), isTrue);
-    });
-
-    test('tie splits pool across all', () {
-      final results = evaluator.evaluate(_teamChallenge(
-        entryFeeCoins: 10,
-        participants: [
-          _tp('u1', team: 'A', progress: 5000, sessions: ['s1']),
-          _tp('u2', team: 'B', progress: 5000, sessions: ['s2']),
-        ],
-      ));
-
-      // Pool = 10 * 2 = 20. All 2 get 20/2 = 10 each.
-      expect(results.every((r) => r.coinsEarned == 10), isTrue);
-    });
-
-    test('non-runner on winning team still shares pool', () {
-      final results = evaluator.evaluate(_teamChallenge(
-        entryFeeCoins: 10,
-        participants: [
-          _tp('u1', team: 'A', progress: 10000, sessions: ['s1']),
-          _tp('u2', team: 'A', progress: 0),
-          _tp('u3', team: 'B', progress: 5000, sessions: ['s3']),
-          _tp('u4', team: 'B', progress: 3000, sessions: ['s4']),
-        ],
-      ));
-
-      // Pool = 10 * 4 = 40. Team A wins (2 members) → 40/2 = 20 each.
-      final u1 = results.firstWhere((r) => r.userId == 'u1');
-      expect(u1.outcome, ParticipantOutcome.won);
-      expect(u1.coinsEarned, 20);
-
-      final u2 = results.firstWhere((r) => r.userId == 'u2');
-      expect(u2.outcome, ParticipantOutcome.won);
-      expect(u2.coinsEarned, 20);
-
-      final losers = results.where((r) => r.outcome == ParticipantOutcome.lost);
-      expect(losers.every((r) => r.coinsEarned == 0), isTrue);
-    });
-
-    test('nobody ran on either team: all DNF, refund', () {
-      final results = evaluator.evaluate(_teamChallenge(
-        entryFeeCoins: 10,
-        participants: [
-          _tp('u1', team: 'A', progress: 0),
-          _tp('u2', team: 'B', progress: 0),
-        ],
-      ));
-
-      expect(results.every((r) => r.outcome == ParticipantOutcome.didNotFinish),
-          isTrue);
-      expect(results.every((r) => r.coinsEarned == 10), isTrue);
+      final winner = results.firstWhere((r) => r.userId == 'a1');
+      final loser = results.firstWhere((r) => r.userId == 'b1');
+      expect(winner.outcome, ParticipantOutcome.won);
+      expect(winner.coinsEarned, 200);
+      expect(loser.outcome, ParticipantOutcome.lost);
+      expect(loser.coinsEarned, 0);
     });
   });
 
-  group('team vs team pace', () {
-    test('team with lower avg pace wins', () {
-      final results = evaluator.evaluate(_teamChallenge(
-        metric: ChallengeMetric.pace,
+  group('team fastestAtDistance', () {
+    test('last runner determines team time — faster team wins', () {
+      final results = evaluator.evaluate(_challenge(
+        type: ChallengeType.team,
+        goal: ChallengeGoal.fastestAtDistance,
+        target: 10000,
         participants: [
-          _tp('u1', team: 'A', progress: 300, sessions: ['s1']),
-          _tp('u2', team: 'A', progress: 280, sessions: ['s2']),
-          _tp('u3', team: 'B', progress: 320, sessions: ['s3']),
-          _tp('u4', team: 'B', progress: 310, sessions: ['s4']),
+          _tp('a1', team: 'A', progress: 3000, sessions: ['s1']),
+          _tp('a2', team: 'A', progress: 3500, sessions: ['s2']),
+          _tp('b1', team: 'B', progress: 3200, sessions: ['s3']),
+          _tp('b2', team: 'B', progress: 4000, sessions: ['s4']),
         ],
       ));
 
-      // Team A avg: (300+280)/2 = 290, Team B avg: (320+310)/2 = 315
-      // Lower is better for pace, so Team A wins
-      final winners = results.where((r) => r.outcome == ParticipantOutcome.won);
-      expect(winners.length, 2);
-      expect(winners.every((r) => r.userId == 'u1' || r.userId == 'u2'), isTrue);
+      final teamAResults = results.where((r) => r.userId.startsWith('a'));
+      final teamBResults = results.where((r) => r.userId.startsWith('b'));
+      expect(teamAResults.every((r) => r.outcome == ParticipantOutcome.won), isTrue);
+      expect(teamBResults.every((r) => r.outcome == ParticipantOutcome.lost), isTrue);
+    });
+
+    test('incomplete team (missing runner) loses', () {
+      final results = evaluator.evaluate(_challenge(
+        type: ChallengeType.team,
+        goal: ChallengeGoal.fastestAtDistance,
+        target: 10000,
+        participants: [
+          _tp('a1', team: 'A', progress: 5000, sessions: ['s1']),
+          _tp('a2', team: 'A', progress: 0, sessions: []),
+          _tp('b1', team: 'B', progress: 4000, sessions: ['s3']),
+          _tp('b2', team: 'B', progress: 3800, sessions: ['s4']),
+        ],
+      ));
+
+      final teamBResults = results.where((r) => r.userId.startsWith('b'));
+      expect(teamBResults.every((r) => r.outcome == ParticipantOutcome.won), isTrue);
+    });
+  });
+
+  group('team bestPaceAtDistance', () {
+    test('average pace determines winner — lower is better', () {
+      final results = evaluator.evaluate(_challenge(
+        type: ChallengeType.team,
+        goal: ChallengeGoal.bestPaceAtDistance,
+        target: 5000,
+        participants: [
+          _tp('a1', team: 'A', progress: 300, sessions: ['s1']),
+          _tp('a2', team: 'A', progress: 320, sessions: ['s2']),
+          _tp('b1', team: 'B', progress: 290, sessions: ['s3']),
+          _tp('b2', team: 'B', progress: 350, sessions: ['s4']),
+        ],
+      ));
+
+      final teamAResults = results.where((r) => r.userId.startsWith('a'));
+      expect(teamAResults.every((r) => r.outcome == ParticipantOutcome.won), isTrue);
+    });
+  });
+
+  group('team nobody ran', () {
+    test('all DNF — refund stakes', () {
+      final results = evaluator.evaluate(ChallengeEntity(
+        id: 'c1',
+        creatorUserId: 'a1',
+        status: ChallengeStatus.active,
+        type: ChallengeType.team,
+        rules: const ChallengeRulesEntity(
+          goal: ChallengeGoal.mostDistance,
+          windowMs: 604800000,
+          entryFeeCoins: 50,
+        ),
+        participants: [
+          _tp('a1', team: 'A'),
+          _tp('b1', team: 'B'),
+        ],
+        createdAtMs: 1000,
+      ));
+
+      expect(results.every((r) => r.outcome == ParticipantOutcome.didNotFinish), isTrue);
+      expect(results.every((r) => r.coinsEarned == 50), isTrue);
     });
   });
 

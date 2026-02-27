@@ -35,11 +35,12 @@ final class ChallengeParticipantEntity extends Equatable {
   /// Null if still [ParticipantStatus.invited].
   final int? respondedAtMs;
 
-  /// Accumulated progress value in the challenge metric's unit.
+  /// Accumulated progress value in the goal's unit.
   ///
-  /// - [ChallengeMetric.distance]: meters
-  /// - [ChallengeMetric.pace]: best pace in seconds/km (lower is better)
-  /// - [ChallengeMetric.time]: moving milliseconds
+  /// - [ChallengeGoal.fastestAtDistance]: best elapsed time in seconds for a qualifying session
+  /// - [ChallengeGoal.mostDistance]: total meters accumulated
+  /// - [ChallengeGoal.bestPaceAtDistance]: best pace in seconds/km for a qualifying session
+  /// - [ChallengeGoal.collectiveDistance]: individual meters contributed
   final double progressValue;
 
   /// IDs of verified sessions that contributed to [progressValue].
@@ -49,10 +50,10 @@ final class ChallengeParticipantEntity extends Equatable {
   /// Used as tiebreaker: earlier finish wins on equal [progressValue].
   final int? lastSubmittedAtMs;
 
-  /// Assessoria group ID for team challenges. Null for individual challenges.
+  /// Assessoria group ID for context. Null for cross-group challenges.
   final String? groupId;
 
-  /// Team assignment ('A' or 'B') for team_vs_team challenges. Null otherwise.
+  /// Team assignment ('A' or 'B') for team challenges. Null for 1v1/group.
   final String? team;
 
   const ChallengeParticipantEntity({

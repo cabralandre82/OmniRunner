@@ -28,21 +28,20 @@ enum ChallengeType {
   /// Head-to-head between exactly 2 participants.
   oneVsOne,
 
-  /// Group challenge with 2–50 participants.
+  /// Group challenge with 2–50 participants (cooperative or competitive).
+  /// Individual ranking — best performer wins the pool.
   group,
 
-  /// Team vs team: assessoria A vs assessoria B.
-  /// Each athlete pays the same entry_fee_coins.
-  /// Winning team's pool is split equally among its members.
-  teamVsTeam,
+  /// Team vs Team (A vs B). Creator assigns teams freely (not tied to assessoria).
+  /// Same number of athletes per team required.
+  /// Winning team splits the pool equally among members.
+  team,
 }
 
 /// The aggregate root of the gamification challenge domain.
 ///
 /// Immutable value object. All mutations produce a new instance via [copyWith].
 /// Domain-pure — no Flutter or platform imports.
-///
-/// See `docs/GAMIFICATION_POLICY.md` §4 for store-safe rules.
 final class ChallengeEntity extends Equatable {
   /// Unique identifier (UUID v4).
   final String id;
@@ -76,18 +75,6 @@ final class ChallengeEntity extends Equatable {
   /// Human-readable title set by creator. Optional.
   final String? title;
 
-  /// Group ID of team A (creator's assessoria). Only for [ChallengeType.teamVsTeam].
-  final String? teamAGroupId;
-
-  /// Group ID of team B (invited assessoria). Only for [ChallengeType.teamVsTeam].
-  final String? teamBGroupId;
-
-  /// Name of team A's assessoria (cached for display).
-  final String? teamAGroupName;
-
-  /// Name of team B's assessoria (cached for display).
-  final String? teamBGroupName;
-
   /// Deadline (ms epoch) by which all participants must accept (group mode).
   final int? acceptDeadlineMs;
 
@@ -102,10 +89,6 @@ final class ChallengeEntity extends Equatable {
     this.startsAtMs,
     this.endsAtMs,
     this.title,
-    this.teamAGroupId,
-    this.teamBGroupId,
-    this.teamAGroupName,
-    this.teamBGroupName,
     this.acceptDeadlineMs,
   });
 
@@ -125,8 +108,6 @@ final class ChallengeEntity extends Equatable {
     List<ChallengeParticipantEntity>? participants,
     int? startsAtMs,
     int? endsAtMs,
-    String? teamBGroupId,
-    String? teamBGroupName,
   }) =>
       ChallengeEntity(
         id: id,
@@ -139,10 +120,6 @@ final class ChallengeEntity extends Equatable {
         startsAtMs: startsAtMs ?? this.startsAtMs,
         endsAtMs: endsAtMs ?? this.endsAtMs,
         title: title,
-        teamAGroupId: teamAGroupId,
-        teamBGroupId: teamBGroupId ?? this.teamBGroupId,
-        teamAGroupName: teamAGroupName,
-        teamBGroupName: teamBGroupName ?? this.teamBGroupName,
         acceptDeadlineMs: acceptDeadlineMs,
       );
 
@@ -158,10 +135,6 @@ final class ChallengeEntity extends Equatable {
         startsAtMs,
         endsAtMs,
         title,
-        teamAGroupId,
-        teamBGroupId,
-        teamAGroupName,
-        teamBGroupName,
         acceptDeadlineMs,
       ];
 }

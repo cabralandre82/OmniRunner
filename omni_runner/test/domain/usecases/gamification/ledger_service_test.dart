@@ -82,7 +82,7 @@ ChallengeEntity _challenge({
       status: ChallengeStatus.active,
       type: ChallengeType.oneVsOne,
       rules: ChallengeRulesEntity(
-        metric: ChallengeMetric.distance,
+        goal: ChallengeGoal.mostDistance,
         windowMs: 604800000,
         entryFeeCoins: entryFee,
       ),
@@ -95,7 +95,7 @@ ChallengeResultEntity _result({
 }) =>
     ChallengeResultEntity(
       challengeId: 'ch1',
-      metric: ChallengeMetric.distance,
+      goal: ChallengeGoal.mostDistance,
       results: results ??
           [
             const ParticipantResult(

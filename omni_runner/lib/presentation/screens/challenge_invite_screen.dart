@@ -175,7 +175,7 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
               label: const Text('Enviar convite'),
               onPressed: () {
                 final title = _challenge.title ?? _defaultTitle();
-                final metric = _metricLabel(_challenge.rules.metric);
+                final metric = _goalLabel(_challenge.rules.goal);
                 final window = _formatWindow(_challenge.rules.windowMs);
                 _shared = true;
                 SharePlus.instance.share(
@@ -189,13 +189,6 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
               },
             ),
             const SizedBox(height: 24),
-
-            // Team invite (for teamVsTeam only)
-            if (_challenge.type == ChallengeType.teamVsTeam) ...[
-              const SizedBox(height: 4),
-              _TeamInviteSection(challenge: _challenge),
-              const SizedBox(height: 16),
-            ],
 
             // Participants preview
             if (_challenge.participants.isNotEmpty) ...[
@@ -251,15 +244,16 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
   }
 
   String _defaultTitle() => switch (_challenge.type) {
-        ChallengeType.oneVsOne => 'Desafio 1v1',
-        ChallengeType.teamVsTeam => 'Desafio de Equipe',
+        ChallengeType.oneVsOne => 'Desafio 1 vs 1',
         ChallengeType.group => 'Desafio em Grupo',
+        ChallengeType.team => 'Desafio Time A vs B',
       };
 
-  static String _metricLabel(ChallengeMetric m) => switch (m) {
-        ChallengeMetric.distance => 'Distância',
-        ChallengeMetric.pace => 'Pace',
-        ChallengeMetric.time => 'Tempo',
+  static String _goalLabel(ChallengeGoal m) => switch (m) {
+        ChallengeGoal.fastestAtDistance => 'Mais rápido',
+        ChallengeGoal.mostDistance => 'Mais km',
+        ChallengeGoal.bestPaceAtDistance => 'Melhor pace',
+        ChallengeGoal.collectiveDistance => 'Coletivo',
       };
 
   static String _formatWindow(int ms) {

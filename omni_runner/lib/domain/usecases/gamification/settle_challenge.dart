@@ -10,14 +10,11 @@ import 'package:omni_runner/domain/repositories/i_wallet_repo.dart';
 /// Distributes entry-fee pool to winners of staked challenges.
 ///
 /// Free challenges (entryFeeCoins == 0) produce zero coin movements.
-/// OmniCoins are only acquired via assessoria or won in staked challenges.
-///
 /// Transitions the challenge to [ChallengeStatus.completed].
 /// Creates one [LedgerEntryEntity] per winner reward.
 /// Updates each winner's [WalletEntity].
 ///
-/// Idempotent — checks if result already exists and challenge is
-/// already completed before writing.
+/// Idempotent — checks if challenge is already completed before writing.
 final class SettleChallenge {
   final IChallengeRepo _challengeRepo;
   final ILedgerRepo _ledgerRepo;
@@ -31,9 +28,6 @@ final class SettleChallenge {
         _ledgerRepo = ledgerRepo,
         _walletRepo = walletRepo;
 
-  /// [uuidGenerator] provides unique IDs for ledger entries.
-  /// [nowMs] is the current timestamp.
-  /// Throws [GamificationFailure] on validation error.
   Future<void> call({
     required String challengeId,
     required String Function() uuidGenerator,
@@ -42,7 +36,6 @@ final class SettleChallenge {
     final challenge = await _challengeRepo.getById(challengeId);
     if (challenge == null) throw ChallengeNotFound(challengeId);
 
-    // Idempotency: already settled.
     if (challenge.status == ChallengeStatus.completed) return;
 
     if (challenge.status != ChallengeStatus.completing) {
@@ -102,12 +95,10 @@ final class SettleChallenge {
           LedgerReason.challengeOneVsOneWon,
         (ChallengeType.oneVsOne, _) =>
           LedgerReason.challengeOneVsOneCompleted,
-        (ChallengeType.teamVsTeam, ParticipantOutcome.won) =>
+        (ChallengeType.team, ParticipantOutcome.won) =>
           LedgerReason.challengeTeamWon,
-        (ChallengeType.teamVsTeam, ParticipantOutcome.tied) =>
-          LedgerReason.challengeTeamCompleted,
-        (ChallengeType.teamVsTeam, _) =>
-          LedgerReason.challengeTeamCompleted,
+        (ChallengeType.team, _) =>
+          LedgerReason.challengeGroupCompleted,
         (ChallengeType.group, _) =>
           LedgerReason.challengeGroupCompleted,
       };

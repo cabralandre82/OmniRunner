@@ -264,7 +264,7 @@ class _ChallengeListTile extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Text(
-        '${_metricLabel(challenge.rules.metric)}'
+        '${_goalLabel(challenge.rules.goal)}'
         ' · ${challenge.acceptedCount} participantes'
         ' · ${_modeTag(challenge.rules)}'
         ' · ${_statusLabel(challenge.status)}',
@@ -295,15 +295,16 @@ class _ChallengeListTile extends StatelessWidget {
   }
 
   static String _defaultTitle(ChallengeEntity c) => switch (c.type) {
-        ChallengeType.oneVsOne => 'Desafio 1v1',
-        ChallengeType.teamVsTeam => 'Desafio de Equipe',
+        ChallengeType.oneVsOne => 'Desafio 1 vs 1',
         ChallengeType.group => 'Desafio em Grupo',
+        ChallengeType.team => 'Desafio Time A vs B',
       };
 
-  static String _metricLabel(ChallengeMetric m) => switch (m) {
-        ChallengeMetric.distance => 'Distância',
-        ChallengeMetric.pace => 'Pace',
-        ChallengeMetric.time => 'Tempo',
+  static String _goalLabel(ChallengeGoal m) => switch (m) {
+        ChallengeGoal.fastestAtDistance => 'Menor tempo',
+        ChallengeGoal.mostDistance => 'Mais km',
+        ChallengeGoal.bestPaceAtDistance => 'Melhor pace',
+        ChallengeGoal.collectiveDistance => 'Meta coletiva',
       };
 
   static String _statusLabel(ChallengeStatus s) => switch (s) {

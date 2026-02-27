@@ -163,10 +163,6 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
       startsAtMs: remote.startsAtMs ?? local.startsAtMs,
       endsAtMs: remote.endsAtMs ?? local.endsAtMs,
       title: remote.title ?? local.title,
-      teamAGroupId: remote.teamAGroupId ?? local.teamAGroupId,
-      teamBGroupId: remote.teamBGroupId ?? local.teamBGroupId,
-      teamAGroupName: remote.teamAGroupName ?? local.teamAGroupName,
-      teamBGroupName: remote.teamBGroupName ?? local.teamBGroupName,
       acceptDeadlineMs: remote.acceptDeadlineMs ?? local.acceptDeadlineMs,
     );
   }
@@ -188,15 +184,18 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
     final typeStr = m['type'] as String? ?? 'one_vs_one';
     final type = switch (typeStr) {
       'group' => ChallengeType.group,
-      'team_vs_team' => ChallengeType.teamVsTeam,
+      'team' => ChallengeType.team,
       _ => ChallengeType.oneVsOne,
     };
 
-    final metricStr = m['metric'] as String? ?? 'distance';
-    final metric = switch (metricStr) {
-      'pace' => ChallengeMetric.pace,
-      'time' => ChallengeMetric.time,
-      _ => ChallengeMetric.distance,
+    final goalStr = (m['goal'] as String?) ?? (m['metric'] as String?) ?? 'most_distance';
+    final goal = switch (goalStr) {
+      'fastest_at_distance' => ChallengeGoal.fastestAtDistance,
+      'best_pace_at_distance' => ChallengeGoal.bestPaceAtDistance,
+      'collective_distance' => ChallengeGoal.collectiveDistance,
+      'pace' => ChallengeGoal.bestPaceAtDistance,
+      'distance' => ChallengeGoal.mostDistance,
+      _ => ChallengeGoal.mostDistance,
     };
 
     final startModeStr = m['start_mode'] as String? ?? 'on_accept';
@@ -249,7 +248,7 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
       status: status,
       type: type,
       rules: ChallengeRulesEntity(
-        metric: metric,
+        goal: goal,
         target: (m['target'] as num?)?.toDouble(),
         windowMs: (m['window_ms'] as num?)?.toInt() ?? 604800000,
         startMode: startMode,
@@ -264,10 +263,6 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
       startsAtMs: (m['starts_at_ms'] as num?)?.toInt(),
       endsAtMs: (m['ends_at_ms'] as num?)?.toInt(),
       title: m['title'] as String?,
-      teamAGroupId: m['team_a_group_id'] as String?,
-      teamBGroupId: m['team_b_group_id'] as String?,
-      teamAGroupName: m['team_a_group_name'] as String?,
-      teamBGroupName: m['team_b_group_name'] as String?,
       acceptDeadlineMs: (m['accept_deadline_ms'] as num?)?.toInt(),
     );
   }
@@ -335,16 +330,7 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
     if (fixedStart == null || fixedStart > nowMs) return false;
     final accepted = c.acceptedCount;
     if (c.type == ChallengeType.oneVsOne && accepted != 2) return false;
-    if (c.type == ChallengeType.group && accepted < 2) return false;
-    if (c.type == ChallengeType.teamVsTeam) {
-      final hasTeamA = c.participants.any(
-        (p) => p.status == ParticipantStatus.accepted && p.groupId == c.teamAGroupId,
-      );
-      final hasTeamB = c.participants.any(
-        (p) => p.status == ParticipantStatus.accepted && p.groupId == c.teamBGroupId,
-      );
-      if (!hasTeamA || !hasTeamB) return false;
-    }
+    if ((c.type == ChallengeType.group || c.type == ChallengeType.team) && accepted < 2) return false;
     return true;
   }
 
@@ -366,8 +352,8 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
       switch (event.type) {
         case 'group':
           type = ChallengeType.group;
-        case 'team_vs_team':
-          type = ChallengeType.teamVsTeam;
+        case 'team':
+          type = ChallengeType.team;
         default:
           type = ChallengeType.oneVsOne;
       }
@@ -379,8 +365,6 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
         rules: event.rules,
         createdAtMs: nowMs,
         title: event.title,
-        teamAGroupId: event.teamAGroupId,
-        teamAGroupName: event.teamAGroupName,
       );
 
       _syncChallengeToBackend(challenge, event.creatorDisplayName);
@@ -398,7 +382,13 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
     final dbType = switch (c.type) {
       ChallengeType.oneVsOne => 'one_vs_one',
       ChallengeType.group => 'group',
-      ChallengeType.teamVsTeam => 'team_vs_team',
+      ChallengeType.team => 'team',
+    };
+    final dbGoal = switch (c.rules.goal) {
+      ChallengeGoal.fastestAtDistance => 'fastest_at_distance',
+      ChallengeGoal.mostDistance => 'most_distance',
+      ChallengeGoal.bestPaceAtDistance => 'best_pace_at_distance',
+      ChallengeGoal.collectiveDistance => 'collective_distance',
     };
     final startMode = c.rules.startMode == ChallengeStartMode.onAccept
         ? 'on_accept'
@@ -411,7 +401,7 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
       'id': c.id,
       'type': dbType,
       'title': c.title,
-      'metric': c.rules.metric.name,
+      'goal': dbGoal,
       'target': c.rules.target,
       'window_ms': c.rules.windowMs,
       'start_mode': startMode,
@@ -423,8 +413,6 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
       'creator_display_name': creatorDisplayName,
       if (c.rules.acceptWindowMin != null) 'accept_window_min': c.rules.acceptWindowMin,
       if (c.rules.maxParticipants != null) 'max_participants': c.rules.maxParticipants,
-      if (c.teamAGroupId != null) 'team_a_group_id': c.teamAGroupId,
-      if (c.teamBGroupId != null) 'team_b_group_id': c.teamBGroupId,
     };
 
     _syncWithRetry(c.id, payload);
@@ -541,14 +529,10 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
     final bool shouldStart;
     if (challenge.type == ChallengeType.oneVsOne) {
       shouldStart = accepted == 2;
-    } else if (challenge.type == ChallengeType.teamVsTeam) {
-      final hasA = challenge.participants.any(
-        (p) => p.status == ParticipantStatus.accepted && p.team == 'A',
-      );
-      final hasB = challenge.participants.any(
-        (p) => p.status == ParticipantStatus.accepted && p.team == 'B',
-      );
-      shouldStart = hasA && hasB;
+    } else if (challenge.type == ChallengeType.team) {
+      final teamA = challenge.participants.where((p) => p.team == 'A' && p.status == ParticipantStatus.accepted).length;
+      final teamB = challenge.participants.where((p) => p.team == 'B' && p.status == ParticipantStatus.accepted).length;
+      shouldStart = teamA >= 1 && teamB >= 1 && teamA == teamB;
     } else {
       shouldStart = accepted >= 2;
     }

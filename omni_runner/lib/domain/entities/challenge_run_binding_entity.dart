@@ -46,13 +46,13 @@ final class ChallengeRunBindingEntity extends Equatable {
   /// If rejected, the reason. Null if accepted.
   final BindingRejectionReason? rejectionReason;
 
-  /// The metric value extracted from the session for this challenge.
+  /// The progress value extracted from the session for this challenge.
   ///
-  /// - [ChallengeMetric.distance]: total meters
-  /// - [ChallengeMetric.pace]: avg seconds/km
-  /// - [ChallengeMetric.time]: moving milliseconds
+  /// - fastestAtDistance: elapsed seconds
+  /// - mostDistance / collectiveDistance: total meters
+  /// - bestPaceAtDistance: avg seconds/km
   ///
-  /// Null if rejected before metric extraction.
+  /// Null if rejected before extraction.
   final double? metricValue;
 
   /// Session distance in meters at bind time (snapshot).

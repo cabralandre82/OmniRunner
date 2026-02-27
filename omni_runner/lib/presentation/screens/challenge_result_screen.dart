@@ -93,7 +93,8 @@ class _HeroSection extends StatelessWidget {
     final theme = Theme.of(context);
     final outcome = myResult?.outcome;
 
-    final isGroup = challenge.type == ChallengeType.group;
+    final isGroup = challenge.type == ChallengeType.group || challenge.type == ChallengeType.team;
+    final isTeam = challenge.type == ChallengeType.team;
     final (icon, color, baseHeadline) = _outcomeVisuals(outcome);
     final headline = isGroup
         ? switch (outcome) {
@@ -108,29 +109,12 @@ class _HeroSection extends StatelessWidget {
         : baseHeadline;
 
     final winners = result.winners;
-    final isTeam = challenge.type == ChallengeType.teamVsTeam;
 
-    String winnerLabel;
-    if (isTeam && winners.isNotEmpty) {
-      final winnerTeam = challenge.participants
-          .where((p) => p.userId == winners.first.userId)
-          .firstOrNull
-          ?.team;
-      if (winnerTeam == 'A') {
-        winnerLabel = challenge.teamAGroupName ?? 'Equipe A';
-      } else if (winnerTeam == 'B') {
-        winnerLabel = challenge.teamBGroupName ?? 'Equipe B';
-      } else {
-        winnerLabel = 'Empate';
-      }
-      if (winners.first.outcome == ParticipantOutcome.tied) {
-        winnerLabel = 'Empate';
-      }
-    } else {
-      winnerLabel = winners
-          .map((w) => _displayName(challenge, w.userId, currentUserId))
-          .join(', ');
-    }
+    final winnerLabel = winners
+        .map((w) => _displayName(challenge, w.userId, currentUserId))
+        .join(', ');
+
+    final goalExplain = _goalResultExplain(challenge.rules.goal, challenge.type);
 
     return Column(
       children: [
@@ -146,13 +130,7 @@ class _HeroSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          isTeam
-              ? (outcome == ParticipantOutcome.won
-                  ? 'Sua equipe venceu!'
-                  : outcome == ParticipantOutcome.tied
-                      ? 'Empate!'
-                      : 'Sua equipe perdeu')
-              : headline,
+          headline,
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
             color: color,
@@ -190,6 +168,22 @@ class _HeroSection extends StatelessWidget {
             ],
           ),
         ],
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            goalExplain,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.4,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -247,10 +241,7 @@ class _ParticipantResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (challenge.type == ChallengeType.teamVsTeam) {
-      return _buildTeamResults(context);
-    }
-    if (challenge.type == ChallengeType.group) {
+    if (challenge.type == ChallengeType.group || challenge.type == ChallengeType.team) {
       return _buildGroupResults(context);
     }
     return _buildIndividualResults(context);
@@ -260,8 +251,9 @@ class _ParticipantResults extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final target = challenge.rules.target;
-    final metric = result.metric;
-    final lowerIsBetter = metric == ChallengeMetric.pace;
+    final metric = result.goal;
+    final lowerIsBetter = metric == ChallengeGoal.bestPaceAtDistance ||
+        metric == ChallengeGoal.fastestAtDistance;
 
     final runners = result.results.where((r) => r.finalValue > 0).toList();
 
@@ -408,7 +400,7 @@ class _ParticipantResults extends StatelessWidget {
                 const SizedBox(height: 12),
                 ...result.results.map((pr) => _ResultRow(
                       pr: pr,
-                      metric: result.metric,
+                      metric: result.goal,
                       isMe: pr.userId == currentUserId,
                       displayName:
                           _displayName(challenge, pr.userId, currentUserId),
@@ -445,7 +437,7 @@ class _ParticipantResults extends StatelessWidget {
             const SizedBox(height: 12),
             ...result.results.map((pr) => _ResultRow(
                   pr: pr,
-                  metric: result.metric,
+                  metric: result.goal,
                   isMe: pr.userId == currentUserId,
                   displayName:
                       _displayName(challenge, pr.userId, currentUserId),
@@ -456,134 +448,11 @@ class _ParticipantResults extends StatelessWidget {
     );
   }
 
-  Widget _buildTeamResults(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    final teamAId = challenge.teamAGroupId;
-    final teamBId = challenge.teamBGroupId;
-    final teamAName = challenge.teamAGroupName ?? 'Equipe A';
-    final teamBName = challenge.teamBGroupName ?? 'Equipe B';
-
-    final isIntraAssessoria = teamAId != null && teamBId != null && teamAId == teamBId;
-
-    final teamAResults = result.results
-        .where((r) => challenge.participants
-            .any((p) => p.userId == r.userId &&
-                (isIntraAssessoria ? p.team == 'A' : p.groupId == teamAId)))
-        .toList();
-    final teamBResults = result.results
-        .where((r) => challenge.participants
-            .any((p) => p.userId == r.userId &&
-                (isIntraAssessoria ? p.team == 'B' : p.groupId == teamBId)))
-        .toList();
-
-    final lowerIsBetter = result.metric == ChallengeMetric.pace;
-
-    double aggregateScore(List<ParticipantResult> team) {
-      if (team.isEmpty) return 0;
-      final sum = team.map((r) => r.finalValue).reduce((a, b) => a + b);
-      if (lowerIsBetter) {
-        final active = team.where((r) => r.finalValue > 0);
-        return active.isEmpty ? 0 : sum / active.length;
-      }
-      return sum;
-    }
-
-    final scoreA = aggregateScore(teamAResults);
-    final scoreB = aggregateScore(teamBResults);
-
-    final teamAWon = teamAResults.isNotEmpty &&
-        teamAResults.first.outcome == ParticipantOutcome.won;
-    final teamBWon = teamBResults.isNotEmpty &&
-        teamBResults.first.outcome == ParticipantOutcome.won;
-
-    return Column(
-      children: [
-        // Team score comparison card
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.shield_rounded, size: 20, color: cs.primary),
-                    const SizedBox(width: 8),
-                    Text('Placar por Equipe',
-                        style: theme.textTheme.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _TeamScoreColumn(
-                        name: teamAName,
-                        score: _formatValue(scoreA, result.metric),
-                        isWinner: teamAWon,
-                        memberCount: teamAResults.length,
-                        theme: theme,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text('VS',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w900,
-                            color: cs.outline,
-                          )),
-                    ),
-                    Expanded(
-                      child: _TeamScoreColumn(
-                        name: teamBName,
-                        score: _formatValue(scoreB, result.metric),
-                        isWinner: teamBWon,
-                        memberCount: teamBResults.length,
-                        theme: theme,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Team A members
-        _TeamMemberCard(
-          teamName: teamAName,
-          isWinner: teamAWon,
-          results: teamAResults,
-          metric: result.metric,
-          challenge: challenge,
-          currentUserId: currentUserId,
-          theme: theme,
-        ),
-        const SizedBox(height: 12),
-
-        // Team B members
-        _TeamMemberCard(
-          teamName: teamBName,
-          isWinner: teamBWon,
-          results: teamBResults,
-          metric: result.metric,
-          challenge: challenge,
-          currentUserId: currentUserId,
-          theme: theme,
-        ),
-      ],
-    );
-  }
 }
 
 class _ResultRow extends StatelessWidget {
   final ParticipantResult pr;
-  final ChallengeMetric metric;
+  final ChallengeGoal metric;
   final bool isMe;
   final String displayName;
 
@@ -769,7 +638,7 @@ class _TeamMemberCard extends StatelessWidget {
   final String teamName;
   final bool isWinner;
   final List<ParticipantResult> results;
-  final ChallengeMetric metric;
+  final ChallengeGoal metric;
   final ChallengeEntity challenge;
   final String currentUserId;
   final ThemeData theme;
@@ -1056,7 +925,7 @@ class _CtaBar extends StatelessWidget {
                   MaterialPageRoute<void>(
                     builder: (_) => ChallengeCreateScreen(
                       initialType: challenge.type,
-                      initialMetric: challenge.rules.metric,
+                      initialGoal: challenge.rules.goal,
                       initialWindowMin: windowMin,
                       initialFee: challenge.rules.entryFeeCoins,
                       initialTarget: challenge.rules.target,
@@ -1116,6 +985,34 @@ class _CtaBar extends StatelessWidget {
 // Shared helpers
 // ═════════════════════════════════════════════════════════════════════════════
 
+String _goalResultExplain(ChallengeGoal goal, ChallengeType type) {
+  if (type == ChallengeType.team) {
+    return switch (goal) {
+      ChallengeGoal.fastestAtDistance =>
+        'Tempo do time = tempo do ultimo membro a completar. Venceu o time mais rapido.',
+      ChallengeGoal.mostDistance =>
+        'Km do time = soma de todos os membros. Venceu o time com mais km.',
+      ChallengeGoal.bestPaceAtDistance =>
+        'Pace do time = media dos paces. Venceu o time com menor pace.',
+      ChallengeGoal.collectiveDistance =>
+        'Meta coletiva — todos os km somaram.',
+    };
+  }
+  if (goal == ChallengeGoal.collectiveDistance) {
+    return 'Meta coletiva — os km de todos somaram para atingir o objetivo.';
+  }
+  return switch (goal) {
+    ChallengeGoal.fastestAtDistance =>
+      'Venceu quem completou a distancia no menor tempo.',
+    ChallengeGoal.mostDistance =>
+      'Venceu quem acumulou mais km somando todas as corridas.',
+    ChallengeGoal.bestPaceAtDistance =>
+      'Venceu quem teve o menor pace medio (min/km) na corrida.',
+    ChallengeGoal.collectiveDistance =>
+      'Meta coletiva — os km de todos somaram.',
+  };
+}
+
 String _displayName(
     ChallengeEntity challenge, String userId, String currentUserId) {
   if (userId == currentUserId) return 'Você';
@@ -1126,13 +1023,14 @@ String _displayName(
 }
 
 String _defaultTitle(ChallengeEntity c) => switch (c.type) {
-      ChallengeType.oneVsOne => 'Desafio 1v1',
-      ChallengeType.teamVsTeam => 'Desafio de Equipe',
+      ChallengeType.oneVsOne => 'Desafio 1 vs 1',
       ChallengeType.group => 'Desafio em Grupo',
+      ChallengeType.team => 'Desafio Time A vs B',
     };
 
-String _formatValue(double value, ChallengeMetric metric) => switch (metric) {
-      ChallengeMetric.distance => '${(value / 1000).toStringAsFixed(2)} km',
-      ChallengeMetric.pace => '${(value / 60).toStringAsFixed(1)} min/km',
-      ChallengeMetric.time => '${(value / 60000).toStringAsFixed(0)} min',
+String _formatValue(double value, ChallengeGoal metric) => switch (metric) {
+      ChallengeGoal.fastestAtDistance => '${(value / 60).toStringAsFixed(1)} min',
+      ChallengeGoal.mostDistance ||
+      ChallengeGoal.collectiveDistance => '${(value / 1000).toStringAsFixed(2)} km',
+      ChallengeGoal.bestPaceAtDistance => '${(value / 60).toStringAsFixed(1)} min/km',
     };

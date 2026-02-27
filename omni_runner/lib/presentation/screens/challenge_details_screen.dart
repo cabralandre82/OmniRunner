@@ -151,7 +151,7 @@ class _BodyState extends State<_Body> {
                   children: [
                     _statusChip(challenge.status, theme),
                     _chip(_typeLabel(challenge.type), cs),
-                    _chip(_metricLabel(challenge.rules.metric), cs),
+                    _chip(_metricLabel(challenge.rules.goal), cs),
                     _chip(_modeLabel(challenge.rules.startMode), cs),
                     if (challenge.rules.entryFeeCoins > 0)
                       _chip(
@@ -182,7 +182,7 @@ class _BodyState extends State<_Body> {
 
         // ── Group acceptance countdown ────────────────────────────────
         if (isPending &&
-            challenge.type == ChallengeType.group &&
+            (challenge.type == ChallengeType.group || challenge.type == ChallengeType.team) &&
             challenge.acceptDeadlineMs != null) ...[
           _AcceptDeadlineCard(deadlineMs: challenge.acceptDeadlineMs!),
           const SizedBox(height: 12),
@@ -339,21 +339,22 @@ class _BodyState extends State<_Body> {
   }
 
   static String _defaultTitle(ChallengeEntity c) => switch (c.type) {
-        ChallengeType.oneVsOne => 'Desafio 1v1',
-        ChallengeType.teamVsTeam => 'Desafio de Equipe',
+        ChallengeType.oneVsOne => 'Desafio 1 vs 1',
         ChallengeType.group => 'Desafio em Grupo',
+        ChallengeType.team => 'Desafio Time A vs B',
       };
 
   static String _typeLabel(ChallengeType t) => switch (t) {
-        ChallengeType.oneVsOne => '1v1',
-        ChallengeType.group => 'Grupo',
-        ChallengeType.teamVsTeam => 'Equipe vs Equipe',
+        ChallengeType.oneVsOne => '1 vs 1',
+        ChallengeType.group => 'Grupo competitivo',
+        ChallengeType.team => 'Time A vs Time B',
       };
 
-  static String _metricLabel(ChallengeMetric m) => switch (m) {
-        ChallengeMetric.distance => 'Distância',
-        ChallengeMetric.pace => 'Pace',
-        ChallengeMetric.time => 'Tempo',
+  static String _metricLabel(ChallengeGoal m) => switch (m) {
+        ChallengeGoal.fastestAtDistance => 'Mais rápido',
+        ChallengeGoal.mostDistance => 'Mais km',
+        ChallengeGoal.bestPaceAtDistance => 'Melhor pace',
+        ChallengeGoal.collectiveDistance => 'Meta coletiva',
       };
 
   static String _modeLabel(ChallengeStartMode m) => switch (m) {
@@ -749,9 +750,9 @@ class _ShareInviteCard extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final title = challenge.title ?? switch (challenge.type) {
-      ChallengeType.oneVsOne => 'Desafio 1v1',
-      ChallengeType.teamVsTeam => 'Desafio de Equipe',
+      ChallengeType.oneVsOne => 'Desafio 1 vs 1',
       ChallengeType.group => 'Desafio em Grupo',
+      ChallengeType.team => 'Desafio Time A vs B',
     };
     final needsOpponent = challenge.type == ChallengeType.oneVsOne &&
         challenge.acceptedCount < 2;
@@ -798,7 +799,7 @@ class _ShareInviteCard extends StatelessWidget {
                     label: const Text('Enviar convite'),
                     onPressed: () {
                       final metric =
-                          _metricLabel(challenge.rules.metric);
+                          _metricLabel(challenge.rules.goal);
                       final window =
                           _formatWindow(challenge.rules.windowMs);
                       SharePlus.instance.share(
@@ -835,10 +836,11 @@ class _ShareInviteCard extends StatelessWidget {
     );
   }
 
-  static String _metricLabel(ChallengeMetric m) => switch (m) {
-        ChallengeMetric.distance => 'Distância',
-        ChallengeMetric.pace => 'Pace',
-        ChallengeMetric.time => 'Tempo',
+  static String _metricLabel(ChallengeGoal m) => switch (m) {
+        ChallengeGoal.fastestAtDistance => 'Mais rápido',
+        ChallengeGoal.mostDistance => 'Mais km',
+        ChallengeGoal.bestPaceAtDistance => 'Melhor pace',
+        ChallengeGoal.collectiveDistance => 'Coletivo',
       };
 
   static String _formatWindow(int ms) {
@@ -882,9 +884,9 @@ class _RulesCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            _row('O que conta', _metricExplain(rules.metric)),
+            _row('Objetivo', _metricExplain(rules.goal)),
             if (rules.target != null)
-              _row('Meta', _formatTarget(rules.target!, rules.metric)),
+              _row('Meta', _formatTarget(rules.target!, rules.goal)),
             _row('Duração', _formatWindow(rules.windowMs)),
             _row('Início',
                 rules.startMode == ChallengeStartMode.onAccept
@@ -895,6 +897,10 @@ class _RulesCard extends StatelessWidget {
             _row('Corrida mínima',
                 '${(rules.minSessionDistanceM / 1000).toStringAsFixed(1)} km'),
             _row('Validação', 'Padrão (GPS + anti-cheat)'),
+            const Divider(height: 16),
+            _row('Vencedor', _winnerExplain(challenge.type, rules.goal)),
+            if (challenge.rules.entryFeeCoins > 0)
+              _row('Prêmio', _prizeExplain(challenge.type, challenge.rules.entryFeeCoins)),
           ],
         ),
       ),
@@ -925,23 +931,24 @@ class _RulesCard extends StatelessWidget {
     });
   }
 
-  static String _metricExplain(ChallengeMetric m) => switch (m) {
-        ChallengeMetric.distance =>
-          'Distância total percorrida (soma de corridas)',
-        ChallengeMetric.pace =>
-          'Melhor pace médio em uma única corrida',
-        ChallengeMetric.time =>
-          'Tempo total em movimento (soma de corridas)',
+  static String _metricExplain(ChallengeGoal m) => switch (m) {
+        ChallengeGoal.fastestAtDistance =>
+          'Cada corredor faz uma corrida cobrindo a distância. Vence quem completar no menor tempo.',
+        ChallengeGoal.mostDistance =>
+          'Pode correr quantas vezes quiser no período. Vence quem acumular mais km no total.',
+        ChallengeGoal.bestPaceAtDistance =>
+          'Cada corredor faz uma corrida cobrindo a distância mínima. Vence quem tiver o menor pace médio (min/km).',
+        ChallengeGoal.collectiveDistance =>
+          'Cada membro corre o que puder — os km somam. Se atingir a meta, todos ganham.',
       };
 
-  static String _formatTarget(double value, ChallengeMetric metric) =>
+  static String _formatTarget(double value, ChallengeGoal metric) =>
       switch (metric) {
-        ChallengeMetric.distance =>
+        ChallengeGoal.fastestAtDistance ||
+        ChallengeGoal.mostDistance ||
+        ChallengeGoal.bestPaceAtDistance ||
+        ChallengeGoal.collectiveDistance =>
           '${(value / 1000).toStringAsFixed(1)} km',
-        ChallengeMetric.pace =>
-          '${(value / 60).toStringAsFixed(1)} min/km',
-        ChallengeMetric.time =>
-          '${(value / 60000).toStringAsFixed(0)} min',
       };
 
   static String _formatWindow(int ms) {
@@ -959,6 +966,46 @@ class _RulesCard extends StatelessWidget {
         '${dt.year} às '
         '${dt.hour.toString().padLeft(2, '0')}:'
         '${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  static String _winnerExplain(ChallengeType type, ChallengeGoal goal) {
+    if (type == ChallengeType.team) {
+      return switch (goal) {
+        ChallengeGoal.fastestAtDistance =>
+          'Tempo do time = tempo do último membro a completar. Time mais rápido vence.',
+        ChallengeGoal.mostDistance =>
+          'Km do time = soma de todos os membros. Time com mais km vence.',
+        ChallengeGoal.bestPaceAtDistance =>
+          'Pace do time = média dos paces dos membros. Time com menor pace vence.',
+        ChallengeGoal.collectiveDistance =>
+          'Meta coletiva — todos somam km.',
+      };
+    }
+    if (goal == ChallengeGoal.collectiveDistance) {
+      return 'Se o grupo atingir a meta, todos ganham. Se não, todos perdem.';
+    }
+    return switch (goal) {
+      ChallengeGoal.fastestAtDistance =>
+        'Quem completar a distância no menor tempo.',
+      ChallengeGoal.mostDistance =>
+        'Quem acumular mais km no período.',
+      ChallengeGoal.bestPaceAtDistance =>
+        'Quem tiver o menor pace médio (min/km).',
+      ChallengeGoal.collectiveDistance =>
+        'Meta coletiva — todos somam km.',
+    };
+  }
+
+  static String _prizeExplain(ChallengeType type, int fee) {
+    return switch (type) {
+      ChallengeType.oneVsOne =>
+        'O vencedor leva $fee OmniCoins do oponente. Empate: todos recebem de volta.',
+      ChallengeType.group =>
+        'O 1.o lugar leva todo o pool (${fee} x participantes). Empate: divisão igual.',
+      ChallengeType.team =>
+        'Cada membro do time vencedor recebe o dobro da inscrição. '
+        'Empate: todos recebem de volta.',
+    };
   }
 }
 
@@ -1047,7 +1094,7 @@ class _ParticipantsCard extends StatelessWidget {
       );
     } else if (p.progressValue > 0) {
       trailing = Text(
-        _formatProgress(p.progressValue, challenge.rules.metric),
+        _formatProgress(p.progressValue, challenge.rules.goal),
         style: const TextStyle(fontWeight: FontWeight.bold),
       );
     }
@@ -1058,6 +1105,28 @@ class _ParticipantsCard extends StatelessWidget {
       leading: Icon(statusIcon, color: statusColor, size: 20),
       title: Row(
         children: [
+          if (p.team != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                color: p.team == 'A'
+                    ? Colors.blue.shade100
+                    : Colors.red.shade100,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                p.team!,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: p.team == 'A'
+                      ? Colors.blue.shade800
+                      : Colors.red.shade800,
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+          ],
           Flexible(
             child: Text(p.displayName, overflow: TextOverflow.ellipsis),
           ),
@@ -1081,14 +1150,15 @@ class _ParticipantsCard extends StatelessWidget {
     );
   }
 
-  static String _formatProgress(double value, ChallengeMetric metric) =>
+  static String _formatProgress(double value, ChallengeGoal metric) =>
       switch (metric) {
-        ChallengeMetric.distance =>
+        ChallengeGoal.fastestAtDistance =>
+          '${(value / 60).toStringAsFixed(1)} min',
+        ChallengeGoal.mostDistance ||
+        ChallengeGoal.collectiveDistance =>
           '${(value / 1000).toStringAsFixed(2)} km',
-        ChallengeMetric.pace =>
+        ChallengeGoal.bestPaceAtDistance =>
           '${(value / 60).toStringAsFixed(1)} min/km',
-        ChallengeMetric.time =>
-          '${(value / 60000).toStringAsFixed(0)} min',
       };
 }
 
@@ -1156,7 +1226,7 @@ class _ResultsCard extends StatelessWidget {
       title: Text(
         '${pr.rank != null ? "#${pr.rank} " : ""}$displayName',
       ),
-      subtitle: Text(_fmtResultProgress(pr.finalValue, ch.rules.metric)),
+      subtitle: Text(_fmtResultProgress(pr.finalValue, ch.rules.goal)),
       trailing: pr.coinsEarned > 0
           ? Text('+${pr.coinsEarned} OmniCoins',
               style: TextStyle(
@@ -1167,14 +1237,15 @@ class _ResultsCard extends StatelessWidget {
     );
   }
 
-  static String _fmtResultProgress(double value, ChallengeMetric metric) =>
+  static String _fmtResultProgress(double value, ChallengeGoal metric) =>
       switch (metric) {
-        ChallengeMetric.distance =>
+        ChallengeGoal.fastestAtDistance =>
+          '${(value / 60).toStringAsFixed(1)} min',
+        ChallengeGoal.mostDistance ||
+        ChallengeGoal.collectiveDistance =>
           '${(value / 1000).toStringAsFixed(2)} km',
-        ChallengeMetric.pace =>
+        ChallengeGoal.bestPaceAtDistance =>
           '${(value / 60).toStringAsFixed(1)} min/km',
-        ChallengeMetric.time =>
-          '${(value / 60000).toStringAsFixed(0)} min',
       };
 }
 
@@ -1191,8 +1262,9 @@ class _GroupLiveProgressCard extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final target = challenge.rules.target!;
-    final metric = challenge.rules.metric;
-    final lowerIsBetter = metric == ChallengeMetric.pace;
+    final metric = challenge.rules.goal;
+    final lowerIsBetter = metric == ChallengeGoal.bestPaceAtDistance ||
+        metric == ChallengeGoal.fastestAtDistance;
 
     final accepted = challenge.participants
         .where((p) => p.status == ParticipantStatus.accepted)
@@ -1226,9 +1298,13 @@ class _GroupLiveProgressCard extends StatelessWidget {
     final pct = (fraction * 100).toStringAsFixed(0);
 
     String formatVal(double v) => switch (metric) {
-          ChallengeMetric.distance => '${(v / 1000).toStringAsFixed(1)} km',
-          ChallengeMetric.pace => '${(v / 60).toStringAsFixed(1)} min/km',
-          ChallengeMetric.time => '${(v / 60000).toStringAsFixed(0)} min',
+          ChallengeGoal.fastestAtDistance =>
+            '${(v / 60).toStringAsFixed(1)} min',
+          ChallengeGoal.mostDistance ||
+          ChallengeGoal.collectiveDistance =>
+            '${(v / 1000).toStringAsFixed(1)} km',
+          ChallengeGoal.bestPaceAtDistance =>
+            '${(v / 60).toStringAsFixed(1)} min/km',
         };
 
     return Card(

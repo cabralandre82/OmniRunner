@@ -55,7 +55,7 @@ final class EvaluateChallenge {
 
     final result = ChallengeResultEntity(
       challengeId: challengeId,
-      metric: challenge.rules.metric,
+      goal: challenge.rules.goal,
       results: results,
       totalCoinsDistributed: totalCoins,
       calculatedAtMs: nowMs,

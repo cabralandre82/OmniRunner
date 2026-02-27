@@ -73,7 +73,7 @@ serve(async (req: Request) => {
       return jsonErr(400, "BAD_REQUEST", "Invalid request", requestId);
     }
 
-    const { challenge_id, display_name } = body;
+    const { challenge_id, display_name, team: requestedTeam } = body;
 
     // Fetch challenge
     const { data: challenge, error: fetchErr } = await db
@@ -139,56 +139,6 @@ serve(async (req: Request) => {
       }
     }
 
-    // For team_vs_team challenges, determine team assignment
-    let joinerGroupId: string | null = null;
-    let joinerTeam: string | null = null;
-    if (challenge.type === "team_vs_team") {
-      const { data: profile } = await db
-        .from("profiles")
-        .select("active_coaching_group_id")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      joinerGroupId = profile?.active_coaching_group_id ?? null;
-
-      if (!joinerGroupId) {
-        status = 400;
-        return jsonErr(400, "NO_GROUP", "Você precisa estar em uma assessoria para participar de um desafio de equipe", requestId);
-      }
-
-      const isSameGroup = challenge.team_a_group_id === challenge.team_b_group_id;
-
-      if (isSameGroup) {
-        // Intra-assessoria: athlete must belong to the group and specify team
-        if (joinerGroupId !== challenge.team_a_group_id) {
-          status = 403;
-          return jsonErr(403, "WRONG_GROUP",
-            "Sua assessoria não participa deste desafio.",
-            requestId);
-        }
-        const requestedTeam = body.team as string | undefined;
-        if (!requestedTeam || !["A", "B"].includes(requestedTeam)) {
-          status = 400;
-          return jsonErr(400, "TEAM_REQUIRED",
-            "Para desafios internos, escolha o time (A ou B).",
-            requestId);
-        }
-        joinerTeam = requestedTeam;
-      } else {
-        // Cross-assessoria: derive team from group membership
-        const isTeamA = joinerGroupId === challenge.team_a_group_id;
-        const isTeamB = joinerGroupId === challenge.team_b_group_id;
-
-        if (!isTeamA && !isTeamB) {
-          status = 403;
-          return jsonErr(403, "WRONG_GROUP",
-            "Sua assessoria não participa deste desafio. Apenas as assessorias convidadas podem entrar.",
-            requestId);
-        }
-        joinerTeam = isTeamA ? "A" : "B";
-      }
-    }
-
     // Check if already participant
     const { data: existingPart } = await db
       .from("challenge_participants")
@@ -236,45 +186,56 @@ serve(async (req: Request) => {
         }
       }
 
-      // Check team capacity (max 25 per team for team_vs_team)
-      if (challenge.type === "team_vs_team" && joinerTeam) {
-        const { data: teamParts } = await db
-          .from("challenge_participants")
-          .select("user_id")
-          .eq("challenge_id", challenge_id)
-          .eq("team", joinerTeam);
-
-        if ((teamParts ?? []).length >= 25) {
-          status = 409;
-          return jsonErr(409, "TEAM_FULL", "Sua equipe já atingiu o limite de 25 atletas neste desafio", requestId);
-        }
-      }
-
-      // Check group capacity
-      if (challenge.type === "group") {
+      // Check group/team capacity
+      if (challenge.type === "group" || challenge.type === "team") {
         const { data: parts } = await db
           .from("challenge_participants")
-          .select("user_id")
+          .select("user_id, team")
           .eq("challenge_id", challenge_id);
 
         if ((parts ?? []).length >= 50) {
           status = 409;
           return jsonErr(409, "CHALLENGE_FULL", "Desafio lotado (máximo 50 participantes)", requestId);
         }
+
+        // Team challenges: validate equal team sizes
+        if (challenge.type === "team") {
+          if (!requestedTeam || !["A", "B"].includes(requestedTeam)) {
+            status = 400;
+            return jsonErr(400, "TEAM_REQUIRED", "Para desafios de time, informe team: 'A' ou 'B'", requestId);
+          }
+          const myTeamCount = (parts ?? []).filter(
+            (p: { team: string | null }) => p.team === requestedTeam
+          ).length;
+          const otherTeam = requestedTeam === "A" ? "B" : "A";
+          const otherTeamCount = (parts ?? []).filter(
+            (p: { team: string | null }) => p.team === otherTeam
+          ).length;
+          if (myTeamCount > otherTeamCount) {
+            status = 409;
+            return jsonErr(409, "TEAM_FULL",
+              `Time ${requestedTeam} já tem mais membros que o time ${otherTeam}. Equilibre os times.`,
+              requestId);
+          }
+        }
       }
 
       // Insert new participant as accepted
+      // deno-lint-ignore no-explicit-any
+      const insertPayload: Record<string, any> = {
+        challenge_id,
+        user_id: user.id,
+        display_name,
+        status: "accepted",
+        responded_at_ms: Date.now(),
+      };
+      if (challenge.type === "team" && requestedTeam) {
+        insertPayload.team = requestedTeam;
+      }
+
       const { error: insertErr } = await db
         .from("challenge_participants")
-        .insert({
-          challenge_id,
-          user_id: user.id,
-          display_name,
-          status: "accepted",
-          responded_at_ms: Date.now(),
-          group_id: joinerGroupId,
-          team: joinerTeam,
-        });
+        .insert(insertPayload);
 
       if (insertErr) {
         const classified = classifyError(insertErr);
@@ -304,9 +265,24 @@ serve(async (req: Request) => {
 
       if (challenge.type === "one_vs_one") {
         shouldStart = acceptedCount === 2;
-      } else if (challenge.type === "group") {
-        // Group: activate when ALL invited have accepted (no more "invited")
-        // OR when accept deadline has passed and at least 2 accepted
+      } else if (challenge.type === "team") {
+        const acceptedA = (allParts ?? []).filter(
+          (p: { status: string; team: string | null }) => p.status === "accepted" && p.team === "A"
+        ).length;
+        const acceptedB = (allParts ?? []).filter(
+          (p: { status: string; team: string | null }) => p.status === "accepted" && p.team === "B"
+        ).length;
+        const teamsBalanced = acceptedA >= 1 && acceptedA === acceptedB;
+        const deadlinePassed = challenge.accept_deadline_ms
+          ? Date.now() >= challenge.accept_deadline_ms
+          : false;
+
+        if (invitedCount === 0 && teamsBalanced) {
+          shouldStart = true;
+        } else if (deadlinePassed && teamsBalanced) {
+          shouldStart = true;
+        }
+      } else {
         const deadlinePassed = challenge.accept_deadline_ms
           ? Date.now() >= challenge.accept_deadline_ms
           : false;
@@ -316,8 +292,6 @@ serve(async (req: Request) => {
         } else if (deadlinePassed && acceptedCount >= 2) {
           shouldStart = true;
         }
-      } else {
-        shouldStart = acceptedCount >= 2;
       }
 
       if (shouldStart) {

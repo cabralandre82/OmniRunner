@@ -22,8 +22,6 @@ final class CreateChallengeRequested extends ChallengesEvent {
   final String type;
   final ChallengeRulesEntity rules;
   final String? title;
-  final String? teamAGroupId;
-  final String? teamAGroupName;
 
   const CreateChallengeRequested({
     required this.creatorUserId,
@@ -31,12 +29,10 @@ final class CreateChallengeRequested extends ChallengesEvent {
     required this.type,
     required this.rules,
     this.title,
-    this.teamAGroupId,
-    this.teamAGroupName,
   });
 
   @override
-  List<Object?> get props => [creatorUserId, creatorDisplayName, type, rules, title, teamAGroupId, teamAGroupName];
+  List<Object?> get props => [creatorUserId, creatorDisplayName, type, rules, title];
 }
 
 final class InviteToChallengeRequested extends ChallengesEvent {

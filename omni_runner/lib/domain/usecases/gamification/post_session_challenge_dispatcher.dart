@@ -147,12 +147,13 @@ final class PostSessionChallengeDispatcher {
       );
     }
 
-    // 7. Extract metric value.
-    final metricValue = _extractMetric(
-      challenge.rules.metric,
+    // 7. Extract progress value based on goal type.
+    final metricValue = _extractProgressValue(
+      challenge.rules.goal,
       totalDistanceM,
       avgPaceSecPerKm,
       movingMs,
+      session.elapsedMs ?? movingMs,
     );
 
     // 8. Submit to challenge.
@@ -184,16 +185,18 @@ final class PostSessionChallengeDispatcher {
     );
   }
 
-  static double _extractMetric(
-    ChallengeMetric metric,
+  static double _extractProgressValue(
+    ChallengeGoal goal,
     double totalDistanceM,
     double? avgPaceSecPerKm,
     int movingMs,
+    int elapsedMs,
   ) =>
-      switch (metric) {
-        ChallengeMetric.distance => totalDistanceM,
-        ChallengeMetric.pace => avgPaceSecPerKm ?? 0.0,
-        ChallengeMetric.time => movingMs.toDouble(),
+      switch (goal) {
+        ChallengeGoal.fastestAtDistance => elapsedMs.toDouble() / 1000.0,
+        ChallengeGoal.mostDistance => totalDistanceM,
+        ChallengeGoal.bestPaceAtDistance => avgPaceSecPerKm ?? 0.0,
+        ChallengeGoal.collectiveDistance => totalDistanceM,
       };
 
   static ChallengeRunBindingEntity _rejected(

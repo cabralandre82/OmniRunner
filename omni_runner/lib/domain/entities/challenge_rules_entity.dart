@@ -1,15 +1,26 @@
 import 'package:equatable/equatable.dart';
 
-/// The metric a challenge is measured by.
-enum ChallengeMetric {
-  /// Total distance in meters accumulated during the window.
-  distance,
+/// The goal of a challenge — determines what is measured and how winners are chosen.
+enum ChallengeGoal {
+  /// Fastest time to complete a target distance in a single session.
+  /// Required: target (distance in meters).
+  /// Winner: lowest elapsed time for a session >= target distance.
+  fastestAtDistance,
 
-  /// Best average pace (seconds/km) for a single verified session.
-  pace,
+  /// Most distance accumulated across all sessions in the window.
+  /// Target optional (collective target for groups).
+  /// Winner: highest total distance.
+  mostDistance,
 
-  /// Total moving time in milliseconds accumulated during the window.
-  time,
+  /// Best average pace in a single session >= target distance.
+  /// Required: target (qualifying distance in meters).
+  /// Winner: lowest pace (sec/km).
+  bestPaceAtDistance,
+
+  /// Group cooperative: collective distance toward a shared target.
+  /// Required: target (collective distance in meters).
+  /// All members contribute; everyone wins or loses together.
+  collectiveDistance,
 }
 
 /// How the challenge window begins.
@@ -35,17 +46,18 @@ enum ChallengeAntiCheatPolicy {
 /// Defined at creation time and never modified.
 /// Domain-pure — no Flutter or platform imports.
 final class ChallengeRulesEntity extends Equatable {
-  /// What is being measured.
-  final ChallengeMetric metric;
+  /// What this challenge measures and how winners are determined.
+  final ChallengeGoal goal;
 
-  /// Target value the participant must reach (meters, sec/km, or ms).
+  /// Target value in meters (distance to run).
   ///
-  /// Null for "open-ended" challenges where the best result wins.
+  /// - [ChallengeGoal.fastestAtDistance]: the distance to complete (e.g. 10000 = 10km). REQUIRED.
+  /// - [ChallengeGoal.mostDistance]: optional collective target for groups.
+  /// - [ChallengeGoal.bestPaceAtDistance]: qualifying session distance (e.g. 5000 = 5km). REQUIRED.
+  /// - [ChallengeGoal.collectiveDistance]: collective target (e.g. 200000 = 200km). REQUIRED.
   final double? target;
 
   /// Duration of the challenge window in milliseconds.
-  ///
-  /// E.g. 7 days = 604_800_000 ms.
   final int windowMs;
 
   /// How the window timer begins.
@@ -63,20 +75,17 @@ final class ChallengeRulesEntity extends Equatable {
 
   /// Entry fee in OmniCoins each participant must pay to join.
   ///
-  /// 0 = free challenge (no pool). Must be ≥ 0.
-  /// The pool (sum of all fees) is transferred to the winner on settlement.
-  /// See `docs/GAMIFICATION_POLICY.md` §4 — Coins are non-convertible.
+  /// 0 = free challenge (no pool). Must be >= 0.
   final int entryFeeCoins;
 
-  /// For group challenges: how long (in minutes) participants have to accept
-  /// before the warmup starts. Null = use default (no deadline).
+  /// For group challenges: how long (in minutes) participants have to accept.
   final int? acceptWindowMin;
 
   /// Max participants for group challenges. Null = unlimited.
   final int? maxParticipants;
 
   const ChallengeRulesEntity({
-    required this.metric,
+    required this.goal,
     this.target,
     required this.windowMs,
     this.startMode = ChallengeStartMode.onAccept,
@@ -90,7 +99,7 @@ final class ChallengeRulesEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-        metric,
+        goal,
         target,
         windowMs,
         startMode,
