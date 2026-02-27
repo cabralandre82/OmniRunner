@@ -2829,3 +2829,46 @@ Substituído loop sequencial (N queries para profiles + N queries para member co
 - `portal/src/app/api/platform/support/route.ts` (+audit)
 
 ---
+
+## DECISÃO 100 — Portal: hardening H1-H3 + M1-M3
+
+**Data:** 2026-02-26
+**Contexto:** Auditoria portal identificou 3 pontos de alto risco e 3 médios.
+
+### H1 — Cookie role bypass mitigado
+
+API routes (`team/invite`, `team/remove`, `verification/evaluate`) confiavam no cookie `portal_role` para autorização. Agora re-verificam role via query ao DB (`coaching_members`) em cada request, igual ao padrão já usado em `auto-topup`.
+
+### H3 — listUsers() substituído por RPC
+
+`auth.admin.listUsers()` carregava TODOS os users do Supabase Auth apenas para buscar um por email. Substituído por `fn_get_user_id_by_email` — `SECURITY DEFINER` RPC que faz lookup direto em `auth.users` e retorna apenas `(id, display_name)`.
+
+### H2 — Rate limiting
+
+Criado `portal/src/lib/rate-limit.ts` — rate limiter in-memory com sliding window. Aplicado em 6 API routes: checkout (5/min), team/invite (10/min), team/remove (10/min), platform/refunds (20/min), platform/products (20/min).
+
+### M1 — Products update whitelist
+
+Endpoint `update` no `/api/platform/products` usava spread do body (`...fields`), permitindo campos arbitrários. Substituído por whitelist explícita: `name`, `description`, `credits_amount`, `price_cents`, `sort_order`.
+
+### M2 — Refund debit error handling
+
+`process-refund` silenciava erro do RPC `fn_debit_institution_credits` com `catch {}`. Agora trata o erro: loga, reverte status do refund para `approved`, e retorna 500 com mensagem clara.
+
+### M3 — Middleware auth para /platform/*
+
+`/platform/` e `/api/platform/` estavam em `PUBLIC_PREFIXES`, bypassando toda verificação de auth no middleware. Movidos para novo grupo `AUTH_ONLY_PREFIXES` — middleware exige session autenticada mas não exige cookies de grupo (platform admins não são staff).
+
+### Arquivos alterados
+
+- `portal/src/middleware.ts`
+- `portal/src/lib/rate-limit.ts` (novo)
+- `portal/src/app/api/team/invite/route.ts`
+- `portal/src/app/api/team/remove/route.ts`
+- `portal/src/app/api/verification/evaluate/route.ts`
+- `portal/src/app/api/checkout/route.ts`
+- `portal/src/app/api/platform/products/route.ts`
+- `portal/src/app/api/platform/refunds/route.ts`
+- `supabase/migrations/20260227600000_portal_audit_log.sql` (+RPC)
+
+---

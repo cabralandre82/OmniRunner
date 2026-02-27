@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { cookies } from "next/headers";
 import { auditLog } from "@/lib/audit";
+import { rateLimit } from "@/lib/rate-limit";
 
 const STAFF_ROLES = ["professor", "assistente"];
 
@@ -16,10 +17,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const groupId = cookies().get("portal_group_id")?.value;
-  const role = cookies().get("portal_role")?.value;
+  const rl = rateLimit(`invite:${session.user.id}`, { maxRequests: 10, windowMs: 60_000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
 
-  if (!groupId || role !== "admin_master") {
+  const groupId = cookies().get("portal_group_id")?.value;
+  if (!groupId) {
+    return NextResponse.json({ error: "No group selected" }, { status: 400 });
+  }
+
+  const db = createServiceClient();
+
+  const { data: callerMembership } = await db
+    .from("coaching_members")
+    .select("role")
+    .eq("group_id", groupId)
+    .eq("user_id", session.user.id)
+    .maybeSingle();
+
+  if (!callerMembership || callerMembership.role !== "admin_master") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -38,19 +55,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const db = createServiceClient();
+  const { data: lookup, error: lookupErr } = await db
+    .rpc("fn_get_user_id_by_email", { p_email: email })
+    .maybeSingle();
 
-  const { data: users, error: lookupErr } = await db.auth.admin.listUsers();
   if (lookupErr) {
     return NextResponse.json(
-      { error: "Erro ao buscar usuários" },
+      { error: "Erro ao buscar usuário" },
       { status: 500 },
     );
   }
 
-  const targetUser = users.users.find(
-    (u) => u.email?.toLowerCase() === email,
-  );
+  const targetUser = lookup as { id: string; display_name: string } | null;
 
   if (!targetUser) {
     return NextResponse.json(
@@ -75,10 +91,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const displayName =
-    targetUser.user_metadata?.full_name ??
-    targetUser.user_metadata?.name ??
-    email.split("@")[0];
+  const displayName = targetUser.display_name || email.split("@")[0];
 
   const { error: insertErr } = await db.from("coaching_members").insert({
     user_id: targetUser.id,

@@ -6,6 +6,9 @@ const PUBLIC_ROUTES = new Set(["/login", "/no-access", "/api/auth/callback"]);
 const PUBLIC_PREFIXES = [
   "/challenge/",
   "/invite/",
+];
+
+const AUTH_ONLY_PREFIXES = [
   "/platform/",
   "/api/platform/",
 ];
@@ -28,6 +31,19 @@ export async function middleware(request: NextRequest) {
 
   if (isPublic) {
     const { supabaseResponse } = await updateSession(request);
+    return supabaseResponse;
+  }
+
+  const isAuthOnly = AUTH_ONLY_PREFIXES.some((p) => pathname.startsWith(p));
+
+  if (isAuthOnly) {
+    const { user, supabaseResponse } = await updateSession(request);
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("next", pathname);
+      return NextResponse.redirect(url);
+    }
     return supabaseResponse;
   }
 

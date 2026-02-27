@@ -23,9 +23,20 @@ export async function POST(request: Request) {
   }
 
   const groupId = cookies().get("portal_group_id")?.value;
-  const role = cookies().get("portal_role")?.value;
+  if (!groupId) {
+    return NextResponse.json({ error: "No group selected" }, { status: 400 });
+  }
 
-  if (!groupId || !["admin_master", "professor"].includes(role ?? "")) {
+  const db = createServiceClient();
+
+  const { data: callerMembership } = await db
+    .from("coaching_members")
+    .select("role")
+    .eq("group_id", groupId)
+    .eq("user_id", session.user.id)
+    .maybeSingle();
+
+  if (!callerMembership || !["admin_master", "professor"].includes(callerMembership.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -38,8 +49,6 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-
-  const db = createServiceClient();
 
   // Verify the athlete belongs to this group
   const { data: member } = await db

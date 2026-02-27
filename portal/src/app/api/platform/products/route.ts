@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { auditLog } from "@/lib/audit";
+import { rateLimit } from "@/lib/rate-limit";
 
 async function requirePlatformAdmin() {
   const supabase = createClient();
@@ -33,6 +34,11 @@ export async function POST(req: NextRequest) {
       { error: auth.error },
       { status: auth.status },
     );
+  }
+
+  const rl = rateLimit(`platform-product:${auth.user.id}`, { maxRequests: 20, windowMs: 60_000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
   const body = await req.json();
@@ -88,8 +94,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (body.action === "update") {
-    const { product_id, ...fields } = body;
-    delete fields.action;
+    const { product_id, name, description, credits_amount, price_cents, sort_order } = body;
 
     if (!product_id) {
       return NextResponse.json(
@@ -98,15 +103,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const updatePayload: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+    if (name !== undefined) updatePayload.name = name;
+    if (description !== undefined) updatePayload.description = description;
+    if (credits_amount !== undefined) updatePayload.credits_amount = credits_amount;
+    if (price_cents !== undefined) updatePayload.price_cents = price_cents;
+    if (sort_order !== undefined) updatePayload.sort_order = sort_order;
+
     const { error } = await admin
       .from("billing_products")
-      .update({ ...fields, updated_at: new Date().toISOString() })
+      .update(updatePayload)
       .eq("id", product_id);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    await auditLog({ actorId: auth.user.id, action: "platform.update_product", targetType: "product", targetId: product_id, metadata: updatePayload });
     return NextResponse.json({ status: "updated" });
   }
 

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { cookies } from "next/headers";
 import { auditLog } from "@/lib/audit";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -14,10 +15,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const groupId = cookies().get("portal_group_id")?.value;
-  const role = cookies().get("portal_role")?.value;
+  const rl = rateLimit(`remove:${session.user.id}`, { maxRequests: 10, windowMs: 60_000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
 
-  if (!groupId || role !== "admin_master") {
+  const groupId = cookies().get("portal_group_id")?.value;
+  if (!groupId) {
+    return NextResponse.json({ error: "No group selected" }, { status: 400 });
+  }
+
+  const db = createServiceClient();
+
+  const { data: callerMembership } = await db
+    .from("coaching_members")
+    .select("role")
+    .eq("group_id", groupId)
+    .eq("user_id", session.user.id)
+    .maybeSingle();
+
+  if (!callerMembership || callerMembership.role !== "admin_master") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -30,8 +47,6 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-
-  const db = createServiceClient();
 
   const { data: member } = await db
     .from("coaching_members")

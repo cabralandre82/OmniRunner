@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { auditLog } from "@/lib/audit";
+import { rateLimit } from "@/lib/rate-limit";
 
 async function requirePlatformAdmin() {
   const supabase = createClient();
@@ -33,6 +34,11 @@ export async function POST(req: NextRequest) {
       { error: auth.error },
       { status: auth.status },
     );
+  }
+
+  const rl = rateLimit(`platform-refund:${auth.user.id}`, { maxRequests: 20, windowMs: 60_000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
   const body = await req.json();
@@ -143,13 +149,24 @@ export async function POST(req: NextRequest) {
     });
 
     if (refund.credits_to_debit && refund.credits_to_debit > 0) {
-      try {
-        await admin.rpc("fn_debit_institution_credits", {
-          p_group_id: refund.group_id,
-          p_amount: refund.credits_to_debit,
-        });
-      } catch {
-        // fn may not exist yet; debit manually if needed
+      const { error: debitErr } = await admin.rpc("fn_debit_institution_credits", {
+        p_group_id: refund.group_id,
+        p_amount: refund.credits_to_debit,
+      });
+
+      if (debitErr) {
+        console.error(`[refund:${refund_id}] Credit debit failed: ${debitErr.message}`);
+        await admin
+          .from("billing_refund_requests")
+          .update({
+            status: "approved",
+            processed_at: null,
+          })
+          .eq("id", refund_id);
+        return NextResponse.json(
+          { error: "Refund approved but credit debit failed. Reverted to approved status." },
+          { status: 500 },
+        );
       }
     }
 

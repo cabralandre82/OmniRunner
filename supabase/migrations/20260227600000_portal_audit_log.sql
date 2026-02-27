@@ -38,3 +38,17 @@ CREATE POLICY "audit_platform_read" ON public.portal_audit_log
 
 COMMENT ON TABLE public.portal_audit_log IS
   'Append-only audit trail for all portal staff and platform admin actions.';
+
+-- ── Helper: lookup user ID by email (portal invite flow) ──────────────────
+-- SECURITY DEFINER so it can read auth.users. Only returns the UUID.
+CREATE OR REPLACE FUNCTION public.fn_get_user_id_by_email(p_email TEXT)
+RETURNS TABLE(id UUID, display_name TEXT) 
+LANGUAGE SQL STABLE SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT u.id, COALESCE(p.display_name, split_part(u.email, '@', 1))
+  FROM auth.users u
+  LEFT JOIN public.profiles p ON p.id = u.id
+  WHERE lower(u.email) = lower(p_email)
+  LIMIT 1;
+$$;
