@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/auth_repository.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
-import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/profile_entity.dart';
@@ -301,7 +300,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final identity = sl<UserIdentityProvider>();
-    final mode = AppConfig.backendMode;
 
     return Scaffold(
       appBar: AppBar(
@@ -388,25 +386,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ?.copyWith(color: cs.onSurfaceVariant),
                   ),
                 ),
-                const SizedBox(height: 16),
-
-                // ── Info card ──
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _infoRow(context, 'Modo', mode),
-                        _infoRow(context, 'ID',
-                            _truncate(identity.userId, 24)),
-                        _infoRow(context, 'Criado em',
-                            _profile?.createdAt.toLocal().toString().substring(0, 16) ?? '—'),
-                      ],
-                    ),
-                  ),
-                ),
-
                 const SizedBox(height: 24),
 
                 // ── Edit display_name ──
@@ -536,33 +515,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
     );
   }
-
-  Widget _infoRow(BuildContext context, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 110,
-            child: Text(label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                )),
-          ),
-          Expanded(
-            child: Text(value,
-                style: const TextStyle(fontSize: 13, fontFamily: 'monospace'),
-                overflow: TextOverflow.ellipsis),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _truncate(String s, int max) =>
-      s.length <= max ? s : '${s.substring(0, max)}...';
 
   String _initials(String name) {
     final parts = name.trim().split(RegExp(r'\s+'));
