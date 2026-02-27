@@ -2117,3 +2117,27 @@ formulário de criação. O admin não podia editar, suspender ou remover produt
 - `lib/presentation/screens/profile_screen.dart`
 
 ---
+
+## DECISÃO 083 — Fix Park Screen: graceful fallback (26/02/2026)
+
+### Contexto:
+A tela de parque (`ParkScreen`) consultava três tabelas — `park_leaderboard`,
+`park_activities`, `park_segments` — que **nunca foram criadas** no Supabase. A feature
+de parques foi implementada apenas no frontend com seed local (`kBrazilianParksSeed`),
+mas o backend (schema SQL) para dados dinâmicos (rankings, comunidade, segmentos) nunca
+foi migrado. Resultado: qualquer parque mostrava "Erro ao carregar dados do parque".
+
+### Decisão:
+1. **Cada loader individual com try/catch** — `_loadRankings`, `_loadCommunity`,
+   `_loadSegments` e `_loadStats` agora falham silenciosamente e retornam listas/stats
+   vazias em caso de erro (tabela inexistente, RLS, rede, etc.).
+2. **Removido `_buildError`** — A tela nunca mais mostra erro genérico. Carrega
+   normalmente com empty states por tab (ranking vazio, comunidade vazia, segmentos vazios).
+3. **Pendência futura** — Quando ativar a feature completa de parques, criar migration
+   com as tabelas `park_leaderboard`, `park_activities`, `park_segments` + RLS + triggers
+   para popular dados a partir das atividades do Strava.
+
+### Arquivos modificados:
+- `lib/features/parks/presentation/park_screen.dart`
+
+---
