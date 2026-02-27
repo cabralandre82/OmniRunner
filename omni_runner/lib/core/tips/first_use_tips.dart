@@ -16,6 +16,9 @@ enum TipKey {
   badgesHowTo,
   rankingsHowTo,
   onboardingTour,
+  firstStakeChallenge,
+  firstVerificationVisit,
+  firstWalletVisit,
 }
 
 class FirstUseTips {

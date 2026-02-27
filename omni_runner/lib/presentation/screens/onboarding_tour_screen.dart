@@ -67,6 +67,34 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen> {
           'Adicione amigos de qualquer assessoria, veja perfis com\n'
           'DNA de corrida e compartilhe redes sociais.',
     ),
+    _SlideData(
+      icon: Icons.sports_kabaddi_rounded,
+      color: Color(0xFF43A047),
+      title: 'Desafie seus amigos',
+      body:
+          'Três tipos de desafio:\n'
+          '🏃 1v1 — Duelo direto entre dois corredores\n'
+          '👥 Grupo — Vários competem, melhor resultado ganha\n'
+          '🤝 Time — Equipes cooperam para atingir metas coletivas',
+    ),
+    _SlideData(
+      icon: Icons.monetization_on_rounded,
+      color: Color(0xFFFFA000),
+      title: 'OmniCoins',
+      body:
+          'Sua assessoria distribui OmniCoins.\n'
+          'Use em desafios como inscrição — o vencedor leva o pool!\n'
+          'Não têm valor monetário, são apenas para diversão.',
+    ),
+    _SlideData(
+      icon: Icons.verified_user_rounded,
+      color: Color(0xFF1565C0),
+      title: 'Atleta Verificado',
+      body:
+          'Complete 7 corridas válidas para se tornar Verificado.\n'
+          'Só atletas verificados podem participar de desafios\n'
+          'com OmniCoins — isso garante jogo justo para todos.',
+    ),
   ];
 
   void _next() {

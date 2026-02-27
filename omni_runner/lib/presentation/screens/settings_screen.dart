@@ -16,6 +16,7 @@ import 'package:omni_runner/domain/repositories/i_coach_settings_repo.dart';
 import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/main.dart' show themeNotifier;
+import 'package:omni_runner/presentation/screens/how_it_works_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final bool isStaff;
@@ -123,6 +124,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     value: _settings.shareActivityInFeed,
                     onChanged: (v) =>
                         _update(_settings.copyWith(shareActivityInFeed: v)),
+                  ),
+                  const Divider(height: 32),
+                  _header('Ajuda'),
+                  ListTile(
+                    leading: const Icon(Icons.help_outline_rounded),
+                    title: const Text('Como Funciona'),
+                    subtitle: const Text(
+                      'Desafios, OmniCoins, verificação e integridade',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const HowItWorksScreen(),
+                      ),
+                    ),
                   ),
                 ],
                 if (kDebugMode) ...[

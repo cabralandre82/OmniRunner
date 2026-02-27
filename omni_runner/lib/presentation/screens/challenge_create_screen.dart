@@ -15,6 +15,8 @@ import 'package:omni_runner/presentation/blocs/verification/verification_event.d
 import 'package:omni_runner/presentation/screens/challenge_invite_screen.dart';
 import 'package:omni_runner/presentation/screens/matchmaking_screen.dart';
 import 'package:omni_runner/presentation/widgets/success_overlay.dart';
+import 'package:omni_runner/presentation/widgets/contextual_tip_banner.dart';
+import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/presentation/widgets/verification_gate.dart';
 
 class ChallengeCreateScreen extends StatefulWidget {
@@ -360,6 +362,15 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                     return null;
                   },
                 ),
+                if ((int.tryParse(_feeCtrl.text) ?? 0) > 0)
+                  const ContextualTipBanner(
+                    tipKey: TipKey.firstStakeChallenge,
+                    message: 'OmniCoins são debitadas da sua carteira ao '
+                        'criar o desafio. O vencedor leva o pool de '
+                        'inscrições de todos os participantes.',
+                    icon: Icons.monetization_on_rounded,
+                    color: Color(0xFFFFA000),
+                  ),
                 const SizedBox(height: 16),
 
                 // ── Validation rules summary ─────────────────────────

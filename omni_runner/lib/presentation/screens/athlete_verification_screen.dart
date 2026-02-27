@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/athlete_verification_entity.dart';
+import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/domain/entities/workout_session_entity.dart';
 import 'package:omni_runner/domain/entities/workout_status.dart';
 import 'package:omni_runner/domain/repositories/i_session_repo.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_bloc.dart';
+import 'package:omni_runner/presentation/widgets/contextual_tip_banner.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_event.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_state.dart';
 
@@ -91,6 +93,15 @@ class _BodyState extends State<_Body> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const ContextualTipBanner(
+            tipKey: TipKey.firstVerificationVisit,
+            message: 'Cada corrida válida te aproxima do status '
+                'Verificado. Com 7 corridas, você desbloqueia '
+                'desafios com OmniCoins!',
+            icon: Icons.verified_user_rounded,
+            color: Color(0xFF1565C0),
+          ),
+
           // ── Status badge ─────────────────────────────────────────────
           _StatusCard(v: v),
           const SizedBox(height: 16),

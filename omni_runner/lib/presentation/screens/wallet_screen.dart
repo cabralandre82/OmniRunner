@@ -6,6 +6,8 @@ import 'package:omni_runner/domain/entities/ledger_entry_entity.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_bloc.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_event.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_state.dart';
+import 'package:omni_runner/core/tips/first_use_tips.dart';
+import 'package:omni_runner/presentation/widgets/contextual_tip_banner.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 
 enum _WalletFilter { all, earned, spent }
@@ -53,6 +55,14 @@ class _WalletScreenState extends State<WalletScreen> {
               },
               child: ListView(
               children: [
+                const ContextualTipBanner(
+                  tipKey: TipKey.firstWalletVisit,
+                  message: 'Seus OmniCoins vêm da sua assessoria. '
+                      'Use-os como inscrição em desafios. '
+                      'Eles não têm valor monetário real.',
+                  icon: Icons.account_balance_wallet_rounded,
+                  color: Color(0xFFFFA000),
+                ),
                 _BalanceCard(
                   total: wallet.totalCoins,
                   available: wallet.balanceCoins,
@@ -346,6 +356,7 @@ class _LedgerTile extends StatelessWidget {
         LedgerReason.crossAssessoriaBurned => 'Expirado (troca de assessoria)',
         LedgerReason.challengeTeamCompleted => 'Desafio de equipe',
         LedgerReason.challengeTeamWon => 'Vitória em equipe',
+        LedgerReason.adminCorrection => 'Ajuste de reconciliação',
       };
 
   static String _formatDate(int ms) {

@@ -2707,3 +2707,40 @@ Auditoria pré-launch identificou 4 vulnerabilidades críticas:
 - 7 arquivos deletados (tracking legado)
 
 ---
+
+## DECISÃO 096 — M1: Tutorial in-app dedicado
+
+**Data:** 2026-02-26
+
+### Implementação
+
+**Onboarding Tour expandido (3 novos slides):**
+- Slide 7: "Desafie seus amigos" — explica os 3 tipos (1v1, Grupo, Time) com ícones visuais.
+- Slide 8: "OmniCoins" — origem (assessoria), uso (inscrição em desafios), e que não têm valor monetário.
+- Slide 9: "Atleta Verificado" — 7 corridas válidas, desbloqueio de desafios com OmniCoins, jogo justo.
+
+**Tela "Como Funciona" (nova):**
+- Acessível via Settings > Ajuda > "Como Funciona".
+- 4 seções com cards informativos: Desafios (tipos, metas, lógica de vencedor), OmniCoins (origem, uso, regras), Verificação (por que, como, perda de status), Integridade (validação automática, o que é verificado).
+- UI moderna: ícones com background colorido, cards com borda sutil, texto legível com height 1.5.
+
+**Tooltips contextuais (3 novos, one-shot):**
+- `firstStakeChallenge`: aparece na tela de criação quando inscrição > 0 — "OmniCoins são debitadas ao criar".
+- `firstVerificationVisit`: aparece na tela de verificação — "Cada corrida válida te aproxima do Verificado".
+- `firstWalletVisit`: aparece na carteira — "Seus OmniCoins vêm da assessoria".
+- Widget reutilizável `ContextualTipBanner` com animação fade, dismiss "Entendi", e integração com `FirstUseTips`.
+
+**Fix colateral:** Switch exhaustivo em `wallet_screen.dart` atualizado para `adminCorrection`.
+
+### Arquivos alterados
+
+- `lib/presentation/screens/onboarding_tour_screen.dart` (3 slides)
+- `lib/presentation/screens/how_it_works_screen.dart` (novo)
+- `lib/presentation/screens/settings_screen.dart` (link "Como Funciona")
+- `lib/presentation/widgets/contextual_tip_banner.dart` (novo)
+- `lib/core/tips/first_use_tips.dart` (3 TipKeys)
+- `lib/presentation/screens/challenge_create_screen.dart` (tooltip stake)
+- `lib/presentation/screens/wallet_screen.dart` (tooltip + switch fix)
+- `lib/presentation/screens/athlete_verification_screen.dart` (tooltip)
+
+---

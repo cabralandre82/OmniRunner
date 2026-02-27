@@ -28149,3 +28149,19 @@ Auditoria final completa antes do lançamento identificou 4 vulnerabilidades cr�
 **M4 — Session retention policy:**
 - `sessions_archive` table + `archive_old_sessions(730)` RPC.
 - Move sessions > 2 anos para archive, idempotente.
+
+---
+
+## Sprint — M1: Tutorial in-app dedicado (DECISÃO 096)
+
+**Data:** 2026-02-26
+
+### Mudanças
+
+**Onboarding Tour:** 3 novos slides (Desafios, OmniCoins, Verificação) adicionados ao `OnboardingTourScreen`. Total agora: 9 slides.
+
+**"Como Funciona" screen:** Nova tela acessível via Settings > Ajuda. 4 seções com cards: Desafios (tipos, metas, vencedor), OmniCoins (origem, uso, regras), Verificação (processo, perda), Integridade (validação GPS, HR, speed).
+
+**Tooltips contextuais:** `ContextualTipBanner` widget reutilizável com fade animation e dismiss. 3 tooltips one-shot: stake na criação, primeira visita à verificação, primeira visita à carteira.
+
+**Fix colateral:** `wallet_screen.dart` switch exaustivo para `LedgerReason.adminCorrection`.
