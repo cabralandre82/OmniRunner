@@ -3190,3 +3190,23 @@ Dois bugs críticos na verificação do atleta:
 - `supabase/migrations/20260227500000_wallet_reconcile_and_session_retention.sql` (constraint fix)
 
 ---
+
+## DECISÃO 111 — Fix CallbackActivity intent filter: host disambiguation (26/02/2026)
+
+### Contexto
+
+Após a DECISÃO 110, o erro "Instance of AuthFailed" foi silenciado, mas a conexão Strava passou a não funcionar: o usuário autorizava no Strava, voltava ao app, e nada acontecia.
+
+**Causa raiz**: No `AndroidManifest.xml`, tanto o `MainActivity` quanto o `CallbackActivity` tinham intent filters idênticos para o scheme `omnirunner://` sem diferenciação de host/path. O Android roteava o callback `omnirunner://localhost/exchange_token` para o `MainActivity` (que ignora callbacks Strava desde a DECISÃO 108), e o `FlutterWebAuth2` nunca recebia a resposta — resultando em `PlatformException(CANCELED)`.
+
+### Decisão
+
+1. **`CallbackActivity`**: adicionado `android:host="localhost"` ao intent filter, tornando-o mais específico que o filtro genérico do `MainActivity`. O Android agora roteia `omnirunner://localhost/*` para o `CallbackActivity`
+2. **`android:launchMode="singleTop"`** adicionado ao `CallbackActivity` para evitar instâncias duplicadas
+3. **`AuthCancelled` re-check**: `_connect()` agora também re-verifica o estado após `AuthCancelled` (fallback para race conditions)
+
+### Arquivos modificados
+- `android/app/src/main/AndroidManifest.xml` (CallbackActivity: +host="localhost", +singleTop)
+- `lib/presentation/screens/settings_screen.dart` (re-check state após AuthCancelled)
+
+---

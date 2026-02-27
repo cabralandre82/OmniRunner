@@ -200,7 +200,21 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
         );
       }
     } on AuthCancelled {
-      // User dismissed the browser — no error to show
+      // Could be a real cancellation or a Chrome Custom Tab race condition.
+      // Re-check state in case the connection actually succeeded.
+      await _loadState();
+      if (mounted && _state is StravaConnected) {
+        final controller = sl<StravaConnectController>();
+        controller.retryBackfillIfNeeded().ignore();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Strava conectado como ${(_state as StravaConnected).athleteName}!',
+            ),
+            backgroundColor: const Color(0xFFFC4C02),
+          ),
+        );
+      }
     } on IntegrationFailure {
       // Connection may have succeeded despite error (e.g. Chrome Custom Tab
       // closing race condition). Re-check actual state before showing error.
