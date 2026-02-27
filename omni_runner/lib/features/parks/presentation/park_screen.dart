@@ -24,7 +24,6 @@ class _ParkScreenState extends State<ParkScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
   bool _loading = true;
-  String? _error;
 
   List<ParkLeaderboardEntry> _rankings = [];
   List<_ParkRunner> _community = [];
@@ -48,10 +47,7 @@ class _ParkScreenState extends State<ParkScreen>
   }
 
   Future<void> _loadAll() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    setState(() => _loading = true);
 
     try {
       if (AppConfig.isSupabaseReady) {
@@ -70,11 +66,14 @@ class _ParkScreenState extends State<ParkScreen>
       }
 
       if (mounted) setState(() => _loading = false);
-    } on Exception catch (e) {
+    } on Exception {
       if (mounted) {
         setState(() {
-          _error = 'Ainda não há dados para este parque. '
-              'Corra aqui e seja o primeiro no ranking!';
+          _rankings = [];
+          _community = [];
+          _segments = [];
+          _parkStats = const _ParkStats(
+              runnersToday: 0, runnersWeek: 0, totalActivities: 0);
           _loading = false;
         });
       }
@@ -82,100 +81,117 @@ class _ParkScreenState extends State<ParkScreen>
   }
 
   Future<void> _loadRankings() async {
-    final res = await Supabase.instance.client
-        .from('park_leaderboard')
-        .select()
-        .eq('park_id', widget.park.id)
-        .order('rank', ascending: true)
-        .limit(50);
+    try {
+      final res = await Supabase.instance.client
+          .from('park_leaderboard')
+          .select()
+          .eq('park_id', widget.park.id)
+          .order('rank', ascending: true)
+          .limit(50);
 
-    _rankings = (res as List)
-        .map((r) => ParkLeaderboardEntry(
-              parkId: r['park_id'] as String,
-              userId: r['user_id'] as String,
-              displayName: r['display_name'] as String? ?? 'Atleta',
-              category: ParkLeaderboardCategory.values.firstWhere(
-                (c) => c.name == r['category'],
-                orElse: () => ParkLeaderboardCategory.pace,
-              ),
-              rank: r['rank'] as int,
-              tier: ParkLeaderboardEntry.tierFromRank(r['rank'] as int),
-              value: (r['value'] as num).toDouble(),
-              period: r['period'] as String? ?? '',
-            ))
-        .toList();
+      _rankings = (res as List)
+          .map((r) => ParkLeaderboardEntry(
+                parkId: r['park_id'] as String,
+                userId: r['user_id'] as String,
+                displayName: r['display_name'] as String? ?? 'Atleta',
+                category: ParkLeaderboardCategory.values.firstWhere(
+                  (c) => c.name == r['category'],
+                  orElse: () => ParkLeaderboardCategory.pace,
+                ),
+                rank: r['rank'] as int,
+                tier: ParkLeaderboardEntry.tierFromRank(r['rank'] as int),
+                value: (r['value'] as num).toDouble(),
+                period: r['period'] as String? ?? '',
+              ))
+          .toList();
+    } on Exception {
+      _rankings = [];
+    }
   }
 
   Future<void> _loadCommunity() async {
-    final res = await Supabase.instance.client
-        .from('park_activities')
-        .select('user_id, display_name, start_time, distance_m')
-        .eq('park_id', widget.park.id)
-        .order('start_time', ascending: false)
-        .limit(100);
+    try {
+      final res = await Supabase.instance.client
+          .from('park_activities')
+          .select('user_id, display_name, start_time, distance_m')
+          .eq('park_id', widget.park.id)
+          .order('start_time', ascending: false)
+          .limit(100);
 
-    final seen = <String>{};
-    _community = [];
-    for (final r in res as List) {
-      final uid = r['user_id'] as String;
-      if (seen.contains(uid)) continue;
-      seen.add(uid);
-      _community.add(_ParkRunner(
-        userId: uid,
-        displayName: r['display_name'] as String? ?? 'Atleta',
-        lastRunDate:
-            DateTime.tryParse(r['start_time'] as String? ?? '') ??
-                DateTime.now(),
-        totalRuns: 0,
-      ));
+      final seen = <String>{};
+      _community = [];
+      for (final r in res as List) {
+        final uid = r['user_id'] as String;
+        if (seen.contains(uid)) continue;
+        seen.add(uid);
+        _community.add(_ParkRunner(
+          userId: uid,
+          displayName: r['display_name'] as String? ?? 'Atleta',
+          lastRunDate:
+              DateTime.tryParse(r['start_time'] as String? ?? '') ??
+                  DateTime.now(),
+          totalRuns: 0,
+        ));
+      }
+    } on Exception {
+      _community = [];
     }
   }
 
   Future<void> _loadSegments() async {
-    final res = await Supabase.instance.client
-        .from('park_segments')
-        .select()
-        .eq('park_id', widget.park.id);
+    try {
+      final res = await Supabase.instance.client
+          .from('park_segments')
+          .select()
+          .eq('park_id', widget.park.id);
 
-    _segments = (res as List)
-        .map((r) => ParkSegmentEntity(
-              id: r['id'] as String,
-              parkId: r['park_id'] as String,
-              name: r['name'] as String? ?? 'Segmento',
-              path: const [],
-              lengthM: (r['length_m'] as num?)?.toDouble() ?? 0,
-              recordHolderName: r['record_holder_name'] as String?,
-              recordPaceSecPerKm:
-                  (r['record_pace_sec_per_km'] as num?)?.toDouble(),
-            ))
-        .toList();
+      _segments = (res as List)
+          .map((r) => ParkSegmentEntity(
+                id: r['id'] as String,
+                parkId: r['park_id'] as String,
+                name: r['name'] as String? ?? 'Segmento',
+                path: const [],
+                lengthM: (r['length_m'] as num?)?.toDouble() ?? 0,
+                recordHolderName: r['record_holder_name'] as String?,
+                recordPaceSecPerKm:
+                    (r['record_pace_sec_per_km'] as num?)?.toDouble(),
+              ))
+          .toList();
+    } on Exception {
+      _segments = [];
+    }
   }
 
   Future<void> _loadStats() async {
-    final now = DateTime.now().toUtc();
-    final todayStart =
-        DateTime.utc(now.year, now.month, now.day).toIso8601String();
-    final weekStart = DateTime.utc(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - 1))
-        .toIso8601String();
+    try {
+      final now = DateTime.now().toUtc();
+      final todayStart =
+          DateTime.utc(now.year, now.month, now.day).toIso8601String();
+      final weekStart = DateTime.utc(now.year, now.month, now.day)
+          .subtract(Duration(days: now.weekday - 1))
+          .toIso8601String();
 
-    final todayCount = await Supabase.instance.client
-        .from('park_activities')
-        .select('id')
-        .eq('park_id', widget.park.id)
-        .gte('start_time', todayStart);
+      final todayCount = await Supabase.instance.client
+          .from('park_activities')
+          .select('id')
+          .eq('park_id', widget.park.id)
+          .gte('start_time', todayStart);
 
-    final weekCount = await Supabase.instance.client
-        .from('park_activities')
-        .select('id')
-        .eq('park_id', widget.park.id)
-        .gte('start_time', weekStart);
+      final weekCount = await Supabase.instance.client
+          .from('park_activities')
+          .select('id')
+          .eq('park_id', widget.park.id)
+          .gte('start_time', weekStart);
 
-    _parkStats = _ParkStats(
-      runnersToday: (todayCount as List).length,
-      runnersWeek: (weekCount as List).length,
-      totalActivities: 0,
-    );
+      _parkStats = _ParkStats(
+        runnersToday: (todayCount as List).length,
+        runnersWeek: (weekCount as List).length,
+        totalActivities: 0,
+      );
+    } on Exception {
+      _parkStats = const _ParkStats(
+          runnersToday: 0, runnersWeek: 0, totalActivities: 0);
+    }
   }
 
   // ── Build ──────────────────────────────────────────────────────────────────
@@ -199,9 +215,7 @@ class _ParkScreenState extends State<ParkScreen>
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? _buildError(theme)
-              : Column(
+          : Column(
                   children: [
                     // Park stats header
                     _ParkStatsHeader(
@@ -220,25 +234,6 @@ class _ParkScreenState extends State<ParkScreen>
                     ),
                   ],
                 ),
-    );
-  }
-
-  Widget _buildError(ThemeData theme) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
-            const SizedBox(height: 16),
-            Text('Erro ao carregar dados do parque',
-                style: TextStyle(color: theme.colorScheme.error)),
-            const SizedBox(height: 16),
-            FilledButton(onPressed: _loadAll, child: const Text('Tentar novamente')),
-          ],
-        ),
-      ),
     );
   }
 
