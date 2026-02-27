@@ -35,7 +35,14 @@ ALTER TABLE public.coin_ledger
     'cosmetic_purchase',
     'admin_adjustment',
     'badge_reward',
-    'mission_reward'
+    'mission_reward',
+    'cross_assessoria_pending',
+    'cross_assessoria_cleared',
+    'cross_assessoria_burned',
+    'institution_switch_burn',
+    'institution_token_issue',
+    'institution_token_burn',
+    'admin_correction'
   ));
 
 -- ── 4. Atomic wallet debit with balance check ───────────────────────────

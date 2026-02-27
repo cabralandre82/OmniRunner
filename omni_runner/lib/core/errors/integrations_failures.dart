@@ -17,6 +17,8 @@ final class AuthCancelled extends IntegrationFailure {
 final class AuthFailed extends IntegrationFailure {
   final String reason;
   const AuthFailed(this.reason);
+  @override
+  String toString() => reason;
 }
 
 /// Token refresh failed — user must re-authenticate.

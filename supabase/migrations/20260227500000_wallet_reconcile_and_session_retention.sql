@@ -88,10 +88,16 @@ ALTER TABLE public.coin_ledger ADD CONSTRAINT coin_ledger_reason_check CHECK (re
   'challenge_one_vs_one_completed', 'challenge_one_vs_one_won',
   'challenge_group_completed', 'challenge_group_won',
   'challenge_team_won', 'challenge_team_completed',
-  'challenge_entry_fee', 'challenge_entry_refund',
+  'challenge_entry_fee', 'challenge_entry_refund', 'challenge_pool_won',
   'streak_weekly', 'streak_monthly',
-  'badge_earned', 'mission_completed',
-  'institution_credit', 'admin_correction'
+  'pr_distance', 'pr_pace',
+  'badge_reward', 'badge_earned',
+  'mission_reward', 'mission_completed',
+  'cosmetic_purchase',
+  'admin_adjustment', 'admin_correction',
+  'cross_assessoria_pending', 'cross_assessoria_cleared', 'cross_assessoria_burned',
+  'institution_switch_burn', 'institution_token_issue', 'institution_token_burn',
+  'institution_credit'
 ));
 
 

@@ -3134,3 +3134,59 @@ A DECISÃO 106 corrigiu o `redirect_uri` mas o fluxo usava `url_launcher` com `L
 - `pubspec.yaml` (+flutter_web_auth_2)
 
 ---
+
+## DECISÃO 109 — Fix verificação: distância mínima + backfill Strava → sessions (26/02/2026)
+
+### Contexto
+
+Dois bugs críticos na verificação do atleta:
+
+1. **Distância mínima errada**: Os RPCs `eval_athlete_verification()` e `get_verification_state()` usavam `total_distance_m >= 200` (200m). O correto é `>= 1000` (1km). A Edge Function já usava 1000m; os RPCs estavam desincronizados. Resultado: corrida de 300m era contada como válida.
+
+2. **Corridas do Strava não contavam**: `importStravaHistory()` salvava em `strava_activity_history` (para anti-cheat baseline), mas NÃO criava registros em `sessions`. O webhook `strava-webhook` só dispara para atividades FUTURAS do Strava. Corridas existentes no Strava nunca viravam sessions, logo nunca contavam para verificação.
+
+### Decisão
+
+1. **RPCs corrigidos**: `total_distance_m >= 200` → `>= 1000` em ambos RPCs
+2. **Webhook corrigido**: flag `TOO_SHORT_DISTANCE` agora para `< 1000m` (era `< 200m`)
+3. **Nova RPC `backfill_strava_sessions(p_user_id)`**: converte registros de `strava_activity_history` em `sessions` com verificação básica (pace plausível, duração mínima). Usa `ON CONFLICT DO NOTHING` para idempotência
+4. **Controller atualizado**: após conectar Strava, o fluxo é `importStravaHistory()` → `backfillStravaSessions()` → `eval-athlete-verification`
+5. **TrailRun** adicionado ao filtro de tipos no import (já estava no webhook)
+
+### Verificação de segurança
+- `backfill_strava_sessions` é `SECURITY DEFINER` e valida pace/duração antes de marcar `is_verified = true`
+- Corridas com pace impossível (< 2:30/km ou > 20:00/km) são criadas como `is_verified = false`
+- Dedup por `(user_id, strava_activity_id)` — safe para chamadas repetidas
+
+### Arquivos modificados
+- `supabase/migrations/20260227800000_fix_verification_min_distance_and_strava_backfill.sql`
+- `supabase/functions/strava-webhook/index.ts` (200 → 1000)
+- `lib/features/strava/presentation/strava_connect_controller.dart` (backfill + eval flow)
+
+---
+
+## DECISÃO 110 — Fix Strava connect "Instance of AuthFailed" + coin_ledger constraint (26/02/2026)
+
+### Contexto
+
+1. Ao conectar Strava, aparecia erro rápido "Instance of AuthFailed" e sumia. O usuário precisava sair da aba Configurações e voltar para ver que estava conectado. Causa: `FlutterWebAuth2` no Android dispara `PlatformException(CANCELED)` quando o Chrome Custom Tab fecha após o redirect bem-sucedido. Essa exceção era capturada pelo catch genérico e convertida em `AuthFailed`.
+
+2. As migrations `20260227400000` e `20260227500000` falhavam no `supabase db push` porque redefiniam o constraint `coin_ledger_reason_check` sem incluir reasons já existentes no banco (`institution_token_issue`, `institution_token_burn`, `cross_assessoria_*`, etc.).
+
+### Decisão
+
+1. **`PlatformException(CANCELED)` → `AuthCancelled`**: Catch específico para `PlatformException` com code `CANCELED` no `authenticate()`, tratado como cancelamento silencioso
+2. **Re-verificação de estado após erro**: `_connect()` no settings_screen agora chama `_loadState()` após qualquer `IntegrationFailure`. Se os tokens já foram salvos, mostra sucesso e dispara o backfill
+3. **`AuthFailed.toString()`**: Override adicionado para mostrar a razão real em vez de "Instance of AuthFailed"
+4. **`retryBackfillIfNeeded()`**: Novo método no controller para garantir import + backfill + verificação mesmo quando o fluxo principal é interrompido
+5. **Constraints corrigidos**: Migrations `20260227400000` e `20260227500000` atualizadas com todos os reasons válidos do `coin_ledger`
+
+### Arquivos modificados
+- `lib/features/strava/data/strava_auth_repository_impl.dart` (+PlatformException catch)
+- `lib/core/errors/integrations_failures.dart` (+toString em AuthFailed)
+- `lib/presentation/screens/settings_screen.dart` (re-check state + retry backfill)
+- `lib/features/strava/presentation/strava_connect_controller.dart` (+retryBackfillIfNeeded)
+- `supabase/migrations/20260227400000_challenge_team_and_entry_fee.sql` (constraint fix)
+- `supabase/migrations/20260227500000_wallet_reconcile_and_session_retention.sql` (constraint fix)
+
+---

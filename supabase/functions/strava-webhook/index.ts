@@ -205,8 +205,8 @@ serve(async (req: Request) => {
     const velocity = streams.velocity_smooth?.data as number[] | undefined;
     const cadence = streams.cadence?.data as number[] | undefined;
 
-    // Distance check
-    if (activity.distance < 200) {
+    // Distance check (min 1km for valid run)
+    if (activity.distance < 1000) {
       integrityFlags.push("TOO_SHORT_DISTANCE");
     }
 

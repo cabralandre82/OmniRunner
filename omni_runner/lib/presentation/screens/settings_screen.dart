@@ -201,10 +201,24 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
       }
     } on AuthCancelled {
       // User dismissed the browser — no error to show
-    } on IntegrationFailure catch (e) {
-      if (mounted) {
+    } on IntegrationFailure {
+      // Connection may have succeeded despite error (e.g. Chrome Custom Tab
+      // closing race condition). Re-check actual state before showing error.
+      await _loadState();
+      if (mounted && _state is StravaConnected) {
+        final controller = sl<StravaConnectController>();
+        controller.retryBackfillIfNeeded().ignore();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao conectar: $e')),
+          SnackBar(
+            content: Text(
+              'Strava conectado como ${(_state as StravaConnected).athleteName}!',
+            ),
+            backgroundColor: const Color(0xFFFC4C02),
+          ),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro ao conectar Strava. Tente novamente.')),
         );
       }
     } finally {

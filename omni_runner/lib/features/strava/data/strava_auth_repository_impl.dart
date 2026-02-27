@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:omni_runner/core/errors/strava_failures.dart';
 import 'package:omni_runner/core/logging/logger.dart';
@@ -103,6 +104,13 @@ final class StravaAuthRepositoryImpl implements IStravaAuthRepository {
     } on IntegrationFailure {
       _cachedState = const StravaDisconnected();
       rethrow;
+    } on PlatformException catch (e) {
+      if (e.code == 'CANCELED') {
+        _cachedState = const StravaDisconnected();
+        throw const AuthCancelled();
+      }
+      _cachedState = const StravaDisconnected();
+      throw AuthFailed('OAuth flow failed: ${e.message}');
     } on Exception catch (e) {
       _cachedState = const StravaDisconnected();
       throw AuthFailed('OAuth flow failed: $e');

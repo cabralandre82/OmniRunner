@@ -82,18 +82,59 @@ final class StravaConnectController {
   /// Start the full OAuth2 connect flow.
   ///
   /// Opens Chrome Custom Tab for Strava consent, waits for callback,
-  /// exchanges code for tokens, syncs to server, and imports history.
+  /// exchanges code for tokens, syncs to server, imports history,
+  /// backfills sessions, and triggers verification evaluation.
   /// Returns [StravaConnected] on success.
   Future<StravaConnected> startConnect() async {
     try {
       final connected = await _authRepo.authenticate();
       await _syncTokensToServer(connected);
-      importStravaHistory().ignore();
+      _importAndBackfill().ignore();
       AppLogger.info('Strava connected: ${connected.athleteName}', tag: _tag);
       return connected;
     } on IntegrationFailure catch (e) {
       AppLogger.warn('Auth failed: $e', tag: _tag);
       rethrow;
+    }
+  }
+
+  /// Import history → backfill sessions → trigger verification.
+  Future<void> _importAndBackfill() async {
+    final imported = await importStravaHistory();
+    if (imported > 0) {
+      await _backfillStravaSessions();
+      await _triggerVerificationEval();
+    }
+  }
+
+  /// Convert strava_activity_history rows into sessions so they
+  /// count for athlete verification.
+  Future<void> _backfillStravaSessions() async {
+    try {
+      final uid = Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) return;
+
+      final result = await Supabase.instance.client
+          .rpc('backfill_strava_sessions', params: {'p_user_id': uid});
+
+      final count = result as int? ?? 0;
+      AppLogger.info(
+        'Backfilled $count Strava sessions for verification',
+        tag: _tag,
+      );
+    } catch (e) {
+      AppLogger.warn('Failed to backfill Strava sessions: $e', tag: _tag);
+    }
+  }
+
+  /// Trigger server-side verification evaluation after backfill.
+  Future<void> _triggerVerificationEval() async {
+    try {
+      await Supabase.instance.client.functions
+          .invoke('eval-athlete-verification', body: {});
+      AppLogger.info('Verification evaluation triggered', tag: _tag);
+    } catch (e) {
+      AppLogger.warn('Failed to trigger verification eval: $e', tag: _tag);
     }
   }
 
@@ -108,8 +149,7 @@ final class StravaConnectController {
     final connected = await _authRepo.exchangeCode(code);
     await _syncTokensToServer(connected);
 
-    // Fire-and-forget: import last 20 runs for verification bootstrapping
-    importStravaHistory().ignore();
+    _importAndBackfill().ignore();
 
     return connected;
   }
@@ -190,6 +230,17 @@ final class StravaConnectController {
     return state is StravaConnected && !state.isExpired;
   }
 
+  /// Retry import + backfill if connected but the main flow was interrupted.
+  Future<void> retryBackfillIfNeeded() async {
+    try {
+      final state = await _authRepo.getAuthState();
+      if (state is! StravaConnected) return;
+      await _importAndBackfill();
+    } catch (e) {
+      AppLogger.warn('retryBackfillIfNeeded failed: $e', tag: _tag);
+    }
+  }
+
   // ── History Import ──────────────────────────────────────────────
 
   /// Fetch the athlete's last [count] running activities from Strava
@@ -206,8 +257,9 @@ final class StravaConnectController {
         perPage: count,
       );
 
+      const runTypes = {'Run', 'TrailRun', 'VirtualRun'};
       final runs = activities
-          .where((a) => a['type'] == 'Run' || a['type'] == 'VirtualRun')
+          .where((a) => runTypes.contains(a['type']))
           .toList();
 
       if (runs.isEmpty) {
