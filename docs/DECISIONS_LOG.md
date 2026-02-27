@@ -2096,3 +2096,24 @@ formulário de criação. O admin não podia editar, suspender ou remover produt
 - `portal/src/app/api/platform/products/route.ts` (action=delete)
 
 ---
+
+## DECISÃO 082 — Fix perfil: save unificado e nome sem email (26/02/2026)
+
+### Contexto:
+1. A tela de perfil mostrava o email bruto como nome quando `display_name` continha `@`
+   (usuários criados antes do fix na edge function `complete-social-profile`).
+2. O botão "Salvar perfil" fazia duas operações sequenciais (`_save` para nome, `_saveSocial`
+   para Instagram/TikTok). Se a primeira sucedia e a segunda falhava, o usuário via
+   snackbar de sucesso E card de erro ao mesmo tempo — confuso.
+
+### Decisão:
+1. **Nome sem email** — Ao carregar o perfil, se `displayName` contém `@`, extrai o
+   prefixo e capitaliza (ex: `cabraandre@yahoo.com.br` → `Cabraandre`) no campo de edição.
+2. **Save unificado** — Substituídos `_save()` + `_saveSocial()` por um único `_saveAll()`
+   que faz uma única chamada `.update()` no Supabase com `display_name`, `instagram_handle`,
+   `tiktok_handle` e `updated_at`. Uma operação, um resultado, uma mensagem.
+
+### Arquivos modificados:
+- `lib/presentation/screens/profile_screen.dart`
+
+---
