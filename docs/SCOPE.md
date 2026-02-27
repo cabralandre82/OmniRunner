@@ -137,7 +137,7 @@ visualizar metricas basicas e competir contra si mesmo atraves de um Ghost Runne
 | E23 | Dashboard admin | `/platform` com KPIs: assessorias, atletas, receita, compras do mês, reembolsos pendentes | ✅ |
 | E24 | Financeiro admin | `/platform/financeiro` — lista de todas as compras com filtros por status e período | ✅ |
 | E25 | Reembolsos admin | `/platform/reembolsos` — aprovar, rejeitar e processar pedidos de reembolso | ✅ |
-| E26 | Produtos admin | `/platform/produtos` — CRUD de pacotes de créditos (billing_products) | ✅ |
+| E26 | Produtos admin | `/platform/produtos` — CRUD completo: criar, editar inline, suspender/ativar, remover | ✅ |
 
 ---
 

@@ -2073,3 +2073,26 @@ import de `AppConfig` que ficou sem uso.
 - `lib/presentation/screens/profile_screen.dart`
 
 ---
+
+## DECISÃO 081 — CRUD completo de Produtos no Portal Admin (26/02/2026)
+
+### Contexto:
+A página de produtos (`/platform/produtos`) só tinha um toggle ativo/inativo e um
+formulário de criação. O admin não podia editar, suspender ou remover produtos existentes.
+
+### Decisão:
+1. **Cards com ações** — Cada produto exibe um card com botões Editar, Suspender/Ativar e Remover.
+2. **Edição inline** — O botão Editar transforma o card em um formulário inline com os
+   campos editáveis (nome, descrição, créditos, preço, ordem). Salvar ou Cancelar.
+3. **Suspender/Ativar** — Toggle de `is_active` com visual diferenciado (laranja/verde).
+4. **Remover** — Exclusão permanente com confirmação. Falha graciosamente se houver
+   compras vinculadas (FK constraint).
+5. **Seções separadas** — Produtos ativos e inativos em seções distintas.
+6. **API `action=delete`** — Novo handler na rota `/api/platform/products`.
+
+### Arquivos modificados:
+- `portal/src/app/platform/produtos/page.tsx` (cards separados por status)
+- `portal/src/app/platform/produtos/actions.tsx` (ProductCard, EditForm, Remover)
+- `portal/src/app/api/platform/products/route.ts` (action=delete)
+
+---
