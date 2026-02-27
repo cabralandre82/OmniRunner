@@ -75,8 +75,7 @@ class HowItWorksScreen extends StatelessWidget {
               ),
               _InfoCard(
                 title: 'Importante',
-                body: 'OmniCoins NÃO têm valor monetário real.\n'
-                    'Não podem ser transferidas entre usuários.\n'
+                body: 'OmniCoins não podem ser transferidas entre usuários.\n'
                     'São debitadas no momento em que você entra no desafio.\n'
                     'Se o desafio for cancelado, o valor é devolvido.',
               ),

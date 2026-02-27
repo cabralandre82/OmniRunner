@@ -58,8 +58,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 const ContextualTipBanner(
                   tipKey: TipKey.firstWalletVisit,
                   message: 'Seus OmniCoins vêm da sua assessoria. '
-                      'Use-os como inscrição em desafios. '
-                      'Eles não têm valor monetário real.',
+                      'Use-os como inscrição em desafios.',
                   icon: Icons.account_balance_wallet_rounded,
                   color: Color(0xFFFFA000),
                 ),

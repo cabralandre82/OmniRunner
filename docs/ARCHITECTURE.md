@@ -424,7 +424,7 @@ Retry: 3x exponential backoff em chamadas críticas (auth, create assessoria)
 | F32 — CSV Export | portal API | Exportação de atletas com métricas | ✅ |
 | F26 — Friends / Social | domain + data + EFs | Amizades cross-assessoria, busca, perfil, CTAs | ✅ |
 | F27 — Push Notifications | core/push + EFs + FCM | 8 tipos de push, in-app banner, deep linking | ✅ |
-| F28 — Guided Onboarding | presentation/screens | Tour de 6 slides para novos atletas | ✅ |
+| F28 — Guided Onboarding | presentation/screens | Tour de 9 slides para novos atletas + tela "Como Funciona" | ✅ |
 | F29 — Polish / UX | presentation/widgets | Shimmer, confetti, empty/error states, haptics | ✅ |
 
 ---
@@ -475,7 +475,7 @@ O modelo de receita é **B2B SaaS** (plataforma → assessoria). O app **nunca p
 | App NUNCA mostra preços R$/USD | 0 ocorrências em lib/ |
 | App NUNCA processa pagamento | Zero payment SDK, zero IAP |
 | App NUNCA menciona dinheiro/saque | Vocabulário controlado |
-| OmniCoins ≠ valor monetário | GAMIFICATION_POLICY §2 |
+| OmniCoins — app não menciona "valor monetário" | Linguagem neutra, sem disclaimers explícitos |
 | Checkout vive no portal web (browser externo) | `launchUrl(mode: externalApplication)` |
 
 ---

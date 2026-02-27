@@ -69,17 +69,27 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
     _loadAssessoriaStatus();
     _checkStrava();
     _loadDisplayName();
+    sl<UserIdentityProvider>().profileNameNotifier.addListener(_onProfileNameChanged);
   }
 
   @override
   void dispose() {
+    sl<UserIdentityProvider>().profileNameNotifier.removeListener(_onProfileNameChanged);
     _staggerCtrl.dispose();
     super.dispose();
   }
 
+  void _onProfileNameChanged() {
+    final name = sl<UserIdentityProvider>().profileNameNotifier.value;
+    if (name != null && mounted) {
+      setState(() => _displayName = name);
+    }
+  }
+
   Future<void> _loadDisplayName() async {
     try {
-      final uid = sl<UserIdentityProvider>().userId;
+      final uid = Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) return;
       final row = await Supabase.instance.client
           .from('profiles')
           .select('display_name')

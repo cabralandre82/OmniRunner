@@ -83,8 +83,7 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen> {
       title: 'OmniCoins',
       body:
           'Suas OmniCoins vêm da sua assessoria de corrida.\n'
-          'Use como inscrição nos desafios — o vencedor leva o pool!\n'
-          'Não têm valor monetário, são apenas para diversão.',
+          'Use como inscrição nos desafios — o vencedor leva o pool!',
     ),
     _SlideData(
       icon: Icons.verified_user_rounded,

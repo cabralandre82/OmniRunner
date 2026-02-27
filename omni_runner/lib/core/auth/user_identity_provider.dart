@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:omni_runner/core/auth/auth_repository.dart';
 import 'package:omni_runner/core/auth/auth_user.dart';
 
@@ -15,11 +16,15 @@ class UserIdentityProvider {
 
   AuthUser _user = const AuthUser(id: '', displayName: 'Runner');
 
+  /// Notifies listeners when the profile display name is updated in the DB.
+  /// Screens that show the name should listen to this.
+  final ValueNotifier<String?> profileNameNotifier = ValueNotifier(null);
+
   /// Current user ID. Never empty after [init].
   String get userId => _user.id;
 
   /// Display name for the current user.
-  String get displayName => _user.displayName;
+  String get displayName => profileNameNotifier.value ?? _user.displayName;
 
   /// Whether the current identity is a local anonymous UUID.
   bool get isAnonymous => _user.isAnonymous;
@@ -39,5 +44,10 @@ class UserIdentityProvider {
   void refresh() {
     final u = _authRepo.currentUser;
     if (u != null) _user = u;
+  }
+
+  /// Update the cached profile display name (after a profile save).
+  void updateProfileName(String name) {
+    profileNameNotifier.value = name;
   }
 }

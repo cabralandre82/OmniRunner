@@ -13,6 +13,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", roles: ["admin_master", "professor", "assistente"] },
   { href: "/credits", label: "Créditos", roles: ["admin_master", "professor", "assistente"] },
+  { href: "/distributions", label: "Distribuições", roles: ["admin_master", "professor"] },
   { href: "/billing", label: "Faturamento", roles: ["admin_master"] },
   { href: "/athletes", label: "Atletas", roles: ["admin_master", "professor", "assistente"] },
   { href: "/verification", label: "Verificação", roles: ["admin_master", "professor", "assistente"] },

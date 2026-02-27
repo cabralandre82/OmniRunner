@@ -29,6 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _loading = true;
   bool _saving = false;
   bool _uploadingAvatar = false;
+  bool _socialColumnsAvailable = false;
   String? _error;
 
   @override
@@ -52,6 +53,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       String insta = '';
       String tiktok = '';
+      bool socialOk = false;
       if (p != null) {
         try {
           final row = await Supabase.instance.client
@@ -61,8 +63,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               .maybeSingle();
           insta = row?['instagram_handle'] as String? ?? '';
           tiktok = row?['tiktok_handle'] as String? ?? '';
+          socialOk = true;
         } on Exception {
-          // Best effort
+          // Columns may not exist yet in production
         }
       }
       var displayName = p?.displayName ?? 'Runner';
@@ -77,6 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _nameCtrl.text = displayName;
         _instaCtrl.text = insta;
         _tiktokCtrl.text = tiktok;
+        _socialColumnsAvailable = socialOk;
         _loading = false;
       });
     } catch (e) {
@@ -92,23 +96,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) return;
 
+    final supaUser = Supabase.instance.client.auth.currentUser;
+    if (supaUser == null) {
+      setState(() => _error = 'Você precisa estar autenticado para salvar.');
+      return;
+    }
+
     setState(() { _saving = true; _error = null; });
     try {
-      final uid = sl<UserIdentityProvider>().userId;
-
-      await Supabase.instance.client.from('profiles').update({
+      final fields = <String, dynamic>{
         'display_name': name,
-        'instagram_handle': _instaCtrl.text.trim(),
-        'tiktok_handle': _tiktokCtrl.text.trim(),
         'updated_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', uid);
+      };
+      if (_socialColumnsAvailable) {
+        fields['instagram_handle'] = _instaCtrl.text.trim();
+        fields['tiktok_handle'] = _tiktokCtrl.text.trim();
+      }
+      final res = await Supabase.instance.client
+          .from('profiles')
+          .update(fields)
+          .eq('id', supaUser.id)
+          .select();
+
+      if (res.isEmpty) {
+        setState(() {
+          _error = 'Não foi possível atualizar. Tente sair e entrar novamente.';
+          _saving = false;
+        });
+        return;
+      }
 
       if (!mounted) return;
       sl<UserIdentityProvider>().refresh();
+      sl<UserIdentityProvider>().updateProfileName(name);
       final refreshed = await sl<IProfileRepo>().getMyProfile();
       if (!mounted) return;
       setState(() {
         _profile = refreshed;
+        _nameCtrl.text = name;
         _saving = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -119,6 +144,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     } catch (e) {
       if (!mounted) return;
+      AppLogger.error('Profile save failed: $e', tag: _tag, error: e);
       setState(() {
         _error = _friendlyError(e);
         _saving = false;
@@ -392,42 +418,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onSubmitted: (_) => _saveAll(),
                 ),
                 const SizedBox(height: 12),
-                const SizedBox(height: 28),
 
-                // ── Social handles ──
-                Text('Redes sociais',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: cs.primary)),
-                const SizedBox(height: 4),
-                Text(
-                  'Compartilhe com seus amigos de corrida',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: cs.onSurfaceVariant),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _instaCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Instagram',
-                    prefixIcon: Icon(Icons.camera_alt_outlined),
-                    hintText: 'seu_usuario',
-                    border: OutlineInputBorder(),
+                if (_socialColumnsAvailable) ...[
+                  const SizedBox(height: 28),
+                  Text('Redes sociais',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: cs.primary)),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Compartilhe com seus amigos de corrida',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: cs.onSurfaceVariant),
                   ),
-                  maxLength: 30,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _tiktokCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'TikTok',
-                    prefixIcon: Icon(Icons.music_note_rounded),
-                    hintText: 'seu_usuario',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _instaCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Instagram',
+                      prefixIcon: Icon(Icons.camera_alt_outlined),
+                      hintText: 'seu_usuario',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLength: 30,
+                    textInputAction: TextInputAction.next,
                   ),
-                  maxLength: 30,
-                  textInputAction: TextInputAction.done,
-                ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _tiktokCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'TikTok',
+                      prefixIcon: Icon(Icons.music_note_rounded),
+                      hintText: 'seu_usuario',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLength: 30,
+                    textInputAction: TextInputAction.done,
+                  ),
+                ],
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,

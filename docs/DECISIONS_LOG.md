@@ -2951,3 +2951,29 @@ Seção "Identidade Visual" na página de settings (admin_master):
 - `portal/src/components/sidebar.tsx` (CSS vars, logo, groupName)
 
 ---
+
+## DECISÃO 103 — Fix profile save + remoção "valor monetário" do tutorial (26/02/2026)
+
+### Contexto
+
+Dois bugs reportados:
+1. Ao editar o nome no perfil e clicar "Salvar", ocorria "Erro inesperado" e o nome voltava para o prefixo do email (antes do `@`).
+2. O tutorial e telas in-app mencionavam que OmniCoins "não têm valor monetário", o que não deveria ser dito.
+
+### Decisão
+
+**Profile save:** O `_saveAll()` usava `sl<UserIdentityProvider>().userId` para o filtro `eq('id', uid)`. Esse ID pode divergir do `auth.uid()` do Supabase (e.g. UUID local offline), fazendo o RLS rejeitar o UPDATE. Corrigido para usar `Supabase.instance.client.auth.currentUser!.id` diretamente. Adicionado `.select()` no update para detectar 0 rows afetadas e dar feedback claro. Verificação de autenticação antes de tentar salvar.
+
+**Linguagem OmniCoins:** Removida toda menção a "valor monetário" de 3 telas:
+- `onboarding_tour_screen.dart` — slide OmniCoins
+- `wallet_screen.dart` — tooltip de primeira visita à carteira
+- `how_it_works_screen.dart` — card "Importante"
+
+### Arquivos modificados
+- `lib/presentation/screens/profile_screen.dart` (fix save com auth UID)
+- `lib/presentation/screens/onboarding_tour_screen.dart` (remove "valor monetário")
+- `lib/presentation/screens/wallet_screen.dart` (remove "valor monetário")
+- `lib/presentation/screens/how_it_works_screen.dart` (remove "valor monetário")
+- `docs/ARCHITECTURE.md` (atualização invariante OmniCoins + F28)
+
+---
