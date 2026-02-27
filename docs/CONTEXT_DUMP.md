@@ -28111,3 +28111,20 @@ Auditoria final completa antes do lançamento identificou 4 vulnerabilidades cr�
 - Bug fix: `session.elapsedMs` → `(session.endTimeMs ?? nowMs) - session.startTimeMs`.
 
 **`challenge_run_binding_entity.dart`:** Novo `BindingRejectionReason.submitFailed`.
+
+---
+
+## Sprint — M2 + M3 + M5: HR validation, race guard, batch settle (DECISÃO 094)
+
+**Data:** 2026-02-26
+
+### Mudanças
+
+**`integrity_flags.ts`:** Novos quality flags `IMPLAUSIBLE_HR_LOW` e `IMPLAUSIBLE_HR_HIGH`.
+
+**`verify-session/index.ts`:** Novo bloco de validação HR: se `avg_bpm` está presente, verifica plausibilidade (< 80 com > 1km = suspeito, > 220 = impossível).
+
+**`settle-challenge/index.ts`:**
+- Race condition guard: `UPDATE status='completing' WHERE status IN ('active','completing')` atômico antes de processar. Se 0 rows → skip.
+- Double-write guard: verifica `challenge_results` existentes antes de escrever.
+- Wallet updates paralelos: `for` sequencial → `Promise.all` (N×RTT → 1×RTT).

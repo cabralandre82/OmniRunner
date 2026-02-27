@@ -2647,3 +2647,29 @@ Auditoria pré-launch identificou 4 vulnerabilidades críticas:
 - `lib/domain/entities/challenge_run_binding_entity.dart`
 
 ---
+
+## DECISÃO 094 — M2 + M3 + M5: HR validation, race guard, batch settle
+
+**Data:** 2026-02-26
+
+### Correções
+
+**M2 — HR plausibility em verify-session:**
+- Novos flags de qualidade: `IMPLAUSIBLE_HR_LOW` (avg_bpm < 80 com distância > 1km) e `IMPLAUSIBLE_HR_HIGH` (avg_bpm > 220).
+- Adicionados a `integrity_flags.ts` e ao pipeline de verificação em `verify-session`.
+- HR flags são QUALITY (não CRITICAL) — informacionais, alimentam trust_score mas não bloqueiam diretamente.
+
+**M3 — Race condition guard em settle-challenge:**
+- Antes de processar, atomicamente claim via `UPDATE challenges SET status='completing' WHERE status IN ('active','completing')`. Se 0 rows → skip.
+- Antes de escrever resultados, verifica se `challenge_results` já existem. Se sim → marca completed e skip. Previne double-write por processos concorrentes.
+
+**M5 — Batch wallet updates:**
+- Wallet updates via `increment_wallet_balance` agora rodam em paralelo com `Promise.all` em vez de sequencialmente. Reduz latência de N×RTT para 1×RTT (onde N = participantes com coins).
+
+### Arquivos alterados
+
+- `supabase/functions/_shared/integrity_flags.ts`
+- `supabase/functions/verify-session/index.ts`
+- `supabase/functions/settle-challenge/index.ts`
+
+---

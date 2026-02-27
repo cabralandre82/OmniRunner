@@ -141,6 +141,32 @@ serve(async (req: Request) => {
       continue;
     }
 
+    // Race condition guard: atomically claim this challenge for settlement.
+    // If another process already set status='completed', skip.
+    const { data: claimed } = await db
+      .from("challenges")
+      .update({ status: "completing" })
+      .eq("id", ch.id)
+      .in("status", ["active", "completing"])
+      .select("id");
+
+    if (!claimed || claimed.length === 0) {
+      continue;
+    }
+
+    // Double-write guard: if results already exist, just finalize status
+    const { data: existingResults } = await db
+      .from("challenge_results")
+      .select("challenge_id")
+      .eq("challenge_id", ch.id)
+      .limit(1);
+
+    if (existingResults && existingResults.length > 0) {
+      await db.from("challenges").update({ status: "completed" }).eq("id", ch.id);
+      settled++;
+      continue;
+    }
+
     const parts = participants as Participant[];
     const goal = ch.goal ?? "most_distance";
     const lowerIsBetter = goal === "fastest_at_distance" || goal === "best_pace_at_distance";
@@ -356,11 +382,13 @@ serve(async (req: Request) => {
         await db.from("challenge_results").upsert(results, { onConflict: "challenge_id,user_id" });
         if (ledgerEntries.length > 0) {
           await db.from("coin_ledger").insert(ledgerEntries);
-          for (const entry of ledgerEntries) {
-            await db.rpc("increment_wallet_balance", {
-              p_user_id: entry.user_id, p_delta: entry.delta_coins,
-            });
-          }
+          await Promise.all(
+            ledgerEntries.map((entry) =>
+              db.rpc("increment_wallet_balance", {
+                p_user_id: entry.user_id, p_delta: entry.delta_coins,
+              })
+            )
+          );
         }
         await db.from("challenges").update({ status: "completed" }).eq("id", ch.id);
         settled++;
@@ -475,12 +503,14 @@ serve(async (req: Request) => {
 
     if (ledgerEntries.length > 0) {
       await db.from("coin_ledger").insert(ledgerEntries);
-      for (const entry of ledgerEntries) {
-        await db.rpc("increment_wallet_balance", {
-          p_user_id: entry.user_id,
-          p_delta: entry.delta_coins,
-        });
-      }
+      await Promise.all(
+        ledgerEntries.map((entry) =>
+          db.rpc("increment_wallet_balance", {
+            p_user_id: entry.user_id,
+            p_delta: entry.delta_coins,
+          })
+        )
+      );
     }
 
     await db.from("challenges").update({ status: "completed" }).eq("id", ch.id);

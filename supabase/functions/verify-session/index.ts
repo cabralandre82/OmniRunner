@@ -17,6 +17,8 @@ import {
   TOO_SHORT_DURATION,
   TOO_SHORT_DISTANCE,
   IMPLAUSIBLE_PACE,
+  IMPLAUSIBLE_HR_LOW,
+  IMPLAUSIBLE_HR_HIGH,
 } from "../_shared/integrity_flags.ts";
 
 /**
@@ -67,6 +69,9 @@ const MAX_PACE_SEC_KM = 90;          // 1:30/km — world record sprint pace
 const MIN_DISTANCE_M = 50;
 const GPS_GAP_THRESHOLD_MS = 60_000; // 60s gap = background GPS loss
 const MOTION_RADIUS_M = 150;         // all points within 150m = no real motion (allows 200m/400m tracks)
+const MIN_HR_RUNNING_BPM = 80;      // avg HR below this while running > 1km = suspicious
+const MAX_HR_BPM = 220;             // above 220 = physiologically impossible
+const HR_CHECK_MIN_DISTANCE_M = 1000; // only check HR if session > 1km
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -264,6 +269,19 @@ serve(async (req: Request) => {
       }
       if (maxDist < MOTION_RADIUS_M) {
         flags.push(NO_MOTION_PATTERN);
+      }
+    }
+
+    // ─ HR plausibility (when avg_bpm is provided) ──────────────────
+
+    if (p.avg_bpm != null && p.avg_bpm > 0) {
+      if (p.avg_bpm > MAX_HR_BPM) {
+        flags.push(IMPLAUSIBLE_HR_HIGH);
+      } else if (
+        p.avg_bpm < MIN_HR_RUNNING_BPM &&
+        p.total_distance_m >= HR_CHECK_MIN_DISTANCE_M
+      ) {
+        flags.push(IMPLAUSIBLE_HR_LOW);
       }
     }
 
