@@ -63,8 +63,8 @@ export default async function AthletesPage() {
   const allMembers = members ?? [];
   const userIds = allMembers.map((m: { user_id: string }) => m.user_id);
 
-  let verMap = new Map<string, { verification_status: string; trust_score: number }>();
-  let sessionMap = new Map<string, { total: number; distance: number; last_at: string | null }>();
+  const verMap = new Map<string, { verification_status: string; trust_score: number }>();
+  const sessionMap = new Map<string, { total: number; distance: number; last_at: string | null }>();
 
   if (userIds.length > 0) {
     const [verRes, sessionsRes] = await Promise.all([

@@ -128,6 +128,7 @@ export default async function EngagementPage() {
         <KpiCard label="Corridas (7d)" value={weekSessions.length} />
         <KpiCard label="Km (7d)" value={formatKm(weekDistance)} />
         <KpiCard label="Corridas (30d)" value={monthSessions.length} />
+        <KpiCard label="Km (30d)" value={formatKm(monthDistance)} />
         <KpiCard label="Desafios (30d)" value={challengeCount} color="text-indigo-700" />
       </div>
 

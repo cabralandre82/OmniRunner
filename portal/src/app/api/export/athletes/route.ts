@@ -51,8 +51,8 @@ export async function GET() {
   const allMembers = members ?? [];
   const userIds = allMembers.map((m: { user_id: string }) => m.user_id);
 
-  let verMap = new Map<string, { status: string; trust: number }>();
-  let sessionMap = new Map<string, { total: number; distance: number }>();
+  const verMap = new Map<string, { status: string; trust: number }>();
+  const sessionMap = new Map<string, { total: number; distance: number }>();
 
   if (userIds.length > 0) {
     const [verRes, sessRes] = await Promise.all([
