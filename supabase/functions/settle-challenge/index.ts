@@ -162,7 +162,23 @@ serve(async (req: Request) => {
     const results: Record<string, unknown>[] = [];
     const ledgerEntries: Record<string, unknown>[] = [];
 
-    const pool = ch.entry_fee_coins * parts.length;
+    // Pool = actual collected fees from coin_ledger (not theoretical)
+    let pool = 0;
+    if (ch.entry_fee_coins > 0) {
+      const { data: feeRows } = await db
+        .from("coin_ledger")
+        .select("delta_coins")
+        .eq("ref_id", ch.id)
+        .eq("reason", "challenge_entry_fee");
+
+      if (feeRows && feeRows.length > 0) {
+        pool = Math.abs(
+          (feeRows as { delta_coins: number }[])
+            .reduce((s, r) => s + r.delta_coins, 0),
+        );
+      }
+    }
+
     const isOneVsOne = ch.type === "one_vs_one";
     const isTeam = ch.type === "team";
     const isCollective = goal === "collective_distance";
@@ -175,13 +191,25 @@ serve(async (req: Request) => {
       const runnersB = teamB.filter((p) => (p.contributing_session_ids?.length ?? 0) > 0);
 
       if (runnersA.length === 0 && runnersB.length === 0) {
+        const refundPerUser = parts.length > 0
+          ? Math.floor(pool / parts.length)
+          : 0;
+
         for (const p of parts) {
           results.push({
             challenge_id: ch.id, user_id: p.user_id,
             final_value: 0, rank: null, outcome: "did_not_finish",
-            coins_earned: ch.entry_fee_coins > 0 ? ch.entry_fee_coins : 0,
+            coins_earned: refundPerUser,
             session_ids: p.contributing_session_ids, calculated_at_ms: nowMs,
           });
+
+          if (refundPerUser > 0) {
+            ledgerEntries.push({
+              user_id: p.user_id, delta_coins: refundPerUser,
+              reason: "challenge_entry_refund", ref_id: ch.id,
+              created_at_ms: nowMs,
+            });
+          }
         }
       } else {
         const computeTeamScore = (runners: Participant[], teamSize: number): number => {
@@ -257,13 +285,25 @@ serve(async (req: Request) => {
       const runners = parts.filter((p) => (p.contributing_session_ids?.length ?? 0) > 0);
 
       if (runners.length === 0) {
+        const refundPerUser = parts.length > 0
+          ? Math.floor(pool / parts.length)
+          : 0;
+
         for (const p of parts) {
           results.push({
             challenge_id: ch.id, user_id: p.user_id,
             final_value: 0, rank: null, outcome: "did_not_finish",
-            coins_earned: ch.entry_fee_coins > 0 ? ch.entry_fee_coins : 0,
+            coins_earned: refundPerUser,
             session_ids: p.contributing_session_ids, calculated_at_ms: nowMs,
           });
+
+          if (refundPerUser > 0) {
+            ledgerEntries.push({
+              user_id: p.user_id, delta_coins: refundPerUser,
+              reason: "challenge_entry_refund", ref_id: ch.id,
+              created_at_ms: nowMs,
+            });
+          }
         }
       } else {
         const totalDistance = runners.reduce((s, p) => s + p.progress_value, 0);
@@ -291,6 +331,42 @@ serve(async (req: Request) => {
       }
     } else {
       // ── Competitive: 1v1 or group ranking ──
+      const anyoneRan = parts.some(
+        (p) => (p.contributing_session_ids?.length ?? 0) > 0,
+      );
+
+      if (!anyoneRan && pool > 0) {
+        const refundPerUser = Math.floor(pool / parts.length);
+        for (const p of parts) {
+          results.push({
+            challenge_id: ch.id, user_id: p.user_id,
+            final_value: 0, rank: null, outcome: "did_not_finish",
+            coins_earned: refundPerUser,
+            session_ids: p.contributing_session_ids, calculated_at_ms: nowMs,
+          });
+          if (refundPerUser > 0) {
+            ledgerEntries.push({
+              user_id: p.user_id, delta_coins: refundPerUser,
+              reason: "challenge_entry_refund", ref_id: ch.id,
+              created_at_ms: nowMs,
+            });
+          }
+        }
+        // Skip ranking — go straight to write
+        await db.from("challenge_results").upsert(results, { onConflict: "challenge_id,user_id" });
+        if (ledgerEntries.length > 0) {
+          await db.from("coin_ledger").insert(ledgerEntries);
+          for (const entry of ledgerEntries) {
+            await db.rpc("increment_wallet_balance", {
+              p_user_id: entry.user_id, p_delta: entry.delta_coins,
+            });
+          }
+        }
+        await db.from("challenges").update({ status: "completed" }).eq("id", ch.id);
+        settled++;
+        continue;
+      }
+
       // Sort by progress value
       parts.sort((a, b) => {
         const diff = lowerIsBetter

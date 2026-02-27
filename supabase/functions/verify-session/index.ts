@@ -278,7 +278,7 @@ serve(async (req: Request) => {
         integrity_flags: flags,
       })
       .eq("id", p.session_id)
-      .eq("user_id", p.user_id);
+      .eq("user_id", user.id);
 
     if (error) {
       const classified = classifyError(error);
@@ -290,18 +290,18 @@ serve(async (req: Request) => {
     // ── 7. Trigger athlete verification re-evaluation (fire-and-forget) ──
     // Idempotent: the RPC recomputes trust_score and state machine from
     // scratch every time, so running it N times is safe.
-    db.rpc("eval_athlete_verification", { p_user_id: p.user_id })
+    db.rpc("eval_athlete_verification", { p_user_id: user.id })
       .single()
       .then(() => {
         console.log(JSON.stringify({
           request_id: requestId, fn: FN,
-          event: "eval_triggered", user_id: p.user_id,
+          event: "eval_triggered", user_id: user.id,
         }));
       })
       .catch((err: Error) => {
         console.error(JSON.stringify({
           request_id: requestId, fn: FN,
-          event: "eval_trigger_failed", user_id: p.user_id,
+          event: "eval_trigger_failed", user_id: user.id,
           detail: err?.message,
         }));
       });

@@ -28020,3 +28020,30 @@ Objetivo: Garantir que um usuário completamente leigo entenda perfeitamente o q
 ### Documentação atualizada
 - `docs/GAMIFICATION_POLICY.md` §4: Reescrito com nova seção 4.0 (ChallengeGoal), 4.1 (1v1), 4.2 (Grupo competitivo), 4.2b (Time A vs B) — regras claras de scoring e distribuição de coins
 - `docs/DECISIONS_LOG.md`: DECISÃO 089 adicionada
+
+---
+
+## Sprint — Auditoria Pré-Launch: Correções Críticas B1-B4 (DECISÃO 090)
+
+**Data:** 2026-02-26
+
+### Contexto
+Auditoria final completa antes do lançamento identificou 4 vulnerabilidades críticas no fluxo económico e de segurança dos desafios.
+
+### Mudanças
+
+**Entry Fee Debit (B1+B2):**
+- `challenge-create/index.ts`: após inserir participante, chama `debit_wallet_checked()` → debita entry_fee_coins da wallet do criador. Se saldo insuficiente, rollback (deleta challenge + participant), retorna 402.
+- `challenge-join/index.ts`: idem para quem entra no desafio. Rollback diferenciado para "novo participant" vs "invited→accepted".
+- Nova RPC `debit_wallet_checked(uuid, int)`: UPDATE atômico com `WHERE balance_coins >= p_amount`, retorna boolean. SECURITY DEFINER.
+- Ambos inserem `coin_ledger` entry com reason `challenge_entry_fee`.
+
+**Anti-Spoof (B3):**
+- `verify-session/index.ts`: todas as referências a `p.user_id` substituídas por `user.id` (JWT autenticado). Impede que usuário A modifique sessões/verificação de usuário B.
+
+**Pool Real + Refund (B4):**
+- `settle-challenge/index.ts`: pool agora vem de `SELECT delta_coins FROM coin_ledger WHERE ref_id = challenge.id AND reason = 'challenge_entry_fee'` — soma real dos débitos coletados.
+- Quando ninguém correu: refund via `challenge_entry_refund` no ledger + `increment_wallet_balance` na wallet. Implementado para team, collective, e competitive.
+
+**Migration:**
+- `20260227400000_challenge_team_and_entry_fee.sql`: tipo `team` no challenges, coluna `team` em participants, reasons `challenge_team_won`/`challenge_team_completed` no ledger, RPC `debit_wallet_checked`.

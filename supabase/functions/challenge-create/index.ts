@@ -249,6 +249,38 @@ serve(async (req: Request) => {
       return jsonErr(classified.httpStatus, classified.code, classified.message, requestId);
     }
 
+    // ── Entry fee debit (atomic balance check) ────────────────────────
+    if (entry_fee_coins > 0) {
+      const { data: debited, error: debitErr } = await db
+        .rpc("debit_wallet_checked", {
+          p_user_id: user.id,
+          p_amount: entry_fee_coins,
+        });
+
+      if (debitErr || debited !== true) {
+        // Rollback: remove participant + challenge
+        await db.from("challenge_participants").delete()
+          .eq("challenge_id", challengeId).eq("user_id", user.id);
+        await db.from("challenges").delete().eq("id", challengeId);
+
+        status = 402;
+        errorCode = "INSUFFICIENT_BALANCE";
+        return jsonErr(
+          402, "INSUFFICIENT_BALANCE",
+          "Saldo insuficiente de OmniCoins para criar este desafio.",
+          requestId,
+        );
+      }
+
+      await db.from("coin_ledger").insert({
+        user_id: user.id,
+        delta_coins: -entry_fee_coins,
+        reason: "challenge_entry_fee",
+        ref_id: challengeId,
+        created_at_ms: created_at_ms,
+      });
+    }
+
     return jsonOk({ challenge_id: challenge.id, created: true }, requestId);
   } catch (_err) {
     status = 500;

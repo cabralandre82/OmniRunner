@@ -245,6 +245,43 @@ serve(async (req: Request) => {
       }
     }
 
+    // ── Entry fee debit (atomic balance check) ────────────────────────
+    if (challenge.entry_fee_coins > 0) {
+      const { data: debited, error: debitErr } = await db
+        .rpc("debit_wallet_checked", {
+          p_user_id: user.id,
+          p_amount: challenge.entry_fee_coins,
+        });
+
+      if (debitErr || debited !== true) {
+        // Rollback: remove just-inserted participant
+        if (!existingPart) {
+          await db.from("challenge_participants").delete()
+            .eq("challenge_id", challenge_id).eq("user_id", user.id);
+        } else if (existingPart.status === "invited") {
+          await db.from("challenge_participants")
+            .update({ status: "invited", responded_at_ms: null })
+            .eq("challenge_id", challenge_id).eq("user_id", user.id);
+        }
+
+        status = 402;
+        errorCode = "INSUFFICIENT_BALANCE";
+        return jsonErr(
+          402, "INSUFFICIENT_BALANCE",
+          "Saldo insuficiente de OmniCoins para participar deste desafio.",
+          requestId,
+        );
+      }
+
+      await db.from("coin_ledger").insert({
+        user_id: user.id,
+        delta_coins: -challenge.entry_fee_coins,
+        reason: "challenge_entry_fee",
+        ref_id: challenge_id,
+        created_at_ms: Date.now(),
+      });
+    }
+
     // Check if challenge should auto-activate (on_accept mode)
     let newChallengeStatus = challenge.status;
 

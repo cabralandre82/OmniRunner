@@ -2504,3 +2504,50 @@ Reescrever todos os textos de UX em todas as telas do fluxo de desafios para que
 - `docs/CONTEXT_DUMP.md`: Nova sprint entry
 
 ---
+
+## DECISÃO 090 — Correções Críticas: Entry Fee Debit, Pool Real, Anti-Spoof
+
+**Data:** 2026-02-26
+
+### Problema
+
+Auditoria pré-launch identificou 4 vulnerabilidades críticas:
+
+1. **B1 — Entry fee nunca debitado:** `challenge-create` e `challenge-join` EFs não debitavam OmniCoins da wallet do criador/participante. O settle calculava pool como `entry_fee_coins × N` e creditava coins que nunca foram coletados → **inflação de moeda**.
+2. **B2 — Sem balance check:** Nenhuma verificação de saldo antes de criar/entrar em desafios com stake.
+3. **B3 — verify-session user_id spoofing:** O payload do body (`p.user_id`) era usado no `WHERE` clause do `UPDATE sessions` e no `eval_athlete_verification`, permitindo que um usuário autenticado alterasse a verificação de sessões de outro usuário.
+4. **B4 — Pool teórico no settle:** `settle-challenge` calculava pool teoricamente em vez de consultar débitos reais no `coin_ledger`.
+
+### Correções implementadas
+
+**B1+B2 — Debit atômico com balance check:**
+- Nova RPC `debit_wallet_checked(p_user_id, p_amount)` — `SECURITY DEFINER`, faz `UPDATE wallets SET balance_coins = balance_coins - p_amount WHERE balance_coins >= p_amount`, retorna `boolean`.
+- `challenge-create`: após inserir participante, chama `debit_wallet_checked`. Se falha → rollback (deleta participant + challenge), retorna 402.
+- `challenge-join`: idem, com rollback adequado para paths "novo participante" e "invited → accepted".
+- Ambos inserem entry no `coin_ledger` com reason `challenge_entry_fee` e `delta_coins` negativo.
+
+**B3 — Anti-spoof em verify-session:**
+- Substituído `p.user_id` por `user.id` (autenticado via JWT) em: `UPDATE sessions ... WHERE user_id`, `eval_athlete_verification`, e logs.
+
+**B4 — Pool real no settle:**
+- `settle-challenge` agora consulta `coin_ledger WHERE ref_id = challenge.id AND reason = 'challenge_entry_fee'` para calcular o pool real.
+- Refund quando ninguém correu: cria entries `challenge_entry_refund` no ledger + chama `increment_wallet_balance` para devolver coins.
+- Aplicado a todas as branches: team, collective, e competitive.
+
+### Migration
+
+`20260227400000_challenge_team_and_entry_fee.sql`:
+- `challenges_type_check`: adiciona `'team'`
+- `challenge_participants.team`: coluna TEXT com CHECK `('A','B')`
+- `coin_ledger_reason_check`: adiciona `'challenge_team_won'`, `'challenge_team_completed'`
+- `debit_wallet_checked()`: nova RPC
+
+### Arquivos alterados
+
+- `supabase/functions/challenge-create/index.ts`
+- `supabase/functions/challenge-join/index.ts`
+- `supabase/functions/verify-session/index.ts`
+- `supabase/functions/settle-challenge/index.ts`
+- `supabase/migrations/20260227400000_challenge_team_and_entry_fee.sql`
+
+---
