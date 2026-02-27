@@ -201,6 +201,34 @@ final class LedgerService {
     return LedgerOpResult.ok(written);
   }
 
+  // ── 4. CREDIT REWARD (generic) ─────────────────────────────
+
+  /// Credits [amount] to a user's wallet with the given [reason].
+  ///
+  /// Idempotent — skips if an entry with the same `(userId, refId, reason)`
+  /// already exists in the ledger.
+  ///
+  /// Used by [SettleChallenge] to write winner/participation rewards
+  /// through a single, consistent credit path.
+  Future<LedgerOpResult> creditReward({
+    required String userId,
+    required int amount,
+    required LedgerReason reason,
+    required String refId,
+    required String Function() uuidGenerator,
+    required int nowMs,
+  }) async {
+    if (amount <= 0) return const LedgerOpResult.skipped();
+    return _creditSingle(
+      userId: userId,
+      amount: amount,
+      reason: reason,
+      refId: refId,
+      uuidGenerator: uuidGenerator,
+      nowMs: nowMs,
+    );
+  }
+
   // ── INTERNAL: SINGLE-USER DEBIT ─────────────────────────────
 
   /// Debits [amount] from a user's wallet.

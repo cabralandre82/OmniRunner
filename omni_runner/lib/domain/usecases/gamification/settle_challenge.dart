@@ -2,31 +2,26 @@ import 'package:omni_runner/core/errors/gamification_failures.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_result_entity.dart';
 import 'package:omni_runner/domain/entities/ledger_entry_entity.dart';
-import 'package:omni_runner/domain/entities/wallet_entity.dart';
 import 'package:omni_runner/domain/repositories/i_challenge_repo.dart';
-import 'package:omni_runner/domain/repositories/i_ledger_repo.dart';
-import 'package:omni_runner/domain/repositories/i_wallet_repo.dart';
+import 'package:omni_runner/domain/usecases/gamification/ledger_service.dart';
 
 /// Distributes entry-fee pool to winners of staked challenges.
 ///
 /// Free challenges (entryFeeCoins == 0) produce zero coin movements.
 /// Transitions the challenge to [ChallengeStatus.completed].
-/// Creates one [LedgerEntryEntity] per winner reward.
-/// Updates each winner's [WalletEntity].
 ///
-/// Idempotent — checks if challenge is already completed before writing.
+/// Delegates all coin movements to [LedgerService.creditReward],
+/// which provides per-entry idempotency via (userId, refId, reason)
+/// dedup — safe to retry after a mid-loop crash.
 final class SettleChallenge {
   final IChallengeRepo _challengeRepo;
-  final ILedgerRepo _ledgerRepo;
-  final IWalletRepo _walletRepo;
+  final LedgerService _ledgerService;
 
   const SettleChallenge({
     required IChallengeRepo challengeRepo,
-    required ILedgerRepo ledgerRepo,
-    required IWalletRepo walletRepo,
+    required LedgerService ledgerService,
   })  : _challengeRepo = challengeRepo,
-        _ledgerRepo = ledgerRepo,
-        _walletRepo = walletRepo;
+        _ledgerService = ledgerService;
 
   Future<void> call({
     required String challengeId,
@@ -61,22 +56,14 @@ final class SettleChallenge {
 
       final reason = _reasonFor(challenge.type, pr.outcome);
 
-      final entry = LedgerEntryEntity(
-        id: uuidGenerator(),
+      await _ledgerService.creditReward(
         userId: pr.userId,
-        deltaCoins: pr.coinsEarned,
+        amount: pr.coinsEarned,
         reason: reason,
         refId: challengeId,
-        createdAtMs: nowMs,
+        uuidGenerator: uuidGenerator,
+        nowMs: nowMs,
       );
-      await _ledgerRepo.append(entry);
-
-      final wallet = await _walletRepo.getByUserId(pr.userId);
-      await _walletRepo.save(wallet.copyWith(
-        balanceCoins: wallet.balanceCoins + pr.coinsEarned,
-        lifetimeEarnedCoins:
-            wallet.lifetimeEarnedCoins + pr.coinsEarned,
-      ));
     }
 
     await _challengeRepo.update(

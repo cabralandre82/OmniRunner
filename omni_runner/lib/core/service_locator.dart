@@ -121,6 +121,7 @@ import 'package:omni_runner/domain/usecases/gamification/create_challenge.dart';
 import 'package:omni_runner/domain/usecases/gamification/join_challenge.dart';
 import 'package:omni_runner/domain/usecases/gamification/start_challenge.dart';
 import 'package:omni_runner/domain/usecases/gamification/evaluate_challenge.dart';
+import 'package:omni_runner/domain/usecases/gamification/ledger_service.dart';
 import 'package:omni_runner/domain/usecases/gamification/settle_challenge.dart';
 import 'package:omni_runner/domain/usecases/gamification/post_session_challenge_dispatcher.dart';
 import 'package:omni_runner/domain/usecases/gamification/reward_session_coins.dart';
@@ -499,11 +500,16 @@ Future<void> setupServiceLocator() async {
   sl.registerFactory<EvaluateChallenge>(
     () => EvaluateChallenge(challengeRepo: sl<IChallengeRepo>()),
   );
+  sl.registerFactory<LedgerService>(
+    () => LedgerService(
+      ledgerRepo: sl<ILedgerRepo>(),
+      walletRepo: sl<IWalletRepo>(),
+    ),
+  );
   sl.registerFactory<SettleChallenge>(
     () => SettleChallenge(
       challengeRepo: sl<IChallengeRepo>(),
-      ledgerRepo: sl<ILedgerRepo>(),
-      walletRepo: sl<IWalletRepo>(),
+      ledgerService: sl<LedgerService>(),
     ),
   );
   sl.registerFactory<SubmitRunToChallenge>(

@@ -2582,3 +2582,38 @@ Auditoria pré-launch identificou 4 vulnerabilidades críticas:
 - `test/domain/usecases/gamification/ledger_service_test.dart`
 
 ---
+
+## DECISÃO 092 — SettleChallenge: idempotência per-entry + unificação via LedgerService
+
+**Data:** 2026-02-26
+
+### Problema
+
+**INC-02 (P2):** `SettleChallenge` escrevia ledger entries diretamente via `_ledgerRepo.append()` com UUIDs novos a cada chamada. Se o use case crashasse mid-loop (após escrever N entries mas antes de marcar `completed`), uma re-execução duplicaria entries — double-credit de coins.
+
+**INC-06 (P2):** `SettleChallenge` e `LedgerService` tinham dois caminhos de credit independentes com padrões de idempotência diferentes. Mudanças em invariantes (ex: cap de balance, audit trail) precisariam ser feitas em dois lugares.
+
+**INC-05:** Já corrigido — `ChallengesBloc` já usa `Uuid().v4()`.
+
+### Correções
+
+1. **`LedgerService`**: novo método público `creditReward()` — wrapper para `_creditSingle()` com idempotência por `(userId, refId, reason)`.
+
+2. **`SettleChallenge`**: refatorado para depender de `LedgerService` em vez de `ILedgerRepo` + `IWalletRepo`. Cada credit agora passa por `creditReward()`, que faz `_alreadyExists()` check antes de escrever. Re-execução após crash é segura.
+
+3. **`service_locator.dart`**: `LedgerService` registrado no DI. `SettleChallenge` recebe `LedgerService` em vez de repos diretos.
+
+### Testes
+
+- 3 novos testes para `creditReward`: credit funciona, idempotente (second call skips), skips amount <= 0
+- `settle_challenge_reason_test.dart`: `.index` → `.stableOrdinal`
+
+### Arquivos alterados
+
+- `lib/domain/usecases/gamification/ledger_service.dart`
+- `lib/domain/usecases/gamification/settle_challenge.dart`
+- `lib/core/service_locator.dart`
+- `test/domain/usecases/gamification/ledger_service_test.dart`
+- `test/domain/usecases/gamification/settle_challenge_reason_test.dart`
+
+---

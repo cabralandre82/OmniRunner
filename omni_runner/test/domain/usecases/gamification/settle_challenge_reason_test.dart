@@ -22,13 +22,13 @@ void main() {
     });
 
     test('ordinals are stable — new values at end', () {
-      expect(LedgerReason.sessionCompleted.index, 0);
-      expect(LedgerReason.challengeOneVsOneCompleted.index, 1);
-      expect(LedgerReason.challengeOneVsOneWon.index, 2);
-      expect(LedgerReason.challengeGroupCompleted.index, 3);
-      expect(LedgerReason.crossAssessoriaBurned.index, 17);
-      expect(LedgerReason.challengeTeamCompleted.index, 18);
-      expect(LedgerReason.challengeTeamWon.index, 19);
+      expect(LedgerReason.sessionCompleted.stableOrdinal, 0);
+      expect(LedgerReason.challengeOneVsOneCompleted.stableOrdinal, 1);
+      expect(LedgerReason.challengeOneVsOneWon.stableOrdinal, 2);
+      expect(LedgerReason.challengeGroupCompleted.stableOrdinal, 3);
+      expect(LedgerReason.crossAssessoriaBurned.stableOrdinal, 17);
+      expect(LedgerReason.challengeTeamCompleted.stableOrdinal, 18);
+      expect(LedgerReason.challengeTeamWon.stableOrdinal, 19);
     });
 
     test('ParticipantOutcome covers all expected values', () {

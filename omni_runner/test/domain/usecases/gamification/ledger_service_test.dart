@@ -650,6 +650,84 @@ void main() {
     });
   });
 
+  // ── creditReward ───────────────────────────────────────────────────
+
+  group('creditReward', () {
+    late _FakeLedgerRepo ledgerRepo;
+    late _FakeWalletRepo walletRepo;
+    late LedgerService service;
+    var uuidCounter = 0;
+    String uuidGen() => 'cr-uuid-${uuidCounter++}';
+
+    setUp(() {
+      ledgerRepo = _FakeLedgerRepo();
+      walletRepo = _FakeWalletRepo();
+      service = LedgerService(
+        ledgerRepo: ledgerRepo,
+        walletRepo: walletRepo,
+      );
+      uuidCounter = 0;
+    });
+
+    test('credits reward to user wallet', () async {
+      final result = await service.creditReward(
+        userId: 'u1',
+        amount: 50,
+        reason: LedgerReason.challengeOneVsOneWon,
+        refId: 'ch-1',
+        uuidGenerator: uuidGen,
+        nowMs: 1000,
+      );
+
+      expect(result.success, isTrue);
+      expect(result.entriesWritten, 1);
+      expect(walletRepo.balanceOf('u1'), 50);
+      expect(walletRepo.lifetimeEarnedOf('u1'), 50);
+      expect(ledgerRepo.entries.length, 1);
+      expect(ledgerRepo.entries.first.reason, LedgerReason.challengeOneVsOneWon);
+    });
+
+    test('idempotent — second call skips', () async {
+      await service.creditReward(
+        userId: 'u1',
+        amount: 50,
+        reason: LedgerReason.challengeGroupCompleted,
+        refId: 'ch-1',
+        uuidGenerator: uuidGen,
+        nowMs: 1000,
+      );
+
+      final second = await service.creditReward(
+        userId: 'u1',
+        amount: 50,
+        reason: LedgerReason.challengeGroupCompleted,
+        refId: 'ch-1',
+        uuidGenerator: uuidGen,
+        nowMs: 2000,
+      );
+
+      expect(second.success, isTrue);
+      expect(second.entriesWritten, 0);
+      expect(walletRepo.balanceOf('u1'), 50);
+      expect(ledgerRepo.entries.length, 1);
+    });
+
+    test('skips when amount <= 0', () async {
+      final result = await service.creditReward(
+        userId: 'u1',
+        amount: 0,
+        reason: LedgerReason.challengeOneVsOneWon,
+        refId: 'ch-1',
+        uuidGenerator: uuidGen,
+        nowMs: 1000,
+      );
+
+      expect(result.success, isTrue);
+      expect(result.entriesWritten, 0);
+      expect(ledgerRepo.entries, isEmpty);
+    });
+  });
+
   // ── INC-01: LedgerReason stable ordinals ──────────────────────────
 
   group('LedgerReason stableOrdinal', () {
