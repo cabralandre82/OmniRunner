@@ -44,8 +44,9 @@ class StravaHttpClient {
 
   /// Build the full authorization URL for the OAuth2 consent page.
   /// `localhost` is whitelisted by Strava — no callback-domain config needed.
-  /// Scheme `omnirunner://` ensures Android/iOS route back to the app.
-  static const defaultRedirectUri = 'omnirunner://localhost/exchange_token';
+  /// Uses dedicated `omnirunnerauth://` scheme to avoid intent filter conflicts
+  /// with the main app's `omnirunner://` deep link handler on Android.
+  static const defaultRedirectUri = 'omnirunnerauth://localhost/exchange_token';
 
   Uri buildAuthorizationUrl({
     required String clientId,

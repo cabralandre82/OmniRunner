@@ -73,19 +73,16 @@
         </intent-filter>
     </activity>
         <!-- flutter_web_auth_2: captures OAuth callback for Strava.
-             Host="localhost" matches omnirunner://localhost/exchange_token
-             and is MORE SPECIFIC than MainActivity's generic omnirunner:// filter,
-             ensuring Android routes the Strava callback here, not to MainActivity. -->
+             Uses dedicated scheme "omnirunnerauth" to avoid any conflict
+             with MainActivity's "omnirunner" deep link intent filter. -->
         <activity
             android:name="com.linusu.flutter_web_auth_2.CallbackActivity"
-            android:exported="true"
-            android:launchMode="singleTop"
-            android:taskAffinity="">
+            android:exported="true">
             <intent-filter android:label="flutter_web_auth_2">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="omnirunner" android:host="localhost"/>
+                <data android:scheme="omnirunnerauth"/>
             </intent-filter>
         </activity>
         <!-- Foreground service for continuous GPS tracking during runs.

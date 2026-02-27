@@ -83,7 +83,7 @@ final class StravaAuthRepositoryImpl implements IStravaAuthRepository {
     try {
       final resultUrl = await FlutterWebAuth2.authenticate(
         url: url.toString(),
-        callbackUrlScheme: 'omnirunner',
+        callbackUrlScheme: 'omnirunnerauth',
       );
 
       final resultUri = Uri.parse(resultUrl);

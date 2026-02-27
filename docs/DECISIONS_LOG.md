@@ -3210,3 +3210,28 @@ Após a DECISÃO 110, o erro "Instance of AuthFailed" foi silenciado, mas a cone
 - `lib/presentation/screens/settings_screen.dart` (re-check state após AuthCancelled)
 
 ---
+
+## DECISÃO 112 — Strava OAuth: scheme dedicado `omnirunnerauth://` (26/02/2026)
+
+### Contexto
+
+A DECISÃO 111 adicionou `host="localhost"` ao `CallbackActivity` para diferenciar do `MainActivity`. Porém, o Android ainda não resolvia a ambiguidade corretamente — ao autorizar no Strava, uma tela aparecia rapidamente e voltava para a página de autorização sem conectar.
+
+**Causa raiz**: Dois Activities com intent filters para o mesmo scheme `omnirunner://` nunca é confiável no Android, mesmo com diferenciação por host. O Chrome Custom Tab não conseguia rotear o redirect de forma consistente.
+
+### Decisão
+
+Usar um scheme dedicado `omnirunnerauth://` exclusivo para o `CallbackActivity`, eliminando qualquer conflito:
+
+1. **`defaultRedirectUri`** alterado para `omnirunnerauth://localhost/exchange_token`
+2. **`callbackUrlScheme`** no `FlutterWebAuth2.authenticate()` alterado para `omnirunnerauth`
+3. **`CallbackActivity`** intent filter usa `android:scheme="omnirunnerauth"` (sem host/path — é o único Activity com esse scheme)
+4. **`MainActivity`** mantém `omnirunner://` para deep links normais (challenges, invites)
+5. Strava continua aceitando porque o host é `localhost` (whitelisted)
+
+### Arquivos modificados
+- `lib/features/strava/data/strava_http_client.dart` (redirect URI)
+- `lib/features/strava/data/strava_auth_repository_impl.dart` (callbackUrlScheme)
+- `android/app/src/main/AndroidManifest.xml` (CallbackActivity scheme)
+
+---
