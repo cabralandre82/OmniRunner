@@ -107,5 +107,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: "updated" });
   }
 
+  if (body.action === "delete") {
+    const { product_id } = body;
+
+    if (!product_id) {
+      return NextResponse.json(
+        { error: "Missing product_id" },
+        { status: 400 },
+      );
+    }
+
+    const { error } = await admin
+      .from("billing_products")
+      .delete()
+      .eq("id", product_id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ status: "deleted" });
+  }
+
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 }

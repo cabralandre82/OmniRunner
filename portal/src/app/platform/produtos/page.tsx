@@ -1,10 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { ProductForm, ToggleActive } from "./actions";
+import { ProductForm, ProductCard } from "./actions";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-interface Product {
+export interface Product {
   id: string;
   name: string;
   description: string;
@@ -25,12 +25,8 @@ export default async function ProdutosPage() {
     .order("sort_order", { ascending: true });
 
   const items: Product[] = products ?? [];
-
-  const fmt = (cents: number) =>
-    (cents / 100).toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    });
+  const active = items.filter((p) => p.is_active);
+  const inactive = items.filter((p) => !p.is_active);
 
   return (
     <div className="space-y-6">
@@ -38,7 +34,7 @@ export default async function ProdutosPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Produtos</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Pacotes de créditos disponíveis para compra
+            {active.length} ativo(s) · {inactive.length} inativo(s)
           </p>
         </div>
         <Link
@@ -49,43 +45,29 @@ export default async function ProdutosPage() {
         </Link>
       </div>
 
-      {/* Product list */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 bg-gray-50 text-left">
-              <th className="px-4 py-3 font-medium text-gray-500">Ordem</th>
-              <th className="px-4 py-3 font-medium text-gray-500">Nome</th>
-              <th className="px-4 py-3 font-medium text-gray-500">Descrição</th>
-              <th className="px-4 py-3 font-medium text-gray-500">Créditos</th>
-              <th className="px-4 py-3 font-medium text-gray-500">Preço</th>
-              <th className="px-4 py-3 font-medium text-gray-500">R$/Crédito</th>
-              <th className="px-4 py-3 font-medium text-gray-500">Ativo</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {items.map((p) => (
-              <tr key={p.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 text-gray-500">{p.sort_order}</td>
-                <td className="px-4 py-3 font-medium text-gray-900">
-                  {p.name}
-                </td>
-                <td className="px-4 py-3 text-gray-500 max-w-[200px] truncate">
-                  {p.description}
-                </td>
-                <td className="px-4 py-3 text-gray-700">{p.credits_amount}</td>
-                <td className="px-4 py-3 text-gray-700">{fmt(p.price_cents)}</td>
-                <td className="px-4 py-3 text-gray-500">
-                  {(p.price_cents / p.credits_amount / 100).toFixed(2)}
-                </td>
-                <td className="px-4 py-3">
-                  <ToggleActive productId={p.id} isActive={p.is_active} />
-                </td>
-              </tr>
+      {/* Active products */}
+      {active.length > 0 && (
+        <div>
+          <h2 className="mb-3 text-sm font-semibold text-gray-900">Ativos</h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {active.map((p) => (
+              <ProductCard key={p.id} product={p} />
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </div>
+      )}
+
+      {/* Inactive products */}
+      {inactive.length > 0 && (
+        <div>
+          <h2 className="mb-3 text-sm font-semibold text-gray-500">Inativos</h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {inactive.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* New product form */}
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
