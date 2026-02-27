@@ -27,9 +27,13 @@ const PLATFORM_ITEMS: NavItem[] = [
 export function Sidebar({
   role,
   isPlatformAdmin = false,
+  logoUrl,
+  groupName,
 }: {
   role: string;
   isPlatformAdmin?: boolean;
+  logoUrl?: string | null;
+  groupName?: string;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -48,14 +52,32 @@ export function Sidebar({
 
   const navContent = (
     <>
-      <div className="border-b border-gray-200 px-4 py-5 flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900">Omni Runner</h2>
-          <p className="text-xs text-gray-500">Portal</p>
+      <div className="border-b px-4 py-5 flex items-center justify-between" style={{ borderColor: "var(--brand-sidebar-text, #e5e7eb)", opacity: 0.2 }}>
+      </div>
+      <div className="px-4 py-5 flex items-center justify-between" style={{ marginTop: "-3.5rem" }}>
+        <div className="flex items-center gap-2.5 min-w-0">
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt="Logo" className="h-8 w-8 rounded-lg object-cover flex-shrink-0" />
+          ) : (
+            <span
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold text-white flex-shrink-0"
+              style={{ backgroundColor: "var(--brand-primary, #2563eb)" }}
+            >
+              {(groupName ?? "O").charAt(0).toUpperCase()}
+            </span>
+          )}
+          <div className="min-w-0">
+            <h2 className="text-sm font-bold truncate" style={{ color: "var(--brand-sidebar-text, #111827)" }}>
+              {groupName ?? "Omni Runner"}
+            </h2>
+            <p className="text-xs opacity-60" style={{ color: "var(--brand-sidebar-text, #6b7280)" }}>Portal</p>
+          </div>
         </div>
         <button
           onClick={() => setOpen(false)}
-          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 lg:hidden"
+          className="rounded-lg p-1.5 opacity-50 hover:opacity-100 lg:hidden"
+          style={{ color: "var(--brand-sidebar-text, #9ca3af)" }}
           aria-label="Fechar menu"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -71,11 +93,18 @@ export function Sidebar({
             <Link
               key={item.href}
               href={item.href}
-              className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+              className="block rounded-lg px-3 py-2.5 text-sm font-medium transition"
+              style={
                 active
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              }`}
+                  ? {
+                      backgroundColor: "var(--brand-accent, #2563eb)" + "18",
+                      color: "var(--brand-accent, #2563eb)",
+                    }
+                  : {
+                      color: "var(--brand-sidebar-text, #4b5563)",
+                      opacity: 0.8,
+                    }
+              }
             >
               {item.label}
             </Link>
@@ -104,8 +133,8 @@ export function Sidebar({
         </div>
       )}
 
-      <div className="border-t border-gray-200 px-4 py-3">
-        <p className="truncate text-xs text-gray-400">{role}</p>
+      <div className="border-t px-4 py-3" style={{ borderColor: "var(--brand-sidebar-text, #e5e7eb)", opacity: 0.6 }}>
+        <p className="truncate text-xs" style={{ color: "var(--brand-sidebar-text, #9ca3af)" }}>{role}</p>
       </div>
     </>
   );
@@ -113,7 +142,10 @@ export function Sidebar({
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex h-screen w-56 flex-shrink-0 flex-col border-r border-gray-200 bg-white">
+      <aside
+        className="hidden lg:flex h-screen w-56 flex-shrink-0 flex-col border-r border-gray-200"
+        style={{ backgroundColor: "var(--brand-sidebar-bg, #ffffff)" }}
+      >
         {navContent}
       </aside>
 
@@ -127,9 +159,10 @@ export function Sidebar({
 
       {/* Mobile drawer */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white shadow-xl transition-transform duration-200 lg:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col shadow-xl transition-transform duration-200 lg:hidden ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
+        style={{ backgroundColor: "var(--brand-sidebar-bg, #ffffff)" }}
       >
         {navContent}
       </aside>

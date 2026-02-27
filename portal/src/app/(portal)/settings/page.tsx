@@ -7,6 +7,7 @@ import { RemoveButton } from "./remove-button";
 import { PortalButton } from "./portal-button";
 import { AutoTopupForm } from "./auto-topup-form";
 import { GatewaySelector } from "./gateway-selector";
+import { BrandingForm } from "./branding-form";
 
 const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   admin_master: { label: "Admin", color: "bg-purple-100 text-purple-800" },
@@ -166,6 +167,19 @@ export default async function SettingsPage() {
             />
           </div>
         </>
+      )}
+
+      {/* ── Branding Section (admin only) ──────────────────────────── */}
+      {isAdmin && (
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-base font-semibold text-gray-900">
+            Identidade Visual
+          </h2>
+          <p className="mt-1 mb-5 text-sm text-gray-500">
+            Personalize o portal com o logo e as cores da sua assessoria
+          </p>
+          <BrandingForm />
+        </div>
       )}
 
       {/* ── Team Section ─────────────────────────────────────────────── */}

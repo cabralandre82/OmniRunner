@@ -2913,3 +2913,41 @@ Alerta visual no dashboard quando créditos < 50: banner vermelho com mensagem e
 - `portal/src/app/api/export/athletes/route.ts` (novo)
 
 ---
+
+## DECISÃO 102 — Portal: branding personalizável por assessoria (E9)
+
+**Data:** 2026-02-26
+**Contexto:** Cada assessoria deve poder personalizar o portal com logo e cores próprias.
+
+### Schema
+
+Tabela `portal_branding` com colunas: `logo_url`, `primary_color`, `sidebar_bg`, `sidebar_text`, `accent_color`. RLS permite leitura pelo staff e escrita somente por admin_master. Platform admin lê tudo.
+
+### API
+
+`GET/POST /api/branding` — lê/salva configurações de branding. Validação hex (#RRGGBB), URL max 512 chars. Rate limited, audit logged.
+
+### UI
+
+Seção "Identidade Visual" na página de settings (admin_master):
+- 5 temas prontos (Padrão, Escuro, Verde, Laranja, Rosa) com um clique.
+- Color pickers (input color + hex) para cada propriedade.
+- Campo de URL para logo.
+- Preview ao vivo da sidebar + conteúdo com as cores selecionadas.
+
+### Integração
+
+- Layout busca branding do DB e injeta como CSS custom properties (`--brand-primary`, `--brand-sidebar-bg`, `--brand-sidebar-text`, `--brand-accent`).
+- Sidebar usa CSS vars para background, texto, item ativo, e exibe logo + nome da assessoria.
+- Fallback para cores padrão se nenhum branding configurado.
+
+### Arquivos
+
+- `supabase/migrations/20260227700000_portal_branding.sql` (novo)
+- `portal/src/app/api/branding/route.ts` (novo)
+- `portal/src/app/(portal)/settings/branding-form.tsx` (novo)
+- `portal/src/app/(portal)/settings/page.tsx` (+branding section)
+- `portal/src/app/(portal)/layout.tsx` (+branding fetch, CSS vars)
+- `portal/src/components/sidebar.tsx` (CSS vars, logo, groupName)
+
+---
