@@ -48,10 +48,10 @@ export function PlatformSidebar({ email }: { email: string }) {
         <SidebarLink href="/platform/liga" label="Liga" pathname={pathname} />
         <SidebarLink href="/platform/support" label="Suporte" pathname={pathname} />
         <Link
-          href="/dashboard"
+          href="/select-group"
           className="block rounded-lg px-3 py-2.5 text-sm font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600"
         >
-          ← Portal Staff
+          ← Portal Assessoria
         </Link>
       </nav>
 

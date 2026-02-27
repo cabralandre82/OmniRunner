@@ -9,7 +9,7 @@ const PUBLIC_PREFIXES = [
 ];
 
 const AUTH_ONLY_PREFIXES = [
-  "/platform/",
+  "/platform",
   "/api/platform/",
 ];
 
