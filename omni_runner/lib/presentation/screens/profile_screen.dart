@@ -65,9 +65,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Best effort
         }
       }
+      var displayName = p?.displayName ?? 'Runner';
+      if (displayName.contains('@')) {
+        displayName = displayName.split('@').first;
+        if (displayName.isNotEmpty) {
+          displayName = displayName[0].toUpperCase() + displayName.substring(1);
+        }
+      }
       setState(() {
         _profile = p;
-        _nameCtrl.text = p?.displayName ?? 'Runner';
+        _nameCtrl.text = displayName;
         _instaCtrl.text = insta;
         _tiktokCtrl.text = tiktok;
         _loading = false;
@@ -81,51 +88,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _save() async {
+  Future<void> _saveAll() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) return;
 
     setState(() { _saving = true; _error = null; });
     try {
-      final updated = await sl<IProfileRepo>().upsertMyProfile(
-        ProfilePatch(displayName: name),
-      );
-      if (!mounted) return;
-      sl<UserIdentityProvider>().refresh();
-      setState(() { _profile = updated; _saving = false; });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Nome atualizado com sucesso'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = _friendlyError(e);
-        _saving = false;
-      });
-    }
-  }
-
-  Future<void> _saveAll() async {
-    await _save();
-    await _saveSocial();
-  }
-
-  Future<void> _saveSocial() async {
-    setState(() { _saving = true; _error = null; });
-    try {
       final uid = sl<UserIdentityProvider>().userId;
+
       await Supabase.instance.client.from('profiles').update({
+        'display_name': name,
         'instagram_handle': _instaCtrl.text.trim(),
         'tiktok_handle': _tiktokCtrl.text.trim(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
       }).eq('id', uid);
+
       if (!mounted) return;
-      setState(() => _saving = false);
+      sl<UserIdentityProvider>().refresh();
+      final refreshed = await sl<IProfileRepo>().getMyProfile();
+      if (!mounted) return;
+      setState(() {
+        _profile = refreshed;
+        _saving = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Redes sociais atualizadas'),
+          content: Text('Perfil atualizado com sucesso'),
           duration: Duration(seconds: 2),
         ),
       );
@@ -401,7 +389,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   maxLength: 50,
                   textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _save(),
+                  onSubmitted: (_) => _saveAll(),
                 ),
                 const SizedBox(height: 12),
                 const SizedBox(height: 28),
