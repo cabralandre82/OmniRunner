@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function PlatformDashboard() {
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const [
     { count: totalGroups },

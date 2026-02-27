@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { AssessoriaActions } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ interface Assessoria {
 }
 
 export default async function AssessoriasPage() {
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const { data: groups } = await supabase
     .from("coaching_groups")

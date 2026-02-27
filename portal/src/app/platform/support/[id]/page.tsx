@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { TicketChat } from "./ticket-chat";
 
@@ -9,12 +10,14 @@ interface Props {
 }
 
 export default async function SupportTicketPage({ params }: Props) {
-  const supabase = createClient();
+  const authClient = createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await authClient.auth.getUser();
 
   if (!user) redirect("/login");
+
+  const supabase = createAdminClient();
 
   const { data: ticket } = await supabase
     .from("support_tickets")

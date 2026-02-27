@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { ProductForm, ToggleActive } from "./actions";
 import Link from "next/link";
 
@@ -17,7 +17,7 @@ interface Product {
 }
 
 export default async function ProdutosPage() {
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const { data: products } = await supabase
     .from("billing_products")

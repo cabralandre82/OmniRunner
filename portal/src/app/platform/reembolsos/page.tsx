@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { RefundActions } from "./actions";
 import Link from "next/link";
 
@@ -26,7 +26,7 @@ export default async function ReembolsosPage({
 }: {
   searchParams: { status?: string };
 }) {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const filterStatus = searchParams.status;
 
   let query = supabase
