@@ -2551,3 +2551,34 @@ Auditoria pré-launch identificou 4 vulnerabilidades críticas:
 - `supabase/migrations/20260227400000_challenge_team_and_entry_fee.sql`
 
 ---
+
+## DECISÃO 091 — LedgerReason ordinals estáveis + countCreditsToday fix
+
+**Data:** 2026-02-26
+
+### Problema
+
+**INC-01 (P1):** `LedgerReason` usava `.index` (ordinal posicional do Dart enum) para persistência no Isar. Inserir novos valores no meio do enum deslocava ordinals existentes, corrompendo dados no upgrade.
+
+**INC-03 (P3):** `countCreditsToday()` filtrava por `deltaCoins > 0`, contando pool wins, refunds e streaks além de session rewards. Isso inflava o count e podia bloquear session rewards legítimos pelo rate limit de 10/dia.
+
+### Correções
+
+**INC-01:** Mapa explícito `LedgerReason → int` com valores fixos (nunca reordenar, só append). Novo getter `stableOrdinal` e factory `fromStableOrdinal()` no enum. `IsarLedgerRepo` atualizado para usar esses métodos em vez de `.index`/`.values[]`.
+
+**INC-03:** `countCreditsToday()` agora filtra por `reasonOrdinalEqualTo(sessionCompleted.stableOrdinal)` em vez de `deltaCoinsGreaterThan(0)`.
+
+### Testes adicionados
+
+- Cada valor do enum tem ordinal único
+- Round-trip `stableOrdinal → fromStableOrdinal` para todos os valores
+- `fromStableOrdinal(9999)` lança `ArgumentError`
+- Ordinals fixos conferem com documentação do `ledger_record.dart`
+
+### Arquivos alterados
+
+- `lib/domain/entities/ledger_entry_entity.dart`
+- `lib/data/repositories_impl/isar_ledger_repo.dart`
+- `test/domain/usecases/gamification/ledger_service_test.dart`
+
+---

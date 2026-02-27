@@ -649,4 +649,46 @@ void main() {
       expect(ledgerRepo.entries.length, 3);
     });
   });
+
+  // ── INC-01: LedgerReason stable ordinals ──────────────────────────
+
+  group('LedgerReason stableOrdinal', () {
+    test('every enum value has a unique stable ordinal', () {
+      final seen = <int>{};
+      for (final r in LedgerReason.values) {
+        final ordinal = r.stableOrdinal;
+        expect(seen.contains(ordinal), isFalse,
+            reason: '$r maps to duplicate ordinal $ordinal');
+        seen.add(ordinal);
+      }
+    });
+
+    test('fromStableOrdinal round-trips every value', () {
+      for (final r in LedgerReason.values) {
+        expect(LedgerReason.fromStableOrdinal(r.stableOrdinal), r);
+      }
+    });
+
+    test('fromStableOrdinal throws on unknown ordinal', () {
+      expect(
+        () => LedgerReason.fromStableOrdinal(9999),
+        throwsArgumentError,
+      );
+    });
+
+    test('ordinals match documented values in ledger_record.dart', () {
+      expect(LedgerReason.sessionCompleted.stableOrdinal, 0);
+      expect(LedgerReason.challengeOneVsOneCompleted.stableOrdinal, 1);
+      expect(LedgerReason.challengeOneVsOneWon.stableOrdinal, 2);
+      expect(LedgerReason.challengeGroupCompleted.stableOrdinal, 3);
+      expect(LedgerReason.challengeEntryFee.stableOrdinal, 8);
+      expect(LedgerReason.challengePoolWon.stableOrdinal, 9);
+      expect(LedgerReason.challengeEntryRefund.stableOrdinal, 10);
+      expect(LedgerReason.cosmeticPurchase.stableOrdinal, 11);
+      expect(LedgerReason.adminAdjustment.stableOrdinal, 12);
+      expect(LedgerReason.crossAssessoriaPending.stableOrdinal, 15);
+      expect(LedgerReason.challengeTeamCompleted.stableOrdinal, 18);
+      expect(LedgerReason.challengeTeamWon.stableOrdinal, 19);
+    });
+  });
 }

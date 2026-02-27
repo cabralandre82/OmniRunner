@@ -62,7 +62,48 @@ enum LedgerReason {
   challengeTeamCompleted,
 
   /// Won a staked team-vs-team challenge — receives share of entry-fee pool.
-  challengeTeamWon,
+  challengeTeamWon;
+
+  // ── Stable ordinals for Isar persistence ────────────────────────
+  // RULE: never change existing values. Only append new entries at the end.
+  static const _toInt = <LedgerReason, int>{
+    sessionCompleted: 0,
+    challengeOneVsOneCompleted: 1,
+    challengeOneVsOneWon: 2,
+    challengeGroupCompleted: 3,
+    streakWeekly: 4,
+    streakMonthly: 5,
+    prDistance: 6,
+    prPace: 7,
+    challengeEntryFee: 8,
+    challengePoolWon: 9,
+    challengeEntryRefund: 10,
+    cosmeticPurchase: 11,
+    adminAdjustment: 12,
+    badgeReward: 13,
+    missionReward: 14,
+    crossAssessoriaPending: 15,
+    crossAssessoriaCleared: 16,
+    crossAssessoriaBurned: 17,
+    challengeTeamCompleted: 18,
+    challengeTeamWon: 19,
+  };
+
+  static final _fromInt = <int, LedgerReason>{
+    for (final e in _toInt.entries) e.value: e.key,
+  };
+
+  /// Fixed integer for Isar storage — immune to enum reordering.
+  int get stableOrdinal => _toInt[this]!;
+
+  /// Reverse lookup from a persisted integer.
+  static LedgerReason fromStableOrdinal(int ordinal) {
+    final reason = _fromInt[ordinal];
+    if (reason == null) {
+      throw ArgumentError('Unknown LedgerReason ordinal: $ordinal');
+    }
+    return reason;
+  }
 }
 
 /// A single, immutable, append-only transaction in the Coins ledger.

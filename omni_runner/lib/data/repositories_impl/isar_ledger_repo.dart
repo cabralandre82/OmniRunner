@@ -45,13 +45,14 @@ final class IsarLedgerRepo implements ILedgerRepo {
     final now = DateTime.now().toUtc();
     final startOfDay = DateTime.utc(now.year, now.month, now.day);
     final startMs = startOfDay.millisecondsSinceEpoch;
+    final sessionOrdinal = LedgerReason.sessionCompleted.stableOrdinal;
 
     final records = await _isar.ledgerRecords
         .where()
         .userIdEqualTo(userId)
         .filter()
         .createdAtMsGreaterThan(startMs - 1)
-        .deltaCoinsGreaterThan(0)
+        .reasonOrdinalEqualTo(sessionOrdinal)
         .findAll();
 
     return records.length;
@@ -77,7 +78,7 @@ final class IsarLedgerRepo implements ILedgerRepo {
     ..entryUuid = e.id
     ..userId = e.userId
     ..deltaCoins = e.deltaCoins
-    ..reasonOrdinal = e.reason.index
+    ..reasonOrdinal = e.reason.stableOrdinal
     ..refId = e.refId
     ..createdAtMs = e.createdAtMs;
 
@@ -85,7 +86,7 @@ final class IsarLedgerRepo implements ILedgerRepo {
         id: r.entryUuid,
         userId: r.userId,
         deltaCoins: r.deltaCoins,
-        reason: LedgerReason.values[r.reasonOrdinal],
+        reason: LedgerReason.fromStableOrdinal(r.reasonOrdinal),
         refId: r.refId,
         createdAtMs: r.createdAtMs,
       );
