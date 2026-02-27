@@ -525,4 +525,15 @@ SECURITY DEFINER + validações server-side.
 
 ---
 
-*Documento atualizado em 26/02/2026 — Sprint 25.0.0 (Strava-Only + Parks + Platform Approval + Friends + Push + Onboarding + Polish)*
+### Portal Admin — Páginas
+
+| Rota | Descrição |
+|------|-----------|
+| `/platform` | Dashboard com KPIs globais (assessorias, atletas, receita, compras, reembolsos) |
+| `/platform/assessorias` | Gestão de assessorias (aprovar, rejeitar, suspender) |
+| `/platform/financeiro` | Todas as compras com filtros por status e período |
+| `/platform/reembolsos` | Pedidos de reembolso — aprovar, rejeitar, processar |
+| `/platform/produtos` | CRUD de pacotes de créditos (billing_products) |
+| `/platform/support` | Chamados de suporte das assessorias |
+
+*Documento atualizado em 26/02/2026 — Sprint 25.0.0 (Strava-Only + Parks + Platform Approval + Friends + Push + Onboarding + Polish + Admin Financeiro)*

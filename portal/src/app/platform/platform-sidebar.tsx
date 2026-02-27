@@ -40,26 +40,12 @@ export function PlatformSidebar({ email }: { email: string }) {
       </div>
 
       <nav className="flex-1 space-y-1 px-2 py-4">
-        <Link
-          href="/platform/assessorias"
-          className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-            pathname.startsWith("/platform/assessorias")
-              ? "bg-red-50 text-red-700"
-              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-          }`}
-        >
-          Assessorias
-        </Link>
-        <Link
-          href="/platform/support"
-          className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-            pathname.startsWith("/platform/support")
-              ? "bg-red-50 text-red-700"
-              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-          }`}
-        >
-          Suporte
-        </Link>
+        <SidebarLink href="/platform" label="Dashboard" pathname={pathname} exact />
+        <SidebarLink href="/platform/assessorias" label="Assessorias" pathname={pathname} />
+        <SidebarLink href="/platform/financeiro" label="Financeiro" pathname={pathname} />
+        <SidebarLink href="/platform/reembolsos" label="Reembolsos" pathname={pathname} />
+        <SidebarLink href="/platform/produtos" label="Produtos" pathname={pathname} />
+        <SidebarLink href="/platform/support" label="Suporte" pathname={pathname} />
         <Link
           href="/dashboard"
           className="block rounded-lg px-3 py-2.5 text-sm font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600"
@@ -103,5 +89,34 @@ export function PlatformSidebar({ email }: { email: string }) {
         {content}
       </aside>
     </>
+  );
+}
+
+function SidebarLink({
+  href,
+  label,
+  pathname,
+  exact = false,
+}: {
+  href: string;
+  label: string;
+  pathname: string;
+  exact?: boolean;
+}) {
+  const active = exact
+    ? pathname === href
+    : pathname.startsWith(href) && (href !== "/platform" || pathname === "/platform");
+
+  return (
+    <Link
+      href={href}
+      className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+        active
+          ? "bg-red-50 text-red-700"
+          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+      }`}
+    >
+      {label}
+    </Link>
   );
 }

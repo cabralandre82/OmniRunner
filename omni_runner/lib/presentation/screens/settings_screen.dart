@@ -17,9 +17,9 @@ import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/main.dart' show themeNotifier;
 
-/// Screen for toggling audio coach announcement categories.
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final bool isStaff;
+  const SettingsScreen({super.key, this.isStaff = false});
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
@@ -53,9 +53,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           : ListView(
               padding: const EdgeInsets.symmetric(vertical: 8),
               children: [
-                _header('Integrações'),
-                const _StravaIntegrationTile(),
-                const Divider(height: 32),
+                if (!widget.isStaff) ...[
+                  _header('Integrações'),
+                  const _StravaIntegrationTile(),
+                  const Divider(height: 32),
+                ],
                 _header('Aparência'),
                 ValueListenableBuilder<ThemeMode>(
                   valueListenable: themeNotifier,
@@ -85,42 +87,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                 ),
-                const Divider(height: 32),
-                _header('Unidades'),
-                ListTile(
-                  leading: const Icon(Icons.straighten),
-                  title: const Text('Distância'),
-                  subtitle: Text(_settings.useImperial
-                      ? 'Milhas (mi)'
-                      : 'Quilômetros (km)'),
-                  trailing: Switch(
-                    value: _settings.useImperial,
+                if (!widget.isStaff) ...[
+                  const Divider(height: 32),
+                  _header('Unidades'),
+                  ListTile(
+                    leading: const Icon(Icons.straighten),
+                    title: const Text('Distância'),
+                    subtitle: Text(_settings.useImperial
+                        ? 'Milhas (mi)'
+                        : 'Quilômetros (km)'),
+                    trailing: Switch(
+                      value: _settings.useImperial,
+                      onChanged: (v) =>
+                          _update(_settings.copyWith(useImperial: v)),
+                    ),
+                  ),
+                  const Divider(height: 32),
+                  _header('Privacidade'),
+                  SwitchListTile(
+                    title: const Text('Perfil visível no ranking'),
+                    subtitle: const Text(
+                      'Permite que outros vejam seu nome nos leaderboards',
+                    ),
+                    secondary: const Icon(Icons.visibility),
+                    value: _settings.profileVisibleInRanking,
                     onChanged: (v) =>
-                        _update(_settings.copyWith(useImperial: v)),
+                        _update(_settings.copyWith(profileVisibleInRanking: v)),
                   ),
-                ),
-                const Divider(height: 32),
-                _header('Privacidade'),
-                SwitchListTile(
-                  title: const Text('Perfil visível no ranking'),
-                  subtitle: const Text(
-                    'Permite que outros vejam seu nome nos leaderboards',
+                  SwitchListTile(
+                    title: const Text('Compartilhar atividade na assessoria'),
+                    subtitle: const Text(
+                      'Suas corridas aparecem no feed da assessoria',
+                    ),
+                    secondary: const Icon(Icons.share),
+                    value: _settings.shareActivityInFeed,
+                    onChanged: (v) =>
+                        _update(_settings.copyWith(shareActivityInFeed: v)),
                   ),
-                  secondary: const Icon(Icons.visibility),
-                  value: _settings.profileVisibleInRanking,
-                  onChanged: (v) =>
-                      _update(_settings.copyWith(profileVisibleInRanking: v)),
-                ),
-                SwitchListTile(
-                  title: const Text('Compartilhar atividade na assessoria'),
-                  subtitle: const Text(
-                    'Suas corridas aparecem no feed da assessoria',
-                  ),
-                  secondary: const Icon(Icons.share),
-                  value: _settings.shareActivityInFeed,
-                  onChanged: (v) =>
-                      _update(_settings.copyWith(shareActivityInFeed: v)),
-                ),
+                ],
                 if (kDebugMode) ...[
                   const Divider(height: 32),
                   _header('Auth Debug'),

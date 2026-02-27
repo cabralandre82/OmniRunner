@@ -129,6 +129,16 @@ visualizar metricas basicas e competir contra si mesmo atraves de um Ghost Runne
 | E20 | Portal assessoria | Botão Portal abre https://omnirunner.app ao invés de "em breve" | ✅ |
 | E21 | Suporte assessoria ↔ plataforma | Tickets de suporte no app (staff) + painel admin no portal | ✅ |
 
+### Sprint 25.0.0 (cont.) — Admin Financeiro + Settings Staff (26/02/2026)
+
+| # | Funcionalidade | Descrição | Status |
+|---|---|---|---|
+| E22 | Settings staff | Assessoria vê apenas Aparência nas Configurações (sem Integrações, Unidades, Privacidade) | ✅ |
+| E23 | Dashboard admin | `/platform` com KPIs: assessorias, atletas, receita, compras do mês, reembolsos pendentes | ✅ |
+| E24 | Financeiro admin | `/platform/financeiro` — lista de todas as compras com filtros por status e período | ✅ |
+| E25 | Reembolsos admin | `/platform/reembolsos` — aprovar, rejeitar e processar pedidos de reembolso | ✅ |
+| E26 | Produtos admin | `/platform/produtos` — CRUD de pacotes de créditos (billing_products) | ✅ |
+
 ---
 
-*Documento gerado na Sprint 0.1 — Atualizado em 26/02/2026 (Sprint 25.0.0 + DECISAO 061-076)*
+*Documento gerado na Sprint 0.1 — Atualizado em 26/02/2026 (Sprint 25.0.0 + DECISAO 061-078)*

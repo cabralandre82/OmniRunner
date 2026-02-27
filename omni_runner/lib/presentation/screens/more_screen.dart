@@ -119,11 +119,11 @@ class MoreScreen extends StatelessWidget {
           ),
 
           _header(context, 'Configurações'),
-          const _ActionTile(
+          _ActionTile(
             icon: Icons.tune,
             title: 'Configurações',
-            subtitle: 'Strava, tema e unidades',
-            pushScreen: SettingsScreen(),
+            subtitle: _isStaff ? 'Aparência' : 'Strava, tema e unidades',
+            pushScreen: SettingsScreen(isStaff: _isStaff),
           ),
 
           if (_isStaff) ...[

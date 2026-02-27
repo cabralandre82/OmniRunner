@@ -1984,3 +1984,54 @@ hardcoded sobre fundo escuro). Configurações inacessíveis para staff.
 - `lib/presentation/screens/support_ticket_screen.dart`
 
 ---
+
+## DECISÃO 078 — Admin Financeiro + Settings Staff (26/02/2026)
+
+### Contexto:
+O admin da plataforma não tinha visibilidade financeira no portal. Assessorias compravam
+pacotes de créditos mas não havia interface para o admin acompanhar compras, gerenciar
+reembolsos ou administrar o catálogo de produtos. Além disso, a tela de Configurações
+mostrava opções irrelevantes para usuários staff (Integrações, Unidades, Privacidade).
+
+### Decisão:
+
+1. **Settings staff-only** — `SettingsScreen` recebe `isStaff` e esconde seções que
+   só fazem sentido para atletas (Integrações/Strava, Unidades, Privacidade). Staff vê
+   apenas Aparência (tema claro/escuro/sistema).
+
+2. **Dashboard admin** (`/platform`) — página inicial do admin com KPIs: assessorias
+   ativas, total de atletas, receita total e do mês, compras pendentes, reembolsos
+   pendentes. Quick links para todas as seções.
+
+3. **Financeiro** (`/platform/financeiro`) — tabela de todas as `billing_purchases` com
+   filtros por status (pending/paid/fulfilled/cancelled/refunded) e período (7 dias, mês).
+   Cards de receita totalizada e pendente.
+
+4. **Reembolsos** (`/platform/reembolsos`) — lista de `billing_refund_requests` com ações:
+   aprovar (requested→approved), rejeitar (requested→rejected, requer motivo),
+   processar (approved→processed, marca purchase como refunded + billing_event).
+
+5. **Produtos** (`/platform/produtos`) — tabela do catálogo `billing_products` com toggle
+   ativo/inativo e formulário para criar novos pacotes (nome, descrição, créditos, preço, ordem).
+
+6. **Sidebar atualizada** — links para Dashboard, Assessorias, Financeiro, Reembolsos,
+   Produtos e Suporte com active state.
+
+### API Routes criadas:
+- `POST /api/platform/products` — actions: `create`, `toggle_active`, `update`
+- `POST /api/platform/refunds` — actions: `approve`, `reject`, `process`
+
+### Arquivos modificados/criados:
+- `lib/presentation/screens/settings_screen.dart` (isStaff)
+- `lib/presentation/screens/more_screen.dart` (passa isStaff)
+- `portal/src/app/platform/page.tsx` (novo — dashboard)
+- `portal/src/app/platform/financeiro/page.tsx` (novo)
+- `portal/src/app/platform/reembolsos/page.tsx` (novo)
+- `portal/src/app/platform/reembolsos/actions.tsx` (novo)
+- `portal/src/app/platform/produtos/page.tsx` (novo)
+- `portal/src/app/platform/produtos/actions.tsx` (novo)
+- `portal/src/app/api/platform/products/route.ts` (novo)
+- `portal/src/app/api/platform/refunds/route.ts` (novo)
+- `portal/src/app/platform/platform-sidebar.tsx` (sidebar links)
+
+---
