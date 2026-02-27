@@ -286,10 +286,23 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
   }
 
   Future<void> _openPortal() async {
-    await launchUrl(
-      Uri.parse('https://omnirunner.app'),
-      mode: LaunchMode.inAppBrowserView,
-    );
+    final uri = Uri.parse('https://omnirunner.app');
+    try {
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok) {
+        await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+      }
+    } catch (_) {
+      try {
+        await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Não foi possível abrir o portal: $e')),
+          );
+        }
+      }
+    }
   }
 
   void _openSupport() {

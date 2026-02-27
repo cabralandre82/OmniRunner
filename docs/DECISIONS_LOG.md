@@ -2035,3 +2035,26 @@ mostrava opções irrelevantes para usuários staff (Integrações, Unidades, Pr
 - `portal/src/app/platform/platform-sidebar.tsx` (sidebar links)
 
 ---
+
+## DECISÃO 079 — Fix Portal Button (App Links conflict) (26/02/2026)
+
+### Contexto:
+O botão "Portal" no dashboard da assessoria ficava "pensando" e voltava sem abrir nada.
+O `launchUrl` com `inAppBrowserView` falhava silenciosamente porque o `AndroidManifest.xml`
+declarava um intent-filter `android:autoVerify="true"` para `https://omnirunner.app`
+sem restrição de path, fazendo o Android interceptar a URL e redirecionar de volta ao app.
+
+### Decisão:
+
+1. **Intent filter restrito** — App Links agora intercepta apenas paths específicos
+   (`/invite/*`, `/challenge/*`) ao invés de qualquer URL de `omnirunner.app`.
+
+2. **`_openPortal()` com fallback** — Tenta `LaunchMode.externalApplication` primeiro
+   (navegador padrão), fallback para `inAppBrowserView` (Chrome Custom Tab), e exibe
+   SnackBar de erro se ambos falharem.
+
+### Arquivos modificados:
+- `android/app/src/main/AndroidManifest.xml` (pathPrefix nos App Links)
+- `lib/presentation/screens/staff_dashboard_screen.dart` (_openPortal com fallback)
+
+---

@@ -59,12 +59,13 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="omnirunner"/>
             </intent-filter>
-            <!-- App Links: https://omnirunner.app (invite, share, fallback web) -->
+            <!-- App Links: only intercept specific paths (invite, challenge) -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="https" android:host="omnirunner.app"/>
+                <data android:scheme="https" android:host="omnirunner.app" android:pathPrefix="/invite"/>
+                <data android:scheme="https" android:host="omnirunner.app" android:pathPrefix="/challenge"/>
             </intent-filter>
             <!-- Health Connect: show permissions rationale screen -->
             <intent-filter>
