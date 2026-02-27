@@ -20,6 +20,9 @@ enum BindingRejectionReason {
 
   /// Challenge requires strict anti-cheat (HR) but session has no HR data.
   missingHeartRate,
+
+  /// Submit to challenge failed due to a transient error (I/O, DB).
+  submitFailed,
 }
 
 /// Snapshot of the validation result when binding a workout session

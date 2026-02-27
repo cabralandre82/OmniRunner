@@ -2617,3 +2617,33 @@ Auditoria pré-launch identificou 4 vulnerabilidades críticas:
 - `test/domain/usecases/gamification/settle_challenge_reason_test.dart`
 
 ---
+
+## DECISÃO 093 — A3 + AF2 + INC-04: Doc counts, motion radius, catch genérico
+
+**Data:** 2026-02-26
+
+### Correções
+
+**A3 — Contagem de Edge Functions inconsistente nos docs:**
+- Contagem real: 54 Edge Functions, 59 migrations.
+- `ARCHITECTURE.md`: 41→54 EFs, 8→59 migrations.
+- `SUPABASE_BACKEND_GUIDE.md`: 29→54, 31→54, 27→54 em todos os locais.
+
+**AF2 — NO_MOTION_PATTERN falso positivo em pistas:**
+- `MOTION_RADIUS_M` de 50m→150m em `verify-session/index.ts`.
+- 200m track tem ~63m de diâmetro, 400m track tem ~127m. Raio de 150m permite corridas em pistas sem gerar flag falsa, mas ainda detecta spoofing estático.
+
+**INC-04 — PostSessionChallengeDispatcher catch genérico:**
+- `on Exception` (que silenciava erros de I/O como "alreadySubmitted") substituído por catches separados: `on SessionAlreadySubmitted` → `alreadySubmitted`, `on GamificationFailure` / `on Exception` → novo `submitFailed`.
+- Novo `BindingRejectionReason.submitFailed` adicionado ao enum.
+- Bug fix: `session.elapsedMs` (getter inexistente) → `(session.endTimeMs ?? nowMs) - session.startTimeMs`.
+
+### Arquivos alterados
+
+- `docs/ARCHITECTURE.md`
+- `SUPABASE_BACKEND_GUIDE.md`
+- `supabase/functions/verify-session/index.ts`
+- `lib/domain/usecases/gamification/post_session_challenge_dispatcher.dart`
+- `lib/domain/entities/challenge_run_binding_entity.dart`
+
+---

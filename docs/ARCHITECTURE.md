@@ -52,8 +52,8 @@
 │   Supabase Backend   │              │    Portal B2B        │
 │                      │              │    (Next.js)         │
 │  PostgreSQL (RLS)    │              │                      │
-│  41 Edge Functions   │              │  14 páginas          │
-│  8 SQL Migrations    │              │  Stripe checkout     │
+│  54 Edge Functions   │              │  14 páginas          │
+│  59 SQL Migrations   │              │  Stripe checkout     │
 │  RPCs (SECURITY DEF) │              │  RBAC middleware     │
 │  pg_cron schedules   │              │  SSR auth            │
 └──────────────────────┘              └──────────────────────┘

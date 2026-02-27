@@ -66,7 +66,7 @@ const MIN_DURATION_MS = 60_000;      // 1 minute
 const MAX_PACE_SEC_KM = 90;          // 1:30/km — world record sprint pace
 const MIN_DISTANCE_M = 50;
 const GPS_GAP_THRESHOLD_MS = 60_000; // 60s gap = background GPS loss
-const MOTION_RADIUS_M = 50;          // all points within 50m = no real motion
+const MOTION_RADIUS_M = 150;         // all points within 150m = no real motion (allows 200m/400m tracks)
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 

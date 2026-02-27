@@ -36,7 +36,7 @@
                               │  └──────────┘  └──────────────┘  │
                               │  ┌──────────┐  ┌──────────────┐  │
                               │  │  Storage  │  │ Edge Funcs   │  │
-                              │  │ (GPS pts) │  │ (29 Deno/TS) │  │
+                              │  │ (GPS pts) │  │ (54 Deno/TS) │  │
                               │  └──────────┘  └──────────────┘  │
                               │  ┌──────────┐  ┌──────────────┐  │
                               │  │  pg_cron  │  │  Stripe      │  │
@@ -514,7 +514,7 @@ parks (id)
 
 ## 5. EDGE FUNCTIONS
 
-### 5.1 Inventário (31 Edge Functions)
+### 5.1 Inventário (54 Edge Functions)
 
 | # | Function | Auth | Rate Limit | Descrição |
 |:-:|----------|------|:----------:|-----------|
@@ -1123,7 +1123,7 @@ supabase link --project-ref <project_id>
 # 2. Push migrations (42+ migration files)
 supabase db push
 
-# 3. Deploy ALL Edge Functions (31 functions)
+# 3. Deploy ALL Edge Functions (54 functions)
 for fn in verify-session evaluate-badges calculate-progression settle-challenge \
   compute-leaderboard submit-analytics token-create-intent token-consume-intent \
   clearing-confirm-sent clearing-confirm-received clearing-open-dispute \
@@ -1303,7 +1303,7 @@ cd portal/ && npm run build && vercel --prod
 ### Ao receber este documento:
 
 1. **Leia as migrations SQL** em `supabase/migrations/` (34 arquivos) — elas são o schema definitivo.
-2. **Leia as Edge Functions** em `supabase/functions/` (27 functions) — elas contêm toda a lógica server-side.
+2. **Leia as Edge Functions** em `supabase/functions/` (54 functions) — elas contêm toda a lógica server-side.
 3. **Leia o portal** em `portal/` — Next.js 14, App Router, Tailwind + shadcn/ui.
 4. **Use o mapeamento Entity→Table** (§12) para traduzir entre Dart e SQL.
 5. **Respeite as RLS policies** — nunca sugira queries que ignorem segurança.
@@ -1350,4 +1350,4 @@ cd portal/ && npm run build && vercel --prod
 
 ---
 
-*Gerado em 2026-02-18, atualizado em 2026-02-27 (Sprint 25.0.0 + Parks E2E + Backend Audit + Liga Admin + Liga Estadual) — 66 tabelas, 31 Edge Functions, 43+ migrations, DECISAO 086*
+*Gerado em 2026-02-18, atualizado em 2026-02-26 (Sprint 25.0.0 + Parks E2E + Backend Audit + Liga Admin + Liga Estadual + Auditoria Final) — 66 tabelas, 54 Edge Functions, 59 migrations, DECISAO 092*

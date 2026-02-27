@@ -1,3 +1,4 @@
+import 'package:omni_runner/core/errors/gamification_failures.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_participant_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
@@ -153,7 +154,7 @@ final class PostSessionChallengeDispatcher {
       totalDistanceM,
       avgPaceSecPerKm,
       movingMs,
-      session.elapsedMs ?? movingMs,
+      (session.endTimeMs ?? nowMs) - session.startTimeMs,
     );
 
     // 8. Submit to challenge.
@@ -164,10 +165,20 @@ final class PostSessionChallengeDispatcher {
         session: session,
         metricValue: metricValue,
       );
-    } on Exception {
+    } on SessionAlreadySubmitted {
       return _rejected(
         session, challenge, userId, totalDistanceM, hasHr, nowMs,
         BindingRejectionReason.alreadySubmitted,
+      );
+    } on GamificationFailure {
+      return _rejected(
+        session, challenge, userId, totalDistanceM, hasHr, nowMs,
+        BindingRejectionReason.submitFailed,
+      );
+    } on Exception {
+      return _rejected(
+        session, challenge, userId, totalDistanceM, hasHr, nowMs,
+        BindingRejectionReason.submitFailed,
       );
     }
 
