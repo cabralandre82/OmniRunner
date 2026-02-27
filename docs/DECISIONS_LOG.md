@@ -3110,3 +3110,27 @@ Desafio cooperativo sem adversário. Apostar coins contra si mesmo não é gamif
 - `lib/presentation/screens/challenge_join_screen.dart` (textos corrigidos)
 
 ---
+
+## DECISÃO 108 — Strava OAuth: FlutterWebAuth2 + remoção de callback duplicado (27/02/2026)
+
+### Contexto
+
+A DECISÃO 106 corrigiu o `redirect_uri` mas o fluxo usava `url_launcher` com `LaunchMode.externalApplication`, que abria o Chrome externamente. Chrome no Android não redireciona de forma confiável para custom schemes (`omnirunner://`) via HTTP 302 — o callback nunca voltava ao app.
+
+### Decisão
+
+1. **`flutter_web_auth_2` adicionado** — usa Chrome Custom Tab (Auth Tab) que captura o callback de forma confiável dentro do processo do app
+2. **`StravaAuthRepositoryImpl.authenticate()`** refatorado: abre Chrome Custom Tab, aguarda callback, extrai o code, troca por tokens — tudo em um único `await`
+3. **`StravaConnectController.startConnect()`** agora retorna `StravaConnected` diretamente (antes retornava void e dependia do deep link)
+4. **`CallbackActivity`** adicionada ao AndroidManifest para o `flutter_web_auth_2` capturar o scheme `omnirunner://`
+5. **Callback duplicado removido do `AuthGate`** — o deep link handler e o FlutterWebAuth2 capturavam o mesmo redirect, causando uma tentativa de trocar o code já usado (erro rápido que desaparecia). Agora o `AuthGate` ignora silenciosamente callbacks do Strava.
+
+### Arquivos modificados
+- `lib/features/strava/data/strava_auth_repository_impl.dart` (FlutterWebAuth2 em vez de url_launcher)
+- `lib/features/strava/presentation/strava_connect_controller.dart` (startConnect retorna StravaConnected)
+- `lib/presentation/screens/settings_screen.dart` (trata retorno + AuthCancelled)
+- `lib/presentation/screens/auth_gate.dart` (remove _handleStravaCallback duplicado)
+- `android/app/src/main/AndroidManifest.xml` (+CallbackActivity)
+- `pubspec.yaml` (+flutter_web_auth_2)
+
+---

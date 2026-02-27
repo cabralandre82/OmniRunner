@@ -1311,7 +1311,7 @@ cd portal/ && npm run build && vercel --prod
 7. **Billing NUNCA aparece no app mobile** — preços, checkout, pagamentos são exclusivos do portal web.
 8. **O frontend mobile é offline-first** — dados locais (Isar) são sincronizados em background.
 9. **Referências de specs**: `GAMIFICATION_POLICY.md`, `PROGRESSION_SPEC.md`, `SOCIAL_SPEC.md`, `contracts/analytics_api.md`.
-10. **Decisões arquiteturais**: `docs/DECISIONS_LOG.md` (107 decisões documentadas, incluindo billing, auto top-up, refunds, limites, strava-only, parks, social, push, polimento, liga, wrapped, running dna, backend audit, liga estadual, auditoria final, Strava OAuth fix, cooperative→team).
+10. **Decisões arquiteturais**: `docs/DECISIONS_LOG.md` (108 decisões documentadas, incluindo billing, auto top-up, refunds, limites, strava-only, parks, social, push, polimento, liga, wrapped, running dna, backend audit, liga estadual, auditoria final, Strava OAuth fix, cooperative→team, FlutterWebAuth2).
 
 ### RPCs disponíveis (funções SQL SECURITY DEFINER):
 
