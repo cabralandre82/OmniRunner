@@ -10,6 +10,7 @@ import {
   SPEED_IMPOSSIBLE,
   GPS_JUMP,
   TELEPORT,
+  VEHICLE_SUSPECTED,
   NO_MOTION_PATTERN,
   BACKGROUND_GPS_GAP,
   TIME_SKEW,
@@ -55,6 +56,7 @@ interface VerifyPayload {
   start_time_ms: number;
   end_time_ms: number;
   avg_bpm?: number;
+  avg_cadence_spm?: number;
 }
 
 // ── Thresholds ────────────────────────────────────────────────────────────
@@ -72,6 +74,9 @@ const MOTION_RADIUS_M = 150;         // all points within 150m = no real motion 
 const MIN_HR_RUNNING_BPM = 80;      // avg HR below this while running > 1km = suspicious
 const MAX_HR_BPM = 220;             // above 220 = physiologically impossible
 const HR_CHECK_MIN_DISTANCE_M = 1000; // only check HR if session > 1km
+const VEHICLE_MIN_SPEED_KMH = 15;    // avg speed above this is suspicious with low cadence
+const VEHICLE_MAX_CADENCE_SPM = 100;  // avg cadence below this at high speed = likely vehicle
+const VEHICLE_MIN_DISTANCE_M = 1000;  // only check cadence correlation if session > 1km
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -282,6 +287,20 @@ serve(async (req: Request) => {
         p.total_distance_m >= HR_CHECK_MIN_DISTANCE_M
       ) {
         flags.push(IMPLAUSIBLE_HR_LOW);
+      }
+    }
+
+    // ─ Cadence vs speed correlation (vehicle detection) ─────────────
+
+    if (
+      p.avg_cadence_spm != null &&
+      p.avg_cadence_spm >= 0 &&
+      p.total_distance_m >= VEHICLE_MIN_DISTANCE_M &&
+      durationMs > 0
+    ) {
+      const avgSpeedKmh = (p.total_distance_m / 1000) / (durationMs / 3_600_000);
+      if (avgSpeedKmh > VEHICLE_MIN_SPEED_KMH && p.avg_cadence_spm < VEHICLE_MAX_CADENCE_SPM) {
+        flags.push(VEHICLE_SUSPECTED);
       }
     }
 

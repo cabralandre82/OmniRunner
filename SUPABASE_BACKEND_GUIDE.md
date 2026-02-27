@@ -1311,7 +1311,7 @@ cd portal/ && npm run build && vercel --prod
 7. **Billing NUNCA aparece no app mobile** — preços, checkout, pagamentos são exclusivos do portal web.
 8. **O frontend mobile é offline-first** — dados locais (Isar) são sincronizados em background.
 9. **Referências de specs**: `GAMIFICATION_POLICY.md`, `PROGRESSION_SPEC.md`, `SOCIAL_SPEC.md`, `contracts/analytics_api.md`.
-10. **Decisões arquiteturais**: `docs/DECISIONS_LOG.md` (96 decisões documentadas, incluindo billing, auto top-up, refunds, limites, strava-only, parks, social, push, polimento, liga, wrapped, running dna, backend audit, liga estadual, auditoria final).
+10. **Decisões arquiteturais**: `docs/DECISIONS_LOG.md` (98 decisões documentadas, incluindo billing, auto top-up, refunds, limites, strava-only, parks, social, push, polimento, liga, wrapped, running dna, backend audit, liga estadual, auditoria final).
 
 ### RPCs disponíveis (funções SQL SECURITY DEFINER):
 
@@ -1350,4 +1350,4 @@ cd portal/ && npm run build && vercel --prod
 
 ---
 
-*Gerado em 2026-02-18, atualizado em 2026-02-26 (Sprint 25.0.0 + Parks E2E + Backend Audit + Liga Admin + Liga Estadual + Auditoria Final) — 67 tabelas, 54 Edge Functions, 60 migrations, DECISAO 096*
+*Gerado em 2026-02-18, atualizado em 2026-02-26 (Sprint 25.0.0 + Parks E2E + Backend Audit + Liga Admin + Liga Estadual + Auditoria Final) — 67 tabelas, 55 Edge Functions, 60 migrations, DECISAO 098*

@@ -2744,3 +2744,39 @@ Auditoria pré-launch identificou 4 vulnerabilidades críticas:
 - `lib/presentation/screens/athlete_verification_screen.dart` (tooltip)
 
 ---
+
+## DECISÃO 097 — Step cadence correlation server-side (anti-veículo)
+
+**Data:** 2026-02-26
+**Contexto:** O strava-webhook já verificava cadência por stream. O verify-session (chamado pelo Flutter client) não tinha essa verificação.
+**Decisão:** Adicionar `avg_cadence_spm` como campo opcional no payload do verify-session. Se avg cadence < 100 SPM com velocidade média > 15 km/h e distância > 1 km, emitir flag `VEHICLE_SUSPECTED`.
+
+**Implementação:**
+- verify-session: novo threshold `VEHICLE_MIN_SPEED_KMH=15`, `VEHICLE_MAX_CADENCE_SPM=100`, `VEHICLE_MIN_DISTANCE_M=1000`.
+- `integrity_flags.ts`: comentário atualizado — VEHICLE_SUSPECTED agora verificado em 2 locais (strava-webhook + verify-session).
+- Flutter: `WorkoutSessionEntity` e `WorkoutSessionRecord` ganharam campo `avgCadenceSpm` (nullable).
+- `sync_service.dart` e `sync_repo.dart`: passam `avgCadenceSpm` para verify-session quando disponível.
+
+### Arquivos alterados
+
+- `supabase/functions/verify-session/index.ts` (cadence check + import VEHICLE_SUSPECTED)
+- `supabase/functions/_shared/integrity_flags.ts` (comentário)
+- `omni_runner/lib/domain/entities/workout_session_entity.dart` (+avgCadenceSpm)
+- `omni_runner/lib/data/models/isar/workout_session_record.dart` (+avgCadenceSpm)
+- `omni_runner/lib/data/repositories_impl/isar_session_repo.dart` (mappers)
+- `omni_runner/lib/data/repositories_impl/sync_repo.dart` (pass cadence)
+- `omni_runner/lib/data/datasources/sync_service.dart` (optional param)
+
+---
+
+## DECISÃO 098 — Reconcile wallets cron Edge Function com alerting
+
+**Data:** 2026-02-26
+**Contexto:** A RPC `reconcile_all_wallets()` já existia (DECISÃO 095), mas não havia um mecanismo automatizado para chamá-la periodicamente e alertar operadores quando drift fosse detectado.
+**Decisão:** Criar Edge Function `reconcile-wallets-cron` agendada via pg_cron (diário 04:00 UTC) que chama `reconcile_all_wallets()` e emite log estruturado com `severity: "ALERT"` quando `drifted > 0`, compatível com Datadog/Grafana/Cloud Logging.
+
+### Arquivos alterados
+
+- `supabase/functions/reconcile-wallets-cron/index.ts` (novo)
+
+---

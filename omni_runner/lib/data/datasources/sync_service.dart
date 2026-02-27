@@ -96,6 +96,7 @@ class SyncService {
     required double totalDistanceM,
     required int startTimeMs,
     required int endTimeMs,
+    double? avgCadenceSpm,
   }) async {
     if (!isConfigured) return;
     try {
@@ -107,6 +108,7 @@ class SyncService {
             'total_distance_m': totalDistanceM,
             'start_time_ms': startTimeMs,
             'end_time_ms': endTimeMs,
+            if (avgCadenceSpm != null) 'avg_cadence_spm': avgCadenceSpm,
           })
           .timeout(const Duration(seconds: 20));
       AppLogger.info('verify-session OK: $sessionId', tag: _tag);

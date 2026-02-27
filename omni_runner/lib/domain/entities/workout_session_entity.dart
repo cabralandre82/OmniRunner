@@ -49,6 +49,9 @@ final class WorkoutSessionEntity extends Equatable {
   /// Maximum heart rate in BPM. Null if no HR data was collected.
   final int? maxBpm;
 
+  /// Average running cadence in steps per minute. Null if unavailable.
+  final double? avgCadenceSpm;
+
   /// Where this session originated: 'app', 'strava', 'watch', 'manual'.
   final String source;
 
@@ -69,6 +72,7 @@ final class WorkoutSessionEntity extends Equatable {
     this.isSynced = false,
     this.avgBpm,
     this.maxBpm,
+    this.avgCadenceSpm,
     this.source = 'app',
     this.deviceName,
   });
@@ -88,6 +92,7 @@ final class WorkoutSessionEntity extends Equatable {
         isSynced,
         avgBpm,
         maxBpm,
+        avgCadenceSpm,
         source,
         deviceName,
       ];

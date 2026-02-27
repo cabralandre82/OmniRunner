@@ -52,7 +52,7 @@
 │   Supabase Backend   │              │    Portal B2B        │
 │                      │              │    (Next.js)         │
 │  PostgreSQL (RLS)    │              │                      │
-│  54 Edge Functions   │              │  14 páginas          │
+│  55 Edge Functions   │              │  14 páginas          │
 │  60 SQL Migrations   │              │  Stripe checkout     │
 │  RPCs (SECURITY DEF) │              │  RBAC middleware     │
 │  pg_cron schedules   │              │  SSR auth            │
@@ -484,7 +484,7 @@ O modelo de receita é **B2B SaaS** (plataforma → assessoria). O app **nunca p
 | Env vars | `--dart-define-from-file=.env.dev` |
 | Keystore | `omnirunner-release.keystore` |
 | APK atual | `v1.0.13` (127 MB) |
-| Supabase | 54 Edge Functions + 60 migrations |
+| Supabase | 55 Edge Functions + 60 migrations |
 | Portal | `portal/` (Next.js 14, Vercel, Root Directory: `portal`) |
 | CI/CD | Manual (flutter build apk) |
 | Min Android SDK | 21 (Android 5.0) |

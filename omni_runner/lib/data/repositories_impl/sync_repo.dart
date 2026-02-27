@@ -212,6 +212,7 @@ class SyncRepo implements ISyncRepo {
       totalDistanceM: record.totalDistanceM,
       startTimeMs: record.startTimeMs,
       endTimeMs: record.endTimeMs ?? record.startTimeMs,
+      avgCadenceSpm: record.avgCadenceSpm,
     );
   }
 }

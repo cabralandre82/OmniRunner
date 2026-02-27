@@ -169,6 +169,7 @@ final class IsarSessionRepo implements ISessionRepo {
       ..integrityFlags = List.of(entity.integrityFlags)
       ..avgBpm = entity.avgBpm
       ..maxBpm = entity.maxBpm
+      ..avgCadenceSpm = entity.avgCadenceSpm
       ..source = entity.source
       ..deviceName = entity.deviceName;
   }
@@ -188,6 +189,7 @@ final class IsarSessionRepo implements ISessionRepo {
       isSynced: record.isSynced,
       avgBpm: record.avgBpm,
       maxBpm: record.maxBpm,
+      avgCadenceSpm: record.avgCadenceSpm,
       source: record.source,
       deviceName: record.deviceName,
     );

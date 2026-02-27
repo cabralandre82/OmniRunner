@@ -9,8 +9,9 @@
  *              >= 3 critical-flagged sessions in 30 days → DOWNGRADED.
  *   QUALITY  — informational. Trigger is_verified=false but lower weight.
  *
- * VEHICLE_SUSPECTED is currently client-only (server doesn't receive step
- * cadence data). Included here for completeness and future server-side check.
+ * VEHICLE_SUSPECTED is checked server-side in two places:
+ *   1. strava-webhook — per-stream cadence vs velocity analysis
+ *   2. verify-session — avg_cadence_spm vs average pace correlation
  */
 
 // ── CRITICAL FLAGS ────────────────────────────────────────────────────────
