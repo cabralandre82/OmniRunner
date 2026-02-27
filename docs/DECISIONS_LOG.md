@@ -2058,3 +2058,18 @@ sem restrição de path, fazendo o Android interceptar a URL e redirecionar de v
 - `lib/presentation/screens/staff_dashboard_screen.dart` (_openPortal com fallback)
 
 ---
+
+## DECISÃO 080 — Remover info debug do perfil (26/02/2026)
+
+### Contexto:
+A tela de perfil (atleta e staff) exibia um card com "Modo", "ID" e "Criado em" —
+informações internas de debug sem utilidade para o usuário final.
+
+### Decisão:
+Removido o card de info debug, os métodos auxiliares `_infoRow` e `_truncate`, e o
+import de `AppConfig` que ficou sem uso.
+
+### Arquivos modificados:
+- `lib/presentation/screens/profile_screen.dart`
+
+---
