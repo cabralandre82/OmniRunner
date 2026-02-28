@@ -517,7 +517,7 @@ async function linkSessionToChallenges(
   const challengeIds = participations.map((p: any) => p.challenge_id);
   const { data: challenges } = await db
     .from("challenges")
-    .select("id, status, metric, min_session_distance_m, starts_at_ms, ends_at_ms")
+    .select("id, status, metric, target, min_session_distance_m, starts_at_ms, ends_at_ms")
     .in("id", challengeIds)
     .eq("status", "active");
 
@@ -531,6 +531,11 @@ async function linkSessionToChallenges(
     const minDist = ch.min_session_distance_m ?? 0;
     if (distanceM < minDist) continue;
 
+    // For time/pace challenges, athlete must complete the full target distance
+    const requiresTarget = ch.metric === "time" || ch.metric === "pace";
+    const chTarget = (ch.target as number) ?? 0;
+    if (requiresTarget && chTarget > 0 && distanceM < chTarget) continue;
+
     if (ch.starts_at_ms && ch.ends_at_ms) {
       if (sessionEndMs < ch.starts_at_ms || sessionStartMs > ch.ends_at_ms) continue;
     }
@@ -539,7 +544,11 @@ async function linkSessionToChallenges(
     switch (ch.metric) {
       case "distance": metricValue = distanceM; break;
       case "pace": metricValue = avgPaceSecKm; break;
-      case "time": metricValue = movingMs; break;
+      case "time":
+        metricValue = (chTarget > 0 && distanceM > chTarget)
+          ? movingMs * (chTarget / distanceM)
+          : movingMs;
+        break;
       default: metricValue = distanceM;
     }
 

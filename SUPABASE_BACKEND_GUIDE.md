@@ -1,6 +1,6 @@
 # SUPABASE_BACKEND_GUIDE.md — Omni Runner Backend
 
-> **Atualizado:** 2026-02-28 (Phase 35.99.0 — 125 decisões documentadas)
+> **Atualizado:** 2026-02-26 (Phase 35.99.0 — 128 decisões documentadas)
 > **Projeto:** Omni Runner (app de corrida com gamificação B2B)
 > **Stack Backend:** Supabase (Postgres + Auth + Storage + Edge Functions + pg_cron)
 > **Stack Mobile:** Flutter (Dart) — offline-first com Isar local
@@ -615,6 +615,10 @@ Atleta finaliza corrida no device
        ▼ (se atleta está em challenges ativos)
   [5] Client atualiza challenge_participants.progress_value
        │  (via RLS UPDATE próprio)
+       │  Regras de distância-alvo (fastestAtDistance / bestPaceAtDistance):
+       │  • distância < target → sessão REJEITADA (belowTargetDistance)
+       │  • distância ≥ target → aceita; se > target, tempo escalado
+       │    proporcionalmente: tempo × (target / distância)
        │
        ▼ (cron hourly)
   [6] POST /settle-challenge
@@ -708,6 +712,12 @@ Atleta finaliza corrida no device
 **Payload:** `{ "challenge_id": "uuid" }` ou `{}` (settle all due)
 
 **Lógica:**
+
+> **Nota:** `progress_value` para `fastestAtDistance` já é escalado proporcionalmente
+> no momento do submit (app + webhook): se o atleta correu mais que o `target`,
+> `tempo_registrado = tempo_real × (target / distância_real)`. Sessões com distância
+> abaixo do `target` são rejeitadas e não contam.
+
 1. Busca challenges com `status IN ('active', 'completing')` e `ends_at_ms <= now()`
 2. Para cada challenge:
    - Ordena participantes por `progress_value` (desc para distance/time, asc para pace)

@@ -108,6 +108,18 @@ final class PostSessionChallengeDispatcher {
       );
     }
 
+    // 3b. For target-based goals the athlete must complete the full target distance.
+    final requiresTarget =
+        challenge.rules.goal == ChallengeGoal.fastestAtDistance ||
+        challenge.rules.goal == ChallengeGoal.bestPaceAtDistance;
+    final target = challenge.rules.target;
+    if (requiresTarget && target != null && target > 0 && totalDistanceM < target) {
+      return _rejected(
+        session, challenge, userId, totalDistanceM, hasHr, nowMs,
+        BindingRejectionReason.belowTargetDistance,
+      );
+    }
+
     // 4. Within challenge window.
     if (challenge.startsAtMs != null && challenge.endsAtMs != null) {
       final sessionEnd = session.endTimeMs ?? nowMs;
@@ -155,6 +167,7 @@ final class PostSessionChallengeDispatcher {
       avgPaceSecPerKm,
       movingMs,
       (session.endTimeMs ?? nowMs) - session.startTimeMs,
+      challenge.rules.target,
     );
 
     // 8. Submit to challenge.
@@ -196,19 +209,35 @@ final class PostSessionChallengeDispatcher {
     );
   }
 
+  /// For [fastestAtDistance], if the runner exceeded the target distance,
+  /// scale elapsed time proportionally so nobody is penalized for running
+  /// farther than required.  e.g. 12 km in 60 min → 10 km ≈ 50 min.
   static double _extractProgressValue(
     ChallengeGoal goal,
     double totalDistanceM,
     double? avgPaceSecPerKm,
     int movingMs,
     int elapsedMs,
+    double? target,
   ) =>
       switch (goal) {
-        ChallengeGoal.fastestAtDistance => elapsedMs.toDouble() / 1000.0,
+        ChallengeGoal.fastestAtDistance => _scaleTimeToTarget(
+            elapsedMs.toDouble() / 1000.0, totalDistanceM, target),
         ChallengeGoal.mostDistance => totalDistanceM,
         ChallengeGoal.bestPaceAtDistance => avgPaceSecPerKm ?? 0.0,
         ChallengeGoal.collectiveDistance => totalDistanceM,
       };
+
+  static double _scaleTimeToTarget(
+    double elapsedSec,
+    double totalDistanceM,
+    double? target,
+  ) {
+    if (target == null || target <= 0 || totalDistanceM <= target) {
+      return elapsedSec;
+    }
+    return elapsedSec * (target / totalDistanceM);
+  }
 
   static ChallengeRunBindingEntity _rejected(
     WorkoutSessionEntity session,

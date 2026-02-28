@@ -3681,3 +3681,42 @@ Varredura completa revelou mais 6 problemas de dados hardcoded ou ausentes:
 - `supabase/migrations/20260228160000_seed_missions_seasons_weekly_goals.sql`
 
 ---
+
+## DECISÃO 128 — Cálculo proporcional de tempo em desafios de distância-alvo (26/02/2026)
+
+### Problema
+Num desafio "mais rápido nos 10 km" (`fastestAtDistance`), se o atleta corre 12 km,
+o tempo total de 12 km era registrado como metricValue. Isso penaliza quem corre
+mais do que o necessário — quanto mais longe, pior o tempo registrado, mesmo que
+o ritmo seja idêntico.
+
+### Solução — Opção A (Proporcional)
+Quando `totalDistanceM > target`, o tempo é escalado proporcionalmente:
+
+```
+tempoEstimado = tempoReal × (distânciaAlvo / distânciaReal)
+```
+
+Exemplo: 12 km em 60 min → 10 km ≈ 50 min.
+
+Premissa: ritmo médio uniforme ao longo da corrida. É matematicamente justo,
+trivial de implementar, e não depende de dados externos (splits, GPS stream).
+
+### Onde foi aplicado
+1. **App (Dart)** — `PostSessionChallengeDispatcher._extractProgressValue`:
+   novo método `_scaleTimeToTarget()` aplica fator `target / totalDistanceM`
+   ao elapsed time para `fastestAtDistance`.
+2. **Webhook Strava (TypeScript)** — `linkSessionToChallenges`:
+   mesma lógica proporcional para `metric === "time"` quando `distanceM > target`.
+
+Para `bestPaceAtDistance`: pace (s/km) já é independente de distância total —
+`avg_pace = moving_time / distance` não muda com escala proporcional.
+
+Para `mostDistance` / `collectiveDistance`: quanto mais, melhor — sem necessidade
+de ajuste.
+
+### Arquivos modificados
+- `lib/domain/usecases/gamification/post_session_challenge_dispatcher.dart`
+- `supabase/functions/strava-webhook/index.ts`
+
+---

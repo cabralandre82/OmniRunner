@@ -21,6 +21,9 @@ enum BindingRejectionReason {
   /// Challenge requires strict anti-cheat (HR) but session has no HR data.
   missingHeartRate,
 
+  /// Session distance is below the challenge target (e.g. ran 8 km in a 10 km challenge).
+  belowTargetDistance,
+
   /// Submit to challenge failed due to a transient error (I/O, DB).
   submitFailed,
 }
