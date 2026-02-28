@@ -21,15 +21,19 @@ final class ProgressionLoaded extends ProgressionState {
   final ProfileProgressEntity profile;
   final List<XpTransactionEntity> recentXp;
   final WeeklyGoalEntity? weeklyGoal;
+  final List<Map<String, dynamic>> badgeCatalog;
+  final Set<String> earnedBadgeIds;
 
   const ProgressionLoaded({
     required this.profile,
     required this.recentXp,
     this.weeklyGoal,
+    this.badgeCatalog = const [],
+    this.earnedBadgeIds = const {},
   });
 
   @override
-  List<Object?> get props => [profile, recentXp, weeklyGoal];
+  List<Object?> get props => [profile, recentXp, weeklyGoal, badgeCatalog, earnedBadgeIds];
 }
 
 final class ProgressionError extends ProgressionState {

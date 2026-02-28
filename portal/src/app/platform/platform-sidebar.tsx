@@ -45,6 +45,7 @@ export function PlatformSidebar({ email }: { email: string }) {
         <SidebarLink href="/platform/financeiro" label="Financeiro" pathname={pathname} />
         <SidebarLink href="/platform/reembolsos" label="Reembolsos" pathname={pathname} />
         <SidebarLink href="/platform/produtos" label="Produtos" pathname={pathname} />
+        <SidebarLink href="/platform/conquistas" label="Conquistas" pathname={pathname} />
         <SidebarLink href="/platform/liga" label="Liga" pathname={pathname} />
         <SidebarLink href="/platform/support" label="Suporte" pathname={pathname} />
         <Link

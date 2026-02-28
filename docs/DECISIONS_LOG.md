@@ -3605,3 +3605,52 @@ Na aba "Hoje", o resumo mostrava tudo zero: 0 km total, 0 corridas, 0 XP, nível
 - `supabase/functions/strava-webhook/index.ts`
 
 ---
+
+## DECISÃO 126 — Conquistas: catálogo no app + avaliação retroativa + CRUD no portal (28/02/2026)
+
+### Problema
+A tela "Meu Progresso → Conquistas" não exibia nada:
+1. A tela de progressão não tinha seção de badges — nunca foi implementada
+2. O banco tinha apenas 6 dos 30 badges catalogados (seed incompleto)
+3. A avaliação de badges (`evaluate-badges` EF) só roda para sessões in-app, nunca para Strava
+4. O portal admin não tinha nenhuma gestão de conquistas
+
+### Solução
+1. **Nova RPC `evaluate_badges_retroactive(p_user_id)`**:
+   - Avalia todos os badges do catálogo contra stats agregados do perfil
+   - Suporta todos os 16 tipos de critério (single_session_distance, lifetime_distance, session_count, daily_streak, pace_below, etc.)
+   - Insere `badge_awards` + `xp_transactions` para novos desbloqueios
+   - Atualiza `profile_progress.total_xp` e `level`
+   - Chamado automaticamente no `ProgressionBloc`, `StravaConnectController`, e `strava-webhook`
+
+2. **Seção Conquistas na tela de progressão**:
+   - Grid com todos os 30 badges do catálogo
+   - Badges desbloqueados em destaque com cor do tier
+   - Badges bloqueados em cinza com descrição do requisito
+   - Tap abre bottom sheet com detalhes, tier, XP e status
+   - Contador "earned/total"
+
+3. **Inserção do catálogo completo**:
+   - 30 badges inseridos (8 distância, 11 frequência, 5 velocidade, 4 resistência, 6 social, 2 especial)
+   - Usuário teste recebeu retroativamente 9 badges (450 XP)
+
+4. **Portal admin — Conquistas**:
+   - Nova página `/platform/conquistas` no portal admin
+   - Listagem por categoria com tabela (nome, tier, descrição, XP, coins, critério, secreta)
+   - Formulário de criação de novas conquistas com todos os campos
+   - Suporta 16 tipos de critério com placeholder JSON
+   - Link na sidebar e Acesso Rápido do dashboard
+
+### Arquivos modificados/criados
+- `supabase/migrations/20260228150000_evaluate_badges_retroactive.sql` (nova RPC)
+- `lib/presentation/screens/progression_screen.dart` (seção Conquistas)
+- `lib/presentation/blocs/progression/progression_bloc.dart` (fetch badges + evaluate)
+- `lib/presentation/blocs/progression/progression_state.dart` (campos badges)
+- `lib/features/strava/presentation/strava_connect_controller.dart` (_evaluateBadges)
+- `supabase/functions/strava-webhook/index.ts` (evaluate_badges_retroactive)
+- `portal/src/app/platform/conquistas/page.tsx` (nova página)
+- `portal/src/app/platform/conquistas/badge-form.tsx` (formulário)
+- `portal/src/app/platform/platform-sidebar.tsx` (link sidebar)
+- `portal/src/app/platform/page.tsx` (quick link)
+
+---

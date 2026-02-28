@@ -35,6 +35,8 @@ class ProgressionScreen extends StatelessWidget {
             :final profile,
             :final recentXp,
             :final weeklyGoal,
+            :final badgeCatalog,
+            :final earnedBadgeIds,
           ) =>
             profile.lifetimeSessionCount == 0
                 ? const _EmptyState()
@@ -42,6 +44,8 @@ class ProgressionScreen extends StatelessWidget {
                     profile: profile,
                     recentXp: recentXp,
                     weeklyGoal: weeklyGoal,
+                    badgeCatalog: badgeCatalog,
+                    earnedBadgeIds: earnedBadgeIds,
                   ),
           ProgressionError(:final message) => Center(
               child: Padding(
@@ -125,11 +129,15 @@ class _LoadedBody extends StatelessWidget {
   final ProfileProgressEntity profile;
   final List<XpTransactionEntity> recentXp;
   final WeeklyGoalEntity? weeklyGoal;
+  final List<Map<String, dynamic>> badgeCatalog;
+  final Set<String> earnedBadgeIds;
 
   const _LoadedBody({
     required this.profile,
     required this.recentXp,
     this.weeklyGoal,
+    this.badgeCatalog = const [],
+    this.earnedBadgeIds = const {},
   });
 
   @override
@@ -173,6 +181,44 @@ class _LoadedBody extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: _LifetimeStatsCard(profile: profile),
         ),
+
+        // ── Conquistas (Badges) ──────────────────────────────────────
+        if (badgeCatalog.isNotEmpty) ...[
+          const Divider(height: 32),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Row(
+              children: [
+                Text(
+                  'Conquistas',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${earnedBadgeIds.length}/${badgeCatalog.length}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber.shade800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _BadgeGrid(
+            catalog: badgeCatalog,
+            earnedIds: earnedBadgeIds,
+          ),
+        ],
 
         // ── XP History ───────────────────────────────────────────────
         const Divider(height: 32),
@@ -732,4 +778,227 @@ class _XpTile extends StatelessWidget {
         '${dt.hour.toString().padLeft(2, '0')}:'
         '${dt.minute.toString().padLeft(2, '0')}';
   }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Badges Grid
+// ═════════════════════════════════════════════════════════════════════════════
+
+class _BadgeGrid extends StatelessWidget {
+  final List<Map<String, dynamic>> catalog;
+  final Set<String> earnedIds;
+
+  const _BadgeGrid({required this.catalog, required this.earnedIds});
+
+  @override
+  Widget build(BuildContext context) {
+    final earned = catalog.where((b) => earnedIds.contains(b['id'])).toList();
+    final locked = catalog.where((b) => !earnedIds.contains(b['id'])).toList();
+    final sorted = [...earned, ...locked];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: sorted.map((b) {
+          final isEarned = earnedIds.contains(b['id']);
+          return _BadgeTile(badge: b, isEarned: isEarned);
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _BadgeTile extends StatelessWidget {
+  final Map<String, dynamic> badge;
+  final bool isEarned;
+
+  const _BadgeTile({required this.badge, required this.isEarned});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tier = badge['tier'] as String? ?? 'bronze';
+    final isSecret = badge['is_secret'] as bool? ?? false;
+    final name = (isSecret && !isEarned) ? '???' : (badge['name'] as String? ?? '');
+    final desc = (isSecret && !isEarned)
+        ? 'Conquista secreta'
+        : (badge['description'] as String? ?? '');
+    final xp = (badge['xp_reward'] as num?)?.toInt() ?? 0;
+    final tierColor = _tierColor(tier);
+
+    return GestureDetector(
+      onTap: () => _showDetail(context, name, desc, tier, xp),
+      child: Container(
+        width: (MediaQuery.of(context).size.width - 42) / 3,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isEarned
+              ? tierColor.withValues(alpha: 0.12)
+              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(14),
+          border: isEarned
+              ? Border.all(color: tierColor.withValues(alpha: 0.5), width: 1.5)
+              : Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              _tierIcon(tier),
+              size: 32,
+              color: isEarned ? tierColor : theme.colorScheme.outline.withValues(alpha: 0.4),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              name,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+                color: isEarned ? null : theme.colorScheme.outline,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                color: tierColor.withValues(alpha: isEarned ? 0.2 : 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                _tierLabel(tier),
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  color: isEarned ? tierColor : theme.colorScheme.outline,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDetail(BuildContext context, String name, String desc, String tier, int xp) {
+    final tierColor = _tierColor(tier);
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _tierIcon(tier),
+              size: 56,
+              color: isEarned ? tierColor : Colors.grey,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              name,
+              style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              desc,
+              style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: tierColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _tierLabel(tier),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: tierColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '+$xp XP',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (isEarned)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green.shade600, size: 20),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Desbloqueada!',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green.shade600,
+                    ),
+                  ),
+                ],
+              )
+            else
+              Text(
+                'Continue correndo para desbloquear!',
+                style: TextStyle(
+                  color: Theme.of(ctx).colorScheme.outline,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Color _tierColor(String tier) => switch (tier) {
+        'diamond' => Colors.deepPurple,
+        'gold' => Colors.amber.shade700,
+        'silver' => Colors.blueGrey,
+        _ => Colors.brown.shade400,
+      };
+
+  static String _tierLabel(String tier) => switch (tier) {
+        'diamond' => 'DIAMANTE',
+        'gold' => 'OURO',
+        'silver' => 'PRATA',
+        _ => 'BRONZE',
+      };
+
+  static IconData _tierIcon(String tier) => switch (tier) {
+        'diamond' => Icons.diamond_rounded,
+        'gold' => Icons.military_tech,
+        'silver' => Icons.workspace_premium,
+        _ => Icons.emoji_events_outlined,
+      };
 }

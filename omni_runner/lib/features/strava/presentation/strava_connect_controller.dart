@@ -112,6 +112,7 @@ final class StravaConnectController {
     await _backfillStravaSessions();
     await _backfillParkActivities();
     await _recalculateProfileProgress();
+    await _evaluateBadges();
     await _triggerVerificationEval();
   }
 
@@ -169,6 +170,21 @@ final class StravaConnectController {
       AppLogger.info('Profile progress recalculated', tag: _tag);
     } catch (e) {
       AppLogger.warn('Failed to recalculate profile progress: $e', tag: _tag);
+    }
+  }
+
+  /// Retroactively evaluate badges based on current aggregate stats.
+  Future<void> _evaluateBadges() async {
+    try {
+      final uid = Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) return;
+
+      await Supabase.instance.client
+          .rpc('evaluate_badges_retroactive', params: {'p_user_id': uid});
+
+      AppLogger.info('Badges evaluated retroactively', tag: _tag);
+    } catch (e) {
+      AppLogger.warn('Failed to evaluate badges: $e', tag: _tag);
     }
   }
 

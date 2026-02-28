@@ -44,15 +44,19 @@ class ProgressionBloc extends Bloc<ProgressionEvent, ProgressionState> {
 
   Future<void> _fetch(Emitter<ProgressionState> emit) async {
     try {
+      await _recalculateAndEvaluate();
       await _syncProfileProgress();
       await _syncXpTransactions();
       final profile = await _profileRepo.getByUserId(_userId);
       final xpHistory = await _xpRepo.getByUserId(_userId);
       final weeklyGoal = await _fetchWeeklyGoal();
+      final badges = await _fetchBadges();
       emit(ProgressionLoaded(
         profile: profile,
         recentXp: xpHistory,
         weeklyGoal: weeklyGoal,
+        badgeCatalog: badges.$1,
+        earnedBadgeIds: badges.$2,
       ));
     } on Exception catch (e) {
       emit(ProgressionError('Erro ao carregar progressão: $e'));
@@ -156,6 +160,42 @@ class ProgressionBloc extends Bloc<ProgressionEvent, ProgressionState> {
       );
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Recalculate profile progress and retroactively evaluate badges.
+  Future<void> _recalculateAndEvaluate() async {
+    if (!AppConfig.isSupabaseReady || _userId.isEmpty) return;
+    try {
+      final db = Supabase.instance.client;
+      await db.rpc('recalculate_profile_progress', params: {'p_user_id': _userId});
+      await db.rpc('evaluate_badges_retroactive', params: {'p_user_id': _userId});
+    } catch (_) {}
+  }
+
+  /// Fetch badge catalog and user's earned badges from Supabase.
+  Future<(List<Map<String, dynamic>>, Set<String>)> _fetchBadges() async {
+    if (!AppConfig.isSupabaseReady || _userId.isEmpty) {
+      return (const <Map<String, dynamic>>[], const <String>{});
+    }
+    try {
+      final db = Supabase.instance.client;
+      final catalogRows = await db
+          .from('badges')
+          .select('id, category, tier, name, description, xp_reward, coins_reward, is_secret')
+          .order('category')
+          .order('tier');
+      final awardsRows = await db
+          .from('badge_awards')
+          .select('badge_id')
+          .eq('user_id', _userId);
+      final catalog = List<Map<String, dynamic>>.from(catalogRows as List);
+      final earned = (awardsRows as List)
+          .map((r) => r['badge_id'] as String)
+          .toSet();
+      return (catalog, earned);
+    } catch (_) {
+      return (const <Map<String, dynamic>>[], const <String>{});
     }
   }
 

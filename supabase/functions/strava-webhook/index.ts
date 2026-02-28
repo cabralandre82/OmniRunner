@@ -388,8 +388,10 @@ serve(async (req: Request) => {
 
         db.rpc("eval_athlete_verification", { p_user_id: conn.user_id }).then(() => {}, () => {});
 
-        // Update profile_progress (XP, level, stats) for this verified session
-        db.rpc("recalculate_profile_progress", { p_user_id: conn.user_id }).then(() => {}, () => {});
+        // Update profile_progress (XP, level, stats) and evaluate badges for this verified session
+        db.rpc("recalculate_profile_progress", { p_user_id: conn.user_id }).then(() => {
+          db.rpc("evaluate_badges_retroactive", { p_user_id: conn.user_id }).then(() => {}, () => {});
+        }, () => {});
       }
 
       // 11. Park detection — match GPS start to known parks
