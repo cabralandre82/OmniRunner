@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
 
+export const dynamic = "force-dynamic";
+
 interface Distribution {
   id: string;
   created_at: string;

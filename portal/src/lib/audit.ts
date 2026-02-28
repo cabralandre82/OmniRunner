@@ -14,7 +14,7 @@ export async function auditLog(params: {
 }): Promise<void> {
   try {
     const db = createServiceClient();
-    await db.from("portal_audit_log").insert({
+    const { error } = await db.from("portal_audit_log").insert({
       actor_id: params.actorId,
       group_id: params.groupId ?? null,
       action: params.action,
@@ -22,7 +22,13 @@ export async function auditLog(params: {
       target_id: params.targetId ?? null,
       metadata: params.metadata ?? {},
     });
-  } catch {
-    // Audit must never block the user flow
+    if (error) {
+      console.error("[AuditLog] insert failed:", error.message, {
+        action: params.action,
+        actorId: params.actorId,
+      });
+    }
+  } catch (e) {
+    console.error("[AuditLog] unexpected error:", e);
   }
 }

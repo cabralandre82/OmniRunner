@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
 
+export const dynamic = "force-dynamic";
+
 function formatKm(meters: number): string {
   return (meters / 1000).toLocaleString("pt-BR", {
     minimumFractionDigits: 0,

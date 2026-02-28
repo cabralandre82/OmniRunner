@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+
+export const dynamic = "force-dynamic";
 import { ReevaluateButton } from "./reevaluate-button";
 
 interface AthleteRow {

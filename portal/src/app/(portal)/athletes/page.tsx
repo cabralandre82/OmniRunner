@@ -2,6 +2,8 @@ import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
 import { DistributeButton } from "./distribute-button";
 
+export const dynamic = "force-dynamic";
+
 interface Athlete {
   user_id: string;
   display_name: string;

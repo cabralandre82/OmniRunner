@@ -2,6 +2,8 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
+export const dynamic = "force-dynamic";
+
 const LOW_CREDIT_THRESHOLD = 50;
 
 function formatKm(m: number) {

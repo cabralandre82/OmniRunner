@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { trackBillingEvent } from "@/lib/analytics";
+
+export const dynamic = "force-dynamic";
 import Link from "next/link";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
