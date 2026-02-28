@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/repositories/i_challenge_repo.dart';
@@ -31,7 +32,30 @@ class _ChallengeSessionBannerState extends State<ChallengeSessionBanner> {
   Future<void> _load() async {
     try {
       final repo = sl<IChallengeRepo>();
-      final challenge = await repo.getById(widget.challengeId);
+      var challenge = await repo.getById(widget.challengeId);
+
+      // Fallback to Supabase if not in local Isar
+      if (challenge == null) {
+        try {
+          final row = await Supabase.instance.client
+              .from('challenges')
+              .select('id, status')
+              .eq('id', widget.challengeId)
+              .maybeSingle();
+          if (row != null) {
+            final statusStr = row['status'] as String? ?? '';
+            if (!mounted) return;
+            setState(() {
+              _loading = false;
+              _hasResult = statusStr == 'completed';
+              _statusText = statusStr == 'completed'
+                  ? 'Desafio concluído! Veja o resultado.'
+                  : 'Sua corrida foi registrada no desafio. Resultado em breve.';
+            });
+            return;
+          }
+        } catch (_) {}
+      }
       if (!mounted || challenge == null) return;
 
       final result = await repo.getResultByChallengeId(widget.challengeId);

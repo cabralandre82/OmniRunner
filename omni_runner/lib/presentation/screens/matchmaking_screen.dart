@@ -14,7 +14,6 @@ import 'package:omni_runner/domain/repositories/i_session_repo.dart';
 import 'package:omni_runner/presentation/screens/challenge_create_screen.dart';
 import 'package:omni_runner/features/parks/data/park_detection_service.dart';
 import 'package:omni_runner/features/parks/data/parks_seed.dart';
-import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_bloc.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_event.dart';
@@ -79,25 +78,39 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
 
   Future<void> _checkStrava() async {
     try {
-      final state = await sl<StravaConnectController>().getState();
-      if (mounted) {
-        setState(() => _stravaConnected = state is StravaConnected);
-      }
-    } on Exception catch (_) {}
+      final connected = await sl<StravaConnectController>().isConnected;
+      if (mounted) setState(() => _stravaConnected = connected);
+    } catch (_) {}
   }
 
   Future<void> _loadAssessoriaMembers() async {
     try {
       final uid = sl<UserIdentityProvider>().userId;
-      final memberships = await sl<ICoachingMemberRepo>().getByUserId(uid);
-      final myMembership =
-          memberships.where((m) => m.isAtleta).firstOrNull;
-      if (myMembership == null) return;
+
+      // Get membership from Supabase first, fallback to Isar
+      String? groupId;
+      try {
+        final row = await Supabase.instance.client
+            .from('coaching_members')
+            .select('group_id')
+            .eq('user_id', uid)
+            .eq('role', 'atleta')
+            .maybeSingle();
+        groupId = row?['group_id'] as String?;
+      } catch (_) {
+        final memberships =
+            await sl<ICoachingMemberRepo>().getByUserId(uid);
+        groupId = memberships
+            .where((m) => m.isAtleta)
+            .firstOrNull
+            ?.groupId;
+      }
+      if (groupId == null) return;
 
       final rows = await Supabase.instance.client
           .from('coaching_members')
           .select('user_id, profiles(display_name)')
-          .eq('group_id', myMembership.groupId)
+          .eq('group_id', groupId)
           .eq('role', 'atleta')
           .neq('user_id', uid)
           .limit(10);

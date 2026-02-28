@@ -3411,3 +3411,42 @@ A aba "Hoje" tinha 3 problemas:
 - `lib/presentation/screens/athlete_verification_screen.dart` (Supabase fetch + filtro 1km + merge)
 
 ---
+
+## DECISÃO 121 — Auditoria Isar-only: 7 telas corrigidas para buscar do Supabase (26/02/2026)
+
+### Contexto
+
+Varredura completa do codebase identificou 7 locais onde a UI lia dados exclusivamente do Isar local, ignorando o Supabase (fonte autoritativa). Isso causava:
+- Dados stale ou vazios após reinstall/novo device/login em outro dispositivo
+- Desafios criados pelo servidor (matchmaking, convites) invisíveis para o atleta
+- Strava aparecendo como "desconectado" quando o access token expirava (~6h) mas refresh token existia
+- Membership de assessoria sumindo se o Isar local não tivesse sido populado
+
+### Já estavam corretos (sync antes de ler)
+- `WalletBloc` — synca `wallets` e `coin_ledger` do Supabase → Isar ✅
+- `ProgressionBloc` — synca `profile_progress` e `xp_transactions` do Supabase → Isar ✅
+- `HistoryScreen` — busca do Supabase e merge no Isar ✅
+- `ProfileRepo` — delega para `RemoteProfileDataSource` (Supabase direto) ✅
+- `FriendshipRepo` — `SupabaseFriendshipRepo` (Supabase direto) ✅
+- `RunDetailsScreen._loadPoints()` — fallback para Supabase Storage se Isar vazio ✅
+
+### 7 correções aplicadas
+
+1. **`AthleteDashboardScreen._loadAssessoriaStatus()`**: `ICoachingMemberRepo` + `ICoachingGroupRepo` buscavam apenas do Isar → agora busca de `coaching_members` com join `coaching_groups(name)` do Supabase, fallback Isar se offline
+2. **`AthleteDashboardScreen._checkStrava()`**: usava `getState()` → `state is StravaConnected` que retornava false com token expirado → trocado para `isConnected` (inclui `StravaReauthRequired`)
+3. **`TodayScreen._load()` — profile progress**: `IProfileProgressRepo` apenas do Isar → agora busca de `profile_progress` no Supabase, salva no Isar, fallback local se offline
+4. **`TodayScreen._load()` — challenges**: `IChallengeRepo` apenas do Isar → agora busca de `challenge_participants` + `challenges` no Supabase para desafios ativos, fallback Isar
+5. **`MatchmakingScreen._loadAssessoriaMembers()`**: `ICoachingMemberRepo` para encontrar groupId do usuário → agora busca de `coaching_members` no Supabase, fallback Isar
+6. **`MatchmakingScreen._checkStrava()`**: mesmo bug do item 2 — trocado para `isConnected`
+7. **`ChallengeSessionBanner._load()`**: `IChallengeRepo` apenas do Isar → agora tenta Supabase (`challenges` table) se challenge não encontrado localmente
+
+### Imports limpos
+- Removido `strava_auth_state.dart` de `athlete_dashboard_screen.dart`, `matchmaking_screen.dart`, `today_screen.dart` (não mais referenciado)
+
+### Arquivos modificados
+- `lib/presentation/screens/athlete_dashboard_screen.dart` (assessoria Supabase + isConnected)
+- `lib/presentation/screens/today_screen.dart` (profile_progress + challenges Supabase)
+- `lib/presentation/screens/matchmaking_screen.dart` (membership Supabase + isConnected)
+- `lib/presentation/widgets/challenge_session_banner.dart` (Supabase fallback)
+
+---

@@ -30,7 +30,6 @@ import 'package:flutter/services.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
-import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
 
 /// Athlete home dashboard — 6 cards providing quick access to the main features.
 ///
@@ -110,24 +109,50 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
 
   Future<void> _checkStrava() async {
     try {
-      final state = await sl<StravaConnectController>().getState();
-      if (mounted) setState(() => _stravaConnected = state is StravaConnected);
+      final connected = await sl<StravaConnectController>().isConnected;
+      if (mounted) setState(() => _stravaConnected = connected);
     } catch (_) {}
   }
 
   Future<void> _loadAssessoriaStatus() async {
     try {
       final uid = sl<UserIdentityProvider>().userId;
-      final memberships = await sl<ICoachingMemberRepo>().getByUserId(uid);
-      final membership = memberships.where((m) => m.isAtleta).firstOrNull;
 
-      if (membership != null) {
-        final group =
-            await sl<ICoachingGroupRepo>().getById(membership.groupId);
+      // Try Supabase first (authoritative), fallback to local Isar
+      String? groupId;
+      String? groupName;
+      try {
+        final db = Supabase.instance.client;
+        final row = await db
+            .from('coaching_members')
+            .select('group_id, coaching_groups(name)')
+            .eq('user_id', uid)
+            .eq('role', 'atleta')
+            .maybeSingle();
+        if (row != null) {
+          groupId = row['group_id'] as String?;
+          groupName =
+              (row['coaching_groups'] as Map?)?['name'] as String?;
+        }
+      } catch (_) {
+        // Offline — fall back to Isar
+        final memberships =
+            await sl<ICoachingMemberRepo>().getByUserId(uid);
+        final membership =
+            memberships.where((m) => m.isAtleta).firstOrNull;
+        if (membership != null) {
+          groupId = membership.groupId;
+          final group =
+              await sl<ICoachingGroupRepo>().getById(membership.groupId);
+          groupName = group?.name;
+        }
+      }
+
+      if (groupId != null) {
         if (mounted) {
           setState(() {
-            _assessoriaName = group?.name;
-            _assessoriaGroupId = membership.groupId;
+            _assessoriaName = groupName;
+            _assessoriaGroupId = groupId;
             _loading = false;
           });
           _staggerCtrl.forward();

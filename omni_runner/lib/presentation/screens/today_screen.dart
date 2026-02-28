@@ -64,6 +64,7 @@ import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
+import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
 import 'package:omni_runner/domain/entities/profile_progress_entity.dart';
 import 'package:omni_runner/domain/entities/workout_session_entity.dart';
 import 'package:omni_runner/domain/entities/workout_status.dart';
@@ -77,7 +78,6 @@ import 'package:omni_runner/features/parks/presentation/park_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/push/notification_rules_service.dart';
 import 'package:omni_runner/presentation/screens/athlete_championships_screen.dart';
-import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/presentation/screens/challenge_details_screen.dart';
 import 'package:omni_runner/presentation/screens/settings_screen.dart';
@@ -120,7 +120,47 @@ class _TodayScreenState extends State<TodayScreen> {
   Future<void> _load() async {
     try {
       final uid = sl<UserIdentityProvider>().userId;
-      final profile = await sl<IProfileProgressRepo>().getByUserId(uid);
+
+      // Profile progress: Supabase first (authoritative), fallback to Isar
+      ProfileProgressEntity profile;
+      try {
+        final db = Supabase.instance.client;
+        final row = await db
+            .from('profile_progress')
+            .select()
+            .eq('user_id', uid)
+            .maybeSingle();
+        if (row != null) {
+          profile = ProfileProgressEntity(
+            userId: uid,
+            totalXp: (row['total_xp'] as num?)?.toInt() ?? 0,
+            seasonXp: (row['season_xp'] as num?)?.toInt() ?? 0,
+            currentSeasonId: row['current_season_id'] as String?,
+            dailyStreakCount:
+                (row['daily_streak_count'] as num?)?.toInt() ?? 0,
+            streakBest: (row['streak_best'] as num?)?.toInt() ?? 0,
+            lastStreakDayMs:
+                (row['last_streak_day_ms'] as num?)?.toInt(),
+            hasFreezeAvailable:
+                row['has_freeze_available'] as bool? ?? false,
+            weeklySessionCount:
+                (row['weekly_session_count'] as num?)?.toInt() ?? 0,
+            monthlySessionCount:
+                (row['monthly_session_count'] as num?)?.toInt() ?? 0,
+            lifetimeSessionCount:
+                (row['lifetime_session_count'] as num?)?.toInt() ?? 0,
+            lifetimeDistanceM:
+                (row['lifetime_distance_m'] as num?)?.toDouble() ?? 0,
+            lifetimeMovingMs:
+                (row['lifetime_moving_ms'] as num?)?.toInt() ?? 0,
+          );
+          await sl<IProfileProgressRepo>().save(profile);
+        } else {
+          profile = await sl<IProfileProgressRepo>().getByUserId(uid);
+        }
+      } catch (_) {
+        profile = await sl<IProfileProgressRepo>().getByUserId(uid);
+      }
 
       // Fetch completed sessions from local Isar, filter >= 1km
       final localAll =
@@ -152,13 +192,57 @@ class _TodayScreenState extends State<TodayScreen> {
 
       final stravaConnected = await sl<StravaConnectController>().isConnected;
 
+      // Active challenges: Supabase first, fallback to Isar
       List<ChallengeEntity> active = const [];
       try {
-        final all = await sl<IChallengeRepo>().getByUserId(uid);
-        active = all
-            .where((c) => c.status == ChallengeStatus.active)
+        final db = Supabase.instance.client;
+        final myParts = await db
+            .from('challenge_participants')
+            .select('challenge_id')
+            .eq('user_id', uid)
+            .inFilter('status', ['accepted', 'invited']);
+        final partIds = (myParts as List)
+            .map((r) => r['challenge_id'] as String)
             .toList();
-      } catch (_) {}
+        if (partIds.isNotEmpty) {
+          final challRows = await db
+              .from('challenges')
+              .select('id, title, type, status, ends_at_ms, entry_fee_coins')
+              .inFilter('id', partIds)
+              .eq('status', 'active');
+          active = (challRows as List).map((r) {
+            final typeStr = r['type'] as String? ?? 'one_vs_one';
+            return ChallengeEntity(
+              id: r['id'] as String,
+              creatorUserId: '',
+              status: ChallengeStatus.active,
+              type: switch (typeStr) {
+                'group' => ChallengeType.group,
+                'team' => ChallengeType.team,
+                _ => ChallengeType.oneVsOne,
+              },
+              rules: ChallengeRulesEntity(
+                goal: ChallengeGoal.mostDistance,
+                windowMs: 0,
+                entryFeeCoins:
+                    (r['entry_fee_coins'] as num?)?.toInt() ?? 0,
+              ),
+              participants: const [],
+              createdAtMs: 0,
+              endsAtMs: (r['ends_at_ms'] as num?)?.toInt(),
+              title: r['title'] as String?,
+            );
+          }).toList();
+        }
+      } catch (_) {
+        // Offline — fall back to local Isar
+        try {
+          final all = await sl<IChallengeRepo>().getByUserId(uid);
+          active = all
+              .where((c) => c.status == ChallengeStatus.active)
+              .toList();
+        } catch (_) {}
+      }
 
       List<Map<String, dynamic>> champs = const [];
       try {
