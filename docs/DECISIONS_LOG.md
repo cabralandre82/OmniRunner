@@ -3720,3 +3720,39 @@ de ajuste.
 - `supabase/functions/strava-webhook/index.ts`
 
 ---
+
+## DECISÃO 129 — Login Instagram: pre-check de provider + UX de erro (26/02/2026)
+
+### Problema
+Botão "Continuar com Instagram" não funcionava. O `signInWithOAuth(OAuthProvider.facebook)`
+abria o browser para o Supabase, mas o provider Facebook **não está habilitado** no Dashboard
+(production). O browser mostrava uma página de erro e o app ficava esperando o callback
+por 5 minutos até dar timeout, sem feedback ao usuário.
+
+### Causa raiz
+Provider `facebook` desabilitado no Supabase (confirmado via `/auth/v1/settings`).
+Apenas `google`, `email` e `anonymous_users` estavam habilitados.
+
+### Solução
+1. **Pre-check de provider**: `RemoteAuthDataSource` agora verifica os providers
+   habilitados via `/auth/v1/settings` (cache por sessão) antes de tentar OAuth.
+   Se o provider não está habilitado, lança `AuthProviderNotConfigured` imediatamente
+   com mensagem clara: *"Login com Instagram ainda não está disponível."*
+2. **`complete-social-profile`**: adicionado case `facebook → OAUTH_INSTAGRAM`
+   no `detectProvider()` para quando o provider for habilitado futuramente.
+3. **LoginScreen**: removido try/catch redundante; erro agora flui via
+   `AuthFailure` como os demais providers.
+
+### Pendência
+Para o login Instagram funcionar de fato:
+1. Criar Facebook App no Meta Developer Console
+2. Habilitar provider Facebook no Supabase Dashboard (Auth > Providers)
+3. Configurar App ID + App Secret + Callback URL
+
+### Arquivos modificados
+- `lib/data/datasources/remote_auth_datasource.dart` (pre-check + cache de providers)
+- `lib/domain/failures/auth_failure.dart` (`AuthProviderNotConfigured`)
+- `lib/presentation/screens/login_screen.dart` (simplificado)
+- `supabase/functions/complete-social-profile/index.ts` (facebook → OAUTH_INSTAGRAM)
+
+---

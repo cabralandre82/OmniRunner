@@ -32,6 +32,8 @@ function detectProvider(user: { id: string; [key: string]: unknown }): string {
       return "OAUTH_GOOGLE";
     case "apple":
       return "OAUTH_APPLE";
+    case "facebook":
+      return "OAUTH_INSTAGRAM";
     case "email":
       return "EMAIL";
     default: {

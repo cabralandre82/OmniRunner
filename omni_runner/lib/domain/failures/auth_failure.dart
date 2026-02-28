@@ -39,7 +39,13 @@ final class AuthSocialCancelled extends AuthFailure {
       : super('Login cancelado.');
 }
 
+final class AuthProviderNotConfigured extends AuthFailure {
+  final String provider;
+  const AuthProviderNotConfigured(this.provider)
+      : super('Login com Instagram ainda não está disponível. '
+              'Use Google ou e-mail para entrar.');
+}
+
 final class AuthUnknownError extends AuthFailure {
-  const AuthUnknownError([String detail = 'Erro inesperado.'])
-      : super(detail);
+  const AuthUnknownError([super.detail = 'Erro inesperado.']);
 }

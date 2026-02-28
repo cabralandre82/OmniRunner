@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show HttpClient;
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
@@ -98,6 +99,37 @@ class RemoteAuthDataSource implements IAuthDataSource {
         }
       }
     }
+  }
+
+  /// Cached set of enabled OAuth provider names (fetched once per session).
+  Set<String>? _enabledProviders;
+
+  /// Queries Supabase auth settings and throws [AuthProviderNotConfigured]
+  /// if [provider] is not enabled on the server.
+  Future<void> _ensureProviderEnabled(String provider) async {
+    _enabledProviders ??= await _fetchEnabledProviders();
+    if (!_enabledProviders!.contains(provider)) {
+      throw AuthProviderNotConfigured(provider);
+    }
+  }
+
+  Future<Set<String>> _fetchEnabledProviders() async {
+    try {
+      final uri = Uri.parse('${AppConfig.supabaseUrl}/auth/v1/settings');
+      final request = await HttpClient().getUrl(uri);
+      request.headers.add('apikey', AppConfig.supabaseAnonKey);
+      final response = await request.close().timeout(const Duration(seconds: 5));
+      final body = await response.transform(utf8.decoder).join();
+      final data = jsonDecode(body) as Map<String, dynamic>;
+      final ext = data['external'] as Map<String, dynamic>? ?? {};
+      return ext.entries
+          .where((e) => e.value == true)
+          .map((e) => e.key)
+          .toSet();
+    } catch (e) {
+      AppLogger.warn('Failed to fetch auth settings: $e', tag: _tag);
+    }
+    return {};
   }
 
   // ── IAuthDataSource ────────────────────────────────────────────────────
@@ -252,6 +284,8 @@ class RemoteAuthDataSource implements IAuthDataSource {
   @override
   Future<app.AuthUser> signInWithInstagram() async {
     try {
+      await _ensureProviderEnabled('facebook');
+
       final completer = Completer<User>();
       StreamSubscription<AuthState>? sub;
 
@@ -278,7 +312,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
 
       final User user;
       try {
-        user = await completer.future.timeout(const Duration(minutes: 5));
+        user = await completer.future.timeout(const Duration(minutes: 3));
       } on TimeoutException {
         sub.cancel();
         throw const AuthSocialCancelled();
