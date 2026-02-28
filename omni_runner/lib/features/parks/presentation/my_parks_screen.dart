@@ -3,10 +3,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/features/parks/data/parks_seed.dart';
 import 'package:omni_runner/features/parks/domain/park_entity.dart';
 import 'package:omni_runner/features/parks/presentation/park_screen.dart';
+import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 
 /// Listing of parks the athlete frequents + discovery of nearby parks.
 ///
@@ -36,6 +38,11 @@ class _MyParksScreenState extends State<MyParksScreen> {
     try {
       if (AppConfig.isSupabaseReady) {
         final uid = sl<UserIdentityProvider>().userId;
+
+        // Re-import Strava activities with start coordinates and
+        // backfill park_activities so recent runs show up immediately.
+        await _ensureParkBackfill(uid);
+
         final res = await Supabase.instance.client
             .from('park_activities')
             .select('park_id, distance_m')
@@ -162,6 +169,22 @@ class _MyParksScreenState extends State<MyParksScreen> {
           }),
       ],
     );
+  }
+
+  Future<void> _ensureParkBackfill(String uid) async {
+    try {
+      final controller = sl<StravaConnectController>();
+      final connected = await controller.isConnected;
+      if (!connected) return;
+
+      await controller.importStravaHistory(count: 30);
+      await Supabase.instance.client
+          .rpc('backfill_strava_sessions', params: {'p_user_id': uid});
+      await Supabase.instance.client
+          .rpc('backfill_park_activities', params: {'p_user_id': uid});
+    } catch (e) {
+      AppLogger.warn('Park backfill skipped: $e', tag: 'MyParksScreen');
+    }
   }
 
   void _openPark(ParkEntity park) {

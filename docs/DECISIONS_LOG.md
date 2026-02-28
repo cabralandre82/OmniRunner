@@ -3496,3 +3496,56 @@ importStravaHistory (com start_latlng)
 - `lib/presentation/blocs/verification/verification_bloc.dart` (backfill parks no fluxo de verificação)
 
 ---
+
+## DECISÃO 123 — Auditoria de raios de parques + capitais faltantes (28/02/2026)
+
+### Contexto
+
+Após corrigir o backfill de park_activities, o parque ainda não mostrava dados. Investigação revelou que o `radius_m` de quase todos os parques era insuficiente — calculado arbitrariamente sem considerar a distância real do centro aos limites do parque.
+
+### Método de cálculo
+
+Para cada parque: `needed_radius = haversine(center, farthest_polygon_vertex) + 200m buffer`, arredondado para cima em múltiplos de 50m. Script Python calculou automaticamente os 47 parques.
+
+### Exemplos de discrepâncias
+
+| Parque | Raio antigo | Distância real | Raio corrigido |
+|--------|-------------|----------------|----------------|
+| Aterro do Flamengo | 800m | 1469m | 1700m |
+| Lagoa Rodrigo de Freitas | 900m | 1461m | 1700m |
+| Parque Barigui | 700m | 1342m | 1550m |
+| Lagoa da Pampulha | 1200m | 1984m | 2200m |
+| Parque do Cocó | 700m | 1181m | 1400m |
+| Orla de Santos | 1000m | 1588m | 1800m |
+
+### 9 capitais estaduais faltantes adicionadas
+
+| Capital | Parque | Raio |
+|---------|--------|------|
+| Aracaju (SE) | Parque Augusto Franco (Sementeira) | 800m |
+| Maceió (AL) | Parque Municipal de Maceió | 700m |
+| Macapá (AP) | Complexo do Forte de Macapá | 500m |
+| Cuiabá (MT) | Parque Mãe Bonifácia | 1000m |
+| Teresina (PI) | Parque Potycabana | 500m |
+| Porto Velho (RO) | Parque da Cidade | 600m |
+| Boa Vista (RR) | Parque Anauá | 600m |
+| Rio Branco (AC) | Parque da Maternidade | 1500m |
+| Palmas (TO) | Parque Cesamar | 700m |
+
+### Telas de parque com backfill automático
+
+`MyParksScreen` e `ParkScreen` agora disparam `importStravaHistory` + `backfill_strava_sessions` + `backfill_park_activities` ao carregar, garantindo que corridas recentes apareçam imediatamente sem depender de outros fluxos.
+
+### Distribuições do portal corrigidas
+
+Página de distribuições do portal trocada de `portal_audit_log` (insert falhava silenciosamente) para `coin_ledger` (fonte de verdade das transações financeiras).
+
+### Arquivos modificados
+- `supabase/migrations/20260228110000_fix_park_radii.sql` (4 parques grandes)
+- `supabase/migrations/20260228120000_fix_all_park_radii_and_missing_capitals.sql` (todos os 47 raios + 9 novos parques)
+- `lib/features/parks/data/parks_seed.dart` (9 novos parques no seed Dart)
+- `lib/features/parks/presentation/my_parks_screen.dart` (backfill automático)
+- `lib/features/parks/presentation/park_screen.dart` (backfill automático)
+- `portal/src/app/(portal)/distributions/page.tsx` (coin_ledger como fonte)
+
+---

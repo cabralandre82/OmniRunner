@@ -3,8 +3,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/features/parks/domain/park_entity.dart';
+import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 
 /// Main park hub — shows leaderboard, community, segments for a given park.
 ///
@@ -51,6 +53,8 @@ class _ParkScreenState extends State<ParkScreen>
 
     try {
       if (AppConfig.isSupabaseReady) {
+        await _ensureParkBackfill();
+
         await Future.wait([
           _loadRankings(),
           _loadCommunity(),
@@ -191,6 +195,25 @@ class _ParkScreenState extends State<ParkScreen>
     } on Exception {
       _parkStats = const _ParkStats(
           runnersToday: 0, runnersWeek: 0, totalActivities: 0);
+    }
+  }
+
+  Future<void> _ensureParkBackfill() async {
+    try {
+      final controller = sl<StravaConnectController>();
+      final connected = await controller.isConnected;
+      if (!connected) return;
+
+      final uid = Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) return;
+
+      await controller.importStravaHistory(count: 30);
+      await Supabase.instance.client
+          .rpc('backfill_strava_sessions', params: {'p_user_id': uid});
+      await Supabase.instance.client
+          .rpc('backfill_park_activities', params: {'p_user_id': uid});
+    } catch (e) {
+      AppLogger.warn('Park backfill skipped: $e', tag: 'ParkScreen');
     }
   }
 

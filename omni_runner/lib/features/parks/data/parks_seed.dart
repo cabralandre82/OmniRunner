@@ -765,4 +765,157 @@ const List<ParkEntity> kBrazilianParksSeed = [
       LatLng(-21.1870, -47.8310),
     ],
   ),
+
+  // ── Aracaju ───────────────────────────────────────────────
+
+  ParkEntity(
+    id: 'park_sementeira',
+    name: 'Parque Augusto Franco (Sementeira)',
+    city: 'Aracaju',
+    state: 'SE',
+    center: LatLng(-10.9250, -37.0660),
+    areaSqM: 400000,
+    polygon: [
+      LatLng(-10.9220, -37.0690),
+      LatLng(-10.9220, -37.0630),
+      LatLng(-10.9280, -37.0630),
+      LatLng(-10.9280, -37.0690),
+    ],
+  ),
+
+  // ── Maceió ────────────────────────────────────────────────
+
+  ParkEntity(
+    id: 'park_municipal_maceio',
+    name: 'Parque Municipal de Maceió',
+    city: 'Maceió',
+    state: 'AL',
+    center: LatLng(-9.6480, -35.7250),
+    areaSqM: 200000,
+    polygon: [
+      LatLng(-9.6460, -35.7270),
+      LatLng(-9.6460, -35.7230),
+      LatLng(-9.6500, -35.7230),
+      LatLng(-9.6500, -35.7270),
+    ],
+  ),
+
+  // ── Macapá ────────────────────────────────────────────────
+
+  ParkEntity(
+    id: 'park_forte_macapa',
+    name: 'Complexo do Forte de Macapá',
+    city: 'Macapá',
+    state: 'AP',
+    center: LatLng(0.0340, -51.0520),
+    areaSqM: 40000,
+    polygon: [
+      LatLng(0.0330, -51.0530),
+      LatLng(0.0330, -51.0510),
+      LatLng(0.0350, -51.0510),
+      LatLng(0.0350, -51.0530),
+    ],
+  ),
+
+  // ── Cuiabá ────────────────────────────────────────────────
+
+  ParkEntity(
+    id: 'park_mae_bonifacia',
+    name: 'Parque Mãe Bonifácia',
+    city: 'Cuiabá',
+    state: 'MT',
+    center: LatLng(-15.5780, -56.0870),
+    areaSqM: 770000,
+    polygon: [
+      LatLng(-15.5740, -56.0910),
+      LatLng(-15.5740, -56.0830),
+      LatLng(-15.5820, -56.0830),
+      LatLng(-15.5820, -56.0910),
+    ],
+  ),
+
+  // ── Teresina ──────────────────────────────────────────────
+
+  ParkEntity(
+    id: 'park_potycabana',
+    name: 'Parque Potycabana',
+    city: 'Teresina',
+    state: 'PI',
+    center: LatLng(-5.0630, -42.7790),
+    areaSqM: 50000,
+    polygon: [
+      LatLng(-5.0620, -42.7800),
+      LatLng(-5.0620, -42.7780),
+      LatLng(-5.0640, -42.7780),
+      LatLng(-5.0640, -42.7800),
+    ],
+  ),
+
+  // ── Porto Velho ───────────────────────────────────────────
+
+  ParkEntity(
+    id: 'park_cidade_porto_velho',
+    name: 'Parque da Cidade de Porto Velho',
+    city: 'Porto Velho',
+    state: 'RO',
+    center: LatLng(-8.7600, -63.9000),
+    areaSqM: 100000,
+    polygon: [
+      LatLng(-8.7585, -63.9015),
+      LatLng(-8.7585, -63.8985),
+      LatLng(-8.7615, -63.8985),
+      LatLng(-8.7615, -63.9015),
+    ],
+  ),
+
+  // ── Boa Vista ─────────────────────────────────────────────
+
+  ParkEntity(
+    id: 'park_anaua',
+    name: 'Parque Anauá',
+    city: 'Boa Vista',
+    state: 'RR',
+    center: LatLng(2.8190, -60.6800),
+    areaSqM: 120000,
+    polygon: [
+      LatLng(2.8175, -60.6815),
+      LatLng(2.8175, -60.6785),
+      LatLng(2.8205, -60.6785),
+      LatLng(2.8205, -60.6815),
+    ],
+  ),
+
+  // ── Rio Branco ────────────────────────────────────────────
+
+  ParkEntity(
+    id: 'park_maternidade',
+    name: 'Parque da Maternidade',
+    city: 'Rio Branco',
+    state: 'AC',
+    center: LatLng(-9.9730, -67.8100),
+    areaSqM: 130000,
+    polygon: [
+      LatLng(-9.9630, -67.8130),
+      LatLng(-9.9630, -67.8070),
+      LatLng(-9.9830, -67.8070),
+      LatLng(-9.9830, -67.8130),
+    ],
+  ),
+
+  // ── Palmas ────────────────────────────────────────────────
+
+  ParkEntity(
+    id: 'park_cesamar',
+    name: 'Parque Cesamar',
+    city: 'Palmas',
+    state: 'TO',
+    center: LatLng(-10.2050, -48.3250),
+    areaSqM: 200000,
+    polygon: [
+      LatLng(-10.2030, -48.3270),
+      LatLng(-10.2030, -48.3230),
+      LatLng(-10.2070, -48.3230),
+      LatLng(-10.2070, -48.3270),
+    ],
+  ),
 ];
