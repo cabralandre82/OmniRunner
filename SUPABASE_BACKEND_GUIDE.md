@@ -1,6 +1,6 @@
 # SUPABASE_BACKEND_GUIDE.md — Omni Runner Backend
 
-> **Atualizado:** 2026-02-26 (Phase 35.99.0 — 128 decisões documentadas)
+> **Atualizado:** 2026-02-26 (Phase 35.99.0 — 129 decisões documentadas)
 > **Projeto:** Omni Runner (app de corrida com gamificação B2B)
 > **Stack Backend:** Supabase (Postgres + Auth + Storage + Edge Functions + pg_cron)
 > **Stack Mobile:** Flutter (Dart) — offline-first com Isar local
@@ -105,6 +105,8 @@
 
 > **Instagram**: Meta OAuth é o caminho nativo do Supabase para Instagram.
 > Não existe provider separado "Instagram" no Supabase.
+> O app Flutter verifica `/auth/v1/settings` antes de tentar OAuth; se o provider
+> não estiver habilitado, mostra erro imediato sem abrir browser (DECISÃO 129).
 
 #### TikTok Sign-In (Custom — não nativo)
 
@@ -534,7 +536,7 @@ parks (id)
 | 14 | `champ-activate-badge` | JWT | - | Consome intent CHAMP_BADGE_ACTIVATE → badge + enrollment |
 | 15 | `champ-list` | JWT | - | Lista campeonatos (filtros: status, host, participating) |
 | 16 | `champ-participant-list` | JWT | - | Lista participantes + display_name + badge info |
-| 17 | `complete-social-profile` | JWT | - | Upsert profile com created_via auto-detectado do provider |
+| 17 | `complete-social-profile` | JWT | - | Upsert profile com created_via auto-detectado (google→OAUTH_GOOGLE, apple→OAUTH_APPLE, facebook→OAUTH_INSTAGRAM) |
 | 18 | `set-user-role` | JWT | - | Define user_role + avança onboarding_state |
 | 19 | `send-push` | Service role | - | Envia push notification via FCM/APNS |
 | 20 | `notify-rules` | Service role | - | Engine de regras para notificações inteligentes |
