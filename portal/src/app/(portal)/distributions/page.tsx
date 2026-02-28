@@ -3,15 +3,15 @@ import { createServiceClient } from "@/lib/supabase/service";
 
 export const dynamic = "force-dynamic";
 
-interface Distribution {
+interface LedgerEntry {
   id: string;
+  user_id: string;
+  delta_coins: number;
+  ref_id: string | null;
   created_at: string;
-  metadata: { amount?: number; athlete_name?: string };
-  target_id: string | null;
-  actor_id: string;
 }
 
-interface ActorProfile {
+interface Profile {
   id: string;
   display_name: string;
 }
@@ -22,14 +22,12 @@ export default async function DistributionsPage() {
 
   const db = createServiceClient();
 
-  const [logsRes, inventoryRes] = await Promise.all([
+  // Get group members to scope distributions to this assessoria
+  const [membersRes, inventoryRes] = await Promise.all([
     db
-      .from("portal_audit_log")
-      .select("id, created_at, metadata, target_id, actor_id")
-      .eq("group_id", groupId)
-      .eq("action", "coins.distribute")
-      .order("created_at", { ascending: false })
-      .limit(200),
+      .from("coaching_members")
+      .select("user_id")
+      .eq("group_id", groupId),
     db
       .from("coaching_token_inventory")
       .select("available_tokens")
@@ -37,35 +35,60 @@ export default async function DistributionsPage() {
       .maybeSingle(),
   ]);
 
-  const logs: Distribution[] = (logsRes.data ?? []) as Distribution[];
   const balance = inventoryRes.data?.available_tokens ?? 0;
+  const memberIds = (membersRes.data ?? []).map((m: { user_id: string }) => m.user_id);
 
-  const actorIds = Array.from(new Set(logs.map((l) => l.actor_id)));
-  let actorMap = new Map<string, string>();
-  if (actorIds.length > 0) {
+  let entries: LedgerEntry[] = [];
+
+  if (memberIds.length > 0) {
+    const { data, error } = await db
+      .from("coin_ledger")
+      .select("id, user_id, delta_coins, ref_id, created_at")
+      .in("user_id", memberIds)
+      .eq("reason", "institution_token_issue")
+      .order("created_at", { ascending: false })
+      .limit(200);
+
+    if (error) {
+      console.error("[Distributions] coin_ledger query failed:", error.message);
+    }
+    entries = (data ?? []) as LedgerEntry[];
+  }
+
+  // Resolve display names for athletes and actors
+  const athleteIds = Array.from(new Set(entries.map((e) => e.user_id)));
+  const actorIds = Array.from(
+    new Set(
+      entries
+        .map((e) => {
+          // ref_id format: portal_{actorId}_{timestamp}
+          const parts = e.ref_id?.split("_") ?? [];
+          return parts.length >= 2 ? parts[1] : null;
+        })
+        .filter(Boolean) as string[],
+    ),
+  );
+
+  const allProfileIds = Array.from(new Set([...athleteIds, ...actorIds]));
+  let profileMap = new Map<string, string>();
+  if (allProfileIds.length > 0) {
     const { data: profiles } = await db
       .from("profiles")
       .select("id, display_name")
-      .in("id", actorIds);
-    actorMap = new Map(
-      ((profiles ?? []) as ActorProfile[]).map((p) => [p.id, p.display_name]),
+      .in("id", allProfileIds);
+    profileMap = new Map(
+      ((profiles ?? []) as Profile[]).map((p) => [p.id, p.display_name]),
     );
   }
 
-  const totalDistributed = logs.reduce(
-    (sum, l) => sum + ((l.metadata?.amount as number) ?? 0),
-    0,
-  );
-  const uniqueAthletes = new Set(logs.map((l) => l.target_id)).size;
+  const totalDistributed = entries.reduce((sum, e) => sum + e.delta_coins, 0);
+  const uniqueAthletes = new Set(entries.map((e) => e.user_id)).size;
 
-  const last30d = logs.filter((l) => {
-    const d = new Date(l.created_at);
+  const last30d = entries.filter((e) => {
+    const d = new Date(e.created_at);
     return d.getTime() > Date.now() - 30 * 86400000;
   });
-  const distributed30d = last30d.reduce(
-    (sum, l) => sum + ((l.metadata?.amount as number) ?? 0),
-    0,
-  );
+  const distributed30d = last30d.reduce((sum, e) => sum + e.delta_coins, 0);
 
   return (
     <div className="space-y-8">
@@ -83,7 +106,7 @@ export default async function DistributionsPage() {
         <KPI label="Atletas Contemplados" value={uniqueAthletes.toString()} sub="Únicos" />
       </div>
 
-      {logs.length === 0 ? (
+      {entries.length === 0 ? (
         <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
           Nenhuma distribuição realizada ainda.
           <br />
@@ -102,15 +125,14 @@ export default async function DistributionsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {logs.map((log) => {
-                  const date = new Date(log.created_at);
-                  const athleteName =
-                    (log.metadata?.athlete_name as string) ?? "—";
-                  const amount = (log.metadata?.amount as number) ?? 0;
-                  const actorName = actorMap.get(log.actor_id) ?? "—";
+                {entries.map((entry) => {
+                  const date = new Date(entry.created_at);
+                  const athleteName = profileMap.get(entry.user_id) ?? "Atleta";
+                  const actorId = entry.ref_id?.split("_")[1] ?? null;
+                  const actorName = actorId ? (profileMap.get(actorId) ?? "Staff") : "—";
 
                   return (
-                    <tr key={log.id} className="hover:bg-gray-50">
+                    <tr key={entry.id} className="hover:bg-gray-50">
                       <td className="whitespace-nowrap px-4 py-3 text-gray-700">
                         {date.toLocaleDateString("pt-BR", {
                           day: "2-digit",
@@ -128,7 +150,7 @@ export default async function DistributionsPage() {
                         {athleteName}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-emerald-600">
-                        +{amount.toLocaleString("pt-BR")}
+                        +{entry.delta_coins.toLocaleString("pt-BR")}
                       </td>
                       <td className="px-4 py-3 text-gray-500">{actorName}</td>
                     </tr>
