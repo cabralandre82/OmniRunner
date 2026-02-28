@@ -134,12 +134,24 @@ class ProgressionBloc extends Bloc<ProgressionEvent, ProgressionState> {
       final weekStartDate =
           '${weekStart.year}-${weekStart.month.toString().padLeft(2, '0')}-${weekStart.day.toString().padLeft(2, '0')}';
 
-      final rows = await db
+      var rows = await db
           .from('weekly_goals')
           .select()
           .eq('user_id', _userId)
           .eq('week_start', weekStartDate)
           .limit(1);
+
+      if (rows.isEmpty) {
+        try {
+          await db.rpc('generate_weekly_goal', params: {'p_user_id': _userId});
+          rows = await db
+              .from('weekly_goals')
+              .select()
+              .eq('user_id', _userId)
+              .eq('week_start', weekStartDate)
+              .limit(1);
+        } catch (_) {}
+      }
 
       if (rows.isEmpty) return null;
       final r = rows.first;

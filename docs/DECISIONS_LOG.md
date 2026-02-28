@@ -3654,3 +3654,30 @@ A tela "Meu Progresso → Conquistas" não exibia nada:
 - `portal/src/app/platform/page.tsx` (quick link)
 
 ---
+
+## DECISÃO 127 — Varredura: hardcoded `const []` + tabelas vazias (28/02/2026)
+
+### Problema
+Varredura completa revelou mais 6 problemas de dados hardcoded ou ausentes:
+
+1. **`MissionsBloc.activeMissionDefs: () => const []`** — missões nunca exibiam nome/descrição
+2. **`PostSessionProgression.activeMissionDefs: () => const []`** — pipeline de missões pós-sessão morto
+3. **Tabela `missions`: 0 rows** — nenhuma missão definida no DB
+4. **Tabela `seasons`: 0 rows** — temporada nunca criada (seed.sql nunca aplicado)
+5. **Tabela `weekly_goals`: 0 rows** — metas semanais nunca geradas
+6. **Tabela `leaderboards`: 0 rows** — rankings vazios (depende de cron job)
+
+### Solução
+1. **`MissionsBloc` reescrito**: agora busca definições de missão do Supabase (`missions` table) em vez de depender de lista vazia injetada
+2. **20 missões seed criadas**: 4 diárias (easy), 7 semanais (medium), 9 sazonais (hard)
+3. **Temporada seed**: "Temporada de Verão 2026" inserida
+4. **Nova RPC `generate_weekly_goal(p_user_id)`**: gera meta semanal automática baseada em 110% da distância da semana anterior (mínimo 10 km). Integrada ao `ProgressionBloc` — se não existe meta para a semana, gera automaticamente.
+5. **Rankings**: permanecem dependentes de cron job (league-snapshot EF) — não é hardcoded, é um data pipeline que roda periodicamente.
+
+### Arquivos modificados
+- `lib/presentation/blocs/missions/missions_bloc.dart` (reescrito: fetch do Supabase)
+- `lib/core/service_locator.dart` (removido `activeMissionDefs` e `catalog`)
+- `lib/presentation/blocs/progression/progression_bloc.dart` (auto-gera weekly goal)
+- `supabase/migrations/20260228160000_seed_missions_seasons_weekly_goals.sql`
+
+---

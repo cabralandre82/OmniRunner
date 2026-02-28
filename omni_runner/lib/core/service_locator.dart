@@ -590,13 +590,11 @@ Future<void> setupServiceLocator() async {
   sl.registerFactory<BadgesBloc>(
     () => BadgesBloc(
       awardRepo: sl<IBadgeAwardRepo>(),
-      catalog: const [],
     ),
   );
   sl.registerFactory<MissionsBloc>(
     () => MissionsBloc(
       progressRepo: sl<IMissionProgressRepo>(),
-      activeMissionDefs: () => const [],
     ),
   );
 
