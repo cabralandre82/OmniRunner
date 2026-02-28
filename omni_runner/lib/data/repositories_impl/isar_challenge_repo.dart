@@ -24,7 +24,13 @@ final class IsarChallengeRepo implements IChallengeRepo {
   @override
   Future<void> save(ChallengeEntity challenge) async {
     await _isar.writeTxn(() async {
-      await _isar.challengeRecords.put(_toRecord(challenge));
+      final existing = await _isar.challengeRecords
+          .where()
+          .challengeUuidEqualTo(challenge.id)
+          .findFirst();
+      final record = _toRecord(challenge);
+      if (existing != null) record.isarId = existing.isarId;
+      await _isar.challengeRecords.put(record);
     });
   }
 
@@ -109,7 +115,13 @@ final class IsarChallengeRepo implements IChallengeRepo {
   @override
   Future<void> saveResult(ChallengeResultEntity result) async {
     await _isar.writeTxn(() async {
-      await _isar.challengeResultRecords.put(_resultToRecord(result));
+      final existing = await _isar.challengeResultRecords
+          .where()
+          .challengeIdEqualTo(result.challengeId)
+          .findFirst();
+      final record = _resultToRecord(result);
+      if (existing != null) record.isarId = existing.isarId;
+      await _isar.challengeResultRecords.put(record);
     });
   }
 

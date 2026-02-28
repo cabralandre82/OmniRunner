@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/athlete_verification_entity.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
@@ -10,6 +11,7 @@ import 'package:omni_runner/presentation/blocs/verification/verification_bloc.da
 import 'package:omni_runner/presentation/widgets/contextual_tip_banner.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_event.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_state.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AthleteVerificationScreen extends StatelessWidget {
   const AthleteVerificationScreen({super.key});
@@ -63,10 +65,61 @@ class _BodyState extends State<_Body> {
 
   Future<void> _loadSessions() async {
     try {
-      final sessions =
+      final uid = sl<UserIdentityProvider>().userId;
+
+      // Local sessions >= 1km
+      final localAll =
           await sl<ISessionRepo>().getByStatus(WorkoutStatus.completed);
+      final localFiltered = localAll
+          .where((s) => (s.totalDistanceM ?? 0) >= 1000)
+          .toList();
+
+      // Remote sessions >= 1km (includes Strava imports)
+      List<WorkoutSessionEntity> remoteFiltered = const [];
+      try {
+        final db = Supabase.instance.client;
+        final rows = await db
+            .from('sessions')
+            .select()
+            .eq('user_id', uid)
+            .eq('status', 3)
+            .gte('total_distance_m', 1000)
+            .order('start_time_ms', ascending: false)
+            .limit(10);
+        remoteFiltered = (rows as List).map((r) {
+          return WorkoutSessionEntity(
+            id: r['id'] as String,
+            userId: r['user_id'] as String?,
+            status: WorkoutStatus.completed,
+            startTimeMs: (r['start_time_ms'] as num).toInt(),
+            endTimeMs: (r['end_time_ms'] as num?)?.toInt(),
+            totalDistanceM: (r['total_distance_m'] as num?)?.toDouble(),
+            route: const [],
+            isVerified: r['is_verified'] as bool? ?? false,
+            integrityFlags: (r['integrity_flags'] as List<dynamic>?)
+                    ?.cast<String>() ??
+                const [],
+            isSynced: true,
+            avgBpm: (r['avg_bpm'] as num?)?.toInt(),
+            maxBpm: (r['max_bpm'] as num?)?.toInt(),
+            source: r['source'] as String? ?? 'app',
+          );
+        }).toList();
+      } catch (_) {}
+
+      // Merge and dedup by id, sort by most recent
+      final byId = <String, WorkoutSessionEntity>{};
+      for (final s in localFiltered) {
+        byId[s.id] = s;
+      }
+      for (final s in remoteFiltered) {
+        byId.putIfAbsent(s.id, () => s);
+      }
+      final merged = byId.values.toList()
+        ..sort((a, b) => b.startTimeMs.compareTo(a.startTimeMs));
+
       if (mounted) {
-        setState(() => _recentSessions = sessions.take(10).toList());
+        setState(() => _recentSessions = merged.take(10).toList());
       }
     } catch (_) {}
   }

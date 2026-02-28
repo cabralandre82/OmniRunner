@@ -12,7 +12,13 @@ final class IsarBadgeAwardRepo implements IBadgeAwardRepo {
   @override
   Future<void> save(BadgeAwardEntity award) async {
     await _isar.writeTxn(() async {
-      await _isar.badgeAwardRecords.put(_toRecord(award));
+      final existing = await _isar.badgeAwardRecords
+          .where()
+          .awardUuidEqualTo(award.id)
+          .findFirst();
+      final record = _toRecord(award);
+      if (existing != null) record.isarId = existing.isarId;
+      await _isar.badgeAwardRecords.put(record);
     });
   }
 

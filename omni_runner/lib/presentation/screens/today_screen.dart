@@ -60,8 +60,6 @@
 /// leisure=park data for Brazilian cities. No real-time tracking needed.
 
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
@@ -88,7 +86,8 @@ import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 
 class TodayScreen extends StatefulWidget {
-  const TodayScreen({super.key});
+  final bool isVisible;
+  const TodayScreen({super.key, this.isVisible = true});
 
   @override
   State<TodayScreen> createState() => _TodayScreenState();
@@ -110,14 +109,48 @@ class _TodayScreenState extends State<TodayScreen> {
     _load();
   }
 
+  @override
+  void didUpdateWidget(covariant TodayScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isVisible && !oldWidget.isVisible) {
+      _load();
+    }
+  }
+
   Future<void> _load() async {
     try {
       final uid = sl<UserIdentityProvider>().userId;
       final profile = await sl<IProfileProgressRepo>().getByUserId(uid);
-      final completed =
-          await sl<ISessionRepo>().getByStatus(WorkoutStatus.completed);
 
-      final stravaState = await sl<StravaConnectController>().getState();
+      // Fetch completed sessions from local Isar, filter >= 1km
+      final localAll =
+          await sl<ISessionRepo>().getByStatus(WorkoutStatus.completed);
+      final localCompleted = localAll
+          .where((s) => (s.totalDistanceM ?? 0) >= 1000)
+          .toList();
+
+      // Also fetch latest sessions from Supabase (includes Strava imports)
+      // Only sessions >= 1km count as real runs
+      List<WorkoutSessionEntity> remoteCompleted = const [];
+      try {
+        final db = Supabase.instance.client;
+        final rows = await db
+            .from('sessions')
+            .select()
+            .eq('user_id', uid)
+            .eq('status', 3)
+            .gte('total_distance_m', 1000)
+            .order('start_time_ms', ascending: false)
+            .limit(5);
+        remoteCompleted = (rows as List)
+            .map((r) => _remoteSessionToEntity(r))
+            .toList();
+      } catch (_) {}
+
+      // Merge: use most recent from either source, deduplicate by id
+      final merged = _mergeRuns(localCompleted, remoteCompleted);
+
+      final stravaConnected = await sl<StravaConnectController>().isConnected;
 
       List<ChallengeEntity> active = const [];
       try {
@@ -147,9 +180,8 @@ class _TodayScreenState extends State<TodayScreen> {
         }
       } catch (_) {}
 
-      // Detect park from last run's GPS data
       ParkEntity? park;
-      final lastRun = completed.isNotEmpty ? completed.first : null;
+      final lastRun = merged.isNotEmpty ? merged.first : null;
       if (lastRun != null && lastRun.route.isNotEmpty) {
         final detector = ParkDetectionService(kBrazilianParksSeed);
         final firstPoint = lastRun.route.first;
@@ -160,8 +192,8 @@ class _TodayScreenState extends State<TodayScreen> {
       setState(() {
         _profile = profile;
         _lastRun = lastRun;
-        _previousRun = completed.length > 1 ? completed[1] : null;
-        _stravaConnected = stravaState is StravaConnected;
+        _previousRun = merged.length > 1 ? merged[1] : null;
+        _stravaConnected = stravaConnected;
         _detectedPark = park;
         _activeChallenges = active;
         _activeChampionships = champs;
@@ -169,9 +201,45 @@ class _TodayScreenState extends State<TodayScreen> {
       });
 
       _checkStreakAtRisk(uid, profile, lastRun);
-    } on Exception catch (_) {
+    } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  /// Merge local and remote sessions, dedup by id, sort by most recent.
+  List<WorkoutSessionEntity> _mergeRuns(
+    List<WorkoutSessionEntity> local,
+    List<WorkoutSessionEntity> remote,
+  ) {
+    final byId = <String, WorkoutSessionEntity>{};
+    for (final s in local) {
+      byId[s.id] = s;
+    }
+    for (final s in remote) {
+      byId.putIfAbsent(s.id, () => s);
+    }
+    final list = byId.values.toList()
+      ..sort((a, b) => b.startTimeMs.compareTo(a.startTimeMs));
+    return list;
+  }
+
+  static WorkoutSessionEntity _remoteSessionToEntity(Map<String, dynamic> r) {
+    return WorkoutSessionEntity(
+      id: r['id'] as String,
+      userId: r['user_id'] as String?,
+      status: WorkoutStatus.completed,
+      startTimeMs: (r['start_time_ms'] as num).toInt(),
+      endTimeMs: (r['end_time_ms'] as num?)?.toInt(),
+      totalDistanceM: (r['total_distance_m'] as num?)?.toDouble(),
+      route: const [],
+      isVerified: r['is_verified'] as bool? ?? false,
+      integrityFlags:
+          (r['integrity_flags'] as List<dynamic>?)?.cast<String>() ?? const [],
+      isSynced: true,
+      avgBpm: (r['avg_bpm'] as num?)?.toInt(),
+      maxBpm: (r['max_bpm'] as num?)?.toInt(),
+      source: r['source'] as String? ?? 'app',
+    );
   }
 
   void _checkStreakAtRisk(
@@ -676,28 +744,13 @@ class _BoraCorrerCard extends StatelessWidget {
           Text(
             ranToday
                 ? 'Sua corrida foi registrada. Veja o recap abaixo!'
-                : 'Abra o Strava, corra com seu relógio, '
-                    'e sua atividade será importada automaticamente.',
+                : 'Corra com seu relógio e sua atividade '
+                    'será importada automaticamente.',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodySmall?.copyWith(
               color: cs.onSurfaceVariant,
             ),
           ),
-          if (!ranToday) ...[
-            const SizedBox(height: 14),
-            FilledButton.icon(
-              onPressed: () => _openStrava(context),
-              icon: const Icon(Icons.open_in_new, size: 18),
-              label: const Text('Abrir Strava'),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFFC4C02),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 24, vertical: 12),
-                textStyle: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -753,21 +806,6 @@ class _BoraCorrerCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Future<void> _openStrava(BuildContext context) async {
-    const stravaUri = 'strava://';
-    const stravaWeb = 'https://www.strava.com/record';
-
-    final uri = Uri.parse(stravaUri);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      await launchUrl(
-        Uri.parse(stravaWeb),
-        mode: LaunchMode.externalApplication,
-      );
-    }
   }
 }
 

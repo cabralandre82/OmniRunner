@@ -346,7 +346,7 @@ serve(async (req: Request) => {
         .insert({
           id: sessionId,
           user_id: conn.user_id,
-          status: 2, // completed
+          status: 3, // completed (initial=0, running=1, paused=2, completed=3, discarded=4)
           start_time_ms: startTimeMs,
           end_time_ms: endTimeMs,
           total_distance_m: activity.distance ?? 0,
@@ -436,7 +436,7 @@ serve(async (req: Request) => {
     await db.from("sessions").insert({
       id: sessionId,
       user_id: conn.user_id,
-      status: 2,
+      status: 3, // completed
       start_time_ms: startTimeMs,
       end_time_ms: endTimeMs,
       total_distance_m: activity.distance ?? 0,

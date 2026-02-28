@@ -186,7 +186,7 @@ serve(async (req: Request) => {
         .from("sessions")
         .select("total_distance_m")
         .eq("user_id", user.id)
-        .eq("status", 2)
+        .eq("status", 3) // completed
         .eq("is_verified", true)
         .gte("start_time_ms", season.start_at_ms)
         .lte("start_time_ms", season.end_at_ms);

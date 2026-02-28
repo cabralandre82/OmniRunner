@@ -126,7 +126,7 @@ serve(async (req: Request) => {
       .from("sessions")
       .select("start_time_ms, total_distance_m, moving_ms, avg_pace_sec_km, avg_bpm")
       .eq("user_id", user.id)
-      .eq("status", 2)
+      .eq("status", 3) // completed
       .eq("is_verified", true)
       .gte("start_time_ms", cutoff)
       .order("start_time_ms", { ascending: true });

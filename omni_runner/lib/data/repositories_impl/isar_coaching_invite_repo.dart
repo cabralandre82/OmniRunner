@@ -13,7 +13,13 @@ final class IsarCoachingInviteRepo implements ICoachingInviteRepo {
   @override
   Future<void> save(CoachingInviteEntity invite) async {
     await _isar.writeTxn(() async {
-      await _isar.coachingInviteRecords.put(_toRecord(invite));
+      final existing = await _isar.coachingInviteRecords
+          .where()
+          .inviteUuidEqualTo(invite.id)
+          .findFirst();
+      final record = _toRecord(invite);
+      if (existing != null) record.isarId = existing.isarId;
+      await _isar.coachingInviteRecords.put(record);
     });
   }
 

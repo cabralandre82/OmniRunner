@@ -12,7 +12,13 @@ final class IsarXpTransactionRepo implements IXpTransactionRepo {
   @override
   Future<void> append(XpTransactionEntity tx) async {
     await _isar.writeTxn(() async {
-      await _isar.xpTransactionRecords.put(_toRecord(tx));
+      final existing = await _isar.xpTransactionRecords
+          .where()
+          .txUuidEqualTo(tx.id)
+          .findFirst();
+      final record = _toRecord(tx);
+      if (existing != null) record.isarId = existing.isarId;
+      await _isar.xpTransactionRecords.put(record);
     });
   }
 

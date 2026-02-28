@@ -30,7 +30,7 @@ class VerificationBloc extends Bloc<VerificationEvent, VerificationState> {
       final entity = await _fetchState();
       _cached = entity;
       emit(VerificationLoaded(entity));
-    } on Exception catch (e) {
+    } catch (e) {
       AppLogger.warn('Failed to load verification state: $e', tag: _tag);
       emit(const VerificationError(
         'Não foi possível carregar o status de verificação.',
@@ -55,18 +55,14 @@ class VerificationBloc extends Bloc<VerificationEvent, VerificationState> {
         return;
       }
 
-      // 1. Backfill Strava history → sessions
       await _backfillStravaIfConnected();
 
-      // 2. Run evaluation RPC directly (more reliable than Edge Function)
-      await Supabase.instance.client
-          .rpc('eval_athlete_verification', params: {'p_user_id': uid});
+      await Supabase.instance.client.rpc('eval_my_verification');
 
-      // 3. Re-read the updated state
       final entity = await _fetchState();
       _cached = entity;
       emit(VerificationLoaded(entity));
-    } on Exception catch (e) {
+    } catch (e) {
       AppLogger.warn('Evaluation failed: $e', tag: _tag);
       emit(VerificationError(
         'Falha na avaliação: $e',
@@ -74,8 +70,8 @@ class VerificationBloc extends Bloc<VerificationEvent, VerificationState> {
     }
   }
 
-  /// If Strava is connected, backfill history into sessions so they
-  /// count for verification. Non-blocking on failure.
+  /// If Strava is connected, re-import latest activities from the
+  /// Strava API, then backfill them into sessions for verification.
   Future<void> _backfillStravaIfConnected() async {
     try {
       final controller = sl<StravaConnectController>();
@@ -85,13 +81,18 @@ class VerificationBloc extends Bloc<VerificationEvent, VerificationState> {
       final uid = Supabase.instance.client.auth.currentUser?.id;
       if (uid == null) return;
 
-      final result = await Supabase.instance.client
-          .rpc('backfill_strava_sessions', params: {'p_user_id': uid});
-      final count = result as int? ?? 0;
-      if (count > 0) {
-        AppLogger.info('Backfilled $count Strava sessions', tag: _tag);
+      // Re-import latest activities from Strava API so
+      // strava_activity_history is up-to-date before backfill.
+      try {
+        await controller.importStravaHistory(count: 30);
+      } catch (e) {
+        AppLogger.warn('Strava import skipped: $e', tag: _tag);
       }
-    } on Exception catch (e) {
+
+      await Supabase.instance.client
+          .rpc('backfill_strava_sessions', params: {'p_user_id': uid});
+      AppLogger.info('Strava backfill completed', tag: _tag);
+    } catch (e) {
       AppLogger.warn('Strava backfill skipped: $e', tag: _tag);
     }
   }

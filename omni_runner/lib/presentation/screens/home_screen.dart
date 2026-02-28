@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: NoConnectionBanner(
         child: IndexedStack(index: _tab, children: [
         const AthleteDashboardScreen(),
-        const TodayScreen(),
+        TodayScreen(isVisible: _tab == 1),
         HistoryScreen(isVisible: _tab == 2),
         const MoreScreen(userRole: 'ATLETA'),
       ]),

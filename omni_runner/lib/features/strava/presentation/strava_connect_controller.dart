@@ -230,10 +230,13 @@ final class StravaConnectController {
     return _uploadRepo.uploadAndWait(request);
   }
 
-  /// Check if the user is connected and tokens are valid.
+  /// Check if user has a Strava connection (tokens exist).
+  /// Returns true even if the access token is expired, as long as a
+  /// refresh token is available — the token will be refreshed
+  /// automatically when needed.
   Future<bool> get isConnected async {
     final state = await _authRepo.getAuthState();
-    return state is StravaConnected && !state.isExpired;
+    return state is StravaConnected || state is StravaReauthRequired;
   }
 
   /// Retry import + backfill if connected but the main flow was interrupted.

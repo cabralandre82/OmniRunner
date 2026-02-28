@@ -18,6 +18,11 @@ final class IsarSessionRepo implements ISessionRepo {
   Future<void> save(WorkoutSessionEntity session) async {
     final record = _toRecord(session);
     await _isar.writeTxn(() async {
+      final existing = await _isar.workoutSessionRecords
+          .where()
+          .sessionUuidEqualTo(session.id)
+          .findFirst();
+      if (existing != null) record.isarId = existing.isarId;
       await _isar.workoutSessionRecords.put(record);
     });
   }

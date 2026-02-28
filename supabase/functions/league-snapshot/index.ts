@@ -192,7 +192,7 @@ serve(async (req: Request) => {
           .from("sessions")
           .select("user_id, total_distance_m")
           .in("user_id", memberIds)
-          .eq("status", 2)
+          .eq("status", 3) // completed
           .eq("is_verified", true)
           .gte("start_time_ms", startMs)
           .lte("start_time_ms", endMs);

@@ -3275,3 +3275,139 @@ O botão "Reavaliar agora" chamava a Edge Function `eval-athlete-verification` q
 - `lib/presentation/blocs/verification/verification_bloc.dart` (RPC direto + cleanup)
 
 ---
+
+## DECISÃO 115 — Integridade: ignorar sessões curtas (< 1km) na contagem de flagged (26/02/2026)
+
+### Contexto
+
+O checklist "Integridade" na verificação mostrava "1 corrida com flags nos últimos 30 dias" mesmo quando o atleta não tinha corridas genuinamente problemáticas. A causa: sessões com distância < 1km (e.g., ~300m) com `is_verified = false` contavam como flagged. Essa 1 sessão flagged causava:
+- **integrity_ok = false** (checklist desmarcado)
+- **-10 pontos** no trust_score (penalidade por recent flag)
+- **+6 pts** em vez de **+20 pts** no clean_record bonus
+- **Score final ~60** em vez de **~84** — impedindo VERIFIED (mínimo 80)
+
+### Decisão
+
+1. **Queries de flagged filtram por distância >= 1km**: tanto `eval_athlete_verification` quanto `get_verification_state` agora ignoram sessões curtas na contagem de `_total_flagged_sessions` e `_recent_flagged`
+2. **Sessões < 1km não afetam integridade**: corridas de aquecimento, testes de GPS, ou sessões curtas canceladas não penalizam o atleta
+3. **Impact no score**: atleta com 9+ corridas válidas e 0 flags >= 1km deve atingir ~84 pts (acima do mínimo 80)
+
+### Arquivos modificados
+- `supabase/migrations/20260227900000_fix_flagged_runs_ignore_short.sql` (nova migration)
+
+---
+
+## DECISÃO 116 — Wrapper eval_my_verification() sem parâmetros para cliente (26/02/2026)
+
+### Contexto
+
+O botão "Reavaliar agora" chamava `eval_athlete_verification(p_user_id UUID)` diretamente do cliente (PostgREST). A chamada falhava com erro genérico — possivelmente por falta de `GRANT EXECUTE` para o role `authenticated` ou por problemas de casting UUID via PostgREST. O `get_verification_state()` funcionava (carregava a tela), mas a avaliação sempre falhava.
+
+### Decisão
+
+1. **Nova RPC `eval_my_verification()`**: wrapper sem parâmetros que usa `auth.uid()` internamente — mais seguro (usuário só pode avaliar a si mesmo) e elimina problemas de passagem de UUID
+2. **GRANT EXECUTE explícito**: adicionado para todas as RPCs de verificação (`eval_my_verification`, `eval_athlete_verification`, `get_verification_state`, `backfill_strava_sessions`) para os roles `authenticated` e `service_role`
+3. **Error handling melhorado**: `catch (e)` genérico em vez de `on Exception catch (e)` para capturar `TypeError` e outros `Error`s que escapavam do catch anterior
+4. **Mensagem de erro descritiva**: `'Falha na avaliação: $e'` mostra o erro real para diagnóstico
+
+### Arquivos modificados
+- `supabase/migrations/20260227950000_eval_verification_client_wrapper.sql` (nova migration)
+- `lib/presentation/blocs/verification/verification_bloc.dart` (eval_my_verification + catch genérico)
+
+---
+
+## DECISÃO 117 — Fix session status: completed = 3, não 2 (28/02/2026)
+
+### Contexto
+
+O enum Dart `WorkoutStatus` mapeia: `initial=0, running=1, paused=2, completed=3, discarded=4`. Porém, 6 Edge Functions e o `backfill_strava_sessions` RPC usavam `status = 2` para "completed" — o que é na verdade "paused". Consequências:
+- **Retrospectiva vazia**: `generate-wrapped` filtrava `status=2`, não encontrando sessions criadas pelo app (status=3)
+- **Running DNA vazio**: `generate-running-dna` com mesmo problema
+- **Liga incorreta**: `league-list` e `league-snapshot` com mesmo problema
+- **Strava webhook**: `strava-webhook` inseria sessions com status=2 (errado)
+- **Backfill**: `backfill_strava_sessions` inseria com status=2 (errado)
+
+### Decisão
+
+1. **Migration**: `UPDATE sessions SET status = 3 WHERE source = 'strava' AND status = 2` — corrige todas as sessions Strava existentes
+2. **Backfill RPC recriado** com `status = 3`
+3. **5 Edge Functions corrigidas**: `generate-wrapped`, `generate-running-dna`, `league-list`, `league-snapshot`, `strava-webhook` — todas agora usam `status = 3` para "completed"
+4. **Deploy de todas as EFs afetadas**
+
+### Também corrigido: IsarError "Unique index violated" (Sentry fatal)
+
+8 repositórios Isar faziam `.put()` sem verificar se já existia um registro com o mesmo índice único (UUID). Ao receber dados duplicados (sync, re-import), o Isar crashava com fatal error. Corrigido com padrão "find existing → copy isarId → put":
+- `isar_session_repo.dart`, `isar_ledger_repo.dart`, `isar_challenge_repo.dart` (save + saveResult)
+- `isar_coaching_group_repo.dart`, `isar_coaching_invite_repo.dart`, `isar_coaching_member_repo.dart`
+- `isar_badge_award_repo.dart`, `isar_xp_transaction_repo.dart`
+
+### Arquivos modificados
+- `supabase/migrations/20260228000000_fix_session_status_completed.sql` (nova migration)
+- `supabase/functions/generate-wrapped/index.ts` (status 2→3)
+- `supabase/functions/generate-running-dna/index.ts` (status 2→3)
+- `supabase/functions/league-list/index.ts` (status 2→3)
+- `supabase/functions/league-snapshot/index.ts` (status 2→3)
+- `supabase/functions/strava-webhook/index.ts` (status 2→3 em dois locais)
+- `lib/data/repositories_impl/isar_*.dart` (8 repos com upsert fix)
+
+---
+
+## DECISÃO 118 — Aba Hoje: sessions do Supabase + remoção do botão "Abrir Strava" (28/02/2026)
+
+### Contexto
+
+A aba "Hoje" tinha 3 problemas:
+1. **Última corrida do Strava não aparecia** — `_load()` buscava sessions apenas do Isar local, mas sessions backfilled do Strava existiam apenas no Supabase
+2. **"Conectar ao Strava" aparecia brevemente** mesmo com Strava conectado — estado carregado com `getState()` retornava instância completa desnecessariamente; trocado para `isConnected` (mais rápido e direto)
+3. **Botão "Abrir Strava"** desnecessário — o atleta corre com seu relógio (Garmin, Coros, Apple Watch) que sincroniza automaticamente com Strava; o botão sugeria erroneamente que era preciso abrir o app do Strava para correr
+
+### Decisão
+
+1. **Busca híbrida Isar + Supabase**: `_load()` agora faz fetch das últimas 5 sessions de `public.sessions` com `status=3` e merge/dedup com as sessions locais do Isar, mostrando a mais recente de qualquer fonte
+2. **Estado Strava via `isConnected`**: chamada direta que retorna `bool`, eliminando overhead de construir o estado completo e reduzindo flash do prompt de conexão
+3. **Botão "Abrir Strava" removido**: texto atualizado para "Corra com seu relógio e sua atividade será importada automaticamente." — sem ação desnecessária
+4. **Import `url_launcher` removido** — não mais utilizado nessa tela
+
+### Arquivos modificados
+- `lib/presentation/screens/today_screen.dart` (fetch Supabase + merge + remove button)
+
+---
+
+## DECISÃO 119 — TodayScreen: reload ao trocar de aba + isConnected resiliente (26/02/2026)
+
+### Contexto
+
+1. **Estado Strava stale**: `HomeScreen` usa `IndexedStack` que mantém todos os widgets vivos. `TodayScreen.initState()` rodava apenas uma vez. Após conectar Strava em Configurações e voltar para aba "Hoje", ainda aparecia "Conectar Strava" até refresh manual.
+2. **isConnected retornava false com token expirado**: O getter verificava `!state.isExpired`, mas o access token expira a cada ~6h. Mesmo com refresh token válido (renovação automática), retornava `false` — mostrando o prompt de conexão erroneamente.
+
+### Decisão
+
+1. **`TodayScreen` recebe `isVisible`**: `HomeScreen` passa `isVisible: _tab == 1`. `didUpdateWidget()` chama `_load()` quando a aba se torna visível — mesmo padrão do `HistoryScreen`.
+2. **`isConnected` resiliente**: Retorna `true` para `StravaConnected` OU `StravaReauthRequired` (token expirado mas refresh existe). A reconexão manual só é necessária se o usuário revogar acesso no site do Strava.
+
+### Arquivos modificados
+- `lib/presentation/screens/today_screen.dart` (isVisible + didUpdateWidget)
+- `lib/presentation/screens/home_screen.dart` (passa isVisible)
+- `lib/features/strava/presentation/strava_connect_controller.dart` (isConnected inclui StravaReauthRequired)
+
+---
+
+## DECISÃO 120 — Verificação: reimportar atividades Strava + filtro 1km + Supabase fetch (26/02/2026)
+
+### Contexto
+
+1. **Corridas recentes paradas no dia 14/02**: `VerificationBloc._backfillStravaIfConnected()` chamava apenas o RPC `backfill_strava_sessions` (converte `strava_activity_history` → `sessions`), mas NUNCA reimportava atividades recentes do Strava API. O `importStravaHistory()` só rodava uma vez no momento da conexão inicial. Atividades posteriores ficavam perdidas.
+2. **Corridas < 1km aparecendo na lista**: `_loadSessions()` na tela de verificação buscava do Isar local sem filtro de distância mínima.
+3. **Dados locais incompletos**: A lista de corridas recentes só buscava do Isar local, ignorando sessions backfilled que existiam apenas no Supabase.
+
+### Decisão
+
+1. **Reimportar antes do backfill**: `_backfillStravaIfConnected()` agora chama `controller.importStravaHistory(count: 30)` antes do RPC `backfill_strava_sessions`, garantindo que `strava_activity_history` está atualizado com as últimas 30 atividades do Strava API.
+2. **Filtro >= 1km**: Tanto sessions locais quanto remotas são filtradas para `total_distance_m >= 1000` na tela de verificação.
+3. **Busca híbrida Isar + Supabase**: `_loadSessions()` agora faz merge/dedup das sessions de ambas as fontes (mesmo padrão do TodayScreen), mostrando as 10 mais recentes.
+
+### Arquivos modificados
+- `lib/presentation/blocs/verification/verification_bloc.dart` (importStravaHistory antes de backfill)
+- `lib/presentation/screens/athlete_verification_screen.dart` (Supabase fetch + filtro 1km + merge)
+
+---

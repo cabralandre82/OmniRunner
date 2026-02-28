@@ -17,6 +17,11 @@ final class IsarLedgerRepo implements ILedgerRepo {
   Future<void> append(LedgerEntryEntity entry) async {
     await _isar.writeTxn(() async {
       final record = _toRecord(entry);
+      final existing = await _isar.ledgerRecords
+          .where()
+          .entryUuidEqualTo(entry.id)
+          .findFirst();
+      if (existing != null) record.isarId = existing.isarId;
       await _isar.ledgerRecords.put(record);
     });
   }
