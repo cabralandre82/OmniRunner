@@ -105,11 +105,12 @@ final class StravaConnectController {
     }
   }
 
-  /// Import history → backfill sessions → trigger verification.
+  /// Import history → backfill sessions → backfill parks → trigger verification.
   Future<void> _importAndBackfill() async {
     final imported = await importStravaHistory();
     AppLogger.info('importStravaHistory returned $imported', tag: _tag);
     await _backfillStravaSessions();
+    await _backfillParkActivities();
     await _triggerVerificationEval();
   }
 
@@ -130,6 +131,26 @@ final class StravaConnectController {
       );
     } catch (e) {
       AppLogger.warn('Failed to backfill Strava sessions: $e', tag: _tag);
+    }
+  }
+
+  /// Detect which backfilled sessions happened in known parks
+  /// and insert into park_activities for leaderboard/community data.
+  Future<void> _backfillParkActivities() async {
+    try {
+      final uid = Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) return;
+
+      final result = await Supabase.instance.client
+          .rpc('backfill_park_activities', params: {'p_user_id': uid});
+
+      final count = result as int? ?? 0;
+      AppLogger.info(
+        'Backfilled $count park activities',
+        tag: _tag,
+      );
+    } catch (e) {
+      AppLogger.warn('Failed to backfill park activities: $e', tag: _tag);
     }
   }
 
@@ -280,21 +301,30 @@ final class StravaConnectController {
       final uid = Supabase.instance.client.auth.currentUser?.id;
       if (uid == null) return 0;
 
-      final rows = runs.map((a) => {
-        'user_id': uid,
-        'strava_activity_id': a['id'],
-        'name': a['name'],
-        'distance_m': (a['distance'] as num?)?.toDouble() ?? 0.0,
-        'moving_time_s': a['moving_time'] ?? 0,
-        'elapsed_time_s': a['elapsed_time'] ?? 0,
-        'average_speed': (a['average_speed'] as num?)?.toDouble(),
-        'max_speed': (a['max_speed'] as num?)?.toDouble(),
-        'average_heartrate': (a['average_heartrate'] as num?)?.toDouble(),
-        'max_heartrate': (a['max_heartrate'] as num?)?.toDouble(),
-        'start_date': a['start_date'],
-        'summary_polyline': (a['map'] as Map?)?['summary_polyline'],
-        'activity_type': a['type'],
-        'imported_at': DateTime.now().toUtc().toIso8601String(),
+      final rows = runs.map((a) {
+        final startLatlng = a['start_latlng'] as List?;
+        return {
+          'user_id': uid,
+          'strava_activity_id': a['id'],
+          'name': a['name'],
+          'distance_m': (a['distance'] as num?)?.toDouble() ?? 0.0,
+          'moving_time_s': a['moving_time'] ?? 0,
+          'elapsed_time_s': a['elapsed_time'] ?? 0,
+          'average_speed': (a['average_speed'] as num?)?.toDouble(),
+          'max_speed': (a['max_speed'] as num?)?.toDouble(),
+          'average_heartrate': (a['average_heartrate'] as num?)?.toDouble(),
+          'max_heartrate': (a['max_heartrate'] as num?)?.toDouble(),
+          'start_date': a['start_date'],
+          'summary_polyline': (a['map'] as Map?)?['summary_polyline'],
+          'activity_type': a['type'],
+          'start_lat': startLatlng != null && startLatlng.length >= 2
+              ? (startLatlng[0] as num).toDouble()
+              : null,
+          'start_lng': startLatlng != null && startLatlng.length >= 2
+              ? (startLatlng[1] as num).toDouble()
+              : null,
+          'imported_at': DateTime.now().toUtc().toIso8601String(),
+        };
       }).toList();
 
       await Supabase.instance.client

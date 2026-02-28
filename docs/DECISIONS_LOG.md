@@ -3450,3 +3450,49 @@ Varredura completa do codebase identificou 7 locais onde a UI lia dados exclusiv
 - `lib/presentation/widgets/challenge_session_banner.dart` (Supabase fallback)
 
 ---
+
+## DECISÃO 122 — Backfill de park_activities para corridas importadas do Strava (28/02/2026)
+
+### Contexto
+
+A detecção de parque (`detectAndLinkPark`) existia apenas no `strava-webhook`, que processa atividades **novas** em tempo real. Corridas importadas via `importStravaHistory()` + `backfill_strava_sessions` nunca criavam registros em `park_activities`, então a tela do parque ficava toda zerada (0 corredores hoje, 0 na semana, ninguém na comunidade, nenhum ranking).
+
+O usuário correu no Parque da Cidade (registrado como um dos parques do app) e o parque não mostrava nenhum dado.
+
+### Causa raiz
+
+O fluxo de import histórico salvava `strava_activity_history` (sem coordenadas de início) → `backfill_strava_sessions` criava `sessions` → mas ninguém inseria `park_activities`. A API do Strava retorna `start_latlng` em cada atividade, porém esse campo não era salvo.
+
+### Solução
+
+1. **Migration `20260228100000`**: 
+   - Adicionou colunas `start_lat`/`start_lng` na tabela `strava_activity_history`
+   - Criou helper SQL `_haversine_m()` para cálculo de distância geodésica
+   - Criou RPC `backfill_park_activities(p_user_id)` que:
+     - Cruza `sessions` com `strava_activity_history` (pelo `strava_activity_id`)
+     - Para cada session com coordenadas e sem `park_activity`, calcula haversine vs `parks.center_lat/center_lng`
+     - Se distância ≤ `parks.radius_m`, insere em `park_activities` (com `ON CONFLICT DO NOTHING`)
+     - O trigger `trg_park_activity_inserted` auto-atualiza o `park_leaderboard`
+
+2. **`importStravaHistory()`**: Agora salva `start_latlng[0]` → `start_lat` e `start_latlng[1]` → `start_lng` do response da API do Strava
+
+3. **`StravaConnectController._importAndBackfill()`**: Chama `backfill_park_activities` após `backfill_strava_sessions`
+
+4. **`VerificationBloc._backfillStravaIfConnected()`**: Também chama `backfill_park_activities` para garantir que re-imports populam dados de parque
+
+### Fluxo completo agora
+
+```
+importStravaHistory (com start_latlng)
+  → backfill_strava_sessions (cria sessions)
+  → backfill_park_activities (detecta parques via haversine)
+    → trigger trg_park_activity_inserted
+      → fn_refresh_park_leaderboard (atualiza rankings)
+```
+
+### Arquivos modificados
+- `supabase/migrations/20260228100000_backfill_park_activities.sql` (novo)
+- `lib/features/strava/presentation/strava_connect_controller.dart` (start_latlng + backfill parks)
+- `lib/presentation/blocs/verification/verification_bloc.dart` (backfill parks no fluxo de verificação)
+
+---

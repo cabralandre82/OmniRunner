@@ -91,7 +91,11 @@ class VerificationBloc extends Bloc<VerificationEvent, VerificationState> {
 
       await Supabase.instance.client
           .rpc('backfill_strava_sessions', params: {'p_user_id': uid});
-      AppLogger.info('Strava backfill completed', tag: _tag);
+
+      await Supabase.instance.client
+          .rpc('backfill_park_activities', params: {'p_user_id': uid});
+
+      AppLogger.info('Strava + park backfill completed', tag: _tag);
     } catch (e) {
       AppLogger.warn('Strava backfill skipped: $e', tag: _tag);
     }
