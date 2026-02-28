@@ -121,6 +121,13 @@ class _TodayScreenState extends State<TodayScreen> {
     try {
       final uid = sl<UserIdentityProvider>().userId;
 
+      // Ensure profile_progress is up-to-date (awards XP for
+      // Strava sessions that never went through calculate-progression)
+      try {
+        await Supabase.instance.client
+            .rpc('recalculate_profile_progress', params: {'p_user_id': uid});
+      } catch (_) {}
+
       // Profile progress: Supabase first (authoritative), fallback to Isar
       ProfileProgressEntity profile;
       try {

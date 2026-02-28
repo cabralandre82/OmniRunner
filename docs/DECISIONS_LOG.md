@@ -3549,3 +3549,59 @@ Página de distribuições do portal trocada de `portal_audit_log` (insert falha
 - `portal/src/app/(portal)/distributions/page.tsx` (coin_ledger como fonte)
 
 ---
+
+## DECISÃO 124 — Filtro mínimo 1km em todas as queries de sessões (28/02/2026)
+
+### Problema
+Varredura completa revelou que **5 locais** no app ainda exibiam corridas abaixo de 1km:
+1. `personal_evolution_screen.dart` — filtrava `> 100` (100m) em vez de `>= 1000`
+2. `fn_friends_activity_feed` RPC (SQL) — filtrava `> 100` em vez de `>= 1000`
+3. `staff_performance_screen.dart` — nenhum filtro de distância nas queries
+4. `staff_weekly_report_screen.dart` — nenhum filtro de distância
+5. `staff_retention_dashboard_screen.dart` — nenhum filtro de distância
+6. `eval-athlete-verification` Edge Function — `recentFlaggedCount` incluía sessões < 1km
+
+### Solução
+- Adicionado `status = 3` e `gte('total_distance_m', 1000)` em todas as queries de sessões no app
+- Atualizado `fn_friends_activity_feed` RPC: `total_distance_m >= 1000` e `status = 3`
+- Edge Function `eval-athlete-verification`: `recentFlaggedCount` agora filtra por `MIN_VALID_DISTANCE_M`
+
+### Arquivos modificados
+- `lib/presentation/screens/personal_evolution_screen.dart`
+- `lib/presentation/screens/staff_performance_screen.dart` (2 queries)
+- `lib/presentation/screens/staff_weekly_report_screen.dart`
+- `lib/presentation/screens/staff_retention_dashboard_screen.dart`
+- `supabase/migrations/20260228130000_fix_min_distance_all_queries.sql`
+- `supabase/functions/eval-athlete-verification/index.ts`
+
+---
+
+## DECISÃO 125 — Recalcular profile_progress para sessões do Strava (28/02/2026)
+
+### Problema
+Na aba "Hoje", o resumo mostrava tudo zero: 0 km total, 0 corridas, 0 XP, nível 0.
+
+**Causa raiz**: Sessões importadas do Strava (via webhook e backfill) nunca passavam pelo pipeline de progressão (`calculate-progression` Edge Function). Esse EF é o único que chama `increment_profile_progress` para atualizar XP, nível, contagem de sessões, distância total etc. Como o usuário só tinha sessões do Strava, `profile_progress` ficava zerado.
+
+### Solução
+1. **Nova RPC `recalculate_profile_progress(p_user_id)`**:
+   - Percorre sessões verificadas ≥ 1km com `progression_applied = false`
+   - Calcula XP por sessão (20 base + dist bonus + dur bonus + HR bonus)
+   - Insere `xp_transactions` e marca `progression_applied = true`
+   - Recalcula totais: `lifetime_session_count`, `lifetime_distance_m`, `lifetime_moving_ms`, `weekly_session_count`, `monthly_session_count`
+   - Recalcula `total_xp` da tabela `xp_transactions` e `level` pela fórmula `floor((xp/100)^(2/3))`
+   - Faz UPSERT em `profile_progress`
+
+2. **Chamadas automáticas**:
+   - `TodayScreen._load()` — garante dados atualizados ao abrir a aba
+   - `StravaConnectController._importAndBackfill()` — após backfill do Strava
+   - `VerificationBloc._backfillStravaIfConnected()` — ao avaliar verificação
+   - `strava-webhook/index.ts` — ao receber nova atividade verificada
+
+### Arquivos modificados
+- `supabase/migrations/20260228140000_recalculate_profile_progress.sql` (nova RPC)
+- `lib/features/strava/presentation/strava_connect_controller.dart`
+- `lib/presentation/blocs/verification/verification_bloc.dart`
+- `supabase/functions/strava-webhook/index.ts`
+
+---

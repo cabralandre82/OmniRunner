@@ -93,8 +93,10 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
             .from('sessions')
             .select('user_id, total_distance_m, is_verified')
             .inFilter('user_id', athleteIds)
+            .eq('status', 3)
             .gte('start_time_ms', weekStartMs)
-            .eq('is_verified', true);
+            .eq('is_verified', true)
+            .gte('total_distance_m', 1000);
 
         final sessions = (sessionsRes as List).cast<Map<String, dynamic>>();
         _weeklyRuns = sessions.length;
@@ -142,9 +144,11 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
               .from('sessions')
               .select('total_distance_m')
               .inFilter('user_id', athleteIds)
+              .eq('status', 3)
               .gte('start_time_ms', prevWeekStartMs)
               .lt('start_time_ms', weekStartMs)
-              .eq('is_verified', true);
+              .eq('is_verified', true)
+              .gte('total_distance_m', 1000);
 
           final prev = (prevRes as List).cast<Map<String, dynamic>>();
           _prevWeekRuns = prev.length;

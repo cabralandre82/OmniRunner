@@ -105,12 +105,13 @@ final class StravaConnectController {
     }
   }
 
-  /// Import history → backfill sessions → backfill parks → trigger verification.
+  /// Import history → backfill sessions → backfill parks → recalc progress → trigger verification.
   Future<void> _importAndBackfill() async {
     final imported = await importStravaHistory();
     AppLogger.info('importStravaHistory returned $imported', tag: _tag);
     await _backfillStravaSessions();
     await _backfillParkActivities();
+    await _recalculateProfileProgress();
     await _triggerVerificationEval();
   }
 
@@ -151,6 +152,23 @@ final class StravaConnectController {
       );
     } catch (e) {
       AppLogger.warn('Failed to backfill park activities: $e', tag: _tag);
+    }
+  }
+
+  /// Recalculate profile_progress (XP, level, stats) from sessions data.
+  /// Strava-imported sessions skip calculate-progression, so this ensures
+  /// the profile summary stays up-to-date.
+  Future<void> _recalculateProfileProgress() async {
+    try {
+      final uid = Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) return;
+
+      await Supabase.instance.client
+          .rpc('recalculate_profile_progress', params: {'p_user_id': uid});
+
+      AppLogger.info('Profile progress recalculated', tag: _tag);
+    } catch (e) {
+      AppLogger.warn('Failed to recalculate profile progress: $e', tag: _tag);
     }
   }
 

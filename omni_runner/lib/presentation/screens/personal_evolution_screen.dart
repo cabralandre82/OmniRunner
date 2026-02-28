@@ -57,8 +57,10 @@ class _PersonalEvolutionScreenState extends State<PersonalEvolutionScreen> {
           .from('sessions')
           .select('start_time_ms, end_time_ms, total_distance_m, is_verified')
           .eq('user_id', uid)
+          .eq('status', 3)
           .gte('start_time_ms', cutoffMs)
           .eq('is_verified', true)
+          .gte('total_distance_m', 1000)
           .order('start_time_ms');
 
       final sessions = (rows as List<dynamic>)
@@ -68,7 +70,7 @@ class _PersonalEvolutionScreenState extends State<PersonalEvolutionScreen> {
                 endMs: (r['end_time_ms'] as num?)?.toInt(),
                 distanceM: (r['total_distance_m'] as num?)?.toDouble(),
               ))
-          .where((s) => s.distanceM != null && s.distanceM! > 100)
+          .where((s) => s.distanceM != null && s.distanceM! >= 1000)
           .toList();
 
       // Compute week buckets

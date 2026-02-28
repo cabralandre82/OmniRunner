@@ -121,9 +121,11 @@ class _StaffWeeklyReportScreenState extends State<StaffWeeklyReportScreen> {
           .from('sessions')
           .select('user_id, total_distance_m, moving_ms, avg_pace_sec_km')
           .inFilter('user_id', athleteIds)
+          .eq('status', 3)
           .gte('start_time_ms', weekStartMs)
           .lt('start_time_ms', weekEndMs)
-          .eq('is_verified', true);
+          .eq('is_verified', true)
+          .gte('total_distance_m', 1000);
 
       final sessions = (sessionsRes as List).cast<Map<String, dynamic>>();
 

@@ -62,6 +62,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 'total_distance_m, moving_ms, is_verified, integrity_flags, '
                 'ghost_session_id, source, device_name')
             .eq('user_id', uid)
+            .eq('status', 3)
+            .gte('total_distance_m', 1000)
             .order('start_time_ms', ascending: false)
             .range(offset, offset + _pageSize - 1);
 
@@ -108,7 +110,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     final all = await repo.getAll();
     if (mounted) {
-      final sorted = all.toList()
+      final sorted = all
+          .where((s) => (s.totalDistanceM ?? 0) >= 1000)
+          .toList()
         ..sort((a, b) => b.startTimeMs.compareTo(a.startTimeMs));
       if (loadMore) {
         setState(() {

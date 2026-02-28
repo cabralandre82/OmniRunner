@@ -137,12 +137,13 @@ serve(async (req: Request) => {
       .eq("is_verified", true)
       .gte("total_distance_m", MIN_VALID_DISTANCE_M);
 
-    // Count recent flagged sessions
+    // Count recent flagged sessions (only real runs ≥ 1 km)
     const { count: recentFlaggedCount } = await db
       .from("sessions")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .eq("is_verified", false)
+      .gte("total_distance_m", MIN_VALID_DISTANCE_M)
       .gte("created_at", cutoff.toISOString());
 
     // Average and total distance

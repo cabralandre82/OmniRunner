@@ -89,8 +89,10 @@ class _StaffRetentionDashboardScreenState
           .from('sessions')
           .select('user_id, start_time_ms')
           .inFilter('user_id', athleteIds)
+          .eq('status', 3)
           .gte('start_time_ms', fourWeeksAgoMs)
-          .eq('is_verified', true);
+          .eq('is_verified', true)
+          .gte('total_distance_m', 1000);
 
       final sessions = (sessionsRes as List).cast<Map<String, dynamic>>();
 

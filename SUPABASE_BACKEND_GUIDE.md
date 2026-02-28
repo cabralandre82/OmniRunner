@@ -1,6 +1,6 @@
 # SUPABASE_BACKEND_GUIDE.md — Omni Runner Backend
 
-> **Atualizado:** 2026-02-21 (Phase 35.99.0 — QA completo)
+> **Atualizado:** 2026-02-28 (Phase 35.99.0 — 125 decisões documentadas)
 > **Projeto:** Omni Runner (app de corrida com gamificação B2B)
 > **Stack Backend:** Supabase (Postgres + Auth + Storage + Edge Functions + pg_cron)
 > **Stack Mobile:** Flutter (Dart) — offline-first com Isar local
