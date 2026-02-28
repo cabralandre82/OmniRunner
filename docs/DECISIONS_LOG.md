@@ -3235,3 +3235,21 @@ Usar um scheme dedicado `omnirunnerauth://` exclusivo para o `CallbackActivity`,
 - `android/app/src/main/AndroidManifest.xml` (CallbackActivity scheme)
 
 ---
+
+## DECISÃO 113 — Strava backfill: await no connect + auto-backfill na verificação (26/02/2026)
+
+### Contexto
+
+Após a DECISÃO 112, a conexão Strava funcionava perfeitamente, mas as corridas históricas não eram computadas para verificação. O `_importAndBackfill()` era chamado com `.ignore()` (fire-and-forget), podendo falhar silenciosamente sem feedback. Além disso, o backfill só era chamado no momento da conexão — se o usuário já estivesse conectado e visitasse a tela de verificação, nada acontecia.
+
+### Decisão
+
+1. **`startConnect()` agora aguarda o backfill** em vez de fire-and-forget. O botão "Conectar" fica em loading até o backfill e avaliação completarem
+2. **Verificação screen auto-backfill**: `VerificationBloc._onLoad()` e `_onEvaluate()` agora chamam `_backfillStravaIfConnected()` antes de carregar/avaliar. Toda vez que o usuário abre a tela de verificação ou clica "Reavaliar agora", o backfill roda primeiro
+3. **Logging detalhado** adicionado ao fluxo de import para diagnóstico
+
+### Arquivos modificados
+- `lib/features/strava/presentation/strava_connect_controller.dart` (await backfill)
+- `lib/presentation/blocs/verification/verification_bloc.dart` (+backfill automático)
+
+---

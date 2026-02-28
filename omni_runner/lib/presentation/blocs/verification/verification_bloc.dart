@@ -2,7 +2,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/athlete_verification_entity.dart';
+import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_event.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_state.dart';
 
@@ -24,6 +26,7 @@ class VerificationBloc extends Bloc<VerificationEvent, VerificationState> {
   ) async {
     emit(const VerificationLoading());
     try {
+      await _backfillStravaIfConnected();
       final entity = await _fetchState();
       _cached = entity;
       emit(VerificationLoaded(entity));
@@ -46,9 +49,12 @@ class VerificationBloc extends Bloc<VerificationEvent, VerificationState> {
         return;
       }
 
+      // Backfill Strava history → sessions before evaluating
+      await _backfillStravaIfConnected();
+
       final res = await Supabase.instance.client.functions
           .invoke('eval-athlete-verification', body: {})
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
 
       final data = res.data as Map<String, dynamic>?;
       if (data == null || data['ok'] != true) {
@@ -67,6 +73,28 @@ class VerificationBloc extends Bloc<VerificationEvent, VerificationState> {
       emit(const VerificationError(
         'Falha na avaliação. Verifique sua conexão.',
       ));
+    }
+  }
+
+  /// If Strava is connected, backfill history into sessions so they
+  /// count for verification. Non-blocking on failure.
+  Future<void> _backfillStravaIfConnected() async {
+    try {
+      final controller = sl<StravaConnectController>();
+      final connected = await controller.isConnected;
+      if (!connected) return;
+
+      final uid = Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) return;
+
+      final result = await Supabase.instance.client
+          .rpc('backfill_strava_sessions', params: {'p_user_id': uid});
+      final count = result as int? ?? 0;
+      if (count > 0) {
+        AppLogger.info('Backfilled $count Strava sessions', tag: _tag);
+      }
+    } on Exception catch (e) {
+      AppLogger.warn('Strava backfill skipped: $e', tag: _tag);
     }
   }
 

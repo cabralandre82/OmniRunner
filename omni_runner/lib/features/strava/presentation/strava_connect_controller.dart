@@ -89,8 +89,15 @@ final class StravaConnectController {
     try {
       final connected = await _authRepo.authenticate();
       await _syncTokensToServer(connected);
-      _importAndBackfill().ignore();
       AppLogger.info('Strava connected: ${connected.athleteName}', tag: _tag);
+
+      // Await backfill so sessions exist before user checks verification.
+      try {
+        await _importAndBackfill();
+      } catch (e) {
+        AppLogger.warn('Backfill after connect failed: $e', tag: _tag);
+      }
+
       return connected;
     } on IntegrationFailure catch (e) {
       AppLogger.warn('Auth failed: $e', tag: _tag);
@@ -101,10 +108,9 @@ final class StravaConnectController {
   /// Import history → backfill sessions → trigger verification.
   Future<void> _importAndBackfill() async {
     final imported = await importStravaHistory();
-    if (imported > 0) {
-      await _backfillStravaSessions();
-      await _triggerVerificationEval();
-    }
+    AppLogger.info('importStravaHistory returned $imported', tag: _tag);
+    await _backfillStravaSessions();
+    await _triggerVerificationEval();
   }
 
   /// Convert strava_activity_history rows into sessions so they
