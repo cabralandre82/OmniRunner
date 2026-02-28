@@ -3253,3 +3253,25 @@ Após a DECISÃO 112, a conexão Strava funcionava perfeitamente, mas as corrida
 - `lib/presentation/blocs/verification/verification_bloc.dart` (+backfill automático)
 
 ---
+
+## DECISÃO 114 — Verificação: chamar RPC diretamente em vez de Edge Function (26/02/2026)
+
+### Contexto
+
+O botão "Reavaliar agora" chamava a Edge Function `eval-athlete-verification` que falhava silenciosamente (provavelmente não deployada com última versão ou timeout). O trust_score ficava em 1/80 porque a avaliação nunca rodava com sucesso após o backfill das corridas do Strava.
+
+### Decisão
+
+1. **`_onEvaluate` chama RPC diretamente**: em vez de invocar a EF (HTTP overhead + deployment dependency), agora chama `eval_athlete_verification` RPC via PostgREST — mais rápido e confiável
+2. **Fluxo**: backfill → `eval_athlete_verification` RPC → `get_verification_state` RPC → atualiza UI
+3. **Erro descritivo**: mensagem de erro agora mostra o detalhe da exceção para diagnóstico
+4. **`_parseEfResponse` removido**: método não mais necessário (EF response parser)
+
+### Sobre as 9/13 corridas
+- 4 corridas do Strava não foram importadas como sessions válidas porque tinham distância < 1km ou pace fora do range plausível (< 3:00/km ou > 20:00/km) — comportamento correto do `backfill_strava_sessions`
+- 1 corrida com flag = session com `is_verified = false` (provavelmente a corrida de ~300m anterior ao fix do threshold)
+
+### Arquivos modificados
+- `lib/presentation/blocs/verification/verification_bloc.dart` (RPC direto + cleanup)
+
+---
