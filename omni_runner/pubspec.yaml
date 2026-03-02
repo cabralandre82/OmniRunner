@@ -59,7 +59,7 @@ dependencies:
   sentry_flutter: ^9.13.0
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.2.0
-  google_sign_in: ^6.2.2
+  google_sign_in: ^7.2.0
   sign_in_with_apple: ^6.1.4
   crypto: ^3.0.6
   app_links: ^6.4.1
