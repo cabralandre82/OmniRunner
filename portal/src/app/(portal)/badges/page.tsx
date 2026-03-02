@@ -13,7 +13,7 @@ export default async function BadgesPage() {
 
   const supabase = createClient();
 
-  const [inventoryRes, productsRes, activationsRes] = await Promise.all([
+  const [inventoryRes, productsRes] = await Promise.all([
     supabase
       .from("coaching_badge_inventory")
       .select("available_badges, lifetime_purchased, lifetime_activated")
@@ -26,19 +26,6 @@ export default async function BadgesPage() {
       .eq("is_active", true)
       .eq("product_type", "badges")
       .order("sort_order", { ascending: true }),
-
-    supabase
-      .from("championship_badges")
-      .select("id, championship_id, user_id, granted_at, expires_at, championships(name, status)")
-      .eq(
-        "championship_id",
-        supabase
-          .from("championships")
-          .select("id")
-          .eq("host_group_id", groupId),
-      )
-      .order("granted_at", { ascending: false })
-      .limit(50),
   ]);
 
   const inventory = inventoryRes.data;

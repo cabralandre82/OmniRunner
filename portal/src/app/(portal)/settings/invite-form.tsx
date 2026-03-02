@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 export function InviteForm() {
-  const t = useTranslations("settings");
+  const _t = useTranslations("settings");
   const tc = useTranslations("common");
   const te = useTranslations("error");
   const router = useRouter();
