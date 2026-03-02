@@ -10,7 +10,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "qa:e2e": "bash scripts/qa-full.sh",
+    "qa:no-money": "bash scripts/qa-no-money.sh ../omni_runner/lib"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.40.0",
