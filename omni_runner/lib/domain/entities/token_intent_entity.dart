@@ -48,6 +48,25 @@ final class EmissionCapacity {
   );
 }
 
+/// Snapshot of the group's badge inventory for badge capacity display.
+final class BadgeCapacity {
+  final int availableBadges;
+  final int lifetimePurchased;
+  final int lifetimeActivated;
+
+  const BadgeCapacity({
+    required this.availableBadges,
+    required this.lifetimePurchased,
+    required this.lifetimeActivated,
+  });
+
+  static const empty = BadgeCapacity(
+    availableBadges: 0,
+    lifetimePurchased: 0,
+    lifetimeActivated: 0,
+  );
+}
+
 /// QR payload containing all data needed to consume a token intent.
 ///
 /// Serialized as JSON → base64url for the QR code content.

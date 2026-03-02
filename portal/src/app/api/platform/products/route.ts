@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    const { name, description, credits_amount, price_cents, sort_order } = parsed.data;
+    const { name, description, credits_amount, price_cents, sort_order, product_type } = parsed.data;
 
     const { error } = await admin.from("billing_products").insert({
       name,
@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
       credits_amount,
       price_cents,
       sort_order,
+      product_type: product_type ?? "coins",
     });
 
     if (error) {

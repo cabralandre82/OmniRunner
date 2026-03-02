@@ -13,6 +13,7 @@ export interface Product {
   currency: string;
   is_active: boolean;
   sort_order: number;
+  product_type: "coins" | "badges";
   created_at: string;
 }
 

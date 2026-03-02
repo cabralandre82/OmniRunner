@@ -15,6 +15,7 @@ class StaffQrBloc extends Bloc<StaffQrEvent, StaffQrState> {
     on<GenerateQr>(_onGenerate);
     on<ConsumeScannedQr>(_onConsume);
     on<LoadEmissionCapacity>(_onLoadCapacity);
+    on<LoadBadgeCapacity>(_onLoadBadgeCapacity);
     on<ResetStaffQr>(_onReset);
   }
 
@@ -69,6 +70,18 @@ class StaffQrBloc extends Bloc<StaffQrEvent, StaffQrState> {
       emit(StaffQrCapacityLoaded(capacity));
     } on Exception catch (e) {
       emit(StaffQrError('Erro ao carregar capacidade: $e'));
+    }
+  }
+
+  Future<void> _onLoadBadgeCapacity(
+    LoadBadgeCapacity event,
+    Emitter<StaffQrState> emit,
+  ) async {
+    try {
+      final capacity = await _repo.getBadgeCapacity(event.groupId);
+      emit(StaffQrBadgeCapacityLoaded(capacity));
+    } on Exception catch (e) {
+      emit(StaffQrError('Erro ao carregar badges: $e'));
     }
   }
 

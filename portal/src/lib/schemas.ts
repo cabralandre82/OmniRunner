@@ -84,6 +84,7 @@ export const platformProductCreateSchema = z.object({
   credits_amount: z.number().int().positive("credits_amount deve ser positivo"),
   price_cents: z.number().int().positive("price_cents deve ser positivo"),
   sort_order: z.number().int().min(0).optional().default(0),
+  product_type: z.enum(["coins", "badges"]).optional().default("coins"),
 });
 
 export const platformProductToggleSchema = z.object({

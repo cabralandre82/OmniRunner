@@ -46,6 +46,16 @@ final class LoadEmissionCapacity extends StaffQrEvent {
   List<Object?> get props => [groupId];
 }
 
+/// Load the group's current badge capacity from badge inventory.
+final class LoadBadgeCapacity extends StaffQrEvent {
+  final String groupId;
+
+  const LoadBadgeCapacity(this.groupId);
+
+  @override
+  List<Object?> get props => [groupId];
+}
+
 /// Reset to initial state (e.g. after a successful operation).
 final class ResetStaffQr extends StaffQrEvent {
   const ResetStaffQr();

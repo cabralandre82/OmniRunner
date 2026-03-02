@@ -63,7 +63,23 @@
 - [x] Validação de inventário no backend (token-create-intent → HTTP 409)
 - [x] QR Scanner disponível para atletas (wallet FAB + more_screen tile)
 
-## Testes (488 portal + 1467 Flutter = 1955 total)
+## Venda de Badges de Campeonato
+
+- [x] coaching_badge_inventory table (available_badges, lifetime_purchased, lifetime_activated)
+- [x] billing_products.product_type (coins | badges) para diferenciar produtos
+- [x] token_intents.championship_id para persistir campeonato no intent
+- [x] fn_credit_badge_inventory — credita badges após compra
+- [x] fn_decrement_badge_inventory — decrementa ao ativar
+- [x] fn_fulfill_purchase atualizado — roteia por product_type (coins → inventory, badges → badge_inventory)
+- [x] token-create-intent: valida badge inventory antes de criar intent
+- [x] token-consume-intent: CHAMP_BADGE_ACTIVATE cria championship_badge + enrola participante + decrementa inventário
+- [x] Portal: /badges page com KPIs + pacotes para compra (BuyButton)
+- [x] Portal: admin pode criar/editar produtos tipo "badges" em /platform/produtos
+- [x] App: badge capacity card no StaffGenerateQrScreen (disponíveis/comprados/ativados)
+- [x] App: botão "Gerar QR" desabilitado se sem badges disponíveis
+- [x] Seed: 3 pacotes de badges (1, 5, 20 un.) com preços configuráveis
+
+## Testes (488 portal + 1469 Flutter = 1957 total)
 
 - [x] Unit: burn plan determinístico
 - [x] Unit: cálculo de taxas (clearing 3%, swap 1%)
@@ -76,6 +92,7 @@
 - [x] Unit: metrics library
 - [x] Unit: health check with invariants
 - [x] Unit: StaffQrBloc emission capacity (load + error)
+- [x] Unit: StaffQrBloc badge capacity (load + error)
 - [x] E2E (model): burn → clearing → settlement
 - [x] Compliance: no monetary terms in app
 - [x] QA Smoke E2E: cenário determinístico com números exatos (fee 1.80, net 58.20)

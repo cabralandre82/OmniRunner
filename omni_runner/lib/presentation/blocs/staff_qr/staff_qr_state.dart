@@ -50,6 +50,16 @@ final class StaffQrCapacityLoaded extends StaffQrState {
   List<Object?> get props => [capacity];
 }
 
+/// Badge capacity loaded successfully.
+final class StaffQrBadgeCapacityLoaded extends StaffQrState {
+  final BadgeCapacity capacity;
+
+  const StaffQrBadgeCapacityLoaded(this.capacity);
+
+  @override
+  List<Object?> get props => [capacity];
+}
+
 final class StaffQrError extends StaffQrState {
   final String message;
 

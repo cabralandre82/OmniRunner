@@ -33,9 +33,12 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
   Timer? _countdownTimer;
   Duration _remaining = Duration.zero;
   EmissionCapacity? _capacity;
+  BadgeCapacity? _badgeCapacity;
   bool _capacityLoading = true;
 
   bool get _isIssue => widget.type == TokenIntentType.issueToAthlete;
+  bool get _isBadge => widget.type == TokenIntentType.champBadgeActivate;
+  bool get _hasInventoryControl => _isIssue || _isBadge;
 
   @override
   void initState() {
@@ -44,6 +47,12 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
       context
           .read<StaffQrBloc>()
           .add(LoadEmissionCapacity(widget.groupId));
+    } else if (_isBadge) {
+      context
+          .read<StaffQrBloc>()
+          .add(LoadBadgeCapacity(widget.groupId));
+    } else {
+      _capacityLoading = false;
     }
   }
 
@@ -77,6 +86,12 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
               _capacityLoading = false;
             });
           }
+          if (state is StaffQrBadgeCapacityLoaded) {
+            setState(() {
+              _badgeCapacity = state.capacity;
+              _capacityLoading = false;
+            });
+          }
           if (state is StaffQrGenerated) {
             _startCountdown(state.payload);
             if (_isIssue && _capacity != null) {
@@ -90,9 +105,21 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
                 );
               });
             }
+            if (_isBadge && _badgeCapacity != null) {
+              setState(() {
+                _badgeCapacity = BadgeCapacity(
+                  availableBadges:
+                      _badgeCapacity!.availableBadges - state.payload.amount,
+                  lifetimePurchased: _badgeCapacity!.lifetimePurchased,
+                  lifetimeActivated:
+                      _badgeCapacity!.lifetimeActivated + state.payload.amount,
+                );
+              });
+            }
           }
           if (state is StaffQrError) {
-            if (!state.message.contains('capacidade')) {
+            if (!state.message.contains('capacidade') &&
+                !state.message.contains('badges')) {
               _capacityLoading = false;
             }
             ScaffoldMessenger.of(context).showSnackBar(
@@ -106,6 +133,7 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
         builder: (context, state) => switch (state) {
           StaffQrInitial() => _buildForm(context, theme),
           StaffQrCapacityLoaded() => _buildForm(context, theme),
+          StaffQrBadgeCapacityLoaded() => _buildForm(context, theme),
           StaffQrGenerating() =>
             const Center(child: CircularProgressIndicator()),
           StaffQrGenerated(:final payload) =>
@@ -119,9 +147,13 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
 
   Widget _buildForm(BuildContext context, ThemeData theme) {
     final isBadge = widget.type == TokenIntentType.champBadgeActivate;
-    final exceedsCapacity = _isIssue &&
+    final exceedsCoinCapacity = _isIssue &&
         _capacity != null &&
         _amount > _capacity!.availableTokens;
+    final exceedsBadgeCapacity = _isBadge &&
+        _badgeCapacity != null &&
+        _badgeCapacity!.availableBadges <= 0;
+    final exceedsCapacity = exceedsCoinCapacity || exceedsBadgeCapacity;
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -147,9 +179,10 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
             ),
             textAlign: TextAlign.center,
           ),
-          if (_isIssue) ...[
+          if (_hasInventoryControl) ...[
             const SizedBox(height: 20),
-            _buildCapacityCard(theme),
+            if (_isIssue) _buildCapacityCard(theme),
+            if (_isBadge) _buildBadgeCapacityCard(theme),
           ],
           const SizedBox(height: 32),
           if (!isBadge) ...[
@@ -180,7 +213,7 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
                 ),
               ],
             ),
-            if (exceedsCapacity) ...[
+            if (exceedsCoinCapacity) ...[
               const SizedBox(height: 8),
               Text(
                 'Quantidade excede o saldo disponível '
@@ -342,6 +375,127 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
     );
   }
 
+  Widget _buildBadgeCapacityCard(ThemeData theme) {
+    if (_capacityLoading) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Carregando badges...',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final cap = _badgeCapacity ?? BadgeCapacity.empty;
+    final available = cap.availableBadges;
+    final low = available > 0 && available <= 3;
+
+    return Card(
+      color: available == 0
+          ? theme.colorScheme.errorContainer
+          : low
+              ? Colors.orange.shade50
+              : Colors.purple.shade50,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  available == 0
+                      ? Icons.warning_amber_rounded
+                      : Icons.military_tech,
+                  size: 20,
+                  color: available == 0
+                      ? theme.colorScheme.error
+                      : low
+                          ? Colors.orange.shade700
+                          : Colors.purple.shade700,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Disponível: $available badge${available != 1 ? 's' : ''}',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: available == 0
+                        ? theme.colorScheme.error
+                        : low
+                            ? Colors.orange.shade700
+                            : Colors.purple.shade700,
+                  ),
+                ),
+              ],
+            ),
+            if (available == 0) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Adquira mais badges pelo portal da assessoria.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _statChip(theme, 'Comprados', cap.lifetimePurchased),
+                _statChip(theme, 'Ativados', cap.lifetimeActivated),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerRight,
+              child: InkWell(
+                onTap: () {
+                  setState(() => _capacityLoading = true);
+                  context
+                      .read<StaffQrBloc>()
+                      .add(LoadBadgeCapacity(widget.groupId));
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.refresh, size: 14,
+                          color: theme.colorScheme.primary),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Atualizar',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildQrDisplay(
     BuildContext context,
     ThemeData theme,
@@ -436,13 +590,19 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
           OutlinedButton.icon(
             onPressed: () {
               context.read<StaffQrBloc>().add(const ResetStaffQr());
-              if (_isIssue) {
+              if (_hasInventoryControl) {
                 Future.microtask(() {
                   if (mounted) {
                     setState(() => _capacityLoading = true);
-                    context
-                        .read<StaffQrBloc>()
-                        .add(LoadEmissionCapacity(widget.groupId));
+                    if (_isIssue) {
+                      context
+                          .read<StaffQrBloc>()
+                          .add(LoadEmissionCapacity(widget.groupId));
+                    } else if (_isBadge) {
+                      context
+                          .read<StaffQrBloc>()
+                          .add(LoadBadgeCapacity(widget.groupId));
+                    }
                   }
                 });
               }

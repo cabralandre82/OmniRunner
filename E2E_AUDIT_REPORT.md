@@ -2,7 +2,7 @@
 
 **Data**: 2026-02-28
 **Score**: 10/10 (auditoria)
-**Testes**: 1955 (1467 Flutter + 488 Portal)
+**Testes**: 1957 (1469 Flutter + 488 Portal)
 **Portal Pages**: 6 (Custódia, Clearing, Swap, FX, Auditoria, Settings)
 **QA Command**: `cd portal && npm run qa:e2e` (6 steps, single command)
 
@@ -200,6 +200,11 @@ cd omni_runner && flutter test test/e2e/
 - [x] **Capacidade de emissão no app** — `StaffGenerateQrScreen` exibe saldo disponível, emitidos, queimados em tempo real
 - [x] **Validação de inventário no backend** — `token-create-intent` bloqueia emissão se `amount > available_tokens` (HTTP 409)
 - [x] **Botão desabilitado se excede saldo** — UI impede staff de tentar emitir mais do que o disponível
+- [x] **Venda de badges de campeonato** — fluxo completo: portal compra → gateway → webhook → badge inventory
+- [x] **Badge inventory no app** — `StaffGenerateQrScreen` mostra badges disponíveis/comprados/ativados
+- [x] **Badge activation completa** — `token-consume-intent` cria `championship_badges` + enrola participante + decrementa inventário
+- [x] **Admin gerencia produtos** — `billing_products.product_type` (coins/badges), CRUD no portal admin
+- [x] **Portal: página /badges** — KPIs + pacotes de badges com BuyButton (Stripe/MercadoPago)
 
 ### Recomendações futuras (P2):
 

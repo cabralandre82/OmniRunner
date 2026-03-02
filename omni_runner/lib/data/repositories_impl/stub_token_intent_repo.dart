@@ -47,4 +47,14 @@ final class StubTokenIntentRepo implements ITokenIntentRepo {
       lifetimeBurned: 2500,
     );
   }
+
+  @override
+  Future<BadgeCapacity> getBadgeCapacity(String groupId) async {
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    return const BadgeCapacity(
+      availableBadges: 15,
+      lifetimePurchased: 50,
+      lifetimeActivated: 35,
+    );
+  }
 }

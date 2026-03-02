@@ -287,8 +287,131 @@ serve(async (req: Request) => {
         p_group_id: intent.group_id,
         p_amount: intent.amount,
       });
+    } else if (intent.type === "CHAMP_BADGE_ACTIVATE") {
+      // ── 6c. Badge activation: decrement inventory + create badge + enroll ──
+
+      // Decrement badge inventory (CHECK constraint guards negative)
+      const { error: badgeDecrErr } = await db.rpc("fn_decrement_badge_inventory", {
+        p_group_id: intent.group_id,
+        p_amount: intent.amount,
+      });
+
+      if (badgeDecrErr) {
+        const msg = badgeDecrErr.message ?? "";
+        if (msg.includes("INSUFFICIENT_BADGE_INVENTORY")) {
+          status = 422;
+          return jsonErr(422, "INSUFFICIENT_BADGE_INVENTORY", "Not enough badge credits", requestId);
+        }
+        const classified = classifyError(badgeDecrErr);
+        status = classified.httpStatus;
+        errorCode = classified.code;
+        return jsonErr(classified.httpStatus, classified.code, classified.message, requestId);
+      }
+
+      // Resolve championship: from intent column or fallback to active championship
+      let championshipId = intent.championship_id as string | null;
+
+      if (!championshipId) {
+        const { data: champs } = await db
+          .from("championships")
+          .select("id")
+          .eq("host_group_id", intent.group_id)
+          .eq("requires_badge", true)
+          .in("status", ["open", "active"])
+          .order("start_at", { ascending: true })
+          .limit(1);
+
+        championshipId = champs?.[0]?.id ?? null;
+      }
+
+      if (!championshipId) {
+        status = 404;
+        return jsonErr(404, "NO_CHAMPIONSHIP", "No open championship requiring badge found for this group", requestId);
+      }
+
+      // Load championship for end_at and validation
+      const { data: champ } = await db
+        .from("championships")
+        .select("id, host_group_id, end_at, status, max_participants")
+        .eq("id", championshipId)
+        .maybeSingle();
+
+      if (!champ || !["open", "active"].includes(champ.status)) {
+        status = 409;
+        return jsonErr(409, "CHAMPIONSHIP_NOT_OPEN", "Championship is not open for enrollment", requestId);
+      }
+
+      // Check max participants
+      if (champ.max_participants != null) {
+        const { count } = await db
+          .from("championship_participants")
+          .select("id", { count: "exact", head: true })
+          .eq("championship_id", championshipId)
+          .in("status", ["enrolled", "active"]);
+
+        if (count != null && count >= champ.max_participants) {
+          status = 409;
+          return jsonErr(409, "CHAMPIONSHIP_FULL", "Championship has reached max participants", requestId);
+        }
+      }
+
+      // Verify athlete's group affiliation
+      const { data: profile } = await db
+        .from("profiles")
+        .select("active_coaching_group_id")
+        .eq("id", targetUserId)
+        .maybeSingle();
+
+      const athleteGroupId = profile?.active_coaching_group_id;
+
+      if (!athleteGroupId) {
+        status = 403;
+        return jsonErr(403, "NO_GROUP", "Athlete must belong to a coaching group", requestId);
+      }
+
+      // Non-host groups need accepted invite
+      if (athleteGroupId !== champ.host_group_id) {
+        const { data: invite } = await db
+          .from("championship_invites")
+          .select("status")
+          .eq("championship_id", championshipId)
+          .eq("to_group_id", athleteGroupId)
+          .eq("status", "accepted")
+          .maybeSingle();
+
+        if (!invite) {
+          status = 403;
+          return jsonErr(403, "GROUP_NOT_INVITED", "Athlete's group has no accepted invite", requestId);
+        }
+      }
+
+      // Create championship badge (upsert for idempotency)
+      const { error: badgeErr } = await db
+        .from("championship_badges")
+        .upsert({
+          championship_id: championshipId,
+          user_id: targetUserId,
+          intent_id: intent.id,
+          expires_at: champ.end_at,
+        }, { onConflict: "championship_id,user_id" });
+
+      if (badgeErr) {
+        const classified = classifyError(badgeErr);
+        status = classified.httpStatus;
+        errorCode = classified.code;
+        return jsonErr(classified.httpStatus, classified.code, classified.message, requestId);
+      }
+
+      // Enroll as participant (upsert for idempotency)
+      await db
+        .from("championship_participants")
+        .upsert({
+          championship_id: championshipId,
+          user_id: targetUserId,
+          group_id: athleteGroupId,
+          status: "enrolled",
+        }, { onConflict: "championship_id,user_id" });
     }
-    // CHAMP_BADGE_ACTIVATE: no wallet/ledger action — just mark consumed
 
     // Intent was already marked CONSUMED in step 5 (claim).
     return jsonOk({

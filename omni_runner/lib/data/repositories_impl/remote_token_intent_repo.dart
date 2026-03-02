@@ -36,7 +36,7 @@ final class RemoteTokenIntentRepo implements ITokenIntentRepo {
           'nonce': nonce,
           'expires_at_iso': expiresAt.toIso8601String(),
           if (targetUserId != null) 'target_user_id': targetUserId,
-          if (championshipId != null) 'championship_id': championshipId,
+          'championship_id': championshipId,
         },
       );
       final data = res.data as Map<String, dynamic>;
@@ -99,6 +99,28 @@ final class RemoteTokenIntentRepo implements ITokenIntentRepo {
     } on PostgrestException catch (e) {
       AppLogger.error('Emission capacity error: ${e.message}', tag: _tag);
       return EmissionCapacity.empty;
+    }
+  }
+
+  @override
+  Future<BadgeCapacity> getBadgeCapacity(String groupId) async {
+    try {
+      final row = await _client
+          .from('coaching_badge_inventory')
+          .select('available_badges, lifetime_purchased, lifetime_activated')
+          .eq('group_id', groupId)
+          .maybeSingle();
+
+      if (row == null) return BadgeCapacity.empty;
+
+      return BadgeCapacity(
+        availableBadges: (row['available_badges'] as int?) ?? 0,
+        lifetimePurchased: (row['lifetime_purchased'] as int?) ?? 0,
+        lifetimeActivated: (row['lifetime_activated'] as int?) ?? 0,
+      );
+    } on PostgrestException catch (e) {
+      AppLogger.error('Badge capacity error: ${e.message}', tag: _tag);
+      return BadgeCapacity.empty;
     }
   }
 }

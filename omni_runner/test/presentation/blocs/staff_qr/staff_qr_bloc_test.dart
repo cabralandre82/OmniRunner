@@ -35,6 +35,15 @@ class _FakeRepo implements ITokenIntentRepo {
       lifetimeBurned: 700,
     );
   }
+  @override
+  Future<BadgeCapacity> getBadgeCapacity(String groupId) async {
+    if (shouldFail) throw Exception('network error');
+    return const BadgeCapacity(
+      availableBadges: 15,
+      lifetimePurchased: 50,
+      lifetimeActivated: 35,
+    );
+  }
 }
 
 void main() {
@@ -115,6 +124,39 @@ void main() {
     bloc.stream.listen(states.add);
 
     bloc.add(const LoadEmissionCapacity('g1'));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    expect(states, hasLength(1));
+    expect(states[0], isA<StaffQrError>());
+
+    await bloc.close();
+  });
+
+  test('emits BadgeCapacityLoaded on LoadBadgeCapacity', () async {
+    final bloc = StaffQrBloc(repo: repo);
+    final states = <StaffQrState>[];
+    bloc.stream.listen(states.add);
+
+    bloc.add(const LoadBadgeCapacity('g1'));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    expect(states, hasLength(1));
+    expect(states[0], isA<StaffQrBadgeCapacityLoaded>());
+    final loaded = states[0] as StaffQrBadgeCapacityLoaded;
+    expect(loaded.capacity.availableBadges, 15);
+    expect(loaded.capacity.lifetimePurchased, 50);
+    expect(loaded.capacity.lifetimeActivated, 35);
+
+    await bloc.close();
+  });
+
+  test('emits Error when LoadBadgeCapacity fails', () async {
+    repo.shouldFail = true;
+    final bloc = StaffQrBloc(repo: repo);
+    final states = <StaffQrState>[];
+    bloc.stream.listen(states.add);
+
+    bloc.add(const LoadBadgeCapacity('g1'));
     await Future<void>.delayed(const Duration(milliseconds: 100));
 
     expect(states, hasLength(1));

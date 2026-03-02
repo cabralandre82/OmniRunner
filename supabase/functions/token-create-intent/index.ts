@@ -79,7 +79,7 @@ serve(async (req: Request) => {
       return jsonErr(400, "BAD_REQUEST", "Invalid request", requestId);
     }
 
-    const { group_id, type, amount, nonce, expires_at_iso, target_user_id } = body;
+    const { group_id, type, amount, nonce, expires_at_iso, target_user_id, championship_id } = body;
 
     if (!VALID_TYPES.includes(type)) {
       status = 400;
@@ -135,6 +135,23 @@ serve(async (req: Request) => {
       }
     }
 
+    // ── 3d. Badge inventory check ───────────────────────────────────────
+    if (type === "CHAMP_BADGE_ACTIVATE") {
+      const { data: badgeInv } = await db
+        .from("coaching_badge_inventory")
+        .select("available_badges")
+        .eq("group_id", group_id)
+        .maybeSingle();
+
+      const availableBadges = badgeInv?.available_badges ?? 0;
+      if (amount > availableBadges) {
+        status = 409;
+        return jsonErr(409, "INSUFFICIENT_BADGE_INVENTORY",
+          `Badges insuficientes. Disponível: ${availableBadges}, solicitado: ${amount}`,
+          requestId);
+      }
+    }
+
     // ── 4. Insert intent ──────────────────────────────────────────────
     const insertPayload: Record<string, unknown> = {
       group_id,
@@ -147,6 +164,9 @@ serve(async (req: Request) => {
     };
     if (target_user_id) {
       insertPayload.target_user_id = target_user_id;
+    }
+    if (championship_id) {
+      insertPayload.championship_id = championship_id;
     }
 
     const { data: intent, error: insertError } = await db

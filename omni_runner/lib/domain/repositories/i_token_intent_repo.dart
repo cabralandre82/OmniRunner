@@ -24,4 +24,7 @@ abstract interface class ITokenIntentRepo {
 
   /// Returns the group's current emission capacity from `coaching_token_inventory`.
   Future<EmissionCapacity> getEmissionCapacity(String groupId);
+
+  /// Returns the group's current badge capacity from `coaching_badge_inventory`.
+  Future<BadgeCapacity> getBadgeCapacity(String groupId);
 }

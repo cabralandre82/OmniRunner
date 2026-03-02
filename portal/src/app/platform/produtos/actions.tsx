@@ -75,6 +75,15 @@ export function ProductCard({ product: p }: { product: Product }) {
             <h3 className="text-sm font-semibold text-gray-900">{p.name}</h3>
             <span
               className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                p.product_type === "badges"
+                  ? "bg-purple-100 text-purple-700"
+                  : "bg-blue-100 text-blue-700"
+              }`}
+            >
+              {p.product_type === "badges" ? "Badge" : "Coins"}
+            </span>
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                 p.is_active
                   ? "bg-green-100 text-green-700"
                   : "bg-gray-200 text-gray-500"
@@ -275,6 +284,8 @@ export function ProductForm() {
       return;
     }
 
+    const product_type = (form.get("product_type") as string) || "coins";
+
     setLoading(true);
     const ok = await apiCall({
       action: "create",
@@ -283,6 +294,7 @@ export function ProductForm() {
       credits_amount,
       price_cents: Math.round(price_reais * 100),
       sort_order,
+      product_type,
     });
     if (ok) {
       (e.target as HTMLFormElement).reset();
@@ -351,6 +363,19 @@ export function ProductForm() {
           defaultValue={0}
           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">
+          Tipo
+        </label>
+        <select
+          name="product_type"
+          defaultValue="coins"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        >
+          <option value="coins">OmniCoins</option>
+          <option value="badges">Badge Campeonato</option>
+        </select>
       </div>
       <div className="flex items-end">
         <button
