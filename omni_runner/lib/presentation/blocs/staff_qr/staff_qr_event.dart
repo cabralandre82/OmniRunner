@@ -36,6 +36,16 @@ final class ConsumeScannedQr extends StaffQrEvent {
   List<Object?> get props => [encodedPayload];
 }
 
+/// Load the group's current emission capacity from inventory.
+final class LoadEmissionCapacity extends StaffQrEvent {
+  final String groupId;
+
+  const LoadEmissionCapacity(this.groupId);
+
+  @override
+  List<Object?> get props => [groupId];
+}
+
 /// Reset to initial state (e.g. after a successful operation).
 final class ResetStaffQr extends StaffQrEvent {
   const ResetStaffQr();

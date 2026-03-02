@@ -21,7 +21,10 @@ import 'package:omni_runner/presentation/screens/my_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/profile_screen.dart';
 import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_qr_hub_screen.dart';
+import 'package:omni_runner/presentation/screens/staff_scan_qr_screen.dart';
 import 'package:omni_runner/presentation/screens/partner_assessorias_screen.dart';
+import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_bloc.dart';
+import 'package:omni_runner/domain/repositories/i_token_intent_repo.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 
 
@@ -62,6 +65,15 @@ class MoreScreen extends StatelessWidget {
                     child: const MyAssessoriaScreen(),
                   ),
                 ));
+              },
+            ),
+            _ActionTile(
+              icon: Icons.qr_code_scanner,
+              title: 'Escanear QR',
+              subtitle: 'Ler QR da assessoria para receber ou devolver OmniCoins',
+              onTap: (ctx) {
+                if (LoginRequiredSheet.guard(ctx, feature: 'QR Scanner')) return;
+                _openAthleteScan(ctx);
               },
             ),
           ],
@@ -303,6 +315,15 @@ class MoreScreen extends StatelessWidget {
         const SnackBar(content: Text('Erro ao carregar. Tente novamente.')),
       );
     }
+  }
+
+  void _openAthleteScan(BuildContext context) {
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => BlocProvider<StaffQrBloc>(
+        create: (_) => StaffQrBloc(repo: sl<ITokenIntentRepo>()),
+        child: const StaffScanQrScreen(),
+      ),
+    ));
   }
 
   Future<void> _openStaffQrHub(BuildContext context) async {

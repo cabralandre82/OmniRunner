@@ -54,7 +54,16 @@
 - [x] CI falha se termos monetários aparecem no app
 - [x] App é coins-only (zero referência a dinheiro)
 
-## Testes (488 portal + 1465 Flutter = 1953 total)
+## App — Controles de Emissão
+
+- [x] Capacidade de emissão visível no app (StaffGenerateQrScreen)
+- [x] Card com saldo disponível, emitidos, queimados (verde/laranja/vermelho)
+- [x] Botão "Gerar QR" desabilitado se quantidade excede disponível
+- [x] Atualização otimista local + refresh do servidor
+- [x] Validação de inventário no backend (token-create-intent → HTTP 409)
+- [x] QR Scanner disponível para atletas (wallet FAB + more_screen tile)
+
+## Testes (488 portal + 1467 Flutter = 1955 total)
 
 - [x] Unit: burn plan determinístico
 - [x] Unit: cálculo de taxas (clearing 3%, swap 1%)
@@ -66,6 +75,7 @@
 - [x] Unit: format utilities
 - [x] Unit: metrics library
 - [x] Unit: health check with invariants
+- [x] Unit: StaffQrBloc emission capacity (load + error)
 - [x] E2E (model): burn → clearing → settlement
 - [x] Compliance: no monetary terms in app
 - [x] QA Smoke E2E: cenário determinístico com números exatos (fee 1.80, net 58.20)

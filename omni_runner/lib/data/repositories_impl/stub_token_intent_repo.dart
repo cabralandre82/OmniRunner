@@ -37,4 +37,14 @@ final class StubTokenIntentRepo implements ITokenIntentRepo {
       throw Exception('Intent expired (stub)');
     }
   }
+
+  @override
+  Future<EmissionCapacity> getEmissionCapacity(String groupId) async {
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    return const EmissionCapacity(
+      availableTokens: 1000,
+      lifetimeIssued: 3500,
+      lifetimeBurned: 2500,
+    );
+  }
 }

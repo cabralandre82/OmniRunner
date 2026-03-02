@@ -40,6 +40,16 @@ final class StaffQrConsumed extends StaffQrState {
   List<Object?> get props => [type];
 }
 
+/// Emission capacity loaded successfully.
+final class StaffQrCapacityLoaded extends StaffQrState {
+  final EmissionCapacity capacity;
+
+  const StaffQrCapacityLoaded(this.capacity);
+
+  @override
+  List<Object?> get props => [capacity];
+}
+
 final class StaffQrError extends StaffQrState {
   final String message;
 

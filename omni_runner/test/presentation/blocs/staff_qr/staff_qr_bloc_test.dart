@@ -26,6 +26,15 @@ class _FakeRepo implements ITokenIntentRepo {
   Future<void> consumeIntent(StaffQrPayload payload) async {
     if (shouldFail) throw const TokenIntentFailed('already_consumed');
   }
+  @override
+  Future<EmissionCapacity> getEmissionCapacity(String groupId) async {
+    if (shouldFail) throw Exception('network error');
+    return const EmissionCapacity(
+      availableTokens: 500,
+      lifetimeIssued: 1200,
+      lifetimeBurned: 700,
+    );
+  }
 }
 
 void main() {
@@ -77,6 +86,39 @@ void main() {
 
     expect(states, hasLength(1));
     expect(states[0], isA<StaffQrInitial>());
+
+    await bloc.close();
+  });
+
+  test('emits CapacityLoaded on LoadEmissionCapacity', () async {
+    final bloc = StaffQrBloc(repo: repo);
+    final states = <StaffQrState>[];
+    bloc.stream.listen(states.add);
+
+    bloc.add(const LoadEmissionCapacity('g1'));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    expect(states, hasLength(1));
+    expect(states[0], isA<StaffQrCapacityLoaded>());
+    final loaded = states[0] as StaffQrCapacityLoaded;
+    expect(loaded.capacity.availableTokens, 500);
+    expect(loaded.capacity.lifetimeIssued, 1200);
+    expect(loaded.capacity.lifetimeBurned, 700);
+
+    await bloc.close();
+  });
+
+  test('emits Error when LoadEmissionCapacity fails', () async {
+    repo.shouldFail = true;
+    final bloc = StaffQrBloc(repo: repo);
+    final states = <StaffQrState>[];
+    bloc.stream.listen(states.add);
+
+    bloc.add(const LoadEmissionCapacity('g1'));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    expect(states, hasLength(1));
+    expect(states[0], isA<StaffQrError>());
 
     await bloc.close();
   });

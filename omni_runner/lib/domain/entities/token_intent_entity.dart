@@ -29,6 +29,25 @@ String tokenIntentLabel(TokenIntentType t) => switch (t) {
       TokenIntentType.champBadgeActivate => 'Ativar Badge de Campeonato',
     };
 
+/// Snapshot of the group's token inventory for emission capacity display.
+final class EmissionCapacity {
+  final int availableTokens;
+  final int lifetimeIssued;
+  final int lifetimeBurned;
+
+  const EmissionCapacity({
+    required this.availableTokens,
+    required this.lifetimeIssued,
+    required this.lifetimeBurned,
+  });
+
+  static const empty = EmissionCapacity(
+    availableTokens: 0,
+    lifetimeIssued: 0,
+    lifetimeBurned: 0,
+  );
+}
+
 /// QR payload containing all data needed to consume a token intent.
 ///
 /// Serialized as JSON → base64url for the QR code content.

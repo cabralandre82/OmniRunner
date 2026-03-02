@@ -14,6 +14,7 @@ class StaffQrBloc extends Bloc<StaffQrEvent, StaffQrState> {
         super(const StaffQrInitial()) {
     on<GenerateQr>(_onGenerate);
     on<ConsumeScannedQr>(_onConsume);
+    on<LoadEmissionCapacity>(_onLoadCapacity);
     on<ResetStaffQr>(_onReset);
   }
 
@@ -56,6 +57,18 @@ class StaffQrBloc extends Bloc<StaffQrEvent, StaffQrState> {
       emit(const StaffQrError('QR inválido. Não é um token Omni Runner.'));
     } on Exception catch (e) {
       emit(StaffQrError('Erro ao processar QR: $e'));
+    }
+  }
+
+  Future<void> _onLoadCapacity(
+    LoadEmissionCapacity event,
+    Emitter<StaffQrState> emit,
+  ) async {
+    try {
+      final capacity = await _repo.getEmissionCapacity(event.groupId);
+      emit(StaffQrCapacityLoaded(capacity));
+    } on Exception catch (e) {
+      emit(StaffQrError('Erro ao carregar capacidade: $e'));
     }
   }
 

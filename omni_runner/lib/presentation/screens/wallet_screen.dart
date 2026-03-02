@@ -8,6 +8,9 @@ import 'package:omni_runner/presentation/blocs/wallet/wallet_event.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_state.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/l10n/l10n.dart';
+import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_bloc.dart';
+import 'package:omni_runner/presentation/screens/staff_scan_qr_screen.dart';
+import 'package:omni_runner/domain/repositories/i_token_intent_repo.dart';
 import 'package:omni_runner/presentation/widgets/contextual_tip_banner.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 
@@ -44,6 +47,16 @@ class _WalletScreenState extends State<WalletScreen> {
                 context.read<WalletBloc>().add(const RefreshWallet()),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => BlocProvider<StaffQrBloc>(
+            create: (_) => StaffQrBloc(repo: sl<ITokenIntentRepo>()),
+            child: const StaffScanQrScreen(),
+          ),
+        )),
+        icon: const Icon(Icons.qr_code_scanner),
+        label: const Text('Escanear QR'),
       ),
       body: BlocBuilder<WalletBloc, WalletState>(
         builder: (context, state) => switch (state) {

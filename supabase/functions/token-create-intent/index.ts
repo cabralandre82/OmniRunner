@@ -118,6 +118,23 @@ serve(async (req: Request) => {
       }
     }
 
+    // ── 3c. Inventory capacity check (emission must not exceed backing) ──
+    if (type === "ISSUE_TO_ATHLETE") {
+      const { data: inv } = await db
+        .from("coaching_token_inventory")
+        .select("available_tokens")
+        .eq("group_id", group_id)
+        .maybeSingle();
+
+      const available = inv?.available_tokens ?? 0;
+      if (amount > available) {
+        status = 409;
+        return jsonErr(409, "INSUFFICIENT_INVENTORY",
+          `Capacidade insuficiente. Disponível: ${available}, solicitado: ${amount}`,
+          requestId);
+      }
+    }
+
     // ── 4. Insert intent ──────────────────────────────────────────────
     const insertPayload: Record<string, unknown> = {
       group_id,

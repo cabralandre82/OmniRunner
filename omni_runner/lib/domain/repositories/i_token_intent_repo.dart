@@ -21,4 +21,7 @@ abstract interface class ITokenIntentRepo {
   ///
   /// Throws [TokenIntentFailed] on server error (expired, already consumed, etc.).
   Future<void> consumeIntent(StaffQrPayload payload);
+
+  /// Returns the group's current emission capacity from `coaching_token_inventory`.
+  Future<EmissionCapacity> getEmissionCapacity(String groupId);
 }

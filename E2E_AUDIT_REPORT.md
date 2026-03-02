@@ -2,7 +2,7 @@
 
 **Data**: 2026-02-28
 **Score**: 10/10 (auditoria)
-**Testes**: 1953 (1465 Flutter + 488 Portal)
+**Testes**: 1955 (1467 Flutter + 488 Portal)
 **Portal Pages**: 6 (Custódia, Clearing, Swap, FX, Auditoria, Settings)
 **QA Command**: `cd portal && npm run qa:e2e` (6 steps, single command)
 
@@ -63,11 +63,13 @@ ATLETA (app)          STAFF (app)           BACKEND (Supabase)         PORTAL (N
 |-------|---------|--------|
 | Hub QR (staff) | `omni_runner/lib/presentation/screens/staff_qr_hub_screen.dart` | 22-157 |
 | Staff gera QR | `omni_runner/lib/presentation/screens/staff_generate_qr_screen.dart` | 83-150 |
+| Capacidade emissão | `omni_runner/lib/presentation/screens/staff_generate_qr_screen.dart` | card c/ saldo |
 | Athlete escaneia | `omni_runner/lib/presentation/screens/staff_scan_qr_screen.dart` | 78-89 |
 | BLoC consume | `omni_runner/lib/presentation/blocs/staff_qr/staff_qr_bloc.dart` | 40-59 |
-| QR payload | `omni_runner/lib/domain/entities/token_intent_entity.dart` | 36-95 |
-| Repo (edge fn) | `omni_runner/lib/data/repositories_impl/remote_token_intent_repo.dart` | 64-81 |
-| Edge: create | `supabase/functions/token-create-intent/index.ts` | 25-165 |
+| BLoC capacidade | `omni_runner/lib/presentation/blocs/staff_qr/staff_qr_bloc.dart` | LoadEmissionCapacity |
+| QR payload + EmissionCapacity | `omni_runner/lib/domain/entities/token_intent_entity.dart` | 36-112 |
+| Repo (edge fn + inventory) | `omni_runner/lib/data/repositories_impl/remote_token_intent_repo.dart` | 64-103 |
+| Edge: create | `supabase/functions/token-create-intent/index.ts` | 25-180 |
 | Edge: consume | `supabase/functions/token-consume-intent/index.ts` | 38-310 |
 | SQL: burn plan | `omni_runner/supabase/migrations/20260228160000_burn_plan_atomic.sql` | 14-68 |
 | SQL: burn atomic | `omni_runner/supabase/migrations/20260228160000_burn_plan_atomic.sql` | 73-199 |
@@ -191,6 +193,13 @@ cd omni_runner && flutter test test/e2e/
 - [x] Service role: funções SECURITY DEFINER apenas para `service_role`
 - [x] Anti-replay: nonce UUID + status transition `OPEN→CONSUMED`
 - [x] Rate limiting em todas as edge functions
+
+### Recursos adicionais implementados:
+
+- [x] **QR Scanner para atleta** — `wallet_screen.dart` FAB + `more_screen.dart` tile (reusa `StaffScanQrScreen`)
+- [x] **Capacidade de emissão no app** — `StaffGenerateQrScreen` exibe saldo disponível, emitidos, queimados em tempo real
+- [x] **Validação de inventário no backend** — `token-create-intent` bloqueia emissão se `amount > available_tokens` (HTTP 409)
+- [x] **Botão desabilitado se excede saldo** — UI impede staff de tentar emitir mais do que o disponível
 
 ### Recomendações futuras (P2):
 

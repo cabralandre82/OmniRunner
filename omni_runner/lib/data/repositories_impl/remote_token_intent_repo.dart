@@ -79,4 +79,26 @@ final class RemoteTokenIntentRepo implements ITokenIntentRepo {
       throw TokenIntentFailed(e.message);
     }
   }
+
+  @override
+  Future<EmissionCapacity> getEmissionCapacity(String groupId) async {
+    try {
+      final row = await _client
+          .from('coaching_token_inventory')
+          .select('available_tokens, lifetime_issued, lifetime_burned')
+          .eq('group_id', groupId)
+          .maybeSingle();
+
+      if (row == null) return EmissionCapacity.empty;
+
+      return EmissionCapacity(
+        availableTokens: (row['available_tokens'] as int?) ?? 0,
+        lifetimeIssued: (row['lifetime_issued'] as int?) ?? 0,
+        lifetimeBurned: (row['lifetime_burned'] as int?) ?? 0,
+      );
+    } on PostgrestException catch (e) {
+      AppLogger.error('Emission capacity error: ${e.message}', tag: _tag);
+      return EmissionCapacity.empty;
+    }
+  }
 }

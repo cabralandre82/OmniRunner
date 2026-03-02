@@ -32,6 +32,20 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
   int _amount = 1;
   Timer? _countdownTimer;
   Duration _remaining = Duration.zero;
+  EmissionCapacity? _capacity;
+  bool _capacityLoading = true;
+
+  bool get _isIssue => widget.type == TokenIntentType.issueToAthlete;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isIssue) {
+      context
+          .read<StaffQrBloc>()
+          .add(LoadEmissionCapacity(widget.groupId));
+    }
+  }
 
   @override
   void dispose() {
@@ -57,8 +71,30 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
       appBar: AppBar(title: Text(tokenIntentLabel(widget.type))),
       body: BlocConsumer<StaffQrBloc, StaffQrState>(
         listener: (context, state) {
-          if (state is StaffQrGenerated) _startCountdown(state.payload);
+          if (state is StaffQrCapacityLoaded) {
+            setState(() {
+              _capacity = state.capacity;
+              _capacityLoading = false;
+            });
+          }
+          if (state is StaffQrGenerated) {
+            _startCountdown(state.payload);
+            if (_isIssue && _capacity != null) {
+              setState(() {
+                _capacity = EmissionCapacity(
+                  availableTokens:
+                      _capacity!.availableTokens - state.payload.amount,
+                  lifetimeIssued:
+                      _capacity!.lifetimeIssued + state.payload.amount,
+                  lifetimeBurned: _capacity!.lifetimeBurned,
+                );
+              });
+            }
+          }
           if (state is StaffQrError) {
+            if (!state.message.contains('capacidade')) {
+              _capacityLoading = false;
+            }
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
@@ -69,6 +105,7 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
         },
         builder: (context, state) => switch (state) {
           StaffQrInitial() => _buildForm(context, theme),
+          StaffQrCapacityLoaded() => _buildForm(context, theme),
           StaffQrGenerating() =>
             const Center(child: CircularProgressIndicator()),
           StaffQrGenerated(:final payload) =>
@@ -82,6 +119,10 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
 
   Widget _buildForm(BuildContext context, ThemeData theme) {
     final isBadge = widget.type == TokenIntentType.champBadgeActivate;
+    final exceedsCapacity = _isIssue &&
+        _capacity != null &&
+        _amount > _capacity!.availableTokens;
+
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -106,6 +147,10 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
             ),
             textAlign: TextAlign.center,
           ),
+          if (_isIssue) ...[
+            const SizedBox(height: 20),
+            _buildCapacityCard(theme),
+          ],
           const SizedBox(height: 32),
           if (!isBadge) ...[
             Text('Quantidade', style: theme.textTheme.titleSmall),
@@ -122,7 +167,11 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
                   child: Text(
                     '$_amount',
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.headlineMedium,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: exceedsCapacity
+                          ? theme.colorScheme.error
+                          : null,
+                    ),
                   ),
                 ),
                 IconButton.outlined(
@@ -131,22 +180,165 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
                 ),
               ],
             ),
+            if (exceedsCapacity) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Quantidade excede o saldo disponível '
+                '(${_capacity!.availableTokens})',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
             const SizedBox(height: 32),
           ],
           FilledButton.icon(
-            onPressed: () => context.read<StaffQrBloc>().add(
-                  GenerateQr(
-                    type: widget.type,
-                    groupId: widget.groupId,
-                    amount: isBadge ? 1 : _amount,
-                    championshipId: widget.championshipId,
-                  ),
-                ),
+            onPressed: exceedsCapacity
+                ? null
+                : () => context.read<StaffQrBloc>().add(
+                      GenerateQr(
+                        type: widget.type,
+                        groupId: widget.groupId,
+                        amount: isBadge ? 1 : _amount,
+                        championshipId: widget.championshipId,
+                      ),
+                    ),
             icon: const Icon(Icons.qr_code),
             label: const Text('Gerar QR'),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCapacityCard(ThemeData theme) {
+    if (_capacityLoading) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Carregando saldo...',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final cap = _capacity ?? EmissionCapacity.empty;
+    final available = cap.availableTokens;
+    final low = available > 0 && available <= 10;
+
+    return Card(
+      color: available == 0
+          ? theme.colorScheme.errorContainer
+          : low
+              ? Colors.orange.shade50
+              : Colors.green.shade50,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  available == 0
+                      ? Icons.warning_amber_rounded
+                      : Icons.account_balance_wallet,
+                  size: 20,
+                  color: available == 0
+                      ? theme.colorScheme.error
+                      : low
+                          ? Colors.orange.shade700
+                          : Colors.green.shade700,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Disponível: $available OmniCoins',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: available == 0
+                        ? theme.colorScheme.error
+                        : low
+                            ? Colors.orange.shade700
+                            : Colors.green.shade700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _statChip(theme, 'Emitidos', cap.lifetimeIssued),
+                _statChip(theme, 'Queimados', cap.lifetimeBurned),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerRight,
+              child: InkWell(
+                onTap: () {
+                  setState(() => _capacityLoading = true);
+                  context
+                      .read<StaffQrBloc>()
+                      .add(LoadEmissionCapacity(widget.groupId));
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.refresh, size: 14,
+                          color: theme.colorScheme.primary),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Atualizar',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _statChip(ThemeData theme, String label, int value) {
+    return Column(
+      children: [
+        Text(
+          '$value',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 
@@ -242,8 +434,19 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
           ),
           const SizedBox(height: 24),
           OutlinedButton.icon(
-            onPressed: () =>
-                context.read<StaffQrBloc>().add(const ResetStaffQr()),
+            onPressed: () {
+              context.read<StaffQrBloc>().add(const ResetStaffQr());
+              if (_isIssue) {
+                Future.microtask(() {
+                  if (mounted) {
+                    setState(() => _capacityLoading = true);
+                    context
+                        .read<StaffQrBloc>()
+                        .add(LoadEmissionCapacity(widget.groupId));
+                  }
+                });
+              }
+            },
             icon: const Icon(Icons.refresh),
             label: const Text('Gerar Novo'),
           ),
