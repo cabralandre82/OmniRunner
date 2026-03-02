@@ -107,6 +107,14 @@ export default async function SettingsPage() {
     await trackBillingEvent("billing_settings_viewed", { group_id: groupId });
   }
 
+  const db2 = createServiceClient();
+  const [feesRes, accountRes] = await Promise.all([
+    db2.from("platform_fee_config").select("fee_type, rate_pct, is_active").order("fee_type"),
+    db2.from("custody_accounts").select("total_deposited_usd, total_committed, is_blocked, blocked_reason").eq("group_id", groupId).maybeSingle(),
+  ]);
+  const fees = (feesRes.data ?? []) as { fee_type: string; rate_pct: number; is_active: boolean }[];
+  const custodyAcct = accountRes.data;
+
   return (
     <div className="space-y-10">
       {/* ── Billing Section (admin only) ─────────────────────────────── */}
@@ -298,6 +306,63 @@ export default async function SettingsPage() {
           </div>
         )}
       </div>
+
+      {/* Taxas e Custodia */}
+      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 className="text-base font-semibold text-gray-900">Taxas Aplicadas</h2>
+        <p className="mt-1 mb-4 text-sm text-gray-500">
+          Taxas vigentes para o seu clube conforme contrato da plataforma.
+        </p>
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr className="text-left text-xs font-medium uppercase text-gray-500">
+              <th className="pb-2 pr-4">Tipo</th>
+              <th className="pb-2 pr-4 text-right">Taxa (%)</th>
+              <th className="pb-2">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {fees.map((f) => (
+              <tr key={f.fee_type}>
+                <td className="py-2 pr-4 text-gray-900 capitalize">{f.fee_type.replace(/_/g, " ")}</td>
+                <td className="py-2 pr-4 text-right font-medium text-gray-900">{f.rate_pct}%</td>
+                <td className="py-2">
+                  <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${f.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-500"}`}>
+                    {f.is_active ? "Ativa" : "Inativa"}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {custodyAcct && (
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-base font-semibold text-gray-900">Status de Custodia</h2>
+          <div className="mt-3 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+            <div>
+              <p className="text-gray-500">Total Depositado</p>
+              <p className="text-lg font-bold text-gray-900">US$ {Number(custodyAcct.total_deposited_usd ?? 0).toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Reservado</p>
+              <p className="text-lg font-bold text-blue-600">US$ {Number(custodyAcct.total_committed ?? 0).toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Disponivel</p>
+              <p className="text-lg font-bold text-green-600">US$ {(Number(custodyAcct.total_deposited_usd ?? 0) - Number(custodyAcct.total_committed ?? 0)).toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Bloqueio</p>
+              <p className={`text-lg font-bold ${custodyAcct.is_blocked ? "text-red-600" : "text-green-600"}`}>
+                {custodyAcct.is_blocked ? (custodyAcct.blocked_reason ?? "Sim") : "Nao"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
 import { distributeCoinsSchema } from "@/lib/schemas";
+import { assertInvariantsHealthy } from "@/lib/custody";
 
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -64,7 +65,15 @@ export async function POST(request: Request) {
     );
   }
 
-  // Check custody backing (new model: 1 coin = US$ 1.00 of backing required)
+  // Pre-operation invariant gate
+  const healthy = await assertInvariantsHealthy();
+  if (!healthy) {
+    return NextResponse.json(
+      { error: "System invariant violation. Emission blocked." },
+      { status: 503 },
+    );
+  }
+
   const { error: custodyErr } = await db.rpc("custody_commit_coins", {
     p_group_id: groupId,
     p_coin_count: amount,

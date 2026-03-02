@@ -1,4 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/service";
+import { auditLog } from "@/lib/audit";
+import { assertInvariantsHealthy } from "@/lib/custody";
 
 export interface ClearingEvent {
   id: string;
@@ -59,6 +61,11 @@ export async function processBurnForClearing(params: {
   totalCoins: number;
   breakdown: IssuerBreakdown[];
 }): Promise<{ eventId: string; settlementsCreated: number }> {
+  const healthy = await assertInvariantsHealthy();
+  if (!healthy) {
+    throw new Error("Invariant violation detected — clearing blocked");
+  }
+
   const db = createServiceClient();
   const feeRate = await getClearingFeeRate();
 
@@ -135,10 +142,32 @@ export async function processBurnForClearing(params: {
   for (const s of pending ?? []) {
     try {
       await db.rpc("settle_clearing", { p_settlement_id: s.id });
+
+      await auditLog({
+        actorId: "system",
+        action: "clearing.settlement.settled",
+        targetId: s.id,
+        metadata: {
+          burn_ref_id: params.burnRefId,
+          clearing_event_id: event.id,
+        },
+      });
     } catch {
       // Will be marked as 'insufficient' by the SQL function
     }
   }
+
+  await auditLog({
+    actorId: "system",
+    action: "clearing.burn.processed",
+    targetId: event.id,
+    metadata: {
+      burn_ref_id: params.burnRefId,
+      redeemer_group_id: params.redeemerGroupId,
+      total_coins: params.totalCoins,
+      settlements_created: settlementsCreated,
+    },
+  });
 
   return { eventId: event.id, settlementsCreated };
 }

@@ -71,6 +71,15 @@ export default async function PortalLayout({
   const groupName = groupRes.data?.name ?? "Assessoria";
   const isPlatformAdmin = profileRes.data?.platform_role === "admin";
 
+  const { data: custodyAccount } = await supabase
+    .from("custody_accounts")
+    .select("is_blocked")
+    .eq("group_id", groupId)
+    .maybeSingle();
+
+  const isBlocked = custodyAccount?.is_blocked ?? false;
+  const environment = process.env.NEXT_PUBLIC_ENV ?? "production";
+
   const branding: Branding = {
     logo_url: brandingRes.data?.logo_url ?? null,
     primary_color: brandingRes.data?.primary_color ?? "#2563eb",
@@ -99,6 +108,9 @@ export default async function PortalLayout({
           groupName={groupName}
           userEmail={user.email ?? ""}
           multiGroup={multiGroup}
+          role={role}
+          environment={environment}
+          isBlocked={isBlocked}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
       </div>

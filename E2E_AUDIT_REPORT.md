@@ -2,7 +2,8 @@
 
 **Data**: 2026-02-28
 **Score**: 10/10 (auditoria)
-**Testes**: 1903 (1465 Flutter + 438 Portal)
+**Testes**: 1915 (1465 Flutter + 450 Portal)
+**Portal Pages**: 6 (Custódia, Clearing, Swap, FX, Auditoria, Settings)
 
 ---
 
@@ -109,7 +110,7 @@ ATLETA (app)          STAFF (app)           BACKEND (Supabase)         PORTAL (N
 # Flutter (1465 testes)
 cd omni_runner && flutter test
 
-# Portal (359 testes)
+# Portal (450 testes)
 cd portal && npx vitest run
 
 # Apenas compliance (anti-regressão)

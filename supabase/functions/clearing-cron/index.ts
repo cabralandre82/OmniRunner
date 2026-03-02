@@ -289,7 +289,51 @@ serve(async (req: Request) => {
       }
     }
 
-    // ── 5. Expire overdue clearing cases ────────────────────────────────
+    // ── 5. Netting: batch-settle custody clearing_settlements ──────────
+    let custodySettled = 0;
+    let custodyFailed = 0;
+    {
+      const windowEnd = now;
+      const windowStart = new Date(now.getTime() - 60_000); // 1-minute window
+
+      const { data: nettingAgg } = await db.rpc("aggregate_clearing_window", {
+        p_window_start: windowStart.toISOString(),
+        p_window_end: windowEnd.toISOString(),
+      });
+
+      if (nettingAgg && nettingAgg.length > 0) {
+        const debtorIds = [...new Set(
+          (nettingAgg as { debtor_group_id: string }[]).map((r) => r.debtor_group_id)
+        )];
+
+        for (const debtorId of debtorIds) {
+          const { data: pendingSettlements } = await db
+            .from("clearing_settlements")
+            .select("id")
+            .eq("debtor_group_id", debtorId)
+            .eq("status", "pending")
+            .gte("created_at", windowStart.toISOString())
+            .lt("created_at", windowEnd.toISOString());
+
+          for (const s of pendingSettlements ?? []) {
+            try {
+              const { error: settleErr } = await db.rpc("settle_clearing", {
+                p_settlement_id: s.id,
+              });
+              if (settleErr) {
+                custodyFailed++;
+              } else {
+                custodySettled++;
+              }
+            } catch {
+              custodyFailed++;
+            }
+          }
+        }
+      }
+    }
+
+    // ── 6. Expire overdue clearing cases ────────────────────────────────
     {
       const { data: overdue } = await db
         .from("clearing_cases")
@@ -321,6 +365,8 @@ serve(async (req: Request) => {
       cases_created: casesCreated,
       items_created: itemsCreated,
       cases_expired: casesExpired,
+      custody_settled: custodySettled,
+      custody_failed: custodyFailed,
     }, requestId);
   } catch (_err) {
     status = 500;

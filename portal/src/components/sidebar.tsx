@@ -16,6 +16,8 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/custody", label: "Custódia", roles: ["admin_master"] },
   { href: "/clearing", label: "Compensações", roles: ["admin_master", "professor"] },
   { href: "/swap", label: "Swap de Lastro", roles: ["admin_master"] },
+  { href: "/fx", label: "Conversao Cambial", roles: ["admin_master"] },
+  { href: "/audit", label: "Auditoria", roles: ["admin_master", "professor"] },
   { href: "/distributions", label: "Distribuições", roles: ["admin_master", "professor"] },
   { href: "/athletes", label: "Atletas", roles: ["admin_master", "professor", "assistente"] },
   { href: "/verification", label: "Verificação", roles: ["admin_master", "professor", "assistente"] },

@@ -69,6 +69,13 @@ vi.mock("@/lib/supabase/service", () => ({
   }),
 }));
 
+vi.mock("@/lib/audit", () => ({
+  auditLog: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock("@/lib/custody", () => ({
+  assertInvariantsHealthy: vi.fn().mockResolvedValue(true),
+}));
+
 const {
   processBurnForClearing,
   aggregateClearingWindow,

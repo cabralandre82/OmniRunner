@@ -35,6 +35,9 @@ const {
   releaseCommitted,
   checkInvariants,
   createCustodyDeposit,
+  convertToUsdWithSpread,
+  convertFromUsdWithSpread,
+  assertInvariantsHealthy,
 } = await import("./custody");
 
 describe("custody service", () => {
@@ -240,6 +243,53 @@ describe("custody service", () => {
       await expect(
         createCustodyDeposit("g1", 100, "mercadopago"),
       ).rejects.toThrow("insert failed");
+    });
+  });
+
+  describe("convertToUsdWithSpread", () => {
+    it("applies spread on BRL → USD conversion", () => {
+      const result = convertToUsdWithSpread(1000, 5.0, 0.75);
+      // 1000 / 5 = 200 USD raw, spread = 200 * 0.0075 = 1.50
+      expect(result.amountUsd).toBe(198.5);
+      expect(result.spreadUsd).toBe(1.5);
+    });
+
+    it("returns full amount with 0% spread", () => {
+      const result = convertToUsdWithSpread(500, 5.0, 0);
+      expect(result.amountUsd).toBe(100);
+      expect(result.spreadUsd).toBe(0);
+    });
+  });
+
+  describe("convertFromUsdWithSpread", () => {
+    it("applies spread on USD → BRL conversion", () => {
+      const result = convertFromUsdWithSpread(100, 5.0, 0.75);
+      // spread = 100 * 0.0075 = 0.75 USD, net = 99.25, local = 99.25 * 5 = 496.25
+      expect(result.spreadUsd).toBe(0.75);
+      expect(result.localAmount).toBe(496.25);
+    });
+
+    it("returns full amount with 0% spread", () => {
+      const result = convertFromUsdWithSpread(200, 5.0, 0);
+      expect(result.spreadUsd).toBe(0);
+      expect(result.localAmount).toBe(1000);
+    });
+  });
+
+  describe("assertInvariantsHealthy", () => {
+    it("returns true when no violations", async () => {
+      mockRpc.mockResolvedValueOnce({ data: [], error: null });
+      const healthy = await assertInvariantsHealthy();
+      expect(healthy).toBe(true);
+    });
+
+    it("returns false when violations exist", async () => {
+      mockRpc.mockResolvedValueOnce({
+        data: [{ group_id: "g1", violation: "deposited_negative" }],
+        error: null,
+      });
+      const healthy = await assertInvariantsHealthy();
+      expect(healthy).toBe(false);
     });
   });
 });

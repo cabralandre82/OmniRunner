@@ -23,6 +23,9 @@ vi.mock("@/lib/audit", () => ({
 vi.mock("@/lib/rate-limit", () => ({
   rateLimit: vi.fn().mockReturnValue({ allowed: true, remaining: 10 }),
 }));
+vi.mock("@/lib/custody", () => ({
+  assertInvariantsHealthy: vi.fn().mockResolvedValue(true),
+}));
 
 const { POST } = await import("./route");
 

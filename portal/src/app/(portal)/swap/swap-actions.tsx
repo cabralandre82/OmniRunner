@@ -5,7 +5,6 @@ import { useState } from "react";
 export function SwapActions({
   acceptOrderId,
 }: {
-  groupId: string;
   acceptOrderId?: string;
 }) {
   const [loading, setLoading] = useState(false);
