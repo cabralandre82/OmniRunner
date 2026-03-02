@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { cookies } from "next/headers";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
+import { teamRemoveSchema } from "@/lib/schemas";
 
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -39,14 +40,14 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const memberId = body.member_id ?? "";
-
-  if (!memberId) {
+  const parsed = teamRemoveSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "member_id is required" },
+      { error: parsed.error.issues[0].message },
       { status: 400 },
     );
   }
+  const memberId = parsed.data.member_id;
 
   const { data: member } = await db
     .from("coaching_members")

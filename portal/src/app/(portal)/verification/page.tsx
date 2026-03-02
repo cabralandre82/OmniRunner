@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { formatDateISO } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 import { ReevaluateButton } from "./reevaluate-button";
@@ -25,16 +26,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   UNVERIFIED: { label: "Não Verificado", color: "bg-gray-100 text-gray-600" },
 };
 
-function formatDate(iso: string | null): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+const formatDate = formatDateISO;
 
 export default async function VerificationPage() {
   const groupId = cookies().get("portal_group_id")?.value;

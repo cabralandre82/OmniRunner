@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/core/service_locator.dart';
 
 const _tag = 'WrappedScreen';
@@ -144,7 +145,7 @@ class _WrappedScreenState extends State<WrappedScreen> {
               FilledButton.icon(
                 onPressed: _load,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Tentar novamente'),
+                label: Text(context.l10n.retry),
               ),
             ],
           ),
@@ -879,7 +880,7 @@ class _SlideShare extends StatelessWidget {
           FilledButton.icon(
             onPressed: () => _shareWrapped(context),
             icon: const Icon(Icons.share_rounded),
-            label: const Text('Compartilhar'),
+            label: Text(context.l10n.share),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
               textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),

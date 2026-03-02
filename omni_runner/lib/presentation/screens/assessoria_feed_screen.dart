@@ -7,6 +7,7 @@ import 'package:omni_runner/domain/entities/feed_item_entity.dart';
 import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_bloc.dart';
 import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_event.dart';
 import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_state.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 
 /// Lightweight social feed scoped to the user's assessoria.
 ///
@@ -19,7 +20,7 @@ class AssessoriaFeedScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Feed da Assessoria'),
+        title: Text(context.l10n.assessoriaFeed),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: BlocBuilder<AssessoriaFeedBloc, AssessoriaFeedState>(

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { auditLog } from "@/lib/audit";
+import { rateLimit } from "@/lib/rate-limit";
+import { platformAssessoriaActionSchema } from "@/lib/schemas";
 
 async function requirePlatformAdmin() {
   const supabase = createClient();
@@ -27,6 +29,12 @@ async function requirePlatformAdmin() {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+  const rl = rateLimit(`platform-assessorias:${ip}`, { maxRequests: 20, windowMs: 60_000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const auth = await requirePlatformAdmin();
   if ("error" in auth) {
     return NextResponse.json(
@@ -36,18 +44,14 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { action, group_id, reason } = body as {
-    action: string;
-    group_id: string;
-    reason?: string;
-  };
-
-  if (!action || !group_id) {
+  const parsed = platformAssessoriaActionSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "Missing action or group_id" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
       { status: 400 },
     );
   }
+  const { action, group_id, reason } = parsed.data;
 
   const admin = createAdminClient();
 

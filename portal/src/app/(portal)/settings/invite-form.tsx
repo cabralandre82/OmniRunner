@@ -2,8 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 export function InviteForm() {
+  const t = useTranslations("settings");
+  const tc = useTranslations("common");
+  const te = useTranslations("error");
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("professor");
@@ -27,7 +31,7 @@ export function InviteForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? "Erro ao convidar");
+        setError(data.error ?? te("generic"));
         setLoading(false);
         return;
       }
@@ -36,7 +40,7 @@ export function InviteForm() {
       setEmail("");
       router.refresh();
     } catch {
-      setError("Erro de conexão");
+      setError(te("generic"));
     } finally {
       setLoading(false);
     }
@@ -68,7 +72,7 @@ export function InviteForm() {
           disabled={loading}
           className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
         >
-          {loading ? "Enviando..." : "Convidar"}
+          {loading ? tc("loading") : tc("invite")}
         </button>
       </div>
 

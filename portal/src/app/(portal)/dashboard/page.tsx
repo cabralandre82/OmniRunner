@@ -1,14 +1,14 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { formatKm } from "@/lib/format";
+import { DashboardCharts } from "./dashboard-charts";
 
+export const metadata: Metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
 
 const LOW_CREDIT_THRESHOLD = 50;
-
-function formatKm(m: number) {
-  return (m / 1000).toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}
 
 export default async function DashboardPage() {
   const groupId = cookies().get("portal_group_id")?.value;
@@ -142,8 +142,6 @@ export default async function DashboardPage() {
       sessions: cnt,
     });
   }
-  const maxBar = Math.max(...dailyBreakdown.map((d) => d.sessions), 1);
-
   const lowCredits = credits < LOW_CREDIT_THRESHOLD;
 
   return (
@@ -244,28 +242,8 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {/* Activity chart */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-gray-900">
-          Corridas — Últimos 7 dias
-        </h2>
-        <div className="mt-4 flex items-end gap-2 sm:gap-3" style={{ height: 140 }}>
-          {dailyBreakdown.map((d) => {
-            const hPct = Math.max((d.sessions / maxBar) * 100, 4);
-            return (
-              <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
-                <span className="text-xs font-semibold text-gray-900">{d.sessions}</span>
-                <div
-                  className="w-full rounded-t-md bg-blue-500"
-                  style={{ height: `${hPct}%`, minHeight: 4 }}
-                />
-                <span className="text-[10px] text-gray-500">{d.label}</span>
-                <span className="text-[10px] text-gray-400">{d.date}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {/* Activity charts */}
+      <DashboardCharts dailyBreakdown={dailyBreakdown} />
 
       {/* Quick links */}
       {role === "admin_master" && (

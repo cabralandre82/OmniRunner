@@ -85,7 +85,8 @@ class ProductEventTracker {
     if (!AppConfig.isSupabaseReady) return null;
     try {
       return Supabase.instance.client.auth.currentUser?.id;
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Caught error', tag: 'ProductEventTracker', error: e);
       return null;
     }
   }

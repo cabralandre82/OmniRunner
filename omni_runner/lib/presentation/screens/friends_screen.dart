@@ -13,6 +13,8 @@ import 'package:omni_runner/presentation/blocs/friends/friends_state.dart';
 import 'package:omni_runner/presentation/screens/friend_profile_screen.dart';
 import 'package:omni_runner/presentation/widgets/empty_state.dart';
 import 'package:omni_runner/presentation/widgets/error_state.dart';
+import 'package:omni_runner/l10n/l10n.dart';
+import 'package:omni_runner/presentation/widgets/cached_avatar.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 
 class FriendsScreen extends StatelessWidget {
@@ -22,7 +24,7 @@ class FriendsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Amigos'),
+        title: Text(context.l10n.friends),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_search_rounded),
@@ -279,13 +281,9 @@ class _AcceptedTile extends StatelessWidget {
         child: const Icon(Icons.person_remove, color: Colors.white),
       ),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: cs.primaryContainer,
-          backgroundImage:
-              info?.avatarUrl != null ? NetworkImage(info!.avatarUrl!) : null,
-          child: info?.avatarUrl == null
-              ? Icon(Icons.person, color: cs.primary)
-              : null,
+        leading: CachedAvatar(
+          url: info?.avatarUrl,
+          fallbackText: info?.displayName ?? 'U',
         ),
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
         subtitle: _socialSubtitle(info),
@@ -525,7 +523,7 @@ class _FriendSearchScreenState extends State<_FriendSearchScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Buscar corredores'),
+        title: Text(context.l10n.search),
       ),
       body: Column(
         children: [
@@ -567,13 +565,9 @@ class _FriendSearchScreenState extends State<_FriendSearchScreen> {
                       final alreadyFriend = _existingFriendIds.contains(uid);
 
                       return ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage: avatar != null
-                              ? NetworkImage(avatar)
-                              : null,
-                          child: avatar == null
-                              ? const Icon(Icons.person)
-                              : null,
+                        leading: CachedAvatar(
+                          url: avatar,
+                          fallbackText: name,
                         ),
                         title: Text(name),
                         subtitle: insta != null && insta.isNotEmpty

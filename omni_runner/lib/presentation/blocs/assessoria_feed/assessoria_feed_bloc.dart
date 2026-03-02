@@ -1,16 +1,20 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/domain/entities/feed_item_entity.dart';
+import 'package:omni_runner/domain/repositories/i_feed_remote_source.dart';
 import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_event.dart';
 import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_state.dart';
 
 class AssessoriaFeedBloc
     extends Bloc<AssessoriaFeedEvent, AssessoriaFeedState> {
   static const _pageSize = 30;
+
+  final IFeedRemoteSource _remote;
   String _groupId = '';
 
-  AssessoriaFeedBloc() : super(const FeedInitial()) {
+  AssessoriaFeedBloc({required IFeedRemoteSource remote})
+      : _remote = remote,
+        super(const FeedInitial()) {
     on<LoadFeed>(_onLoad);
     on<LoadMoreFeed>(_onLoadMore);
     on<RefreshFeed>(_onRefresh);
@@ -23,7 +27,7 @@ class AssessoriaFeedBloc
     _groupId = event.groupId;
     emit(const FeedLoading());
     try {
-      final items = await _fetch(null);
+      final items = await _fetchPage(null);
       if (items.isEmpty) {
         emit(const FeedEmpty());
       } else {
@@ -49,7 +53,7 @@ class AssessoriaFeedBloc
     emit(current.copyWith(loadingMore: true));
     try {
       final beforeMs = current.items.last.createdAtMs;
-      final older = await _fetch(beforeMs);
+      final older = await _fetchPage(beforeMs);
       emit(current.copyWith(
         items: [...current.items, ...older],
         hasMore: older.length >= _pageSize,
@@ -65,7 +69,7 @@ class AssessoriaFeedBloc
     Emitter<AssessoriaFeedState> emit,
   ) async {
     try {
-      final items = await _fetch(null);
+      final items = await _fetchPage(null);
       if (items.isEmpty) {
         emit(const FeedEmpty());
       } else {
@@ -79,41 +83,10 @@ class AssessoriaFeedBloc
     }
   }
 
-  Future<List<FeedItemEntity>> _fetch(int? beforeMs) async {
-    final sb = Supabase.instance.client;
-
-    final params = <String, dynamic>{
-      'p_group_id': _groupId,
-      'p_limit': _pageSize,
-    };
-    if (beforeMs != null) {
-      params['p_before_ms'] = beforeMs;
-    }
-
-    final rows = await sb.rpc('fn_get_assessoria_feed', params: params)
-        as List<dynamic>;
-
-    return rows.map((dynamic row) {
-      final r = row as Map<String, dynamic>;
-      return FeedItemEntity(
-        id: r['id'] as String,
-        actorUserId: r['actor_user_id'] as String,
-        actorName: (r['actor_name'] as String?) ?? 'Corredor',
-        eventType: _parseEventType(r['event_type'] as String),
-        payload: (r['payload'] as Map<String, dynamic>?) ?? {},
-        createdAtMs: (r['created_at_ms'] as num).toInt(),
+  Future<List<FeedItemEntity>> _fetchPage(int? beforeMs) =>
+      _remote.fetchFeed(
+        groupId: _groupId,
+        limit: _pageSize,
+        beforeMs: beforeMs,
       );
-    }).toList();
-  }
-
-  static FeedEventType _parseEventType(String raw) => switch (raw) {
-        'session_completed' => FeedEventType.sessionCompleted,
-        'challenge_won' => FeedEventType.challengeWon,
-        'badge_unlocked' => FeedEventType.badgeUnlocked,
-        'championship_started' => FeedEventType.championshipStarted,
-        'streak_milestone' => FeedEventType.streakMilestone,
-        'level_up' => FeedEventType.levelUp,
-        'member_joined' => FeedEventType.memberJoined,
-        _ => FeedEventType.sessionCompleted,
-      };
 }

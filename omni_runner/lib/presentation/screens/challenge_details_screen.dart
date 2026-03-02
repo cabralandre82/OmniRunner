@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_participant_entity.dart';
@@ -27,7 +28,7 @@ class ChallengeDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Detalhes do Desafio')),
+      appBar: AppBar(title: Text(context.l10n.challengeDetails)),
       body: BlocBuilder<ChallengesBloc, ChallengesState>(
         builder: (context, state) => switch (state) {
           ChallengeDetailLoaded(:final challenge, :final result) =>
@@ -621,7 +622,7 @@ class _AcceptDeclineCardState extends State<_AcceptDeclineCard> {
   void initState() {
     super.initState();
     if (widget.hasStake) {
-      _verificationBloc = VerificationBloc()
+      _verificationBloc = sl<VerificationBloc>()
         ..add(const LoadVerificationState());
     }
   }
@@ -1467,7 +1468,8 @@ class _ClearingInfoState extends State<_ClearingInfo> {
           _loaded = true;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Caught error', tag: 'ChallengeDetailsScreen', error: e);
       if (mounted) setState(() => _loaded = true);
     }
   }

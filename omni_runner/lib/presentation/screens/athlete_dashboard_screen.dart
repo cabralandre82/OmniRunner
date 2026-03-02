@@ -29,6 +29,7 @@ import 'package:omni_runner/presentation/widgets/login_required_sheet.dart';
 import 'package:flutter/services.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 
 /// Athlete home dashboard — 6 cards providing quick access to the main features.
@@ -104,14 +105,18 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
         }
         setState(() => _displayName = name);
       }
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.debug('Failed to load display name', tag: 'Dashboard', error: e);
+    }
   }
 
   Future<void> _checkStrava() async {
     try {
       final connected = await sl<StravaConnectController>().isConnected;
       if (mounted) setState(() => _stravaConnected = connected);
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.debug('Strava status check failed', tag: 'Dashboard', error: e);
+    }
   }
 
   Future<void> _loadAssessoriaStatus() async {
@@ -134,8 +139,8 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
           groupName =
               (row['coaching_groups'] as Map?)?['name'] as String?;
         }
-      } catch (_) {
-        // Offline — fall back to Isar
+      } catch (e) {
+        AppLogger.debug('Supabase offline, falling back to Isar', tag: 'Dashboard', error: e);
         final memberships =
             await sl<ICoachingMemberRepo>().getByUserId(uid);
         final membership =
@@ -164,7 +169,8 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
           _staggerCtrl.forward();
         }
       }
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Failed to load assessoria status', tag: 'Dashboard', error: e);
       if (mounted) {
         setState(() => _loading = false);
         _staggerCtrl.forward();
@@ -194,8 +200,8 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
           });
         }
       }
-    } catch (_) {
-      // Non-critical — just won't show the banner
+    } catch (e) {
+      AppLogger.debug('Pending request check failed', tag: 'Dashboard', error: e);
     }
   }
 
@@ -371,7 +377,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
                   onTap: () {
                     Navigator.of(context).push(MaterialPageRoute<void>(
                       builder: (_) => BlocProvider<AssessoriaFeedBloc>(
-                        create: (_) => AssessoriaFeedBloc()
+                        create: (_) => sl<AssessoriaFeedBloc>()
                           ..add(LoadFeed(_assessoriaGroupId!)),
                         child: const AssessoriaFeedScreen(),
                       ),

@@ -1,0 +1,124 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump type"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      notes:
+        description: "Release notes (optional)"
+        required: false
+        type: string
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Bump, Tag & Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        id: bump
+        run: |
+          cd omni_runner
+          CURRENT=$(grep '^version:' pubspec.yaml | sed 's/version: //')
+          VERSION=$(echo "$CURRENT" | cut -d'+' -f1)
+          BUILD=$(echo "$CURRENT" | cut -d'+' -f2)
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          case "${{ inputs.bump }}" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+          NEW_BUILD=$((BUILD + 1))
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}+${NEW_BUILD}"
+
+          sed -i "s/^version: .*/version: ${NEW_VERSION}/" pubspec.yaml
+          echo "version=${MAJOR}.${MINOR}.${PATCH}" >> "$GITHUB_OUTPUT"
+          echo "full_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate changelog entry
+        id: changelog
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            COMMITS=$(git log --oneline --no-merges -20)
+          else
+            COMMITS=$(git log --oneline --no-merges "${LAST_TAG}..HEAD")
+          fi
+
+          {
+            echo "## v${{ steps.bump.outputs.version }}"
+            echo ""
+            if [ -n "${{ inputs.notes }}" ]; then
+              echo "${{ inputs.notes }}"
+              echo ""
+            fi
+            echo "$COMMITS" | sed 's/^/- /'
+            echo ""
+          } > /tmp/release_notes.md
+
+          cat /tmp/release_notes.md
+
+      - name: Update CHANGELOG.md
+        run: |
+          if [ -f CHANGELOG.md ]; then
+            cat /tmp/release_notes.md CHANGELOG.md > /tmp/merged_changelog.md
+            mv /tmp/merged_changelog.md CHANGELOG.md
+          else
+            cp /tmp/release_notes.md CHANGELOG.md
+          fi
+
+      - name: Commit version bump
+        run: |
+          git add omni_runner/pubspec.yaml CHANGELOG.md
+          git commit -m "chore: release v${{ steps.bump.outputs.version }}"
+          git tag "v${{ steps.bump.outputs.version }}"
+          git push origin master --tags
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.22.x"
+          channel: stable
+          cache: true
+
+      - name: Build release APK
+        working-directory: omni_runner
+        run: |
+          flutter pub get
+          flutter build apk --release
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ steps.bump.outputs.version }}"
+          name: "v${{ steps.bump.outputs.version }}"
+          body_path: /tmp/release_notes.md
+          files: |
+            omni_runner/build/app/outputs/flutter-apk/app-release.apk
+          generate_release_notes: false

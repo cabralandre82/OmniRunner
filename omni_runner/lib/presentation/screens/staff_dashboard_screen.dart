@@ -113,7 +113,9 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
           try {
             await sl<ICoachingGroupRepo>().save(groupEntity);
             await sl<ICoachingMemberRepo>().save(membership);
-          } catch (_) {}
+          } catch (e) {
+            AppLogger.debug('Isar cache write failed', tag: 'StaffDash', error: e);
+          }
         }
 
         // Also sync all members of this group to Isar
@@ -133,12 +135,16 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
             );
             await sl<ICoachingMemberRepo>().save(m);
           }
-        } catch (_) {}
+        } catch (e) {
+          AppLogger.debug('Members Isar sync failed', tag: 'StaffDash', error: e);
+        }
 
         try {
           final wallet = await sl<IWalletRepo>().getByUserId(uid);
           _hasPendingPrizes = wallet.hasPending;
-        } catch (_) {}
+        } catch (e) {
+          AppLogger.debug('Wallet load failed', tag: 'StaffDash', error: e);
+        }
 
         try {
           final res = await db
@@ -147,16 +153,19 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
               .or('from_group_id.eq.$gid,to_group_id.eq.$gid')
               .inFilter('status', ['OPEN', 'SENT_CONFIRMED', 'DISPUTED']);
           _openDisputesCount = (res as List).length;
-        } catch (_) {}
+        } catch (e) {
+          AppLogger.debug('Clearing cases load failed', tag: 'StaffDash', error: e);
+        }
 
-        // Count members + pending join requests
         try {
           final countRes = await db
               .from('coaching_members')
               .select('id')
               .eq('group_id', gid);
           _memberCount = (countRes as List).length;
-        } catch (_) {}
+        } catch (e) {
+          AppLogger.debug('Member count failed', tag: 'StaffDash', error: e);
+        }
 
         try {
           final joinRes = await db
@@ -165,7 +174,9 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
               .eq('group_id', gid)
               .eq('status', 'pending');
           _pendingJoinRequests = (joinRes as List).length;
-        } catch (_) {}
+        } catch (e) {
+          AppLogger.debug('Join requests count failed', tag: 'StaffDash', error: e);
+        }
 
         if (mounted) {
           setState(() {
@@ -203,11 +214,13 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                   (groupRow?['name'] as String?) ?? 'Assessoria';
             }
           }
-        } catch (_) {}
+        } catch (e) {
+          AppLogger.debug('Pending professor check failed', tag: 'StaffDash', error: e);
+        }
         if (mounted) setState(() => _loading = false);
       }
     } catch (e) {
-      AppLogger.error('StaffDashboard load failed: $e', tag: 'StaffDash', error: e);
+      AppLogger.error('StaffDashboard load failed', tag: 'StaffDash', error: e);
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -293,7 +306,8 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
       if (!ok) {
         await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
       }
-    } catch (_) {
+    } catch (e1) {
+      AppLogger.debug('External browser failed, trying in-app', tag: 'StaffDash', error: e1);
       try {
         await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
       } catch (e) {

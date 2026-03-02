@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 
 class SupportTicketScreen extends StatefulWidget {
   final String ticketId;
@@ -63,7 +64,8 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
         });
         _scrollToBottom();
       }
-    } on Exception catch (_) {
+    } on Exception catch (e) {
+      AppLogger.warn('Caught error', tag: 'SupportTicketScreen', error: e);
       if (mounted) setState(() => _loading = false);
     }
   }

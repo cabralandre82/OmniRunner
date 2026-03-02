@@ -10,6 +10,8 @@ import 'package:omni_runner/presentation/blocs/leaderboards/leaderboards_bloc.da
 import 'package:omni_runner/presentation/blocs/leaderboards/leaderboards_event.dart';
 import 'package:omni_runner/presentation/blocs/leaderboards/leaderboards_state.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
+import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 
 class LeaderboardsScreen extends StatefulWidget {
   const LeaderboardsScreen({super.key});
@@ -98,7 +100,8 @@ class _LeaderboardsScreenState extends State<LeaderboardsScreen>
         });
         _dispatchLoad();
       }
-    } on Exception catch (_) {
+    } on Exception catch (e) {
+      AppLogger.warn('Caught error', tag: 'LeaderboardsScreen', error: e);
       if (mounted) _dispatchLoad();
     }
   }
@@ -139,7 +142,7 @@ class _LeaderboardsScreenState extends State<LeaderboardsScreen>
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Rankings'),
+        title: Text(context.l10n.leaderboards),
         bottom: TabBar(
           controller: _tabCtrl,
           tabs: const [
@@ -150,6 +153,7 @@ class _LeaderboardsScreenState extends State<LeaderboardsScreen>
         ),
         actions: [
           IconButton(
+            tooltip: context.l10n.retry,
             icon: const Icon(Icons.refresh),
             onPressed: () =>
                 context.read<LeaderboardsBloc>().add(const RefreshLeaderboard()),
@@ -391,10 +395,12 @@ class _LeaderboardList extends StatelessWidget {
         if (index == entries.length) {
           return _ScoringExplanation(metric: metric);
         }
-        return _EntryTile(
-          entry: entries[index],
-          metric: metric,
-          isCurrentUser: entries[index].userId == currentUserId,
+        return RepaintBoundary(
+          child: _EntryTile(
+            entry: entries[index],
+            metric: metric,
+            isCurrentUser: entries[index].userId == currentUserId,
+          ),
         );
       },
     );

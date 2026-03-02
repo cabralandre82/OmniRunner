@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -89,7 +90,9 @@ class _FriendsActivityFeedScreenState extends State<FriendsActivityFeedScreen> {
                           if (i == _items.length) {
                             return _loadMoreButton();
                           }
-                          return _ActivityTile(item: _items[i]);
+                          return RepaintBoundary(
+                            child: _ActivityTile(item: _items[i]),
+                          );
                         },
                       ),
                     ),
@@ -248,7 +251,7 @@ class _ActivityTile extends StatelessWidget {
                 CircleAvatar(
                   radius: 18,
                   backgroundImage: item.avatarUrl != null
-                      ? NetworkImage(item.avatarUrl!)
+                      ? CachedNetworkImageProvider(item.avatarUrl!)
                       : null,
                   backgroundColor: cs.primaryContainer,
                   child: item.avatarUrl == null

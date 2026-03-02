@@ -85,6 +85,7 @@ final class IsarLedgerRepo implements ILedgerRepo {
     ..deltaCoins = e.deltaCoins
     ..reasonOrdinal = e.reason.stableOrdinal
     ..refId = e.refId
+    ..issuerGroupId = e.issuerGroupId
     ..createdAtMs = e.createdAtMs;
 
   static LedgerEntryEntity _toEntity(LedgerRecord r) => LedgerEntryEntity(
@@ -93,6 +94,7 @@ final class IsarLedgerRepo implements ILedgerRepo {
         deltaCoins: r.deltaCoins,
         reason: LedgerReason.fromStableOrdinal(r.reasonOrdinal),
         refId: r.refId,
+        issuerGroupId: r.issuerGroupId,
         createdAtMs: r.createdAtMs,
       );
 }

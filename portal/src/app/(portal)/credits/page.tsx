@@ -1,17 +1,11 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { formatBRL } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 import { trackBillingEvent } from "@/lib/analytics";
 import { BuyButton } from "./buy-button";
-
-function formatBRL(cents: number): string {
-  return (cents / 100).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
 
 function costPerCoin(priceCents: number, credits: number): string {
   return (priceCents / 100 / credits).toLocaleString("pt-BR", {
@@ -23,6 +17,15 @@ function costPerCoin(priceCents: number, credits: number): string {
 }
 
 export default async function CreditsPage() {
+  // LEGACY: This page is deprecated in favor of the Custody model (ADR-007).
+  // Feature flag: legacy_billing_enabled
+  const { isFeatureEnabled } = await import("@/lib/feature-flags");
+  const legacyEnabled = await isFeatureEnabled("legacy_billing_enabled");
+  if (!legacyEnabled) {
+    const { redirect } = await import("next/navigation");
+    redirect("/custody");
+  }
+
   const groupId = cookies().get("portal_group_id")?.value;
   const role = cookies().get("portal_role")?.value;
   if (!groupId) return null;

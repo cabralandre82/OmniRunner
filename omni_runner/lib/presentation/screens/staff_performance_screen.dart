@@ -158,7 +158,9 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
                   sum +
                   ((s['total_distance_m'] as num?)?.toDouble() ?? 0)) /
               1000;
-        } catch (_) {}
+        } catch (e) {
+      AppLogger.warn('Unexpected error', tag: 'StaffPerformanceScreen', error: e);
+    }
       } catch (e) {
         AppLogger.warn('Performance: sessions query failed: $e', tag: 'StaffPerf');
       }
@@ -189,7 +191,8 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
             _challengesWon = results
                 .where((r) => athleteIds.contains(r['winner_user_id']))
                 .length;
-          } catch (_) {
+          } catch (e) {
+      AppLogger.warn('Caught error', tag: 'StaffPerformanceScreen', error: e);
             _challengesWon = 0;
           }
         }

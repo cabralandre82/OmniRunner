@@ -8,6 +8,7 @@ import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/repositories/i_friendship_repo.dart';
+import 'package:omni_runner/presentation/widgets/cached_avatar.dart';
 import 'package:omni_runner/domain/usecases/social/send_friend_invite.dart';
 import 'package:uuid/uuid.dart';
 
@@ -241,13 +242,10 @@ class _ProfileHeader extends StatelessWidget {
       ),
       child: Column(
         children: [
-          CircleAvatar(
+          CachedAvatar(
+            url: avatarUrl,
+            fallbackText: name,
             radius: 48,
-            backgroundImage:
-                avatarUrl != null ? NetworkImage(avatarUrl) : null,
-            child: avatarUrl == null
-                ? const Icon(Icons.person, size: 48)
-                : null,
           ),
           const SizedBox(height: 16),
           Text(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:omni_runner/core/utils/format_pace.dart';
 import 'package:omni_runner/domain/entities/location_point_entity.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/screens/run_replay_screen.dart';
 
 /// Bottom panel showing final metrics on the RunSummaryScreen.
@@ -48,20 +49,20 @@ class SummaryMetricsPanel extends StatelessWidget {
       ),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-          _col(_fmtDist(totalDistanceM), 'Distância'),
-          _col(_fmtTime(elapsedMs), 'Duração'),
-          _col(formatPace(avgPaceSecPerKm), 'Pace médio'),
+          _col(_fmtDist(totalDistanceM), context.l10n.distance),
+          _col(_fmtTime(elapsedMs), context.l10n.duration),
+          _col(formatPace(avgPaceSecPerKm), context.l10n.avgPace),
         ],),
         if (hasHr) ...[
           const SizedBox(height: 12),
           Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-            _hrCol('${avgBpm!}', 'FC média'),
-            _hrCol('${maxBpm ?? '--'}', 'FC máx'),
+            _hrCol('${avgBpm!}', context.l10n.avgHeartRate),
+            _hrCol('${maxBpm ?? '--'}', context.l10n.maxHeartRate),
           ],),
         ],
         const SizedBox(height: 8),
         Text(
-          '$pointsCount pontos GPS registrados',
+          context.l10n.gpsPoints(pointsCount),
           style: const TextStyle(fontSize: 12, color: Colors.grey),
         ),
         if (extraSection != null) extraSection!,
@@ -71,7 +72,7 @@ class SummaryMetricsPanel extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               icon: const Icon(Icons.replay_rounded, size: 18),
-              label: const Text('Replay da corrida'),
+              label: Text(context.l10n.replay),
               onPressed: () {
                 Navigator.of(context).push(MaterialPageRoute<void>(
                   builder: (_) => RunReplayScreen(
@@ -92,32 +93,38 @@ class SummaryMetricsPanel extends StatelessWidget {
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
-            child: const Text('Fechar'),
+            child: Text(context.l10n.close),
           ),
         ),
       ],),
     );
   }
 
-  Widget _hrCol(String value, String label) => Column(children: [
-        Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.favorite, size: 14, color: Colors.red.shade400),
-          const SizedBox(width: 4),
-          Text(
+  Widget _hrCol(String value, String label) => Semantics(
+        label: '$label: $value bpm',
+        child: Column(children: [
+          ExcludeSemantics(child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.favorite, size: 14, color: Colors.red.shade400),
+            const SizedBox(width: 4),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+          ],)),
+          ExcludeSemantics(child: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey))),
+        ],),
+      );
+
+  Widget _col(String value, String label) => Semantics(
+        label: '$label: $value',
+        child: Column(children: [
+          ExcludeSemantics(child: Text(
             value,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
+          )),
+          ExcludeSemantics(child: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey))),
         ],),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      ],);
-
-  Widget _col(String value, String label) => Column(children: [
-        Text(
-          value,
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      ],);
+      );
 
   static String _fmtDist(double m) {
     if (m >= 1000) return '${(m / 1000).toStringAsFixed(2)} km';

@@ -10,6 +10,8 @@ import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/profile_entity.dart';
 import 'package:omni_runner/domain/repositories/i_profile_repo.dart';
+import 'package:omni_runner/l10n/l10n.dart';
+import 'package:omni_runner/presentation/widgets/cached_avatar.dart';
 import 'package:omni_runner/presentation/screens/auth_gate.dart';
 
 /// Screen showing the user's Supabase profile with editable display_name.
@@ -317,7 +319,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Meu Perfil'),
+        title: Text(context.l10n.profile),
         backgroundColor: cs.inversePrimary,
       ),
       body: _loading
@@ -329,26 +331,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Center(
                   child: Stack(
                     children: [
-                      if (_profile?.avatarUrl != null &&
-                          _profile!.avatarUrl!.isNotEmpty)
-                        CircleAvatar(
-                          radius: 52,
-                          backgroundImage:
-                              NetworkImage(_profile!.avatarUrl!),
-                        )
-                      else
-                        CircleAvatar(
-                          radius: 52,
-                          backgroundColor: cs.primaryContainer,
-                          child: Text(
-                            _initials(_profile?.displayName ?? 'R'),
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: cs.primary,
-                            ),
-                          ),
-                        ),
+                      CachedAvatar(
+                        url: _profile?.avatarUrl,
+                        fallbackText: _profile?.displayName ?? 'R',
+                        radius: 52,
+                      ),
                       Positioned(
                         bottom: 0,
                         right: 0,
@@ -467,7 +454,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white))
                         : const Icon(Icons.save),
-                    label: const Text('Salvar perfil'),
+                    label: Text(context.l10n.save),
                   ),
                 ),
 
@@ -506,7 +493,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: OutlinedButton.icon(
                       onPressed: _signOut,
                       icon: const Icon(Icons.logout_rounded),
-                      label: const Text('Sair da conta'),
+                      label: Text(context.l10n.logout),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red,
                         side: const BorderSide(color: Colors.red),
@@ -519,7 +506,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: TextButton.icon(
                       onPressed: _requestDeleteAccount,
                       icon: const Icon(Icons.delete_forever_rounded, size: 18),
-                      label: const Text('Excluir minha conta'),
+                      label: Text(context.l10n.delete),
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.red.shade300,
                       ),
@@ -531,11 +518,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length >= 2) {
-      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
-    }
-    return name.isNotEmpty ? name[0].toUpperCase() : 'R';
-  }
 }

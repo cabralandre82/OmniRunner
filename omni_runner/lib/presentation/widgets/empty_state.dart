@@ -23,7 +23,9 @@ class EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Center(
+    return Semantics(
+      label: '$title. $subtitle',
+      child: Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
         child: Column(
@@ -70,6 +72,7 @@ class EmptyState extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }

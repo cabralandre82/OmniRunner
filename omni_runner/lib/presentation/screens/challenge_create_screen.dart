@@ -45,7 +45,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
   late final TextEditingController _targetCtrl;
   late final TextEditingController _feeCtrl;
 
-  final _verificationBloc = VerificationBloc()
+  final _verificationBloc = sl<VerificationBloc>()
     ..add(const LoadVerificationState());
 
   /// 0 = Agora, 1 = Agendado
@@ -354,7 +354,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                   onChanged: (_) => setState(() {}),
                   validator: (v) {
                     final fee = int.tryParse(v ?? '0') ?? 0;
-                    if (fee < 0) return 'Valor inválido';
+                    if (fee < 0) return 'Quantidade inválida';
                     return null;
                   },
                 ),

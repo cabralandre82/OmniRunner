@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { trackBillingEvent } from "@/lib/analytics";
+import { formatBRL, formatDateTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 import Link from "next/link";
@@ -18,22 +19,7 @@ const METHOD_LABELS: Record<string, string> = {
   boleto: "Boleto",
 };
 
-function formatBRL(cents: number): string {
-  return (cents / 100).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+const formatDate = formatDateTime;
 
 interface Purchase {
   id: string;
@@ -56,6 +42,14 @@ interface SummaryByStatus {
 }
 
 export default async function BillingPage() {
+  // LEGACY: Deprecated in favor of Custody model (ADR-007).
+  const { isFeatureEnabled } = await import("@/lib/feature-flags");
+  const legacyEnabled = await isFeatureEnabled("legacy_billing_enabled");
+  if (!legacyEnabled) {
+    const { redirect } = await import("next/navigation");
+    redirect("/custody");
+  }
+
   const groupId = cookies().get("portal_group_id")?.value;
   if (!groupId) return null;
 

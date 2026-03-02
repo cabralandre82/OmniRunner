@@ -75,7 +75,8 @@ class _MyParksScreenState extends State<MyParksScreen> {
       }
 
       if (mounted) setState(() => _loading = false);
-    } on Exception catch (_) {
+    } on Exception catch (e) {
+      AppLogger.warn('Caught error', tag: 'MyParksScreen', error: e);
       if (mounted) setState(() => _loading = false);
     }
   }

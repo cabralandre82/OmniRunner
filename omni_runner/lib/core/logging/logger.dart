@@ -24,14 +24,14 @@ abstract final class AppLogger {
   static void Function(String message, Object? error, StackTrace? stack)?
       onError;
 
-  static void debug(String msg, {String tag = 'App'}) =>
-      _log(LogLevel.debug, msg, tag: tag);
+  static void debug(String msg, {String tag = 'App', Object? error}) =>
+      _log(LogLevel.debug, msg, tag: tag, error: error);
 
-  static void info(String msg, {String tag = 'App'}) =>
-      _log(LogLevel.info, msg, tag: tag);
+  static void info(String msg, {String tag = 'App', Object? error}) =>
+      _log(LogLevel.info, msg, tag: tag, error: error);
 
-  static void warn(String msg, {String tag = 'App'}) =>
-      _log(LogLevel.warn, msg, tag: tag);
+  static void warn(String msg, {String tag = 'App', Object? error}) =>
+      _log(LogLevel.warn, msg, tag: tag, error: error);
 
   static void error(
     String msg, {

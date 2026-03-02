@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 
 /// Shows who's on a streak and a consistency ranking for the user's assessoria.
 ///
@@ -126,7 +128,8 @@ class _StreaksLeaderboardScreenState extends State<StreaksLeaderboardScreen> {
         });
 
       if (mounted) setState(() => _loading = false);
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Caught error', tag: 'StreaksLeaderboardScreen', error: e);
       if (mounted) {
         setState(() {
           _error = 'Não foi possível carregar a consistência.';
@@ -151,7 +154,7 @@ class _StreaksLeaderboardScreenState extends State<StreaksLeaderboardScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Consistência')),
+      appBar: AppBar(title: Text(context.l10n.consistency)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error == 'no_group'

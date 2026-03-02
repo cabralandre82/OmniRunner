@@ -276,7 +276,9 @@ class _StaffChampionshipManageScreenState
           availableGroups.add({'id': gid, 'name': (g['name'] as String?) ?? gid});
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.warn('Unexpected error', tag: 'StaffChampionshipManage', error: e);
+    }
 
     if (!mounted) return;
 

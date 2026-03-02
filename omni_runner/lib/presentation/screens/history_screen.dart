@@ -7,6 +7,7 @@ import 'package:omni_runner/domain/entities/workout_session_entity.dart';
 import 'package:omni_runner/domain/entities/workout_status.dart';
 import 'package:omni_runner/domain/repositories/i_session_repo.dart';
 import 'package:omni_runner/domain/repositories/i_sync_repo.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/screens/run_details_screen.dart';
 import 'package:omni_runner/presentation/widgets/empty_state.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
@@ -146,7 +147,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final pending = _sessions?.where((s) => !s.isSynced && s.status == WorkoutStatus.completed).length ?? 0;
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.pickGhostMode ? 'Escolher fantasma' : 'Histórico'),
+        title: Text(widget.pickGhostMode ? 'Escolher fantasma' : context.l10n.history),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: widget.pickGhostMode ? null : [
           if (pending > 0)
@@ -187,9 +188,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ),
                         );
                       }
-                      return _SessionTile(
-                        session: _sessions![i],
-                        pickGhostMode: widget.pickGhostMode,
+                      return RepaintBoundary(
+                        child: _SessionTile(
+                          session: _sessions![i],
+                          pickGhostMode: widget.pickGhostMode,
+                        ),
                       );
                     },
                   ),

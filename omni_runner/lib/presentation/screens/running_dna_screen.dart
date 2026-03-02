@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/core/service_locator.dart';
 
 const _tag = 'RunningDnaScreen';
@@ -78,7 +79,7 @@ class _RunningDnaScreenState extends State<RunningDnaScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Meu DNA de Corredor'),
+        title: Text(context.l10n.myRunnerDna),
         backgroundColor: cs.inversePrimary,
         actions: [
           IconButton(

@@ -1,0 +1,120 @@
+{
+  "common": {
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "delete": "Excluir",
+    "remove": "Remover",
+    "invite": "Convidar",
+    "loading": "Carregando...",
+    "retry": "Tentar novamente",
+    "search": "Buscar",
+    "close": "Fechar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "previous": "Anterior",
+    "yes": "Sim",
+    "no": "Não",
+    "edit": "Editar",
+    "create": "Criar",
+    "update": "Atualizar",
+    "actions": "Ações",
+    "results": "{count} resultado(s)",
+    "noResults": "Nenhum resultado encontrado."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "athletes": "Atletas",
+    "billing": "Cobrança",
+    "credits": "Créditos",
+    "distributions": "Distribuições",
+    "engagement": "Engajamento",
+    "settings": "Configurações",
+    "verification": "Verificação",
+    "custody": "Custódia",
+    "clearing": "Compensações",
+    "swap": "Swap de Lastro"
+  },
+  "auth": {
+    "login": "Entrar",
+    "logout": "Sair",
+    "unauthorized": "Não autorizado"
+  },
+  "settings": {
+    "branding": "Identidade visual",
+    "team": "Equipe",
+    "billing": "Cobrança",
+    "gateway": "Gateway de pagamento",
+    "autoTopup": "Recarga automática",
+    "saveBranding": "Salvar identidade",
+    "inviteMember": "Convidar membro",
+    "removeMember": "Remover membro",
+    "confirmRemove": "Tem certeza que deseja remover este membro?"
+  },
+  "athletes": {
+    "title": "Atletas",
+    "distribute": "Distribuir moedas",
+    "export": "Exportar",
+    "noAthletes": "Nenhum atleta encontrado"
+  },
+  "custody": {
+    "title": "Custódia",
+    "deposit": "Depositar Lastro",
+    "newDeposit": "Novo Depósito de Lastro",
+    "totalDeposited": "Total Depositado",
+    "reserved": "Reservado (Coins Ativos)",
+    "available": "Disponível para Emissão",
+    "coinEquivalent": "Equivale a {amount} coins",
+    "minAmount": "Valor mínimo: US$ 10.00",
+    "depositSuccess": "Depósito criado com sucesso!",
+    "gateway": "Gateway"
+  },
+  "clearing": {
+    "title": "Compensações",
+    "settlements": "Liquidações",
+    "creditor": "Credor",
+    "debtor": "Devedor",
+    "coinAmount": "Coins",
+    "grossAmount": "Bruto",
+    "fee": "Taxa",
+    "netAmount": "Líquido",
+    "status": "Status",
+    "pending": "Pendente",
+    "settled": "Liquidado",
+    "failed": "Falhou"
+  },
+  "swap": {
+    "title": "Swap de Lastro",
+    "createOffer": "Criar Oferta de Venda",
+    "sellBacking": "Vender Lastro",
+    "buy": "Comprar",
+    "minAmount": "Valor mínimo: US$ 100.00",
+    "openOffers": "Ofertas Abertas",
+    "seller": "Vendedor",
+    "amount": "Valor",
+    "publish": "Publicar"
+  },
+  "platform": {
+    "dashboard": "Dashboard da Plataforma",
+    "fees": "Taxas",
+    "invariants": "Invariantes",
+    "featureFlags": "Feature Flags",
+    "assessorias": "Assessorias",
+    "support": "Suporte",
+    "products": "Produtos",
+    "refunds": "Reembolsos",
+    "league": "Liga",
+    "achievements": "Conquistas",
+    "financial": "Financeiro",
+    "healthy": "Todos os invariantes saudáveis",
+    "violations": "Violações detectadas"
+  },
+  "error": {
+    "generic": "Algo deu errado. Tente novamente.",
+    "notFound": "Página não encontrada",
+    "unauthorized": "Sua sessão expirou. Faça login novamente.",
+    "tooManyRequests": "Muitas requisições. Tente novamente em breve.",
+    "connectionError": "Erro de conexão",
+    "forbidden": "Acesso negado"
+  }
+}

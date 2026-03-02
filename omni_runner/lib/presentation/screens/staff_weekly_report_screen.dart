@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 
 /// Weekly report for the assessoria staff.
 ///
@@ -193,7 +194,8 @@ class _StaffWeeklyReportScreenState extends State<StaffWeeklyReportScreen> {
       }
 
       if (mounted) setState(() => _loading = false);
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Caught error', tag: 'StaffWeeklyReport', error: e);
       if (mounted) {
         setState(() {
           _error = 'Não foi possível gerar o relatório.';

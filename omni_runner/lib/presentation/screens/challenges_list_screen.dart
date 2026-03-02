@@ -16,8 +16,10 @@ import 'package:omni_runner/presentation/screens/challenge_details_screen.dart';
 import 'package:omni_runner/presentation/screens/matchmaking_screen.dart';
 import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/widgets/error_state.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 
 void _openMatchmaking(BuildContext context) async {
   final challengeId = await Navigator.of(context).push<String>(
@@ -60,14 +62,16 @@ class _ChallengesListScreenState extends State<ChallengesListScreen> {
       if (mounted) {
         setState(() => _stravaConnected = state is StravaConnected);
       }
-    } on Exception catch (_) {}
+    } on Exception catch (e) {
+      AppLogger.warn('Unexpected error', tag: 'ChallengesListScreen', error: e);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Desafios'),
+        title: Text(context.l10n.challenges),
         actions: [
           IconButton(
             icon: const Icon(Icons.sports_mma_rounded),

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect } from "react";
 
 interface BrandingData {
@@ -160,8 +161,7 @@ export function BrandingForm() {
           >
             <div className="flex items-center gap-2">
               {data.logo_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={data.logo_url} alt="Logo" className="h-6 w-6 rounded" />
+                <Image src={data.logo_url} alt="Logo" width={24} height={24} className="rounded" />
               ) : (
                 <span
                   className="flex h-6 w-6 items-center justify-center rounded text-xs font-bold text-white"

@@ -129,10 +129,10 @@ void main() {
     });
   });
 
-  // ── 1v1 TIME (higher wins — more running time = better) ─────
+  // ── 1v1 TIME (lower wins — faster completion = better) ──────
 
   group('1v1 time', () {
-    test('higher duration wins', () {
+    test('lower duration wins (faster runner)', () {
       final results = evaluator.evaluate(_challenge(
         goal: ChallengeGoal.fastestAtDistance,
         participants: [
@@ -145,7 +145,7 @@ void main() {
         (r) => r.outcome != ParticipantOutcome.didNotFinish,
       );
       final winner = active.firstWhere((r) => r.rank == 1);
-      expect(winner.userId, 'u1');
+      expect(winner.userId, 'u2');
       expect(winner.outcome, ParticipantOutcome.won);
       expect(winner.coinsEarned, 0);
     });
@@ -319,10 +319,11 @@ void main() {
 
   // ── GROUP (cooperative — group wins/loses as a unit) ──────────
 
-  group('group distance (cooperative)', () {
+  group('group distance (cooperative via collectiveDistance)', () {
     test('collective sum meets target: 0 coins (free)', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
+        goal: ChallengeGoal.collectiveDistance,
         target: 30000,
         participants: [
           _p('u1', progress: 15000, sessions: ['s1']),
@@ -341,6 +342,7 @@ void main() {
       // target = 50000. sum = 15000+12000+8000 = 35000 < 50000 → not met
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
+        goal: ChallengeGoal.collectiveDistance,
         target: 50000,
         participants: [
           _p('u1', progress: 15000, sessions: ['s1']),
@@ -357,6 +359,7 @@ void main() {
     test('non-runner shares result when group meets target (free, 0 coins)', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
+        goal: ChallengeGoal.collectiveDistance,
         target: 10000,
         participants: [
           _p('u1', progress: 8000, sessions: ['s1']),
@@ -378,7 +381,7 @@ void main() {
         status: ChallengeStatus.active,
         type: ChallengeType.group,
         rules: const ChallengeRulesEntity(
-          goal: ChallengeGoal.mostDistance,
+          goal: ChallengeGoal.collectiveDistance,
           target: 10000,
           windowMs: 604800000,
           entryFeeCoins: 20,
@@ -399,6 +402,7 @@ void main() {
     test('no target: group succeeds if anyone ran (free, 0 coins)', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
+        goal: ChallengeGoal.collectiveDistance,
         participants: [
           _p('u1', progress: 3000, sessions: ['s1']),
           _p('u2', progress: 0),
@@ -417,7 +421,7 @@ void main() {
         status: ChallengeStatus.active,
         type: ChallengeType.group,
         rules: const ChallengeRulesEntity(
-          goal: ChallengeGoal.mostDistance,
+          goal: ChallengeGoal.collectiveDistance,
           target: 5000,
           windowMs: 604800000,
           entryFeeCoins: 20,
@@ -438,6 +442,7 @@ void main() {
     test('nobody ran free: all DNF, 0 coins', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
+        goal: ChallengeGoal.collectiveDistance,
         target: 5000,
         participants: [
           _p('u1', progress: 0),
@@ -451,10 +456,10 @@ void main() {
     });
   });
 
-  // ── GROUP PACE (cooperative — avg of runners ≤ target) ────────
+  // ── GROUP PACE (competitive — lower pace wins) ────────────────
 
-  group('group pace (cooperative)', () {
-    test('avg pace meets target (free, 0 coins)', () {
+  group('group pace (competitive)', () {
+    test('lower pace wins in competitive group', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
         goal: ChallengeGoal.bestPaceAtDistance,
@@ -465,13 +470,12 @@ void main() {
         ],
       ));
 
-      expect(results.every((r) => r.outcome == ParticipantOutcome.completedTarget),
-          isTrue);
-      expect(results.every((r) => r.coinsEarned == 0), isTrue);
+      final winner = results.firstWhere((r) => r.rank == 1);
+      expect(winner.userId, 'u1');
+      expect(winner.outcome, ParticipantOutcome.won);
     });
 
-    test('avg pace too slow: no reward', () {
-      // avg = (270+350)/2 = 310 > 300 → not met
+    test('slower runner is ranked lower', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
         goal: ChallengeGoal.bestPaceAtDistance,
@@ -482,20 +486,20 @@ void main() {
         ],
       ));
 
-      expect(results.every((r) => r.outcome == ParticipantOutcome.participated),
-          isTrue);
-      expect(results.every((r) => r.coinsEarned == 0), isTrue);
+      final second = results.firstWhere((r) => r.userId == 'u2');
+      expect(second.rank, 2);
+      expect(second.outcome, ParticipantOutcome.participated);
+      expect(second.coinsEarned, 0);
     });
   });
 
-  // ── GROUP TIME (cooperative — sum of runners ≥ target) ────────
+  // ── GROUP TIME (competitive — lower time wins) ────────────────
 
-  group('group time (cooperative)', () {
-    test('collective time meets target (free, 0 coins)', () {
+  group('group time (competitive)', () {
+    test('fastest runner wins in competitive group', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
         goal: ChallengeGoal.fastestAtDistance,
-        target: 4000000,
         participants: [
           _p('u1', progress: 1500000, sessions: ['s1']),
           _p('u2', progress: 2000000, sessions: ['s2']),
@@ -503,26 +507,26 @@ void main() {
         ],
       ));
 
-      expect(results.every((r) => r.outcome == ParticipantOutcome.completedTarget),
-          isTrue);
-      expect(results.every((r) => r.coinsEarned == 0), isTrue);
+      final winner = results.firstWhere((r) => r.rank == 1);
+      expect(winner.userId, 'u3');
+      expect(winner.outcome, ParticipantOutcome.won);
     });
 
-    test('collective time not enough: no reward', () {
-      // sum = 1500000+1200000 = 2700000 < 4000000 → not met
+    test('slower runners are ranked by time ascending', () {
       final results = evaluator.evaluate(_challenge(
         type: ChallengeType.group,
         goal: ChallengeGoal.fastestAtDistance,
-        target: 4000000,
         participants: [
           _p('u1', progress: 1500000, sessions: ['s1']),
           _p('u2', progress: 1200000, sessions: ['s2']),
         ],
       ));
 
-      expect(results.every((r) => r.outcome == ParticipantOutcome.participated),
-          isTrue);
-      expect(results.every((r) => r.coinsEarned == 0), isTrue);
+      final first = results.firstWhere((r) => r.rank == 1);
+      final second = results.firstWhere((r) => r.rank == 2);
+      expect(first.userId, 'u2');
+      expect(second.userId, 'u1');
+      expect(second.outcome, ParticipantOutcome.participated);
     });
   });
 

@@ -133,7 +133,23 @@ serve(async (req: Request) => {
       return jsonErr(410, "INTENT_EXPIRED", "This intent has expired", requestId);
     }
 
-    // ── 4b. Daily limit checks (DECISAO 052) ─────────────────────────
+    // ── 4b. Affiliate check (only affiliated athletes can consume) ──
+    if (intent.type === "ISSUE_TO_ATHLETE" || intent.type === "BURN_FROM_ATHLETE") {
+      const consumerId = intent.target_user_id ?? user.id;
+      const { data: affiliation } = await db
+        .from("coaching_members")
+        .select("role")
+        .eq("group_id", intent.group_id)
+        .eq("user_id", consumerId)
+        .maybeSingle();
+
+      if (!affiliation) {
+        status = 403;
+        return jsonErr(403, "NOT_AFFILIATED", "Athlete is not a member of this assessoria", requestId);
+      }
+    }
+
+    // ── 4c. Daily limit checks (DECISAO 052) ─────────────────────────
     if (intent.type === "ISSUE_TO_ATHLETE" || intent.type === "BURN_FROM_ATHLETE") {
       const { data: remaining, error: limitErr } = await db.rpc("check_daily_token_usage", {
         p_group_id: intent.group_id,
@@ -164,10 +180,35 @@ serve(async (req: Request) => {
       }
     }
 
-    // ── 5. Execute by type ────────────────────────────────────────────
+    // ── 5. Atomically claim intent (OPEN → CONSUMED) BEFORE executing
+    //    This prevents double-burn if two requests race on the same nonce.
     const nowMs = Date.now();
     const targetUserId = intent.target_user_id ?? user.id;
 
+    const { data: claimed, error: claimErr } = await db
+      .from("token_intents")
+      .update({
+        status: "CONSUMED",
+        target_user_id: targetUserId,
+        consumed_at: new Date().toISOString(),
+      })
+      .eq("id", intent.id)
+      .eq("status", "OPEN")
+      .select("id")
+      .maybeSingle();
+
+    if (claimErr) {
+      const classified = classifyError(claimErr);
+      status = classified.httpStatus;
+      errorCode = classified.code;
+      return jsonErr(classified.httpStatus, classified.code, classified.message, requestId);
+    }
+
+    if (!claimed) {
+      return jsonOk({ status: "already_consumed", intent_id: intent.id }, requestId);
+    }
+
+    // ── 6. Execute by type (intent is now claimed, no race possible) ──
     if (intent.type === "ISSUE_TO_ATHLETE") {
       // 5a. Decrement inventory (atomic, CHECK >= 0 guards negative)
       const { error: decrErr } = await db.rpc("decrement_token_inventory", {
@@ -199,12 +240,13 @@ serve(async (req: Request) => {
         return jsonErr(classified.httpStatus, classified.code, classified.message, requestId);
       }
 
-      // Append ledger
+      // Append ledger (issuer = the group that emitted the coins)
       const { error: ledgerErr } = await db.from("coin_ledger").insert({
         user_id: targetUserId,
         delta_coins: intent.amount,
         reason: "institution_token_issue",
         ref_id: intent.id,
+        issuer_group_id: intent.group_id,
         created_at_ms: nowMs,
       });
       if (ledgerErr) {
@@ -215,47 +257,32 @@ serve(async (req: Request) => {
       }
 
     } else if (intent.type === "BURN_FROM_ATHLETE") {
-      // 5b. Check balance first
-      const { data: wallet } = await db
-        .from("wallets")
-        .select("balance_coins")
-        .eq("user_id", targetUserId)
-        .maybeSingle();
-
-      const currentBalance = wallet?.balance_coins ?? 0;
-      if (currentBalance < intent.amount) {
-        status = 422;
-        return jsonErr(422, "INSUFFICIENT_BALANCE", "Athlete does not have enough tokens", requestId);
-      }
-
-      // Debit athlete wallet
-      const { error: walletErr } = await db.rpc("increment_wallet_balance", {
+      // 5b. Atomic burn: wallet debit + per-issuer ledger + clearing events
+      // All in a single Postgres transaction via execute_burn_atomic.
+      const { data: burnResult, error: burnErr } = await db.rpc("execute_burn_atomic", {
         p_user_id: targetUserId,
-        p_delta: -intent.amount,
+        p_redeemer_group_id: intent.group_id,
+        p_amount: intent.amount,
+        p_ref_id: intent.id,
       });
-      if (walletErr) {
-        const classified = classifyError(walletErr);
+
+      if (burnErr) {
+        const msg = burnErr.message ?? "";
+        if (msg.includes("INSUFFICIENT_BALANCE")) {
+          status = 422;
+          return jsonErr(422, "INSUFFICIENT_BALANCE", "Athlete does not have enough tokens", requestId);
+        }
+        if (msg.includes("BURN_PLAN_SHORTFALL")) {
+          status = 422;
+          return jsonErr(422, "BURN_PLAN_SHORTFALL", "Could not allocate coins by issuer for burn", requestId);
+        }
+        const classified = classifyError(burnErr);
         status = classified.httpStatus;
         errorCode = classified.code;
         return jsonErr(classified.httpStatus, classified.code, classified.message, requestId);
       }
 
-      // Append ledger
-      const { error: ledgerErr } = await db.from("coin_ledger").insert({
-        user_id: targetUserId,
-        delta_coins: -intent.amount,
-        reason: "institution_token_burn",
-        ref_id: intent.id,
-        created_at_ms: nowMs,
-      });
-      if (ledgerErr) {
-        const classified = classifyError(ledgerErr);
-        status = classified.httpStatus;
-        errorCode = classified.code;
-        return jsonErr(classified.httpStatus, classified.code, classified.message, requestId);
-      }
-
-      // Track burn in inventory
+      // Track burn in inventory (fire-and-forget, non-critical)
       await db.rpc("increment_inventory_burned", {
         p_group_id: intent.group_id,
         p_amount: intent.amount,
@@ -263,30 +290,7 @@ serve(async (req: Request) => {
     }
     // CHAMP_BADGE_ACTIVATE: no wallet/ledger action — just mark consumed
 
-    // ── 6. Mark intent CONSUMED (idempotent via WHERE status = 'OPEN') ─
-    const { data: updated, error: consumeErr } = await db
-      .from("token_intents")
-      .update({
-        status: "CONSUMED",
-        target_user_id: targetUserId,
-        consumed_at: new Date().toISOString(),
-      })
-      .eq("id", intent.id)
-      .eq("status", "OPEN")
-      .select("id, status")
-      .maybeSingle();
-
-    if (consumeErr) {
-      const classified = classifyError(consumeErr);
-      status = classified.httpStatus;
-      errorCode = classified.code;
-      return jsonErr(classified.httpStatus, classified.code, classified.message, requestId);
-    }
-
-    if (!updated) {
-      return jsonOk({ status: "already_consumed", intent_id: intent.id }, requestId);
-    }
-
+    // Intent was already marked CONSUMED in step 5 (claim).
     return jsonOk({
       status: "consumed",
       intent_id: intent.id,

@@ -5,6 +5,7 @@ import 'package:omni_runner/domain/entities/mission_progress_entity.dart';
 import 'package:omni_runner/presentation/blocs/missions/missions_bloc.dart';
 import 'package:omni_runner/presentation/blocs/missions/missions_event.dart';
 import 'package:omni_runner/presentation/blocs/missions/missions_state.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 
 class MissionsScreen extends StatelessWidget {
   const MissionsScreen({super.key});
@@ -13,9 +14,10 @@ class MissionsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Missões'),
+        title: Text(context.l10n.missions),
         actions: [
           IconButton(
+            tooltip: context.l10n.retry,
             icon: const Icon(Icons.refresh),
             onPressed: () =>
                 context.read<MissionsBloc>().add(const RefreshMissions()),

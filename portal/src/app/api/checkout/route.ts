@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { rateLimit } from "@/lib/rate-limit";
+import { checkoutSchema } from "@/lib/schemas";
 
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -24,14 +25,14 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const productId = body.product_id;
-  const gateway = body.gateway ?? "mercadopago";
-  if (!productId) {
+  const parsed = checkoutSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "product_id is required" },
+      { error: parsed.error.issues[0].message },
       { status: 400 },
     );
   }
+  const { product_id: productId, gateway } = parsed.data;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 

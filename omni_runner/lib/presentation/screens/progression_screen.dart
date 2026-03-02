@@ -6,6 +6,7 @@ import 'package:omni_runner/domain/entities/weekly_goal_entity.dart';
 import 'package:omni_runner/presentation/blocs/progression/progression_bloc.dart';
 import 'package:omni_runner/presentation/blocs/progression/progression_event.dart';
 import 'package:omni_runner/presentation/blocs/progression/progression_state.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 
 class ProgressionScreen extends StatelessWidget {
@@ -15,9 +16,10 @@ class ProgressionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Meu Progresso'),
+        title: Text(context.l10n.progression),
         actions: [
           IconButton(
+            tooltip: context.l10n.retry,
             icon: const Icon(Icons.refresh),
             onPressed: () => context
                 .read<ProgressionBloc>()

@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/service";
+import { logger } from "@/lib/logger";
 
 /**
  * Logs a portal action to portal_audit_log.
@@ -23,12 +24,12 @@ export async function auditLog(params: {
       metadata: params.metadata ?? {},
     });
     if (error) {
-      console.error("[AuditLog] insert failed:", error.message, {
+      logger.error("AuditLog insert failed", error, {
         action: params.action,
         actorId: params.actorId,
       });
     }
   } catch (e) {
-    console.error("[AuditLog] unexpected error:", e);
+    logger.error("AuditLog unexpected error", e);
   }
 }

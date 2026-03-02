@@ -1,14 +1,11 @@
-import 'dart:async';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/errors/gamification_failures.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_participant_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
 import 'package:omni_runner/domain/repositories/i_challenge_repo.dart';
+import 'package:omni_runner/domain/repositories/i_challenges_remote_source.dart';
 import 'package:omni_runner/domain/usecases/gamification/cancel_challenge.dart';
 import 'package:omni_runner/domain/usecases/gamification/create_challenge.dart';
 import 'package:omni_runner/domain/usecases/gamification/evaluate_challenge.dart';
@@ -23,6 +20,7 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
   static const _tag = 'ChallengesBloc';
 
   final IChallengeRepo _challengeRepo;
+  final IChallengesRemoteSource _remote;
   final CreateChallenge _createChallenge;
   final JoinChallenge _joinChallenge;
   final CancelChallenge _cancelChallenge;
@@ -34,6 +32,7 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
 
   ChallengesBloc({
     required IChallengeRepo challengeRepo,
+    required IChallengesRemoteSource remote,
     required CreateChallenge createChallenge,
     required JoinChallenge joinChallenge,
     required CancelChallenge cancelChallenge,
@@ -41,6 +40,7 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
     required EvaluateChallenge evaluateChallenge,
     required SettleChallenge settleChallenge,
   })  : _challengeRepo = challengeRepo,
+        _remote = remote,
         _createChallenge = createChallenge,
         _joinChallenge = joinChallenge,
         _cancelChallenge = cancelChallenge,
@@ -77,25 +77,14 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
     }
   }
 
-  /// Fetches challenges from Supabase and merges into Isar.
+  /// Fetches challenges from backend and merges into local repo.
   /// Gracefully degrades if offline.
   Future<void> _syncFromBackend(String userId) async {
-    if (!AppConfig.isSupabaseReady) return;
-
     try {
-      final res = await Supabase.instance.client.functions
-          .invoke('challenge-list-mine', body: {})
-          .timeout(const Duration(seconds: 10));
+      final remoteChallenges = await _remote.fetchMyChallenges();
 
-      final data = res.data as Map<String, dynamic>?;
-      if (data == null) return;
-
-      final remoteChallenges = data['challenges'] as List<dynamic>? ?? [];
-
-      for (final raw in remoteChallenges) {
-        final map = raw as Map<String, dynamic>;
+      for (final remoteEntity in remoteChallenges) {
         try {
-          final remoteEntity = _mapRemoteToEntity(map);
           final local = await _challengeRepo.getById(remoteEntity.id);
 
           if (local == null) {
@@ -108,13 +97,11 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
               AppLogger.debug('Merged challenge ${merged.id}', tag: _tag);
             }
           }
-        } catch (e) {
+        } on Exception catch (e) {
           AppLogger.warn('Failed to merge challenge: $e', tag: _tag);
         }
       }
-    } on TimeoutException {
-      AppLogger.warn('Backend sync timed out — using local data', tag: _tag);
-    } catch (e) {
+    } on Exception catch (e) {
       AppLogger.warn('Backend sync failed — using local data: $e', tag: _tag);
     }
   }
@@ -180,93 +167,6 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
     return (order[b] ?? 0) >= (order[a] ?? 0) ? b : a;
   }
 
-  ChallengeEntity _mapRemoteToEntity(Map<String, dynamic> m) {
-    final typeStr = m['type'] as String? ?? 'one_vs_one';
-    final type = switch (typeStr) {
-      'group' => ChallengeType.group,
-      'team' => ChallengeType.team,
-      _ => ChallengeType.oneVsOne,
-    };
-
-    final goalStr = (m['goal'] as String?) ?? (m['metric'] as String?) ?? 'most_distance';
-    final goal = switch (goalStr) {
-      'fastest_at_distance' => ChallengeGoal.fastestAtDistance,
-      'best_pace_at_distance' => ChallengeGoal.bestPaceAtDistance,
-      'collective_distance' => ChallengeGoal.collectiveDistance,
-      'pace' => ChallengeGoal.bestPaceAtDistance,
-      'distance' => ChallengeGoal.mostDistance,
-      _ => ChallengeGoal.mostDistance,
-    };
-
-    final startModeStr = m['start_mode'] as String? ?? 'on_accept';
-    final startMode = startModeStr == 'scheduled'
-        ? ChallengeStartMode.scheduled
-        : ChallengeStartMode.onAccept;
-
-    final antiCheatStr = m['anti_cheat_policy'] as String? ?? 'standard';
-    final antiCheat = antiCheatStr == 'strict'
-        ? ChallengeAntiCheatPolicy.strict
-        : ChallengeAntiCheatPolicy.standard;
-
-    final rawParts = m['participants'] as List<dynamic>? ?? [];
-    final participants = rawParts.map((p) {
-      final pm = p as Map<String, dynamic>;
-      final statusStr = pm['status'] as String? ?? 'invited';
-      final pStatus = switch (statusStr) {
-        'accepted' => ParticipantStatus.accepted,
-        'declined' => ParticipantStatus.declined,
-        'withdrawn' => ParticipantStatus.withdrawn,
-        _ => ParticipantStatus.invited,
-      };
-      final hasSubmitted = pm['has_submitted'] as bool? ?? false;
-      return ChallengeParticipantEntity(
-        userId: pm['user_id'] as String? ?? '',
-        displayName: pm['display_name'] as String? ?? '',
-        status: pStatus,
-        respondedAtMs: pm['responded_at_ms'] as int?,
-        progressValue: (pm['progress_value'] as num?)?.toDouble() ?? 0.0,
-        contributingSessionIds:
-            hasSubmitted ? const ['_submitted'] : const [],
-        groupId: pm['group_id'] as String?,
-        team: pm['team'] as String?,
-      );
-    }).toList();
-
-    final statusStr = m['status'] as String? ?? 'pending';
-    final status = switch (statusStr) {
-      'active' => ChallengeStatus.active,
-      'completing' => ChallengeStatus.completing,
-      'completed' => ChallengeStatus.completed,
-      'cancelled' => ChallengeStatus.cancelled,
-      'expired' => ChallengeStatus.expired,
-      _ => ChallengeStatus.pending,
-    };
-
-    return ChallengeEntity(
-      id: m['id'] as String,
-      creatorUserId: m['creator_user_id'] as String? ?? '',
-      status: status,
-      type: type,
-      rules: ChallengeRulesEntity(
-        goal: goal,
-        target: (m['target'] as num?)?.toDouble(),
-        windowMs: (m['window_ms'] as num?)?.toInt() ?? 604800000,
-        startMode: startMode,
-        fixedStartMs: (m['fixed_start_ms'] as num?)?.toInt(),
-        entryFeeCoins: (m['entry_fee_coins'] as num?)?.toInt() ?? 0,
-        minSessionDistanceM: (m['min_session_distance_m'] as num?)?.toDouble() ?? 1000.0,
-        antiCheatPolicy: antiCheat,
-        acceptWindowMin: (m['accept_window_min'] as num?)?.toInt(),
-      ),
-      participants: participants,
-      createdAtMs: (m['created_at_ms'] as num?)?.toInt() ?? 0,
-      startsAtMs: (m['starts_at_ms'] as num?)?.toInt(),
-      endsAtMs: (m['ends_at_ms'] as num?)?.toInt(),
-      title: m['title'] as String?,
-      acceptDeadlineMs: (m['accept_deadline_ms'] as num?)?.toInt(),
-    );
-  }
-
   /// Checks all challenges for lifecycle transitions that should happen:
   /// 1. Scheduled pending challenges whose start time has arrived → activate
   /// 2. Active challenges whose window has expired → settle via backend EF
@@ -293,24 +193,11 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
     }
   }
 
-  /// Delegates challenge evaluation+settlement to the server-side EF,
-  /// which has access to all participants' progress data.
+  /// Delegates challenge settlement to the backend.
   /// Falls back to local evaluation only if backend is unreachable.
   Future<void> _settleViaBackend(String challengeId) async {
-    if (AppConfig.isSupabaseReady) {
-      try {
-        await Supabase.instance.client.functions
-            .invoke('settle-challenge', body: {'challenge_id': challengeId})
-            .timeout(const Duration(seconds: 15));
-        AppLogger.info('Challenge $challengeId settled via backend', tag: _tag);
-        return;
-      } catch (e) {
-        AppLogger.warn(
-          'Backend settle failed for $challengeId, falling back to local: $e',
-          tag: _tag,
-        );
-      }
-    }
+    final handled = await _remote.settleChallenge(challengeId);
+    if (handled) return;
 
     // Fallback: local evaluation (may have incomplete data)
     final nowMs = DateTime.now().millisecondsSinceEpoch;
@@ -375,10 +262,8 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
     }
   }
 
-  /// Sync challenge to Supabase with retry (up to 3 attempts, exponential backoff).
+  /// Sync a newly created challenge to the backend (fire-and-forget).
   void _syncChallengeToBackend(ChallengeEntity c, String creatorDisplayName) {
-    if (!AppConfig.isSupabaseReady) return;
-
     final dbType = switch (c.type) {
       ChallengeType.oneVsOne => 'one_vs_one',
       ChallengeType.group => 'group',
@@ -415,37 +300,7 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
       if (c.rules.maxParticipants != null) 'max_participants': c.rules.maxParticipants,
     };
 
-    _syncWithRetry(c.id, payload);
-  }
-
-  Future<void> _syncWithRetry(
-    String challengeId,
-    Map<String, dynamic> payload, {
-    int attempt = 1,
-    int maxAttempts = 3,
-  }) async {
-    try {
-      await Supabase.instance.client.functions
-          .invoke('challenge-create', body: payload)
-          .timeout(const Duration(seconds: 15));
-      AppLogger.info('Challenge $challengeId synced to backend (attempt $attempt)', tag: _tag);
-    } catch (e) {
-      if (attempt < maxAttempts) {
-        final delay = Duration(seconds: attempt * 2);
-        AppLogger.warn(
-          'Challenge sync attempt $attempt failed, retrying in ${delay.inSeconds}s: $e',
-          tag: _tag,
-        );
-        await Future.delayed(delay);
-        await _syncWithRetry(challengeId, payload,
-            attempt: attempt + 1, maxAttempts: maxAttempts);
-      } else {
-        AppLogger.error(
-          'Challenge $challengeId sync failed after $maxAttempts attempts: $e',
-          tag: _tag,
-        );
-      }
-    }
+    _remote.syncNewChallenge(payload);
   }
 
   Future<void> _onInvite(

@@ -4,6 +4,7 @@ import 'package:omni_runner/domain/entities/group_entity.dart';
 import 'package:omni_runner/presentation/blocs/groups/groups_bloc.dart';
 import 'package:omni_runner/presentation/blocs/groups/groups_event.dart';
 import 'package:omni_runner/presentation/blocs/groups/groups_state.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 
 class GroupsScreen extends StatelessWidget {
   const GroupsScreen({super.key});
@@ -12,9 +13,10 @@ class GroupsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Grupos'),
+        title: Text(context.l10n.groups),
         actions: [
           IconButton(
+            tooltip: context.l10n.retry,
             icon: const Icon(Icons.refresh),
             onPressed: () =>
                 context.read<GroupsBloc>().add(const RefreshGroups()),

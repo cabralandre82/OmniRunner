@@ -227,6 +227,15 @@ serve(async (req: Request) => {
   const lifetimeSessions = progress.lifetime_session_count + 1;
   const lifetimeMovingMs = progress.lifetime_moving_ms + movingMs;
 
+  // Resolve user's group for coin traceability
+  const { data: memberRow } = await db
+    .from("coaching_members")
+    .select("group_id")
+    .eq("user_id", user_id)
+    .limit(1)
+    .maybeSingle();
+  const userGroupId: string | null = memberRow?.group_id ?? null;
+
   for (const badge of allBadges) {
     if (alreadyAwarded.has(badge.id)) continue;
 
@@ -274,6 +283,7 @@ serve(async (req: Request) => {
         delta_coins: badge.coins_reward,
         reason: "badge_reward",
         ref_id: badge.id,
+        issuer_group_id: userGroupId,
         created_at_ms: nowMs,
       });
       totalCoinsAwarded += badge.coins_reward;

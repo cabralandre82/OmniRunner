@@ -1,0 +1,13 @@
+{
+  "name": "omni-runner",
+  "private": true,
+  "description": "Omni Runner — plataforma de corrida com gamificação e coaching",
+  "scripts": {
+    "prepare": "npx lefthook install"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.4.2",
+    "@commitlint/config-conventional": "^20.4.2",
+    "lefthook": "^2.1.1"
+  }
+}

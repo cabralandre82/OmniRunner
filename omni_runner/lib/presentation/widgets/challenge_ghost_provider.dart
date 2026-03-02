@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 
 /// Fetches an opponent's running progress during an active challenge.
 ///
@@ -62,7 +63,8 @@ class ChallengeGhostProvider {
         lastSyncMs: lastSyncMs,
         isOffline: isStale,
       ));
-    } on Exception catch (_) {
+    } on Exception catch (e) {
+      AppLogger.warn('Caught error', tag: 'ChallengeGhostProvider', error: e);
       // Silently fail — overlay shows stale indicator
     }
   }

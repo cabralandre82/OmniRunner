@@ -35,10 +35,21 @@ omni_runner/android/*.keystore
 omni_runner/ios/Pods/
 omni_runner/ios/.symlinks/
 
+# Root (commitlint, lefthook)
+node_modules/
+
 # Portal (Next.js)
 portal/node_modules/
 portal/.next/
 portal/.env.local
+portal/coverage/
+
+# Flutter test coverage
+omni_runner/coverage/
 
 # Supabase local
 supabase/.temp/
+
+# OS
+.DS_Store
+Thumbs.db

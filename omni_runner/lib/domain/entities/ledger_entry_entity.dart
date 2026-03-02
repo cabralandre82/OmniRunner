@@ -176,6 +176,12 @@ final class LedgerEntryEntity extends Equatable {
   /// - [LedgerReason.prDistance] / [LedgerReason.prPace] → session ID
   final String? refId;
 
+  /// The assessoria (group) that originally issued/emitted these coins.
+  /// Used for interclub clearing: when coins are burned at a different
+  /// assessoria, the portal compensates the redeemer from the issuer's custody.
+  /// Null for legacy entries or system-generated transactions.
+  final String? issuerGroupId;
+
   /// When this transaction was recorded (ms since epoch, UTC).
   final int createdAtMs;
 
@@ -185,6 +191,7 @@ final class LedgerEntryEntity extends Equatable {
     required this.deltaCoins,
     required this.reason,
     this.refId,
+    this.issuerGroupId,
     required this.createdAtMs,
   });
 
@@ -198,6 +205,7 @@ final class LedgerEntryEntity extends Equatable {
         deltaCoins,
         reason,
         refId,
+        issuerGroupId,
         createdAtMs,
       ];
 }

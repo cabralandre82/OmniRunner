@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 
 const _tag = 'LeagueScreen';
 
@@ -92,10 +93,11 @@ class _LeagueScreenState extends State<LeagueScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Liga de Assessorias'),
+        title: Text(context.l10n.assessoriaLeague),
         backgroundColor: cs.inversePrimary,
         actions: [
           IconButton(
+            tooltip: context.l10n.retry,
             icon: const Icon(Icons.refresh),
             onPressed: _load,
           ),

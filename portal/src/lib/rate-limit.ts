@@ -1,7 +1,29 @@
 /**
- * Simple in-memory sliding-window rate limiter for API routes.
- * For production at scale, swap with Redis-based (e.g. @upstash/ratelimit).
+ * Pluggable sliding-window rate limiter for API routes.
+ *
+ * Default export is a synchronous in-memory limiter (zero-config).
+ * For production at scale, use createAsyncRateLimiter() with a
+ * Redis/Upstash store that implements RateLimitStore.
  */
+
+export interface RateLimitResult {
+  allowed: boolean;
+  remaining: number;
+  resetAt: number;
+}
+
+export interface RateLimitStore {
+  get(key: string): Promise<{ count: number; resetAt: number } | null>;
+  set(key: string, entry: { count: number; resetAt: number }): Promise<void>;
+  delete(key: string): Promise<void>;
+}
+
+interface RateLimitOptions {
+  maxRequests?: number;
+  windowMs?: number;
+}
+
+// --- In-memory store (default, sync) ---
 
 interface Entry {
   count: number;
@@ -9,7 +31,6 @@ interface Entry {
 }
 
 const store = new Map<string, Entry>();
-
 const CLEANUP_INTERVAL = 60_000;
 let lastCleanup = Date.now();
 
@@ -22,15 +43,9 @@ function cleanup() {
   });
 }
 
-export interface RateLimitResult {
-  allowed: boolean;
-  remaining: number;
-  resetAt: number;
-}
-
 export function rateLimit(
   key: string,
-  { maxRequests = 10, windowMs = 60_000 } = {},
+  { maxRequests = 10, windowMs = 60_000 }: RateLimitOptions = {},
 ): RateLimitResult {
   cleanup();
   const now = Date.now();
@@ -47,4 +62,30 @@ export function rateLimit(
   }
 
   return { allowed: true, remaining: maxRequests - entry.count, resetAt: entry.resetAt };
+}
+
+// --- Async factory for distributed stores (Redis, Upstash, etc.) ---
+
+export function createAsyncRateLimiter(externalStore: RateLimitStore) {
+  return async function rateLimitAsync(
+    key: string,
+    { maxRequests = 10, windowMs = 60_000 }: RateLimitOptions = {},
+  ): Promise<RateLimitResult> {
+    const now = Date.now();
+    const entry = await externalStore.get(key);
+
+    if (!entry || entry.resetAt <= now) {
+      await externalStore.set(key, { count: 1, resetAt: now + windowMs });
+      return { allowed: true, remaining: maxRequests - 1, resetAt: now + windowMs };
+    }
+
+    entry.count++;
+    await externalStore.set(key, entry);
+
+    if (entry.count > maxRequests) {
+      return { allowed: false, remaining: 0, resetAt: entry.resetAt };
+    }
+
+    return { allowed: true, remaining: maxRequests - entry.count, resetAt: entry.resetAt };
+  };
 }

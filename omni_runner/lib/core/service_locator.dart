@@ -1,3 +1,14 @@
+/// Dependency Injection container using GetIt (Service Locator pattern).
+///
+/// Registration order: Infrastructure → Datasources → Repositories →
+/// Use Cases → BLoCs. Each layer depends only on abstractions from
+/// the layer above (Clean Architecture).
+///
+/// - [registerSingleton]: single instance, created immediately
+/// - [registerLazySingleton]: single instance, created on first access
+/// - [registerFactory]: new instance on every access (BLoCs, stateful use cases)
+///
+/// Call [setupServiceLocator] once from `main.dart` before `runApp`.
 import 'package:get_it/get_it.dart';
 import 'package:isar/isar.dart';
 
@@ -60,17 +71,26 @@ import 'package:omni_runner/domain/repositories/i_coaching_group_repo.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_invite_repo.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_ranking_repo.dart';
-// TODO(phase-15): re-add when Isar impls are registered:
-// import 'package:omni_runner/domain/repositories/i_event_repo.dart';
 import 'package:omni_runner/domain/repositories/i_friendship_repo.dart';
+import 'package:omni_runner/domain/repositories/i_leaderboard_repo.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_leaderboard_repo.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_badges_remote_source.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_feed_remote_source.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_my_assessoria_remote_source.dart';
+import 'package:omni_runner/domain/repositories/i_feed_remote_source.dart';
+import 'package:omni_runner/domain/repositories/i_my_assessoria_remote_source.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_challenges_remote_source.dart';
+import 'package:omni_runner/domain/repositories/i_challenges_remote_source.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_progression_remote_source.dart';
+import 'package:omni_runner/domain/repositories/i_progression_remote_source.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_missions_remote_source.dart';
+import 'package:omni_runner/domain/repositories/i_badges_remote_source.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_wallet_remote_source.dart';
+import 'package:omni_runner/domain/repositories/i_missions_remote_source.dart';
+import 'package:omni_runner/domain/repositories/i_wallet_remote_source.dart';
 import 'package:omni_runner/data/repositories_impl/supabase_friendship_repo.dart';
 import 'package:omni_runner/domain/usecases/social/send_friend_invite.dart';
 import 'package:omni_runner/domain/usecases/social/accept_friend.dart';
-// import 'package:omni_runner/domain/repositories/i_group_repo.dart';
-// TODO(sprint-16.5+): re-add when Isar impls are registered:
-// import 'package:omni_runner/domain/repositories/i_race_event_repo.dart';
-// import 'package:omni_runner/domain/repositories/i_race_participation_repo.dart';
-// import 'package:omni_runner/domain/repositories/i_race_result_repo.dart';
 import 'package:omni_runner/domain/repositories/i_wallet_repo.dart';
 import 'package:omni_runner/domain/repositories/i_ledger_repo.dart';
 import 'package:omni_runner/data/repositories_impl/isar_coaching_group_repo.dart';
@@ -145,6 +165,7 @@ import 'package:omni_runner/data/repositories_impl/remote_switch_assessoria_repo
 import 'package:omni_runner/domain/repositories/i_token_intent_repo.dart';
 import 'package:omni_runner/data/repositories_impl/stub_token_intent_repo.dart';
 import 'package:omni_runner/data/repositories_impl/remote_token_intent_repo.dart';
+import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_bloc.dart';
 import 'package:omni_runner/presentation/blocs/athlete_evolution/athlete_evolution_bloc.dart';
 import 'package:omni_runner/presentation/blocs/badges/badges_bloc.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
@@ -153,21 +174,16 @@ import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_bloc.
 import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_bloc.dart';
 import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_bloc.dart';
 import 'package:omni_runner/presentation/blocs/coaching_rankings/coaching_rankings_bloc.dart';
-// TODO(phase-15): re-add when Social repos are registered:
-// import 'package:omni_runner/presentation/blocs/events/events_bloc.dart';
 import 'package:omni_runner/presentation/blocs/friends/friends_bloc.dart';
 import 'package:omni_runner/presentation/blocs/group_evolution/group_evolution_bloc.dart';
 import 'package:omni_runner/presentation/blocs/coach_insights/coach_insights_bloc.dart';
-// TODO(phase-15): re-add when Social repos are registered:
-// import 'package:omni_runner/presentation/blocs/groups/groups_bloc.dart';
-// TODO(sprint-16.5+): re-add when Race Event repos are registered:
-// import 'package:omni_runner/presentation/blocs/race_event_details/race_event_details_bloc.dart';
-// import 'package:omni_runner/presentation/blocs/race_events/race_events_bloc.dart';
 import 'package:omni_runner/presentation/blocs/leaderboards/leaderboards_bloc.dart';
 import 'package:omni_runner/presentation/blocs/missions/missions_bloc.dart';
 import 'package:omni_runner/presentation/blocs/progression/progression_bloc.dart';
-// TrackingBloc import removed (legacy GPS — DECISÃO 095)
+import 'package:omni_runner/presentation/blocs/verification/verification_bloc.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_bloc.dart';
+import 'package:omni_runner/domain/repositories/i_verification_remote_source.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_verification_remote_source.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -564,9 +580,13 @@ Future<void> setupServiceLocator() async {
   );
 
   // --- BLoCs ---
+  sl.registerLazySingleton<IChallengesRemoteSource>(
+    SupabaseChallengesRemoteSource.new,
+  );
   sl.registerFactory<ChallengesBloc>(
     () => ChallengesBloc(
       challengeRepo: sl<IChallengeRepo>(),
+      remote: sl<IChallengesRemoteSource>(),
       createChallenge: sl<CreateChallenge>(),
       joinChallenge: sl<JoinChallenge>(),
       cancelChallenge: sl<CancelChallenge>(),
@@ -575,26 +595,42 @@ Future<void> setupServiceLocator() async {
       settleChallenge: sl<SettleChallenge>(),
     ),
   );
+  sl.registerLazySingleton<IWalletRemoteSource>(
+    SupabaseWalletRemoteSource.new,
+  );
   sl.registerFactory<WalletBloc>(
     () => WalletBloc(
       walletRepo: sl<IWalletRepo>(),
       ledgerRepo: sl<ILedgerRepo>(),
+      remote: sl<IWalletRemoteSource>(),
     ),
+  );
+  sl.registerLazySingleton<IProgressionRemoteSource>(
+    SupabaseProgressionRemoteSource.new,
   );
   sl.registerFactory<ProgressionBloc>(
     () => ProgressionBloc(
       profileRepo: sl<IProfileProgressRepo>(),
       xpRepo: sl<IXpTransactionRepo>(),
+      remote: sl<IProgressionRemoteSource>(),
     ),
+  );
+  sl.registerLazySingleton<IBadgesRemoteSource>(
+    SupabaseBadgesRemoteSource.new,
   );
   sl.registerFactory<BadgesBloc>(
     () => BadgesBloc(
       awardRepo: sl<IBadgeAwardRepo>(),
+      remote: sl<IBadgesRemoteSource>(),
     ),
+  );
+  sl.registerLazySingleton<IMissionsRemoteSource>(
+    SupabaseMissionsRemoteSource.new,
   );
   sl.registerFactory<MissionsBloc>(
     () => MissionsBloc(
       progressRepo: sl<IMissionProgressRepo>(),
+      remote: sl<IMissionsRemoteSource>(),
     ),
   );
 
@@ -656,10 +692,14 @@ Future<void> setupServiceLocator() async {
       rankingRepo: sl<ICoachingRankingRepo>(),
     ),
   );
+  sl.registerLazySingleton<IMyAssessoriaRemoteSource>(
+    SupabaseMyAssessoriaRemoteSource.new,
+  );
   sl.registerFactory<MyAssessoriaBloc>(
     () => MyAssessoriaBloc(
       groupRepo: sl<ICoachingGroupRepo>(),
       memberRepo: sl<ICoachingMemberRepo>(),
+      remote: sl<IMyAssessoriaRemoteSource>(),
       switchAssessoria: sl<SwitchAssessoria>(),
     ),
   );
@@ -671,23 +711,6 @@ Future<void> setupServiceLocator() async {
   sl.registerFactory<CoachInsightsBloc>(
     () => CoachInsightsBloc(repo: sl<ICoachInsightRepo>()),
   );
-
-  // ── Race Event BLoCs ──
-  // TODO(sprint-16.5+): uncomment when Isar impls for IRaceEventRepo,
-  // IRaceParticipationRepo and IRaceResultRepo are registered.
-  // sl.registerFactory<RaceEventsBloc>(
-  //   () => RaceEventsBloc(
-  //     eventRepo: sl<IRaceEventRepo>(),
-  //     participationRepo: sl<IRaceParticipationRepo>(),
-  //   ),
-  // );
-  // sl.registerFactory<RaceEventDetailsBloc>(
-  //   () => RaceEventDetailsBloc(
-  //     eventRepo: sl<IRaceEventRepo>(),
-  //     participationRepo: sl<IRaceParticipationRepo>(),
-  //     resultRepo: sl<IRaceResultRepo>(),
-  //   ),
-  // );
 
   // ── Evolution BLoCs ──
   sl.registerFactory<AthleteEvolutionBloc>(
@@ -720,17 +743,29 @@ Future<void> setupServiceLocator() async {
       notifyRules: sl<NotificationRulesService>(),
     ),
   );
-  // TODO(phase-15): GroupsBloc and EventsBloc when repos are implemented.
-  // sl.registerFactory<GroupsBloc>(
-  //   () => GroupsBloc(groupRepo: sl<IGroupRepo>()),
-  // );
-  // sl.registerFactory<EventsBloc>(
-  //   () => EventsBloc(eventRepo: sl<IEventRepo>()),
-  // );
+  // --- Leaderboard ---
+  sl.registerLazySingleton<ILeaderboardRepo>(
+    SupabaseLeaderboardRepo.new,
+  );
   sl.registerFactory<LeaderboardsBloc>(
-    () => LeaderboardsBloc(),
+    () => LeaderboardsBloc(repo: sl<ILeaderboardRepo>()),
   );
 
-  // TrackingBloc removed (legacy GPS tracking — DECISÃO 095).
-  // All run data comes from Strava sync, not in-app GPS.
+  // --- Assessoria Feed ---
+  sl.registerLazySingleton<IFeedRemoteSource>(
+    SupabaseFeedRemoteSource.new,
+  );
+  sl.registerFactory<AssessoriaFeedBloc>(
+    () => AssessoriaFeedBloc(remote: sl<IFeedRemoteSource>()),
+  );
+
+  // --- Verification ---
+  sl.registerLazySingleton<IVerificationRemoteSource>(
+    () => SupabaseVerificationRemoteSource(
+      stravaFactory: () => sl<StravaConnectController>(),
+    ),
+  );
+  sl.registerFactory<VerificationBloc>(
+    () => VerificationBloc(remote: sl<IVerificationRemoteSource>()),
+  );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 export function DistributeButton({
   athleteId,
@@ -9,6 +10,9 @@ export function DistributeButton({
   athleteId: string;
   athleteName: string;
 }) {
+  const tc = useTranslations("common");
+  const ta = useTranslations("athletes");
+  const te = useTranslations("error");
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,7 +23,7 @@ export function DistributeButton({
   async function handleSubmit() {
     const num = parseInt(amount, 10);
     if (!num || num < 1 || num > 1000) {
-      setResult({ error: "Valor deve ser entre 1 e 1000" });
+        setResult({ error: te("generic") });
       return;
     }
 
@@ -42,10 +46,10 @@ export function DistributeButton({
           setResult(null);
         }, 1500);
       } else {
-        setResult({ error: data.error ?? "Erro desconhecido" });
+        setResult({ error: data.error ?? te("generic") });
       }
     } catch {
-      setResult({ error: "Erro de conexão" });
+      setResult({ error: te("generic") });
     } finally {
       setLoading(false);
     }
@@ -57,7 +61,7 @@ export function DistributeButton({
         onClick={() => setOpen(true)}
         className="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100"
       >
-        Distribuir
+        {ta("distribute")}
       </button>
     );
   }
@@ -79,7 +83,7 @@ export function DistributeButton({
         disabled={loading}
         className="rounded-lg bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
       >
-        {loading ? "..." : "Enviar"}
+        {loading ? "..." : tc("confirm")}
       </button>
       <button
         onClick={() => {
@@ -88,7 +92,7 @@ export function DistributeButton({
         }}
         className="text-xs text-gray-400 hover:text-gray-600"
       >
-        Cancelar
+        {tc("cancel")}
       </button>
       {result?.ok && (
         <span className="text-xs font-medium text-green-600">

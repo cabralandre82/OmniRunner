@@ -39,7 +39,8 @@ class AutoSyncManager {
     try {
       final current = await _connectivity.checkConnectivity();
       _wasDisconnected = current.every((r) => r == ConnectivityResult.none);
-    } on Exception catch (_) {
+    } on Exception catch (e) {
+      AppLogger.warn('Caught error', tag: 'AutoSyncManager', error: e);
       _wasDisconnected = false;
     }
 

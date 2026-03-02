@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
@@ -44,7 +45,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
 
   final _feeCtrl = TextEditingController(text: '0');
   final _targetCtrl = TextEditingController();
-  final _verificationBloc = VerificationBloc()
+  final _verificationBloc = sl<VerificationBloc>()
     ..add(const LoadVerificationState());
 
   ChallengeGoal _goal = ChallengeGoal.fastestAtDistance;
@@ -80,7 +81,9 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
     try {
       final connected = await sl<StravaConnectController>().isConnected;
       if (mounted) setState(() => _stravaConnected = connected);
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.warn('Unexpected error', tag: 'MatchmakingScreen', error: e);
+    }
   }
 
   Future<void> _loadAssessoriaMembers() async {
@@ -97,7 +100,8 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
             .eq('role', 'atleta')
             .maybeSingle();
         groupId = row?['group_id'] as String?;
-      } catch (_) {
+      } catch (e) {
+      AppLogger.warn('Caught error', tag: 'MatchmakingScreen', error: e);
         final memberships =
             await sl<ICoachingMemberRepo>().getByUserId(uid);
         groupId = memberships
@@ -128,7 +132,9 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
               .toList();
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.warn('Unexpected error', tag: 'MatchmakingScreen', error: e);
+    }
   }
 
   Future<void> _detectPreferredPark() async {
@@ -137,7 +143,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
           await sl<ISessionRepo>().getByStatus(WorkoutStatus.completed);
       if (runs.isEmpty) return;
 
-      final detector = ParkDetectionService(kBrazilianParksSeed);
+      const detector = ParkDetectionService(kBrazilianParksSeed);
       final parkCounts = <String, int>{};
 
       for (final run in runs.take(20)) {
@@ -164,7 +170,9 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
           });
         }
       }
-    } on Exception catch (_) {}
+    } on Exception catch (e) {
+      AppLogger.warn('Unexpected error', tag: 'MatchmakingScreen', error: e);
+    }
   }
 
   @override
@@ -304,7 +312,9 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
                     .eq('id', oppId)
                     .maybeSingle();
                 oppName = prof?['display_name'] as String? ?? oppName;
-              } on Exception catch (_) {}
+              } on Exception catch (e) {
+      AppLogger.warn('Unexpected error', tag: 'MatchmakingScreen', error: e);
+    }
             }
             if (!mounted) return;
             setState(() {
@@ -322,7 +332,8 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
           if (!mounted) return;
           _showError('Tempo esgotado. Nenhum oponente encontrado.');
         }
-      } on Exception catch (_) {
+      } on Exception catch (e) {
+      AppLogger.warn('Caught error', tag: 'MatchmakingScreen', error: e);
         // Polling failure — retry on next tick
       }
     });
@@ -335,7 +346,9 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
         'matchmake',
         body: {'action': 'cancel'},
       );
-    } on Exception catch (_) {}
+    } on Exception catch (e) {
+      AppLogger.warn('Unexpected error', tag: 'MatchmakingScreen', error: e);
+    }
     if (!mounted) return;
     setState(() => _state = _MatchState.setup);
   }
@@ -369,6 +382,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
           title: const Text('Encontrar Oponente'),
           leading: _state == _MatchState.searching
               ? IconButton(
+                  tooltip: context.l10n.cancel,
                   icon: const Icon(Icons.close),
                   onPressed: _cancelSearch,
                 )

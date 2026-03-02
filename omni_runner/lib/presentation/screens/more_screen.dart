@@ -7,6 +7,7 @@ import 'package:omni_runner/core/auth/auth_repository.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_bloc.dart';
 import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_event.dart';
 import 'package:omni_runner/presentation/screens/auth_gate.dart';
@@ -21,6 +22,7 @@ import 'package:omni_runner/presentation/screens/profile_screen.dart';
 import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_qr_hub_screen.dart';
 import 'package:omni_runner/presentation/screens/partner_assessorias_screen.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 
 
 /// Hub screen for secondary features: coaching, social, integrations, settings.
@@ -38,7 +40,7 @@ class MoreScreen extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mais'),
+        title: Text(context.l10n.more),
         backgroundColor: cs.inversePrimary,
       ),
       body: ListView(
@@ -121,7 +123,7 @@ class MoreScreen extends StatelessWidget {
           _header(context, 'Configurações'),
           _ActionTile(
             icon: Icons.tune,
-            title: 'Configurações',
+            title: context.l10n.settings,
             subtitle: _isStaff ? 'Aparência' : 'Strava, tema e unidades',
             pushScreen: SettingsScreen(isStaff: _isStaff),
           ),
@@ -142,7 +144,7 @@ class MoreScreen extends StatelessWidget {
 
           _ActionTile(
             icon: Icons.info_outline,
-            title: 'Sobre',
+            title: context.l10n.about,
             subtitle: 'Omni Runner',
             onTap: (ctx) async {
               final info = await PackageInfo.fromPlatform();
@@ -225,7 +227,7 @@ class MoreScreen extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: () => _signOut(context),
                   icon: const Icon(Icons.logout_rounded),
-                  label: const Text('Sair da conta'),
+                  label: Text(context.l10n.logout),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.red,
                     side: const BorderSide(color: Colors.red),
@@ -254,12 +256,12 @@ class MoreScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Sair'),
+            child: Text(context.l10n.logout),
           ),
         ],
       ),
@@ -294,7 +296,8 @@ class MoreScreen extends StatelessWidget {
       Navigator.of(context).push(MaterialPageRoute<void>(
         builder: (_) => PartnerAssessoriasScreen(groupId: staffRow['group_id'] as String),
       ));
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Caught error', tag: 'MoreScreen', error: e);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Erro ao carregar. Tente novamente.')),
@@ -343,7 +346,8 @@ class MoreScreen extends StatelessWidget {
       Navigator.of(context).push(MaterialPageRoute<void>(
         builder: (_) => StaffQrHubScreen(membership: membership),
       ));
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Caught error', tag: 'MoreScreen', error: e);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

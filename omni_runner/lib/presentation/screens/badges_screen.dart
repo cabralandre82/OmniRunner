@@ -6,6 +6,7 @@ import 'package:omni_runner/domain/entities/badge_entity.dart';
 import 'package:omni_runner/presentation/blocs/badges/badges_bloc.dart';
 import 'package:omni_runner/presentation/blocs/badges/badges_event.dart';
 import 'package:omni_runner/presentation/blocs/badges/badges_state.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 
 class BadgesScreen extends StatelessWidget {
@@ -15,9 +16,10 @@ class BadgesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Conquistas'),
+        title: Text(context.l10n.badges),
         actions: [
           IconButton(
+            tooltip: context.l10n.retry,
             icon: const Icon(Icons.refresh),
             onPressed: () =>
                 context.read<BadgesBloc>().add(const RefreshBadges()),

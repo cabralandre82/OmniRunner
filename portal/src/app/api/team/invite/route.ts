@@ -4,8 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { cookies } from "next/headers";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
-
-const STAFF_ROLES = ["professor", "assistente"];
+import { teamInviteSchema } from "@/lib/schemas";
 
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -41,19 +40,15 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const email = (body.email ?? "").trim().toLowerCase();
-  const memberRole = body.role ?? "";
-
-  if (!email || !email.includes("@")) {
-    return NextResponse.json({ error: "E-mail inválido" }, { status: 400 });
-  }
-
-  if (!STAFF_ROLES.includes(memberRole)) {
+  const parsed = teamInviteSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: `Role deve ser: ${STAFF_ROLES.join(", ")}` },
+      { error: parsed.error.issues[0].message },
       { status: 400 },
     );
   }
+  const email = parsed.data.email.trim().toLowerCase();
+  const memberRole = parsed.data.role;
 
   const { data: lookup, error: lookupErr } = await db
     .rpc("fn_get_user_id_by_email", { p_email: email })

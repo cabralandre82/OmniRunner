@@ -30,6 +30,7 @@ import 'package:omni_runner/presentation/screens/league_screen.dart';
 import 'package:omni_runner/presentation/screens/running_dna_screen.dart';
 import 'package:omni_runner/presentation/screens/wallet_screen.dart';
 import 'package:omni_runner/presentation/screens/wrapped_screen.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 
 /// Hub listing all gamification / progress features.
 ///
@@ -44,7 +45,7 @@ class ProgressHubScreen extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Meu Progresso'),
+        title: Text(context.l10n.progression),
         backgroundColor: cs.inversePrimary,
       ),
       body: ListView(
@@ -322,7 +323,7 @@ class _Tile extends StatelessWidget {
       }
 
       final page = BlocProvider<AssessoriaFeedBloc>(
-        create: (_) => AssessoriaFeedBloc()..add(LoadFeed(groupId)),
+        create: (_) => sl<AssessoriaFeedBloc>()..add(LoadFeed(groupId)),
         child: const AssessoriaFeedScreen(),
       );
       nav.push(MaterialPageRoute<void>(builder: (_) => page));

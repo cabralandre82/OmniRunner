@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatBRL } from "@/lib/format";
 
 interface Product {
   id: string;
@@ -21,13 +22,6 @@ interface AutoTopupFormProps {
   currentSettings: TopupSettings | null;
   products: Product[];
   hasStripePaymentMethod?: boolean;
-}
-
-function formatBRL(cents: number): string {
-  return (cents / 100).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
 }
 
 export function AutoTopupForm({ currentSettings, products, hasStripePaymentMethod }: AutoTopupFormProps) {

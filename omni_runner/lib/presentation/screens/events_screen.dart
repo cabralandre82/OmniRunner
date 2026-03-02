@@ -5,6 +5,7 @@ import 'package:omni_runner/domain/entities/event_participation_entity.dart';
 import 'package:omni_runner/presentation/blocs/events/events_bloc.dart';
 import 'package:omni_runner/presentation/blocs/events/events_event.dart';
 import 'package:omni_runner/presentation/blocs/events/events_state.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 
 class EventsScreen extends StatelessWidget {
   const EventsScreen({super.key});
@@ -13,9 +14,10 @@ class EventsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Eventos'),
+        title: Text(context.l10n.events),
         actions: [
           IconButton(
+            tooltip: context.l10n.retry,
             icon: const Icon(Icons.refresh),
             onPressed: () =>
                 context.read<EventsBloc>().add(const RefreshEvents()),

@@ -3,6 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
+import {
+  platformProductCreateSchema,
+  platformProductToggleSchema,
+  platformProductUpdateSchema,
+  platformProductDeleteSchema,
+} from "@/lib/schemas";
 
 async function requirePlatformAdmin() {
   const supabase = createClient();
@@ -45,21 +51,21 @@ export async function POST(req: NextRequest) {
   const admin = createAdminClient();
 
   if (body.action === "create") {
-    const { name, description, credits_amount, price_cents, sort_order } = body;
-
-    if (!name || !credits_amount || !price_cents) {
+    const parsed = platformProductCreateSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: parsed.error.issues[0]?.message ?? "Invalid input" },
         { status: 400 },
       );
     }
+    const { name, description, credits_amount, price_cents, sort_order } = parsed.data;
 
     const { error } = await admin.from("billing_products").insert({
       name,
-      description: description || "",
+      description,
       credits_amount,
       price_cents,
-      sort_order: sort_order ?? 0,
+      sort_order,
     });
 
     if (error) {
@@ -71,14 +77,14 @@ export async function POST(req: NextRequest) {
   }
 
   if (body.action === "toggle_active") {
-    const { product_id, is_active } = body;
-
-    if (!product_id) {
+    const parsed = platformProductToggleSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Missing product_id" },
+        { error: parsed.error.issues[0]?.message ?? "Invalid input" },
         { status: 400 },
       );
     }
+    const { product_id, is_active } = parsed.data;
 
     const { error } = await admin
       .from("billing_products")
@@ -94,14 +100,14 @@ export async function POST(req: NextRequest) {
   }
 
   if (body.action === "update") {
-    const { product_id, name, description, credits_amount, price_cents, sort_order } = body;
-
-    if (!product_id) {
+    const parsed = platformProductUpdateSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Missing product_id" },
+        { error: parsed.error.issues[0]?.message ?? "Invalid input" },
         { status: 400 },
       );
     }
+    const { product_id, name, description, credits_amount, price_cents, sort_order } = parsed.data;
 
     const updatePayload: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
@@ -126,14 +132,14 @@ export async function POST(req: NextRequest) {
   }
 
   if (body.action === "delete") {
-    const { product_id } = body;
-
-    if (!product_id) {
+    const parsed = platformProductDeleteSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Missing product_id" },
+        { error: parsed.error.issues[0]?.message ?? "Invalid input" },
         { status: 400 },
       );
     }
+    const { product_id } = parsed.data;
 
     const { error } = await admin
       .from("billing_products")

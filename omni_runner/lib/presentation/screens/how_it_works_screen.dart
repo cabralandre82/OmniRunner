@@ -67,8 +67,8 @@ class HowItWorksScreen extends StatelessWidget {
               ),
               _InfoCard(
                 title: 'Para que servem?',
-                body: 'Use como inscrição em desafios com aposta. '
-                    'O valor da inscrição de todos os participantes forma '
+                body: 'Use como inscrição em desafios com aposta de coins. '
+                    'As OmniCoins de todos os participantes formam '
                     'o pool — o vencedor leva tudo!\n\n'
                     'Desafios sem inscrição (gratuitos) também existem e '
                     'são abertos a todos.',
@@ -77,7 +77,7 @@ class HowItWorksScreen extends StatelessWidget {
                 title: 'Importante',
                 body: 'OmniCoins não podem ser transferidas entre usuários.\n'
                     'São debitadas no momento em que você entra no desafio.\n'
-                    'Se o desafio for cancelado, o valor é devolvido.',
+                    'Se o desafio for cancelado, as coins são devolvidas.',
               ),
             ],
           ),

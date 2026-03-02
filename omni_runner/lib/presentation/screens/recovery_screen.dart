@@ -4,6 +4,7 @@ import 'package:omni_runner/core/utils/format_pace.dart';
 import 'package:omni_runner/domain/entities/workout_metrics_entity.dart';
 import 'package:omni_runner/domain/entities/workout_status.dart';
 import 'package:omni_runner/domain/usecases/recover_active_session.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 
 /// Screen shown when a previous active session is found on app start.
 ///
@@ -30,7 +31,7 @@ class RecoveryScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sessão encontrada'),
+        title: Text(context.l10n.recoverSession),
         backgroundColor: theme.colorScheme.inversePrimary,
       ),
       body: Padding(
@@ -72,7 +73,7 @@ class RecoveryScreen extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: () => _confirmDiscard(context),
               icon: const Icon(Icons.delete_outline),
-              label: const Text('Descartar sessão'),
+              label: Text(context.l10n.discardSession),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.red,
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -94,9 +95,9 @@ class RecoveryScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _row('Distância', '$distKm km'),
+            _row(context.l10n.distance, '$distKm km'),
             const Divider(),
-            _row('Pace', pace),
+            _row(context.l10n.pace, pace),
             const Divider(),
             _row('Pontos GPS', '$pts'),
             const Divider(),
@@ -134,7 +135,7 @@ class RecoveryScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancelar'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -142,7 +143,7 @@ class RecoveryScreen extends StatelessWidget {
               onDiscard();
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Descartar'),
+            child: Text(context.l10n.discardRun),
           ),
         ],
       ),

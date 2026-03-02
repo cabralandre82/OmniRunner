@@ -1,7 +1,9 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
 import { DistributeButton } from "./distribute-button";
 
+export const metadata: Metadata = { title: "Atletas" };
 export const dynamic = "force-dynamic";
 
 interface Athlete {
@@ -23,29 +25,10 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   UNVERIFIED: { label: "Sem status", color: "bg-gray-100 text-gray-600" },
 };
 
-function formatKm(meters: number): string {
-  return (meters / 1000).toLocaleString("pt-BR", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  });
-}
+import { formatKm, formatDateISO, formatDateMs } from "@/lib/format";
 
-function formatDate(iso: string | null): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function formatJoinDate(ms: number): string {
-  return new Date(ms).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
+const formatDate = formatDateISO;
+const formatJoinDate = formatDateMs;
 
 export default async function AthletesPage() {
   const groupId = cookies().get("portal_group_id")?.value;

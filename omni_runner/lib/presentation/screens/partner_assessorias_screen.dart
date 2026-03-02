@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 
 class PartnerAssessoriasScreen extends StatefulWidget {
   final String groupId;
@@ -509,7 +510,8 @@ class _SearchAssessoriaDialogState extends State<_SearchAssessoriaDialog> {
             .toList();
         _searching = false;
       });
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Caught error', tag: 'PartnerAssessoriasScreen', error: e);
       if (!mounted) return;
       setState(() => _searching = false);
     }

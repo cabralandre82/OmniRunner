@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 
 /// Displays a persistent QR code for an assessoria invite link.
 ///
@@ -59,7 +60,9 @@ class _InviteQrScreenState extends State<InviteQrScreen> {
         _inviteEnabled = (row?['invite_enabled'] as bool?) ?? true;
         _memberCount = (countRes as List?)?.length;
       });
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.warn('Unexpected error', tag: 'InviteQrScreen', error: e);
+    }
   }
 
   @override

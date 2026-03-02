@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 
 /// Global banner that appears at the top of the screen when there is no
 /// internet connection. Automatically hides when connectivity is restored.
@@ -37,7 +39,8 @@ class _NoConnectionBannerState extends State<NoConnectionBanner> {
           _offline = result.every((r) => r == ConnectivityResult.none);
         });
       }
-    } on Exception catch (_) {
+    } on Exception catch (e) {
+      AppLogger.warn('Caught error', tag: 'NoConnectionBanner', error: e);
       // Can't determine — assume connected.
     }
   }
@@ -64,20 +67,23 @@ class _NoConnectionBannerState extends State<NoConnectionBanner> {
           duration: const Duration(milliseconds: 300),
           height: _offline ? null : 0,
           child: _offline
-              ? MaterialBanner(
+              ? Semantics(
+                  liveRegion: true,
+                  label: context.l10n.errorNoConnection,
+                  child: MaterialBanner(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 8,
                   ),
                   backgroundColor: Colors.orange.shade800,
-                  content: const Text(
-                    'Sem conexão com a internet. '
-                    'Alguns recursos podem não funcionar.',
-                    style: TextStyle(color: Colors.white, fontSize: 13),
+                  content: Text(
+                    context.l10n.errorNoConnectionDetailed,
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
                   ),
                   leading:
                       const Icon(Icons.wifi_off, color: Colors.white, size: 20),
                   actions: const [SizedBox.shrink()],
+                ),
                 )
               : const SizedBox.shrink(),
         ),

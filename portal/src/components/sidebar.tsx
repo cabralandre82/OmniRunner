@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -12,9 +13,10 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", roles: ["admin_master", "professor", "assistente"] },
-  { href: "/credits", label: "Créditos", roles: ["admin_master", "professor", "assistente"] },
+  { href: "/custody", label: "Custódia", roles: ["admin_master"] },
+  { href: "/clearing", label: "Compensações", roles: ["admin_master", "professor"] },
+  { href: "/swap", label: "Swap de Lastro", roles: ["admin_master"] },
   { href: "/distributions", label: "Distribuições", roles: ["admin_master", "professor"] },
-  { href: "/billing", label: "Faturamento", roles: ["admin_master"] },
   { href: "/athletes", label: "Atletas", roles: ["admin_master", "professor", "assistente"] },
   { href: "/verification", label: "Verificação", roles: ["admin_master", "professor", "assistente"] },
   { href: "/engagement", label: "Engajamento", roles: ["admin_master", "professor", "assistente"] },
@@ -58,8 +60,7 @@ export function Sidebar({
       <div className="px-4 py-5 flex items-center justify-between" style={{ marginTop: "-3.5rem" }}>
         <div className="flex items-center gap-2.5 min-w-0">
           {logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt="Logo" className="h-8 w-8 rounded-lg object-cover flex-shrink-0" />
+            <Image src={logoUrl} alt="Logo" width={32} height={32} className="rounded-lg object-cover flex-shrink-0" />
           ) : (
             <span
               className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold text-white flex-shrink-0"

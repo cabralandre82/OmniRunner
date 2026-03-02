@@ -313,6 +313,7 @@ export default async function PlatformDashboard() {
           <QuickLink href="/platform/produtos" title="Produtos" icon="📦" />
           <QuickLink href="/platform/conquistas" title="Conquistas" icon="🏅" />
           <QuickLink href="/platform/support" title="Suporte" icon="💬" />
+          <QuickLink href="/platform/feature-flags" title="Feature Flags" icon="🚀" />
         </div>
       </div>
     </div>

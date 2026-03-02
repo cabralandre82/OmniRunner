@@ -1,7 +1,9 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
+export const metadata: Metadata = { title: "Configurações" };
 export const dynamic = "force-dynamic";
 import { trackBillingEvent } from "@/lib/analytics";
 import { InviteForm } from "./invite-form";
@@ -10,6 +12,7 @@ import { PortalButton } from "./portal-button";
 import { AutoTopupForm } from "./auto-topup-form";
 import { GatewaySelector } from "./gateway-selector";
 import { BrandingForm } from "./branding-form";
+import { formatDateMs } from "@/lib/format";
 
 const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   admin_master: { label: "Admin", color: "bg-purple-100 text-purple-800" },
@@ -20,13 +23,7 @@ const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   athlete:      { label: "Atleta", color: "bg-green-100 text-green-800" },
 };
 
-function formatDate(ms: number): string {
-  return new Date(ms).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
+const formatDate = formatDateMs;
 
 interface Member {
   id: string;

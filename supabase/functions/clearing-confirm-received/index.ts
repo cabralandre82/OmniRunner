@@ -168,6 +168,7 @@ serve(async (req: Request) => {
         delta_coins: item.amount,
         reason: "challenge_prize_cleared",
         ref_id: item.challenge_id,
+        issuer_group_id: cc.to_group_id,
         created_at_ms: nowMs,
       });
 

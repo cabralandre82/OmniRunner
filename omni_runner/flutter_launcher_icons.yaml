@@ -1,0 +1,18 @@
+# Generate icons: flutter pub run flutter_launcher_icons
+#
+# Before running, place your 1024x1024 icon at:
+#   assets/icon/app_icon.png
+#
+# For adaptive icons (Android 8+), also place:
+#   assets/icon/app_icon_foreground.png (with safe zone padding)
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  adaptive_icon_background: "#2563EB"
+  min_sdk_android: 21
+  remove_alpha_ios: true
+  web:
+    generate: false

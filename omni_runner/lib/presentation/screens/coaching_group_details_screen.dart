@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:omni_runner/domain/entities/coaching_group_entity.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
@@ -308,7 +309,7 @@ class _HeaderCard extends StatelessWidget {
                   radius: 28,
                   backgroundColor: theme.colorScheme.primaryContainer,
                   backgroundImage: group.logoUrl != null
-                      ? NetworkImage(group.logoUrl!)
+                      ? CachedNetworkImageProvider(group.logoUrl!)
                       : null,
                   child: group.logoUrl == null
                       ? Icon(Icons.sports,

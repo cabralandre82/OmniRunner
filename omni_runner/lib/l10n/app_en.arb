@@ -1,0 +1,227 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Omni Runner",
+
+  "dashboard": "Home",
+  "runs": "Runs",
+  "challenges": "Challenges",
+  "social": "Social",
+  "profile": "Profile",
+  "settings": "Settings",
+  "more": "More",
+  "history": "History",
+  "progression": "Progression",
+  "wallet": "Wallet",
+  "leaderboards": "Leaderboards",
+  "verification": "Verification",
+  "diagnostics": "Diagnostics",
+  "support": "Support",
+  "howItWorks": "How it works",
+
+  "startRun": "Start run",
+  "stopRun": "Stop run",
+  "pauseRun": "Pause run",
+  "resumeRun": "Resume run",
+  "finishRun": "Finish run",
+  "discardRun": "Discard run",
+  "runSummary": "Run summary",
+  "replay": "Run replay",
+  "gpsPoints": "{count} GPS points recorded",
+  "@gpsPoints": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "distance": "Distance",
+  "pace": "Pace",
+  "avgPace": "Avg pace",
+  "duration": "Duration",
+  "calories": "Calories",
+  "elevation": "Elevation",
+  "heartRate": "Heart Rate",
+  "avgHeartRate": "Avg HR",
+  "maxHeartRate": "Max HR",
+  "cadence": "Cadence",
+
+  "km": "km",
+  "minPerKm": "min/km",
+  "bpm": "bpm",
+
+  "today": "Today",
+  "thisWeek": "This week",
+  "thisMonth": "This month",
+  "allTime": "All time",
+  "daily": "Daily",
+  "weekly": "Weekly",
+  "monthly": "Monthly",
+
+  "noRunsYet": "No runs yet",
+  "noRunsYetDescription": "Start your first run and track your progress!",
+  "noDataYet": "No data yet",
+  "noResultsFound": "No results found",
+
+  "noChallengesYet": "No active challenges",
+  "noChallengesYetDescription": "Create or accept a challenge to compete with friends.",
+  "challengeDetails": "Challenge details",
+
+  "createChallenge": "Create challenge",
+  "joinChallenge": "Join challenge",
+  "challengeActive": "Active",
+  "challengeCompleted": "Completed",
+  "challengePending": "Pending",
+  "challengeCancelled": "Cancelled",
+  "challengeExpired": "Expired",
+
+  "groups": "Groups",
+  "events": "Events",
+  "friends": "Friends",
+  "members": "Members",
+  "rankings": "Rankings",
+
+  "createGroup": "Create group",
+  "joinGroup": "Join group",
+  "leaveGroup": "Leave group",
+  "groupDetails": "Group details",
+  "inviteCode": "Invite code",
+
+  "coins": "Coins",
+  "xp": "XP",
+  "level": "Level",
+  "badges": "Badges",
+  "missions": "Missions",
+  "streak": "Streak",
+  "streakDays": "{count} days",
+  "@streakDays": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "coaching": "Coaching",
+  "myCoach": "My coach",
+  "switchCoach": "Switch coach",
+  "joinCoach": "Join a coach",
+  "coachInsights": "Insights",
+  "athleteEvolution": "Athlete evolution",
+  "groupEvolution": "Group evolution",
+
+  "errorGeneric": "Something went wrong. Please try again.",
+  "errorNoConnection": "No internet connection.",
+  "errorNoConnectionDetailed": "No internet connection. Some features may not work.",
+  "errorSessionExpired": "Your session has expired. Please log in again.",
+  "errorForbidden": "You don't have permission for this action.",
+  "errorNotFound": "Content not found.",
+  "errorServer": "Server error. Please try again in a few minutes.",
+  "errorTimeout": "The request took too long. Please try again.",
+
+  "retry": "Retry",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "confirm": "Confirm",
+  "close": "Close",
+  "done": "Done",
+  "next": "Next",
+  "back": "Back",
+  "loading": "Loading...",
+  "loadingContent": "Loading content",
+  "search": "Search",
+  "share": "Share",
+  "copy": "Copy",
+  "copied": "Copied!",
+  "edit": "Edit",
+  "add": "Add",
+  "remove": "Remove",
+  "refresh": "Refresh",
+  "seeAll": "See all",
+  "seeMore": "See more",
+
+  "darkMode": "Dark mode",
+  "lightMode": "Light mode",
+  "systemMode": "Follow system",
+  "theme": "Theme",
+  "audioCoach": "Audio coach",
+  "notifications": "Notifications",
+  "privacy": "Privacy",
+  "account": "Account",
+  "about": "About",
+  "version": "Version",
+
+  "logout": "Log out",
+  "logoutConfirm": "Are you sure you want to log out?",
+  "login": "Log in",
+  "signUp": "Sign up",
+  "continueWithGoogle": "Continue with Google",
+  "continueWithApple": "Continue with Apple",
+  "welcomeBack": "Welcome back!",
+
+  "verified": "Verified",
+  "unverified": "Unverified",
+  "pending": "Pending",
+  "approved": "Approved",
+  "rejected": "Rejected",
+  "suspended": "Suspended",
+
+  "personalRecord": "Personal record",
+  "newRecord": "New record!",
+  "bestPace": "Best pace",
+  "longestRun": "Longest run",
+  "totalSessions": "Total sessions",
+  "totalDistance": "Total distance",
+
+  "recoverSession": "Recover session",
+  "recoverSessionDescription": "A previous session was not finished. Would you like to recover it?",
+  "resumeSession": "Resume",
+  "discardSession": "Discard",
+
+  "distanceFormatKm": "{distance} km",
+  "@distanceFormatKm": {
+    "placeholders": {
+      "distance": { "type": "String" }
+    }
+  },
+
+  "paceFormat": "{pace} min/km",
+  "@paceFormat": {
+    "placeholders": {
+      "pace": { "type": "String" }
+    }
+  },
+
+  "levelFormat": "Level {level}",
+  "@levelFormat": {
+    "placeholders": {
+      "level": { "type": "int" }
+    }
+  },
+
+  "coinsFormat": "{count} coins",
+  "@coinsFormat": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "sessionCount": "{count, plural, =0{No sessions} =1{1 session} other{{count} sessions}}",
+  "@sessionCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "myAssessoria": "My Coach",
+  "switchAssessoria": "Switch Coach",
+  "assessoriaFeed": "Coach Feed",
+  "consistency": "Consistency",
+  "myEvolution": "My Evolution",
+  "myRunnerDna": "My Runner DNA",
+  "assessoriaLeague": "Coach League",
+  "newTicket": "New ticket",
+  "runDetails": "Run details",
+  "inviteCode": "Invite code",
+  "inviteFriends": "Invite friends",
+  "myFriends": "My Friends",
+  "wrapped": "Year in Review"
+}

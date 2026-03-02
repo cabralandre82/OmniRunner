@@ -157,6 +157,14 @@ final class _FakeHttpClient implements StravaHttpClient {
       http.Response('{}', 200);
 
   @override
+  Future<List<Map<String, dynamic>>> getAthleteActivities({
+    required String accessToken,
+    int perPage = 20,
+    int page = 1,
+  }) async =>
+      [];
+
+  @override
   void close() {}
 
   static Map<String, dynamic> _validTokenResponse({

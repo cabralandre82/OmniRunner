@@ -61,6 +61,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
@@ -83,6 +84,7 @@ import 'package:omni_runner/presentation/screens/challenge_details_screen.dart';
 import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/widgets/run_share_card.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 
 class TodayScreen extends StatefulWidget {
@@ -126,7 +128,9 @@ class _TodayScreenState extends State<TodayScreen> {
       try {
         await Supabase.instance.client
             .rpc('recalculate_profile_progress', params: {'p_user_id': uid});
-      } catch (_) {}
+      } catch (e) {
+        AppLogger.debug('recalculate_profile_progress failed', tag: 'Today', error: e);
+      }
 
       // Profile progress: Supabase first (authoritative), fallback to Isar
       ProfileProgressEntity profile;
@@ -165,7 +169,8 @@ class _TodayScreenState extends State<TodayScreen> {
         } else {
           profile = await sl<IProfileProgressRepo>().getByUserId(uid);
         }
-      } catch (_) {
+      } catch (e) {
+        AppLogger.debug('Profile fetch offline, using Isar', tag: 'Today', error: e);
         profile = await sl<IProfileProgressRepo>().getByUserId(uid);
       }
 
@@ -192,7 +197,9 @@ class _TodayScreenState extends State<TodayScreen> {
         remoteCompleted = (rows as List)
             .map((r) => _remoteSessionToEntity(r))
             .toList();
-      } catch (_) {}
+      } catch (e) {
+        AppLogger.debug('Remote sessions fetch failed', tag: 'Today', error: e);
+      }
 
       // Merge: use most recent from either source, deduplicate by id
       final merged = _mergeRuns(localCompleted, remoteCompleted);
@@ -241,14 +248,16 @@ class _TodayScreenState extends State<TodayScreen> {
             );
           }).toList();
         }
-      } catch (_) {
-        // Offline — fall back to local Isar
+      } catch (e) {
+        AppLogger.debug('Challenges fetch offline, using Isar', tag: 'Today', error: e);
         try {
           final all = await sl<IChallengeRepo>().getByUserId(uid);
           active = all
               .where((c) => c.status == ChallengeStatus.active)
               .toList();
-        } catch (_) {}
+        } catch (e2) {
+          AppLogger.warn('Isar challenges fallback failed', tag: 'Today', error: e2);
+        }
       }
 
       List<Map<String, dynamic>> champs = const [];
@@ -269,12 +278,14 @@ class _TodayScreenState extends State<TodayScreen> {
               .eq('status', 'active');
           champs = List<Map<String, dynamic>>.from(rows as List);
         }
-      } catch (_) {}
+      } catch (e) {
+        AppLogger.debug('Championships fetch failed', tag: 'Today', error: e);
+      }
 
       ParkEntity? park;
       final lastRun = merged.isNotEmpty ? merged.first : null;
       if (lastRun != null && lastRun.route.isNotEmpty) {
-        final detector = ParkDetectionService(kBrazilianParksSeed);
+        const detector = ParkDetectionService(kBrazilianParksSeed);
         final firstPoint = lastRun.route.first;
         park = detector.detectPark(firstPoint.lat, firstPoint.lng);
       }
@@ -292,7 +303,8 @@ class _TodayScreenState extends State<TodayScreen> {
       });
 
       _checkStreakAtRisk(uid, profile, lastRun);
-    } catch (_) {
+    } catch (e) {
+      AppLogger.error('Today data load failed', tag: 'Today', error: e);
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -373,7 +385,7 @@ class _TodayScreenState extends State<TodayScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Hoje'),
+        title: Text(context.l10n.today),
         backgroundColor: cs.inversePrimary,
       ),
       body: _loading
@@ -587,7 +599,7 @@ class _TodayScreenState extends State<TodayScreen> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: () => Navigator.pop(ctx, controller.text),
-                child: const Text('Salvar'),
+                child: Text(ctx.l10n.save),
               ),
             ),
           ],
@@ -980,17 +992,17 @@ class _RunRecapCard extends StatelessWidget {
             child: Row(
               children: [
                 _MetricTile(
-                  label: 'Distância',
+                  label: context.l10n.distance,
                   value: '${distKm.toStringAsFixed(2)} km',
                   icon: Icons.straighten,
                 ),
                 _MetricTile(
-                  label: 'Pace',
+                  label: context.l10n.pace,
                   value: '$paceMin:${paceSec.toString().padLeft(2, '0')} /km',
                   icon: Icons.speed,
                 ),
                 _MetricTile(
-                  label: 'Tempo',
+                  label: context.l10n.duration,
                   value: '$durMin:${durSec.toString().padLeft(2, '0')}',
                   icon: Icons.timer,
                 ),
@@ -1035,13 +1047,13 @@ class _RunRecapCard extends StatelessWidget {
                 TextButton.icon(
                   onPressed: onShare,
                   icon: const Icon(Icons.share, size: 18),
-                  label: const Text('Compartilhar'),
+                  label: Text(context.l10n.share),
                 ),
                 const SizedBox(width: 4),
                 TextButton.icon(
                   onPressed: onJournal,
                   icon: const Icon(Icons.edit_note, size: 18),
-                  label: const Text('Diário'),
+                  label: Text(context.l10n.history),
                 ),
               ],
             ),

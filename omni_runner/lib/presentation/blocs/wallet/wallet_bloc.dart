@@ -1,10 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:omni_runner/core/config/app_config.dart';
-import 'package:omni_runner/domain/entities/ledger_entry_entity.dart';
-import 'package:omni_runner/domain/entities/wallet_entity.dart';
 import 'package:omni_runner/domain/repositories/i_ledger_repo.dart';
+import 'package:omni_runner/domain/repositories/i_wallet_remote_source.dart';
 import 'package:omni_runner/domain/repositories/i_wallet_repo.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_event.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_state.dart';
@@ -12,14 +9,17 @@ import 'package:omni_runner/presentation/blocs/wallet/wallet_state.dart';
 class WalletBloc extends Bloc<WalletEvent, WalletState> {
   final IWalletRepo _walletRepo;
   final ILedgerRepo _ledgerRepo;
+  final IWalletRemoteSource _remote;
 
   String _userId = '';
 
   WalletBloc({
     required IWalletRepo walletRepo,
     required ILedgerRepo ledgerRepo,
+    required IWalletRemoteSource remote,
   })  : _walletRepo = walletRepo,
         _ledgerRepo = ledgerRepo,
+        _remote = remote,
         super(const WalletInitial()) {
     on<LoadWallet>(_onLoad);
     on<RefreshWallet>(_onRefresh);
@@ -44,64 +44,23 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
 
   Future<void> _fetch(Emitter<WalletState> emit) async {
     try {
-      await _syncFromServer();
-      await _syncLedger();
+      // Sync remote data to local repos (best-effort)
+      final remoteWallet = await _remote.fetchWallet(_userId);
+      if (remoteWallet != null) {
+        await _walletRepo.save(remoteWallet);
+      }
+
+      final remoteLedger = await _remote.fetchLedger(_userId);
+      for (final entry in remoteLedger) {
+        await _ledgerRepo.append(entry);
+      }
+
+      // Read from local repos (always available, even offline)
       final wallet = await _walletRepo.getByUserId(_userId);
       final history = await _ledgerRepo.getByUserId(_userId);
       emit(WalletLoaded(wallet: wallet, history: history));
     } on Exception catch (e) {
       emit(WalletError('Erro ao carregar OmniCoins: $e'));
-    }
-  }
-
-  /// Pulls the authoritative wallet balance from Supabase and persists to Isar.
-  Future<void> _syncFromServer() async {
-    if (!AppConfig.isSupabaseReady || _userId.isEmpty) return;
-    try {
-      final row = await Supabase.instance.client
-          .from('wallets')
-          .select('balance_coins, lifetime_earned_coins, lifetime_spent_coins')
-          .eq('user_id', _userId)
-          .maybeSingle();
-      if (row == null) return;
-      final remote = WalletEntity(
-        userId: _userId,
-        balanceCoins: (row['balance_coins'] as num?)?.toInt() ?? 0,
-        lifetimeEarnedCoins: (row['lifetime_earned_coins'] as num?)?.toInt() ?? 0,
-        lifetimeSpentCoins: (row['lifetime_spent_coins'] as num?)?.toInt() ?? 0,
-      );
-      await _walletRepo.save(remote);
-    } on Exception {
-      // Offline or error — fall back to local Isar data
-    }
-  }
-
-  /// Pulls coin_ledger entries from Supabase and persists to Isar.
-  Future<void> _syncLedger() async {
-    if (!AppConfig.isSupabaseReady || _userId.isEmpty) return;
-    try {
-      final rows = await Supabase.instance.client
-          .from('coin_ledger')
-          .select('id, user_id, delta_coins, reason, ref_id, created_at_ms')
-          .eq('user_id', _userId)
-          .order('created_at_ms', ascending: false)
-          .limit(200);
-      for (final r in rows) {
-        final reasonStr = r['reason'] as String? ?? '';
-        final reason = LedgerReason.fromSnakeCase(reasonStr);
-        if (reason == null) continue;
-        final entry = LedgerEntryEntity(
-          id: r['id'] as String,
-          userId: r['user_id'] as String,
-          deltaCoins: (r['delta_coins'] as num).toInt(),
-          reason: reason,
-          refId: r['ref_id'] as String? ?? '',
-          createdAtMs: (r['created_at_ms'] as num).toInt(),
-        );
-        await _ledgerRepo.append(entry);
-      }
-    } on Exception {
-      // Offline — use local data
     }
   }
 }

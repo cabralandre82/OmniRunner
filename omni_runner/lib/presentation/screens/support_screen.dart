@@ -4,6 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/presentation/screens/support_ticket_screen.dart';
+import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 
 class SupportScreen extends StatefulWidget {
   final String groupId;
@@ -38,7 +40,8 @@ class _SupportScreenState extends State<SupportScreen> {
           _loading = false;
         });
       }
-    } on Exception catch (_) {
+    } on Exception catch (e) {
+      AppLogger.warn('Caught error', tag: 'SupportScreen', error: e);
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -98,13 +101,13 @@ class _SupportScreenState extends State<SupportScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Suporte'),
+        title: Text(context.l10n.support),
         backgroundColor: cs.inversePrimary,
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _newTicket,
         icon: const Icon(Icons.add),
-        label: const Text('Novo chamado'),
+        label: Text(context.l10n.newTicket),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -308,7 +311,7 @@ class _NewTicketDialogState extends State<_NewTicketDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Novo chamado'),
+      title: Text(context.l10n.newTicket),
       content: Form(
         key: _formKey,
         child: Column(

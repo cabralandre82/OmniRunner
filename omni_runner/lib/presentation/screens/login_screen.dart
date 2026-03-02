@@ -6,6 +6,7 @@ import 'package:omni_runner/core/auth/auth_repository.dart';
 import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/failures/auth_failure.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 
 /// Login screen with social sign-in buttons (Google, Apple, Instagram, TikTok).
 ///
@@ -247,7 +248,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: OutlinedButton.icon(
                     onPressed: _signInWithGoogle,
                     icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
-                    label: const Text('Continuar com Google'),
+                    label: Text(context.l10n.continueWithGoogle),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.black87,
                       backgroundColor: Colors.white,
@@ -272,7 +273,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: FilledButton.icon(
                       onPressed: _signInWithApple,
                       icon: const Icon(Icons.apple_rounded, size: 26),
-                      label: const Text('Continuar com Apple'),
+                      label: Text(context.l10n.continueWithApple),
                       style: FilledButton.styleFrom(
                         backgroundColor: Colors.black,
                         foregroundColor: Colors.white,
@@ -386,7 +387,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Text(_isSignUp ? 'Criar conta' : 'Entrar'),
+                      child: Text(_isSignUp ? context.l10n.signUp : context.l10n.login),
                     ),
                   ),
                   Row(

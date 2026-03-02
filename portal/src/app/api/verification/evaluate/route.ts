@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { cookies } from "next/headers";
 import { auditLog } from "@/lib/audit";
+import { rateLimit } from "@/lib/rate-limit";
+import { verificationEvaluateSchema } from "@/lib/schemas";
 
 /**
  * POST /api/verification/evaluate
@@ -13,6 +15,11 @@ import { auditLog } from "@/lib/audit";
  * The athlete must belong to the caller's assessoria group.
  */
 export async function POST(request: Request) {
+  const rl = rateLimit(`verify-eval:${request.headers.get("x-forwarded-for") ?? "unknown"}`);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const supabase = createClient();
   const {
     data: { session },
@@ -41,14 +48,14 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const userId = body.user_id;
-
-  if (!userId || typeof userId !== "string") {
+  const parsed = verificationEvaluateSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "user_id is required" },
+      { error: parsed.error.issues[0].message },
       { status: 400 },
     );
   }
+  const userId = parsed.data.user_id;
 
   // Verify the athlete belongs to this group
   const { data: member } = await db

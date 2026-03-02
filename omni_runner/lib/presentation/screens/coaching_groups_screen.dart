@@ -6,6 +6,8 @@ import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_bloc.dart';
 import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_event.dart';
 import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_state.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/screens/coaching_group_details_screen.dart';
 
 class CoachingGroupsScreen extends StatelessWidget {
@@ -15,9 +17,10 @@ class CoachingGroupsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Assessorias'),
+        title: Text(context.l10n.coaching),
         actions: [
           IconButton(
+            tooltip: context.l10n.retry,
             icon: const Icon(Icons.refresh),
             onPressed: () => context
                 .read<CoachingGroupsBloc>()
@@ -128,7 +131,7 @@ class _CoachingGroupCard extends StatelessWidget {
                 radius: 24,
                 backgroundColor: theme.colorScheme.primaryContainer,
                 backgroundImage: group.logoUrl != null
-                    ? NetworkImage(group.logoUrl!)
+                    ? CachedNetworkImageProvider(group.logoUrl!)
                     : null,
                 child: group.logoUrl == null
                     ? Icon(Icons.sports,

@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/repositories/i_challenge_repo.dart';
 import 'package:omni_runner/presentation/screens/challenge_result_screen.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 
 /// Banner shown in [RunSummaryScreen] when the run was part of a challenge.
 ///
@@ -54,7 +55,9 @@ class _ChallengeSessionBannerState extends State<ChallengeSessionBanner> {
             });
             return;
           }
-        } catch (_) {}
+        } catch (e) {
+      AppLogger.warn('Unexpected error', tag: 'ChallengeSessionBanner', error: e);
+    }
       }
       if (!mounted || challenge == null) return;
 
@@ -68,7 +71,8 @@ class _ChallengeSessionBannerState extends State<ChallengeSessionBanner> {
             ? 'Desafio concluído! Veja o resultado.'
             : 'Sua corrida foi registrada no desafio. Resultado em breve.';
       });
-    } on Exception catch (_) {
+    } on Exception catch (e) {
+      AppLogger.warn('Caught error', tag: 'ChallengeSessionBanner', error: e);
       if (!mounted) return;
       setState(() {
         _loading = false;

@@ -40,6 +40,11 @@ class LedgerRecord {
   @Index()
   String? refId;
 
+  /// The assessoria (group) that issued/emitted these coins.
+  /// Null for legacy entries or system-generated transactions.
+  @Index()
+  String? issuerGroupId;
+
   /// When this entry was recorded (ms epoch UTC).
   @Index()
   late int createdAtMs;

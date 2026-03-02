@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { auditLog } from "@/lib/audit";
+import { rateLimit } from "@/lib/rate-limit";
 
 async function requirePlatformAdmin() {
   const supabase = createClient();
@@ -27,6 +28,12 @@ async function requirePlatformAdmin() {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+  const rl = rateLimit(`platform-support:${ip}`, { maxRequests: 20, windowMs: 60_000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const auth = await requirePlatformAdmin();
   if ("error" in auth) {
     return NextResponse.json(

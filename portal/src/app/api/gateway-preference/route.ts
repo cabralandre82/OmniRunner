@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { cookies } from "next/headers";
 import { auditLog } from "@/lib/audit";
+import { rateLimit } from "@/lib/rate-limit";
+import { gatewayPreferenceSchema } from "@/lib/schemas";
 
 export async function GET() {
   const supabase = createClient();
@@ -33,6 +35,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const rl = rateLimit(`gateway-pref:${request.headers.get("x-forwarded-for") ?? "unknown"}`);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const supabase = createClient();
   const {
     data: { user },
@@ -61,14 +68,14 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const gateway = body.preferred_gateway;
-
-  if (gateway !== "mercadopago" && gateway !== "stripe") {
+  const parsed = gatewayPreferenceSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "Gateway inválido. Use 'mercadopago' ou 'stripe'." },
+      { error: parsed.error.issues[0].message },
       { status: 400 },
     );
   }
+  const gateway = parsed.data.preferred_gateway;
 
   const { data: existing } = await db
     .from("billing_customers")

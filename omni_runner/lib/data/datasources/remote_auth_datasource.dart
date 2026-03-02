@@ -406,7 +406,9 @@ class RemoteAuthDataSource implements IAuthDataSource {
   @override
   Future<void> signOut() async {
     try {
-      try { await GoogleSignIn().signOut(); } catch (_) {}
+      try { await GoogleSignIn().signOut(); } catch (e) {
+      AppLogger.warn('Unexpected error', tag: 'RemoteAuthDatasource', error: e);
+    }
       await _auth.signOut();
       AppLogger.info('SignOut OK', tag: _tag);
     } on AuthFailure {
@@ -421,7 +423,8 @@ class RemoteAuthDataSource implements IAuthDataSource {
     try {
       final u = _auth.currentUser;
       return u == null ? null : _map(u);
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Caught error', tag: 'RemoteAuthDatasource', error: e);
       return null;
     }
   }

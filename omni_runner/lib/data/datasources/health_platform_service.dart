@@ -373,7 +373,8 @@ class HealthPlatformService implements IHealthProvider {
       // Attempt to discard the route builder to avoid leaks.
       try {
         await _health.discardWorkoutRoute(builderId);
-      } on Exception catch (_) {
+      } on Exception catch (e) {
+      AppLogger.warn('Caught error', tag: 'HealthPlatformService', error: e);
         // Best effort cleanup.
       }
 

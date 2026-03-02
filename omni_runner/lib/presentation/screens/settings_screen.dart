@@ -11,12 +11,15 @@ import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/errors/strava_failures.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/coach_settings_entity.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 
 import 'package:omni_runner/domain/repositories/i_coach_settings_repo.dart';
 import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/main.dart' show themeNotifier;
+import 'package:omni_runner/presentation/screens/diagnostics_screen.dart';
 import 'package:omni_runner/presentation/screens/how_it_works_screen.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 
 class SettingsScreen extends StatefulWidget {
   final bool isStaff;
@@ -46,7 +49,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configurações'),
+        title: Text(context.l10n.settings),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: _loading
@@ -65,21 +68,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   builder: (_, mode, __) => Column(
                     children: [
                       RadioListTile<ThemeMode>(
-                        title: const Text('Seguir sistema'),
+                        title: Text(context.l10n.systemMode),
                         secondary: const Icon(Icons.brightness_auto),
                         value: ThemeMode.system,
                         groupValue: mode,
                         onChanged: (v) => themeNotifier.setMode(v!),
                       ),
                       RadioListTile<ThemeMode>(
-                        title: const Text('Claro'),
+                        title: Text(context.l10n.lightMode),
                         secondary: const Icon(Icons.light_mode),
                         value: ThemeMode.light,
                         groupValue: mode,
                         onChanged: (v) => themeNotifier.setMode(v!),
                       ),
                       RadioListTile<ThemeMode>(
-                        title: const Text('Escuro'),
+                        title: Text(context.l10n.darkMode),
                         secondary: const Icon(Icons.dark_mode),
                         value: ThemeMode.dark,
                         groupValue: mode,
@@ -93,7 +96,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _header('Unidades'),
                   ListTile(
                     leading: const Icon(Icons.straighten),
-                    title: const Text('Distância'),
+                    title: Text(context.l10n.distance),
                     subtitle: Text(_settings.useImperial
                         ? 'Milhas (mi)'
                         : 'Quilômetros (km)'),
@@ -129,7 +132,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _header('Ajuda'),
                   ListTile(
                     leading: const Icon(Icons.help_outline_rounded),
-                    title: const Text('Como Funciona'),
+                    title: Text(context.l10n.howItWorks),
                     subtitle: const Text(
                       'Desafios, OmniCoins, verificação e integridade',
                     ),
@@ -145,6 +148,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const Divider(height: 32),
                   _header('Auth Debug'),
                   const _AuthDebugCard(),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    leading: const Icon(Icons.bug_report),
+                    title: Text(context.l10n.diagnostics),
+                    subtitle: const Text('Status do app, conexões e ambiente'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const DiagnosticsScreen(),
+                      ),
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -525,8 +540,8 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
       return;
     }
 
-    final url = AppConfig.supabaseUrl;
-    final anonKey = AppConfig.supabaseAnonKey;
+    const url = AppConfig.supabaseUrl;
+    const anonKey = AppConfig.supabaseAnonKey;
     if (url.isEmpty || anonKey.isEmpty) {
       setState(() => _pingResult = 'Erro: SUPABASE_URL ou ANON_KEY nao configurados');
       return;
@@ -554,7 +569,8 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
       try {
         final decoded = jsonDecode(response.body);
         body = const JsonEncoder.withIndent('  ').convert(decoded);
-      } catch (_) {
+      } catch (e) {
+      AppLogger.warn('Caught error', tag: 'SettingsScreen', error: e);
         body = response.body;
       }
 
@@ -576,8 +592,8 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
       return;
     }
 
-    final url = AppConfig.supabaseUrl;
-    final anonKey = AppConfig.supabaseAnonKey;
+    const url = AppConfig.supabaseUrl;
+    const anonKey = AppConfig.supabaseAnonKey;
     if (url.isEmpty || anonKey.isEmpty) {
       setState(() => _pingLeaderboardResult = 'Erro: SUPABASE_URL ou ANON_KEY nao configurados');
       return;
@@ -605,7 +621,8 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
       try {
         final decoded = jsonDecode(response.body);
         body = const JsonEncoder.withIndent('  ').convert(decoded);
-      } catch (_) {
+      } catch (e) {
+      AppLogger.warn('Caught error', tag: 'SettingsScreen', error: e);
         body = response.body;
       }
 
@@ -627,8 +644,8 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
       return;
     }
 
-    final url = AppConfig.supabaseUrl;
-    final anonKey = AppConfig.supabaseAnonKey;
+    const url = AppConfig.supabaseUrl;
+    const anonKey = AppConfig.supabaseAnonKey;
     if (url.isEmpty || anonKey.isEmpty) {
       setState(() => _pingAnalyticsResult = 'Erro: SUPABASE_URL ou ANON_KEY nao configurados');
       return;
@@ -662,7 +679,8 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
       try {
         final decoded = jsonDecode(response.body);
         body = const JsonEncoder.withIndent('  ').convert(decoded);
-      } catch (_) {
+      } catch (e) {
+      AppLogger.warn('Caught error', tag: 'SettingsScreen', error: e);
         body = response.body;
       }
 

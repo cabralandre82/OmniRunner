@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
 import { BadgeForm } from "./badge-form";
 
 export const dynamic = "force-dynamic";
@@ -38,11 +39,11 @@ export default async function ConquistasPage() {
     .select("id", { count: "exact", head: true });
 
   if (error) {
-    console.error("Failed to fetch badges:", error);
+    logger.error("Failed to fetch badges", error);
   }
 
   const allBadges = badges ?? [];
-  const categories = [...new Set(allBadges.map((b) => b.category as string))];
+  const categories = Array.from(new Set(allBadges.map((b) => b.category as string)));
 
   return (
     <div className="space-y-6">

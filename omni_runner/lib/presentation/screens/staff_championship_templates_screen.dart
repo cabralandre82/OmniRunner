@@ -6,6 +6,7 @@ import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/push/notification_rules_service.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/presentation/screens/staff_championship_manage_screen.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 
 /// Staff screen for managing recurring championship templates.
 ///
@@ -101,7 +102,8 @@ class _StaffChampionshipTemplatesScreenState
       }).toList();
 
       if (mounted) setState(() => _loading = false);
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Caught error', tag: 'StaffChampionshipTemplates', error: e);
       if (mounted) {
         setState(() {
           _error = 'Não foi possível carregar os dados.';
@@ -1220,7 +1222,8 @@ class _LaunchFromTemplateDialogState
         );
       }
       if (mounted) Navigator.of(context).pop(champId ?? '');
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Caught error', tag: 'StaffChampionshipTemplates', error: e);
       if (mounted) {
         setState(() => _launching = false);
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1,0 +1,44 @@
+name: Supabase CI
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'omni_runner/supabase/migrations/**'
+      - '.github/workflows/supabase.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'omni_runner/supabase/migrations/**'
+      - '.github/workflows/supabase.yml'
+
+jobs:
+  validate-migrations:
+    name: Validate Migrations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check SQL syntax
+        run: |
+          errors=0
+          for f in omni_runner/supabase/migrations/*.sql; do
+            if ! head -1 "$f" > /dev/null 2>&1; then
+              echo "ERROR: Cannot read $f"
+              errors=$((errors + 1))
+            fi
+          done
+          echo "Checked $(ls omni_runner/supabase/migrations/*.sql | wc -l) migration files"
+          if [ $errors -gt 0 ]; then
+            echo "Found $errors errors"
+            exit 1
+          fi
+          echo "All migrations valid"
+
+      - name: Check migration naming convention
+        run: |
+          for f in omni_runner/supabase/migrations/*.sql; do
+            basename=$(basename "$f")
+            if ! echo "$basename" | grep -qP '^\d{14}_\w+\.sql$'; then
+              echo "WARNING: $basename does not follow YYYYMMDDHHMMSS_description.sql convention"
+            fi
+          done

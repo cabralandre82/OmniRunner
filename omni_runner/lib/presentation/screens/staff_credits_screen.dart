@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 
 /// Staff screen showing the assessoria's OmniCoin inventory,
 /// distribution history, and a CTA to contact the platform.
@@ -75,7 +76,8 @@ class _StaffCreditsScreenState extends State<StaffCreditsScreen> {
       }).toList();
 
       if (mounted) setState(() => _loading = false);
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Caught error', tag: 'StaffCreditsScreen', error: e);
       if (mounted) {
         setState(() {
           _error = 'Não foi possível carregar os dados.';

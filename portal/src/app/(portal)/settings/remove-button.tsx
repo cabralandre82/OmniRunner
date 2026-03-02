@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 interface RemoveButtonProps {
   memberId: string;
@@ -9,12 +10,15 @@ interface RemoveButtonProps {
 }
 
 export function RemoveButton({ memberId, memberName }: RemoveButtonProps) {
+  const t = useTranslations("settings");
+  const tc = useTranslations("common");
+  const te = useTranslations("error");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleRemove() {
-    if (!confirm(`Remover ${memberName} da equipe?`)) return;
+    if (!confirm(`${t("removeMember")}: ${memberName}?`)) return;
 
     setLoading(true);
     setError(null);
@@ -29,14 +33,14 @@ export function RemoveButton({ memberId, memberName }: RemoveButtonProps) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? "Erro ao remover");
+        setError(data.error ?? te("generic"));
         setLoading(false);
         return;
       }
 
       router.refresh();
     } catch {
-      setError("Erro de conexão");
+      setError(te("generic"));
     } finally {
       setLoading(false);
     }
@@ -49,7 +53,7 @@ export function RemoveButton({ memberId, memberName }: RemoveButtonProps) {
         disabled={loading}
         className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
       >
-        {loading ? "Removendo..." : "Remover"}
+        {loading ? tc("loading") : tc("remove")}
       </button>
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>

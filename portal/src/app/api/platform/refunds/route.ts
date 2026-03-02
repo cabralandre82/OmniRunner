@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { auditLog } from "@/lib/audit";
+import { logger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
+import { platformRefundActionSchema } from "@/lib/schemas";
 
 async function requirePlatformAdmin() {
   const supabase = createClient();
@@ -42,18 +44,14 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { action, refund_id, notes } = body as {
-    action: string;
-    refund_id: string;
-    notes?: string;
-  };
-
-  if (!action || !refund_id) {
+  const parsed = platformRefundActionSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "Missing action or refund_id" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
       { status: 400 },
     );
   }
+  const { action, refund_id, notes } = parsed.data;
 
   const admin = createAdminClient();
 
@@ -155,7 +153,7 @@ export async function POST(req: NextRequest) {
       });
 
       if (debitErr) {
-        console.error(`[refund:${refund_id}] Credit debit failed: ${debitErr.message}`);
+        logger.error("Credit debit failed during refund processing", debitErr, { refundId: refund_id });
         await admin
           .from("billing_refund_requests")
           .update({

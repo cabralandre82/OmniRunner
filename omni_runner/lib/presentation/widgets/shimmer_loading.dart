@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 
 /// Pure-Flutter shimmer effect without external dependencies.
 /// Wraps any child with a translucent gradient animation.
@@ -161,11 +162,14 @@ class ShimmerListLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ShimmerLoading(
-      child: ListView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: itemCount,
-        itemBuilder: (_, __) => const SkeletonTile(),
+    return Semantics(
+      label: context.l10n.loadingContent,
+      child: ShimmerLoading(
+        child: ListView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: itemCount,
+          itemBuilder: (_, __) => const SkeletonTile(),
+        ),
       ),
     );
   }

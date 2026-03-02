@@ -1,10 +1,10 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/domain/entities/coaching_group_entity.dart';
-import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_group_repo.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
+import 'package:omni_runner/domain/repositories/i_my_assessoria_remote_source.dart';
 import 'package:omni_runner/domain/usecases/coaching/switch_assessoria.dart';
 import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_event.dart';
 import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_state.dart';
@@ -12,14 +12,17 @@ import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_state
 class MyAssessoriaBloc extends Bloc<MyAssessoriaEvent, MyAssessoriaState> {
   final ICoachingGroupRepo _groupRepo;
   final ICoachingMemberRepo _memberRepo;
+  final IMyAssessoriaRemoteSource _remote;
   final SwitchAssessoria _switchAssessoria;
 
   MyAssessoriaBloc({
     required ICoachingGroupRepo groupRepo,
     required ICoachingMemberRepo memberRepo,
+    required IMyAssessoriaRemoteSource remote,
     required SwitchAssessoria switchAssessoria,
   })  : _groupRepo = groupRepo,
         _memberRepo = memberRepo,
+        _remote = remote,
         _switchAssessoria = switchAssessoria,
         super(const MyAssessoriaInitial()) {
     on<LoadMyAssessoria>(_onLoad);
@@ -33,29 +36,16 @@ class MyAssessoriaBloc extends Bloc<MyAssessoriaEvent, MyAssessoriaState> {
     emit(const MyAssessoriaLoading());
 
     try {
-      final db = Supabase.instance.client;
+      final members = await _remote.fetchMemberships(event.userId);
 
-      // Query Supabase directly (Isar cache may be stale after join approval)
-      final memberRows = await db
-          .from('coaching_members')
-          .select('id, user_id, group_id, display_name, role, joined_at_ms')
-          .eq('user_id', event.userId);
-
-      final members = (memberRows as List)
-          .cast<Map<String, dynamic>>()
-          .map((r) => CoachingMemberEntity(
-                id: r['id'] as String,
-                userId: r['user_id'] as String,
-                groupId: r['group_id'] as String,
-                displayName: (r['display_name'] as String?) ?? '',
-                role: coachingRoleFromString(r['role'] as String? ?? ''),
-                joinedAtMs: (r['joined_at_ms'] as num?)?.toInt() ?? 0,
-              ))
-          .toList();
-
-      // Sync to Isar for offline access
+      // Sync to local repo for offline access
       for (final m in members) {
-        try { await _memberRepo.save(m); } catch (_) {}
+        try {
+          await _memberRepo.save(m);
+        } on Exception catch (e) {
+          AppLogger.debug('Member cache write failed',
+              tag: 'MyAssessoria', error: e);
+        }
       }
 
       final atletaMembership = members.where((m) => m.isAtleta).toList();
@@ -67,27 +57,15 @@ class MyAssessoriaBloc extends Bloc<MyAssessoriaEvent, MyAssessoriaState> {
 
       final current = atletaMembership.first;
 
-      // Fetch group from Supabase
-      final groupRow = await db
-          .from('coaching_groups')
-          .select()
-          .eq('id', current.groupId)
-          .maybeSingle();
-
-      CoachingGroupEntity? group;
-      if (groupRow != null) {
-        group = CoachingGroupEntity(
-          id: groupRow['id'] as String,
-          name: (groupRow['name'] as String?) ?? 'Assessoria',
-          logoUrl: groupRow['logo_url'] as String?,
-          coachUserId: (groupRow['coach_user_id'] as String?) ?? '',
-          description: (groupRow['description'] as String?) ?? '',
-          city: (groupRow['city'] as String?) ?? '',
-          inviteCode: groupRow['invite_code'] as String?,
-          inviteEnabled: (groupRow['invite_enabled'] as bool?) ?? true,
-          createdAtMs: (groupRow['created_at_ms'] as num?)?.toInt() ?? 0,
-        );
-        try { await _groupRepo.save(group); } catch (_) {}
+      // Fetch current group
+      final group = await _remote.fetchGroup(current.groupId);
+      if (group != null) {
+        try {
+          await _groupRepo.save(group);
+        } on Exception catch (e) {
+          AppLogger.debug('Group cache write failed',
+              tag: 'MyAssessoria', error: e);
+        }
       }
 
       // Build available groups from other memberships
@@ -99,27 +77,20 @@ class MyAssessoriaBloc extends Bloc<MyAssessoriaEvent, MyAssessoriaState> {
       final available = <CoachingGroupEntity>[];
       for (final gid in otherGroupIds) {
         try {
-          final gRow = await db
-              .from('coaching_groups')
-              .select()
-              .eq('id', gid)
-              .maybeSingle();
-          if (gRow != null) {
-            final g = CoachingGroupEntity(
-              id: gRow['id'] as String,
-              name: (gRow['name'] as String?) ?? '',
-              logoUrl: gRow['logo_url'] as String?,
-              coachUserId: (gRow['coach_user_id'] as String?) ?? '',
-              description: (gRow['description'] as String?) ?? '',
-              city: (gRow['city'] as String?) ?? '',
-              inviteCode: gRow['invite_code'] as String?,
-              inviteEnabled: (gRow['invite_enabled'] as bool?) ?? true,
-              createdAtMs: (gRow['created_at_ms'] as num?)?.toInt() ?? 0,
-            );
-            try { await _groupRepo.save(g); } catch (_) {}
+          final g = await _remote.fetchGroup(gid);
+          if (g != null) {
+            try {
+              await _groupRepo.save(g);
+            } on Exception catch (e) {
+              AppLogger.debug('Available group cache failed',
+                  tag: 'MyAssessoria', error: e);
+            }
             available.add(g);
           }
-        } catch (_) {}
+        } on Exception catch (e) {
+          AppLogger.debug('Available group fetch failed',
+              tag: 'MyAssessoria', error: e);
+        }
       }
 
       emit(MyAssessoriaLoaded(
@@ -127,8 +98,11 @@ class MyAssessoriaBloc extends Bloc<MyAssessoriaEvent, MyAssessoriaState> {
         membership: current,
         availableGroups: available,
       ));
-    } on Exception catch (_) {
-      emit(const MyAssessoriaError('Não foi possível carregar sua assessoria.'));
+    } on Exception catch (e) {
+      AppLogger.error('Assessoria load failed',
+          tag: 'MyAssessoria', error: e);
+      emit(const MyAssessoriaError(
+          'Não foi possível carregar sua assessoria.'));
     }
   }
 
@@ -141,8 +115,11 @@ class MyAssessoriaBloc extends Bloc<MyAssessoriaEvent, MyAssessoriaState> {
     try {
       final newId = await _switchAssessoria(event.newGroupId);
       emit(MyAssessoriaSwitched(newId));
-    } on Exception catch (_) {
-      emit(const MyAssessoriaError('Não foi possível trocar de assessoria. Tente novamente.'));
+    } on Exception catch (e) {
+      AppLogger.error('Switch assessoria failed',
+          tag: 'MyAssessoria', error: e);
+      emit(const MyAssessoriaError(
+          'Não foi possível trocar de assessoria. Tente novamente.'));
     }
   }
 }

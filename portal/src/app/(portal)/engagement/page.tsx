@@ -1,14 +1,8 @@
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
+import { formatKm } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-
-function formatKm(meters: number): string {
-  return (meters / 1000).toLocaleString("pt-BR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
-}
 
 export default async function EngagementPage() {
   const groupId = cookies().get("portal_group_id")?.value;

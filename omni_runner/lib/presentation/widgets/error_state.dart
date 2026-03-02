@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omni_runner/l10n/app_localizations.dart';
 
 /// Reusable error state widget with friendly message and retry button.
 class ErrorState extends StatelessWidget {
@@ -12,6 +13,9 @@ class ErrorState extends StatelessWidget {
   });
 
   /// Converts raw exception text to a user-friendly message.
+  ///
+  /// Context-free variant with hardcoded pt-BR fallbacks.
+  /// Prefer [humanizeLocalized] when a BuildContext is available.
   static String humanize(String raw) {
     final lower = raw.toLowerCase();
     if (lower.contains('socketexception') ||
@@ -41,12 +45,33 @@ class ErrorState extends StatelessWidget {
     return raw;
   }
 
+  /// Context-aware variant that falls back to [AppLocalizations].
+  static String humanizeLocalized(BuildContext context, String raw) {
+    final lower = raw.toLowerCase();
+    final l10n = AppLocalizations.of(context);
+    if (lower.contains('socketexception') ||
+        lower.contains('clientexception') ||
+        lower.contains('connection') ||
+        lower.contains('network')) {
+      return l10n.errorNoConnection;
+    }
+    if (raw.length > 100 ||
+        lower.contains('500') ||
+        lower.contains('timeout')) {
+      return l10n.errorGeneric;
+    }
+    return humanize(raw);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final friendly = humanize(message);
 
-    return Center(
+    return Semantics(
+      label: 'Erro: $friendly',
+      liveRegion: true,
+      child: Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
         child: Column(
@@ -79,12 +104,13 @@ class ErrorState extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Tentar novamente'),
+                label: Text(AppLocalizations.of(context).retry),
               ),
             ],
           ],
         ),
       ),
+    ),
     );
   }
 }

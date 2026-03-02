@@ -3,8 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { cookies } from "next/headers";
 import { auditLog } from "@/lib/audit";
+import { rateLimit } from "@/lib/rate-limit";
+import { autoTopupSchema } from "@/lib/schemas";
 
 export async function POST(request: Request) {
+  const rl = rateLimit(`auto-topup:${request.headers.get("x-forwarded-for") ?? "unknown"}`);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const supabase = createClient();
   const {
     data: { user },
@@ -34,7 +41,14 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { enabled, threshold_tokens, product_id, max_per_month } = body;
+  const parsed = autoTopupSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0].message },
+      { status: 400 },
+    );
+  }
+  const { enabled, threshold_tokens, product_id, max_per_month } = parsed.data;
 
   // Upsert settings
   const updatePayload: Record<string, unknown> = {

@@ -1,0 +1,120 @@
+{
+  "common": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "remove": "Remove",
+    "invite": "Invite",
+    "loading": "Loading...",
+    "retry": "Try again",
+    "search": "Search",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "yes": "Yes",
+    "no": "No",
+    "edit": "Edit",
+    "create": "Create",
+    "update": "Update",
+    "actions": "Actions",
+    "results": "{count} result(s)",
+    "noResults": "No results found."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "athletes": "Athletes",
+    "billing": "Billing",
+    "credits": "Credits",
+    "distributions": "Distributions",
+    "engagement": "Engagement",
+    "settings": "Settings",
+    "verification": "Verification",
+    "custody": "Custody",
+    "clearing": "Clearing",
+    "swap": "Swap"
+  },
+  "auth": {
+    "login": "Sign in",
+    "logout": "Sign out",
+    "unauthorized": "Unauthorized"
+  },
+  "settings": {
+    "branding": "Branding",
+    "team": "Team",
+    "billing": "Billing",
+    "gateway": "Payment gateway",
+    "autoTopup": "Auto top-up",
+    "saveBranding": "Save branding",
+    "inviteMember": "Invite member",
+    "removeMember": "Remove member",
+    "confirmRemove": "Are you sure you want to remove this member?"
+  },
+  "athletes": {
+    "title": "Athletes",
+    "distribute": "Distribute coins",
+    "export": "Export",
+    "noAthletes": "No athletes found"
+  },
+  "custody": {
+    "title": "Custody",
+    "deposit": "Deposit Backing",
+    "newDeposit": "New Backing Deposit",
+    "totalDeposited": "Total Deposited",
+    "reserved": "Reserved (Active Coins)",
+    "available": "Available for Emission",
+    "coinEquivalent": "Equivalent to {amount} coins",
+    "minAmount": "Minimum amount: US$ 10.00",
+    "depositSuccess": "Deposit created successfully!",
+    "gateway": "Gateway"
+  },
+  "clearing": {
+    "title": "Clearing",
+    "settlements": "Settlements",
+    "creditor": "Creditor",
+    "debtor": "Debtor",
+    "coinAmount": "Coins",
+    "grossAmount": "Gross",
+    "fee": "Fee",
+    "netAmount": "Net",
+    "status": "Status",
+    "pending": "Pending",
+    "settled": "Settled",
+    "failed": "Failed"
+  },
+  "swap": {
+    "title": "Backing Swap",
+    "createOffer": "Create Sell Offer",
+    "sellBacking": "Sell Backing",
+    "buy": "Buy",
+    "minAmount": "Minimum amount: US$ 100.00",
+    "openOffers": "Open Offers",
+    "seller": "Seller",
+    "amount": "Amount",
+    "publish": "Publish"
+  },
+  "platform": {
+    "dashboard": "Platform Dashboard",
+    "fees": "Fees",
+    "invariants": "Invariants",
+    "featureFlags": "Feature Flags",
+    "assessorias": "Assessorias",
+    "support": "Support",
+    "products": "Products",
+    "refunds": "Refunds",
+    "league": "League",
+    "achievements": "Achievements",
+    "financial": "Financial",
+    "healthy": "All invariants healthy",
+    "violations": "Violations detected"
+  },
+  "error": {
+    "generic": "Something went wrong. Please try again.",
+    "notFound": "Page not found",
+    "unauthorized": "Your session has expired. Please sign in again.",
+    "tooManyRequests": "Too many requests. Please try again shortly.",
+    "connectionError": "Connection error",
+    "forbidden": "Access denied"
+  }
+}

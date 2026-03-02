@@ -1,0 +1,228 @@
+{
+  "@@locale": "pt",
+
+  "appTitle": "Omni Runner",
+  "@appTitle": { "description": "App title shown in the app bar" },
+
+  "dashboard": "Início",
+  "runs": "Corridas",
+  "challenges": "Desafios",
+  "social": "Social",
+  "profile": "Perfil",
+  "settings": "Configurações",
+  "more": "Mais",
+  "history": "Histórico",
+  "progression": "Progressão",
+  "wallet": "Carteira",
+  "leaderboards": "Rankings",
+  "verification": "Verificação",
+  "diagnostics": "Diagnóstico",
+  "support": "Suporte",
+  "howItWorks": "Como funciona",
+
+  "startRun": "Iniciar corrida",
+  "stopRun": "Parar corrida",
+  "pauseRun": "Pausar corrida",
+  "resumeRun": "Retomar corrida",
+  "finishRun": "Finalizar corrida",
+  "discardRun": "Descartar corrida",
+  "runSummary": "Resumo da corrida",
+  "replay": "Replay da corrida",
+  "gpsPoints": "{count} pontos GPS registrados",
+  "@gpsPoints": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "distance": "Distância",
+  "pace": "Ritmo",
+  "avgPace": "Pace médio",
+  "duration": "Duração",
+  "calories": "Calorias",
+  "elevation": "Elevação",
+  "heartRate": "Freq. Cardíaca",
+  "avgHeartRate": "FC média",
+  "maxHeartRate": "FC máx",
+  "cadence": "Cadência",
+
+  "km": "km",
+  "minPerKm": "min/km",
+  "bpm": "bpm",
+
+  "today": "Hoje",
+  "thisWeek": "Esta semana",
+  "thisMonth": "Este mês",
+  "allTime": "Total",
+  "daily": "Diário",
+  "weekly": "Semanal",
+  "monthly": "Mensal",
+
+  "noRunsYet": "Nenhuma corrida ainda",
+  "noRunsYetDescription": "Comece sua primeira corrida e acompanhe sua evolução!",
+  "noDataYet": "Nenhum dado ainda",
+  "noResultsFound": "Nenhum resultado encontrado",
+
+  "noChallengesYet": "Nenhum desafio ativo",
+  "noChallengesYetDescription": "Crie ou aceite um desafio para competir com amigos.",
+  "challengeDetails": "Detalhes do desafio",
+
+  "createChallenge": "Criar desafio",
+  "joinChallenge": "Entrar no desafio",
+  "challengeActive": "Ativo",
+  "challengeCompleted": "Concluído",
+  "challengePending": "Pendente",
+  "challengeCancelled": "Cancelado",
+  "challengeExpired": "Expirado",
+
+  "groups": "Grupos",
+  "events": "Eventos",
+  "friends": "Amigos",
+  "members": "Membros",
+  "rankings": "Rankings",
+
+  "createGroup": "Criar grupo",
+  "joinGroup": "Entrar no grupo",
+  "leaveGroup": "Sair do grupo",
+  "groupDetails": "Detalhes do grupo",
+  "inviteCode": "Código de convite",
+
+  "coins": "Moedas",
+  "xp": "XP",
+  "level": "Nível",
+  "badges": "Conquistas",
+  "missions": "Missões",
+  "streak": "Sequência",
+  "streakDays": "{count} dias",
+  "@streakDays": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "coaching": "Assessoria",
+  "myCoach": "Minha assessoria",
+  "switchCoach": "Trocar assessoria",
+  "joinCoach": "Entrar em assessoria",
+  "coachInsights": "Insights",
+  "athleteEvolution": "Evolução do atleta",
+  "groupEvolution": "Evolução do grupo",
+
+  "errorGeneric": "Algo deu errado. Tente novamente.",
+  "errorNoConnection": "Sem conexão com a internet.",
+  "errorNoConnectionDetailed": "Sem conexão com a internet. Alguns recursos podem não funcionar.",
+  "errorSessionExpired": "Sua sessão expirou. Faça login novamente.",
+  "errorForbidden": "Você não tem permissão para esta ação.",
+  "errorNotFound": "O conteúdo não foi encontrado.",
+  "errorServer": "Erro no servidor. Tente novamente em alguns minutos.",
+  "errorTimeout": "A requisição demorou demais. Tente novamente.",
+
+  "retry": "Tentar novamente",
+  "cancel": "Cancelar",
+  "save": "Salvar",
+  "delete": "Excluir",
+  "confirm": "Confirmar",
+  "close": "Fechar",
+  "done": "Concluído",
+  "next": "Próximo",
+  "back": "Voltar",
+  "loading": "Carregando...",
+  "loadingContent": "Carregando conteúdo",
+  "search": "Buscar",
+  "share": "Compartilhar",
+  "copy": "Copiar",
+  "copied": "Copiado!",
+  "edit": "Editar",
+  "add": "Adicionar",
+  "remove": "Remover",
+  "refresh": "Atualizar",
+  "seeAll": "Ver tudo",
+  "seeMore": "Ver mais",
+
+  "darkMode": "Modo escuro",
+  "lightMode": "Modo claro",
+  "systemMode": "Seguir sistema",
+  "theme": "Tema",
+  "audioCoach": "Treinador de áudio",
+  "notifications": "Notificações",
+  "privacy": "Privacidade",
+  "account": "Conta",
+  "about": "Sobre",
+  "version": "Versão",
+
+  "logout": "Sair",
+  "logoutConfirm": "Tem certeza que deseja sair?",
+  "login": "Entrar",
+  "signUp": "Criar conta",
+  "continueWithGoogle": "Continuar com Google",
+  "continueWithApple": "Continuar com Apple",
+  "welcomeBack": "Bem-vindo de volta!",
+
+  "verified": "Verificado",
+  "unverified": "Não verificado",
+  "pending": "Pendente",
+  "approved": "Aprovado",
+  "rejected": "Rejeitado",
+  "suspended": "Suspenso",
+
+  "personalRecord": "Recorde pessoal",
+  "newRecord": "Novo recorde!",
+  "bestPace": "Melhor pace",
+  "longestRun": "Maior distância",
+  "totalSessions": "Total de sessões",
+  "totalDistance": "Distância total",
+
+  "recoverSession": "Recuperar sessão",
+  "recoverSessionDescription": "Uma sessão anterior não foi finalizada. Deseja recuperá-la?",
+  "resumeSession": "Retomar",
+  "discardSession": "Descartar",
+
+  "distanceFormatKm": "{distance} km",
+  "@distanceFormatKm": {
+    "placeholders": {
+      "distance": { "type": "String" }
+    }
+  },
+
+  "paceFormat": "{pace} min/km",
+  "@paceFormat": {
+    "placeholders": {
+      "pace": { "type": "String" }
+    }
+  },
+
+  "levelFormat": "Nível {level}",
+  "@levelFormat": {
+    "placeholders": {
+      "level": { "type": "int" }
+    }
+  },
+
+  "coinsFormat": "{count} moedas",
+  "@coinsFormat": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "sessionCount": "{count, plural, =0{Nenhuma sessão} =1{1 sessão} other{{count} sessões}}",
+  "@sessionCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "myAssessoria": "Minha Assessoria",
+  "switchAssessoria": "Trocar de Assessoria",
+  "assessoriaFeed": "Feed da Assessoria",
+  "consistency": "Consistência",
+  "myEvolution": "Minha Evolução",
+  "myRunnerDna": "Meu DNA de Corredor",
+  "assessoriaLeague": "Liga de Assessorias",
+  "newTicket": "Novo chamado",
+  "runDetails": "Detalhes da corrida",
+  "inviteCode": "Código de convite",
+  "inviteFriends": "Convidar amigos",
+  "myFriends": "Meus Amigos",
+  "wrapped": "Retrospectiva"
+}

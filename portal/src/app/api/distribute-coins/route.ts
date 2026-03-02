@@ -4,8 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { cookies } from "next/headers";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
-
-const MAX_AMOUNT = 1000;
+import { distributeCoinsSchema } from "@/lib/schemas";
 
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -41,21 +40,14 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { athlete_user_id, amount } = body as {
-    athlete_user_id: string;
-    amount: number;
-  };
-
-  if (!athlete_user_id || typeof athlete_user_id !== "string") {
-    return NextResponse.json({ error: "athlete_user_id required" }, { status: 400 });
-  }
-
-  if (!amount || typeof amount !== "number" || amount < 1 || amount > MAX_AMOUNT || !Number.isInteger(amount)) {
+  const parsed = distributeCoinsSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: `amount must be integer 1-${MAX_AMOUNT}` },
+      { error: parsed.error.issues[0].message },
       { status: 400 },
     );
   }
+  const { athlete_user_id, amount } = parsed.data;
 
   const { data: member } = await db
     .from("coaching_members")
@@ -72,14 +64,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const { error: decrErr } = await db.rpc("decrement_token_inventory", {
+  // Check custody backing (new model: 1 coin = US$ 1.00 of backing required)
+  const { error: custodyErr } = await db.rpc("custody_commit_coins", {
     p_group_id: groupId,
-    p_amount: amount,
+    p_coin_count: amount,
   });
 
-  if (decrErr) {
+  if (custodyErr) {
     return NextResponse.json(
-      { error: "Créditos insuficientes no estoque da assessoria" },
+      { error: "Lastro insuficiente na custódia da assessoria. Deposite mais lastro antes de emitir coins." },
       { status: 422 },
     );
   }
@@ -90,11 +83,19 @@ export async function POST(request: Request) {
   });
 
   if (walletErr) {
-    // Rollback inventory
-    await db.rpc("decrement_token_inventory", {
-      p_group_id: groupId,
-      p_amount: -amount,
-    });
+    const { data: acct } = await db
+      .from("custody_accounts")
+      .select("total_committed")
+      .eq("group_id", groupId)
+      .single();
+
+    if (acct) {
+      await db
+        .from("custody_accounts")
+        .update({ total_committed: Math.max(0, acct.total_committed - amount) })
+        .eq("group_id", groupId);
+    }
+
     return NextResponse.json(
       { error: "Erro ao creditar wallet do atleta" },
       { status: 500 },
@@ -105,6 +106,7 @@ export async function POST(request: Request) {
     user_id: athlete_user_id,
     delta_coins: amount,
     reason: "institution_token_issue",
+    issuer_group_id: groupId,
     ref_id: `portal_${session.user.id}_${Date.now()}`,
     created_at_ms: Date.now(),
   });

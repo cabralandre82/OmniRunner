@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 
 /// Clearing case from the database.
 class _ClearingCase {
@@ -106,7 +107,8 @@ class _StaffDisputesScreenState extends State<StaffDisputesScreen> {
         );
       }
       await _loadCases();
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Caught error', tag: 'StaffDisputesScreen', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Erro ao confirmar envio. Tente novamente.')),
@@ -127,7 +129,8 @@ class _StaffDisputesScreenState extends State<StaffDisputesScreen> {
         );
       }
       await _loadCases();
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Caught error', tag: 'StaffDisputesScreen', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Erro ao confirmar recebimento. Tente novamente.')),
@@ -172,7 +175,8 @@ class _StaffDisputesScreenState extends State<StaffDisputesScreen> {
         );
       }
       await _loadCases();
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Caught error', tag: 'StaffDisputesScreen', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Erro ao abrir revisão. Tente novamente.')),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 
 /// Staff retention dashboard — engagement and growth metrics.
 ///
@@ -115,7 +116,8 @@ class _StaffRetentionDashboardScreenState
       _weeklyRetention = _computeWeeklyRetention(sessions, weekStart);
 
       if (mounted) setState(() => _loading = false);
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Caught error', tag: 'StaffRetentionDashboard', error: e);
       if (mounted) {
         setState(() {
           _error = 'Não foi possível carregar os dados.';

@@ -1,5 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:omni_runner/l10n/app_localizations.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -16,6 +18,7 @@ import 'package:omni_runner/features/watch_bridge/watch_bridge_init.dart';
 import 'package:omni_runner/domain/usecases/discard_session.dart';
 import 'package:omni_runner/domain/usecases/finish_session.dart';
 import 'package:omni_runner/domain/usecases/recover_active_session.dart';
+import 'package:omni_runner/core/theme/app_theme.dart';
 import 'package:omni_runner/core/theme/theme_notifier.dart';
 import 'package:omni_runner/presentation/screens/auth_gate.dart';
 import 'package:omni_runner/presentation/screens/recovery_screen.dart';
@@ -126,30 +129,16 @@ class OmniRunnerApp extends StatelessWidget {
       builder: (_, mode, __) => MaterialApp(
         navigatorKey: _navigatorKey,
         title: 'Omni Runner',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-          pageTransitionsTheme: const PageTransitionsTheme(
-            builders: {
-              TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-            },
-          ),
-        ),
-        darkTheme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.deepPurple,
-            brightness: Brightness.dark,
-          ),
-          useMaterial3: true,
-          pageTransitionsTheme: const PageTransitionsTheme(
-            builders: {
-              TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-            },
-          ),
-        ),
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
         themeMode: mode,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
         home: recovery != null
             ? _RecoveryWrapper(recovery: recovery!)
             : const AuthGate(),

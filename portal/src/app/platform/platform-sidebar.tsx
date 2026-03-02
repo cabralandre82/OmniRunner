@@ -48,6 +48,9 @@ export function PlatformSidebar({ email }: { email: string }) {
         <SidebarLink href="/platform/conquistas" label="Conquistas" pathname={pathname} />
         <SidebarLink href="/platform/liga" label="Liga" pathname={pathname} />
         <SidebarLink href="/platform/support" label="Suporte" pathname={pathname} />
+        <SidebarLink href="/platform/fees" label="Taxas" pathname={pathname} />
+        <SidebarLink href="/platform/invariants" label="Invariantes" pathname={pathname} />
+        <SidebarLink href="/platform/feature-flags" label="Feature Flags" pathname={pathname} />
         <Link
           href="/select-group"
           className="block rounded-lg px-3 py-2.5 text-sm font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600"

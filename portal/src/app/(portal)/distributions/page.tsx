@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +51,7 @@ export default async function DistributionsPage() {
       .limit(200);
 
     if (error) {
-      console.error("[Distributions] coin_ledger query failed:", error.message);
+      logger.error("coin_ledger query failed", error, { page: "distributions" });
     }
     entries = (data ?? []) as LedgerEntry[];
   }

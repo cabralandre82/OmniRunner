@@ -12,6 +12,7 @@ import 'package:omni_runner/presentation/widgets/contextual_tip_banner.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_event.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_state.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 
 class AthleteVerificationScreen extends StatelessWidget {
   const AthleteVerificationScreen({super.key});
@@ -19,7 +20,7 @@ class AthleteVerificationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => VerificationBloc()..add(const LoadVerificationState()),
+      create: (_) => sl<VerificationBloc>()..add(const LoadVerificationState()),
       child: Scaffold(
         appBar: AppBar(title: const Text('Verificação do Atleta')),
         body: BlocBuilder<VerificationBloc, VerificationState>(
@@ -105,7 +106,9 @@ class _BodyState extends State<_Body> {
             source: r['source'] as String? ?? 'app',
           );
         }).toList();
-      } catch (_) {}
+      } catch (e) {
+      AppLogger.warn('Unexpected error', tag: 'AthleteVerificationScreen', error: e);
+    }
 
       // Merge and dedup by id, sort by most recent
       final byId = <String, WorkoutSessionEntity>{};
@@ -121,7 +124,9 @@ class _BodyState extends State<_Body> {
       if (mounted) {
         setState(() => _recentSessions = merged.take(10).toList());
       }
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.warn('Unexpected error', tag: 'AthleteVerificationScreen', error: e);
+    }
   }
 
   bool get _inCooldown {

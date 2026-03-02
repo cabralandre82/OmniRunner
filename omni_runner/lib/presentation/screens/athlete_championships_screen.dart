@@ -46,7 +46,9 @@ class _AthleteChampionshipsScreenState
       try {
         await _db.functions.invoke('champ-lifecycle', body: {})
             .timeout(const Duration(seconds: 10));
-      } catch (_) {}
+      } catch (e) {
+      AppLogger.warn('Unexpected error', tag: 'AthleteChampionshipsScreen', error: e);
+    }
 
       final res = await _db.functions.invoke('champ-list', body: {});
       final data = res.data as Map<String, dynamic>? ?? {};

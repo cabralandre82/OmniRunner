@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 
 /// Displays personal performance evolution over the last 12 weeks.
 ///
@@ -150,7 +151,7 @@ class _PersonalEvolutionScreenState extends State<PersonalEvolutionScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Minha Evolução'),
+        title: Text(context.l10n.myEvolution),
         backgroundColor: cs.inversePrimary,
       ),
       body: _loading

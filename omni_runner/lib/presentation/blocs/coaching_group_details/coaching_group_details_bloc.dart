@@ -46,7 +46,7 @@ class CoachingGroupDetailsBloc
         details: details,
         callerUserId: _callerUserId,
       ));
-    } on Exception catch (e) {
+    } catch (e) {
       emit(CoachingGroupDetailsError('Erro ao carregar grupo: $e'));
     }
   }

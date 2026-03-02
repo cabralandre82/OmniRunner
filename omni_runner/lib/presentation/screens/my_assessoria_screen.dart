@@ -20,6 +20,9 @@ import 'package:omni_runner/presentation/screens/join_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/league_screen.dart';
 import 'package:omni_runner/presentation/widgets/error_state.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 
 /// "Minha Assessoria" screen for athletes.
 ///
@@ -32,7 +35,7 @@ class MyAssessoriaScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Minha Assessoria')),
+      appBar: AppBar(title: Text(context.l10n.myAssessoria)),
       body: BlocConsumer<MyAssessoriaBloc, MyAssessoriaState>(
         listener: (context, state) {
           if (state is MyAssessoriaSwitched) {
@@ -165,7 +168,7 @@ class _LoadedBody extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         icon: Icon(Icons.warning_amber_rounded,
             color: Colors.orange.shade700, size: 48),
-        title: const Text('Trocar de Assessoria'),
+        title: Text(context.l10n.switchAssessoria),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,28 +180,28 @@ class _LoadedBody extends StatelessWidget {
                   ),
             ),
             const SizedBox(height: 12),
-            _ImpactRow(
+            const _ImpactRow(
               icon: Icons.check_circle,
               color: Colors.green,
               text: 'Seus treinos e histórico permanecem',
             ),
-            _ImpactRow(
+            const _ImpactRow(
               icon: Icons.check_circle,
               color: Colors.green,
               text: 'Desafios em andamento continuam normalmente',
             ),
-            _ImpactRow(
+            const _ImpactRow(
               icon: Icons.check_circle,
               color: Colors.green,
               text: 'Seu status de verificação não muda',
             ),
             const SizedBox(height: 8),
-            _ImpactRow(
+            const _ImpactRow(
               icon: Icons.cancel,
               color: Colors.red,
               text: 'Você será removido do grupo atual',
             ),
-            _ImpactRow(
+            const _ImpactRow(
               icon: Icons.cancel,
               color: Colors.red,
               text: 'OmniCoins pendentes entre assessorias serão perdidos',
@@ -278,7 +281,7 @@ class _CurrentGroupCard extends StatelessWidget {
                   radius: 28,
                   backgroundColor: theme.colorScheme.primaryContainer,
                   backgroundImage: group.logoUrl != null
-                      ? NetworkImage(group.logoUrl!)
+                      ? CachedNetworkImageProvider(group.logoUrl!)
                       : null,
                   child: group.logoUrl == null
                       ? Icon(Icons.sports,
@@ -347,7 +350,7 @@ class _AvailableGroupTile extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: theme.colorScheme.surfaceContainerHighest,
           backgroundImage:
-              group.logoUrl != null ? NetworkImage(group.logoUrl!) : null,
+              group.logoUrl != null ? CachedNetworkImageProvider(group.logoUrl!) : null,
           child: group.logoUrl == null
               ? Icon(Icons.sports, color: theme.colorScheme.outline, size: 20)
               : null,
@@ -390,7 +393,7 @@ class _QuickAccessSection extends StatelessWidget {
           onTap: () {
             Navigator.of(context).push(MaterialPageRoute<void>(
               builder: (_) => BlocProvider<AssessoriaFeedBloc>(
-                create: (_) => AssessoriaFeedBloc()..add(LoadFeed(groupId)),
+                create: (_) => sl<AssessoriaFeedBloc>()..add(LoadFeed(groupId)),
                 child: const AssessoriaFeedScreen(),
               ),
             ));
@@ -566,7 +569,8 @@ class _NoAssessoriaBodyState extends State<_NoAssessoriaBody> {
       } else {
         if (mounted) setState(() => _loading = false);
       }
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warn('Caught error', tag: 'MyAssessoriaScreen', error: e);
       if (mounted) setState(() => _loading = false);
     }
   }

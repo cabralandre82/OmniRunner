@@ -254,7 +254,9 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
             .limit(1);
         hasPendingElsewhere = (pending as List).isNotEmpty;
       }
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.warn('Unexpected error', tag: 'JoinAssessoriaScreen', error: e);
+    }
 
     if (!mounted) return;
 

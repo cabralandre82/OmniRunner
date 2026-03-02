@@ -147,7 +147,7 @@ serve(async (req: Request) => {
     // Assessoria gate
     const { data: memberRow } = await db
       .from("coaching_members")
-      .select("id")
+      .select("id, group_id")
       .eq("user_id", user.id)
       .limit(1)
       .maybeSingle();
@@ -277,6 +277,7 @@ serve(async (req: Request) => {
         delta_coins: -entry_fee_coins,
         reason: "challenge_entry_fee",
         ref_id: challengeId,
+        issuer_group_id: memberRow?.group_id ?? null,
         created_at_ms: created_at_ms,
       });
     }
