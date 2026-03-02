@@ -54,7 +54,7 @@
 - [x] CI falha se termos monetários aparecem no app
 - [x] App é coins-only (zero referência a dinheiro)
 
-## Testes
+## Testes (488 portal + 1465 Flutter = 1953 total)
 
 - [x] Unit: burn plan determinístico
 - [x] Unit: cálculo de taxas (clearing 3%, swap 1%)
@@ -68,6 +68,12 @@
 - [x] Unit: health check with invariants
 - [x] E2E (model): burn → clearing → settlement
 - [x] Compliance: no monetary terms in app
+- [x] QA Smoke E2E: cenário determinístico com números exatos (fee 1.80, net 58.20)
+- [x] QA Idempotency: repeated scan, duplicate burn_ref, re-settle blocked
+- [x] QA Anti-fraud: expired/forged/replay token, non-affiliated, insufficient balance
+- [x] QA Concurrency: 100 scans=1 burn, 1000 burns no negative, 1000 events no duplicate
+- [x] QA Reconciliation: D=R+A, R=M, fee sums, no duplicate settlements
+- [x] QA No Money in App: ripgrep CI gate (portal/scripts/qa-no-money.sh)
 
 ## CI/CD
 
@@ -84,6 +90,16 @@
 - [x] E2E Audit Report
 - [x] Termos Operacionais B2B (docs/TERMOS_OPERACIONAIS.md)
 - [x] Production Checklist (this file)
+- [x] QA Manual Checklist (docs/QA_MANUAL_CHECKLIST.md)
+
+## QA Suite (npm run qa:e2e)
+
+- [x] Step 1: TypeScript compilation (zero errors)
+- [x] Step 2: Smoke test E2E (deterministic happy path — 24 tests)
+- [x] Step 3: Full unit test suite (488 tests)
+- [x] Step 4: Reconciliation invariant auditor (14 tests)
+- [x] Step 5: NO MONEY IN APP compliance gate (ripgrep)
+- [x] Step 6: ESLint production code
 
 ## Observabilidade
 
@@ -110,3 +126,4 @@
 - [ ] Redis-backed rate limiter em produção
 - [ ] Alerting/PagerDuty para invariant violations
 - [ ] Dashboard de platform_revenue para admin
+- [ ] Playwright E2E para pages do portal (visual regression)

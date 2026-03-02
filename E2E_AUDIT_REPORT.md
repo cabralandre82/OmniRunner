@@ -2,8 +2,9 @@
 
 **Data**: 2026-02-28
 **Score**: 10/10 (auditoria)
-**Testes**: 1915 (1465 Flutter + 450 Portal)
+**Testes**: 1953 (1465 Flutter + 488 Portal)
 **Portal Pages**: 6 (Custódia, Clearing, Swap, FX, Auditoria, Settings)
+**QA Command**: `cd portal && npm run qa:e2e` (6 steps, single command)
 
 ---
 
@@ -107,20 +108,26 @@ ATLETA (app)          STAFF (app)           BACKEND (Supabase)         PORTAL (N
 ### Comandos para rodar:
 
 ```bash
+# QA completo (6 steps: tsc, smoke e2e, unit, reconciliation, no-money, lint)
+cd portal && npm run qa:e2e
+
 # Flutter (1465 testes)
 cd omni_runner && flutter test
 
-# Portal (450 testes)
+# Portal (488 testes)
 cd portal && npx vitest run
 
-# Apenas compliance (anti-regressão)
-cd omni_runner && flutter test test/compliance/
+# Apenas QA E2E (smoke + idempotency + antifraud + concurrency)
+cd portal && npx vitest run src/lib/qa-e2e.test.ts
 
-# Apenas E2E burn/clearing
+# Apenas reconciliação (invariantes + fees)
+cd portal && npx vitest run src/lib/qa-reconciliation.test.ts
+
+# Apenas compliance "no money in app" (CI gate)
+cd portal && npm run qa:no-money
+
+# Apenas E2E burn/clearing (Flutter)
 cd omni_runner && flutter test test/e2e/
-
-# Apenas clearing service (Portal)
-cd portal && npx vitest run src/lib/clearing.test.ts
 ```
 
 ### Cobertura por categoria:
@@ -140,6 +147,12 @@ cd portal && npx vitest run src/lib/clearing.test.ts
 | Custody service | 6 | `portal/src/lib/custody.test.ts` |
 | Swap service | 4 | `portal/src/lib/swap.test.ts` |
 | API routes (clearing, swap, fees, invariants) | 20+ | `portal/src/app/api/*/route.test.ts` |
+| **QA Smoke E2E** (seed→burn→settlement→custody) | 8 | `portal/src/lib/qa-e2e.test.ts` |
+| **QA Idempotency** (repeated scan, duplicate ref) | 4 | `portal/src/lib/qa-e2e.test.ts` |
+| **QA Anti-fraud** (expired, forged, replay, affiliation) | 8 | `portal/src/lib/qa-e2e.test.ts` |
+| **QA Concurrency** (100 scans, 1000 burns, 1000 events) | 4 | `portal/src/lib/qa-e2e.test.ts` |
+| **QA Reconciliation** (D=R+A, R=M, fees, no duplicates) | 14 | `portal/src/lib/qa-reconciliation.test.ts` |
+| **QA No Money** (ripgrep CI gate) | script | `portal/scripts/qa-no-money.sh` |
 
 ---
 
@@ -183,6 +196,8 @@ cd portal && npx vitest run src/lib/clearing.test.ts
 
 1. **Assinar QR com HMAC** — hoje o nonce UUID basta, mas HMAC hardening melhora
 2. **PIN/biometria** antes de gerar QR burn — `local_auth` package
-3. **Webhook signature validation** para depósitos (Stripe/MercadoPago HMAC)
-4. **Cron de netting** — chamar `aggregate_clearing_window` + `settleWindowForDebtor` a cada 1min
+3. ~~**Webhook signature validation**~~ — IMPLEMENTADO (`portal/src/lib/webhook.ts` + `/api/custody/webhook`)
+4. ~~**Cron de netting**~~ — IMPLEMENTADO (`clearing-cron` chama `aggregate_clearing_window` + batch settle)
 5. **Alertas** — Datadog/Grafana quando `check_custody_invariants()` retorna rows
+6. **Integration test Postgres real** — burn → settlement → wallet com DB de teste
+7. **Redis-backed rate limiter** — interface plugável pronta, precisa trocar store em prod
