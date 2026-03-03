@@ -31,6 +31,33 @@ psql $DATABASE_URL -f supabase/migrations/20260303700000_portal_performance_inde
 
 # 6. OS-05: KPI attendance integration
 psql $DATABASE_URL -f supabase/migrations/20260303800000_kpi_attendance_integration.sql
+
+# 7. Security hardening
+psql $DATABASE_URL -f supabase/migrations/20260303900000_security_definer_hardening_remaining.sql
+
+# 8. BLOCO A: Workout Builder
+psql $DATABASE_URL -f supabase/migrations/20260304100000_workout_builder.sql
+
+# 9. BLOCO B: Financial Engine
+psql $DATABASE_URL -f supabase/migrations/20260304200000_financial_engine.sql
+
+# 10. BLOCO C: Workout-Financial Integration
+psql $DATABASE_URL -f supabase/migrations/20260304300000_workout_financial_integration.sql
+
+# 11. BLOCO D: Wearables
+psql $DATABASE_URL -f supabase/migrations/20260304400000_wearables.sql
+
+# 12. BLOCO E: Analytics Advanced
+psql $DATABASE_URL -f supabase/migrations/20260304500000_analytics_advanced.sql
+
+# 13. Security Legacy RPCs
+psql $DATABASE_URL -f supabase/migrations/20260304600000_security_hardening_legacy_rpcs.sql
+
+# 14. Optimistic Locking
+psql $DATABASE_URL -f supabase/migrations/20260304700000_optimistic_locking.sql
+
+# 15. TrainingPeaks Integration
+psql $DATABASE_URL -f supabase/migrations/20260304800000_trainingpeaks_integration.sql
 ```
 
 ### Verificação pós-migrations
@@ -60,9 +87,12 @@ WHERE proname IN (
   'fn_mark_attendance','fn_issue_checkin_token',
   'fn_upsert_member_status',
   'fn_mark_announcement_read','fn_announcement_read_stats',
-  'compute_coaching_kpis_daily','compute_coaching_alerts_daily'
+  'compute_coaching_kpis_daily','compute_coaching_alerts_daily',
+  'fn_assign_workout','fn_generate_workout_payload','fn_import_execution',
+  'fn_update_subscription_status','fn_create_ledger_entry',
+  'fn_push_to_trainingpeaks','fn_tp_sync_status'
 );
--- expect: 7 rows
+-- expect: 14 rows
 
 -- Colunas novas OS-05
 SELECT column_name FROM information_schema.columns
@@ -70,23 +100,56 @@ WHERE table_name = 'coaching_kpis_daily'
   AND column_name LIKE 'attendance%';
 -- expect: 3 rows
 
+-- BLOCO A-D tables
+SELECT count(*) FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_name IN (
+    'coaching_workout_templates','coaching_workout_blocks','coaching_workout_assignments',
+    'coaching_plans','coaching_subscriptions','coaching_financial_ledger',
+    'coaching_device_links','coaching_workout_executions',
+    'coaching_tp_sync'
+  );
+-- expect: 9
+
 -- Total policies
 SELECT count(*) FROM pg_policies
 WHERE tablename IN (
   'coaching_training_sessions','coaching_training_attendance',
   'coaching_tags','coaching_athlete_tags','coaching_athlete_notes','coaching_member_status',
-  'coaching_announcements','coaching_announcement_reads'
+  'coaching_announcements','coaching_announcement_reads',
+  'coaching_workout_templates','coaching_workout_blocks','coaching_workout_assignments',
+  'coaching_plans','coaching_subscriptions','coaching_financial_ledger',
+  'coaching_device_links','coaching_workout_executions',
+  'coaching_tp_sync'
 );
--- expect: 35+
+-- expect: 50+
 ```
 
 ---
 
-## Fase 2 — Edge Functions (se houver)
+## Fase 2 — Edge Functions
 
 ```bash
-# Deploy edge functions (se atualizadas)
+# Deploy ALL edge functions
 supabase functions deploy
+
+# Or deploy individually (TrainingPeaks):
+supabase functions deploy trainingpeaks-oauth
+supabase functions deploy trainingpeaks-sync
+
+# Set TrainingPeaks secrets (if not already set):
+supabase secrets set TRAININGPEAKS_CLIENT_ID=<value>
+supabase secrets set TRAININGPEAKS_CLIENT_SECRET=<value>
+supabase secrets set TRAININGPEAKS_REDIRECT_URI=<value>
+```
+
+### Verificação Edge Functions
+
+```bash
+# Health check para cada function:
+curl -s https://<PROJECT>.supabase.co/functions/v1/trainingpeaks-oauth/health
+curl -s https://<PROJECT>.supabase.co/functions/v1/trainingpeaks-sync/health
+# expect: {"status":"ok","fn":"trainingpeaks-*"}
 ```
 
 ---
@@ -94,18 +157,36 @@ supabase functions deploy
 ## Fase 3 — Portal Deploy
 
 ```bash
-cd portal
-npm run build
-# Deploy conforme seu setup (Vercel, Docker, etc.)
+# Vercel: push to master triggers auto-deploy
+git push origin master
+
+# Manual build check:
+cd portal && npm run build
 ```
+
+**Vercel Configuration:**
+- Root Directory: `portal/`
+- Build Command: `npm run build` (auto-detected)
+- Output Directory: `.next` (auto-detected)
+- Node.js Version: 18.x or 20.x
+
+**Required Vercel Environment Variables:**
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SENTRY_ORG` / `SENTRY_PROJECT` / `SENTRY_AUTH_TOKEN` (optional, for error tracking)
 
 ### Verificação pós-deploy portal
 
 - [ ] Login funciona
-- [ ] Sidebar mostra novas entradas (Presença, CRM, Mural, Comunicação, Análise Presença, Alertas/Risco, Exports)
+- [ ] `/api/health` retorna `{"status":"ok"}`
+- [ ] Sidebar mostra todas as entradas (Presença, CRM, Mural, Workouts, Financeiro, Wearables, TrainingPeaks, Exports)
 - [ ] `/attendance` carrega sem erros
 - [ ] `/crm` carrega sem erros
 - [ ] `/announcements` carrega sem erros
+- [ ] `/workouts` carrega sem erros
+- [ ] `/financial` carrega sem erros
+- [ ] `/trainingpeaks` carrega sem erros
 - [ ] `/exports` → CSV downloads funcionam
 - [ ] `/risk` → alertas carregam (pode estar vazio se cron não rodou)
 
@@ -125,10 +206,16 @@ flutter build apk --release  # ou ios
 - [ ] Staff: criar treino → salva no DB
 - [ ] Staff: "CRM Atletas" acessível com filtros
 - [ ] Staff: "Mural de Avisos" → criar/ler/fixar
+- [ ] Staff: "Workout Builder" → criar template com blocos
+- [ ] Staff: "Assign Workout" → atribuir e sync TrainingPeaks
+- [ ] Staff: "Financeiro" → planos e subscriptions
 - [ ] Athlete: "Meus Treinos" → lista treinos do grupo
+- [ ] Athlete: "Meu Treino do Dia" → visualiza blocos
 - [ ] Athlete: gerar QR → código aparece com countdown
 - [ ] Athlete: "Meu Status" → status visível (se definido)
 - [ ] Athlete: "Mural" → vê avisos, confirma leitura
+- [ ] Athlete: "Dispositivos" → vincular TrainingPeaks via OAuth
+- [ ] Athlete: "Wearables" → importar execução
 
 ---
 

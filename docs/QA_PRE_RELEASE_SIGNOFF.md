@@ -1,8 +1,10 @@
 # QA Pre-Release Sign-off
 
 **Data**: 2026-03-03
-**Versão**: RC-1
+**Versão**: RC-2
 **QA Lead**: Claude/CTO
+**Commit**: `01695e1` (pushed to `origin/master`)
+**Build**: Portal `npm run build` ✅ | Flutter `dart analyze` ✅ 0 errors
 
 ---
 

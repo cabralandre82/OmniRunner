@@ -843,3 +843,128 @@ ALTER TABLE public.coaching_kpis_daily DROP COLUMN IF EXISTS late_subscriptions;
 -- Re-apply previous compute functions:
 psql $DATABASE_URL -f supabase/migrations/20260303800000_kpi_attendance_integration.sql
 ```
+
+---
+
+## Phase 17: TrainingPeaks Integration
+
+### 17.1 Pre-requisites
+
+- [ ] `TRAININGPEAKS_CLIENT_ID` and `TRAININGPEAKS_CLIENT_SECRET` set in Supabase Edge Function secrets
+- [ ] `TRAININGPEAKS_REDIRECT_URI` set (e.g., `https://<SUPABASE_URL>/functions/v1/trainingpeaks-oauth?action=callback`)
+
+### 17.2 Apply Migration
+
+```bash
+psql $DATABASE_URL -f supabase/migrations/20260304800000_trainingpeaks_integration.sql
+```
+
+**What it does:**
+- Adds `trainingpeaks` to `coaching_device_links.provider` and `coaching_workout_executions.source` CHECK constraints
+- Creates `coaching_tp_sync` table for tracking sync state
+- Creates RPCs: `fn_push_to_trainingpeaks`, `fn_tp_sync_status` (both SECURITY DEFINER, hardened)
+
+### 17.3 Deploy Edge Functions
+
+```bash
+supabase functions deploy trainingpeaks-oauth
+supabase functions deploy trainingpeaks-sync
+```
+
+### 17.4 Set Secrets
+
+```bash
+supabase secrets set TRAININGPEAKS_CLIENT_ID=<your_client_id>
+supabase secrets set TRAININGPEAKS_CLIENT_SECRET=<your_client_secret>
+supabase secrets set TRAININGPEAKS_REDIRECT_URI=<your_redirect_uri>
+```
+
+### 17.5 Verify
+
+```sql
+-- Check provider constraint updated
+SELECT conname, consrc FROM pg_constraint
+WHERE conname = 'coaching_device_links_provider_check';
+
+-- Check sync table exists
+SELECT count(*) FROM information_schema.tables
+WHERE table_name = 'coaching_tp_sync';
+
+-- Check RPCs exist
+SELECT proname FROM pg_proc WHERE proname IN ('fn_push_to_trainingpeaks', 'fn_tp_sync_status');
+```
+
+### 17.6 Rollback
+
+```sql
+DROP TABLE IF EXISTS public.coaching_tp_sync CASCADE;
+DROP FUNCTION IF EXISTS public.fn_push_to_trainingpeaks(uuid);
+DROP FUNCTION IF EXISTS public.fn_tp_sync_status(uuid);
+-- Revert provider CHECKs to previous values if needed
+```
+
+---
+
+## Phase 18: Vercel Portal Deployment
+
+### 18.1 Pre-requisites
+
+- [ ] Vercel project configured with root directory: `portal/`
+- [ ] Environment variables set in Vercel dashboard:
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` (optional)
+
+### 18.2 Deploy
+
+Push to `master` triggers automatic deployment. Verify at Vercel dashboard.
+
+### 18.3 Post-Deploy Checks
+
+- [ ] `/api/health` returns `{ "status": "ok" }`
+- [ ] Login flow works
+- [ ] Dashboard loads with data
+- [ ] TrainingPeaks page accessible for staff
+- [ ] CSV exports work
+- [ ] No console errors
+
+### 18.4 Rollback
+
+Redeploy previous commit from Vercel dashboard:
+```bash
+# Or via CLI:
+vercel rollback
+```
+
+---
+
+## Full Migration Order (Production)
+
+| # | Migration | What |
+|---|-----------|------|
+| 1 | `20260303300000_fix_coaching_roles.sql` | Canonical roles + backfill |
+| 2 | `20260303300001_alert_dedup_constraints.sql` | Alert dedup |
+| 3 | `20260303400000_training_sessions_attendance.sql` | OS-01 Training |
+| 4 | `20260303500000_crm_tags_notes_status.sql` | OS-02 CRM |
+| 5 | `20260303600000_announcements.sql` | OS-03 Announcements |
+| 6 | `20260303700000_portal_performance_indexes.sql` | OS-04 Indexes |
+| 7 | `20260303800000_kpi_attendance_integration.sql` | OS-05 KPI |
+| 8 | `20260303900000_security_definer_hardening_remaining.sql` | Security |
+| 9 | `20260304100000_workout_builder.sql` | BLOCO A |
+| 10 | `20260304200000_financial_engine.sql` | BLOCO B |
+| 11 | `20260304300000_workout_financial_integration.sql` | BLOCO C |
+| 12 | `20260304400000_wearables.sql` | BLOCO D |
+| 13 | `20260304500000_analytics_advanced.sql` | BLOCO E |
+| 14 | `20260304600000_security_hardening_legacy_rpcs.sql` | Legacy RPCs |
+| 15 | `20260304700000_optimistic_locking.sql` | Locking |
+| 16 | `20260304800000_trainingpeaks_integration.sql` | TrainingPeaks |
+
+### One-liner (apply all)
+
+```bash
+for f in supabase/migrations/202603*.sql supabase/migrations/202604*.sql; do
+  echo "=== Applying: $f ==="
+  psql $DATABASE_URL -f "$f" || { echo "FAILED: $f"; exit 1; }
+done
+```

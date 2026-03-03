@@ -161,19 +161,70 @@
 |---------|-------|
 | `tools/verify_metrics_snapshots.ts` | OS-05 (updated) |
 
+## TrainingPeaks Integration
+
+| Arquivo | Bloco |
+|---------|-------|
+| `supabase/migrations/20260304800000_trainingpeaks_integration.sql` | TrainingPeaks |
+| `supabase/functions/trainingpeaks-oauth/index.ts` | TrainingPeaks |
+| `supabase/functions/trainingpeaks-sync/index.ts` | TrainingPeaks |
+| `omni_runner/lib/domain/usecases/wearable/push_to_trainingpeaks.dart` | TrainingPeaks |
+| `portal/src/app/(portal)/trainingpeaks/page.tsx` | TrainingPeaks |
+| `portal/src/app/(portal)/trainingpeaks/loading.tsx` | TrainingPeaks |
+| `docs/TRAININGPEAKS_INTEGRATION.md` | TrainingPeaks |
+
+## Performance / Observability / UX
+
+| Arquivo | Tipo |
+|---------|------|
+| `tools/perf_seed.ts` | Performance |
+| `tools/perf_benchmark.sql` | Performance |
+| `tools/perf_run.sh` | Performance |
+| `portal/src/app/error.tsx` | Error boundary |
+| `portal/src/app/global-error.tsx` | Error boundary |
+| `portal/src/components/empty-state.tsx` | UX |
+| `portal/src/components/web-vitals.tsx` | Performance |
+| `portal/src/lib/api-handler.ts` | Observability |
+| `supabase/functions/_shared/obs.ts` | Observability |
+| `supabase/functions/_shared/cors.ts` | Security |
+
+## QA Documentation
+
+| Arquivo | Tipo |
+|---------|------|
+| `docs/QA_GATE0_PRODUCT_INVENTORY.md` | QA Gate 0 |
+| `docs/QA_GATE1_E2E_DUMMY.md` | QA Gate 1 |
+| `docs/QA_GATE2_INTEGRATION_CONTRACTS.md` | QA Gate 2 |
+| `docs/QA_GATE3_NO_LOCAL_MOCK.md` | QA Gate 3 |
+| `docs/QA_GATE4_EDGE_CASES.md` | QA Gate 4 |
+| `docs/QA_GATE5_SECURITY.md` | QA Gate 5 |
+| `docs/QA_GATE6_CONCURRENCY.md` | QA Gate 6 |
+| `docs/QA_GATE7_WEARABLES.md` | QA Gate 7 |
+| `docs/QA_GATE8_UX.md` | QA Gate 8 |
+| `docs/QA_GATE9_OBSERVABILITY.md` | QA Gate 9 |
+| `docs/QA_GATE10_SCALE_PERF.md` | QA Gate 10 |
+| `docs/QA_GATE11_FEATURE_QA_INTERROGATION.md` | QA Gate 11 |
+| `docs/QA_GATE12_RELEASE_SIGNOFF.md` | QA Gate 12 |
+| `docs/QA_PRE_RELEASE_MASTER_REPORT.md` | QA Consolidado |
+| `docs/QA_PRE_RELEASE_BUGS.md` | QA Bugs |
+| `docs/QA_PRE_RELEASE_RISK_REGISTER.md` | QA Riscos |
+| `docs/QA_PRE_RELEASE_SIGNOFF.md` | QA Sign-off |
+
 ## Totais
 
 | Camada | Arquivos novos | Arquivos modificados |
 |--------|---------------|---------------------|
-| Migrations SQL | 7 | 0 |
-| App Domain | 23 | 1 |
+| Migrations SQL | 16 | 0 |
+| Edge Functions | 4 (new) | 20+ (CORS/health) |
+| App Domain | 25 | 2 |
 | App Data | 4 | 0 |
-| App BLoCs | 21 | 0 |
-| App Screens | 14 | 0 |
+| App BLoCs | 21 | 3 |
+| App Screens | 14 | 10 |
 | App DI | 0 | 1 |
-| Portal Pages | 16+ | 1 |
-| Portal API | 9 | 0 |
-| Portal Components | 0 | 1 |
-| Docs | 17 | 1 |
-| Tools | 0 | 1 |
-| **TOTAL** | **~110+** | **~6** |
+| Portal Pages | 24+ | 5 |
+| Portal API | 12 | 8 |
+| Portal Components | 3 | 2 |
+| Docs | 45+ | 3 |
+| Tools | 6 | 1 |
+| CI/CD | 2 | 0 |
+| **TOTAL** | **~190+** | **~55** |
