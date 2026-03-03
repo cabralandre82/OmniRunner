@@ -49,15 +49,15 @@ describe("POST /api/verification/evaluate", () => {
 
   it("returns 403 when caller has no permission", async () => {
     serviceClient.from.mockReturnValueOnce(
-      queryChain({ data: { role: "atleta" } }),
+      queryChain({ data: { role: "athlete" } }),
     );
     const res = await POST(req({ user_id: USER_UUID }));
     expect(res.status).toBe(403);
   });
 
-  it("allows professor role", async () => {
+  it("allows coach role", async () => {
     serviceClient.from
-      .mockReturnValueOnce(queryChain({ data: { role: "professor" } }))
+      .mockReturnValueOnce(queryChain({ data: { role: "coach" } }))
       .mockReturnValueOnce(queryChain({ data: { user_id: USER_UUID } }));
     serviceClient.rpc.mockReturnValueOnce(
       queryChain({ data: null, error: null }),

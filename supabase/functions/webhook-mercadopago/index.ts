@@ -80,6 +80,12 @@ async function trackAnalytics(
 }
 
 serve(async (req: Request) => {
+  if (req.method === 'GET' && new URL(req.url).pathname === '/health') {
+    return new Response(JSON.stringify({ status: 'ok', version: '1.0.0' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   const requestId = crypto.randomUUID();
   const elapsed = startTimer();
   let status = 200;

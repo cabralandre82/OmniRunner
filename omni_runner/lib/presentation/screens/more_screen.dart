@@ -296,7 +296,7 @@ class MoreScreen extends StatelessWidget {
           .eq('user_id', uid);
       final staffRow = (rows as List).cast<Map<String, dynamic>>().where((r) {
         final role = r['role'] as String? ?? '';
-        return role == 'admin_master' || role == 'professor' || role == 'assistente';
+        return role == 'admin_master' || role == 'coach' || role == 'assistant';
       }).firstOrNull;
       if (!context.mounted) return;
       if (staffRow == null) {
@@ -338,8 +338,8 @@ class MoreScreen extends StatelessWidget {
       final staffRow = (rows as List).cast<Map<String, dynamic>>().where((r) {
         final role = r['role'] as String? ?? '';
         return role == 'admin_master' ||
-            role == 'professor' ||
-            role == 'assistente';
+            role == 'coach' ||
+            role == 'assistant';
       }).firstOrNull;
 
       if (!context.mounted) return;

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { Toaster } from "sonner";
+import { WebVitals } from "@/components/web-vitals";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -41,8 +43,10 @@ export default async function RootLayout({
     <html lang={locale}>
       <body className={`${geistSans.variable} font-sans antialiased`}>
         <NextIntlClientProvider messages={messages}>
+          <WebVitals />
           {children}
         </NextIntlClientProvider>
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );

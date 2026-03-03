@@ -1,48 +1,57 @@
 import 'package:equatable/equatable.dart';
 
+import 'package:omni_runner/core/logging/logger.dart';
+
 /// Role of a member within a coaching group.
 ///
 /// Distinct from social [GroupRole] (admin/moderator/member).
 /// Append-only ordinal rule (DECISAO 018): new values at the end only.
 ///
-/// Migration mapping (Postgres → Dart):
-///   'coach'       / ordinal 0 → [adminMaster]
-///   'assistant'   / ordinal 1 → [assistente]
-///   'athlete'     / ordinal 2 → [atleta]
-///   'professor'   / ordinal 3 → [professor]   (new in 16.10.0)
+/// Canonical Postgres values (ASCII, no accents):
+///   'admin_master' / ordinal 0 → [adminMaster]
+///   'assistant'    / ordinal 1 → [assistant]
+///   'athlete'      / ordinal 2 → [athlete]
+///   'coach'        / ordinal 3 → [coach]
 ///
-/// Staff = admin_master | professor | assistente (can operate the ecosystem).
+/// Staff = admin_master | coach | assistant (can operate the ecosystem).
 enum CoachingRole {
-  /// Group owner (was "coach"). Full control: analytics, events, management.
+  /// Group owner. Full control: analytics, events, management.
   adminMaster,
 
-  /// Support staff (was "assistant"). View analytics, create events.
-  assistente,
+  /// Support staff. View analytics, create events.
+  assistant,
 
-  /// Active runner (was "athlete"). Workouts → group analytics and rankings.
-  atleta,
+  /// Active runner. Workouts → group analytics and rankings.
+  athlete,
 
-  /// Institutional professor (new). Same power as admin_master for operations.
-  professor,
+  /// Trainer/professor. Same power as admin_master for operations.
+  coach,
 }
 
 /// Postgres string ↔ [CoachingRole] mapping.
 ///
-/// Handles both legacy ('coach', 'assistant', 'athlete') and
-/// current ('admin_master', 'professor', 'assistente', 'atleta') values.
+/// Handles both legacy and canonical values for safe migration.
+/// Unknown values fall back to [CoachingRole.athlete] but are logged
+/// as warnings so they surface in DevTools/Sentry.
 CoachingRole coachingRoleFromString(String value) => switch (value) {
-      'admin_master' || 'coach' => CoachingRole.adminMaster,
-      'professor' => CoachingRole.professor,
-      'assistente' || 'assistant' => CoachingRole.assistente,
-      'atleta' || 'athlete' => CoachingRole.atleta,
-      _ => CoachingRole.atleta,
+      'admin_master' => CoachingRole.adminMaster,
+      'coach' || 'professor' => CoachingRole.coach,
+      'assistant' || 'assistente' => CoachingRole.assistant,
+      'athlete' || 'atleta' => CoachingRole.athlete,
+      _ => () {
+          AppLogger.warn(
+            'Unknown coaching role "$value" — falling back to athlete',
+            tag: 'CoachingRole',
+          );
+          return CoachingRole.athlete;
+        }(),
     };
 
 String coachingRoleToString(CoachingRole role) => switch (role) {
       CoachingRole.adminMaster => 'admin_master',
-      CoachingRole.professor => 'professor',
-      CoachingRole.assistente => 'assistente',
-      CoachingRole.atleta => 'atleta',
+      CoachingRole.coach => 'coach',
+      CoachingRole.assistant => 'assistant',
+      CoachingRole.athlete => 'athlete',
     };
 
 /// A user's membership record within a coaching group.
@@ -77,28 +86,22 @@ final class CoachingMemberEntity extends Equatable {
   });
 
   bool get isAdminMaster => role == CoachingRole.adminMaster;
-  bool get isProfessor => role == CoachingRole.professor;
-  bool get isAssistente => role == CoachingRole.assistente;
-  bool get isAtleta => role == CoachingRole.atleta;
+  bool get isCoach => role == CoachingRole.coach;
+  bool get isAssistant => role == CoachingRole.assistant;
+  bool get isAthlete => role == CoachingRole.athlete;
 
-  /// admin_master, professor, or assistente — can operate the coaching ecosystem.
+  /// admin_master, coach, or assistant — can operate the coaching ecosystem.
   bool get isStaff =>
       role == CoachingRole.adminMaster ||
-      role == CoachingRole.professor ||
-      role == CoachingRole.assistente;
+      role == CoachingRole.coach ||
+      role == CoachingRole.assistant;
 
-  /// admin_master or professor — can manage members, events, and settings.
+  /// admin_master or coach — can manage members, events, and settings.
   bool get canManage =>
-      role == CoachingRole.adminMaster || role == CoachingRole.professor;
+      role == CoachingRole.adminMaster || role == CoachingRole.coach;
 
-  /// admin_master, professor, or assistente — can issue tokens and invites.
+  /// admin_master, coach, or assistant — can issue tokens and invites.
   bool get canIssueTokens => isStaff;
-
-  // Legacy aliases for migration period
-  @Deprecated('Use isAdminMaster instead')
-  bool get isCoach => isAdminMaster;
-  @Deprecated('Use isAssistente instead')
-  bool get isAssistant => isAssistente;
 
   CoachingMemberEntity copyWith({
     String? displayName,

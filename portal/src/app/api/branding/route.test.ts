@@ -82,7 +82,7 @@ describe("POST /api/branding", () => {
 
   it("returns 403 when caller is not admin_master", async () => {
     serviceClient.from.mockReturnValueOnce(
-      queryChain({ data: { role: "professor" } }),
+      queryChain({ data: { role: "coach" } }),
     );
     const res = await POST(postReq({ primary_color: "#ff0000" }));
     expect(res.status).toBe(403);

@@ -11,7 +11,7 @@ import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
 /// - Invite has not expired.
 /// - The accepting user is the invited user.
 ///
-/// Creates a [CoachingMemberEntity] with [CoachingRole.atleta] and
+/// Creates a [CoachingMemberEntity] with [CoachingRole.athlete] and
 /// transitions the invite to [CoachingInviteStatus.accepted].
 ///
 /// Throws [CoachingFailure] on validation error.
@@ -63,7 +63,7 @@ final class AcceptCoachingInvite {
       userId: acceptingUserId,
       groupId: invite.groupId,
       displayName: displayName,
-      role: CoachingRole.atleta,
+      role: CoachingRole.athlete,
       joinedAtMs: nowMs,
     );
 

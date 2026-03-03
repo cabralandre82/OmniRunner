@@ -16,9 +16,7 @@ import { formatDateMs } from "@/lib/format";
 
 const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   admin_master: { label: "Admin", color: "bg-purple-100 text-purple-800" },
-  professor:    { label: "Professor", color: "bg-blue-100 text-blue-800" },
-  assistente:   { label: "Assistente", color: "bg-gray-100 text-gray-700" },
-  coach:        { label: "Coach", color: "bg-purple-100 text-purple-800" },
+  coach:        { label: "Coach", color: "bg-blue-100 text-blue-800" },
   assistant:    { label: "Assistente", color: "bg-gray-100 text-gray-700" },
   athlete:      { label: "Atleta", color: "bg-green-100 text-green-800" },
 };
@@ -63,7 +61,7 @@ export default async function SettingsPage() {
     .from("coaching_members")
     .select("id, user_id, display_name, role, joined_at_ms")
     .eq("group_id", groupId)
-    .in("role", ["admin_master", "professor", "assistente", "coach", "assistant"])
+    .in("role", ["admin_master", "coach", "assistant"])
     .order("joined_at_ms", { ascending: true });
 
   const staff = (members ?? []) as Member[];

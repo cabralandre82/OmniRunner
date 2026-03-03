@@ -10,7 +10,7 @@ import { classifyError } from "../_shared/errors.ts";
 /**
  * champ-invite — Supabase Edge Function
  *
- * Staff (admin_master/professor) of the HOST group invites another group
+ * Staff (admin_master/coach) of the HOST group invites another group
  * to participate in a championship. Idempotent on (championship_id, to_group_id).
  *
  * POST /champ-invite
@@ -22,6 +22,12 @@ const FN = "champ-invite";
 serve(async (req: Request) => {
   const cors = handleCors(req);
   if (cors) return cors;
+
+  if (req.method === 'GET' && new URL(req.url).pathname === '/health') {
+    return new Response(JSON.stringify({ status: 'ok', version: '1.0.0' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   const requestId = crypto.randomUUID();
   const elapsed = startTimer();
@@ -116,7 +122,7 @@ serve(async (req: Request) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (!membership || !["admin_master", "professor"].includes(membership.role)) {
+    if (!membership || !["admin_master", "coach"].includes(membership.role)) {
       status = 403;
       return jsonErr(403, "FORBIDDEN", "Only host group staff can invite", requestId);
     }
@@ -161,7 +167,7 @@ serve(async (req: Request) => {
           .from("coaching_members")
           .select("user_id")
           .eq("group_id", to_group_id)
-          .in("role", ["admin_master", "professor"]);
+          .in("role", ["admin_master", "coach"]);
 
         if (staffMembers && staffMembers.length > 0) {
           const staffIds = staffMembers.map((m: { user_id: string }) => m.user_id);

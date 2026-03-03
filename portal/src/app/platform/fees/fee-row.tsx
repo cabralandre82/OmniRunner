@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface Fee {
   id: string;
@@ -39,7 +40,7 @@ export function FeeRow({
 
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error ?? "Erro ao salvar");
+        toast.error(data.error ?? "Erro ao salvar");
       } else {
         window.location.reload();
       }

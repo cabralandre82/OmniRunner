@@ -92,7 +92,7 @@ Distributes coins from group inventory to an athlete's wallet.
 ```
 
 - `amount`: integer 1–1000
-- `athlete_user_id`: must be UUID, must be `atleta` in the group
+- `athlete_user_id`: must be UUID, must be `athlete` in the group
 
 **Flow:**
 1. Decrements group token inventory (`decrement_token_inventory` RPC)
@@ -150,7 +150,7 @@ Invites a user to the coaching group as staff.
 ```json
 {
   "email": "user@example.com",
-  "role": "professor" | "assistente"
+  "role": "coach" | "assistant"
 }
 ```
 
@@ -185,7 +185,7 @@ Removes a staff member from the group.
 
 Triggers the automated verification evaluation for an athlete.
 
-**Auth:** `admin_master` or `professor` role required.
+**Auth:** `admin_master` or `coach` role required.
 
 **Body (Zod: `verificationEvaluateSchema`):**
 ```json

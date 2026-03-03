@@ -11,7 +11,7 @@ import { classifyError } from "../_shared/errors.ts";
  * champ-open — Supabase Edge Function
  *
  * Transitions a championship from "draft" to "open", allowing athlete enrollment.
- * Only staff (admin_master/professor) of the host group may call this.
+ * Only staff (admin_master/coach) of the host group may call this.
  *
  * POST /champ-open
  * Body: { championship_id: string }
@@ -22,6 +22,12 @@ const FN = "champ-open";
 serve(async (req: Request) => {
   const cors = handleCors(req);
   if (cors) return cors;
+
+  if (req.method === 'GET' && new URL(req.url).pathname === '/health') {
+    return new Response(JSON.stringify({ status: 'ok', version: '1.0.0' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   const requestId = crypto.randomUUID();
   const elapsed = startTimer();
@@ -109,7 +115,7 @@ serve(async (req: Request) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (!membership || !["admin_master", "professor"].includes(membership.role)) {
+    if (!membership || !["admin_master", "coach"].includes(membership.role)) {
       status = 403;
       return jsonErr(403, "FORBIDDEN", "Only host group staff can open a championship", requestId);
     }

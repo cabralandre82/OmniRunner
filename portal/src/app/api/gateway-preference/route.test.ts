@@ -74,7 +74,7 @@ describe("POST /api/gateway-preference", () => {
 
   it("returns 403 when not admin_master", async () => {
     serviceClient.from.mockReturnValueOnce(
-      queryChain({ data: { role: "atleta" } }),
+      queryChain({ data: { role: "athlete" } }),
     );
     const res = await POST(postReq({ preferred_gateway: "stripe" }));
     expect(res.status).toBe(403);

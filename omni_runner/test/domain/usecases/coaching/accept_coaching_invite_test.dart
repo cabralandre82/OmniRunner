@@ -87,7 +87,7 @@ void main() {
       nowMs: 500,
     );
 
-    expect(member.role, CoachingRole.atleta);
+    expect(member.role, CoachingRole.athlete);
     expect(member.userId, 'user-1');
     expect(member.groupId, 'g1');
     expect(memberRepo.saved, isNotNull);

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface Props {
   groupId: string;
@@ -53,12 +54,12 @@ export function AssessoriaActions({
 
       if (!res.ok) {
         const data = await res.json();
-        alert(`Erro: ${data.error ?? "Falha desconhecida"}`);
+        toast.error(`Erro: ${data.error ?? "Falha desconhecida"}`);
       }
 
       router.refresh();
     } catch (e) {
-      alert(`Erro de rede: ${e}`);
+      toast.error(`Erro de rede: ${e}`);
     } finally {
       setLoading(false);
     }

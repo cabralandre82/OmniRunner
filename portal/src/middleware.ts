@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const PUBLIC_ROUTES = new Set(["/login", "/no-access", "/api/auth/callback"]);
+const PUBLIC_ROUTES = new Set(["/login", "/no-access", "/api/auth/callback", "/api/health"]);
 
 const PUBLIC_PREFIXES = [
   "/challenge/",
@@ -66,7 +66,7 @@ export async function middleware(request: NextRequest) {
       .from("coaching_members")
       .select("group_id, role, coaching_groups(name)")
       .eq("user_id", user.id)
-      .in("role", ["admin_master", "professor", "assistente"]);
+      .in("role", ["admin_master", "coach", "assistant"]);
 
     if (!memberships || memberships.length === 0) {
       const url = request.nextUrl.clone();
@@ -107,10 +107,13 @@ export async function middleware(request: NextRequest) {
   }
 
   if (ADMIN_PROFESSOR_ROUTES.some((r) => pathname.startsWith(r))) {
-    if (role !== "admin_master" && role !== "professor") {
+    if (role !== "admin_master" && role !== "coach") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
   }
+
+  const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
+  supabaseResponse.headers.set("x-request-id", requestId);
 
   return supabaseResponse;
 }

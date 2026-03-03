@@ -14,6 +14,12 @@ import { jsonOk, jsonErr } from "../_shared/http.ts";
  */
 
 serve(async (req: Request) => {
+  if (req.method === 'GET' && new URL(req.url).pathname === '/health') {
+    return new Response(JSON.stringify({ status: 'ok', version: '1.0.0' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   if (req.method !== "POST") {
     return jsonErr(405, "METHOD_NOT_ALLOWED", "Use POST");
   }

@@ -51,7 +51,7 @@ describe("POST /api/team/remove", () => {
 
   it("returns 403 when caller is not admin_master", async () => {
     serviceClient.from.mockReturnValueOnce(
-      queryChain({ data: { role: "professor" } }),
+      queryChain({ data: { role: "coach" } }),
     );
     const res = await POST(req({ member_id: "m-1" }));
     expect(res.status).toBe(403);
@@ -104,7 +104,7 @@ describe("POST /api/team/remove", () => {
       .mockReturnValueOnce(queryChain({ data: { role: "admin_master" } }))
       .mockReturnValueOnce(
         queryChain({
-          data: { id: "m-3", user_id: "athlete-1", role: "atleta" },
+          data: { id: "m-3", user_id: "athlete-1", role: "athlete" },
         }),
       )
       .mockReturnValueOnce(queryChain({ data: null, error: null }));

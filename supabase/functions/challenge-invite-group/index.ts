@@ -24,6 +24,12 @@ serve(async (req: Request) => {
   const cors = handleCors(req);
   if (cors) return cors;
 
+  if (req.method === 'GET' && new URL(req.url).pathname === '/health') {
+    return new Response(JSON.stringify({ status: 'ok', version: '1.0.0' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   const requestId = crypto.randomUUID();
   const elapsed = startTimer();
   let userId: string | null = null;
@@ -125,7 +131,7 @@ serve(async (req: Request) => {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (!membership || !["admin_master", "professor"].includes(membership.role)) {
+      if (!membership || !["admin_master", "coach"].includes(membership.role)) {
         status = 403;
         return jsonErr(403, "FORBIDDEN", "Apenas o criador ou staff da assessoria podem convidar", requestId);
       }
@@ -184,7 +190,7 @@ serve(async (req: Request) => {
           .from("coaching_members")
           .select("user_id")
           .eq("group_id", to_group_id)
-          .in("role", ["admin_master", "professor"]);
+          .in("role", ["admin_master", "coach"]);
 
         if (staffMembers && staffMembers.length > 0) {
           const staffIds = staffMembers.map((m: { user_id: string }) => m.user_id);

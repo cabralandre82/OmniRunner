@@ -7,7 +7,7 @@ import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
 import 'package:omni_runner/domain/usecases/coaching/get_coaching_group_details.dart';
 
 final _group = CoachingGroupEntity(id: 'g1', name: 'G', coachUserId: 'coach', createdAtMs: 0);
-final _member = CoachingMemberEntity(id: 'm1', userId: 'u1', groupId: 'g1', displayName: 'U', role: CoachingRole.atleta, joinedAtMs: 0);
+final _member = CoachingMemberEntity(id: 'm1', userId: 'u1', groupId: 'g1', displayName: 'U', role: CoachingRole.athlete, joinedAtMs: 0);
 
 class _FakeGroupRepo implements ICoachingGroupRepo {
   @override Future<CoachingGroupEntity?> getById(String id) async => id == 'g1' ? _group : null;

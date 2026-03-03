@@ -4,6 +4,7 @@ import { jsonOk, jsonErr } from "../_shared/http.ts";
 import { handleCors } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rate_limit.ts";
 import { startTimer, logRequest, logError } from "../_shared/obs.ts";
+import { log } from "../_shared/logger.ts";
 import { requireJson, requireFields, ValidationError } from "../_shared/validate.ts";
 import { classifyError } from "../_shared/errors.ts";
 
@@ -26,6 +27,12 @@ const FN = "clearing-confirm-received";
 serve(async (req: Request) => {
   const cors = handleCors(req);
   if (cors) return cors;
+
+  if (req.method === 'GET' && new URL(req.url).pathname === '/health') {
+    return new Response(JSON.stringify({ status: 'ok', version: '1.0.0' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   const requestId = crypto.randomUUID();
   const elapsed = startTimer();
@@ -124,10 +131,18 @@ serve(async (req: Request) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (!membership || !["admin_master", "professor"].includes(membership.role)) {
+    if (!membership || !["admin_master", "coach"].includes(membership.role)) {
       status = 403;
-      return jsonErr(403, "FORBIDDEN", "Only admin_master or professor of the receiving group can confirm", requestId);
+      return jsonErr(403, "FORBIDDEN", "Only admin_master or coach of the receiving group can confirm", requestId);
     }
+
+    log("info", "clearing-confirm-received: transitioning case", {
+      request_id: requestId,
+      case_id,
+      from_status: cc.status,
+      to_status: "PAID_CONFIRMED",
+      to_group_id: cc.to_group_id,
+    });
 
     // ── 5. Transition SENT_CONFIRMED → PAID_CONFIRMED ───────────────────
     const { error: updateErr } = await db
@@ -190,10 +205,19 @@ serve(async (req: Request) => {
       metadata: { released_total: released, items_count: (items ?? []).length },
     });
 
+    log("info", "clearing-confirm-received: completed", {
+      request_id: requestId,
+      case_id,
+      released_total: released,
+      items_count: (items ?? []).length,
+      duration_ms: elapsed(),
+    });
+
     return jsonOk({ case_id, status: "PAID_CONFIRMED", released_total: released }, requestId);
   } catch (_err) {
     status = 500;
     errorCode = "INTERNAL";
+    log("error", "clearing-confirm-received: unexpected error", { request_id: requestId });
     return jsonErr(500, "INTERNAL", "Unexpected error", requestId);
   } finally {
     if (errorCode) {

@@ -30,7 +30,7 @@ const formatDate = formatDateISO;
 
 export default async function VerificationPage() {
   const groupId = cookies().get("portal_group_id")?.value;
-  const role = cookies().get("portal_role")?.value ?? "assistente";
+  const role = cookies().get("portal_role")?.value ?? "assistant";
 
   if (!groupId) return null;
 
@@ -48,7 +48,7 @@ export default async function VerificationPage() {
     .from("coaching_members")
     .select("user_id, display_name")
     .eq("group_id", groupId)
-    .eq("role", "atleta");
+    .eq("role", "athlete");
 
   const athleteIds = (members ?? []).map(
     (m: { user_id: string }) => m.user_id,
@@ -102,7 +102,7 @@ export default async function VerificationPage() {
     unverified: athletes.filter((a) => a.verification_status === "UNVERIFIED").length,
   };
 
-  const canEval = ["admin_master", "professor"].includes(role);
+  const canEval = ["admin_master", "coach"].includes(role);
 
   return (
     <div className="space-y-6">

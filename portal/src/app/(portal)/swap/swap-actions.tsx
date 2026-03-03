@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 export function SwapActions({
   acceptOrderId,
@@ -25,13 +26,13 @@ export function SwapActions({
 
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error ?? "Erro ao aceitar oferta");
+        toast.error(data.error ?? "Erro ao aceitar oferta");
         return;
       }
 
       window.location.reload();
     } catch {
-      alert("Erro de conexão");
+      toast.error("Erro de conexão");
     } finally {
       setLoading(false);
     }

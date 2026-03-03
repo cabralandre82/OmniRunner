@@ -50,7 +50,7 @@ void main() {
 
   test('admin_master removes athlete successfully', () async {
     repo.setMember('g1', 'coach', _member('coach', CoachingRole.adminMaster));
-    repo.setMember('g1', 'athlete', _member('athlete', CoachingRole.atleta));
+    repo.setMember('g1', 'athlete', _member('athlete', CoachingRole.athlete));
 
     await usecase.call(
       groupId: 'g1',
@@ -62,8 +62,8 @@ void main() {
   });
 
   test('throws when caller is not staff', () {
-    repo.setMember('g1', 'user', _member('user', CoachingRole.atleta));
-    repo.setMember('g1', 'other', _member('other', CoachingRole.atleta));
+    repo.setMember('g1', 'user', _member('user', CoachingRole.athlete));
+    repo.setMember('g1', 'other', _member('other', CoachingRole.athlete));
 
     expect(
       () => usecase.call(
@@ -89,7 +89,7 @@ void main() {
   });
 
   test('throws when trying to remove admin_master', () {
-    repo.setMember('g1', 'prof', _member('prof', CoachingRole.professor));
+    repo.setMember('g1', 'prof', _member('prof', CoachingRole.coach));
     repo.setMember('g1', 'coach', _member('coach', CoachingRole.adminMaster));
 
     expect(
@@ -103,8 +103,8 @@ void main() {
   });
 
   test('assistente cannot remove other staff', () {
-    repo.setMember('g1', 'ast', _member('ast', CoachingRole.assistente));
-    repo.setMember('g1', 'prof', _member('prof', CoachingRole.professor));
+    repo.setMember('g1', 'ast', _member('ast', CoachingRole.assistant));
+    repo.setMember('g1', 'prof', _member('prof', CoachingRole.coach));
 
     expect(
       () => usecase.call(

@@ -132,7 +132,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
             .from('coaching_members')
             .select('group_id, coaching_groups(name)')
             .eq('user_id', uid)
-            .eq('role', 'atleta')
+            .eq('role', 'athlete')
             .maybeSingle();
         if (row != null) {
           groupId = row['group_id'] as String?;
@@ -144,7 +144,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
         final memberships =
             await sl<ICoachingMemberRepo>().getByUserId(uid);
         final membership =
-            memberships.where((m) => m.isAtleta).firstOrNull;
+            memberships.where((m) => m.isAthlete).firstOrNull;
         if (membership != null) {
           groupId = membership.groupId;
           final group =

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 interface Message {
   id: string;
@@ -55,7 +56,7 @@ export function TicketChat({
 
       if (!res.ok) {
         const d = await res.json();
-        alert(`Erro: ${d.error ?? "Falha"}`);
+        toast.error(`Erro: ${d.error ?? "Falha"}`);
         return;
       }
 
@@ -91,7 +92,7 @@ export function TicketChat({
 
       if (!res.ok) {
         const d = await res.json();
-        alert(`Erro: ${d.error ?? "Falha"}`);
+        toast.error(`Erro: ${d.error ?? "Falha"}`);
         return;
       }
 
@@ -113,7 +114,7 @@ export function TicketChat({
 
       if (!res.ok) {
         const d = await res.json();
-        alert(`Erro: ${d.error ?? "Falha"}`);
+        toast.error(`Erro: ${d.error ?? "Falha"}`);
         return;
       }
 

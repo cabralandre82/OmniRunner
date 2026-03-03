@@ -3,6 +3,8 @@ import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_participant_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_result_entity.dart';
 import 'package:omni_runner/domain/entities/ledger_entry_entity.dart';
+import 'package:omni_runner/domain/entities/wallet_entity.dart';
+import 'package:omni_runner/domain/repositories/i_atomic_ledger_ops.dart';
 import 'package:omni_runner/domain/repositories/i_ledger_repo.dart';
 import 'package:omni_runner/domain/repositories/i_wallet_repo.dart';
 
@@ -49,12 +51,15 @@ final class LedgerOpResult {
 final class LedgerService {
   final ILedgerRepo _ledgerRepo;
   final IWalletRepo _walletRepo;
+  final IAtomicLedgerOps? _atomicOps;
 
   const LedgerService({
     required ILedgerRepo ledgerRepo,
     required IWalletRepo walletRepo,
+    IAtomicLedgerOps? atomicOps,
   })  : _ledgerRepo = ledgerRepo,
-        _walletRepo = walletRepo;
+        _walletRepo = walletRepo,
+        _atomicOps = atomicOps;
 
   // ── 1. DEBIT ENTRY FEES ─────────────────────────────────────
 
@@ -244,7 +249,6 @@ final class LedgerService {
     required String Function() uuidGenerator,
     required int nowMs,
   }) async {
-    // Idempotency check.
     if (await _alreadyExists(userId, refId, reason)) {
       return const LedgerOpResult.skipped();
     }
@@ -264,13 +268,12 @@ final class LedgerService {
       refId: refId,
       createdAtMs: nowMs,
     );
-    await _ledgerRepo.append(entry);
-
-    await _walletRepo.save(wallet.copyWith(
+    final updatedWallet = wallet.copyWith(
       balanceCoins: wallet.balanceCoins - amount,
       lifetimeSpentCoins: wallet.lifetimeSpentCoins + amount,
-    ));
+    );
 
+    await _persistAtomically(entry, updatedWallet);
     return const LedgerOpResult.ok(1);
   }
 
@@ -296,15 +299,30 @@ final class LedgerService {
       refId: refId,
       createdAtMs: nowMs,
     );
-    await _ledgerRepo.append(entry);
-
     final wallet = await _walletRepo.getByUserId(userId);
-    await _walletRepo.save(wallet.copyWith(
+    final updatedWallet = wallet.copyWith(
       balanceCoins: wallet.balanceCoins + amount,
       lifetimeEarnedCoins: wallet.lifetimeEarnedCoins + amount,
-    ));
+    );
 
+    await _persistAtomically(entry, updatedWallet);
     return const LedgerOpResult.ok(1);
+  }
+
+  // ── INTERNAL: ATOMIC PERSISTENCE ────────────────────────────
+
+  /// Writes ledger entry + wallet in one transaction when [_atomicOps]
+  /// is available; falls back to sequential writes otherwise.
+  Future<void> _persistAtomically(
+    LedgerEntryEntity entry,
+    WalletEntity wallet,
+  ) async {
+    if (_atomicOps != null) {
+      await _atomicOps.appendEntryAndSaveWallet(entry, wallet);
+    } else {
+      await _ledgerRepo.append(entry);
+      await _walletRepo.save(wallet);
+    }
   }
 
   // ── INTERNAL: IDEMPOTENCY CHECK ─────────────────────────────

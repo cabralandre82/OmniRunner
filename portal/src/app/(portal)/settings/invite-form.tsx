@@ -10,7 +10,7 @@ export function InviteForm() {
   const te = useTranslations("error");
   const router = useRouter();
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("professor");
+  const [role, setRole] = useState("coach");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -63,8 +63,8 @@ export function InviteForm() {
           onChange={(e) => setRole(e.target.value)}
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
-          <option value="professor">Professor</option>
-          <option value="assistente">Assistente</option>
+          <option value="coach">Coach</option>
+          <option value="assistant">Assistente</option>
         </select>
 
         <button

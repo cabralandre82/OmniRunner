@@ -46,7 +46,7 @@ describe("POST /api/auto-topup", () => {
 
   it("returns 403 when not admin_master", async () => {
     serviceClient.from.mockReturnValueOnce(
-      queryChain({ data: { role: "professor" } }),
+      queryChain({ data: { role: "coach" } }),
     );
     const res = await POST(req({ enabled: true }));
     expect(res.status).toBe(403);

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 import type { Product } from "./page";
 
 async function apiCall(body: Record<string, unknown>) {
@@ -12,7 +13,7 @@ async function apiCall(body: Record<string, unknown>) {
   });
   if (!res.ok) {
     const data = await res.json();
-    alert(data.error ?? "Erro");
+    toast.error(data.error ?? "Erro");
     return false;
   }
   return true;
@@ -160,7 +161,7 @@ function EditForm({
     const sort_order = parseInt(form.get("sort_order") as string, 10) || 0;
 
     if (!name || !credits_amount || !price_cents) {
-      alert("Preencha todos os campos obrigatórios");
+      toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
@@ -280,7 +281,7 @@ export function ProductForm() {
     const sort_order = parseInt(form.get("sort_order") as string, 10) || 0;
 
     if (!name || !credits_amount || !price_reais) {
-      alert("Preencha todos os campos obrigatórios");
+      toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 

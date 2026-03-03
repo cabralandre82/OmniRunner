@@ -4,6 +4,7 @@ import { jsonOk, jsonErr } from "../_shared/http.ts";
 import { handleCors } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rate_limit.ts";
 import { startTimer, logRequest, logError } from "../_shared/obs.ts";
+import { log } from "../_shared/logger.ts";
 import { requireJson, requireFields, ValidationError } from "../_shared/validate.ts";
 import { classifyError } from "../_shared/errors.ts";
 
@@ -25,6 +26,12 @@ const FN = "token-create-intent";
 serve(async (req: Request) => {
   const cors = handleCors(req);
   if (cors) return cors;
+
+  if (req.method === 'GET' && new URL(req.url).pathname === '/health') {
+    return new Response(JSON.stringify({ status: 'ok', version: '1.0.0' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   const requestId = crypto.randomUUID();
   const elapsed = startTimer();
@@ -99,7 +106,7 @@ serve(async (req: Request) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (!membership || !["admin_master", "professor", "assistente"].includes(membership.role)) {
+    if (!membership || !["admin_master", "coach", "assistant"].includes(membership.role)) {
       status = 403;
       return jsonErr(403, "FORBIDDEN", "Only staff can create intents", requestId);
     }
@@ -152,6 +159,13 @@ serve(async (req: Request) => {
       }
     }
 
+    log("info", "token-create-intent: creating intent", {
+      request_id: requestId,
+      group_id,
+      type,
+      amount,
+    });
+
     // ── 4. Insert intent ──────────────────────────────────────────────
     const insertPayload: Record<string, unknown> = {
       group_id,
@@ -182,6 +196,14 @@ serve(async (req: Request) => {
       return jsonErr(classified.httpStatus, classified.code, classified.message, requestId);
     }
 
+    log("info", "token-create-intent: created", {
+      request_id: requestId,
+      intent_id: intent.id,
+      type,
+      amount,
+      duration_ms: elapsed(),
+    });
+
     return jsonOk({
       intent_id: intent.id,
       nonce: intent.nonce,
@@ -191,6 +213,7 @@ serve(async (req: Request) => {
   } catch (_err) {
     status = 500;
     errorCode = "INTERNAL";
+    log("error", "token-create-intent: unexpected error", { request_id: requestId });
     return jsonErr(500, "INTERNAL", "Unexpected error", requestId);
   } finally {
     if (errorCode) {

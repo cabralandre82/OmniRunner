@@ -20,15 +20,15 @@ const ENV_BADGE: Record<string, { label: string; color: string }> = {
 
 const ROLE_LABELS: Record<string, string> = {
   admin_master: "Admin",
-  professor: "Professor",
-  assistente: "Assistente",
+  coach: "Coach",
+  assistant: "Assistente",
 };
 
 export function Header({
   groupName,
   userEmail,
   multiGroup,
-  role = "assistente",
+  role = "assistant",
   environment = "production",
   isBlocked = false,
 }: HeaderProps) {

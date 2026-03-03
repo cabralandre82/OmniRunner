@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { jsonOk, jsonErr } from "../_shared/http.ts";
 import { handleCors } from "../_shared/cors.ts";
 import { startTimer, logRequest, logError } from "../_shared/obs.ts";
+import { log } from "../_shared/logger.ts";
 
 /**
  * notify-rules — Supabase Edge Function
@@ -45,6 +46,12 @@ const MS_PER_DAY = 86_400_000;
 serve(async (req: Request) => {
   const cors = handleCors(req);
   if (cors) return cors;
+
+  if (req.method === 'GET' && new URL(req.url).pathname === '/health') {
+    return new Response(JSON.stringify({ status: 'ok', version: '1.0.0' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   const requestId = crypto.randomUUID();
   const elapsed = startTimer();
@@ -100,6 +107,12 @@ serve(async (req: Request) => {
     }
 
     const results: Record<string, { evaluated: number; sent: number }> = {};
+
+    log("info", "notify-rules invoked", {
+      request_id: requestId,
+      rule: body.rule ?? "all",
+      has_context: !!body.context,
+    });
 
     // ── Evaluate rules ─────────────────────────────────────────────────
     const allRules = [
@@ -167,10 +180,21 @@ serve(async (req: Request) => {
       }
     }
 
+    const totalEvaluated = Object.values(results).reduce((s, r) => s + r.evaluated, 0);
+    const totalSent = Object.values(results).reduce((s, r) => s + r.sent, 0);
+    log("info", "notify-rules completed", {
+      request_id: requestId,
+      rules_run: Object.keys(results).length,
+      total_evaluated: totalEvaluated,
+      total_sent: totalSent,
+      duration_ms: elapsed(),
+    });
+
     return jsonOk({ rules: results }, requestId);
   } catch (_err) {
     status = 500;
     errorCode = "INTERNAL";
+    log("error", "notify-rules unexpected error", { request_id: requestId });
     return jsonErr(500, "INTERNAL", "Unexpected error", requestId);
   } finally {
     if (errorCode) {
@@ -586,12 +610,12 @@ async function evaluateJoinRequestReceived(
 
   const groupName = group?.name ?? "sua assessoria";
 
-  // Get staff members (admin_master + professor) of this group
+  // Get staff members (admin_master + coach) of this group
   const { data: staff } = await db
     .from("coaching_members")
     .select("user_id")
     .eq("group_id", groupId)
-    .in("role", ["admin_master", "professor"])
+    .in("role", ["admin_master", "coach"])
     .limit(50);
 
   if (!staff || staff.length === 0) return { evaluated: 0, sent: 0 };
@@ -996,7 +1020,7 @@ async function evaluateLeagueRankChange(
     .from("coaching_members")
     .select("user_id")
     .eq("group_id", groupId)
-    .in("role", ["admin_master", "professor", "athlete"])
+    .in("role", ["admin_master", "coach", "athlete"])
     .limit(200);
 
   if (!members || members.length === 0) return { evaluated: 0, sent: 0 };

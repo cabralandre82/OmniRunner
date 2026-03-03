@@ -48,14 +48,14 @@ function mockStaffCheck(role = "admin_master") {
 describe("Clearing API", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    authClient.auth.getUser.mockResolvedValue({
-      data: { user: { id: "user-1" } },
+    authClient.auth.getSession.mockResolvedValue({
+      data: { session: { user: { id: "user-1" } } },
     });
   });
 
   it("returns 401 when not authenticated", async () => {
-    authClient.auth.getUser.mockResolvedValueOnce({
-      data: { user: null },
+    authClient.auth.getSession.mockResolvedValueOnce({
+      data: { session: null },
     });
     const res = await GET(getReq());
     expect(res.status).toBe(401);
@@ -91,8 +91,8 @@ describe("Clearing API", () => {
     expect(mockGetSettlements).toHaveBeenCalledWith("group-1", "both");
   });
 
-  it("returns settlements for professor", async () => {
-    mockStaffCheck("professor");
+  it("returns settlements for coach", async () => {
+    mockStaffCheck("coach");
     mockGetSettlements.mockResolvedValue([]);
 
     const res = await GET(getReq());

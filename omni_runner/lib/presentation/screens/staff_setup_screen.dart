@@ -232,7 +232,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
     try {
       final res = await _client.rpc(
         'fn_request_join',
-        params: {'p_group_id': groupId, 'p_role': 'professor'},
+        params: {'p_group_id': groupId, 'p_role': 'coach'},
       );
       final status = (res as Map<String, dynamic>?)?['status'] as String?;
 

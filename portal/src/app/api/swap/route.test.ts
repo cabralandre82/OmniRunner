@@ -91,7 +91,7 @@ describe("Swap API", () => {
 
     it("returns 403 when not admin_master", async () => {
       serviceClient.from.mockReturnValueOnce(
-        queryChain({ data: { role: "professor" } }),
+        queryChain({ data: { role: "coach" } }),
       );
       const res = await GET(getReq());
       expect(res.status).toBe(403);

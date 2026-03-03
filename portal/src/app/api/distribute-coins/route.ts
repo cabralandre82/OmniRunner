@@ -6,8 +6,10 @@ import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
 import { distributeCoinsSchema } from "@/lib/schemas";
 import { assertInvariantsHealthy } from "@/lib/custody";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: Request) {
+  try {
   const supabase = createClient();
   const {
     data: { session },
@@ -50,12 +52,30 @@ export async function POST(request: Request) {
   }
   const { athlete_user_id, amount } = parsed.data;
 
+  const idempotencyKey = request.headers.get("x-idempotency-key");
+  if (idempotencyKey) {
+    const { data: existing } = await db
+      .from("coin_ledger")
+      .select("user_id, delta_coins")
+      .eq("ref_id", idempotencyKey)
+      .maybeSingle();
+
+    if (existing) {
+      return NextResponse.json({
+        ok: true,
+        athlete_user_id: existing.user_id,
+        amount: existing.delta_coins,
+        idempotent: true,
+      });
+    }
+  }
+
   const { data: member } = await db
     .from("coaching_members")
     .select("user_id, display_name")
     .eq("group_id", groupId)
     .eq("user_id", athlete_user_id)
-    .eq("role", "atleta")
+    .eq("role", "athlete")
     .maybeSingle();
 
   if (!member) {
@@ -65,7 +85,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // Pre-operation invariant gate
   const healthy = await assertInvariantsHealthy();
   if (!healthy) {
     return NextResponse.json(
@@ -116,7 +135,7 @@ export async function POST(request: Request) {
     delta_coins: amount,
     reason: "institution_token_issue",
     issuer_group_id: groupId,
-    ref_id: `portal_${session.user.id}_${Date.now()}`,
+    ref_id: idempotencyKey ?? `portal_${session.user.id}_${Date.now()}`,
     created_at_ms: Date.now(),
   });
 
@@ -135,4 +154,8 @@ export async function POST(request: Request) {
     amount,
     athlete_name: member.display_name,
   });
+  } catch (error) {
+    logger.error("Failed to distribute coins", error);
+    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
+  }
 }

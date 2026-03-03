@@ -62,21 +62,21 @@ class _MemberRow extends StatelessWidget {
 
     final roleLabel = switch (member.role) {
       CoachingRole.adminMaster => 'Admin Master',
-      CoachingRole.professor => 'Professor',
-      CoachingRole.assistente => 'Assistente',
-      CoachingRole.atleta => 'Atleta',
+      CoachingRole.coach => 'Coach',
+      CoachingRole.assistant => 'Assistente',
+      CoachingRole.athlete => 'Atleta',
     };
     final roleColor = switch (member.role) {
       CoachingRole.adminMaster => Colors.amber.shade700,
-      CoachingRole.professor => Colors.deepPurple,
-      CoachingRole.assistente => Colors.blue,
-      CoachingRole.atleta => theme.colorScheme.outline,
+      CoachingRole.coach => Colors.deepPurple,
+      CoachingRole.assistant => Colors.blue,
+      CoachingRole.athlete => theme.colorScheme.outline,
     };
     final roleIcon = switch (member.role) {
       CoachingRole.adminMaster => Icons.star,
-      CoachingRole.professor => Icons.school,
-      CoachingRole.assistente => Icons.assistant,
-      CoachingRole.atleta => Icons.directions_run,
+      CoachingRole.coach => Icons.school,
+      CoachingRole.assistant => Icons.assistant,
+      CoachingRole.athlete => Icons.directions_run,
     };
 
     final name = isCurrentUser

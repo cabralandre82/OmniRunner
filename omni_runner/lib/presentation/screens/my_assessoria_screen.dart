@@ -116,9 +116,9 @@ class _LoadedBody extends StatelessWidget {
 
     final roleLabel = switch (membership!.role) {
       CoachingRole.adminMaster => 'Admin Master',
-      CoachingRole.professor => 'Professor',
-      CoachingRole.assistente => 'Assistente',
-      CoachingRole.atleta => 'Atleta',
+      CoachingRole.coach => 'Coach',
+      CoachingRole.assistant => 'Assistente',
+      CoachingRole.athlete => 'Atleta',
     };
 
     return ListView(

@@ -41,42 +41,23 @@ describe("GET /api/export/athletes", () => {
     expect(res.status).toBe(401);
   });
 
-  it("returns 403 when caller is not admin or professor", async () => {
+  it("returns 403 when caller is not admin or coach", async () => {
     serviceClient.from.mockReturnValueOnce(
-      queryChain({ data: { role: "atleta" } }),
+      queryChain({ data: { role: "athlete" } }),
     );
     const res = await GET();
     expect(res.status).toBe(403);
   });
 
   it("returns CSV with correct headers and content-type", async () => {
-    // role check
     serviceClient.from.mockReturnValueOnce(
       queryChain({ data: { role: "admin_master" } }),
     );
-    // members
     serviceClient.from.mockReturnValueOnce(
       queryChain({
         data: [
-          { user_id: "u1", display_name: "João Silva", joined_at_ms: 1700000000000 },
-          { user_id: "u2", display_name: "Maria", joined_at_ms: 1700100000000 },
-        ],
-      }),
-    );
-    // verification
-    serviceClient.from.mockReturnValueOnce(
-      queryChain({
-        data: [
-          { user_id: "u1", verification_status: "VERIFIED", trust_score: 90 },
-        ],
-      }),
-    );
-    // sessions
-    serviceClient.from.mockReturnValueOnce(
-      queryChain({
-        data: [
-          { user_id: "u1", total_distance_m: 5000 },
-          { user_id: "u1", total_distance_m: 3000 },
+          { id: "m1", display_name: "João Silva", email: "joao@test.com", role: "athlete", joined_at_ms: 1700000000000 },
+          { id: "m2", display_name: "Maria", email: "maria@test.com", role: "coach", joined_at_ms: 1700100000000 },
         ],
       }),
     );
@@ -87,15 +68,14 @@ describe("GET /api/export/athletes", () => {
     expect(res.headers.get("Content-Disposition")).toContain("attachment");
 
     const csv = await res.text();
-    expect(csv).toContain("Nome,Status Verificação,Trust Score,Corridas,Distância (km),Membro Desde");
+    expect(csv).toContain("Nome,Email,Função,Membro desde");
     expect(csv).toContain("João Silva");
-    expect(csv).toContain("VERIFIED");
-    expect(csv).toContain("90");
+    expect(csv).toContain("joao@test.com");
   });
 
   it("returns CSV with empty data when no members", async () => {
     serviceClient.from.mockReturnValueOnce(
-      queryChain({ data: { role: "professor" } }),
+      queryChain({ data: { role: "coach" } }),
     );
     serviceClient.from.mockReturnValueOnce(queryChain({ data: [] }));
 
@@ -103,6 +83,6 @@ describe("GET /api/export/athletes", () => {
     expect(res.status).toBe(200);
     const csv = await res.text();
     const lines = csv.trim().split("\n");
-    expect(lines.length).toBe(1); // header only
+    expect(lines.length).toBe(1);
   });
 });

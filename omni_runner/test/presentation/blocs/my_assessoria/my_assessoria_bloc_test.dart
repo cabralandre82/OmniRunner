@@ -65,7 +65,7 @@ const _member = CoachingMemberEntity(
   userId: _userId,
   groupId: 'g-1',
   displayName: 'Alice',
-  role: CoachingRole.atleta,
+  role: CoachingRole.athlete,
   joinedAtMs: 1000000,
 );
 

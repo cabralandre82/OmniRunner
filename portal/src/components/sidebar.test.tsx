@@ -56,16 +56,16 @@ describe("Sidebar", () => {
     expect(screen.getAllByText("Swap de Lastro")).toHaveLength(2);
   });
 
-  it("hides custody/swap for professor", () => {
-    render(<Sidebar role="professor" groupName="Test" />);
+  it("hides custody/swap for coach", () => {
+    render(<Sidebar role="coach" groupName="Test" />);
     expect(screen.queryByText("Custódia")).not.toBeInTheDocument();
     expect(screen.queryByText("Swap de Lastro")).not.toBeInTheDocument();
     expect(screen.getAllByText("Dashboard")).toHaveLength(2);
     expect(screen.getAllByText("Compensações")).toHaveLength(2);
   });
 
-  it("hides custody, swap and distributions for assistente", () => {
-    render(<Sidebar role="assistente" groupName="Test" />);
+  it("hides custody, swap and distributions for assistant", () => {
+    render(<Sidebar role="assistant" groupName="Test" />);
     expect(screen.queryByText("Custódia")).not.toBeInTheDocument();
     expect(screen.queryByText("Swap de Lastro")).not.toBeInTheDocument();
     expect(screen.queryByText("Distribuições")).not.toBeInTheDocument();
@@ -89,8 +89,8 @@ describe("Sidebar", () => {
   });
 
   it("displays role at the bottom", () => {
-    render(<Sidebar role="professor" groupName="Test" />);
-    expect(screen.getAllByText("professor")).toHaveLength(2);
+    render(<Sidebar role="coach" groupName="Test" />);
+    expect(screen.getAllByText("coach")).toHaveLength(2);
   });
 });
 

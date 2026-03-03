@@ -109,18 +109,18 @@ class _CoachingGroupDetailsScreenState
     if (role == null) return false;
     if (target.userId == widget.callerUserId) return false;
     if (target.role == CoachingRole.adminMaster) return false;
-    if (role == CoachingRole.assistente && target.isStaff) return false;
+    if (role == CoachingRole.assistant && target.isStaff) return false;
     return role == CoachingRole.adminMaster ||
-        role == CoachingRole.professor ||
-        role == CoachingRole.assistente;
+        role == CoachingRole.coach ||
+        role == CoachingRole.assistant;
   }
 
   Future<void> _removeMember(CoachingMemberEntity member) async {
     final roleLabel = switch (member.role) {
       CoachingRole.adminMaster => 'Admin Master',
-      CoachingRole.professor => 'Professor',
-      CoachingRole.assistente => 'Assistente',
-      CoachingRole.atleta => 'Atleta',
+      CoachingRole.coach => 'Coach',
+      CoachingRole.assistant => 'Assistente',
+      CoachingRole.athlete => 'Atleta',
     };
 
     final confirmed = await showDialog<bool>(
@@ -386,15 +386,15 @@ class _CoachingMemberTile extends StatelessWidget {
 
     final roleLabel = switch (member.role) {
       CoachingRole.adminMaster => 'Admin Master',
-      CoachingRole.professor => 'Professor',
-      CoachingRole.assistente => 'Assistente',
-      CoachingRole.atleta => 'Atleta',
+      CoachingRole.coach => 'Coach',
+      CoachingRole.assistant => 'Assistente',
+      CoachingRole.athlete => 'Atleta',
     };
     final roleColor = switch (member.role) {
       CoachingRole.adminMaster => Colors.amber.shade700,
-      CoachingRole.professor => Colors.deepPurple,
-      CoachingRole.assistente => Colors.blue,
-      CoachingRole.atleta => theme.colorScheme.outline,
+      CoachingRole.coach => Colors.deepPurple,
+      CoachingRole.assistant => Colors.blue,
+      CoachingRole.athlete => theme.colorScheme.outline,
     };
 
     final name = isCurrentUser

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { jsonOk, jsonErr } from "../_shared/http.ts";
 import { startTimer, logRequest, logError } from "../_shared/obs.ts";
+import { CORS_HEADERS, handleCors } from "../_shared/cors.ts";
 
 /**
  * validate-social-login — Supabase Edge Function
@@ -22,13 +23,18 @@ import { startTimer, logRequest, logError } from "../_shared/obs.ts";
 const FN = "validate-social-login";
 
 serve(async (req: Request) => {
+  if (req.method === 'GET' && new URL(req.url).pathname === '/health') {
+    return new Response(JSON.stringify({ status: 'ok', version: '1.0.0' }), {
+      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+    });
+  }
+
+  const cors = handleCors(req);
+  if (cors) return cors;
+
   const requestId = crypto.randomUUID();
   const elapsed = startTimer();
   let status = 200;
-
-  if (req.method === "OPTIONS") {
-    return jsonOk({}, requestId);
-  }
 
   try {
     let body: { provider?: string; action?: string } = {};

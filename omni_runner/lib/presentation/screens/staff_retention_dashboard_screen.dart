@@ -61,7 +61,7 @@ class _StaffRetentionDashboardScreenState
 
       final members = (membersRes as List).cast<Map<String, dynamic>>();
       final athleteIds = members
-          .where((m) => m['role'] == 'atleta')
+          .where((m) => m['role'] == 'athlete')
           .map((m) => m['user_id'] as String)
           .toList();
 

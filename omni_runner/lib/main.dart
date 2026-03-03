@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:ui';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -29,6 +32,43 @@ final _navigatorKey = GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    AppLogger.error(
+      'FlutterError',
+      tag: 'ErrorHandler',
+      error: details.exception,
+      stack: details.stack,
+    );
+  };
+
+  PlatformDispatcher.instance.onError = (error, stack) {
+    AppLogger.error('PlatformError', tag: 'ErrorHandler', error: error, stack: stack);
+    return true;
+  };
+
+  ErrorWidget.builder = (details) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                const Text('Algo deu errado', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                const Text('Tente reiniciar o aplicativo.', textAlign: TextAlign.center),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  };
+
   if (AppConfig.isSentryConfigured) {
     await SentryFlutter.init(
       (options) {
@@ -39,7 +79,12 @@ Future<void> main() async {
       appRunner: _bootstrap,
     );
   } else {
-    await _bootstrap();
+    runZonedGuarded(
+      () async => await _bootstrap(),
+      (error, stack) {
+        AppLogger.error('Uncaught error', tag: 'ErrorHandler', error: error, stack: stack);
+      },
+    );
   }
 }
 

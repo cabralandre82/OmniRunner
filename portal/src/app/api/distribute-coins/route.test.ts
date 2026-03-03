@@ -66,7 +66,7 @@ describe("POST /api/distribute-coins", () => {
   });
 
   it("returns 403 when caller is not admin_master", async () => {
-    mockAdminCheck("atleta");
+    mockAdminCheck("athlete");
     const res = await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 10 }));
     expect(res.status).toBe(403);
   });

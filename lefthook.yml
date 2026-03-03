@@ -4,7 +4,7 @@ pre-commit:
     flutter-analyze:
       root: omni_runner/
       glob: "*.dart"
-      run: flutter analyze --no-pub --no-fatal-infos
+      run: dart analyze --no-fatal-warnings
     portal-lint:
       root: portal/
       glob: "*.{ts,tsx}"

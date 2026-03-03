@@ -27,6 +27,12 @@ serve(async (req: Request) => {
   const cors = handleCors(req);
   if (cors) return cors;
 
+  if (req.method === 'GET' && new URL(req.url).pathname === '/health') {
+    return new Response(JSON.stringify({ status: 'ok', version: '1.0.0' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   const requestId = crypto.randomUUID();
   const elapsed = startTimer();
   let userId: string | null = null;
@@ -117,11 +123,11 @@ serve(async (req: Request) => {
       .select("role, group_id")
       .eq("user_id", user.id)
       .in("group_id", [cc.from_group_id, cc.to_group_id])
-      .in("role", ["admin_master", "professor"]);
+      .in("role", ["admin_master", "coach"]);
 
     if (!membership || membership.length === 0) {
       status = 403;
-      return jsonErr(403, "FORBIDDEN", "Only admin_master or professor of involved groups can dispute", requestId);
+      return jsonErr(403, "FORBIDDEN", "Only admin_master or coach of involved groups can dispute", requestId);
     }
 
     // ── 5. Transition → DISPUTED ────────────────────────────────────────

@@ -62,11 +62,10 @@ class _ParkScreenState extends State<ParkScreen>
           _loadStats(),
         ]);
       } else {
-        _rankings = _mockRankings();
-        _community = _mockCommunity();
+        _rankings = [];
+        _community = [];
         _segments = [];
-        _parkStats = const _ParkStats(
-            runnersToday: 14, runnersWeek: 87, totalActivities: 1243);
+        _parkStats = null;
       }
 
       if (mounted) setState(() => _loading = false);
@@ -458,9 +457,6 @@ class _ParkScreenState extends State<ParkScreen>
         ParkLeaderboardCategory.evolution => Icons.trending_up,
         ParkLeaderboardCategory.longestRun => Icons.timer,
       };
-
-  List<ParkLeaderboardEntry> _mockRankings() => [];
-  List<_ParkRunner> _mockCommunity() => [];
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

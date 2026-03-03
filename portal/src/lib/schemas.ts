@@ -11,8 +11,8 @@ export const distributeCoinsSchema = z.object({
 
 export const teamInviteSchema = z.object({
   email: z.string().email("E-mail inválido"),
-  role: z.enum(["professor", "assistente"], {
-    error: "Role deve ser: professor, assistente",
+  role: z.enum(["coach", "assistant"], {
+    error: "Role deve ser: coach, assistant",
   }),
 });
 

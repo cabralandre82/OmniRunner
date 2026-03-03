@@ -21,6 +21,7 @@ import 'package:omni_runner/presentation/screens/staff_performance_screen.dart';
 import 'package:omni_runner/presentation/screens/support_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_qr_hub_screen.dart';
 import 'package:omni_runner/presentation/screens/league_screen.dart';
+import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 
 /// Staff home dashboard — 6 cards for assessoria management.
@@ -74,8 +75,8 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
         (r) {
           final role = r['role'] as String? ?? '';
           return role == 'admin_master' ||
-              role == 'professor' ||
-              role == 'assistente';
+              role == 'coach' ||
+              role == 'assistant';
         },
       ).firstOrNull;
 
@@ -200,7 +201,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
               .select('group_id')
               .eq('user_id', uid)
               .eq('status', 'pending')
-              .eq('requested_role', 'professor')
+              .eq('requested_role', 'coach')
               .limit(1);
           if ((joinRows as List).isNotEmpty) {
             final gid = joinRows.first['group_id'] as String;
@@ -346,7 +347,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
         backgroundColor: cs.inversePrimary,
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const ShimmerListLoader()
           : _groupId.isEmpty
               ? _buildNoGroup(theme)
               : _approvalStatus != 'approved'
@@ -595,7 +596,9 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                   'configurações e lançar campeonatos recorrentes.',
             ),
             Expanded(
-              child: GridView.count(
+              child: RefreshIndicator(
+                onRefresh: () async { await _loadStatus(); },
+                child: GridView.count(
                 crossAxisCount: 2,
                 mainAxisSpacing: 14,
                 crossAxisSpacing: 14,
@@ -700,6 +703,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                     onTap: _openSupport,
                   ),
                 ],
+              ),
               ),
             ),
           ],

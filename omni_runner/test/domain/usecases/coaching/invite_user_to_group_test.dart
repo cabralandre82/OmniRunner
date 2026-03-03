@@ -137,7 +137,7 @@ void main() {
       userId: 'athlete',
       groupId: 'g1',
       displayName: 'A',
-      role: CoachingRole.atleta,
+      role: CoachingRole.athlete,
       joinedAtMs: 0,
     ));
 
@@ -159,7 +159,7 @@ void main() {
       userId: 'user-1',
       groupId: 'g1',
       displayName: 'User',
-      role: CoachingRole.atleta,
+      role: CoachingRole.athlete,
       joinedAtMs: 0,
     ));
 

@@ -83,7 +83,7 @@ class _StreaksLeaderboardScreenState extends State<StreaksLeaderboardScreen> {
           .from('coaching_members')
           .select('user_id')
           .eq('group_id', groupId)
-          .eq('role', 'atleta');
+          .eq('role', 'athlete');
 
       final members = (membersRes as List).cast<Map<String, dynamic>>();
       final athleteIds = members.map((m) => m['user_id'] as String).toList();

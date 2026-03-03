@@ -68,7 +68,7 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
 
       final members = (membersRes as List).cast<Map<String, dynamic>>();
       final athletes = members
-          .where((m) => m['role'] == 'atleta')
+          .where((m) => m['role'] == 'athlete')
           .toList();
       final athleteIds =
           athletes.map((m) => m['user_id'] as String).toList();

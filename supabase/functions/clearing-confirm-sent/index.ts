@@ -24,6 +24,12 @@ serve(async (req: Request) => {
   const cors = handleCors(req);
   if (cors) return cors;
 
+  if (req.method === 'GET' && new URL(req.url).pathname === '/health') {
+    return new Response(JSON.stringify({ status: 'ok', version: '1.0.0' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   const requestId = crypto.randomUUID();
   const elapsed = startTimer();
   let userId: string | null = null;
@@ -122,9 +128,9 @@ serve(async (req: Request) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (!membership || !["admin_master", "professor"].includes(membership.role)) {
+    if (!membership || !["admin_master", "coach"].includes(membership.role)) {
       status = 403;
-      return jsonErr(403, "FORBIDDEN", "Only admin_master or professor of the sending group can confirm", requestId);
+      return jsonErr(403, "FORBIDDEN", "Only admin_master or coach of the sending group can confirm", requestId);
     }
 
     // ── 5. Transition OPEN → SENT_CONFIRMED ─────────────────────────────

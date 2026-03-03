@@ -1,0 +1,248 @@
+import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
+import { formatDateISO } from "@/lib/format";
+import Link from "next/link";
+
+export const dynamic = "force-dynamic";
+
+const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  planned: { label: "Planejado", color: "bg-blue-100 text-blue-800" },
+  completed: { label: "Concluído", color: "bg-green-100 text-green-800" },
+  missed: { label: "Perdido", color: "bg-red-100 text-red-800" },
+};
+
+const PAGE_SIZE = 25;
+
+interface Assignment {
+  id: string;
+  scheduled_date: string;
+  status: string;
+  athlete_name: string;
+  template_name: string;
+}
+
+async function getAssignments(
+  groupId: string,
+  from?: string,
+  to?: string,
+  page = 1,
+): Promise<{ assignments: Assignment[]; total: number }> {
+  const supabase = createClient();
+
+  const now = new Date();
+  const defaultFrom = new Date(now);
+  defaultFrom.setDate(defaultFrom.getDate() - 30);
+  const fromDate = from ?? defaultFrom.toISOString().slice(0, 10);
+  const toDate = to ?? now.toISOString().slice(0, 10);
+
+  const offset = (page - 1) * PAGE_SIZE;
+
+  const { data: assignments, count } = await supabase
+    .from("coaching_workout_assignments")
+    .select(
+      "id, scheduled_date, status, athlete_user_id, template_id",
+      { count: "exact" },
+    )
+    .eq("group_id", groupId)
+    .gte("scheduled_date", fromDate)
+    .lte("scheduled_date", toDate)
+    .order("scheduled_date", { ascending: false })
+    .range(offset, offset + PAGE_SIZE - 1);
+
+  if (!assignments || assignments.length === 0) {
+    return { assignments: [], total: 0 };
+  }
+
+  const athleteIds = Array.from(new Set(assignments.map((a) => a.athlete_user_id)));
+  const templateIds = Array.from(new Set(assignments.map((a) => a.template_id)));
+
+  const [profilesRes, templatesRes] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, display_name")
+      .in("id", athleteIds),
+    supabase
+      .from("coaching_workout_templates")
+      .select("id, name")
+      .in("id", templateIds),
+  ]);
+
+  const profileMap = new Map(
+    (profilesRes.data ?? []).map((p: { id: string; display_name: string }) => [
+      p.id,
+      p.display_name || "Sem nome",
+    ]),
+  );
+  const templateMap = new Map(
+    (templatesRes.data ?? []).map((t: { id: string; name: string }) => [
+      t.id,
+      t.name,
+    ]),
+  );
+
+  return {
+    assignments: assignments.map((a) => ({
+      id: a.id,
+      scheduled_date: a.scheduled_date,
+      status: a.status,
+      athlete_name: profileMap.get(a.athlete_user_id) ?? "Sem nome",
+      template_name: templateMap.get(a.template_id) ?? "Template removido",
+    })),
+    total: count ?? 0,
+  };
+}
+
+export default async function WorkoutAssignmentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string; to?: string; page?: string }>;
+}) {
+  const groupId = cookies().get("portal_group_id")?.value;
+  if (!groupId) return null;
+
+  const params = await searchParams;
+  const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
+
+  let assignments: Assignment[] = [];
+  let total = 0;
+  let fetchError: string | null = null;
+
+  try {
+    const result = await getAssignments(groupId, params.from, params.to, page);
+    assignments = result.assignments;
+    total = result.total;
+  } catch (e) {
+    fetchError = String(e);
+  }
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  const buildPageUrl = (p: number) => {
+    const sp = new URLSearchParams();
+    if (params.from) sp.set("from", params.from);
+    if (params.to) sp.set("to", params.to);
+    sp.set("page", String(p));
+    return `/workouts/assignments?${sp.toString()}`;
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Atribuições de Treino</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Treinos atribuídos aos atletas
+        </p>
+      </div>
+
+      {fetchError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
+          <p className="text-red-600">Erro ao carregar dados. Tente recarregar a página.</p>
+        </div>
+      )}
+
+      <form className="flex flex-wrap items-end gap-3">
+        <div>
+          <label htmlFor="from" className="block text-xs font-medium text-gray-500">
+            De
+          </label>
+          <input
+            type="date"
+            id="from"
+            name="from"
+            defaultValue={params.from ?? ""}
+            className="mt-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label htmlFor="to" className="block text-xs font-medium text-gray-500">
+            Até
+          </label>
+          <input
+            type="date"
+            id="to"
+            name="to"
+            defaultValue={params.to ?? ""}
+            className="mt-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        <button
+          type="submit"
+          className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+        >
+          Filtrar
+        </button>
+      </form>
+
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left font-medium text-gray-500">Atleta</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-500">Template</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-500">Data</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-500">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {assignments.map((a) => {
+                const statusInfo =
+                  STATUS_LABELS[a.status] ?? { label: a.status, color: "bg-gray-100 text-gray-800" };
+                return (
+                  <tr key={a.id} className="hover:bg-gray-50">
+                    <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-900">
+                      {a.athlete_name}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                      {a.template_name}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                      {formatDateISO(a.scheduled_date)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-center">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusInfo.color}`}
+                      >
+                        {statusInfo.label}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {assignments.length === 0 && !fetchError && (
+        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+          <p className="text-sm text-gray-500">Nenhuma atribuição encontrada.</p>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          {page > 1 && (
+            <Link
+              href={buildPageUrl(page - 1)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+            >
+              Anterior
+            </Link>
+          )}
+          <span className="text-sm text-gray-500">
+            Página {page} de {totalPages}
+          </span>
+          {page < totalPages && (
+            <Link
+              href={buildPageUrl(page + 1)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+            >
+              Próxima
+            </Link>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

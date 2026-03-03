@@ -215,7 +215,7 @@ JoinAssessoriaScreen → fn_request_join(p_group_id)
 Staff abre StaffJoinRequestsScreen
     │
     ├─ Aprovar → fn_approve_join_request
-    │   └─ Cria coaching_member (role: atleta)
+    │   └─ Cria coaching_member (role: athlete)
     │   └─ Atualiza profiles.active_coaching_group_id
     │
     └─ Rejeitar → fn_reject_join_request
@@ -348,8 +348,8 @@ ParkDetectionService
 - **coaching_members**: `group_id IN (SELECT user_coaching_group_ids())` — SECURITY DEFINER evita recursão
 - **sessions**: `user_id = auth.uid()` + `sessions_staff_read` (via `staff_group_member_ids()`)
 - **challenge_participants**: own read + staff read
-- **championship_templates**: INSERT/UPDATE/DELETE para admin_master/professor
-- **coaching_join_requests**: own read (atleta) + group staff read + staff update
+- **championship_templates**: INSERT/UPDATE/DELETE para admin_master/coach
+- **coaching_join_requests**: own read (athlete) + group staff read + staff update
 - **clearing_cases**: staff de ambos os grupos
 
 ---
@@ -435,7 +435,7 @@ Retry: 3x exponential backoff em chamadas críticas (auth, create assessoria)
 Captura GPS em tempo real, anti-cheat, métricas, ghost runner, auto-pause, foreground service.
 
 ### 12.2 Coaching Context (Assessoria)
-Assessorias, membros (admin_master/professor/assistente/atleta), join requests com aprovação, remoção de membros, convites, QR operations, tokens/OmniCoins.
+Assessorias, membros (admin_master/coach/assistant/athlete), join requests com aprovação, remoção de membros, convites, QR operations, tokens/OmniCoins.
 
 ### 12.3 Challenge Context
 Desafios 1v1, grupo e team vs team. Sempre entre atletas. Assessorias não participam de desafios — apenas distribuem tokens.

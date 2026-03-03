@@ -3756,3 +3756,25 @@ Para o login Instagram funcionar de fato:
 - `supabase/functions/complete-social-profile/index.ts` (facebook → OAUTH_INSTAGRAM)
 
 ---
+
+## DECISAO 019 — Canonical Role Rename (STEP 05)
+
+**Data:** 2026-03-03
+**Contexto:** coaching_members.role tinha schema drift — baseline permitia `coach/assistant/athlete`, mas o código usava `admin_master/professor/assistente/atleta`. Constraint foi alterada manualmente em produção sem migration no repo.
+
+**Decisão:** Padronizar em inglês ASCII sem acentos: `admin_master`, `coach`, `assistant`, `athlete`.
+
+**Mapeamento:**
+- `coach` (legacy, era admin) → `admin_master` (apenas para group owners verificados via JOIN com coaching_groups.coach_user_id)
+- `professor` → `coach`
+- `assistente` → `assistant`
+- `atleta` → `athlete`
+
+**Implementação:**
+- Migration: `20260303300000_fix_coaching_roles.sql` (backfill + constraint + 15 RLS policies + 6 functions)
+- Constantes centralizadas: `lib/core/constants/coaching_roles.dart` + `portal/src/lib/roles.ts`
+- Fallback auditável: `coachingRoleFromString` loga warning para valores desconhecidos via AppLogger
+
+**Arquivos:** 60+ arquivos atualizados (app, portal, edge functions, docs, migrations)
+
+---

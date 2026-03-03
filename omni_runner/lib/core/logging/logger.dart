@@ -43,6 +43,16 @@ abstract final class AppLogger {
     onError?.call(msg, error, stack);
   }
 
+  static void critical(
+    String msg, {
+    String tag = 'App',
+    Object? error,
+    StackTrace? stack,
+  }) {
+    _log(LogLevel.error, '[CRITICAL] $msg', tag: tag, error: error, stack: stack);
+    onError?.call('[CRITICAL] $msg', error, stack);
+  }
+
   static void _log(
     LogLevel level,
     String msg, {

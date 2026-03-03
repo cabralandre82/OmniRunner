@@ -45,15 +45,15 @@ describe("POST /api/team/invite", () => {
     authClient.auth.getSession.mockResolvedValueOnce({
       data: { session: null },
     });
-    const res = await POST(req({ email: "a@b.com", role: "professor" }));
+    const res = await POST(req({ email: "a@b.com", role: "coach" }));
     expect(res.status).toBe(401);
   });
 
   it("returns 403 when caller is not admin_master", async () => {
     serviceClient.from.mockReturnValueOnce(
-      queryChain({ data: { role: "professor" } }),
+      queryChain({ data: { role: "coach" } }),
     );
-    const res = await POST(req({ email: "a@b.com", role: "professor" }));
+    const res = await POST(req({ email: "a@b.com", role: "coach" }));
     expect(res.status).toBe(403);
   });
 
@@ -61,7 +61,7 @@ describe("POST /api/team/invite", () => {
     serviceClient.from.mockReturnValueOnce(
       queryChain({ data: { role: "admin_master" } }),
     );
-    const res = await POST(req({ email: "not-an-email", role: "professor" }));
+    const res = await POST(req({ email: "not-an-email", role: "coach" }));
     expect(res.status).toBe(400);
   });
 
@@ -80,7 +80,7 @@ describe("POST /api/team/invite", () => {
     serviceClient.rpc.mockReturnValueOnce(
       queryChain({ data: null, error: null }),
     );
-    const res = await POST(req({ email: "new@example.com", role: "professor" }));
+    const res = await POST(req({ email: "new@example.com", role: "coach" }));
     expect(res.status).toBe(404);
   });
 
@@ -88,12 +88,12 @@ describe("POST /api/team/invite", () => {
     serviceClient.from
       .mockReturnValueOnce(queryChain({ data: { role: "admin_master" } }))
       .mockReturnValueOnce(
-        queryChain({ data: { id: "member-1", role: "atleta" } }),
+        queryChain({ data: { id: "member-1", role: "athlete" } }),
       );
     serviceClient.rpc.mockReturnValueOnce(
       queryChain({ data: { id: "target-user", display_name: "João" } }),
     );
-    const res = await POST(req({ email: "joao@example.com", role: "professor" }));
+    const res = await POST(req({ email: "joao@example.com", role: "coach" }));
     expect(res.status).toBe(409);
     expect((await res.json()).error).toContain("já é membro");
   });
@@ -109,11 +109,11 @@ describe("POST /api/team/invite", () => {
       }),
     );
     const res = await POST(
-      req({ email: "maria@example.com", role: "assistente" }),
+      req({ email: "maria@example.com", role: "assistant" }),
     );
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.ok).toBe(true);
-    expect(json.role).toBe("assistente");
+    expect(json.role).toBe("assistant");
   });
 });

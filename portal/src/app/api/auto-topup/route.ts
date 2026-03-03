@@ -5,8 +5,10 @@ import { cookies } from "next/headers";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
 import { autoTopupSchema } from "@/lib/schemas";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: Request) {
+  try {
   const rl = rateLimit(`auto-topup:${request.headers.get("x-forwarded-for") ?? "unknown"}`);
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
@@ -113,4 +115,8 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json({ ok: true });
+  } catch (error) {
+    logger.error("Failed in auto-topup route", error);
+    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
+  }
 }

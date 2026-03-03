@@ -97,7 +97,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
             .from('coaching_members')
             .select('group_id')
             .eq('user_id', uid)
-            .eq('role', 'atleta')
+            .eq('role', 'athlete')
             .maybeSingle();
         groupId = row?['group_id'] as String?;
       } catch (e) {
@@ -105,7 +105,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
         final memberships =
             await sl<ICoachingMemberRepo>().getByUserId(uid);
         groupId = memberships
-            .where((m) => m.isAtleta)
+            .where((m) => m.isAthlete)
             .firstOrNull
             ?.groupId;
       }
@@ -115,7 +115,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
           .from('coaching_members')
           .select('user_id, profiles(display_name)')
           .eq('group_id', groupId)
-          .eq('role', 'atleta')
+          .eq('role', 'athlete')
           .neq('user_id', uid)
           .limit(10);
 

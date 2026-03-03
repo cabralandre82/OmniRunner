@@ -30,7 +30,7 @@ const _membership = CoachingMemberEntity(
   userId: _userId,
   groupId: 'g-1',
   displayName: 'Alice',
-  role: CoachingRole.atleta,
+  role: CoachingRole.athlete,
   joinedAtMs: 2000000,
 );
 
@@ -93,7 +93,7 @@ void main() {
         expect(loaded.groups.length, 1);
         expect(loaded.groups[0].group.name, 'Running Team');
         expect(loaded.groups[0].memberCount, 10);
-        expect(loaded.groups[0].membership.role, CoachingRole.atleta);
+        expect(loaded.groups[0].membership.role, CoachingRole.athlete);
         await bloc.close();
       });
 
@@ -149,7 +149,7 @@ void main() {
           userId: _userId,
           groupId: 'g-2',
           displayName: 'Alice',
-          role: CoachingRole.assistente,
+          role: CoachingRole.assistant,
           joinedAtMs: 3000000,
         );
         const group2 = CoachingGroupEntity(

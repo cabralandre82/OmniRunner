@@ -17246,7 +17246,7 @@ SPRINT 16.4.4 — Contratos backend analytics
 
    **fetchEvolutionMetrics** (GET REST):
    - Consulta `athlete_trends` e `athlete_baselines` com filtros
-   - RLS: coach/assistant vê todos; atleta vê apenas os seus
+   - RLS: coach/assistant vê todos; athlete vê apenas os seus
    - Unique constraint em `(user_id, group_id, metric, period)` para trends
    - Unique constraint em `(user_id, group_id, metric)` para baselines
 
@@ -20900,7 +20900,7 @@ Zero sobreposição. Zero valores em R$/USD. Zero termos proibidos.
    - TipBanner campeonatos atualizado: "Crie modelos de campeonatos para repetir configurações e lançar campeonatos recorrentes."
    - Método `_openCampeonatos()` navega para `StaffChampionshipTemplatesScreen`.
 
-**Backend:** Tabela `championship_templates` já existente (migration `20260222_championship_tables.sql`), com RLS para admin_master/professor. Edge Function `champ-create` já aceita `template_id`. Nenhuma alteração backend necessária.
+**Backend:** Tabela `championship_templates` já existente (migration `20260222_championship_tables.sql`), com RLS para admin_master/coach. Edge Function `champ-create` já aceita `template_id`. Nenhuma alteração backend necessária.
 
 **Arquivos criados/alterados:**
 
@@ -21252,11 +21252,11 @@ DECISAO 047 em `docs/DECISIONS.md`:
 
 **Sincronização realizada:**
 
-- `coaching_members` schema: roles = `admin_master`, `professor`, `assistente`, `atleta` (migration `20260222_coaching_roles_expansion.sql`)
-- `coaching_token_inventory` RLS: staff read (`admin_master`, `professor`, `assistente`)
+- `coaching_members` schema: roles = `admin_master`, `coach`, `assistant`, `athlete` (migration `20260303300000_fix_coaching_roles.sql`)
+- `coaching_token_inventory` RLS: staff read (`admin_master`, `coach`, `assistant`)
 - `institution_credit_purchases` RLS: **apenas `admin_master`** pode ler
 - `profiles.active_coaching_group_id`: campo de atleta, não de staff
-- Unique constraint `atleta` em `coaching_members(user_id)` WHERE role='atleta' -- staff pode pertencer a múltiplos grupos
+- Unique constraint `athlete` em `coaching_members(user_id)` WHERE role='athlete' -- staff pode pertencer a múltiplos grupos
 - `coach_insights`, `athlete_baselines`, `athlete_trends`: RLS staff read
 - `sessions`: RLS `auth.uid() = user_id` -- relatórios de grupo precisam de service_role
 
@@ -21264,9 +21264,9 @@ DECISAO 047 em `docs/DECISIONS.md`:
 
 DECISAO 048 em `docs/DECISIONS.md`:
 
-1. **Quem acessa:** admin_master, professor, assistente. Atleta NUNCA. Sem assessoria NUNCA.
+1. **Quem acessa:** admin_master, coach, assistant. Athlete NUNCA. Sem assessoria NUNCA.
 
-2. **Group ID resolution:** Via query `coaching_members` filtrando `role IN ('admin_master', 'professor', 'assistente')`:
+2. **Group ID resolution:** Via query `coaching_members` filtrando `role IN ('admin_master', 'coach', 'assistant')`:
    - 0 resultados → redirect "Sem acesso"
    - 1 resultado → auto-seleciona grupo
    - N resultados → group picker (staff multi-grupo)
@@ -21274,8 +21274,8 @@ DECISAO 048 em `docs/DECISIONS.md`:
 
 3. **Matriz de permissões (13 rotas × 3 roles):**
    - admin_master: acesso total (13/13 rotas)
-   - professor: acesso de gestão (9/13 rotas; sem billing history, sem solicitar créditos, sem settings principal, sem remover atleta)
-   - assistente: somente leitura (7/13 rotas; sem export, sem invite code, sem nenhuma ação destrutiva)
+   - coach: acesso de gestão (9/13 rotas; sem billing history, sem solicitar créditos, sem settings principal, sem remover athlete)
+   - assistant: somente leitura (7/13 rotas; sem export, sem invite code, sem nenhuma ação destrutiva)
 
 4. **Middleware flow (5 etapas):**
    session → membership check → group resolution → role vs rota → render
@@ -21287,7 +21287,7 @@ DECISAO 048 em `docs/DECISIONS.md`:
 - Nenhuma tabela nova ✅
 - Nenhuma policy RLS nova — 100% reutilizado ✅
 - institution_credit_purchases exclusivo admin_master (enforced by RLS existente) ✅
-- Staff multi-grupo suportado (unique constraint só em atleta) ✅
+- Staff multi-grupo suportado (unique constraint só em athlete) ✅
 - profiles.active_coaching_group_id NÃO usado (correto para staff) ✅
 - MASTER_PLAN + CONTEXT_DUMP atualizados ✅
 
@@ -21314,7 +21314,7 @@ DECISAO 048 em `docs/DECISIONS.md`:
    - `name`, `description`, `credits_amount`, `price_cents` (centavos), `currency` (ISO 3), `is_active`, `sort_order`
    - `price_cents` é inteiro em menor unidade da moeda (evita floating-point)
    - Gerenciado pela plataforma via service_role
-   - RLS: **qualquer staff** pode ler o catálogo (admin_master + professor + assistente)
+   - RLS: **qualquer staff** pode ler o catálogo (admin_master + coach + assistant)
 
 3. **`billing_purchases`** (ordens de compra / faturas)
    - Lifecycle: `pending` → `paid` → `fulfilled` | `cancelled`
@@ -21887,7 +21887,7 @@ interagir com cookies httpOnly (server-side), e o dashboard era um skeleton sem 
 
 Dados carregados via Server Component (Promise.all):
 - `coaching_token_inventory.available_tokens` → Créditos Disponíveis
-- `coaching_members` count where role=atleta → Atletas
+- `coaching_members` count where role=athlete → Atletas
 - `billing_purchases` where group_id → Compras Realizadas + Total Créditos (admin_master only)
 - Quick-links para /billing, /credits, /athletes (admin_master only)
 
@@ -21895,7 +21895,7 @@ Dados carregados via Server Component (Promise.all):
 
 Fluxo completo validado:
 1. Atleta faz login com email/senha → ✅ Supabase Auth aceita (user existe)
-2. Middleware consulta `coaching_members` com roles IN ('admin_master', 'professor', 'assistente')
+2. Middleware consulta `coaching_members` com roles IN ('admin_master', 'coach', 'assistant')
 3. Atleta não tem nenhuma membership com role staff → 0 resultados
 4. Redirect para `/no-access` → ✅ Página mostra "Sua conta está vinculada como atleta"
 5. Botão "Sair e usar outra conta" via Server Action `signOut` → ✅ Limpa session + cookies

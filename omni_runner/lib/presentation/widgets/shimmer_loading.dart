@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:omni_runner/l10n/l10n.dart';
 
-/// Pure-Flutter shimmer effect without external dependencies.
-/// Wraps any child with a translucent gradient animation.
 class ShimmerLoading extends StatefulWidget {
-  final Widget child;
+  final Widget? child;
+  final double width;
+  final double height;
+  final double borderRadius;
 
-  const ShimmerLoading({super.key, required this.child});
+  const ShimmerLoading({
+    super.key,
+    this.child,
+    this.width = double.infinity,
+    this.height = 16,
+    this.borderRadius = 8,
+  });
 
   @override
   State<ShimmerLoading> createState() => _ShimmerLoadingState();
@@ -14,12 +20,12 @@ class ShimmerLoading extends StatefulWidget {
 
 class _ShimmerLoadingState extends State<ShimmerLoading>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
+  late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
+    _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat();
@@ -27,77 +33,77 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.child != null) {
+      return AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          return ShaderMask(
+            shaderCallback: (bounds) {
+              return LinearGradient(
+                begin: Alignment(-1.0 + 2.0 * _controller.value, 0),
+                end: Alignment(-1.0 + 2.0 * _controller.value + 1, 0),
+                colors: [
+                  Colors.grey.shade300,
+                  Colors.grey.shade100,
+                  Colors.grey.shade300,
+                ],
+              ).createShader(bounds);
+            },
+            blendMode: BlendMode.srcATop,
+            child: widget.child,
+          );
+        },
+      );
+    }
+
     return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (_, __) {
-        return ShaderMask(
-          blendMode: BlendMode.srcATop,
-          shaderCallback: (bounds) {
-            final x = _ctrl.value * 3 - 1;
-            return LinearGradient(
-              begin: Alignment(x - 0.3, -0.3),
-              end: Alignment(x + 0.3, 0.3),
+      animation: _controller,
+      builder: (context, child) {
+        return Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            gradient: LinearGradient(
+              begin: Alignment(-1.0 + 2.0 * _controller.value, 0),
+              end: Alignment(-1.0 + 2.0 * _controller.value + 1, 0),
               colors: [
-                Colors.grey.shade300,
-                Colors.grey.shade100,
-                Colors.grey.shade300,
+                Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.6),
+                Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
               ],
-              stops: const [0.0, 0.5, 1.0],
-            ).createShader(bounds);
-          },
-          child: widget.child,
+            ),
+          ),
         );
       },
     );
   }
 }
 
-/// Skeleton placeholder for a list tile row.
-class SkeletonTile extends StatelessWidget {
-  const SkeletonTile({super.key});
+class ShimmerListTile extends StatelessWidget {
+  const ShimmerListTile({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          const SizedBox(width: 14),
+          const ShimmerLoading(width: 48, height: 48, borderRadius: 24),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: double.infinity,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: 120,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
+              children: const [
+                ShimmerLoading(height: 14, width: 160),
+                SizedBox(height: 6),
+                ShimmerLoading(height: 12, width: 100),
               ],
             ),
           ),
@@ -107,70 +113,47 @@ class SkeletonTile extends StatelessWidget {
   }
 }
 
-/// Skeleton placeholder for a card in a grid.
-class SkeletonCard extends StatelessWidget {
-  const SkeletonCard({super.key});
+class ShimmerCard extends StatelessWidget {
+  const ShimmerCard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          const Spacer(),
-          Container(
-            width: double.infinity,
-            height: 14,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            width: 80,
-            height: 10,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Full-screen shimmer list loader (replaces bare CircularProgressIndicator).
-class ShimmerListLoader extends StatelessWidget {
-  final int itemCount;
-
-  const ShimmerListLoader({super.key, this.itemCount = 6});
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: context.l10n.loadingContent,
-      child: ShimmerLoading(
-        child: ListView.builder(
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: itemCount,
-          itemBuilder: (_, __) => const SkeletonTile(),
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            ShimmerLoading(height: 18, width: 200),
+            SizedBox(height: 10),
+            ShimmerLoading(height: 14),
+            SizedBox(height: 6),
+            ShimmerLoading(height: 14, width: 250),
+          ],
         ),
       ),
     );
   }
 }
+
+class ShimmerListLoader extends StatelessWidget {
+  final int itemCount;
+  const ShimmerListLoader({super.key, this.itemCount = 6});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Loading',
+      child: ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: itemCount,
+        itemBuilder: (_, __) => const ShimmerListTile(),
+      ),
+    );
+  }
+}
+
+typedef SkeletonCard = ShimmerCard;
+typedef SkeletonTile = ShimmerListTile;

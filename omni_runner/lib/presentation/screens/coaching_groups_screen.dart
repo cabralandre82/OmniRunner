@@ -99,15 +99,15 @@ class _CoachingGroupCard extends StatelessWidget {
 
     final roleLabel = switch (role) {
       CoachingRole.adminMaster => 'Admin Master',
-      CoachingRole.professor => 'Professor',
-      CoachingRole.assistente => 'Assistente',
-      CoachingRole.atleta => 'Atleta',
+      CoachingRole.coach => 'Coach',
+      CoachingRole.assistant => 'Assistente',
+      CoachingRole.athlete => 'Atleta',
     };
     final roleColor = switch (role) {
       CoachingRole.adminMaster => Colors.amber.shade700,
-      CoachingRole.professor => Colors.deepPurple,
-      CoachingRole.assistente => Colors.blue,
-      CoachingRole.atleta => theme.colorScheme.primary,
+      CoachingRole.coach => Colors.deepPurple,
+      CoachingRole.assistant => Colors.blue,
+      CoachingRole.athlete => theme.colorScheme.primary,
     };
 
     return Card(

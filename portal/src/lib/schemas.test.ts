@@ -48,7 +48,7 @@ describe("teamInviteSchema", () => {
   it("accepts valid input", () => {
     const result = teamInviteSchema.safeParse({
       email: "john@example.com",
-      role: "professor",
+      role: "coach",
     });
     expect(result.success).toBe(true);
   });
@@ -56,7 +56,7 @@ describe("teamInviteSchema", () => {
   it("rejects invalid email", () => {
     const result = teamInviteSchema.safeParse({
       email: "not-an-email",
-      role: "professor",
+      role: "coach",
     });
     expect(result.success).toBe(false);
   });

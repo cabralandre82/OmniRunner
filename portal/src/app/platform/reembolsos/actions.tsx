@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export function RefundActions({
   refundId,
@@ -44,7 +45,7 @@ export function RefundActions({
 
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error ?? "Erro ao processar ação");
+        toast.error(data.error ?? "Erro ao processar ação");
       }
 
       router.refresh();

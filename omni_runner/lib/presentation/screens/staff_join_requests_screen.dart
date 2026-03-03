@@ -51,7 +51,7 @@ class _StaffJoinRequestsScreenState extends State<StaffJoinRequestsScreen> {
                 requestedAt: DateTime.tryParse(
                         (r['requested_at'] as String?) ?? '') ??
                     DateTime.now(),
-                requestedRole: (r['requested_role'] as String?) ?? 'atleta',
+                requestedRole: (r['requested_role'] as String?) ?? 'athlete',
               ))
           .toList();
 
@@ -281,7 +281,7 @@ class _JoinRequest {
     required this.displayName,
     required this.status,
     required this.requestedAt,
-    this.requestedRole = 'atleta',
+    this.requestedRole = 'athlete',
   });
 }
 
@@ -327,14 +327,14 @@ class _RequestCard extends StatelessWidget {
                             ?.copyWith(fontWeight: FontWeight.w600),
                       ),
                       Text(
-                        request.requestedRole == 'professor'
+                        request.requestedRole == 'coach'
                             ? 'Solicitou entrada como professor · $ago'
                             : 'Solicitou entrada · $ago',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: request.requestedRole == 'professor'
+                          color: request.requestedRole == 'coach'
                               ? Colors.deepPurple
                               : theme.colorScheme.onSurfaceVariant,
-                          fontWeight: request.requestedRole == 'professor'
+                          fontWeight: request.requestedRole == 'coach'
                               ? FontWeight.w600
                               : null,
                         ),

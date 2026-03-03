@@ -36,75 +36,96 @@ export default async function AthletesPage() {
   if (!groupId) return null;
   const isAdmin = role === "admin_master";
 
-  const db = createServiceClient();
+  let athletes: Athlete[] = [];
+  let activeCount = 0;
+  let verifiedCount = 0;
+  let totalKm = 0;
+  let fetchError = false;
 
-  const { data: members } = await db
-    .from("coaching_members")
-    .select("user_id, display_name, joined_at_ms")
-    .eq("group_id", groupId)
-    .eq("role", "atleta")
-    .order("joined_at_ms", { ascending: false });
+  try {
+    const db = createServiceClient();
 
-  const allMembers = members ?? [];
-  const userIds = allMembers.map((m: { user_id: string }) => m.user_id);
+    const { data: members } = await db
+      .from("coaching_members")
+      .select("user_id, display_name, joined_at_ms")
+      .eq("group_id", groupId)
+      .eq("role", "athlete")
+      .order("joined_at_ms", { ascending: false });
 
-  const verMap = new Map<string, { verification_status: string; trust_score: number }>();
-  const sessionMap = new Map<string, { total: number; distance: number; last_at: string | null }>();
+    const allMembers = members ?? [];
+    const userIds = allMembers.map((m: { user_id: string }) => m.user_id);
 
-  if (userIds.length > 0) {
-    const [verRes, sessionsRes] = await Promise.all([
-      db
-        .from("athlete_verification")
-        .select("user_id, verification_status, trust_score")
-        .in("user_id", userIds),
-      db
-        .from("sessions")
-        .select("user_id, total_distance_m, start_time_ms")
-        .in("user_id", userIds)
-        .gte("status", 3),
-    ]);
+    const verMap = new Map<string, { verification_status: string; trust_score: number }>();
+    const sessionMap = new Map<string, { total: number; distance: number; last_at: string | null }>();
 
-    for (const v of verRes.data ?? []) {
-      const row = v as { user_id: string; verification_status: string; trust_score: number };
-      verMap.set(row.user_id, { verification_status: row.verification_status, trust_score: row.trust_score });
-    }
+    if (userIds.length > 0) {
+      const [verRes, sessionsRes] = await Promise.all([
+        db
+          .from("athlete_verification")
+          .select("user_id, verification_status, trust_score")
+          .in("user_id", userIds),
+        db
+          .from("sessions")
+          .select("user_id, total_distance_m, start_time_ms")
+          .in("user_id", userIds)
+          .gte("status", 3),
+      ]);
 
-    for (const s of sessionsRes.data ?? []) {
-      const row = s as { user_id: string; total_distance_m: number; start_time_ms: number };
-      const existing = sessionMap.get(row.user_id);
-      const startIso = new Date(row.start_time_ms).toISOString();
-      if (existing) {
-        existing.total++;
-        existing.distance += row.total_distance_m ?? 0;
-        if (!existing.last_at || startIso > existing.last_at) existing.last_at = startIso;
-      } else {
-        sessionMap.set(row.user_id, {
-          total: 1,
-          distance: row.total_distance_m ?? 0,
-          last_at: startIso,
-        });
+      for (const v of verRes.data ?? []) {
+        const row = v as { user_id: string; verification_status: string; trust_score: number };
+        verMap.set(row.user_id, { verification_status: row.verification_status, trust_score: row.trust_score });
+      }
+
+      for (const s of sessionsRes.data ?? []) {
+        const row = s as { user_id: string; total_distance_m: number; start_time_ms: number };
+        const existing = sessionMap.get(row.user_id);
+        const startIso = new Date(row.start_time_ms).toISOString();
+        if (existing) {
+          existing.total++;
+          existing.distance += row.total_distance_m ?? 0;
+          if (!existing.last_at || startIso > existing.last_at) existing.last_at = startIso;
+        } else {
+          sessionMap.set(row.user_id, {
+            total: 1,
+            distance: row.total_distance_m ?? 0,
+            last_at: startIso,
+          });
+        }
       }
     }
+
+    athletes = allMembers.map((m: { user_id: string; display_name: string; joined_at_ms: number }) => {
+      const ver = verMap.get(m.user_id);
+      const sess = sessionMap.get(m.user_id);
+      return {
+        user_id: m.user_id,
+        display_name: m.display_name || "Sem nome",
+        joined_at_ms: m.joined_at_ms,
+        verification_status: ver?.verification_status ?? "UNVERIFIED",
+        trust_score: ver?.trust_score ?? 0,
+        total_sessions: sess?.total ?? 0,
+        total_distance_m: sess?.distance ?? 0,
+        last_session_at: sess?.last_at ?? null,
+      };
+    });
+
+    activeCount = athletes.filter((a) => a.total_sessions > 0).length;
+    verifiedCount = athletes.filter((a) => a.verification_status === "VERIFIED").length;
+    totalKm = athletes.reduce((s, a) => s + a.total_distance_m, 0);
+  } catch {
+    fetchError = true;
   }
 
-  const athletes: Athlete[] = allMembers.map((m: { user_id: string; display_name: string; joined_at_ms: number }) => {
-    const ver = verMap.get(m.user_id);
-    const sess = sessionMap.get(m.user_id);
-    return {
-      user_id: m.user_id,
-      display_name: m.display_name || "Sem nome",
-      joined_at_ms: m.joined_at_ms,
-      verification_status: ver?.verification_status ?? "UNVERIFIED",
-      trust_score: ver?.trust_score ?? 0,
-      total_sessions: sess?.total ?? 0,
-      total_distance_m: sess?.distance ?? 0,
-      last_session_at: sess?.last_at ?? null,
-    };
-  });
-
-  const activeCount = athletes.filter((a) => a.total_sessions > 0).length;
-  const verifiedCount = athletes.filter((a) => a.verification_status === "VERIFIED").length;
-  const totalKm = athletes.reduce((s, a) => s + a.total_distance_m, 0);
+  if (fetchError) {
+    return (
+      <div className="p-6">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
+          <h2 className="text-lg font-semibold text-red-800">Erro ao carregar dados</h2>
+          <p className="mt-2 text-sm text-red-600">Não foi possível conectar ao servidor. Tente recarregar a página.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

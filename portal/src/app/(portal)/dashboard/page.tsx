@@ -12,137 +12,148 @@ const LOW_CREDIT_THRESHOLD = 50;
 
 export default async function DashboardPage() {
   const groupId = cookies().get("portal_group_id")?.value;
-  const role = cookies().get("portal_role")?.value ?? "assistente";
+  const role = cookies().get("portal_role")?.value ?? "assistant";
   if (!groupId) return null;
 
-  const supabase = createClient();
-  const db = createServiceClient();
-
-  const now = Date.now();
-  const dayMs = 86_400_000;
-  const todayStart = now - (now % dayMs);
-  const weekStart = todayStart - 6 * dayMs;
-  const prevWeekStart = weekStart - 7 * dayMs;
-  const monthStart = todayStart - 29 * dayMs;
-
-  const [inventoryRes, membersRes, purchasesRes, membersAllRes] =
-    await Promise.all([
-      supabase
-        .from("coaching_token_inventory")
-        .select("available_tokens")
-        .eq("group_id", groupId)
-        .maybeSingle(),
-      supabase
-        .from("coaching_members")
-        .select("role", { count: "exact", head: true })
-        .eq("group_id", groupId)
-        .eq("role", "atleta"),
-      role === "admin_master"
-        ? supabase
-            .from("billing_purchases")
-            .select("status, credits_amount")
-            .eq("group_id", groupId)
-        : Promise.resolve({ data: null }),
-      db
-        .from("coaching_members")
-        .select("user_id")
-        .eq("group_id", groupId)
-        .eq("role", "atleta"),
-    ]);
-
-  const credits = inventoryRes.data?.available_tokens ?? 0;
-  const athleteCount = membersRes.count ?? 0;
-  const athleteIds = (membersAllRes.data ?? []).map(
-    (m: { user_id: string }) => m.user_id,
-  );
-
+  let credits = 0;
+  let athleteCount = 0;
   let purchasesFulfilled = 0;
   let totalCreditsBought = 0;
-  if (purchasesRes.data) {
-    for (const p of purchasesRes.data) {
-      if ((p as { status: string }).status === "fulfilled") {
-        purchasesFulfilled++;
-        totalCreditsBought += (p as { credits_amount: number }).credits_amount;
-      }
-    }
-  }
-
-  // Activity data
   let weekSessions: { user_id: string; total_distance_m: number; start_time_ms: number }[] = [];
-  let prevWeekSessions: { user_id: string; total_distance_m: number; start_time_ms: number }[] = [];
   let verifiedCount = 0;
   let challengeCount = 0;
+  let wau = 0;
+  let weekDistance = 0;
+  let distanceTrend = 0;
+  let sessionsTrend = 0;
+  let dailyBreakdown: { label: string; date: string; sessions: number }[] = [];
+  let lowCredits = false;
+  let fetchError = false;
 
-  if (athleteIds.length > 0) {
-    const [weekRes, prevWeekRes, verRes, challengeRes] = await Promise.all([
-      db
-        .from("sessions")
-        .select("user_id, total_distance_m, start_time_ms")
-        .in("user_id", athleteIds)
-        .gte("start_time_ms", weekStart)
-        .gte("status", 3),
-      db
-        .from("sessions")
-        .select("user_id, total_distance_m, start_time_ms")
-        .in("user_id", athleteIds)
-        .gte("start_time_ms", prevWeekStart)
-        .lt("start_time_ms", weekStart)
-        .gte("status", 3),
-      db
-        .from("athlete_verification")
-        .select("user_id", { count: "exact", head: true })
-        .in("user_id", athleteIds)
-        .eq("verification_status", "VERIFIED"),
-      db
-        .from("challenge_participants")
-        .select("id", { count: "exact", head: true })
-        .in("user_id", athleteIds)
-        .gte("joined_at_ms", monthStart),
-    ]);
+  try {
+    const supabase = createClient();
+    const db = createServiceClient();
 
-    weekSessions = (weekRes.data ?? []) as typeof weekSessions;
-    prevWeekSessions = (prevWeekRes.data ?? []) as typeof prevWeekSessions;
-    verifiedCount = verRes.count ?? 0;
-    challengeCount = challengeRes.count ?? 0;
+    const now = Date.now();
+    const dayMs = 86_400_000;
+    const todayStart = now - (now % dayMs);
+    const weekStart = todayStart - 6 * dayMs;
+    const prevWeekStart = weekStart - 7 * dayMs;
+    const monthStart = todayStart - 29 * dayMs;
+
+    const [inventoryRes, athleteMembersRes, purchasesRes] =
+      await Promise.all([
+        supabase
+          .from("coaching_token_inventory")
+          .select("available_tokens")
+          .eq("group_id", groupId)
+          .maybeSingle(),
+        db
+          .from("coaching_members")
+          .select("user_id")
+          .eq("group_id", groupId)
+          .eq("role", "athlete"),
+        role === "admin_master"
+          ? supabase
+              .from("billing_purchases")
+              .select("status, credits_amount")
+              .eq("group_id", groupId)
+          : Promise.resolve({ data: null }),
+      ]);
+
+    credits = inventoryRes.data?.available_tokens ?? 0;
+    const athleteIds = (athleteMembersRes.data ?? []).map(
+      (m: { user_id: string }) => m.user_id,
+    );
+    athleteCount = athleteIds.length;
+
+    if (purchasesRes.data) {
+      for (const p of purchasesRes.data) {
+        if ((p as { status: string }).status === "fulfilled") {
+          purchasesFulfilled++;
+          totalCreditsBought += (p as { credits_amount: number }).credits_amount;
+        }
+      }
+    }
+
+    let prevWeekSessions: { user_id: string; total_distance_m: number; start_time_ms: number }[] = [];
+
+    if (athleteIds.length > 0) {
+      const [allSessionsRes, verRes, challengeRes] = await Promise.all([
+        db
+          .from("sessions")
+          .select("user_id, total_distance_m, start_time_ms")
+          .in("user_id", athleteIds)
+          .gte("start_time_ms", prevWeekStart)
+          .gte("status", 3),
+        db
+          .from("athlete_verification")
+          .select("user_id", { count: "exact", head: true })
+          .in("user_id", athleteIds)
+          .eq("verification_status", "VERIFIED"),
+        db
+          .from("challenge_participants")
+          .select("id", { count: "exact", head: true })
+          .in("user_id", athleteIds)
+          .gte("joined_at_ms", monthStart),
+      ]);
+
+      const allSessions = (allSessionsRes.data ?? []) as typeof weekSessions;
+      weekSessions = allSessions.filter((s) => s.start_time_ms >= weekStart);
+      prevWeekSessions = allSessions.filter((s) => s.start_time_ms < weekStart);
+      verifiedCount = verRes.count ?? 0;
+      challengeCount = challengeRes.count ?? 0;
+    }
+
+    wau = new Set(weekSessions.map((s) => s.user_id)).size;
+    weekDistance = weekSessions.reduce((s, r) => s + (r.total_distance_m ?? 0), 0);
+    const prevWeekDistance = prevWeekSessions.reduce((s, r) => s + (r.total_distance_m ?? 0), 0);
+
+    distanceTrend =
+      prevWeekDistance > 0
+        ? Math.round(((weekDistance - prevWeekDistance) / prevWeekDistance) * 100)
+        : weekSessions.length > 0
+          ? 100
+          : 0;
+
+    sessionsTrend =
+      prevWeekSessions.length > 0
+        ? Math.round(
+            ((weekSessions.length - prevWeekSessions.length) / prevWeekSessions.length) * 100,
+          )
+        : weekSessions.length > 0
+          ? 100
+          : 0;
+
+    const dayLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    for (let i = 6; i >= 0; i--) {
+      const dStart = todayStart - i * dayMs;
+      const dEnd = dStart + dayMs;
+      const cnt = weekSessions.filter(
+        (s) => s.start_time_ms >= dStart && s.start_time_ms < dEnd,
+      ).length;
+      const d = new Date(dStart);
+      dailyBreakdown.push({
+        label: dayLabels[d.getDay()],
+        date: d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+        sessions: cnt,
+      });
+    }
+    lowCredits = credits < LOW_CREDIT_THRESHOLD;
+  } catch {
+    fetchError = true;
   }
 
-  const wau = new Set(weekSessions.map((s) => s.user_id)).size;
-  const weekDistance = weekSessions.reduce((s, r) => s + (r.total_distance_m ?? 0), 0);
-  const prevWeekDistance = prevWeekSessions.reduce((s, r) => s + (r.total_distance_m ?? 0), 0);
-
-  const distanceTrend =
-    prevWeekDistance > 0
-      ? Math.round(((weekDistance - prevWeekDistance) / prevWeekDistance) * 100)
-      : weekSessions.length > 0
-        ? 100
-        : 0;
-
-  const sessionsTrend =
-    prevWeekSessions.length > 0
-      ? Math.round(
-          ((weekSessions.length - prevWeekSessions.length) / prevWeekSessions.length) * 100,
-        )
-      : weekSessions.length > 0
-        ? 100
-        : 0;
-
-  // Daily breakdown for chart
-  const dayLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-  const dailyBreakdown: { label: string; date: string; sessions: number }[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const dStart = todayStart - i * dayMs;
-    const dEnd = dStart + dayMs;
-    const cnt = weekSessions.filter(
-      (s) => s.start_time_ms >= dStart && s.start_time_ms < dEnd,
-    ).length;
-    const d = new Date(dStart);
-    dailyBreakdown.push({
-      label: dayLabels[d.getDay()],
-      date: d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
-      sessions: cnt,
-    });
+  if (fetchError) {
+    return (
+      <div className="p-6">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
+          <h2 className="text-lg font-semibold text-red-800">Erro ao carregar dados</h2>
+          <p className="mt-2 text-sm text-red-600">Não foi possível conectar ao servidor. Tente recarregar a página.</p>
+        </div>
+      </div>
+    );
   }
-  const lowCredits = credits < LOW_CREDIT_THRESHOLD;
 
   return (
     <div className="space-y-6">

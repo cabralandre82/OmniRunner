@@ -48,7 +48,7 @@ class MyAssessoriaBloc extends Bloc<MyAssessoriaEvent, MyAssessoriaState> {
         }
       }
 
-      final atletaMembership = members.where((m) => m.isAtleta).toList();
+      final atletaMembership = members.where((m) => m.isAthlete).toList();
 
       if (atletaMembership.isEmpty) {
         emit(const MyAssessoriaLoaded());

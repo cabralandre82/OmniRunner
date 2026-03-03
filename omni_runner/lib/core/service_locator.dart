@@ -11,6 +11,7 @@
 /// Call [setupServiceLocator] once from `main.dart` before `runApp`.
 import 'package:get_it/get_it.dart';
 import 'package:isar/isar.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/analytics/product_event_tracker.dart';
 import 'package:omni_runner/core/auth/auth_repository.dart';
@@ -19,6 +20,7 @@ import 'package:omni_runner/core/push/push_notification_service.dart';
 import 'package:omni_runner/core/auth/i_auth_datasource.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/deep_links/deep_link_handler.dart';
 import 'package:omni_runner/data/datasources/analytics_sync_service.dart';
 import 'package:omni_runner/data/datasources/mock_auth_datasource.dart';
@@ -70,6 +72,8 @@ import 'package:omni_runner/domain/repositories/i_coach_insight_repo.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_group_repo.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_invite_repo.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
+import 'package:omni_runner/domain/repositories/i_training_attendance_repo.dart';
+import 'package:omni_runner/domain/repositories/i_training_session_repo.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_ranking_repo.dart';
 import 'package:omni_runner/domain/repositories/i_friendship_repo.dart';
 import 'package:omni_runner/domain/repositories/i_leaderboard_repo.dart';
@@ -93,9 +97,28 @@ import 'package:omni_runner/domain/usecases/social/send_friend_invite.dart';
 import 'package:omni_runner/domain/usecases/social/accept_friend.dart';
 import 'package:omni_runner/domain/repositories/i_wallet_repo.dart';
 import 'package:omni_runner/domain/repositories/i_ledger_repo.dart';
+import 'package:omni_runner/domain/repositories/i_atomic_ledger_ops.dart';
+import 'package:omni_runner/data/repositories_impl/isar_atomic_ledger_ops.dart';
 import 'package:omni_runner/data/repositories_impl/isar_coaching_group_repo.dart';
 import 'package:omni_runner/data/repositories_impl/isar_coaching_invite_repo.dart';
 import 'package:omni_runner/data/repositories_impl/isar_coaching_member_repo.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_training_attendance_repo.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_training_session_repo.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_crm_repo.dart';
+import 'package:omni_runner/domain/repositories/i_crm_repo.dart';
+import 'package:omni_runner/domain/usecases/crm/manage_tags.dart';
+import 'package:omni_runner/domain/usecases/crm/manage_notes.dart';
+import 'package:omni_runner/domain/usecases/crm/manage_member_status.dart';
+import 'package:omni_runner/domain/usecases/crm/list_crm_athletes.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_announcement_repo.dart';
+import 'package:omni_runner/domain/repositories/i_announcement_repo.dart';
+import 'package:omni_runner/domain/usecases/announcements/list_announcements.dart';
+import 'package:omni_runner/domain/usecases/announcements/create_announcement.dart';
+import 'package:omni_runner/domain/usecases/announcements/mark_announcement_read.dart';
+import 'package:omni_runner/presentation/blocs/announcement_feed/announcement_feed_bloc.dart';
+import 'package:omni_runner/presentation/blocs/announcement_detail/announcement_detail_bloc.dart';
+import 'package:omni_runner/presentation/blocs/crm_list/crm_list_bloc.dart';
+import 'package:omni_runner/presentation/blocs/athlete_profile/athlete_profile_bloc.dart';
 import 'package:omni_runner/data/repositories_impl/isar_athlete_baseline_repo.dart';
 import 'package:omni_runner/data/repositories_impl/isar_coach_insight_repo.dart';
 import 'package:omni_runner/data/repositories_impl/isar_athlete_trend_repo.dart';
@@ -159,6 +182,12 @@ import 'package:omni_runner/domain/usecases/coaching/get_coaching_members.dart';
 import 'package:omni_runner/domain/usecases/coaching/invite_user_to_group.dart';
 import 'package:omni_runner/domain/usecases/coaching/remove_coaching_member.dart';
 import 'package:omni_runner/domain/usecases/coaching/switch_assessoria.dart';
+import 'package:omni_runner/domain/usecases/training/cancel_training_session.dart';
+import 'package:omni_runner/domain/usecases/training/create_training_session.dart';
+import 'package:omni_runner/domain/usecases/training/issue_checkin_token.dart';
+import 'package:omni_runner/domain/usecases/training/list_attendance.dart';
+import 'package:omni_runner/domain/usecases/training/list_training_sessions.dart';
+import 'package:omni_runner/domain/usecases/training/mark_attendance.dart';
 import 'package:omni_runner/domain/repositories/i_switch_assessoria_repo.dart';
 import 'package:omni_runner/data/repositories_impl/stub_switch_assessoria_repo.dart';
 import 'package:omni_runner/data/repositories_impl/remote_switch_assessoria_repo.dart';
@@ -171,7 +200,10 @@ import 'package:omni_runner/presentation/blocs/badges/badges_bloc.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
 import 'package:omni_runner/presentation/blocs/coaching_group_details/coaching_group_details_bloc.dart';
 import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_bloc.dart';
+import 'package:omni_runner/presentation/blocs/checkin/checkin_bloc.dart';
 import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_bloc.dart';
+import 'package:omni_runner/presentation/blocs/training_detail/training_detail_bloc.dart';
+import 'package:omni_runner/presentation/blocs/training_list/training_list_bloc.dart';
 import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_bloc.dart';
 import 'package:omni_runner/presentation/blocs/coaching_rankings/coaching_rankings_bloc.dart';
 import 'package:omni_runner/presentation/blocs/friends/friends_bloc.dart';
@@ -184,6 +216,17 @@ import 'package:omni_runner/presentation/blocs/verification/verification_bloc.da
 import 'package:omni_runner/presentation/blocs/wallet/wallet_bloc.dart';
 import 'package:omni_runner/domain/repositories/i_verification_remote_source.dart';
 import 'package:omni_runner/data/repositories_impl/supabase_verification_remote_source.dart';
+import 'package:omni_runner/domain/repositories/i_workout_repo.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_workout_repo.dart';
+import 'package:omni_runner/presentation/blocs/workout_builder/workout_builder_bloc.dart';
+import 'package:omni_runner/presentation/blocs/workout_assignments/workout_assignments_bloc.dart';
+import 'package:omni_runner/domain/repositories/i_financial_repo.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_financial_repo.dart';
+import 'package:omni_runner/domain/repositories/i_wearable_repo.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_wearable_repo.dart';
+import 'package:omni_runner/domain/usecases/wearable/link_device.dart';
+import 'package:omni_runner/domain/usecases/wearable/import_execution.dart';
+import 'package:omni_runner/domain/usecases/wearable/list_executions.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -194,7 +237,10 @@ Future<void> setupServiceLocator() async {
   // --- Auth Datasource (adapter pattern: remote vs mock) ---
   final IAuthDataSource authDs = AppConfig.isSupabaseReady
       ? RemoteAuthDataSource()
-      : MockAuthDataSource();
+      : () {
+          AppLogger.critical('AUTH: Supabase not ready — using MockAuthDataSource. This should NEVER happen in production.');
+          return MockAuthDataSource();
+        }();
   sl.registerSingleton<IAuthDataSource>(authDs);
 
   final authRepo = AuthRepository(datasource: authDs);
@@ -208,7 +254,10 @@ Future<void> setupServiceLocator() async {
   // --- Profile (first real Supabase table with RLS) ---
   final IProfileRepo profileDs = AppConfig.isSupabaseReady
       ? RemoteProfileDataSource()
-      : MockProfileDataSource(identity: userIdentity);
+      : () {
+          AppLogger.critical('PROFILE: Supabase not ready — using MockProfileDataSource. This should NEVER happen in production.');
+          return MockProfileDataSource(identity: userIdentity);
+        }();
   sl.registerLazySingleton<IProfileRepo>(
     () => ProfileRepo(datasource: profileDs),
   );
@@ -296,6 +345,9 @@ Future<void> setupServiceLocator() async {
   sl.registerLazySingleton<ILedgerRepo>(
     () => IsarLedgerRepo(sl<Isar>()),
   );
+  sl.registerLazySingleton<IAtomicLedgerOps>(
+    () => IsarAtomicLedgerOps(sl<Isar>()),
+  );
 
   // --- Progression Repositories ---
   sl.registerLazySingleton<IProfileProgressRepo>(
@@ -329,14 +381,20 @@ Future<void> setupServiceLocator() async {
   sl.registerLazySingleton<ISwitchAssessoriaRepo>(
     () => AppConfig.isSupabaseReady
         ? const RemoteSwitchAssessoriaRepo()
-        : const StubSwitchAssessoriaRepo(),
+        : () {
+            AppLogger.critical('SWITCH_ASSESSORIA: Supabase not ready — using StubSwitchAssessoriaRepo. This should NEVER happen in production.');
+            return const StubSwitchAssessoriaRepo();
+          }(),
   );
 
   // --- Token Intent ---
   sl.registerLazySingleton<ITokenIntentRepo>(
     () => AppConfig.isSupabaseReady
         ? const RemoteTokenIntentRepo()
-        : const StubTokenIntentRepo(),
+        : () {
+            AppLogger.critical('TOKEN_INTENT: Supabase not ready — using StubTokenIntentRepo. This should NEVER happen in production.');
+            return const StubTokenIntentRepo();
+          }(),
   );
 
   // --- Analytics Repositories ---
@@ -520,6 +578,7 @@ Future<void> setupServiceLocator() async {
     () => LedgerService(
       ledgerRepo: sl<ILedgerRepo>(),
       walletRepo: sl<IWalletRepo>(),
+      atomicOps: sl<IAtomicLedgerOps>(),
     ),
   );
   sl.registerFactory<SettleChallenge>(
@@ -707,6 +766,105 @@ Future<void> setupServiceLocator() async {
     () => StaffQrBloc(repo: sl<ITokenIntentRepo>()),
   );
 
+  // ── Training (sessions + attendance) ──
+  sl.registerLazySingleton<ITrainingSessionRepo>(
+    () => SupabaseTrainingSessionRepo(Supabase.instance.client),
+  );
+  sl.registerLazySingleton<ITrainingAttendanceRepo>(
+    () => SupabaseTrainingAttendanceRepo(Supabase.instance.client),
+  );
+  sl.registerFactory<ListTrainingSessions>(
+    () => ListTrainingSessions(repo: sl<ITrainingSessionRepo>()),
+  );
+  sl.registerFactory<CreateTrainingSession>(
+    () => CreateTrainingSession(repo: sl<ITrainingSessionRepo>()),
+  );
+  sl.registerFactory<ListAttendance>(
+    () => ListAttendance(repo: sl<ITrainingAttendanceRepo>()),
+  );
+  sl.registerFactory<CancelTrainingSession>(
+    () => CancelTrainingSession(repo: sl<ITrainingSessionRepo>()),
+  );
+  sl.registerFactory<IssueCheckinToken>(
+    () => IssueCheckinToken(repo: sl<ITrainingAttendanceRepo>()),
+  );
+  sl.registerFactory<MarkAttendance>(
+    () => MarkAttendance(repo: sl<ITrainingAttendanceRepo>()),
+  );
+  sl.registerFactory<TrainingListBloc>(
+    () => TrainingListBloc(listSessions: sl<ListTrainingSessions>()),
+  );
+  sl.registerFactory<TrainingDetailBloc>(
+    () => TrainingDetailBloc(
+      sessionRepo: sl<ITrainingSessionRepo>(),
+      listAttendance: sl<ListAttendance>(),
+      cancelTrainingSession: sl<CancelTrainingSession>(),
+    ),
+  );
+  sl.registerFactory<CheckinBloc>(
+    () => CheckinBloc(
+      issueToken: sl<IssueCheckinToken>(),
+      markAttendance: sl<MarkAttendance>(),
+    ),
+  );
+
+  // ── CRM (tags, notes, status) ──
+  sl.registerLazySingleton<ICrmRepo>(
+    () => SupabaseCrmRepo(Supabase.instance.client),
+  );
+  sl.registerFactory<ManageTags>(
+    () => ManageTags(repo: sl<ICrmRepo>()),
+  );
+  sl.registerFactory<ManageNotes>(
+    () => ManageNotes(repo: sl<ICrmRepo>()),
+  );
+  sl.registerFactory<ManageMemberStatus>(
+    () => ManageMemberStatus(repo: sl<ICrmRepo>()),
+  );
+  sl.registerFactory<ListCrmAthletes>(
+    () => ListCrmAthletes(repo: sl<ICrmRepo>()),
+  );
+  sl.registerFactory<CrmListBloc>(
+    () => CrmListBloc(
+      listCrmAthletes: sl<ListCrmAthletes>(),
+      manageTags: sl<ManageTags>(),
+    ),
+  );
+  sl.registerFactory<AthleteProfileBloc>(
+    () => AthleteProfileBloc(
+      manageTags: sl<ManageTags>(),
+      manageNotes: sl<ManageNotes>(),
+      manageMemberStatus: sl<ManageMemberStatus>(),
+      crmRepo: sl<ICrmRepo>(),
+    ),
+  );
+
+  // ── Announcements ──
+  sl.registerLazySingleton<IAnnouncementRepo>(
+    () => SupabaseAnnouncementRepo(Supabase.instance.client),
+  );
+  sl.registerFactory<ListAnnouncements>(
+    () => ListAnnouncements(repo: sl<IAnnouncementRepo>()),
+  );
+  sl.registerFactory<CreateAnnouncement>(
+    () => CreateAnnouncement(repo: sl<IAnnouncementRepo>()),
+  );
+  sl.registerFactory<MarkAnnouncementRead>(
+    () => MarkAnnouncementRead(repo: sl<IAnnouncementRepo>()),
+  );
+  sl.registerFactory<AnnouncementFeedBloc>(
+    () => AnnouncementFeedBloc(
+      listAnnouncements: sl<ListAnnouncements>(),
+      markAnnouncementRead: sl<MarkAnnouncementRead>(),
+    ),
+  );
+  sl.registerFactory<AnnouncementDetailBloc>(
+    () => AnnouncementDetailBloc(
+      repo: sl<IAnnouncementRepo>(),
+      markAnnouncementRead: sl<MarkAnnouncementRead>(),
+    ),
+  );
+
   // ── Coach Insights BLoC ──
   sl.registerFactory<CoachInsightsBloc>(
     () => CoachInsightsBloc(repo: sl<ICoachInsightRepo>()),
@@ -767,5 +925,35 @@ Future<void> setupServiceLocator() async {
   );
   sl.registerFactory<VerificationBloc>(
     () => VerificationBloc(remote: sl<IVerificationRemoteSource>()),
+  );
+
+  // ── Workout Builder ──
+  sl.registerLazySingleton<IWorkoutRepo>(
+    () => SupabaseWorkoutRepo(Supabase.instance.client),
+  );
+  sl.registerFactory<WorkoutBuilderBloc>(
+    () => WorkoutBuilderBloc(repo: sl<IWorkoutRepo>()),
+  );
+  sl.registerFactory<WorkoutAssignmentsBloc>(
+    () => WorkoutAssignmentsBloc(repo: sl<IWorkoutRepo>()),
+  );
+
+  // ── Financial ──
+  sl.registerLazySingleton<IFinancialRepo>(
+    () => SupabaseFinancialRepo(Supabase.instance.client),
+  );
+
+  // ── Wearables (Device Links + Executions) ──
+  sl.registerLazySingleton<IWearableRepo>(
+    () => SupabaseWearableRepo(Supabase.instance.client),
+  );
+  sl.registerFactory<LinkDevice>(
+    () => LinkDevice(repo: sl<IWearableRepo>()),
+  );
+  sl.registerFactory<ImportExecution>(
+    () => ImportExecution(repo: sl<IWearableRepo>()),
+  );
+  sl.registerFactory<ListExecutions>(
+    () => ListExecutions(repo: sl<IWearableRepo>()),
   );
 }

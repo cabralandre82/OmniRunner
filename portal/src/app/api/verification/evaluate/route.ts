@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     .eq("user_id", session.user.id)
     .maybeSingle();
 
-  if (!callerMembership || !["admin_master", "professor"].includes(callerMembership.role)) {
+  if (!callerMembership || !["admin_master", "coach"].includes(callerMembership.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     .select("user_id")
     .eq("group_id", groupId)
     .eq("user_id", userId)
-    .eq("role", "atleta")
+    .eq("role", "athlete")
     .maybeSingle();
 
   if (!member) {

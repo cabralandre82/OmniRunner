@@ -4,6 +4,7 @@ import { jsonOk, jsonErr } from "../_shared/http.ts";
 import { handleCors } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rate_limit.ts";
 import { startTimer, logRequest, logError } from "../_shared/obs.ts";
+import { log } from "../_shared/logger.ts";
 import { requireJson, requireFields, ValidationError } from "../_shared/validate.ts";
 
 /**
@@ -25,12 +26,19 @@ import { requireJson, requireFields, ValidationError } from "../_shared/validate
 
 const MS_PER_DAY = 86_400_000;
 
-type Scope = "global" | "assessoria" | "championship";
+type Scope = "global" | "assessoria" | "championship" | "batch_assessoria";
 type Period = "weekly" | "monthly";
+const BATCH_SIZE = 100;
 
 serve(async (req: Request) => {
   const cors = handleCors(req);
   if (cors) return cors;
+
+  if (req.method === 'GET' && new URL(req.url).pathname === '/health') {
+    return new Response(JSON.stringify({ status: 'ok', version: '1.0.0' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   const requestId = crypto.randomUUID();
   const elapsed = startTimer();
@@ -86,9 +94,9 @@ serve(async (req: Request) => {
     }
 
     const scope = body.scope as Scope;
-    if (!["global", "assessoria", "championship"].includes(scope)) {
+    if (!["global", "assessoria", "championship", "batch_assessoria"].includes(scope)) {
       status = 400;
-      return jsonErr(400, "INVALID_SCOPE", "scope must be global, assessoria, or championship", requestId);
+      return jsonErr(400, "INVALID_SCOPE", "scope must be global, assessoria, championship, or batch_assessoria", requestId);
     }
 
     const period: Period = (body.period as Period) ?? "weekly";
@@ -201,7 +209,7 @@ serve(async (req: Request) => {
           .select("id")
           .eq("group_id", champ.host_group_id)
           .eq("user_id", userId)
-          .in("role", ["admin_master", "assistente", "professor", "coach", "assistant"])
+          .in("role", ["admin_master", "coach", "assistant"])
           .limit(1)
           .maybeSingle(),
       ]);
@@ -223,7 +231,104 @@ serve(async (req: Request) => {
         return jsonErr(500, "RPC_ERROR", "Failed to compute championship leaderboard", requestId);
       }
       computed = count ?? 0;
+
+    } else if (scope === "batch_assessoria") {
+      // ── Batch mode: process ALL coaching groups in chunks of BATCH_SIZE ──
+      const { data: allGroups, error: groupsErr } = await db
+        .from("coaching_groups")
+        .select("id")
+        .order("id");
+
+      if (groupsErr) {
+        status = 500;
+        errorCode = "RPC_ERROR";
+        return jsonErr(500, "RPC_ERROR", "Failed to fetch coaching groups", requestId);
+      }
+
+      const groups = allGroups ?? [];
+      const totalGroups = groups.length;
+      let totalComputed = 0;
+      let batchIndex = 0;
+      const batchErrors: { group_id: string; error: string }[] = [];
+
+      log("info", "batch_assessoria: starting", {
+        request_id: requestId,
+        total_groups: totalGroups,
+        batch_size: BATCH_SIZE,
+        period,
+        period_key: key,
+      });
+
+      for (let i = 0; i < totalGroups; i += BATCH_SIZE) {
+        batchIndex++;
+        const chunk = groups.slice(i, i + BATCH_SIZE);
+        const batchStart = Date.now();
+
+        for (const g of chunk) {
+          try {
+            const { data: count, error } = await db.rpc("compute_leaderboard_assessoria", {
+              p_coaching_group_id: g.id,
+              p_period: period,
+              p_period_key: key,
+              p_start_ms: startMs,
+              p_end_ms: endMs,
+            });
+            if (error) {
+              batchErrors.push({ group_id: g.id, error: error.message ?? "rpc_error" });
+            } else {
+              totalComputed += count ?? 0;
+            }
+          } catch (err) {
+            batchErrors.push({
+              group_id: g.id,
+              error: err instanceof Error ? err.message : "unknown",
+            });
+          }
+        }
+
+        log("info", "batch_assessoria: batch completed", {
+          request_id: requestId,
+          batch: batchIndex,
+          groups_in_batch: chunk.length,
+          batch_duration_ms: Date.now() - batchStart,
+        });
+      }
+
+      if (batchErrors.length > 0) {
+        log("warn", "batch_assessoria: some groups failed", {
+          request_id: requestId,
+          failed_count: batchErrors.length,
+          errors: batchErrors.slice(0, 10),
+        });
+      }
+
+      log("info", "batch_assessoria: finished", {
+        request_id: requestId,
+        total_groups: totalGroups,
+        total_computed: totalComputed,
+        failed_count: batchErrors.length,
+        total_duration_ms: elapsed(),
+      });
+
+      return jsonOk({
+        status: "ok",
+        scope,
+        period,
+        period_key: key,
+        total_groups: totalGroups,
+        entries_computed: totalComputed,
+        failed_groups: batchErrors.length,
+        errors: batchErrors.length > 0 ? batchErrors.slice(0, 10) : undefined,
+      }, requestId);
     }
+
+    log("info", "compute-leaderboard completed", {
+      request_id: requestId,
+      scope,
+      period,
+      entries_computed: computed,
+      duration_ms: elapsed(),
+    });
 
     return jsonOk({
       status: "ok",

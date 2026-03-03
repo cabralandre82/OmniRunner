@@ -26,7 +26,7 @@ export default async function PortalLayout({
 
   const cookieStore = cookies();
   const groupId = cookieStore.get("portal_group_id")?.value;
-  const role = cookieStore.get("portal_role")?.value ?? "assistente";
+  const role = cookieStore.get("portal_role")?.value ?? "assistant";
 
   if (!groupId) {
     const { data: profile } = await supabase
@@ -46,7 +46,7 @@ export default async function PortalLayout({
     .from("coaching_members")
     .select("group_id")
     .eq("user_id", user.id)
-    .in("role", ["admin_master", "professor", "assistente"]);
+    .in("role", ["admin_master", "coach", "assistant"]);
 
   const multiGroup = (memberships?.length ?? 0) > 1;
 

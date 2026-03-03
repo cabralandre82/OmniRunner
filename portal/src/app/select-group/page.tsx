@@ -14,7 +14,7 @@ export default async function SelectGroupPage() {
     .from("coaching_members")
     .select("group_id, role, coaching_groups(name)")
     .eq("user_id", user.id)
-    .in("role", ["admin_master", "professor", "assistente"]);
+    .in("role", ["admin_master", "coach", "assistant"]);
 
   const memberships = data ?? [];
 
