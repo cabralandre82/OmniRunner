@@ -1,0 +1,111 @@
+/*
+ * Global Design Tokens — Single source of truth for all visual properties.
+ *
+ * These CSS custom properties mirror the Flutter DesignTokens and should be
+ * the ONLY place where raw color/spacing/radius values are defined.
+ * Components must reference token variables, never raw hex values.
+ *
+ * Flutter counterpart: omni_runner/lib/core/theme/design_tokens.dart
+ */
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* 1. PALETTE                                                     */
+/* ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* -- Light mode (default) -- */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+
+  --primary: #2563eb;
+  --primary-soft: #dbeafe;
+  --primary-glow: rgba(37, 99, 235, 0.1);
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #38bdf8;
+
+  --border: #e2e8f0;
+  --border-subtle: #f1f5f9;
+  --overlay: rgba(0, 0, 0, 0.5);
+
+  /* -- Typography -- */
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --display-large: 2rem;       /* 32px */
+  --display-medium: 1.75rem;   /* 28px */
+  --title-large: 1.5rem;       /* 24px */
+  --title-medium: 1.25rem;     /* 20px */
+  --body: 1rem;                /* 16px */
+  --caption: 0.75rem;          /* 12px */
+  --label: 0.875rem;           /* 14px */
+
+  --font-weight-bold: 700;
+  --font-weight-semibold: 600;
+  --font-weight-medium: 500;
+  --font-weight-regular: 400;
+
+  /* -- Spacing -- */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-xxl: 3rem;     /* 48px */
+
+  /* -- Border Radius -- */
+  --radius-sm: 0.5rem;     /* 8px */
+  --radius-md: 0.75rem;    /* 12px */
+  --radius-lg: 1rem;       /* 16px */
+  --radius-xl: 1.5rem;     /* 24px */
+
+  /* -- Shadows -- */
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+
+  /* -- Transitions -- */
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+
+  /* -- States (opacity) -- */
+  --opacity-hover: 0.08;
+  --opacity-pressed: 0.12;
+  --opacity-disabled: 0.38;
+  --opacity-focus: 0.12;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* DARK MODE                                                      */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dark {
+  --bg-primary: #0a0e17;
+  --bg-secondary: #111827;
+  --surface: #1e293b;
+  --surface-elevated: #283548;
+
+  --primary: #3b82f6;
+  --primary-soft: #1e3a5f;
+  --primary-glow: rgba(59, 130, 246, 0.2);
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --border: #334155;
+  --border-subtle: #1e293b;
+  --overlay: rgba(0, 0, 0, 0.8);
+
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.25);
+}
