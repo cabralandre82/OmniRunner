@@ -32,6 +32,18 @@ serve(async (req: Request) => {
       );
     }
 
+    const flagDb = createClient(SUPABASE_URL, SERVICE_KEY);
+    const { data: flagRow } = await flagDb
+      .from("feature_flags")
+      .select("enabled")
+      .eq("key", "trainingpeaks_enabled")
+      .maybeSingle();
+    if (!flagRow?.enabled) {
+      status = 403;
+      errorCode = "TRAININGPEAKS_DISABLED";
+      return jsonErr(403, "TRAININGPEAKS_DISABLED", "TrainingPeaks integration is disabled", requestId);
+    }
+
     const action = url.searchParams.get("action");
 
     // Step 1: Initiate OAuth — redirect user to TrainingPeaks

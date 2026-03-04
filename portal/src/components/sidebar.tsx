@@ -32,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/exports", label: "Exports", roles: ["admin_master", "coach"] },
   { href: "/workouts", label: "Treinos", roles: ["admin_master", "coach"] },
   { href: "/workouts/analytics", label: "Análise Treinos", roles: ["admin_master", "coach"] },
+  { href: "/delivery", label: "Entrega Treinos", roles: ["admin_master", "coach"] },
   { href: "/trainingpeaks", label: "TrainingPeaks", roles: ["admin_master", "coach"] },
   { href: "/financial", label: "Financeiro", roles: ["admin_master", "coach"] },
   { href: "/executions", label: "Execuções", roles: ["admin_master", "coach", "assistant"] },
@@ -47,11 +48,13 @@ export function Sidebar({
   isPlatformAdmin = false,
   logoUrl,
   groupName,
+  trainingpeaksEnabled = false,
 }: {
   role: string;
   isPlatformAdmin?: boolean;
   logoUrl?: string | null;
   groupName?: string;
+  trainingpeaksEnabled?: boolean;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -66,7 +69,11 @@ export function Sidebar({
     return () => window.removeEventListener("toggle-sidebar", handler);
   }, []);
 
-  const visibleItems = NAV_ITEMS.filter((item) => item.roles.includes(role));
+  const visibleItems = NAV_ITEMS.filter(
+    (item) =>
+      item.roles.includes(role) &&
+      (item.href !== "/trainingpeaks" || trainingpeaksEnabled),
+  );
 
   const navContent = (
     <>

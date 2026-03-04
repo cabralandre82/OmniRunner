@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
 
@@ -88,6 +89,8 @@ export default async function PortalLayout({
     accent_color: brandingRes.data?.accent_color ?? "#3b82f6",
   };
 
+  const tpEnabled = await isFeatureEnabled("trainingpeaks_enabled");
+
   const cssVars = {
     "--brand-primary": branding.primary_color,
     "--brand-sidebar-bg": branding.sidebar_bg,
@@ -102,6 +105,7 @@ export default async function PortalLayout({
         isPlatformAdmin={isPlatformAdmin}
         logoUrl={branding.logo_url}
         groupName={groupName}
+        trainingpeaksEnabled={tpEnabled}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header

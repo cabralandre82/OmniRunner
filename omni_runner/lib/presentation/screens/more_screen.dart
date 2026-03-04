@@ -21,6 +21,7 @@ import 'package:omni_runner/presentation/screens/invite_friends_screen.dart';
 import 'package:omni_runner/presentation/screens/my_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/profile_screen.dart';
 import 'package:omni_runner/presentation/screens/settings_screen.dart';
+import 'package:omni_runner/presentation/screens/athlete_delivery_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_qr_hub_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_scan_qr_screen.dart';
 import 'package:omni_runner/presentation/screens/partner_assessorias_screen.dart';
@@ -75,6 +76,17 @@ class MoreScreen extends StatelessWidget {
               onTap: (ctx) {
                 if (LoginRequiredSheet.guard(ctx, feature: 'QR Scanner')) return;
                 _openAthleteScan(ctx);
+              },
+            ),
+            _ActionTile(
+              icon: Icons.delivery_dining,
+              title: 'Entregas Pendentes',
+              subtitle: 'Confirmar treinos enviados ao relógio',
+              onTap: (ctx) {
+                if (LoginRequiredSheet.guard(ctx, feature: 'Entregas')) return;
+                Navigator.of(ctx).push(MaterialPageRoute<void>(
+                  builder: (_) => const AthleteDeliveryScreen(),
+                ));
               },
             ),
           ],

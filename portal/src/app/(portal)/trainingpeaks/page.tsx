@@ -1,9 +1,24 @@
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 
 export const dynamic = "force-dynamic";
 
 export default async function TrainingPeaksPage() {
+  const tpEnabled = await isFeatureEnabled("trainingpeaks_enabled");
+  if (!tpEnabled) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="rounded-xl border border-border p-8 text-center max-w-md">
+          <h2 className="text-lg font-semibold text-content-primary">Funcionalidade indisponível</h2>
+          <p className="mt-2 text-sm text-content-secondary">
+            A integração com TrainingPeaks não está habilitada para este grupo.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const supabase = createClient();
   const cookieStore = await cookies();
   const groupId = cookieStore.get("group_id")?.value;

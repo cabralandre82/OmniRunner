@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:omni_runner/core/config/feature_flags.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
@@ -29,7 +30,14 @@ class _AthleteDeviceLinkScreenState extends State<AthleteDeviceLinkScreen> {
   bool _loading = true;
   String? _error;
 
-  static const _providers = ['garmin', 'apple', 'polar', 'suunto', 'trainingpeaks'];
+  static const _allProviders = ['garmin', 'apple', 'polar', 'suunto', 'trainingpeaks'];
+
+  List<String> get _providers {
+    final tpEnabled = sl<FeatureFlagService>().isEnabled('trainingpeaks_enabled');
+    return tpEnabled
+        ? _allProviders
+        : _allProviders.where((p) => p != 'trainingpeaks').toList();
+  }
   static const _providerLabels = {
     'garmin': 'Garmin',
     'apple': 'Apple Watch',

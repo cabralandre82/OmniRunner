@@ -76,6 +76,18 @@ serve(async (req: Request) => {
       return jsonOk({ status: "ok", fn: FN }, requestId);
     }
 
+    const flagDb = createClient(SUPABASE_URL, SERVICE_KEY);
+    const { data: flagRow } = await flagDb
+      .from("feature_flags")
+      .select("enabled")
+      .eq("key", "trainingpeaks_enabled")
+      .maybeSingle();
+    if (!flagRow?.enabled) {
+      status = 403;
+      errorCode = "TRAININGPEAKS_DISABLED";
+      return jsonErr(403, "TRAININGPEAKS_DISABLED", "TrainingPeaks integration is disabled", requestId);
+    }
+
     if (req.method !== "POST") {
       status = 405;
       return jsonErr(405, "METHOD_NOT_ALLOWED", "Use POST", requestId);

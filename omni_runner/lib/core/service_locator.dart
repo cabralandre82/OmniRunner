@@ -20,6 +20,7 @@ import 'package:omni_runner/core/push/push_notification_service.dart';
 import 'package:omni_runner/core/auth/i_auth_datasource.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/config/feature_flags.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/deep_links/deep_link_handler.dart';
 import 'package:omni_runner/data/datasources/analytics_sync_service.dart';
@@ -250,6 +251,11 @@ Future<void> setupServiceLocator() async {
   final userIdentity = UserIdentityProvider(authRepo: authRepo);
   await userIdentity.init();
   sl.registerSingleton<UserIdentityProvider>(userIdentity);
+
+  // --- Feature Flags ---
+  final featureFlags = FeatureFlagService(userId: userIdentity.userId);
+  await featureFlags.load();
+  sl.registerSingleton<FeatureFlagService>(featureFlags);
 
   // --- Profile (first real Supabase table with RLS) ---
   final IProfileRepo profileDs = AppConfig.isSupabaseReady

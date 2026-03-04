@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:omni_runner/core/config/feature_flags.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
@@ -126,7 +127,11 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Treino atribuído com sucesso!')),
       );
-      await _offerTrainingPeaksSync(assignment.id);
+      if (sl<FeatureFlagService>().isEnabled('trainingpeaks_enabled')) {
+        await _offerTrainingPeaksSync(assignment.id);
+      } else {
+        await _offerDelivery(assignment.id);
+      }
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (e, stack) {
@@ -186,6 +191,38 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
         SnackBar(content: Text('Erro: $e')),
       );
     }
+  }
+
+  Future<void> _offerDelivery(String assignmentId) async {
+    final shouldDeliver = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.send_rounded),
+        title: const Text('Incluir na entrega?'),
+        content: const Text(
+          'Deseja adicionar este treino ao lote de entrega para o atleta confirmar no relógio?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Depois'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: const Icon(Icons.check_circle_outline, size: 18),
+            label: const Text('Incluir'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDeliver != true || !mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Treino adicionado — publique pelo portal em "Entrega Treinos".'),
+      ),
+    );
   }
 
   void _showError(String msg) {

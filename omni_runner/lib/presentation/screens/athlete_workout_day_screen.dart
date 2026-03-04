@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/logging/logger.dart';
@@ -9,6 +10,7 @@ import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/workout_assignment_entity.dart';
 import 'package:omni_runner/domain/entities/workout_template_entity.dart';
 import 'package:omni_runner/domain/repositories/i_workout_repo.dart';
+import 'package:omni_runner/presentation/screens/athlete_delivery_screen.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 
 /// Shows the athlete's workout for today (or selected date).
@@ -32,11 +34,29 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
   WorkoutAssignmentEntity? _assignment;
   WorkoutTemplateEntity? _template;
   bool _completing = false;
+  int _pendingDeliveries = 0;
 
   @override
   void initState() {
     super.initState();
     _loadToday();
+    _loadPendingDeliveryCount();
+  }
+
+  Future<void> _loadPendingDeliveryCount() async {
+    try {
+      final uid = sl<UserIdentityProvider>().userId;
+      final rows = await Supabase.instance.client
+          .from('workout_delivery_items')
+          .select('id')
+          .eq('athlete_user_id', uid)
+          .inFilter('status', ['published']);
+      if (mounted) {
+        setState(() => _pendingDeliveries = (rows as List).length);
+      }
+    } catch (e) {
+      AppLogger.warn('Failed to load delivery count', tag: 'WorkoutDayScreen', error: e);
+    }
   }
 
   Future<void> _loadToday() async {
@@ -126,6 +146,21 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
       appBar: AppBar(
         title: const Text('Meu Treino do Dia'),
         actions: [
+          if (_pendingDeliveries > 0)
+            IconButton(
+              icon: Badge.count(
+                count: _pendingDeliveries,
+                backgroundColor: DesignTokens.error,
+                child: const Icon(Icons.delivery_dining),
+              ),
+              onPressed: () async {
+                await Navigator.of(context).push(MaterialPageRoute<void>(
+                  builder: (_) => const AthleteDeliveryScreen(),
+                ));
+                _loadPendingDeliveryCount();
+              },
+              tooltip: 'Entregas Pendentes',
+            ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadToday,
