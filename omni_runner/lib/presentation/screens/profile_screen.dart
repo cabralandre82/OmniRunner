@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/auth/auth_repository.dart';
 import 'package:omni_runner/data/services/profile_data_service.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
@@ -38,6 +39,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _initialName = '';
   String _initialInsta = '';
   String _initialTiktok = '';
+
+  int _badgeCount = 0;
+  int _currentStreak = 0;
+  double _totalKm = 0;
+  int _level = 1;
+  int _xp = 0;
 
   @override
   void initState() {
@@ -81,6 +88,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _initialName = displayName;
       _initialInsta = insta;
       _initialTiktok = tiktok;
+      if (p != null) {
+        await _loadStats(p.id);
+      }
       setState(() {
         _profile = p;
         _nameCtrl.text = displayName;
@@ -95,6 +105,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _error = _friendlyError(e);
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _loadStats(String uid) async {
+    try {
+      final db = Supabase.instance.client;
+      final badgesFuture = db.from('badges_earned').select('id').eq('user_id', uid);
+      final progFuture = db.from('user_progressions').select('level, xp, current_streak_days').eq('user_id', uid).maybeSingle();
+      final sessionsFuture = db.from('sessions').select('distance_meters').eq('user_id', uid);
+
+      final badges = await badgesFuture;
+      final prog = await progFuture;
+      final sessions = await sessionsFuture;
+
+      double km = 0;
+      for (final s in sessions) {
+        km += (s['distance_meters'] as num?)?.toDouble() ?? 0;
+      }
+      if (mounted) {
+        setState(() {
+          _badgeCount = badges.length;
+          _level = (prog?['level'] as int?) ?? 1;
+          _xp = (prog?['xp'] as int?) ?? 0;
+          _currentStreak = (prog?['current_streak_days'] as int?) ?? 0;
+          _totalKm = km / 1000;
+        });
+      }
+    } on Exception catch (e) {
+      AppLogger.debug('Profile stats load failed', tag: _tag, error: e);
     }
   }
 
@@ -517,6 +556,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
 
+                // ── Achievements ──
+                const SizedBox(height: 24),
+                const Divider(),
+                const SizedBox(height: DesignTokens.spacingSm),
+                Text(
+                  'Conquistas',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: cs.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: DesignTokens.spacingSm),
+                Card(
+                  elevation: 0,
+                  color: cs.primaryContainer.withValues(alpha: 0.3),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: DesignTokens.spacingMd,
+                      horizontal: DesignTokens.spacingSm,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _ProfileStat(
+                          icon: Icons.trending_up_rounded,
+                          value: 'Nível $_level',
+                          label: '$_xp XP',
+                          color: cs.primary,
+                        ),
+                        _ProfileStat(
+                          icon: Icons.military_tech_rounded,
+                          value: '$_badgeCount',
+                          label: 'Badges',
+                          color: DesignTokens.warning,
+                        ),
+                        _ProfileStat(
+                          icon: Icons.local_fire_department_rounded,
+                          value: '$_currentStreak',
+                          label: 'Dias seguidos',
+                          color: DesignTokens.error,
+                        ),
+                        _ProfileStat(
+                          icon: Icons.directions_run_rounded,
+                          value: '${_totalKm.toStringAsFixed(0)} km',
+                          label: 'Total',
+                          color: DesignTokens.success,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
                 // ── Sign out ──
                 if (!identity.isAnonymous) ...[
                   const SizedBox(height: 32),
@@ -557,5 +651,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ),
     );
   }
+}
 
+class _ProfileStat extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  const _ProfileStat({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: color, size: 22),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 11,
+          ),
+        ),
+      ],
+    );
+  }
 }

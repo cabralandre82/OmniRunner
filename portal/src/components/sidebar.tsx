@@ -117,6 +117,13 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
+const ROLE_LABELS: Record<string, string> = {
+  admin_master: "Administrador",
+  coach: "Treinador",
+  assistant: "Assistente",
+  athlete: "Atleta",
+};
+
 const PLATFORM_ITEMS: NavItem[] = [
   { href: "/platform/assessorias", label: "Admin Plataforma", roles: ["platform_admin"] },
 ];
@@ -300,7 +307,7 @@ export function Sidebar({
       )}
 
       <div className="border-t border-border px-4 py-3">
-        <p className="truncate text-xs text-content-muted">{role}</p>
+        <p className="truncate text-xs text-content-muted">{ROLE_LABELS[role] ?? role}</p>
       </div>
     </>
   );

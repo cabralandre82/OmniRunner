@@ -34,68 +34,6 @@ class _OnboardingRoleScreenState extends State<OnboardingRoleScreen> {
   bool _busy = false;
   String? _error;
 
-  Future<void> _showConfirmDialog() async {
-    final roleName = _selectedRole == 'ATLETA' ? 'Atleta' : 'Assessoria';
-    final roleDesc = _selectedRole == 'ATLETA'
-        ? 'Você vai treinar, participar de desafios e acompanhar sua evolução.'
-        : 'Você vai gerenciar atletas, organizar eventos e acompanhar seu grupo.';
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        icon: Icon(Icons.warning_amber_rounded,
-            color: DesignTokens.warning, size: 48),
-        title: Text('Confirmar: $roleName'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(roleDesc,
-                textAlign: TextAlign.center,
-                style: Theme.of(ctx).textTheme.bodyMedium),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: DesignTokens.error,
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                border: Border.all(color: DesignTokens.error),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.lock, size: 18, color: DesignTokens.error),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Essa escolha é permanente e não pode ser alterada depois. '
-                      'Se precisar trocar, entre em contato com o suporte.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: DesignTokens.error,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Voltar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('Sim, sou $roleName'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) _confirm();
-  }
-
   Future<void> _confirm() async {
     if (_selectedRole == null) return;
 
@@ -173,9 +111,9 @@ class _OnboardingRoleScreenState extends State<OnboardingRoleScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Essa escolha é permanente e define toda a sua experiência no app.',
+                'Você pode ajustar isso depois em Configurações.',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.error,
+                  color: theme.colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
@@ -230,7 +168,7 @@ class _OnboardingRoleScreenState extends State<OnboardingRoleScreen> {
                 height: 56,
                 child: FilledButton(
                   onPressed: _selectedRole != null && !_busy
-                      ? _showConfirmDialog
+                      ? _confirm
                       : null,
                   style: FilledButton.styleFrom(
                     shape: RoundedRectangleBorder(

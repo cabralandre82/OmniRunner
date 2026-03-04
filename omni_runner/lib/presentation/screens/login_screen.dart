@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -272,30 +270,28 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 14),
 
-                // Apple (iOS only)
-                if (Platform.isIOS) ...[
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: FilledButton.icon(
-                      onPressed: _signInWithApple,
-                      icon: const Icon(Icons.apple_rounded, size: 26),
-                      label: Text(context.l10n.continueWithApple),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
+                // Apple Sign-In (both iOS and Android via web-based OAuth)
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton.icon(
+                    onPressed: _signInWithApple,
+                    icon: const Icon(Icons.apple_rounded, size: 26),
+                    label: Text(context.l10n.continueWithApple),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 14),
-                ],
+                ),
+                const SizedBox(height: 14),
 
                 // Instagram (via Meta/Facebook OAuth)
                 SizedBox(

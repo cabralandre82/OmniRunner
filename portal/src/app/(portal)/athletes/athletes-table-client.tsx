@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { formatKm, formatDateISO, formatDateMs } from "@/lib/format";
+import { notifyAthleteLink } from "@/lib/deep-links";
 import { DistributeButton } from "./distribute-button";
 
 const formatDate = formatDateISO;
@@ -142,6 +144,9 @@ export function AthletesTableClient({
                     OmniCoins
                   </th>
                 )}
+                <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-content-muted">
+                  Ações
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
@@ -196,6 +201,21 @@ export function AthletesTableClient({
                         />
                       </td>
                     )}
+                    <td className="whitespace-nowrap px-4 py-3 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Link
+                          href={`/athletes/${a.user_id}`}
+                          className="rounded-lg p-1.5 text-content-muted hover:bg-surface-elevated hover:text-content-primary transition-colors"
+                          title="Ver perfil"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.64 0 8.577 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.64 0-8.577-3.007-9.963-7.178z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </Link>
+                        <CopyDeepLinkButton userId={a.user_id} displayName={a.display_name} />
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -204,5 +224,43 @@ export function AthletesTableClient({
         </div>
       </div>
     </div>
+  );
+}
+
+function CopyDeepLinkButton({ userId, displayName }: { userId: string; displayName: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    const link = notifyAthleteLink(userId);
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback: ignore
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="relative rounded-lg p-1.5 text-content-muted hover:bg-surface-elevated hover:text-content-primary transition-colors"
+      title={`Copiar deep link — ${displayName}`}
+    >
+      {copied ? (
+        <svg className="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+        </svg>
+      ) : (
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+        </svg>
+      )}
+      {copied && (
+        <span className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-success px-2 py-0.5 text-xs font-medium text-white shadow">
+          Copiado!
+        </span>
+      )}
+    </button>
   );
 }

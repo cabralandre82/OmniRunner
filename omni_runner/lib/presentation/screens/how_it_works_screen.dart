@@ -68,7 +68,7 @@ class HowItWorksScreen extends StatelessWidget {
               ),
               _InfoCard(
                 title: 'Para que servem?',
-                body: 'Use como inscrição em desafios com aposta de coins. '
+                body: 'Use como inscrição em desafios competitivos. '
                     'As OmniCoins de todos os participantes formam '
                     'o pool — o vencedor leva tudo!\n\n'
                     'Desafios sem inscrição (gratuitos) também existem e '

@@ -33,6 +33,7 @@ class _RunningDnaScreenState extends State<RunningDnaScreen> {
   String? _error;
   String? _insufficientReason;
   Map<String, dynamic>? _data;
+  bool _isPreview = false;
 
   @override
   void initState() {
@@ -66,6 +67,7 @@ class _RunningDnaScreenState extends State<RunningDnaScreen> {
       setState(() {
         _loading = false;
         _data = dna as Map<String, dynamic>;
+        _isPreview = body['preview'] as bool? ?? false;
       });
     } on TimeoutException {
       AppLogger.warn('DNA load timed out', tag: _tag);
@@ -152,7 +154,7 @@ class _RunningDnaScreenState extends State<RunningDnaScreen> {
               ),
               SizedBox(height: 8),
               Text(
-                'Precisamos de pelo menos 10 corridas verificadas\nnos últimos 6 meses para gerar seu DNA.',
+                'Precisamos de pelo menos 3 corridas verificadas\npara gerar seu perfil preliminar.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: DesignTokens.textMuted),
               ),
@@ -175,6 +177,41 @@ class _RunningDnaScreenState extends State<RunningDnaScreen> {
       child: ListView(
         padding: const EdgeInsets.only(bottom: DesignTokens.spacingXxl),
         children: [
+          if (_isPreview)
+            Container(
+              margin: const EdgeInsets.fromLTRB(
+                DesignTokens.spacingMd, DesignTokens.spacingMd,
+                DesignTokens.spacingMd, 0,
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: DesignTokens.spacingMd,
+                vertical: DesignTokens.spacingSm,
+              ),
+              decoration: BoxDecoration(
+                color: DesignTokens.warning.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                border: Border.all(
+                  color: DesignTokens.warning.withValues(alpha: 0.4),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline,
+                      size: 20, color: DesignTokens.warning),
+                  const SizedBox(width: DesignTokens.spacingSm),
+                  Expanded(
+                    child: Text(
+                      'Perfil preliminar — Complete 10 corridas para DNA completo',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: DesignTokens.warning,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           _RadarCard(scores: radar),
           _ScoresBreakdown(scores: radar),
           if (insights.isNotEmpty) _InsightsCard(insights: insights),
@@ -281,12 +318,12 @@ class _ScoresBreakdown extends StatelessWidget {
   const _ScoresBreakdown({required this.scores});
 
   static const _axes = [
-    ('speed', 'Velocidade', Icons.speed_rounded),
-    ('endurance', 'Resistência', Icons.straighten_rounded),
-    ('consistency', 'Consistência', Icons.calendar_month_rounded),
-    ('evolution', 'Evolução', Icons.trending_up_rounded),
-    ('versatility', 'Versatilidade', Icons.shuffle_rounded),
-    ('competitiveness', 'Competitividade', Icons.emoji_events_rounded),
+    ('speed', 'Velocidade', Icons.speed_rounded, 'Pace médio e sprints'),
+    ('endurance', 'Resistência', Icons.straighten_rounded, 'Distâncias longas e volume'),
+    ('consistency', 'Consistência', Icons.calendar_month_rounded, 'Frequência e regularidade'),
+    ('evolution', 'Evolução', Icons.trending_up_rounded, 'Melhora ao longo do tempo'),
+    ('versatility', 'Versatilidade', Icons.shuffle_rounded, 'Variedade de distâncias e terrenos'),
+    ('competitiveness', 'Competitividade', Icons.emoji_events_rounded, 'Desempenho em desafios'),
   ];
 
   @override
@@ -302,50 +339,65 @@ class _ScoresBreakdown extends StatelessWidget {
             final value = (scores[a.$1] as num?)?.toDouble() ?? 0;
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(a.$3, size: 18, color: cs.primary),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    width: 110,
-                    child: Text(
-                      a.$2,
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                  ),
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: value / 100,
-                        minHeight: 8,
-                        backgroundColor: cs.surfaceContainerHighest,
-                        color: _barColor(value),
+                  Row(
+                    children: [
+                      Icon(a.$3, size: 18, color: cs.primary),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 110,
+                        child: Text(
+                          a.$2,
+                          style: const TextStyle(fontSize: 13),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  SizedBox(
-                    width: 72,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          '${value.round()}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: value / 100,
+                            minHeight: 8,
+                            backgroundColor: cs.surfaceContainerHighest,
                             color: _barColor(value),
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _levelLabel(value),
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: _barColor(value).withValues(alpha: 0.7),
-                          ),
+                      ),
+                      const SizedBox(width: 6),
+                      SizedBox(
+                        width: 72,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              '${value.round()}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: _barColor(value),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _levelLabel(value),
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: _barColor(value).withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 26, top: 2),
+                    child: Text(
+                      a.$4,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                      ),
                     ),
                   ),
                 ],
@@ -694,10 +746,21 @@ Future<void> _shareDnaCard(
     final file = File('${tempDir.path}/omni_dna.png');
     await file.writeAsBytes(bytes);
 
+    final scoresSummary = [
+      'VEL ${(scores['speed'] as num?)?.round() ?? 0}',
+      'RES ${(scores['endurance'] as num?)?.round() ?? 0}',
+      'CON ${(scores['consistency'] as num?)?.round() ?? 0}',
+      'EVO ${(scores['evolution'] as num?)?.round() ?? 0}',
+      'VER ${(scores['versatility'] as num?)?.round() ?? 0}',
+      'COM ${(scores['competitiveness'] as num?)?.round() ?? 0}',
+    ].join(' | ');
+
     await SharePlus.instance.share(
       ShareParams(
         files: [XFile(file.path, mimeType: 'image/png')],
         title: 'Meu DNA de Corredor — Omni Runner',
+        text: 'Meu DNA de Corredor no Omni Runner: $scoresSummary. '
+            'Descubra o seu em https://omnirunner.app/dna',
       ),
     );
 

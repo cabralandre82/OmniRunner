@@ -154,9 +154,9 @@ class _BodyState extends State<_Body> {
         children: [
           const ContextualTipBanner(
             tipKey: TipKey.firstVerificationVisit,
-            message: 'Cada corrida válida te aproxima do status '
-                'Verificado. Com 7 corridas, você desbloqueia '
-                'desafios com OmniCoins!',
+            message: 'A Verificação confirma que suas corridas são '
+                'legítimas (GPS + frequência cardíaca). Atletas '
+                'Verificados podem participar de desafios com OmniCoins.',
             icon: Icons.verified_user_rounded,
             color: Color(0xFF1565C0),
           ),

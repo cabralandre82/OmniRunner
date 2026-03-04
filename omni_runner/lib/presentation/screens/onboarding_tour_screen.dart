@@ -21,11 +21,11 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen> {
 
   static const _slides = <_SlideData>[
     _SlideData(
-      icon: Icons.link_rounded,
+      icon: Icons.sync_rounded,
       color: Color(0xFFFC4C02),
-      title: 'Conecte seu Strava',
+      title: 'Importe corridas do Strava',
       body:
-          'Suas corridas são importadas automaticamente do Strava.\n'
+          'Funciona com qualquer relógio — Garmin, Coros, Apple Watch.\n'
           'Conecte uma vez e tudo sincroniza sozinho, sem esforço.',
     ),
     _SlideData(
@@ -33,67 +33,24 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen> {
       color: Color(0xFFFFB300),
       title: 'Desafie outros corredores',
       body:
-          'Crie desafios 1v1 ou em equipe. Aposte OmniCoins.\n'
-          'Quem cumprir o objetivo primeiro, vence!',
+          'Crie desafios 1v1 ou em grupo com OmniCoins.\n'
+          'Quem cumprir o objetivo primeiro, leva o pool!',
+    ),
+    _SlideData(
+      icon: Icons.auto_graph_rounded,
+      color: Color(0xFF7B1FA2),
+      title: 'Descubra seu DNA de Corredor',
+      body:
+          'Radar chart com 6 dimensões do seu perfil de corrida.\n'
+          'Acompanhe sua evolução mês a mês com dados reais.',
     ),
     _SlideData(
       icon: Icons.groups_rounded,
       color: Color(0xFF1E88E5),
       title: 'Treine com sua assessoria',
       body:
-          'Entre na assessoria do seu treinador, participe de campeonatos\n'
-          'e veja rankings semanais do grupo.',
-    ),
-    _SlideData(
-      icon: Icons.local_fire_department_rounded,
-      color: Color(0xFFE53935),
-      title: 'Mantenha sua sequência',
-      body:
-          'Corra todos os dias para construir seu streak.\n'
-          'Quanto maior a sequência, mais XP e badges você ganha.',
-    ),
-    _SlideData(
-      icon: Icons.insights_rounded,
-      color: Color(0xFF7B1FA2),
-      title: 'Acompanhe sua evolução',
-      body:
-          'DNA do Corredor, Retrospectiva mensal, Liga de Assessorias\n'
-          'e previsão de PR — tudo baseado nos seus dados reais.',
-    ),
-    _SlideData(
-      icon: Icons.people_rounded,
-      color: Color(0xFF00897B),
-      title: 'Encontre amigos',
-      body:
-          'Adicione amigos de qualquer assessoria, veja perfis com\n'
-          'DNA de corrida e compartilhe redes sociais.',
-    ),
-    _SlideData(
-      icon: Icons.sports_kabaddi_rounded,
-      color: Color(0xFF43A047),
-      title: 'Desafie seus amigos',
-      body:
-          'Três tipos de desafio:\n'
-          '🏃 1v1 — Duelo direto entre dois corredores\n'
-          '👥 Grupo — Vários competem, melhor resultado ganha\n'
-          '🤝 Time — Equipes cooperam para atingir metas coletivas',
-    ),
-    _SlideData(
-      icon: Icons.monetization_on_rounded,
-      color: DesignTokens.warning,
-      title: 'OmniCoins',
-      body:
-          'Suas OmniCoins vêm da sua assessoria de corrida.\n'
-          'Use como inscrição nos desafios — o vencedor leva o pool!',
-    ),
-    _SlideData(
-      icon: Icons.verified_user_rounded,
-      color: Color(0xFF1565C0),
-      title: 'Atleta Verificado',
-      body:
-          'Complete 7 corridas válidas para se tornar Verificado.\n'
-          'Só atletas verificados podem participar de desafios\n'
-          'com OmniCoins — isso garante jogo justo para todos.',
+          'Ranking, campeonatos e liga entre grupos.\n'
+          'Entre na assessoria do seu treinador e compita com o time.',
     ),
   ];
 

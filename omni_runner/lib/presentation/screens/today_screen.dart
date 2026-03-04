@@ -62,16 +62,21 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
+import 'package:omni_runner/domain/entities/badge_award_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
 import 'package:omni_runner/domain/entities/profile_progress_entity.dart';
 import 'package:omni_runner/domain/entities/workout_session_entity.dart';
 import 'package:omni_runner/domain/entities/workout_status.dart';
 import 'package:omni_runner/domain/repositories/i_challenge_repo.dart';
+import 'package:omni_runner/domain/repositories/i_badge_award_repo.dart';
 import 'package:omni_runner/domain/repositories/i_profile_progress_repo.dart';
 import 'package:omni_runner/domain/repositories/i_session_repo.dart';
 import 'package:omni_runner/features/parks/data/park_detection_service.dart';
@@ -82,6 +87,9 @@ import 'package:omni_runner/core/push/notification_rules_service.dart';
 import 'package:omni_runner/data/services/today_data_service.dart';
 import 'package:omni_runner/presentation/screens/athlete_championships_screen.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
+import 'package:omni_runner/presentation/blocs/badges/badges_bloc.dart';
+import 'package:omni_runner/presentation/blocs/badges/badges_event.dart';
+import 'package:omni_runner/presentation/screens/badges_screen.dart';
 import 'package:omni_runner/presentation/screens/challenge_details_screen.dart';
 import 'package:omni_runner/presentation/widgets/run_share_card.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
@@ -108,6 +116,7 @@ class _TodayScreenState extends State<TodayScreen> {
   ParkEntity? _detectedPark;
   List<ChallengeEntity> _activeChallenges = const [];
   List<Map<String, dynamic>> _activeChampionships = const [];
+  List<BadgeAwardEntity> _recentBadges = const [];
   DateTime? _lastLoadTime;
   bool _connectingStrava = false;
 
@@ -126,6 +135,10 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 
   Future<void> _load() async {
+    if (AppConfig.demoMode) {
+      _loadDemoData();
+      return;
+    }
     if (_lastLoadTime != null &&
         DateTime.now().difference(_lastLoadTime!) < const Duration(seconds: 60)) {
       return;
@@ -254,6 +267,15 @@ class _TodayScreenState extends State<TodayScreen> {
         AppLogger.debug('Championships fetch failed', tag: 'Today', error: e);
       }
 
+      List<BadgeAwardEntity> recentBadges = const [];
+      try {
+        final allAwards = await sl<IBadgeAwardRepo>().getByUserId(uid);
+        final cutoff = DateTime.now().subtract(const Duration(hours: 24)).millisecondsSinceEpoch;
+        recentBadges = allAwards.where((a) => a.unlockedAtMs > cutoff).toList();
+      } catch (e) {
+        AppLogger.debug('Recent badges fetch failed', tag: 'Today', error: e);
+      }
+
       ParkEntity? park;
       final lastRun = merged.isNotEmpty ? merged.first : null;
       if (lastRun != null && lastRun.route.isNotEmpty) {
@@ -272,6 +294,7 @@ class _TodayScreenState extends State<TodayScreen> {
         _detectedPark = park;
         _activeChallenges = active;
         _activeChampionships = champs;
+        _recentBadges = recentBadges;
         _loading = false;
         _errorMessage = null;
       });
@@ -286,6 +309,51 @@ class _TodayScreenState extends State<TodayScreen> {
         });
       }
     }
+  }
+
+  void _loadDemoData() {
+    final now = DateTime.now();
+    final demoRun = WorkoutSessionEntity(
+      id: 'demo-run-1',
+      userId: 'demo',
+      status: WorkoutStatus.completed,
+      startTimeMs: now.subtract(const Duration(hours: 2)).millisecondsSinceEpoch,
+      endTimeMs: now.subtract(const Duration(hours: 1, minutes: 28)).millisecondsSinceEpoch,
+      totalDistanceM: 5200,
+      route: const [],
+      isVerified: true,
+      integrityFlags: const [],
+      isSynced: false,
+      avgBpm: 152,
+      maxBpm: 171,
+      source: 'strava',
+    );
+    final demoProfile = ProfileProgressEntity(
+      userId: 'demo',
+      totalXp: 1250,
+      seasonXp: 480,
+      dailyStreakCount: 7,
+      streakBest: 12,
+      hasFreezeAvailable: true,
+      weeklySessionCount: 4,
+      monthlySessionCount: 14,
+      lifetimeSessionCount: 42,
+      lifetimeDistanceM: 287000,
+      lifetimeMovingMs: 86400000,
+    );
+    if (!mounted) return;
+    setState(() {
+      _profile = demoProfile;
+      _lastRun = demoRun;
+      _previousRun = null;
+      _stravaConnected = true;
+      _detectedPark = null;
+      _activeChallenges = const [];
+      _activeChampionships = const [];
+      _recentBadges = const [];
+      _loading = false;
+      _errorMessage = null;
+    });
   }
 
   /// Merge local and remote sessions, dedup by id, sort by most recent.
@@ -349,20 +417,27 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 
   Future<void> _connectStrava() async {
+    if (AppConfig.demoMode) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Crie uma conta para usar esta funcionalidade')),
+        );
+      }
+      return;
+    }
     setState(() => _connectingStrava = true);
     try {
       final controller = sl<StravaConnectController>();
-      final connected = await controller.startConnect();
+      final result = await controller.startConnect();
       if (mounted) {
         setState(() {
           _stravaConnected = true;
           _connectingStrava = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Strava conectado como ${connected.athleteName}!'),
-          ),
-        );
+        final msg = result.importedCount > 0
+            ? '${result.importedCount} corridas importadas do Strava!'
+            : 'Strava conectado como ${result.state.athleteName}!';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
         _lastLoadTime = null;
         _load();
       }
@@ -504,6 +579,25 @@ class _TodayScreenState extends State<TodayScreen> {
                   if (_profile != null) _StreakBanner(profile: _profile!),
                   const SizedBox(height: 14),
 
+                  // Recent badge unlock
+                  if (_recentBadges.isNotEmpty) ...[
+                    _RecentBadgeUnlockCard(
+                      badgeCount: _recentBadges.length,
+                      onTap: () {
+                        Navigator.of(context).push(MaterialPageRoute<void>(
+                          builder: (_) => BlocProvider<BadgesBloc>(
+                            create: (_) => sl<BadgesBloc>()
+                              ..add(LoadBadges(
+                                sl<UserIdentityProvider>().userId,
+                              )),
+                            child: const BadgesScreen(),
+                          ),
+                        ));
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+
                   // Active challenges
                   if (_activeChallenges.isNotEmpty) ...[
                     _ActiveChallengesCard(
@@ -569,6 +663,16 @@ class _TodayScreenState extends State<TodayScreen> {
 
                   // Quick stats
                   if (_profile != null) _QuickStatsRow(profile: _profile!),
+
+                  const SizedBox(height: 14),
+
+                  // Active runners nearby
+                  const _ActiveRunnersChip(),
+
+                  const SizedBox(height: 14),
+
+                  // Daily running tip
+                  const _RunningTipCard(),
                 ],
               ),
             ),
@@ -1685,6 +1789,89 @@ String _challengeDefaultTitle(ChallengeEntity c) => switch (c.type) {
     };
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// Recent Badge Unlock Card
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _RecentBadgeUnlockCard extends StatelessWidget {
+  final int badgeCount;
+  final VoidCallback onTap;
+
+  const _RecentBadgeUnlockCard({
+    required this.badgeCount,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+      ),
+      color: const Color(0xFFFFF8E1),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+        child: Container(
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+            border: Border.all(
+              color: DesignTokens.warning.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [DesignTokens.warning, const Color(0xFFFFD700)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                ),
+                child: const Icon(Icons.military_tech, color: Colors.white, size: 28),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      badgeCount == 1
+                          ? 'Novo badge desbloqueado!'
+                          : '$badgeCount novos badges desbloqueados!',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF795548),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Ver badges →',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: DesignTokens.warning,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: DesignTokens.warning),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // Active Championships Card
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1753,6 +1940,150 @@ class _ActiveChampionshipsCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Running Tip Card (#37)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _RunningTipCard extends StatelessWidget {
+  const _RunningTipCard();
+
+  static const _tips = [
+    'Hidrate-se antes, durante e depois da corrida. 500ml 2h antes é um bom começo.',
+    'Aumente seu volume semanal no máximo 10% por semana para evitar lesões.',
+    'Treinos intervalados (tiros) melhoram seu VO2max e pace em poucas semanas.',
+    'Corrida lenta (zona 2) deve ser 80% do seu volume. Isso constrói base aeróbica.',
+    'Alongamento dinâmico antes e estático depois. Nunca alongue a frio.',
+    'Seu pace ideal de corrida longa é 30-60s mais lento que seu pace de 10K.',
+    'Cadência ideal fica entre 170-180 passos por minuto para a maioria dos corredores.',
+    'Descanso é treino. Sem recuperação, não há evolução.',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final now = DateTime.now();
+    final dayOfYear = now.difference(DateTime(now.year)).inDays;
+    final tip = _tips[dayOfYear % _tips.length];
+
+    return Container(
+      padding: const EdgeInsets.all(DesignTokens.spacingMd),
+      decoration: BoxDecoration(
+        color: cs.tertiaryContainer.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        border: Border.all(
+          color: cs.tertiaryContainer.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.lightbulb_outline, size: 22, color: cs.tertiary),
+          const SizedBox(width: DesignTokens.spacingSm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Dica do dia',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: cs.tertiary,
+                  ),
+                ),
+                const SizedBox(height: DesignTokens.spacingXs),
+                Text(
+                  tip,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Active Runners Nearby (#43)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _ActiveRunnersChip extends StatefulWidget {
+  const _ActiveRunnersChip();
+
+  @override
+  State<_ActiveRunnersChip> createState() => _ActiveRunnersChipState();
+}
+
+class _ActiveRunnersChipState extends State<_ActiveRunnersChip> {
+  int? _count;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCount();
+  }
+
+  Future<void> _loadCount() async {
+    try {
+      final sevenDaysAgo = DateTime.now()
+          .subtract(const Duration(days: 7))
+          .millisecondsSinceEpoch;
+
+      final rows = await Supabase.instance.client
+          .from('sessions')
+          .select('user_id')
+          .gte('start_time_ms', sevenDaysAgo);
+
+      final uniqueUsers =
+          (rows as List).map((r) => r['user_id']).toSet().length;
+      if (mounted && uniqueUsers > 0) {
+        setState(() => _count = uniqueUsers);
+      }
+    } catch (e) {
+      AppLogger.debug('Active runners count failed', tag: 'Today', error: e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_count == null) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: DesignTokens.spacingMd,
+        vertical: DesignTokens.spacingSm,
+      ),
+      decoration: BoxDecoration(
+        color: cs.primaryContainer.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.groups_rounded, size: 20, color: cs.primary),
+          const SizedBox(width: DesignTokens.spacingSm),
+          Expanded(
+            child: Text(
+              '$_count corredore${_count == 1 ? '' : 's'} ativo${_count == 1 ? '' : 's'} esta semana',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Icon(Icons.trending_up, size: 16, color: DesignTokens.success),
+        ],
       ),
     );
   }

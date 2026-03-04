@@ -25,6 +25,7 @@ class MyParksScreen extends StatefulWidget {
 class _MyParksScreenState extends State<MyParksScreen> {
   bool _loading = true;
   List<_ParkSummary> _myParks = [];
+  List<_PopularPark> _popularParks = [];
   String _search = '';
   final _searchCtrl = TextEditingController();
 
@@ -72,6 +73,33 @@ class _MyParksScreenState extends State<MyParksScreen> {
             .whereType<_ParkSummary>()
             .toList()
           ..sort((a, b) => b.runCount.compareTo(a.runCount));
+      }
+
+      // Load popular parks by runner count
+      try {
+        final popRows = await Supabase.instance.client
+            .from('park_activities')
+            .select('park_id, user_id');
+
+        final parkUserCounts = <String, Set<String>>{};
+        for (final r in popRows as List) {
+          final pid = r['park_id'] as String;
+          final uid2 = r['user_id'] as String;
+          parkUserCounts.putIfAbsent(pid, () => {}).add(uid2);
+        }
+
+        final sorted = parkUserCounts.entries.toList()
+          ..sort((a, b) => b.value.length.compareTo(a.value.length));
+
+        _popularParks = sorted.take(10).map((e) {
+          final park = kBrazilianParksSeed
+              .where((p) => p.id == e.key)
+              .firstOrNull;
+          if (park == null) return null;
+          return _PopularPark(park: park, runnerCount: e.value.length);
+        }).whereType<_PopularPark>().toList();
+      } catch (e) {
+        AppLogger.debug('Popular parks load failed', tag: 'MyParksScreen', error: e);
       }
 
       if (mounted) setState(() => _loading = false);
@@ -128,6 +156,53 @@ class _MyParksScreenState extends State<MyParksScreen> {
                 onTap: () => _openPark(s.park),
               )),
           const SizedBox(height: 20),
+        ] else if (q.isEmpty) ...[
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.green.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.explore_rounded,
+                    size: 32, color: Colors.green.shade700),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Corra em um parque para aparecer no ranking local. '
+                    'Parques mapeados: Ibirapuera, Aterro, Villa-Lobos e mais.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.green.shade800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_popularParks.isNotEmpty) ...[
+            const _SectionTitle(
+                title: 'Top parques por corredores', icon: Icons.leaderboard),
+            const SizedBox(height: 8),
+            ..._popularParks.map((p) => ListTile(
+                  dense: true,
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.green.shade100,
+                    child:
+                        Icon(Icons.park, color: Colors.green.shade700, size: 20),
+                  ),
+                  title: Text(p.park.name),
+                  subtitle: Text(
+                      '${p.park.city} \u00b7 ${p.runnerCount} corredore${p.runnerCount == 1 ? '' : 's'}'),
+                  trailing: Icon(Icons.chevron_right,
+                      color: cs.onSurfaceVariant),
+                  onTap: () => _openPark(p.park),
+                )),
+            const SizedBox(height: 20),
+          ],
         ],
         const _SectionTitle(title: 'Descobrir parques', icon: Icons.explore),
         const SizedBox(height: 8),
@@ -327,4 +402,11 @@ class _ParkSummary {
 class _ParkAgg {
   int count = 0;
   double totalDistM = 0;
+}
+
+class _PopularPark {
+  final ParkEntity park;
+  final int runnerCount;
+
+  const _PopularPark({required this.park, required this.runnerCount});
 }

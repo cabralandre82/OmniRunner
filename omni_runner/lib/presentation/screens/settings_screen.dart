@@ -225,14 +225,14 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
     setState(() => _busy = true);
     try {
       final controller = sl<StravaConnectController>();
-      final connected = await controller.startConnect();
+      final result = await controller.startConnect();
       if (mounted) {
-        setState(() => _state = connected);
+        setState(() => _state = result.state);
+        final msg = result.importedCount > 0
+            ? '${result.importedCount} corridas importadas do Strava!'
+            : 'Strava conectado como ${result.state.athleteName}!';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Strava conectado como ${connected.athleteName}!'),
-            backgroundColor: DesignTokens.warning,
-          ),
+          SnackBar(content: Text(msg), backgroundColor: DesignTokens.warning),
         );
       }
     } on AuthCancelled {

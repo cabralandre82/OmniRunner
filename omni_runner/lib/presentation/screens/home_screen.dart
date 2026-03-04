@@ -23,7 +23,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _tab = 0;
+  late int _tab = _isStaff ? 0 : 1;
 
   bool get _isStaff => widget.userRole == 'ASSESSORIA_STAFF';
 
@@ -38,7 +38,8 @@ class _HomeScreenState extends State<HomeScreen> {
       body: NoConnectionBanner(
         child: Column(
           children: [
-            if (AppConfig.backendMode == 'mock') _MockModeBanner(),
+            if (AppConfig.demoMode) const _DemoModeBanner(),
+            if (!AppConfig.demoMode && AppConfig.backendMode == 'mock') _MockModeBanner(),
             Expanded(
               child: IndexedStack(index: _tab, children: [
                 const AthleteDashboardScreen(),
@@ -89,7 +90,8 @@ class _HomeScreenState extends State<HomeScreen> {
       body: NoConnectionBanner(
         child: Column(
           children: [
-            if (AppConfig.backendMode == 'mock') _MockModeBanner(),
+            if (AppConfig.demoMode) const _DemoModeBanner(),
+            if (!AppConfig.demoMode && AppConfig.backendMode == 'mock') _MockModeBanner(),
             Expanded(
               child: IndexedStack(index: _tab, children: const [
                 StaffDashboardScreen(),
@@ -119,6 +121,44 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Mais',
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _DemoModeBanner extends StatelessWidget {
+  const _DemoModeBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 4,
+          bottom: 6,
+          left: DesignTokens.spacingMd,
+          right: DesignTokens.spacingMd,
+        ),
+        color: DesignTokens.info,
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.explore_outlined, size: 16, color: Colors.white),
+            SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                'Modo exploração — Crie uma conta para salvar seus dados',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

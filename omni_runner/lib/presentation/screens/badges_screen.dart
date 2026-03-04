@@ -90,8 +90,8 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Corra, complete desafios e mantenha sua sequência '
-              'para desbloquear conquistas.',
+              'Complete corridas e desafios para desbloquear badges. '
+              'Mantenha sua sequência e suba de nível!',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.outline,
               ),
@@ -199,7 +199,7 @@ class _LoadedBody extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'Nenhuma conquista desbloqueada ainda. '
-                        'Complete uma corrida para começar!',
+                        'Complete corridas e desafios para desbloquear badges!',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.outline,
                         ),

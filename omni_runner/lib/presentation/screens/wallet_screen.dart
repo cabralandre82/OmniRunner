@@ -51,15 +51,18 @@ class _WalletScreenState extends State<WalletScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
-          builder: (_) => BlocProvider<StaffQrBloc>(
-            create: (_) => StaffQrBloc(repo: sl<ITokenIntentRepo>()),
-            child: const StaffScanQrScreen(),
-          ),
-        )),
-        icon: const Icon(Icons.qr_code_scanner),
-        label: const Text('Escanear QR'),
+      floatingActionButton: Tooltip(
+        message: 'Escanear QR de distribuição de OmniCoins',
+        child: FloatingActionButton.extended(
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+            builder: (_) => BlocProvider<StaffQrBloc>(
+              create: (_) => StaffQrBloc(repo: sl<ITokenIntentRepo>()),
+              child: const StaffScanQrScreen(),
+            ),
+          )),
+          icon: const Icon(Icons.qr_code_scanner),
+          label: const Text('Escanear QR'),
+        ),
       ),
       body: BlocBuilder<WalletBloc, WalletState>(
         builder: (context, state) => switch (state) {
@@ -97,8 +100,9 @@ class _WalletScreenState extends State<WalletScreen> {
                   ),
                 const ContextualTipBanner(
                   tipKey: TipKey.firstWalletVisit,
-                  message: 'Seus OmniCoins vêm da sua assessoria. '
-                      'Use-os como inscrição em desafios.',
+                  message: 'OmniCoins são moedas virtuais que você ganha ao '
+                      'completar desafios e treinos. Use para participar '
+                      'de competições!',
                   icon: Icons.account_balance_wallet_rounded,
                   color: DesignTokens.warning,
                 ),
@@ -148,37 +152,74 @@ class _WalletScreenState extends State<WalletScreen> {
                 if (history.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: DesignTokens.spacingXl, vertical: 40),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.toll_outlined,
-                              size: 56,
-                              color: Theme.of(context).colorScheme.outline),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Nenhuma movimentação ainda',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Seus créditos aparecem aqui.\n'
-                            'Peça ao professor da sua assessoria\n'
-                            'para distribuir OmniCoins.',
-                            textAlign: TextAlign.center,
-                            style:
-                                Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
+                        horizontal: DesignTokens.spacingMd, vertical: 20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Opacity(
+                          opacity: 0.4,
+                          child: IgnorePointer(
+                            child: Column(
+                              children: [
+                                ListTile(
+                                  leading: CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: DesignTokens.success.withValues(alpha: 0.1),
+                                    child: const Icon(Icons.add_circle_outline, color: DesignTokens.success, size: 20),
+                                  ),
+                                  title: const Text('Badge desbloqueado'),
+                                  subtitle: const Text('01/01/2026 10:30'),
+                                  trailing: const Text(
+                                    '+50',
+                                    style: TextStyle(
+                                      color: DesignTokens.success,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
                                     ),
+                                  ),
+                                ),
+                                ListTile(
+                                  leading: CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: DesignTokens.success.withValues(alpha: 0.1),
+                                    child: const Icon(Icons.add_circle_outline, color: DesignTokens.success, size: 20),
+                                  ),
+                                  title: const Text('Vitória no desafio 1v1'),
+                                  subtitle: const Text('01/01/2026 09:15'),
+                                  trailing: const Text(
+                                    '+100',
+                                    style: TextStyle(
+                                      color: DesignTokens.success,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: DesignTokens.spacingMd),
+                        Text(
+                          'Suas movimentações aparecerão aqui',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Complete desafios, ganhe badges e receba\n'
+                          'OmniCoins da sua assessoria.',
+                          textAlign: TextAlign.center,
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                        ),
+                      ],
                     ),
                   )
                 else

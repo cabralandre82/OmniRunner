@@ -764,7 +764,8 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                   _StaffCard(
                     icon: Icons.open_in_browser_rounded,
                     title: 'Portal',
-                    subtitle: 'Abrir no navegador',
+                    subtitle: 'CRM de atletas, treinos, analytics, '
+                        'relatórios financeiros e CSV',
                     bgColor: DesignTokens.info.withValues(alpha: 0.1),
                     iconColor: DesignTokens.info,
                     onTap: _openPortal,

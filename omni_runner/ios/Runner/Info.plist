@@ -25,9 +25,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Omni Runner needs your location to record your running route, calculate distance and pace in real time.</string>
+	<string>O Omni Runner precisa da sua localização para registrar o trajeto da corrida, calcular distância e pace em tempo real.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Omni Runner needs your location in the background to continue recording your run when the app is minimized.</string>
+	<string>O Omni Runner precisa da sua localização em segundo plano para continuar registrando a corrida quando o app estiver minimizado.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -51,17 +51,17 @@
 	<true/>
 	<!-- HealthKit -->
 	<key>NSHealthShareUsageDescription</key>
-	<string>Omni Runner reads your heart rate, steps, and workout data from Apple Health to track your performance and progress.</string>
+	<string>O Omni Runner lê dados de saúde (frequência cardíaca, passos, treinos) para enriquecer suas métricas de corrida.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Omni Runner saves your running workouts, heart rate data, and distance to Apple Health so you have a unified fitness history.</string>
+	<string>O Omni Runner salva suas corridas no Apple Saúde para manter seu histórico integrado.</string>
 	<!-- Bluetooth LE Heart Rate Monitor -->
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Omni Runner connects to Bluetooth heart rate monitors (Garmin, Polar, Wahoo) to display your live heart rate during runs.</string>
+	<string>O Omni Runner usa Bluetooth para conectar monitores cardíacos.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>Omni Runner connects to Bluetooth heart rate monitors to display your live heart rate during runs.</string>
+	<string>O Omni Runner usa Bluetooth para conectar monitores cardíacos.</string>
 	<!-- Camera & Photo Library -->
 	<key>NSCameraUsageDescription</key>
-	<string>O Omni Runner usa a câmera para capturar sua foto de perfil.</string>
+	<string>O Omni Runner usa a câmera para capturar sua foto de perfil e escanear QR codes.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>O Omni Runner acessa suas fotos para definir sua foto de perfil.</string>
 	<key>UIBackgroundModes</key>

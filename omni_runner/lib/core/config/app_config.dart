@@ -13,6 +13,12 @@
 ///   --dart-define=SUPABASE_ANON_KEY=eyJ...
 /// ```
 abstract final class AppConfig {
+  // ── Demo Mode ──
+
+  /// When `true`, the app shows hardcoded sample data and skips auth.
+  /// Set via the "Explorar sem conta" button on the welcome screen.
+  static bool demoMode = false;
+
   // ── Environment ──
 
   /// Current environment: `dev` (default) or `prod`.

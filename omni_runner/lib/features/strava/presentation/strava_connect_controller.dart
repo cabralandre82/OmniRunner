@@ -84,21 +84,21 @@ final class StravaConnectController {
   /// Opens Chrome Custom Tab for Strava consent, waits for callback,
   /// exchanges code for tokens, syncs to server, imports history,
   /// backfills sessions, and triggers verification evaluation.
-  /// Returns [StravaConnected] on success.
-  Future<StravaConnected> startConnect() async {
+  /// Returns a record with the connected state and the number of imported runs.
+  Future<({StravaConnected state, int importedCount})> startConnect() async {
     try {
       final connected = await _authRepo.authenticate();
       await _syncTokensToServer(connected);
       AppLogger.info('Strava connected: ${connected.athleteName}', tag: _tag);
 
-      // Await backfill so sessions exist before user checks verification.
+      int importedCount = 0;
       try {
-        await _importAndBackfill();
+        importedCount = await _importAndBackfill();
       } catch (e) {
         AppLogger.warn('Backfill after connect failed: $e', tag: _tag);
       }
 
-      return connected;
+      return (state: connected, importedCount: importedCount);
     } on IntegrationFailure catch (e) {
       AppLogger.warn('Auth failed: $e', tag: _tag);
       rethrow;
@@ -106,7 +106,8 @@ final class StravaConnectController {
   }
 
   /// Import history → backfill sessions → backfill parks → recalc progress → trigger verification.
-  Future<void> _importAndBackfill() async {
+  /// Returns the number of activities imported from Strava.
+  Future<int> _importAndBackfill() async {
     final imported = await importStravaHistory();
     AppLogger.info('importStravaHistory returned $imported', tag: _tag);
     await _backfillStravaSessions();
@@ -114,6 +115,7 @@ final class StravaConnectController {
     await _recalculateProfileProgress();
     await _evaluateBadges();
     await _triggerVerificationEval();
+    return imported;
   }
 
   /// Convert strava_activity_history rows into sessions so they
@@ -131,6 +133,12 @@ final class StravaConnectController {
         'Backfilled $count Strava sessions for verification',
         tag: _tag,
       );
+
+      // TODO: Send local notification on new session sync
+      // When flutter_local_notifications is added, trigger here:
+      //   Title: "Corrida registrada!"
+      //   Body: "Você correu X.Xkm. Confira seu recap e veja se desbloqueou algo novo."
+      // Use the latest session distance from the backfill result.
     } catch (e) {
       AppLogger.warn('Failed to backfill Strava sessions: $e', tag: _tag);
     }
@@ -313,7 +321,7 @@ final class StravaConnectController {
   ///
   /// Called automatically after a successful Strava connect.
   /// Non-critical — failures are logged but do not block the user.
-  Future<int> importStravaHistory({int count = 20}) async {
+  Future<int> importStravaHistory({int count = 50}) async {
     try {
       final token = await _authRepo.getValidAccessToken();
       final activities = await _httpClient.getAthleteActivities(

@@ -13,7 +13,6 @@ import 'package:omni_runner/domain/repositories/i_profile_repo.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/presentation/screens/challenge_join_screen.dart';
 import 'package:omni_runner/presentation/screens/home_screen.dart';
-import 'package:omni_runner/presentation/screens/join_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/login_screen.dart';
 import 'package:omni_runner/presentation/screens/onboarding_role_screen.dart';
 import 'package:omni_runner/presentation/screens/onboarding_tour_screen.dart';
@@ -26,14 +25,13 @@ import 'package:omni_runner/core/theme/design_tokens.dart';
 /// Flow:
 ///   No session / anonymous → [WelcomeScreen] → [LoginScreen]
 ///   Session + NEW → [OnboardingRoleScreen]
-///   Session + ROLE_SELECTED + ATLETA → [JoinAssessoriaScreen]
+///   Session + ROLE_SELECTED + ATLETA → auto-READY → Tour → [HomeScreen]
 ///   Session + ROLE_SELECTED + STAFF → [StaffSetupScreen]
 ///   Session + READY → [HomeScreen]
 ///   Mock mode → [HomeScreen] (skip all gates)
 ///
 /// Invite link handling:
 ///   - Not logged in → persists code, applies after login
-///   - Onboarding ATLETA → passed as initialCode to [JoinAssessoriaScreen]
 ///   - READY user → auto-join with confirmation dialog
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -47,7 +45,6 @@ enum _GateDestination {
   welcome,
   login,
   onboarding,
-  joinAssessoria,
   staffSetup,
   tour,
   home,
@@ -278,7 +275,8 @@ class _AuthGateState extends State<AuthGate> {
         }
       } else if (profile.onboardingState == OnboardingState.roleSelected &&
           profile.userRole == 'ATLETA') {
-        _go(_GateDestination.joinAssessoria);
+        await _setAtletaReady();
+        await _goHomeOrTour();
       } else if (profile.onboardingState == OnboardingState.roleSelected &&
           profile.userRole == 'ASSESSORIA_STAFF') {
         _go(_GateDestination.staffSetup);
@@ -330,6 +328,20 @@ class _AuthGateState extends State<AuthGate> {
     }
   }
 
+  Future<void> _setAtletaReady() async {
+    try {
+      final uid = Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) return;
+      await Supabase.instance.client.from('profiles').update({
+        'onboarding_state': 'READY',
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', uid);
+      AppLogger.info('Atleta onboarding_state → READY (skipped assessoria)', tag: _tag);
+    } catch (e) {
+      AppLogger.warn('Failed to set READY for atleta: $e', tag: _tag, error: e);
+    }
+  }
+
   void _onTourComplete() {
     _go(_GateDestination.home);
   }
@@ -337,6 +349,11 @@ class _AuthGateState extends State<AuthGate> {
   void _go(_GateDestination d) {
     if (!mounted) return;
     setState(() => _dest = d);
+  }
+
+  void _enterDemoMode() {
+    AppConfig.demoMode = true;
+    _go(_GateDestination.home);
   }
 
   void _onLoginSuccess() {
@@ -358,7 +375,6 @@ class _AuthGateState extends State<AuthGate> {
   @override
   Widget build(BuildContext context) {
     final canGoBack = _dest == _GateDestination.onboarding ||
-        _dest == _GateDestination.joinAssessoria ||
         _dest == _GateDestination.staffSetup;
 
     final child = switch (_dest) {
@@ -367,6 +383,7 @@ class _AuthGateState extends State<AuthGate> {
         ),
       _GateDestination.welcome => WelcomeScreen(
           onStart: () => _go(_GateDestination.login),
+          onExplore: _enterDemoMode,
         ),
       _GateDestination.login => LoginScreen(
           onSuccess: _onLoginSuccess,
@@ -374,11 +391,6 @@ class _AuthGateState extends State<AuthGate> {
         ),
       _GateDestination.onboarding => OnboardingRoleScreen(
           initialState: _onboardingState,
-          onComplete: _onOnboardingComplete,
-          onBack: _onBackToLogin,
-        ),
-      _GateDestination.joinAssessoria => JoinAssessoriaScreen(
-          initialCode: _pendingInviteCode,
           onComplete: _onOnboardingComplete,
           onBack: _onBackToLogin,
         ),

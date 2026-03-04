@@ -43,6 +43,7 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
   int _challengesWon = 0;
   int _champParticipants = 0;
   int _champCompleted = 0;
+  int _churnRiskCount = 0;
 
   List<_AthleteActivity> _topAthletes = [];
 
@@ -166,6 +167,26 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
         AppLogger.warn('Performance: sessions query failed: $e', tag: 'StaffPerf');
       }
 
+      // 2b. Churn risk — athletes with no verified session in the last 14 days
+      try {
+        final fourteenDaysAgo = now.subtract(const Duration(days: 14));
+        final fourteenDaysMs = fourteenDaysAgo.millisecondsSinceEpoch;
+        final recentRes = await db
+            .from('sessions')
+            .select('user_id')
+            .inFilter('user_id', athleteIds)
+            .eq('status', 3)
+            .eq('is_verified', true)
+            .gte('start_time_ms', fourteenDaysMs);
+
+        final recentUserIds = (recentRes as List)
+            .map((r) => (r as Map<String, dynamic>)['user_id'] as String)
+            .toSet();
+        _churnRiskCount = athleteIds.where((id) => !recentUserIds.contains(id)).length;
+      } catch (e) {
+        AppLogger.warn('Performance: churn risk query failed: $e', tag: 'StaffPerf');
+      }
+
       // 3. Challenges completed involving group athletes
       try {
         final challRes = await db
@@ -239,6 +260,7 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
         _challengesWon = 0;
         _champParticipants = 0;
         _champCompleted = 0;
+        _churnRiskCount = 0;
         _topAthletes = [];
         _loading = false;
       });
@@ -279,6 +301,12 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
                         challengesWon: _challengesWon,
                         champParticipants: _champParticipants,
                         champCompleted: _champCompleted,
+                      ),
+                      const SizedBox(height: 24),
+                      _EngagementCard(
+                        activeThisWeek: _activeAthletes,
+                        totalAthletes: _totalMembers,
+                        churnRisk: _churnRiskCount,
                       ),
                       const SizedBox(height: 24),
                       _TopAthletesSection(athletes: _topAthletes),
@@ -525,6 +553,151 @@ class _KpiCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Engagement & Churn card
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _EngagementCard extends StatelessWidget {
+  final int activeThisWeek;
+  final int totalAthletes;
+  final int churnRisk;
+
+  const _EngagementCard({
+    required this.activeThisWeek,
+    required this.totalAthletes,
+    required this.churnRisk,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.monitor_heart_outlined,
+                  size: 20, color: cs.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Engajamento',
+                style: theme.textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _EngagementMetric(
+                  label: 'Atletas ativos esta semana',
+                  value: '$activeThisWeek',
+                  subtitle: 'de $totalAthletes',
+                  icon: Icons.directions_run_rounded,
+                  color: DesignTokens.success,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _EngagementMetric(
+                  label: 'Risco de churn',
+                  value: '$churnRisk',
+                  subtitle: 'inativos há 14+ dias',
+                  icon: Icons.warning_amber_rounded,
+                  color: churnRisk > 0
+                      ? DesignTokens.warning
+                      : DesignTokens.success,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Métricas detalhadas no Portal',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: cs.onSurfaceVariant,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EngagementMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+
+  const _EngagementMetric({
+    required this.label,
+    required this.value,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  label,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            subtitle,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );

@@ -125,7 +125,7 @@ serve(async (req: Request) => {
       return jsonErr(409, "ALREADY_CREATOR", "Você é o criador deste desafio", requestId);
     }
 
-    // ── Assessoria gate: all challenges require group membership ──────
+    // ── Lookup group membership (needed for stake challenges) ──────────
     const { data: memberRow } = await db
       .from("coaching_members")
       .select("id, group_id")
@@ -133,18 +133,18 @@ serve(async (req: Request) => {
       .limit(1)
       .maybeSingle();
 
-    if (!memberRow) {
-      status = 403;
-      errorCode = "NO_ASSESSORIA";
-      return jsonErr(
-        403, "NO_ASSESSORIA",
-        "Você precisa estar em uma assessoria para participar de desafios. Peça o código de convite ao seu professor.",
-        requestId,
-      );
-    }
-
-    // ── Monetization gate: stake>0 requires VERIFIED ──────────────────
+    // ── Assessoria + verification gate: only for paid challenges ──────
     if (challenge.entry_fee_coins > 0) {
+      if (!memberRow) {
+        status = 403;
+        errorCode = "NO_ASSESSORIA";
+        return jsonErr(
+          403, "NO_ASSESSORIA",
+          "Desafios com OmniCoins exigem que você faça parte de uma assessoria.",
+          requestId,
+        );
+      }
+
       const { data: verifiedRow, error: verErr } = await db
         .rpc("is_user_verified", { p_user_id: user.id });
 

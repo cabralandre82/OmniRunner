@@ -520,6 +520,9 @@ verify_jwt = false
 [functions.matchmake]
 verify_jwt = true
 
+[functions.onboarding-nudge]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

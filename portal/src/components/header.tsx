@@ -19,9 +19,10 @@ const ENV_BADGE: Record<string, { label: string; color: string }> = {
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  admin_master: "Admin",
-  coach: "Coach",
+  admin_master: "Administrador",
+  coach: "Treinador",
   assistant: "Assistente",
+  athlete: "Atleta",
 };
 
 export function Header({

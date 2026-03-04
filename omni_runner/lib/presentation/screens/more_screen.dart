@@ -21,8 +21,7 @@ import 'package:omni_runner/presentation/screens/invite_friends_screen.dart';
 import 'package:omni_runner/presentation/screens/my_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/profile_screen.dart';
 import 'package:omni_runner/presentation/screens/settings_screen.dart';
-import 'package:omni_runner/presentation/screens/athlete_delivery_screen.dart';
-import 'package:omni_runner/presentation/screens/athlete_workout_day_screen.dart';
+import 'package:omni_runner/presentation/screens/workout_delivery_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_qr_hub_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_scan_qr_screen.dart';
 import 'package:omni_runner/presentation/screens/friends_activity_feed_screen.dart';
@@ -66,7 +65,7 @@ class _MoreScreenState extends State<MoreScreen> {
           horizontal: DesignTokens.spacingMd,
         ),
         children: [
-          if (!_isStaff) _sectionCard(context, 'Minha Assessoria', [
+          if (!_isStaff) _sectionCard(context, 'Minha Assessoria (grupo de corrida com treinador)', [
             _ActionTile(
               icon: Icons.groups,
               title: 'Minha Assessoria',
@@ -95,11 +94,11 @@ class _MoreScreenState extends State<MoreScreen> {
             _ActionTile(
               icon: Icons.delivery_dining,
               title: 'Entregas Pendentes',
-              subtitle: 'Confirmar treinos enviados ao relógio',
+              subtitle: 'Treinos enviados pela assessoria para seu relógio',
               onTap: (ctx) {
                 if (LoginRequiredSheet.guard(ctx, feature: 'Entregas')) return;
                 Navigator.of(ctx).push(MaterialPageRoute<void>(
-                  builder: (_) => const AthleteDeliveryScreen(),
+                  builder: (_) => const WorkoutDeliveryScreen(),
                 ));
               },
             ),
@@ -109,12 +108,14 @@ class _MoreScreenState extends State<MoreScreen> {
               subtitle: 'Ver o treino agendado para hoje',
               onTap: (ctx) {
                 if (LoginRequiredSheet.guard(ctx, feature: 'Treino do Dia')) return;
-                _openWorkoutDay(ctx);
+                Navigator.of(ctx).push(MaterialPageRoute<void>(
+                  builder: (_) => const WorkoutDeliveryScreen(),
+                ));
               },
             ),
           ]),
 
-          if (_isStaff) _sectionCard(context, 'Minha Assessoria', [
+          if (_isStaff) _sectionCard(context, 'Minha Assessoria (grupo de corrida com treinador)', [
             _ActionTile(
               icon: Icons.handshake,
               title: 'Assessorias Parceiras',
@@ -150,7 +151,7 @@ class _MoreScreenState extends State<MoreScreen> {
             _ActionTile(
               icon: Icons.group_rounded,
               title: 'Meus Amigos',
-              subtitle: 'Sua rede de corredores',
+              subtitle: 'Amigos são corredores individuais, independente de assessoria',
               onTap: (ctx) {
                 if (LoginRequiredSheet.guard(ctx, feature: 'Amigos')) return;
                 Navigator.of(ctx).push(MaterialPageRoute<void>(
@@ -348,35 +349,6 @@ class _MoreScreenState extends State<MoreScreen> {
       );
     } finally {
       if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Future<void> _openWorkoutDay(BuildContext context) async {
-    final uid = sl<UserIdentityProvider>().userId;
-    try {
-      final rows = await Supabase.instance.client
-          .from('coaching_members')
-          .select('group_id')
-          .eq('user_id', uid)
-          .limit(1);
-      final list = (rows as List).cast<Map<String, dynamic>>();
-      if (!context.mounted) return;
-      if (list.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Você não está em nenhuma assessoria.')),
-        );
-        return;
-      }
-      final groupId = list.first['group_id'] as String;
-      Navigator.of(context).push(MaterialPageRoute<void>(
-        builder: (_) => AthleteWorkoutDayScreen(groupId: groupId),
-      ));
-    } catch (e) {
-      AppLogger.warn('Failed to open workout day', tag: 'MoreScreen', error: e);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro ao carregar. Tente novamente.')),
-      );
     }
   }
 

@@ -365,12 +365,27 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
               ? 'Solicitação já enviada'
               : 'Solicitação enviada!',
         ),
-        content: Text(
-          alreadyExists
-              ? 'Você já tem uma solicitação pendente para "$groupName". '
-                'Aguarde a aprovação da assessoria.'
-              : 'Sua solicitação foi enviada para "$groupName". '
-                'A assessoria irá analisar e aprovar sua entrada.',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              alreadyExists
+                  ? 'Você já tem uma solicitação pendente para "$groupName". '
+                    'Aguarde a aprovação da assessoria.'
+                  : 'Sua solicitação foi enviada para "$groupName". '
+                    'Sua assessoria será notificada. Normalmente a aprovação '
+                    'leva algumas horas.',
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Enquanto isso, explore o app normalmente.',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ],
         ),
         actions: [
           FilledButton(
@@ -627,7 +642,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Busque pelo nome, escaneie um QR ou use um código.',
+                'Assessoria é seu grupo de corrida com treinador. Busque pelo nome, escaneie um QR ou use um código.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -700,8 +715,12 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
               SizedBox(
                 width: double.infinity,
                 height: 48,
-                child: TextButton(
+                child: OutlinedButton(
                   onPressed: _joining ? null : _skip,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: theme.colorScheme.onSurface,
+                    side: BorderSide(color: theme.colorScheme.outline),
+                  ),
                   child: _joining
                       ? const SizedBox(
                           width: 22,

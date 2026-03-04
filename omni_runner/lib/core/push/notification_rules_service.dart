@@ -144,6 +144,17 @@ class NotificationRulesService {
     });
   }
 
+  /// Notify athlete that a new run was synced from Strava.
+  void notifyNewSessionSynced({
+    required String userId,
+    required double distanceKm,
+  }) {
+    _invoke('new_session_synced', {
+      'user_id': userId,
+      'distance_km': distanceKm,
+    });
+  }
+
   /// Evaluate all notification rules (streak_at_risk, etc.).
   /// Typically called by a server-side cron, but available for manual trigger.
   void evaluateAll() {

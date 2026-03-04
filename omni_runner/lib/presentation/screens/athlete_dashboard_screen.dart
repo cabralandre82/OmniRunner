@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_group_repo.dart';
@@ -13,7 +14,6 @@ import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_bloc.
 import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_event.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_bloc.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_event.dart';
-import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_bloc.dart';
 import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_event.dart';
 import 'package:omni_runner/presentation/screens/assessoria_feed_screen.dart';
@@ -24,12 +24,12 @@ import 'package:omni_runner/presentation/screens/challenges_list_screen.dart';
 import 'package:omni_runner/presentation/screens/join_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/my_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/progress_hub_screen.dart';
+import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/screens/wallet_screen.dart';
 import 'package:omni_runner/presentation/widgets/assessoria_required_sheet.dart';
 import 'package:omni_runner/presentation/widgets/login_required_sheet.dart';
 import 'package:flutter/services.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
-import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/presentation/widgets/ds/fade_in.dart';
@@ -59,6 +59,8 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
   String? _displayName;
   bool _loading = true;
   bool _stravaConnected = true;
+  bool _hasFirstRun = false;
+  bool _hasChallenge = false;
   late final AnimationController _staggerCtrl;
 
   @override
@@ -68,15 +70,27 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _loadAssessoriaStatus();
-    _checkStrava();
-    _loadDisplayName();
-    sl<UserIdentityProvider>().profileNameNotifier.addListener(_onProfileNameChanged);
+    if (AppConfig.demoMode) {
+      _loading = false;
+      _displayName = 'Explorador';
+      _stravaConnected = true;
+      _hasFirstRun = true;
+      _hasChallenge = true;
+      _staggerCtrl.forward();
+    } else {
+      _loadAssessoriaStatus();
+      _checkStrava();
+      _loadDisplayName();
+      _checkFirstRunAndChallenges();
+      sl<UserIdentityProvider>().profileNameNotifier.addListener(_onProfileNameChanged);
+    }
   }
 
   @override
   void dispose() {
-    sl<UserIdentityProvider>().profileNameNotifier.removeListener(_onProfileNameChanged);
+    if (!AppConfig.demoMode) {
+      sl<UserIdentityProvider>().profileNameNotifier.removeListener(_onProfileNameChanged);
+    }
     _staggerCtrl.dispose();
     super.dispose();
   }
@@ -112,12 +126,43 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
     }
   }
 
+  bool get _allFirstStepsComplete =>
+      _stravaConnected &&
+      _assessoriaGroupId != null &&
+      _hasFirstRun &&
+      _hasChallenge;
+
   Future<void> _checkStrava() async {
     try {
       final connected = await sl<StravaConnectController>().isConnected;
       if (mounted) setState(() => _stravaConnected = connected);
     } catch (e) {
       AppLogger.debug('Strava status check failed', tag: 'Dashboard', error: e);
+    }
+  }
+
+  Future<void> _checkFirstRunAndChallenges() async {
+    try {
+      final uid = sl<UserIdentityProvider>().userId;
+      final db = Supabase.instance.client;
+      final sessionRows = await db
+          .from('sessions')
+          .select('id')
+          .eq('user_id', uid)
+          .limit(1);
+      final challengeRows = await db
+          .from('challenge_participants')
+          .select('id')
+          .eq('user_id', uid)
+          .limit(1);
+      if (mounted) {
+        setState(() {
+          _hasFirstRun = (sessionRows as List).isNotEmpty;
+          _hasChallenge = (challengeRows as List).isNotEmpty;
+        });
+      }
+    } catch (e) {
+      AppLogger.debug('First steps check failed', tag: 'Dashboard', error: e);
     }
   }
 
@@ -209,9 +254,19 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
 
   // ── Navigation ───────────────────────────────────────────────────────────
 
+  bool _guardDemoMode(BuildContext context) {
+    if (!AppConfig.demoMode) return false;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Crie uma conta para usar esta funcionalidade'),
+      ),
+    );
+    return true;
+  }
+
   void _openChallenges() {
+    if (_guardDemoMode(context)) return;
     if (LoginRequiredSheet.guard(context, feature: 'Desafios')) return;
-    if (AssessoriaRequiredSheet.guard(context, hasAssessoria: _assessoriaGroupId != null)) return;
     final uid = sl<UserIdentityProvider>().userId;
     Navigator.of(context).push(MaterialPageRoute<void>(
       builder: (_) => BlocProvider<ChallengesBloc>(
@@ -222,6 +277,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
   }
 
   void _openAssessoria() {
+    if (_guardDemoMode(context)) return;
     if (LoginRequiredSheet.guard(context, feature: 'Assessoria')) return;
     final uid = sl<UserIdentityProvider>().userId;
     Navigator.of(context).push(MaterialPageRoute<void>(
@@ -239,6 +295,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
   }
 
   void _openWallet() {
+    if (_guardDemoMode(context)) return;
     if (LoginRequiredSheet.guard(context, feature: 'OmniCoins')) return;
     final uid = sl<UserIdentityProvider>().userId;
     Navigator.of(context).push(MaterialPageRoute<void>(
@@ -250,6 +307,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
   }
 
   void _openVerification() {
+    if (_guardDemoMode(context)) return;
     if (LoginRequiredSheet.guard(context, feature: 'Verificação')) return;
     Navigator.of(context).push(MaterialPageRoute<void>(
       builder: (_) => const AthleteVerificationScreen(),
@@ -257,6 +315,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
   }
 
   void _openJoinAssessoria() {
+    if (_guardDemoMode(context)) return;
     Navigator.of(context)
         .push(MaterialPageRoute<void>(
           builder: (_) => JoinAssessoriaScreen(
@@ -267,6 +326,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
   }
 
   void _openChampionships() {
+    if (_guardDemoMode(context)) return;
     if (LoginRequiredSheet.guard(context, feature: 'Campeonatos')) return;
     if (AssessoriaRequiredSheet.guard(context, hasAssessoria: _assessoriaGroupId != null)) return;
     Navigator.of(context).push(MaterialPageRoute<void>(
@@ -314,15 +374,23 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
                 ),
               ),
               const SizedBox(height: DesignTokens.spacingMd),
-              const TipBanner(
-                tipKey: TipKey.dashboardWelcome,
-                icon: Icons.rocket_launch_rounded,
-                text: 'Primeiros passos:\n'
-                    '1. Conecte seu Strava e faça sua primeira corrida\n'
-                    '2. Entre em uma assessoria (peça o código ao professor)\n'
-                    '3. Crie ou encontre um desafio para competir\n'
-                    '4. Complete corridas para se tornar Atleta Verificado',
-              ),
+              if (!_loading && !_allFirstStepsComplete)
+                _FirstStepsCard(
+                  stravaConnected: _stravaConnected,
+                  hasAssessoria: _assessoriaGroupId != null,
+                  hasFirstRun: _hasFirstRun,
+                  hasChallenge: _hasChallenge,
+                  onConnectStrava: () {
+                    Navigator.of(context)
+                        .push(MaterialPageRoute<void>(
+                          builder: (_) => const SettingsScreen(),
+                        ))
+                        .then((_) => _checkStrava());
+                  },
+                  onJoinAssessoria: _openJoinAssessoria,
+                  onFirstRun: _openProgress,
+                  onCreateChallenge: _openChallenges,
+                ),
               if (_pendingRequestGroupName != null && !hasAssessoria) ...[
                 const SizedBox(height: DesignTokens.spacingSm),
                 Card(
@@ -395,6 +463,16 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
                 ),
                 const SizedBox(height: DesignTokens.spacingSm),
               ],
+              if (!_loading && !_hasFirstRun)
+                _RunnerQuizCard(
+                  onStravaConnect: () {
+                    Navigator.of(context)
+                        .push(MaterialPageRoute<void>(
+                          builder: (_) => const SettingsScreen(),
+                        ))
+                        .then((_) => _checkStrava());
+                  },
+                ),
               Expanded(
                 child: _loading
                   ? ShimmerLoading(
@@ -435,7 +513,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
                           : 'Entrar em assessoria',
                       subtitle: _loading
                           ? '...'
-                          : _assessoriaName ?? 'Toque para se juntar',
+                          : _assessoriaName ?? 'Grupo de corrida com treinador',
                       bgColor: hasAssessoria
                           ? cs.secondaryContainer
                           : DesignTokens.info.withValues(alpha: 0.1),
@@ -459,7 +537,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
                     _DashCard(
                       icon: Icons.verified_user_rounded,
                       title: 'Verificação',
-                      subtitle: 'Status de atleta verificado',
+                      subtitle: 'Confirme suas corridas para competir',
                       bgColor: DesignTokens.info.withValues(alpha: 0.1),
                       iconColor: DesignTokens.info,
                       onTap: _openVerification,
@@ -475,7 +553,9 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
                     _DashCard(
                       icon: Icons.park_rounded,
                       title: 'Parques',
-                      subtitle: 'Rankings e comunidade',
+                      subtitle: _hasFirstRun
+                          ? 'Rankings e comunidade'
+                          : 'Descubra corredores nos parques perto de você',
                       bgColor: DesignTokens.success.withValues(alpha: 0.1),
                       iconColor: DesignTokens.success,
                       onTap: () {
@@ -629,6 +709,431 @@ class _DashCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// First-steps interactive checklist (#18 + #36)
+// ---------------------------------------------------------------------------
+
+class _FirstStepsCard extends StatelessWidget {
+  final bool stravaConnected;
+  final bool hasAssessoria;
+  final bool hasFirstRun;
+  final bool hasChallenge;
+  final VoidCallback onConnectStrava;
+  final VoidCallback onJoinAssessoria;
+  final VoidCallback onFirstRun;
+  final VoidCallback onCreateChallenge;
+
+  const _FirstStepsCard({
+    required this.stravaConnected,
+    required this.hasAssessoria,
+    required this.hasFirstRun,
+    required this.hasChallenge,
+    required this.onConnectStrava,
+    required this.onJoinAssessoria,
+    required this.onFirstRun,
+    required this.onCreateChallenge,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    final steps = [
+      (done: stravaConnected, label: 'Conectar Strava', xp: '+50 XP', onTap: onConnectStrava),
+      (done: hasAssessoria, label: 'Entrar em assessoria', xp: '+100 XP', onTap: onJoinAssessoria),
+      (done: hasFirstRun, label: 'Completar primeira corrida', xp: '+75 XP', onTap: onFirstRun),
+      (done: hasChallenge, label: 'Criar ou aceitar um desafio', xp: '+50 XP', onTap: onCreateChallenge),
+    ];
+    final completed = steps.where((s) => s.done).length;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        value: completed / steps.length,
+                        strokeWidth: 3,
+                        backgroundColor: cs.outlineVariant.withValues(alpha: 0.3),
+                        color: DesignTokens.success,
+                      ),
+                      Text(
+                        '$completed/${steps.length}',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: DesignTokens.spacingSm),
+                Expanded(
+                  child: Text(
+                    'Primeiros passos',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Text(
+                  '+275 XP total',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: DesignTokens.warning,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: DesignTokens.spacingSm),
+            ...steps.map((s) => _StepRow(
+                  done: s.done,
+                  label: s.label,
+                  xp: s.xp,
+                  onTap: s.done ? null : s.onTap,
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StepRow extends StatelessWidget {
+  final bool done;
+  final String label;
+  final String xp;
+  final VoidCallback? onTap;
+
+  const _StepRow({
+    required this.done,
+    required this.label,
+    required this.xp,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            Icon(
+              done ? Icons.check_circle : Icons.radio_button_unchecked,
+              size: 22,
+              color: done ? DesignTokens.success : cs.outlineVariant,
+            ),
+            const SizedBox(width: DesignTokens.spacingSm),
+            Expanded(
+              child: Text(
+                label,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  decoration: done ? TextDecoration.lineThrough : null,
+                  color: done
+                      ? cs.onSurface.withValues(alpha: 0.5)
+                      : cs.onSurface,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: DesignTokens.spacingSm,
+                vertical: 2,
+              ),
+              decoration: BoxDecoration(
+                color: done
+                    ? DesignTokens.success.withValues(alpha: 0.1)
+                    : DesignTokens.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+              ),
+              child: Text(
+                xp,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: done ? DesignTokens.success : DesignTokens.warning,
+                ),
+              ),
+            ),
+            if (!done) ...[
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right, size: 18, color: cs.outlineVariant),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Mini-AHA Quiz "Qual seu tipo de corredor?" (#41)
+// ---------------------------------------------------------------------------
+
+class _RunnerQuizCard extends StatelessWidget {
+  final VoidCallback onStravaConnect;
+
+  const _RunnerQuizCard({required this.onStravaConnect});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+      ),
+      color: cs.tertiaryContainer.withValues(alpha: 0.3),
+      child: InkWell(
+        onTap: () => _showQuiz(context),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        child: Padding(
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: cs.tertiary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                ),
+                child: Icon(Icons.quiz_outlined, color: cs.tertiary, size: 24),
+              ),
+              const SizedBox(width: DesignTokens.spacingSm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Qual seu tipo de corredor?',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: DesignTokens.spacingXs),
+                    Text(
+                      'Responda 3 perguntas e descubra',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static void _showQuiz(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => _RunnerQuizSheet(
+        onStravaConnect: () {
+          Navigator.pop(ctx);
+        },
+      ),
+    );
+  }
+}
+
+class _RunnerQuizSheet extends StatefulWidget {
+  final VoidCallback onStravaConnect;
+  const _RunnerQuizSheet({required this.onStravaConnect});
+
+  @override
+  State<_RunnerQuizSheet> createState() => _RunnerQuizSheetState();
+}
+
+class _RunnerQuizSheetState extends State<_RunnerQuizSheet> {
+  int _step = 0;
+  int? _a1;
+  int? _a2;
+  int? _a3;
+
+  static const _questions = [
+    (
+      question: 'Quantas vezes você corre por semana?',
+      options: ['1-2x', '3-4x', '5+x'],
+    ),
+    (
+      question: 'Qual distância mais corre?',
+      options: ['Até 5km', '5-10km', 'Meia/Maratona'],
+    ),
+    (
+      question: 'O que te motiva a correr?',
+      options: ['Saúde', 'Competição', 'Diversão'],
+    ),
+  ];
+
+  void _answer(int value) {
+    setState(() {
+      switch (_step) {
+        case 0:
+          _a1 = value;
+        case 1:
+          _a2 = value;
+        case 2:
+          _a3 = value;
+      }
+      _step++;
+    });
+  }
+
+  ({String emoji, String title, String subtitle}) get _result {
+    final score = (_a1 ?? 0) + (_a2 ?? 0) + (_a3 ?? 0);
+    if (score <= 2) {
+      return (
+        emoji: '\u{1F3C3}\u{200D}\u{2642}\u{FE0F}',
+        title: 'Corredor Social',
+        subtitle: 'Você corre pela experiência e diversão',
+      );
+    } else if (score <= 4) {
+      return (
+        emoji: '\u{1F4AA}',
+        title: 'Corredor Dedicado',
+        subtitle: 'Consistência é sua força',
+      );
+    } else {
+      return (
+        emoji: '\u{1F525}',
+        title: 'Corredor Competitivo',
+        subtitle: 'Nasceu para desafios',
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        DesignTokens.spacingLg,
+        DesignTokens.spacingLg,
+        DesignTokens.spacingLg,
+        MediaQuery.of(context).viewInsets.bottom + DesignTokens.spacingLg,
+      ),
+      child: _step < 3 ? _buildQuestion(theme, cs) : _buildResult(theme, cs),
+    );
+  }
+
+  Widget _buildQuestion(ThemeData theme, ColorScheme cs) {
+    final q = _questions[_step];
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.quiz_outlined, color: cs.tertiary),
+            const SizedBox(width: DesignTokens.spacingSm),
+            Text(
+              'Pergunta ${_step + 1} de 3',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: DesignTokens.spacingMd),
+        Text(
+          q.question,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: DesignTokens.spacingMd),
+        ...q.options.asMap().entries.map((e) => Padding(
+              padding: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => _answer(e.key),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: DesignTokens.spacingMd,
+                    ),
+                  ),
+                  child: Text(e.value),
+                ),
+              ),
+            )),
+        const SizedBox(height: DesignTokens.spacingSm),
+      ],
+    );
+  }
+
+  Widget _buildResult(ThemeData theme, ColorScheme cs) {
+    final r = _result;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(r.emoji, style: const TextStyle(fontSize: 56)),
+        const SizedBox(height: DesignTokens.spacingMd),
+        Text(
+          r.title,
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: DesignTokens.spacingSm),
+        Text(
+          r.subtitle,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: cs.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: DesignTokens.spacingLg),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_forward, size: 18),
+            label: const Text(
+              'Conecte o Strava para descobrir seu DNA completo \u2192',
+            ),
+          ),
+        ),
+        const SizedBox(height: DesignTokens.spacingSm),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Fechar'),
+        ),
+      ],
     );
   }
 }

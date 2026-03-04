@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
@@ -68,8 +69,65 @@ class _ChallengesListScreenState extends State<ChallengesListScreen> {
     }
   }
 
+  static List<ChallengeEntity> get _demoChallenges => [
+    ChallengeEntity(
+      id: 'demo-1',
+      creatorUserId: 'demo',
+      status: ChallengeStatus.active,
+      type: ChallengeType.oneVsOne,
+      rules: const ChallengeRulesEntity(
+        goal: ChallengeGoal.fastestAtDistance,
+        windowMs: 86400000,
+        entryFeeCoins: 50,
+      ),
+      participants: const [],
+      createdAtMs: DateTime.now().millisecondsSinceEpoch,
+      endsAtMs: DateTime.now().add(const Duration(hours: 18)).millisecondsSinceEpoch,
+      title: 'Desafio 5K — Menor Tempo',
+    ),
+    ChallengeEntity(
+      id: 'demo-2',
+      creatorUserId: 'demo',
+      status: ChallengeStatus.active,
+      type: ChallengeType.group,
+      rules: const ChallengeRulesEntity(
+        goal: ChallengeGoal.mostDistance,
+        windowMs: 604800000,
+        entryFeeCoins: 100,
+      ),
+      participants: const [],
+      createdAtMs: DateTime.now().millisecondsSinceEpoch,
+      endsAtMs: DateTime.now().add(const Duration(days: 5)).millisecondsSinceEpoch,
+      title: 'Quem corre mais em 7 dias',
+    ),
+    ChallengeEntity(
+      id: 'demo-3',
+      creatorUserId: 'demo',
+      status: ChallengeStatus.completed,
+      type: ChallengeType.oneVsOne,
+      rules: const ChallengeRulesEntity(
+        goal: ChallengeGoal.bestPaceAtDistance,
+        windowMs: 86400000,
+        entryFeeCoins: 30,
+      ),
+      participants: const [],
+      createdAtMs: DateTime.now().subtract(const Duration(days: 3)).millisecondsSinceEpoch,
+      title: 'Melhor pace 10K',
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
+    if (AppConfig.demoMode) {
+      return Semantics(
+        label: 'Tela de Desafios',
+        child: Scaffold(
+          appBar: AppBar(title: Text(context.l10n.challenges)),
+          body: _list(context, _demoChallenges),
+        ),
+      );
+    }
+
     return Semantics(
       label: 'Tela de Desafios',
       child: Scaffold(
@@ -129,33 +187,117 @@ class _ChallengesListScreenState extends State<ChallengesListScreen> {
 
   Widget _empty(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingXl),
+        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingLg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.emoji_events_outlined,
-              size: 72,
-              color: theme.colorScheme.outline,
+            const SizedBox(height: DesignTokens.spacingLg),
+            // Mock challenge card preview
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Opacity(
+                  opacity: 0.5,
+                  child: IgnorePointer(
+                    child: Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(DesignTokens.spacingMd),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: DesignTokens.success.withValues(alpha: 0.15),
+                                  child: const Icon(Icons.directions_run, color: DesignTokens.success, size: 18),
+                                ),
+                                const SizedBox(width: DesignTokens.spacingSm),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Desafio 5K — Menor Tempo',
+                                          style: theme.textTheme.titleSmall?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          )),
+                                      Text('Você vs. João Silva',
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            color: cs.onSurfaceVariant,
+                                          )),
+                                    ],
+                                  ),
+                                ),
+                                Chip(
+                                  label: const Text('50 OmniCoins', style: TextStyle(fontSize: 10)),
+                                  padding: EdgeInsets.zero,
+                                  visualDensity: VisualDensity.compact,
+                                  backgroundColor: DesignTokens.warning.withValues(alpha: 0.15),
+                                  side: BorderSide.none,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: DesignTokens.spacingSm),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('5.0 km · Imediato',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: cs.onSurfaceVariant,
+                                    )),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: DesignTokens.success.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                                  ),
+                                  child: const Text('Ativo', style: TextStyle(fontSize: 11, color: DesignTokens.success, fontWeight: FontWeight.w600)),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: DesignTokens.spacingMd,
+                    vertical: DesignTokens.spacingSm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: cs.surface,
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                    boxShadow: DesignTokens.shadowSm,
+                  ),
+                  child: Text(
+                    'Crie seu primeiro desafio',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: cs.primary,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: DesignTokens.spacingLg),
             Text(
-              'Nenhum desafio ainda',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Crie um desafio e convide corredores\npara competir com você!',
+              'Desafie outros corredores em provas\nde distância, pace ou tempo!',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+                color: cs.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: DesignTokens.spacingLg),
             FilledButton.icon(
               onPressed: () => _openMatchmaking(context),
               icon: const Icon(Icons.sports_mma_rounded),
@@ -287,6 +429,12 @@ class _ChallengeListTile extends StatelessWidget {
           : null,
       onTap: () {
         HapticFeedback.selectionClick();
+        if (AppConfig.demoMode) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Crie uma conta para usar esta funcionalidade')),
+          );
+          return;
+        }
         context
             .read<ChallengesBloc>()
             .add(ViewChallengeDetails(challenge.id));

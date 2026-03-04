@@ -8,6 +8,7 @@ import { WelcomeBanner } from "@/components/welcome-banner";
 import { formatKm } from "@/lib/format";
 import { StatBlock, DashboardCard } from "@/components/ui";
 import { DashboardCharts } from "./dashboard-charts";
+import { DashboardAlerts } from "./dashboard-alerts";
 
 export const metadata: Metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
@@ -255,6 +256,8 @@ export default async function DashboardPage() {
           />
         )}
       </div>
+
+      <DashboardAlerts />
 
       <DashboardCharts dailyBreakdown={dailyBreakdown} />
 

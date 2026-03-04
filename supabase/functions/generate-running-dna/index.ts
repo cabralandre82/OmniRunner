@@ -20,7 +20,8 @@ import { startTimer, logRequest, logError } from "../_shared/obs.ts";
 
 const FN = "generate-running-dna";
 const CACHE_TTL_MS = 7 * 86400000;
-const MIN_SESSIONS = 10;
+const MIN_PREVIEW_SESSIONS = 3;
+const MIN_FULL_SESSIONS = 10;
 const SIX_MONTHS_MS = 180 * 86400000;
 
 function clamp(v: number, lo: number, hi: number): number {
@@ -114,6 +115,7 @@ serve(async (req: Request) => {
       .maybeSingle();
 
     if (cached && (now - cached.updated_at_ms) < CACHE_TTL_MS) {
+      const cachedSessions = cached.stats?.sessions_analyzed ?? 0;
       return jsonOk({
         dna: {
           radar_scores: cached.radar_scores,
@@ -122,6 +124,7 @@ serve(async (req: Request) => {
           stats: cached.stats,
         },
         cached: true,
+        preview: cachedSessions < MIN_FULL_SESSIONS,
       }, requestId);
     }
 
@@ -139,14 +142,16 @@ serve(async (req: Request) => {
 
     const runs = sessions ?? [];
 
-    if (runs.length < MIN_SESSIONS) {
+    if (runs.length < MIN_PREVIEW_SESSIONS) {
       return jsonOk({
         dna: null,
         reason: "insufficient_data",
         session_count: runs.length,
-        min_required: MIN_SESSIONS,
+        min_required: MIN_PREVIEW_SESSIONS,
       }, requestId);
     }
+
+    const isPreview = runs.length < MIN_FULL_SESSIONS;
 
     // ── 2. Calculate radar axes ───────────────────────────────────
 
@@ -430,7 +435,7 @@ serve(async (req: Request) => {
         updated_at_ms: now,
       }, { onConflict: "user_id" });
 
-    return jsonOk({ dna, cached: false }, requestId);
+    return jsonOk({ dna, cached: false, preview: isPreview }, requestId);
 
   } catch (_err) {
     status = 500;

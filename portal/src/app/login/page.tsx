@@ -18,6 +18,26 @@ function LoginForm() {
   );
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
+  const [resetSent, setResetSent] = useState(false);
+
+  async function handleForgotPassword() {
+    if (!email) {
+      setError("Preencha o e-mail acima para redefinir sua senha.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    const supabase = createClient();
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/api/auth/callback?next=/dashboard`,
+    });
+    setLoading(false);
+    if (resetError) {
+      setError("Erro ao enviar e-mail de redefinição. Tente novamente.");
+      return;
+    }
+    setResetSent(true);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -160,7 +180,23 @@ function LoginForm() {
             className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:opacity-50"
             placeholder="••••••••"
           />
+          <div className="mt-1 text-right">
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              disabled={isDisabled}
+              className="text-xs text-brand hover:underline disabled:opacity-50"
+            >
+              Esqueci minha senha
+            </button>
+          </div>
         </div>
+
+        {resetSent && (
+          <p className="rounded-lg bg-emerald-900/30 border border-emerald-700 p-3 text-sm text-emerald-300">
+            E-mail de redefinição enviado! Verifique sua caixa de entrada.
+          </p>
+        )}
 
         {error && (
           <p className="rounded-lg bg-error-soft p-3 text-sm text-error">
@@ -223,6 +259,13 @@ export default function LoginPage() {
         >
           <LoginForm />
         </Suspense>
+
+        <p className="text-center text-xs text-content-muted">
+          Atleta?{" "}
+          <a href="/download" className="text-brand hover:underline">
+            Baixe o app
+          </a>
+        </p>
       </div>
     </div>
   );
