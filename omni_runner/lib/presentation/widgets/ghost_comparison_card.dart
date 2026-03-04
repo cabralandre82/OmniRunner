@@ -71,19 +71,10 @@ class GhostComparisonCard extends StatelessWidget {
           _col('Fantasma', _fmtTime(ghostDurationMs)),
         ],),
         const SizedBox(height: 10),
-        // Placeholder chart area
-        Container(
-          width: double.infinity,
-          height: 60,
-          decoration: BoxDecoration(
-            color: Colors.purple.shade100.withAlpha(80),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            'Gráfico de pace em breve',
-            style: TextStyle(fontSize: 12, color: Colors.purple.shade300),
-          ),
+        _PaceComparisonBar(
+          runnerElapsedMs: runnerElapsedMs,
+          ghostDurationMs: ghostDurationMs,
+          ghostDistanceM: ghostDistanceM,
         ),
       ],),
     );
@@ -106,5 +97,67 @@ class GhostComparisonCard extends StatelessWidget {
     final sec = t % 60;
     if (h > 0) return '${h}h ${min.toString().padLeft(2, '0')}m';
     return '${min.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
+  }
+}
+
+class _PaceComparisonBar extends StatelessWidget {
+  final int runnerElapsedMs;
+  final int ghostDurationMs;
+  final double ghostDistanceM;
+
+  const _PaceComparisonBar({
+    required this.runnerElapsedMs,
+    required this.ghostDurationMs,
+    required this.ghostDistanceM,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (ghostDistanceM <= 0 || runnerElapsedMs <= 0 || ghostDurationMs <= 0) {
+      return Text(
+        'Comparação de pace indisponível',
+        style: TextStyle(fontSize: 12, color: Colors.purple.shade300),
+      );
+    }
+
+    final runnerPace = (runnerElapsedMs / 1000) / (ghostDistanceM / 1000);
+    final ghostPace = (ghostDurationMs / 1000) / (ghostDistanceM / 1000);
+    final maxPace = runnerPace > ghostPace ? runnerPace : ghostPace;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Pace (min/km)',
+            style: TextStyle(fontSize: 11, color: Colors.purple.shade400)),
+        const SizedBox(height: 6),
+        _bar('Você', runnerPace, maxPace, Colors.blue),
+        const SizedBox(height: 4),
+        _bar('Fantasma', ghostPace, maxPace, Colors.purple),
+      ],
+    );
+  }
+
+  Widget _bar(String label, double pace, double maxPace, Color color) {
+    final fraction = (pace / maxPace).clamp(0.0, 1.0);
+    final min = pace ~/ 60;
+    final sec = (pace % 60).toInt();
+    final paceStr = '$min:${sec.toString().padLeft(2, '0')}/km';
+
+    return Row(
+      children: [
+        SizedBox(width: 60, child: Text(label, style: const TextStyle(fontSize: 11))),
+        Expanded(
+          child: LinearProgressIndicator(
+            value: fraction,
+            backgroundColor: color.withAlpha(30),
+            valueColor: AlwaysStoppedAnimation(color.withAlpha(180)),
+            minHeight: 10,
+            borderRadius: BorderRadius.circular(5),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(paceStr, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+      ],
+    );
   }
 }

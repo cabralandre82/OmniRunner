@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import { formatUsd } from "@/lib/format";
 import { ClearingFilters } from "./clearing-filters";
 
@@ -31,23 +32,34 @@ interface ClearingEvent {
 
 export default async function ClearingPage() {
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
-  const db = createServiceClient();
+  const db = createClient();
 
-  const [receivablesRes, payablesRes, groupsRes, eventsRes] = await Promise.all([
-    db.from("clearing_settlements").select("*").eq("creditor_group_id", groupId).order("created_at", { ascending: false }).limit(100),
-    db.from("clearing_settlements").select("*").eq("debtor_group_id", groupId).order("created_at", { ascending: false }).limit(100),
-    db.from("coaching_groups").select("id, name"),
+  const [receivablesRes, payablesRes, eventsRes] = await Promise.all([
+    db.from("clearing_settlements").select("id, clearing_event_id, creditor_group_id, debtor_group_id, coin_amount, gross_amount_usd, fee_rate_pct, fee_amount_usd, net_amount_usd, status, created_at, settled_at").eq("creditor_group_id", groupId).order("created_at", { ascending: false }).limit(100),
+    db.from("clearing_settlements").select("id, clearing_event_id, creditor_group_id, debtor_group_id, coin_amount, gross_amount_usd, fee_rate_pct, fee_amount_usd, net_amount_usd, status, created_at, settled_at").eq("debtor_group_id", groupId).order("created_at", { ascending: false }).limit(100),
     db.from("clearing_events").select("id, burn_ref_id, total_coins, created_at").eq("redeemer_group_id", groupId).order("created_at", { ascending: false }).limit(100),
   ]);
 
   const receivables: Settlement[] = receivablesRes.data ?? [];
   const payables: Settlement[] = payablesRes.data ?? [];
   const events: ClearingEvent[] = eventsRes.data ?? [];
-  const groupMap = Object.fromEntries(
-    (groupsRes.data ?? []).map((g: { id: string; name: string }) => [g.id, g.name]),
-  );
+
+  const referencedGroupIds = Array.from(new Set([
+    ...receivables.map((s) => s.creditor_group_id),
+    ...receivables.map((s) => s.debtor_group_id),
+    ...payables.map((s) => s.creditor_group_id),
+    ...payables.map((s) => s.debtor_group_id),
+  ].filter((id) => id !== groupId)));
+
+  let groupMap: Record<string, string> = {};
+  if (referencedGroupIds.length > 0) {
+    const groupsRes = await db.from("coaching_groups").select("id, name").in("id", referencedGroupIds);
+    groupMap = Object.fromEntries(
+      (groupsRes.data ?? []).map((g: { id: string; name: string }) => [g.id, g.name]),
+    );
+  }
 
   const eventMap = Object.fromEntries(events.map((e) => [e.id, e]));
 

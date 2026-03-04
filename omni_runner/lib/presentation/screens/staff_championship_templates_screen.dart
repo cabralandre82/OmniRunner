@@ -7,6 +7,7 @@ import 'package:omni_runner/core/push/notification_rules_service.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/presentation/screens/staff_championship_manage_screen.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Staff screen for managing recurring championship templates.
@@ -67,7 +68,7 @@ class _StaffChampionshipTemplatesScreenState
 
       final templateRes = await db
           .from('championship_templates')
-          .select()
+          .select('id, name, description, metric, duration_days, requires_badge, max_participants')
           .eq('owner_group_id', widget.groupId)
           .order('created_at', ascending: false);
 
@@ -182,7 +183,7 @@ class _StaffChampionshipTemplatesScreenState
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _ErrorBody(message: _error!, onRetry: _load)
+              ? _ErrorBody(message: _error ?? '', onRetry: _load)
               : TabBarView(
                   controller: _tabCtrl,
                   children: [
@@ -634,7 +635,7 @@ class _CreateTemplateScreenState extends State<_CreateTemplateScreen> {
 
       final maxText = _maxCtrl.text.trim();
       if (maxText.isNotEmpty) {
-        payload['max_participants'] = int.parse(maxText);
+        payload['max_participants'] = int.tryParse(maxText) ?? 0;
       }
 
       await db.from('championship_templates').insert(payload);
@@ -644,7 +645,7 @@ class _CreateTemplateScreenState extends State<_CreateTemplateScreen> {
       if (mounted) {
         setState(() => _saving = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar: $e')),
+          SnackBar(content: Text(ErrorMessages.humanize(e))),
         );
       }
     }

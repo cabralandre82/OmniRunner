@@ -276,7 +276,8 @@ async function evaluateStreakAtRisk(
   const { data: atRisk } = await db
     .from("v_user_progression")
     .select("user_id, display_name, streak_current")
-    .gte("streak_current", 3);
+    .gte("streak_current", 3)
+    .limit(500);
 
   if (!atRisk || atRisk.length === 0) return { evaluated: 0, sent: 0 };
 
@@ -885,39 +886,22 @@ async function evaluateInactivityNudge(
   serviceKey: string,
 ): Promise<{ evaluated: number; sent: number }> {
   const nowMs = Date.now();
-  const fiveDaysAgoMs = nowMs - 5 * MS_PER_DAY;
-  const thirtyDaysAgoMs = nowMs - 30 * MS_PER_DAY;
   const todayKey = new Date().toISOString().slice(0, 10);
 
-  // Users who ran in the last 30 days (still active users) but NOT in the last 5
-  const { data: recentUsers } = await db
-    .from("sessions")
-    .select("user_id")
-    .gte("start_time_ms", thirtyDaysAgoMs)
-    .eq("is_verified", true);
+  // SQL set-difference: users active in 30 days EXCEPT active in 5 days (capped at 500)
+  const { data: inactive, error: rpcErr } = await db.rpc("fn_inactive_users", {
+    p_active_window_days: 30,
+    p_recent_window_days: 5,
+    p_limit: 500,
+  });
 
-  if (!recentUsers || recentUsers.length === 0) return { evaluated: 0, sent: 0 };
-
-  const allUserIds = [...new Set(recentUsers.map((s: { user_id: string }) => s.user_id))];
-
-  // Check who ran in the last 5 days
-  const { data: activeRecent } = await db
-    .from("sessions")
-    .select("user_id")
-    .in("user_id", allUserIds)
-    .gte("start_time_ms", fiveDaysAgoMs)
-    .eq("is_verified", true);
-
-  const activeSet = new Set(
-    (activeRecent ?? []).map((s: { user_id: string }) => s.user_id),
-  );
-
-  const inactiveUsers = allUserIds.filter((uid: string) => !activeSet.has(uid));
-  if (inactiveUsers.length === 0) return { evaluated: 0, sent: 0 };
+  if (rpcErr || !inactive || inactive.length === 0) return { evaluated: 0, sent: 0 };
 
   let sent = 0;
 
-  for (const userId of inactiveUsers) {
+  for (const row of inactive) {
+    const userId = row.user_id as string;
+
     if (await wasRecentlyNotified(db, userId, "inactivity_nudge", todayKey)) {
       continue;
     }
@@ -947,7 +931,7 @@ async function evaluateInactivityNudge(
     }
   }
 
-  return { evaluated: inactiveUsers.length, sent };
+  return { evaluated: inactive.length, sent };
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -1206,6 +1190,8 @@ async function dispatchPush(
     data?: Record<string, string>;
   },
 ): Promise<boolean> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15_000);
   try {
     const res = await fetch(`${supabaseUrl}/functions/v1/send-push`, {
       method: "POST",
@@ -1214,10 +1200,13 @@ async function dispatchPush(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
+      signal: ctrl.signal,
     });
 
     return res.ok;
   } catch {
     return false;
+  } finally {
+    clearTimeout(timer);
   }
 }

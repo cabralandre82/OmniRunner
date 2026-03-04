@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/domain/entities/announcement_entity.dart';
 import 'package:omni_runner/domain/repositories/i_announcement_repo.dart';
 import 'package:omni_runner/domain/usecases/announcements/create_announcement.dart';
@@ -52,7 +53,7 @@ class _AnnouncementCreateScreenState extends State<AnnouncementCreateScreen> {
 
   Future<void> _save() async {
     if (_saving) return;
-    if (!_formKey.currentState!.validate()) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() {
       _saving = true;
@@ -61,8 +62,10 @@ class _AnnouncementCreateScreenState extends State<AnnouncementCreateScreen> {
 
     try {
       if (_isEdit) {
+        final existing = widget.existing;
+        if (existing == null) return;
         final repo = sl<IAnnouncementRepo>();
-        final updated = widget.existing!.copyWith(
+        final updated = existing.copyWith(
           title: _titleController.text.trim(),
           body: _bodyController.text.trim(),
           pinned: _pinned,
@@ -87,7 +90,7 @@ class _AnnouncementCreateScreenState extends State<AnnouncementCreateScreen> {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = e.toString();
+          _error = ErrorMessages.humanize(e);
         });
       }
     }
@@ -172,7 +175,7 @@ class _AnnouncementCreateScreenState extends State<AnnouncementCreateScreen> {
             if (_error != null) ...[
               const SizedBox(height: 16),
               Text(
-                _error!,
+                _error ?? '',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: cs.error,
                 ),

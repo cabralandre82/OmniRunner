@@ -4,14 +4,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:omni_runner/core/errors/integrations_failures.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/storage/preferences_keys.dart';
 import 'package:omni_runner/domain/entities/workout_session_entity.dart';
 import 'package:omni_runner/features/integrations_export/domain/export_format.dart';
 import 'package:omni_runner/features/integrations_export/presentation/export_sheet_controller.dart';
 import 'package:omni_runner/features/integrations_export/presentation/how_to_import_screen.dart';
 import 'package:omni_runner/features/integrations_export/presentation/share_export_file.dart';
+import 'package:omni_runner/presentation/screens/settings_screen.dart';
 
-/// Key for the first-use Strava education bottom sheet.
-const _kHasSeenGarminGuide = 'has_seen_garmin_import_guide';
 
 /// Export screen — lets the user choose a format and share the file.
 ///
@@ -127,9 +127,9 @@ class _ExportScreenState extends State<ExportScreen> {
   /// Tela 3 — first-use Strava education sheet.
   Future<void> _maybeShowStravaEducation() async {
     final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(_kHasSeenGarminGuide) == true) return;
+    if (prefs.getBool(PreferencesKeys.hasSeenGarminImportGuide) == true) return;
 
-    await prefs.setBool(_kHasSeenGarminGuide, true);
+    await prefs.setBool(PreferencesKeys.hasSeenGarminImportGuide, true);
 
     if (!mounted) return;
 
@@ -174,8 +174,9 @@ class _ExportScreenState extends State<ExportScreen> {
                     child: FilledButton(
                       onPressed: () {
                         Navigator.of(_contextOrFallback).pop();
-                        // Navigate to Strava settings — placeholder.
-                        // Will be wired in Sprint 14.5 (Settings UI).
+                        Navigator.of(context).push(MaterialPageRoute<void>(
+                          builder: (_) => const SettingsScreen(),
+                        ));
                       },
                       child: const Text('Conectar Strava'),
                     ),

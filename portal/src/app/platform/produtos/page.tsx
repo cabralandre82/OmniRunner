@@ -22,7 +22,7 @@ export default async function ProdutosPage() {
 
   const { data: products } = await supabase
     .from("billing_products")
-    .select("*")
+    .select("id, name, description, credits_amount, price_cents, currency, is_active, sort_order, product_type, created_at")
     .order("sort_order", { ascending: true });
 
   const items: Product[] = products ?? [];

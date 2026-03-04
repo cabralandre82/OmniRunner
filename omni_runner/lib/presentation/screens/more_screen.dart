@@ -22,23 +22,35 @@ import 'package:omni_runner/presentation/screens/my_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/profile_screen.dart';
 import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/screens/athlete_delivery_screen.dart';
+import 'package:omni_runner/presentation/screens/athlete_workout_day_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_qr_hub_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_scan_qr_screen.dart';
+import 'package:omni_runner/presentation/screens/friends_activity_feed_screen.dart';
 import 'package:omni_runner/presentation/screens/partner_assessorias_screen.dart';
 import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_bloc.dart';
 import 'package:omni_runner/domain/repositories/i_token_intent_repo.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/presentation/screens/faq_screen.dart';
+import 'package:omni_runner/presentation/screens/diagnostics_screen.dart';
+import 'package:omni_runner/presentation/screens/support_screen.dart';
 
 
 /// Hub screen for secondary features: coaching, social, integrations, settings.
 ///
 /// Role-aware: staff users see a reduced menu without running-specific items.
-class MoreScreen extends StatelessWidget {
+class MoreScreen extends StatefulWidget {
   final String? userRole;
 
   const MoreScreen({super.key, this.userRole});
 
-  bool get _isStaff => userRole == 'ASSESSORIA_STAFF';
+  @override
+  State<MoreScreen> createState() => _MoreScreenState();
+}
+
+class _MoreScreenState extends State<MoreScreen> {
+  bool _busy = false;
+
+  bool get _isStaff => widget.userRole == 'ASSESSORIA_STAFF';
 
   @override
   Widget build(BuildContext context) {
@@ -49,10 +61,12 @@ class MoreScreen extends StatelessWidget {
         backgroundColor: cs.inversePrimary,
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
+        padding: const EdgeInsets.symmetric(
+          vertical: DesignTokens.spacingSm,
+          horizontal: DesignTokens.spacingMd,
+        ),
         children: [
-          if (!_isStaff) ...[
-            _header(context, 'Assessoria'),
+          if (!_isStaff) _sectionCard(context, 'Minha Assessoria', [
             _ActionTile(
               icon: Icons.groups,
               title: 'Minha Assessoria',
@@ -89,10 +103,18 @@ class MoreScreen extends StatelessWidget {
                 ));
               },
             ),
-          ],
+            _ActionTile(
+              icon: Icons.fitness_center,
+              title: 'Meu Treino do Dia',
+              subtitle: 'Ver o treino agendado para hoje',
+              onTap: (ctx) {
+                if (LoginRequiredSheet.guard(ctx, feature: 'Treino do Dia')) return;
+                _openWorkoutDay(ctx);
+              },
+            ),
+          ]),
 
-          _header(context, 'Social'),
-          if (_isStaff)
+          if (_isStaff) _sectionCard(context, 'Minha Assessoria', [
             _ActionTile(
               icon: Icons.handshake,
               title: 'Assessorias Parceiras',
@@ -102,7 +124,18 @@ class MoreScreen extends StatelessWidget {
                 _openPartnerAssessorias(ctx);
               },
             ),
-          if (!_isStaff) ...[
+            _ActionTile(
+              icon: Icons.qr_code,
+              title: 'Operações QR',
+              subtitle: 'Emitir ou recolher OmniCoins, ativar badge',
+              onTap: (ctx) {
+                if (LoginRequiredSheet.guard(ctx, feature: 'Operações QR')) return;
+                _openStaffQrHub(ctx);
+              },
+            ),
+          ]),
+
+          if (!_isStaff) _sectionCard(context, 'Social', [
             _ActionTile(
               icon: Icons.people_alt_rounded,
               title: 'Convidar amigos',
@@ -129,65 +162,76 @@ class MoreScreen extends StatelessWidget {
                 ));
               },
             ),
-            const _ComingSoonTile(
+            _ActionTile(
               icon: Icons.dynamic_feed_rounded,
               title: 'Atividade dos amigos',
               subtitle: 'Corridas recentes dos seus amigos',
-              reason: 'O feed de amigos estará disponível em breve!',
-            ),
-          ],
-
-          _header(context, 'Conta'),
-          const _ActionTile(
-            icon: Icons.person,
-            title: 'Meu Perfil',
-            subtitle: 'Ver e editar seu perfil',
-            pushScreen: ProfileScreen(),
-          ),
-
-          _header(context, 'Configurações'),
-          _ActionTile(
-            icon: Icons.tune,
-            title: context.l10n.settings,
-            subtitle: _isStaff ? 'Aparência' : 'Strava, tema e unidades',
-            pushScreen: SettingsScreen(isStaff: _isStaff),
-          ),
-
-          if (_isStaff) ...[
-            _header(context, 'Administração'),
-            _ActionTile(
-              icon: Icons.qr_code,
-              title: 'Operações QR',
-              subtitle: 'Emitir ou recolher OmniCoins, ativar badge',
               onTap: (ctx) {
-                if (LoginRequiredSheet.guard(ctx, feature: 'Operações QR')) return;
-                _openStaffQrHub(ctx);
+                if (LoginRequiredSheet.guard(ctx, feature: 'Atividade dos amigos')) return;
+                Navigator.of(ctx).push(MaterialPageRoute<void>(
+                  builder: (_) => const FriendsActivityFeedScreen(),
+                ));
               },
             ),
-            _header(context, 'Informações'),
-          ],
+          ]),
 
-          _ActionTile(
-            icon: Icons.info_outline,
-            title: context.l10n.about,
-            subtitle: 'Omni Runner',
-            onTap: (ctx) async {
-              final info = await PackageInfo.fromPlatform();
-              if (!ctx.mounted) return;
-              showAboutDialog(
-                context: ctx,
-                applicationName: 'Omni Runner',
-                applicationVersion: '${info.version} (${info.buildNumber})',
-                applicationLegalese: '\u00a9 2026 Omni Runner',
-              );
-            },
-          ),
+          _sectionCard(context, 'Conta', [
+            const _ActionTile(
+              icon: Icons.person,
+              title: 'Meu Perfil',
+              subtitle: 'Ver e editar seu perfil',
+              pushScreen: ProfileScreen(),
+            ),
+            _ActionTile(
+              icon: Icons.tune,
+              title: context.l10n.settings,
+              subtitle: _isStaff ? 'Aparência' : 'Strava, tema e unidades',
+              pushScreen: SettingsScreen(isStaff: _isStaff),
+            ),
+            _ActionTile(
+              icon: Icons.bug_report_outlined,
+              title: context.l10n.diagnostics,
+              subtitle: 'Informações técnicas e depuração',
+              pushScreen: const DiagnosticsScreen(),
+            ),
+          ]),
+
+          _sectionCard(context, 'Ajuda', [
+            _ActionTile(
+              icon: Icons.support_agent,
+              title: context.l10n.support,
+              subtitle: 'Tickets de suporte da assessoria',
+              onTap: (ctx) {
+                if (LoginRequiredSheet.guard(ctx, feature: 'Suporte')) return;
+                _openSupport(ctx);
+              },
+            ),
+            const _ActionTile(
+              icon: Icons.help_outline,
+              title: 'Perguntas Frequentes',
+              subtitle: 'Dúvidas comuns sobre o app',
+              pushScreen: FaqScreen(),
+            ),
+            _ActionTile(
+              icon: Icons.info_outline,
+              title: context.l10n.about,
+              subtitle: 'Omni Runner',
+              onTap: (ctx) async {
+                final info = await PackageInfo.fromPlatform();
+                if (!ctx.mounted) return;
+                showAboutDialog(
+                  context: ctx,
+                  applicationName: 'Omni Runner',
+                  applicationVersion: '${info.version} (${info.buildNumber})',
+                  applicationLegalese: '\u00a9 2026 Omni Runner',
+                );
+              },
+            ),
+          ]),
 
           const SizedBox(height: DesignTokens.spacingMd),
           if (sl<UserIdentityProvider>().isAnonymous)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd),
-              child: Card(
+            Card(
                 color: DesignTokens.warning.withValues(alpha: 0.1),
                 child: Padding(
                   padding: const EdgeInsets.all(DesignTokens.spacingMd),
@@ -241,17 +285,18 @@ class MoreScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-              ),
             ),
           if (!sl<UserIdentityProvider>().isAnonymous) ...[
             const SizedBox(height: DesignTokens.spacingMd),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd),
-              child: SizedBox(
+            SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () => _signOut(context),
-                  icon: const Icon(Icons.logout_rounded),
+                  onPressed: _busy ? null : () => _signOut(context),
+                  icon: _busy
+                      ? const SizedBox(
+                          width: 16, height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.logout_rounded),
                   label: Text(context.l10n.logout),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: cs.error,
@@ -259,7 +304,6 @@ class MoreScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
                   ),
                 ),
-              ),
             ),
           ],
           const SizedBox(height: DesignTokens.spacingLg),
@@ -269,6 +313,7 @@ class MoreScreen extends StatelessWidget {
   }
 
   Future<void> _signOut(BuildContext context) async {
+    if (_busy) return;
     final cs = Theme.of(context).colorScheme;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -293,12 +338,46 @@ class MoreScreen extends StatelessWidget {
       ),
     );
     if (confirmed != true || !context.mounted) return;
-    await sl<AuthRepository>().signOut();
-    if (!context.mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const AuthGate()),
-      (_) => false,
-    );
+    setState(() => _busy = true);
+    try {
+      await sl<AuthRepository>().signOut();
+      if (!context.mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => const AuthGate()),
+        (_) => false,
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _openWorkoutDay(BuildContext context) async {
+    final uid = sl<UserIdentityProvider>().userId;
+    try {
+      final rows = await Supabase.instance.client
+          .from('coaching_members')
+          .select('group_id')
+          .eq('user_id', uid)
+          .limit(1);
+      final list = (rows as List).cast<Map<String, dynamic>>();
+      if (!context.mounted) return;
+      if (list.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Você não está em nenhuma assessoria.')),
+        );
+        return;
+      }
+      final groupId = list.first['group_id'] as String;
+      Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => AthleteWorkoutDayScreen(groupId: groupId),
+      ));
+    } catch (e) {
+      AppLogger.warn('Failed to open workout day', tag: 'MoreScreen', error: e);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro ao carregar. Tente novamente.')),
+      );
+    }
   }
 
   Future<void> _openPartnerAssessorias(BuildContext context) async {
@@ -393,21 +472,60 @@ class MoreScreen extends StatelessWidget {
     }
   }
 
-  Widget _header(BuildContext context, String text) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        DesignTokens.spacingMd,
-        DesignTokens.spacingMd,
-        DesignTokens.spacingMd,
-        DesignTokens.spacingXs,
-      ),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+  Widget _sectionCard(BuildContext context, String title, List<Widget> children) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: DesignTokens.spacingMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              DesignTokens.spacingMd,
+              DesignTokens.spacingMd,
+              DesignTokens.spacingMd,
+              DesignTokens.spacingXs,
             ),
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+            ),
+          ),
+          ...children,
+        ],
       ),
     );
+  }
+
+  Future<void> _openSupport(BuildContext context) async {
+    final uid = sl<UserIdentityProvider>().userId;
+    try {
+      final rows = await Supabase.instance.client
+          .from('coaching_members')
+          .select('group_id')
+          .eq('user_id', uid)
+          .limit(1);
+      final list = (rows as List).cast<Map<String, dynamic>>();
+      if (!context.mounted) return;
+      if (list.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Você precisa estar em uma assessoria para acessar o suporte.')),
+        );
+        return;
+      }
+      final groupId = list.first['group_id'] as String;
+      Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => SupportScreen(groupId: groupId),
+      ));
+    } catch (e) {
+      AppLogger.warn('Failed to open support', tag: 'MoreScreen', error: e);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro ao carregar. Tente novamente.')),
+      );
+    }
   }
 }
 
@@ -435,48 +553,16 @@ class _ActionTile extends StatelessWidget {
       subtitle: Text(subtitle),
       trailing: const Icon(Icons.chevron_right),
       onTap: () {
-        if (onTap != null) {
-          onTap!(context);
-        } else if (pushScreen != null) {
+        final tap = onTap;
+        final screen = pushScreen;
+        if (tap != null) {
+          tap(context);
+        } else if (screen != null) {
           Navigator.of(context)
-              .push(MaterialPageRoute<void>(builder: (_) => pushScreen!));
+              .push(MaterialPageRoute<void>(builder: (_) => screen));
         }
       },
     );
   }
 }
 
-/// Tile for features not yet available — shows a SnackBar on tap.
-class _ComingSoonTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final String reason;
-
-  const _ComingSoonTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.reason,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return ListTile(
-      leading: Icon(icon, color: cs.onSurface.withValues(alpha: 0.38)),
-      title:
-          Text(title, style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6))),
-      subtitle: Text(subtitle),
-      trailing: Chip(
-        label: const Text('Em breve', style: TextStyle(fontSize: 10)),
-        backgroundColor: cs.surfaceContainerHighest,
-        visualDensity: VisualDensity.compact,
-        side: BorderSide.none,
-      ),
-      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(reason), duration: const Duration(seconds: 2)),
-      ),
-    );
-  }
-}

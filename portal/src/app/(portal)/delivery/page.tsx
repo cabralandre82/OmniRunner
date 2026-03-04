@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import { formatDateISO } from "@/lib/format";
 import { StatBlock, StatusBadge } from "@/components/ui";
 import {
@@ -49,7 +50,7 @@ interface DeliveryBatch {
 export default async function DeliveryPage() {
   const groupId = cookies().get("portal_group_id")?.value;
   const role = cookies().get("portal_role")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   const supabase = createClient();
   let fetchError: string | null = null;

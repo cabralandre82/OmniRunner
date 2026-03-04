@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
+import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 
 interface Branding {
   logo_url: string | null;
@@ -27,7 +28,7 @@ export default async function PortalLayout({
 
   const cookieStore = cookies();
   const groupId = cookieStore.get("portal_group_id")?.value;
-  const role = cookieStore.get("portal_role")?.value ?? "assistant";
+  let role = cookieStore.get("portal_role")?.value ?? "assistant";
 
   if (!groupId) {
     const { data: profile } = await supabase
@@ -45,51 +46,96 @@ export default async function PortalLayout({
 
   const { data: memberships } = await supabase
     .from("coaching_members")
-    .select("group_id")
+    .select("group_id, role")
     .eq("user_id", user.id)
     .in("role", ["admin_master", "coach", "assistant"]);
 
   const multiGroup = (memberships?.length ?? 0) > 1;
 
-  const [groupRes, profileRes, brandingRes] = await Promise.all([
-    supabase
-      .from("coaching_groups")
-      .select("name")
-      .eq("id", groupId)
-      .single(),
-    supabase
-      .from("profiles")
-      .select("platform_role")
-      .eq("id", user.id)
-      .single(),
-    supabase
-      .from("portal_branding")
-      .select("logo_url, primary_color, sidebar_bg, sidebar_text, accent_color")
-      .eq("group_id", groupId)
-      .maybeSingle(),
-  ]);
+  // Re-verify: user must belong to the group in cookie (defense in depth)
+  const membershipForGroup = memberships?.find((m) => m.group_id === groupId);
+  if (!membershipForGroup) {
+    redirect("/select-group");
+  }
+  const roleFromDb = membershipForGroup.role ?? role;
 
-  const groupName = groupRes.data?.name ?? "Assessoria";
-  const isPlatformAdmin = profileRes.data?.platform_role === "admin";
-
-  const { data: custodyAccount } = await supabase
-    .from("custody_accounts")
-    .select("is_blocked")
-    .eq("group_id", groupId)
-    .maybeSingle();
-
-  const isBlocked = custodyAccount?.is_blocked ?? false;
-  const environment = process.env.NEXT_PUBLIC_ENV ?? "production";
-
-  const branding: Branding = {
-    logo_url: brandingRes.data?.logo_url ?? null,
-    primary_color: brandingRes.data?.primary_color ?? "#3b82f6",
-    sidebar_bg: brandingRes.data?.sidebar_bg ?? "#111827",
-    sidebar_text: brandingRes.data?.sidebar_text ?? "#f1f5f9",
-    accent_color: brandingRes.data?.accent_color ?? "#3b82f6",
+  let groupName = "Assessoria";
+  let isPlatformAdmin = false;
+  let isBlocked = false;
+  let branding: Branding = {
+    logo_url: null,
+    primary_color: "#3b82f6",
+    sidebar_bg: "#111827",
+    sidebar_text: "#f1f5f9",
+    accent_color: "#3b82f6",
   };
+  let tpEnabled = false;
 
-  const tpEnabled = await isFeatureEnabled("trainingpeaks_enabled");
+  try {
+    const [groupRes, profileRes, brandingRes, custodyRes] =
+      await Promise.allSettled([
+        supabase
+          .from("coaching_groups")
+          .select("name")
+          .eq("id", groupId)
+          .single(),
+        supabase
+          .from("profiles")
+          .select("platform_role")
+          .eq("id", user.id)
+          .single(),
+        supabase
+          .from("portal_branding")
+          .select(
+            "logo_url, primary_color, sidebar_bg, sidebar_text, accent_color",
+          )
+          .eq("group_id", groupId)
+          .maybeSingle(),
+        supabase
+          .from("custody_accounts")
+          .select("is_blocked")
+          .eq("group_id", groupId)
+          .maybeSingle(),
+      ]);
+
+    if (groupRes.status === "fulfilled") {
+      groupName = groupRes.value.data?.name ?? groupName;
+    }
+    if (profileRes.status === "fulfilled") {
+      isPlatformAdmin = profileRes.value.data?.platform_role === "admin";
+    }
+    if (custodyRes.status === "fulfilled") {
+      isBlocked = custodyRes.value.data?.is_blocked ?? false;
+    }
+    if (brandingRes.status === "fulfilled" && brandingRes.value.data) {
+      branding = {
+        logo_url: brandingRes.value.data.logo_url ?? null,
+        primary_color: brandingRes.value.data.primary_color ?? "#3b82f6",
+        sidebar_bg: brandingRes.value.data.sidebar_bg ?? "#111827",
+        sidebar_text: brandingRes.value.data.sidebar_text ?? "#f1f5f9",
+        accent_color: brandingRes.value.data.accent_color ?? "#3b82f6",
+      };
+    }
+
+    tpEnabled = await isFeatureEnabled("trainingpeaks_enabled");
+  } catch (err) {
+    console.error("Portal layout: failed to load data", err);
+    const environment = process.env.NEXT_PUBLIC_ENV ?? "production";
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50 p-8 text-center">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-800">
+            Unable to load the portal
+          </h2>
+          <p className="mt-2 text-sm text-gray-500">
+            A temporary error occurred. Please refresh or try again later.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const environment = process.env.NEXT_PUBLIC_ENV ?? "production";
 
   const cssVars = {
     "--brand-primary": branding.primary_color,
@@ -100,8 +146,9 @@ export default async function PortalLayout({
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg-primary" style={cssVars}>
+      <KeyboardShortcuts />
       <Sidebar
-        role={role}
+        role={roleFromDb}
         isPlatformAdmin={isPlatformAdmin}
         logoUrl={branding.logo_url}
         groupName={groupName}
@@ -112,7 +159,7 @@ export default async function PortalLayout({
           groupName={groupName}
           userEmail={user.email ?? ""}
           multiGroup={multiGroup}
-          role={role}
+          role={roleFromDb}
           environment={environment}
           isBlocked={isBlocked}
         />

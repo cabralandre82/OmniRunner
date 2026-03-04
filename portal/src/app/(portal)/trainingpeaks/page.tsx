@@ -21,7 +21,7 @@ export default async function TrainingPeaksPage() {
 
   const supabase = createClient();
   const cookieStore = await cookies();
-  const groupId = cookieStore.get("group_id")?.value;
+  const groupId = cookieStore.get("portal_group_id")?.value;
 
   if (!groupId) {
     return (
@@ -36,7 +36,14 @@ export default async function TrainingPeaksPage() {
     p_group_id: groupId,
   });
 
-  const syncs = syncResult?.ok ? (syncResult.data ?? []) : [];
+  const syncs: any[] =
+    syncResult != null &&
+    typeof syncResult === "object" &&
+    "ok" in syncResult &&
+    syncResult.ok === true &&
+    Array.isArray(syncResult.data)
+      ? syncResult.data
+      : [];
 
   // Get linked athletes
   const { data: links } = await supabase

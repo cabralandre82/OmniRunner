@@ -1,13 +1,15 @@
 import 'package:isar/isar.dart';
 
+import 'package:omni_runner/core/cache/cache_metadata_store.dart';
 import 'package:omni_runner/data/models/isar/progress_model.dart';
 import 'package:omni_runner/domain/entities/profile_progress_entity.dart';
 import 'package:omni_runner/domain/repositories/i_profile_progress_repo.dart';
 
 final class IsarProfileProgressRepo implements IProfileProgressRepo {
   final Isar _isar;
+  final CacheMetadataStore _cacheMeta;
 
-  const IsarProfileProgressRepo(this._isar);
+  IsarProfileProgressRepo(this._isar, this._cacheMeta);
 
   @override
   Future<ProfileProgressEntity> getByUserId(String userId) async {
@@ -36,6 +38,7 @@ final class IsarProfileProgressRepo implements IProfileProgressRepo {
 
       await _isar.profileProgressRecords.put(record);
     });
+    _cacheMeta.recordCacheWriteSync('profile_progress', profile.userId);
   }
 
   static ProfileProgressRecord _toRecord(ProfileProgressEntity e) =>

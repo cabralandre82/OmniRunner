@@ -10,14 +10,14 @@ export async function GET() {
   try {
   const supabase = createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = rateLimit(`export:${session.user.id}`, { maxRequests: 3, windowMs: 60_000 });
+  const rl = rateLimit(`export:${user.id}`, { maxRequests: 3, windowMs: 60_000 });
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
@@ -33,7 +33,7 @@ export async function GET() {
     .from("coaching_members")
     .select("role")
     .eq("group_id", groupId)
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
     .maybeSingle();
 
   if (
@@ -71,7 +71,7 @@ export async function GET() {
   const csv = BOM + header + "\n" + rows.join("\n");
 
   await auditLog({
-    actorId: session.user.id,
+    actorId: user.id,
     groupId,
     action: "export.athletes_csv",
     metadata: { count: allMembers.length },

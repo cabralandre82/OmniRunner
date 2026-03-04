@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import Link from "next/link";
 import { formatDateISO, formatPercent } from "@/lib/format";
 import { AnnouncementsClient } from "./announcements-client";
@@ -107,7 +108,7 @@ async function getAnnouncementsData(groupId: string): Promise<{
 export default async function AnnouncementsPage() {
   const groupId = cookies().get("portal_group_id")?.value;
   const role = cookies().get("portal_role")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   let announcements: AnnouncementRow[] = [];
   let total = 0;

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -14,6 +16,9 @@ class FeatureFlagService {
   final String userId;
   Map<String, _Flag> _flags = {};
   bool _loaded = false;
+  Timer? _refreshTimer;
+
+  static const _refreshInterval = Duration(minutes: 15);
 
   bool get isLoaded => _loaded;
 
@@ -43,9 +48,33 @@ class FeatureFlagService {
   /// Alias for [load] — re-fetches from server.
   Future<void> refresh() => load();
 
+  /// Starts a periodic timer that re-fetches flags every 15 minutes.
+  /// Safe to call multiple times — restarts the timer if already running.
+  void startPeriodicRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) => load());
+  }
+
+  /// Stops the periodic refresh timer.
+  void stopPeriodicRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+  }
+
+  /// Cancels the refresh timer. Call when the service is no longer needed.
+  void dispose() {
+    stopPeriodicRefresh();
+  }
+
   /// Returns `true` if the flag is enabled for this user.
   ///
   /// Unknown flags default to `false`.
+  ///
+  /// KNOWN RISK (m13): If a flag is toggled mid-operation (e.g. disabling a
+  /// feature while the user is in the middle of an action that depends on it),
+  /// the in-memory cache will be stale until the next [refresh]. Callers that
+  /// gate destructive operations should re-check the flag server-side (RPC/Edge
+  /// Function) rather than relying solely on this client-side cache.
   bool isEnabled(String key) {
     final flag = _flags[key];
     if (flag == null || !flag.enabled) return false;

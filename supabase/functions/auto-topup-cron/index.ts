@@ -18,7 +18,9 @@ import { startTimer, logRequest, logError } from "../_shared/obs.ts";
  */
 
 const FN = "auto-topup-cron";
-const INTER_CALL_DELAY_MS = 200;
+const BATCH_SIZE = 50;
+const CONCURRENCY_CAP = 5;
+const MAX_ELAPSED_MS = 50_000;
 
 serve(async (req: Request) => {
   const cors = handleCors(req);
@@ -82,13 +84,16 @@ serve(async (req: Request) => {
       return jsonOk({ processed: 0, triggered: 0, results: [] }, requestId);
     }
 
-    // ── 4. Call auto-topup-check for each group ───────────────────────────
+    // ── 4. Call auto-topup-check in parallel batches ──────────────────────
     const checkUrl = `${supabaseUrl}/functions/v1/auto-topup-check`;
     // deno-lint-ignore no-explicit-any
     const results: Record<string, any>[] = [];
     let triggeredCount = 0;
+    let skippedCount = 0;
 
-    for (const group of groups) {
+    async function checkGroup(groupId: string) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 15_000);
       try {
         const res = await fetch(checkUrl, {
           method: "POST",
@@ -96,22 +101,34 @@ serve(async (req: Request) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${serviceKey}`,
           },
-          body: JSON.stringify({ group_id: group.group_id }),
+          body: JSON.stringify({ group_id: groupId }),
+          signal: ctrl.signal,
         });
-
         const data = await res.json();
         if (data.triggered) triggeredCount++;
-        results.push({ group_id: group.group_id, ...data });
+        results.push({ group_id: groupId, ...data });
       } catch (err) {
-        results.push({
-          group_id: group.group_id,
-          ok: false,
-          error: (err as Error).message,
-        });
+        results.push({ group_id: groupId, ok: false, error: (err as Error).message });
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    for (let offset = 0; offset < groups.length; offset += BATCH_SIZE) {
+      if (elapsed() > MAX_ELAPSED_MS) {
+        skippedCount = groups.length - offset;
+        console.warn(JSON.stringify({
+          fn: FN, request_id: requestId,
+          msg: `Elapsed ${elapsed()}ms > ${MAX_ELAPSED_MS}ms, skipping ${skippedCount} remaining groups`,
+        }));
+        break;
       }
 
-      if (groups.length > 1) {
-        await new Promise((r) => setTimeout(r, INTER_CALL_DELAY_MS));
+      const batch = groups.slice(offset, offset + BATCH_SIZE);
+
+      for (let i = 0; i < batch.length; i += CONCURRENCY_CAP) {
+        const chunk = batch.slice(i, i + CONCURRENCY_CAP);
+        await Promise.allSettled(chunk.map((g) => checkGroup(g.group_id)));
       }
     }
 
@@ -134,8 +151,10 @@ serve(async (req: Request) => {
 
     return jsonOk(
       {
-        processed: groups.length,
+        processed: groups.length - skippedCount,
         triggered: triggeredCount,
+        skipped: skippedCount,
+        total: groups.length,
         results,
       },
       requestId,

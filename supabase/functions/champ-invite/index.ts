@@ -181,6 +181,7 @@ serve(async (req: Request) => {
               rule: "championship_invite_received",
               context: { championship_id, user_ids: staffIds },
             }),
+            signal: AbortSignal.timeout(15_000),
           }).catch(() => {});
         }
       }

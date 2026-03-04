@@ -240,17 +240,25 @@ serve(async (req: Request) => {
       ).toISOString(),
     };
 
-    const mpRes = await fetch(
-      "https://api.mercadopago.com/checkout/preferences",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${mpAccessToken}`,
+    const mpCtrl = new AbortController();
+    const mpTimer = setTimeout(() => mpCtrl.abort(), 15_000);
+    let mpRes: Response;
+    try {
+      mpRes = await fetch(
+        "https://api.mercadopago.com/checkout/preferences",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${mpAccessToken}`,
+          },
+          body: JSON.stringify(preference),
+          signal: mpCtrl.signal,
         },
-        body: JSON.stringify(preference),
-      },
-    );
+      );
+    } finally {
+      clearTimeout(mpTimer);
+    }
 
     if (!mpRes.ok) {
       const errBody = await mpRes.text();

@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import Link from "next/link";
 import { formatDateISO, formatDateTime } from "@/lib/format";
 
@@ -25,7 +26,7 @@ export default async function AttendanceDetailPage({
   const { id: sessionId } = await params;
   const groupId = cookies().get("portal_group_id")?.value;
   const role = cookies().get("portal_role")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   const supabase = createClient();
 
@@ -128,16 +129,7 @@ export default async function AttendanceDetailPage({
       <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-content-primary">Presença</h2>
-          {canMarkAttendance && (
-            <button
-              type="button"
-              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary shadow-sm hover:bg-surface-elevated"
-              disabled
-              title="Em breve"
-            >
-              Marcar presença manualmente
-            </button>
-          )}
+          {/* Manual attendance button hidden until feature is implemented */}
         </div>
         <p className="mt-2 text-2xl font-bold text-content-primary">
           {presentes} / {total} atletas = {pct.toFixed(1)}%

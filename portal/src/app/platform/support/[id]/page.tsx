@@ -21,7 +21,7 @@ export default async function SupportTicketPage({ params }: Props) {
 
   const { data: ticket } = await supabase
     .from("support_tickets")
-    .select()
+    .select("id, group_id, subject, status, created_at, updated_at")
     .eq("id", params.id)
     .single();
 
@@ -35,9 +35,10 @@ export default async function SupportTicketPage({ params }: Props) {
 
   const { data: messages } = await supabase
     .from("support_messages")
-    .select()
+    .select("id, ticket_id, sender_id, sender_role, body, created_at")
     .eq("ticket_id", params.id)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .limit(500);
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">

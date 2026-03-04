@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
+import { NoGroupSelected } from "@/components/no-group-selected";
 
 export const metadata: Metadata = { title: "Análise de Treinos" };
 export const dynamic = "force-dynamic";
 
 export default async function WorkoutAnalyticsPage() {
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   const db = createServiceClient();
   const now = Date.now();

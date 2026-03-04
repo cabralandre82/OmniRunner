@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import { formatDateISO } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -48,7 +49,7 @@ async function getTemplates(groupId: string): Promise<WorkoutTemplate[]> {
 
 export default async function WorkoutsPage() {
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   let templates: WorkoutTemplate[] = [];
   let fetchError: string | null = null;

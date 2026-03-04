@@ -17,7 +17,7 @@ final class SupabaseFinancialRepo implements IFinancialRepo {
     try {
       final rows = await _db
           .from('coaching_plans')
-          .select()
+          .select('id, group_id, name, description, monthly_price, billing_cycle, max_workouts_per_week, status, created_at')
           .eq('group_id', groupId)
           .order('name');
       return rows.map(_fromPlanRow).toList();
@@ -39,7 +39,7 @@ final class SupabaseFinancialRepo implements IFinancialRepo {
         'billing_cycle': billingCycleToString(plan.billingCycle),
         'max_workouts_per_week': plan.maxWorkoutsPerWeek,
         'status': planStatusToString(plan.status),
-      }).select().single();
+      }).select('id, group_id, name, description, monthly_price, billing_cycle, max_workouts_per_week, status, created_at').single();
       return _fromPlanRow(row);
     } catch (e, st) {
       AppLogger.error('Financial.createPlan failed', error: e, stack: st);
@@ -61,7 +61,7 @@ final class SupabaseFinancialRepo implements IFinancialRepo {
             'status': planStatusToString(plan.status),
           })
           .eq('id', plan.id)
-          .select()
+          .select('id, group_id, name, description, monthly_price, billing_cycle, max_workouts_per_week, status, created_at')
           .single();
       return _fromPlanRow(row);
     } catch (e, st) {
@@ -140,7 +140,7 @@ final class SupabaseFinancialRepo implements IFinancialRepo {
         'plan_id': planId,
         'status': 'active',
         'started_at': DateTime.now().toUtc().toIso8601String(),
-      }).select().single();
+      }).select('id, group_id, athlete_user_id, plan_id, status, started_at, created_at, coaching_plans(name), profiles!athlete_user_id(display_name)').single();
       return _fromSubscriptionRow(row);
     } catch (e, st) {
       AppLogger.error('Financial.createSubscription failed',

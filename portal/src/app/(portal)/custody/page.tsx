@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import { DepositButton } from "./deposit-button";
 import { CustodyTabs } from "./custody-tabs";
 import { formatUsd } from "@/lib/format";
@@ -11,16 +12,16 @@ export const dynamic = "force-dynamic";
 
 export default async function CustodyPage() {
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
-  const db = createServiceClient();
+  const db = createClient();
 
   const [accountRes, depositsRes, withdrawalsRes, coinsRes, settlementsInRes, settlementsOutRes] =
     await Promise.all([
-      db.from("custody_accounts").select("*").eq("group_id", groupId).maybeSingle(),
-      db.from("custody_deposits").select("*").eq("group_id", groupId).order("created_at", { ascending: false }).limit(50),
-      db.from("custody_withdrawals").select("*").eq("group_id", groupId).order("created_at", { ascending: false }).limit(50),
-      db.from("coin_ledger").select("delta_coins").eq("issuer_group_id", groupId),
+      db.from("custody_accounts").select("total_deposited_usd, total_committed, total_settled_usd, is_blocked, blocked_reason").eq("group_id", groupId).maybeSingle(),
+      db.from("custody_deposits").select("id, created_at, status, amount_usd").eq("group_id", groupId).order("created_at", { ascending: false }).limit(50),
+      db.from("custody_withdrawals").select("id, created_at, amount_usd, status").eq("group_id", groupId).order("created_at", { ascending: false }).limit(50),
+      db.rpc("fn_sum_coin_ledger_by_group", { p_group_id: groupId }),
       db.from("clearing_settlements").select("id, net_amount_usd, status, created_at, settled_at").eq("creditor_group_id", groupId).order("created_at", { ascending: false }).limit(30),
       db.from("clearing_settlements").select("id, gross_amount_usd, status, created_at").eq("debtor_group_id", groupId).order("created_at", { ascending: false }).limit(30),
     ]);
@@ -35,9 +36,7 @@ export default async function CustodyPage() {
   const settled = account?.total_settled_usd ?? 0;
   const isBlocked = account?.is_blocked ?? false;
 
-  const coinsAlive = (coinsRes.data ?? []).reduce(
-    (sum: number, r: { delta_coins: number }) => sum + r.delta_coins, 0,
-  );
+  const coinsAlive: number = (coinsRes.data as number) ?? 0;
 
   const invTotalOk = Math.abs(deposited - (committed + available)) < 0.01;
   const invReservedOk = Math.abs(committed - coinsAlive) < 0.01;

@@ -30,7 +30,7 @@ export default async function FeesPage() {
   const supabase = createAdminClient();
   const { data: fees } = await supabase
     .from("platform_fee_config")
-    .select("*")
+    .select("id, fee_type, rate_pct, is_active, updated_at")
     .order("fee_type");
 
   return (

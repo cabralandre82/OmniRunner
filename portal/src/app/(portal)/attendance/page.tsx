@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import Link from "next/link";
 import { formatDateISO, formatPercent } from "@/lib/format";
 import { AttendanceFilters } from "./attendance-filters";
@@ -76,7 +77,7 @@ export default async function AttendancePage({
   searchParams: Promise<{ from?: string; to?: string; session_id?: string }>;
 }) {
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   const params = await searchParams;
 
@@ -88,19 +89,28 @@ export default async function AttendancePage({
   let fetchError: string | null = null;
 
   try {
-    const result = await getAttendanceData(
-      groupId,
-      params.from,
-      params.to,
-      params.session_id,
-    );
-    sessions = result.sessions;
-    attendanceBySession = result.attendanceBySession;
-    totalCheckIns = result.totalCheckIns;
-    athleteCount = result.athleteCount;
+    const allResult = await getAttendanceData(groupId, params.from, params.to);
+    allSessionsForFilter = allResult.sessions;
 
-    const filterResult = await getAttendanceData(groupId, params.from, params.to);
-    allSessionsForFilter = filterResult.sessions;
+    if (params.session_id) {
+      const filtered = allResult.sessions.filter((s) => s.id === params.session_id);
+      const filteredAttendance = new Map<string, number>();
+      let filteredCheckIns = 0;
+      for (const s of filtered) {
+        const count = allResult.attendanceBySession.get(s.id) ?? 0;
+        filteredAttendance.set(s.id, count);
+        filteredCheckIns += count;
+      }
+      sessions = filtered;
+      attendanceBySession = filteredAttendance;
+      totalCheckIns = filteredCheckIns;
+      athleteCount = allResult.athleteCount;
+    } else {
+      sessions = allResult.sessions;
+      attendanceBySession = allResult.attendanceBySession;
+      totalCheckIns = allResult.totalCheckIns;
+      athleteCount = allResult.athleteCount;
+    }
   } catch (e) {
     fetchError = String(e);
   }

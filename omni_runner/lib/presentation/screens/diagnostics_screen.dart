@@ -86,6 +86,21 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
+    if (!kDebugMode) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Diagnóstico')),
+        body: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(32),
+            child: Text(
+              'Diagnóstico não disponível',
+              style: TextStyle(fontSize: 16),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Diagnóstico')),
       body: _loading

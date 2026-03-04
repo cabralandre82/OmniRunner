@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { NoGroupSelected } from "@/components/no-group-selected";
 
 export const metadata: Metadata = { title: "Configurações" };
 export const dynamic = "force-dynamic";
@@ -48,7 +49,7 @@ interface TopupSettings {
 export default async function SettingsPage() {
   const groupId = cookies().get("portal_group_id")?.value;
   const role = cookies().get("portal_role")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   const isAdmin = role === "admin_master";
   const supabase = createClient();

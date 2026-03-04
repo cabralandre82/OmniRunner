@@ -90,386 +90,41 @@ serve(async (req: Request) => {
       return jsonErr(400, "BAD_REQUEST", "Invalid JSON", requestId);
     }
 
-    // Only process activity creation events
-    if (event.object_type !== "activity" || event.aspect_type !== "create") {
-      return jsonOk({ ignored: true, reason: `${event.object_type}.${event.aspect_type}` }, requestId);
-    }
-
-    const stravaAthleteId = event.owner_id;
-    const stravaActivityId = event.object_id;
-
+    // ── Queue-based approach: enqueue and return 200 fast ────────────
+    // Strava requires fast webhook responses; heavy processing is deferred.
     const db = createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     });
 
-    // 1. Find user by Strava athlete ID
-    const { data: conn } = await db
-      .from("strava_connections")
-      .select("user_id, access_token, refresh_token, expires_at")
-      .eq("strava_athlete_id", stravaAthleteId)
-      .maybeSingle();
-
-    if (!conn) {
-      return jsonOk({ ignored: true, reason: "no_connection", strava_athlete_id: stravaAthleteId }, requestId);
-    }
-
-    // 2. Check for duplicate
-    const { data: existing } = await db
-      .from("sessions")
+    const { error: enqueueErr } = await db
+      .from("strava_event_queue")
+      .insert({
+        owner_id: event.owner_id,
+        object_type: event.object_type,
+        object_id: event.object_id,
+        aspect_type: event.aspect_type,
+        event_time: event.event_time,
+        subscription_id: event.subscription_id ?? null,
+        status: "pending",
+      }, { onConflict: "owner_id,object_id,aspect_type" })
+      // dedup: the unique index on (owner_id, object_id, aspect_type) prevents duplicates
       .select("id")
-      .eq("user_id", conn.user_id)
-      .eq("strava_activity_id", stravaActivityId)
       .maybeSingle();
 
-    if (existing) {
-      return jsonOk({ ignored: true, reason: "duplicate", strava_activity_id: stravaActivityId }, requestId);
+    if (enqueueErr) {
+      const msg = enqueueErr.message ?? "";
+      // ON CONFLICT / duplicate → already queued, still return 200
+      if (msg.includes("duplicate") || msg.includes("unique") || msg.includes("conflict")) {
+        return jsonOk({ queued: false, reason: "already_queued", owner_id: event.owner_id, object_id: event.object_id }, requestId);
+      }
+      console.error(JSON.stringify({ request_id: requestId, fn: FN, error_code: "ENQUEUE_FAILED", detail: msg }));
     }
-
-    // 3. Get valid access token (refresh if expired)
-    let accessToken = conn.access_token;
-    const now = Math.floor(Date.now() / 1000);
-
-    if (conn.expires_at < now + 300) {
-      const clientId = Deno.env.get("STRAVA_CLIENT_ID");
-      const clientSecret = Deno.env.get("STRAVA_CLIENT_SECRET");
-
-      if (!clientId || !clientSecret) {
-        status = 500;
-        errorCode = "STRAVA_CONFIG_MISSING";
-        return jsonErr(500, "INTERNAL", "Strava credentials not configured", requestId);
-      }
-
-      const refreshRes = await fetch("https://www.strava.com/oauth/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          grant_type: "refresh_token",
-          refresh_token: conn.refresh_token,
-        }),
-      });
-
-      if (!refreshRes.ok) {
-        console.error(JSON.stringify({ request_id: requestId, fn: FN, error_code: "TOKEN_REFRESH_FAILED", status: refreshRes.status }));
-        return jsonOk({ ignored: true, reason: "token_refresh_failed" }, requestId);
-      }
-
-      const tokens = await refreshRes.json();
-      accessToken = tokens.access_token;
-
-      await db
-        .from("strava_connections")
-        .update({
-          access_token: tokens.access_token,
-          refresh_token: tokens.refresh_token ?? conn.refresh_token,
-          expires_at: tokens.expires_at,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("user_id", conn.user_id);
-    }
-
-    // 4. Fetch activity details
-    const activityRes = await fetch(
-      `https://www.strava.com/api/v3/activities/${stravaActivityId}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } },
-    );
-
-    if (!activityRes.ok) {
-      console.error(JSON.stringify({ request_id: requestId, fn: FN, error_code: "ACTIVITY_FETCH_FAILED", status: activityRes.status }));
-      return jsonOk({ ignored: true, reason: "activity_fetch_failed" }, requestId);
-    }
-
-    const activity = await activityRes.json();
-
-    // Only import runs
-    const runTypes = ["Run", "TrailRun", "VirtualRun"];
-    if (!runTypes.includes(activity.type)) {
-      return jsonOk({ ignored: true, reason: `type_${activity.type}` }, requestId);
-    }
-
-    // 5. Fetch GPS + HR streams for anti-cheat
-    const streamsRes = await fetch(
-      `https://www.strava.com/api/v3/activities/${stravaActivityId}/streams?keys=latlng,time,heartrate,velocity_smooth,altitude,cadence&key_type=time`,
-      { headers: { Authorization: `Bearer ${accessToken}` } },
-    );
-
-    let streams: Record<string, { data: number[] | number[][] }> = {};
-    if (streamsRes.ok) {
-      const raw = await streamsRes.json();
-      if (Array.isArray(raw)) {
-        for (const s of raw) {
-          streams[s.type] = { data: s.data };
-        }
-      }
-    }
-
-    // 6. Run anti-cheat on GPS streams
-    const integrityFlags: string[] = [];
-    const latlng = streams.latlng?.data as number[][] | undefined;
-    const time = streams.time?.data as number[] | undefined;
-    const velocity = streams.velocity_smooth?.data as number[] | undefined;
-    const cadence = streams.cadence?.data as number[] | undefined;
-
-    // Distance check (min 1km for valid run)
-    if (activity.distance < 1000) {
-      integrityFlags.push("TOO_SHORT_DISTANCE");
-    }
-
-    // Duration check
-    if (activity.moving_time < 60) {
-      integrityFlags.push("TOO_SHORT_DURATION");
-    }
-
-    // Pace check (faster than 2:30/km = world record territory)
-    if (activity.distance > 0 && activity.moving_time > 0) {
-      const paceSecKm = (activity.moving_time / (activity.distance / 1000));
-      if (paceSecKm < 150) {
-        integrityFlags.push("SPEED_IMPOSSIBLE");
-      }
-      if (paceSecKm < 180 || paceSecKm > 1200) {
-        integrityFlags.push("IMPLAUSIBLE_PACE");
-      }
-    }
-
-    // GPS point analysis
-    if (latlng && latlng.length > 0 && time && time.length === latlng.length) {
-      if (latlng.length < 10) {
-        integrityFlags.push("TOO_FEW_POINTS");
-      }
-
-      // Check for GPS jumps and speed between consecutive points
-      for (let i = 1; i < latlng.length; i++) {
-        const dt = (time[i] - time[i - 1]);
-        if (dt <= 0) continue;
-
-        const dist = haversine(
-          latlng[i - 1][0], latlng[i - 1][1],
-          latlng[i][0], latlng[i][1],
-        );
-
-        // > 500m between consecutive points = GPS jump
-        if (dist > 500 && dt < 30) {
-          integrityFlags.push("GPS_JUMP");
-          break;
-        }
-
-        // > 2km between points = teleport
-        if (dist > 2000 && dt < 60) {
-          integrityFlags.push("TELEPORT");
-          break;
-        }
-
-        // Speed > 12 m/s (43 km/h) sustained = vehicle
-        const speed = dist / dt;
-        if (speed > 12 && dt > 10) {
-          integrityFlags.push("SPEED_IMPOSSIBLE");
-          break;
-        }
-      }
-
-      // Check for GPS gaps (> 60s between points)
-      let gapCount = 0;
-      for (let i = 1; i < time.length; i++) {
-        if (time[i] - time[i - 1] > 60) gapCount++;
-      }
-      if (gapCount > 3) {
-        integrityFlags.push("BACKGROUND_GPS_GAP");
-      }
-
-      // No motion pattern: velocity too constant (low stddev)
-      if (velocity && velocity.length > 20) {
-        const nonZero = velocity.filter((v) => v > 0.5);
-        if (nonZero.length > 10) {
-          const mean = nonZero.reduce((a, b) => a + b, 0) / nonZero.length;
-          const variance = nonZero.reduce((a, b) => a + (b - mean) ** 2, 0) / nonZero.length;
-          const stddev = Math.sqrt(variance);
-          const cv = stddev / mean;
-          if (cv < 0.03) {
-            integrityFlags.push("NO_MOTION_PATTERN");
-          }
-        }
-      }
-
-      // Vehicle suspected: cadence zero with high speed
-      if (cadence && velocity) {
-        let zeroCadenceHighSpeed = 0;
-        for (let i = 0; i < Math.min(cadence.length, velocity.length); i++) {
-          if (cadence[i] === 0 && velocity[i] > 5) zeroCadenceHighSpeed++;
-        }
-        if (zeroCadenceHighSpeed > cadence.length * 0.5) {
-          integrityFlags.push("VEHICLE_SUSPECTED");
-        }
-      }
-    } else if (!latlng || latlng.length === 0) {
-      integrityFlags.push("TOO_FEW_POINTS");
-    }
-
-    // Deduplicate flags
-    const uniqueFlags = [...new Set(integrityFlags)];
-    const hasCritical = uniqueFlags.some((f) =>
-      ["SPEED_IMPOSSIBLE", "GPS_JUMP", "TELEPORT", "VEHICLE_SUSPECTED",
-       "NO_MOTION_PATTERN", "BACKGROUND_GPS_GAP", "TIME_SKEW"].includes(f)
-    );
-
-    // 7. Calculate metrics
-    const startTimeMs = new Date(activity.start_date).getTime();
-    const endTimeMs = startTimeMs + (activity.elapsed_time * 1000);
-    const avgPaceSecKm = activity.distance > 0
-      ? (activity.moving_time / (activity.distance / 1000))
-      : null;
-
-    // 8. Store GPS points in Supabase Storage
-    let pointsPath: string | null = null;
-    if (latlng && time && latlng.length > 0) {
-      const points = latlng.map((ll, i) => ({
-        lat: ll[0],
-        lng: ll[1],
-        ts: startTimeMs + (time[i] * 1000),
-        alt: streams.altitude?.data?.[i] ?? null,
-        hr: streams.heartrate?.data?.[i] ?? null,
-        spd: velocity?.[i] ?? null,
-      }));
-
-      const sessionId = crypto.randomUUID();
-      pointsPath = `session-points/${conn.user_id}/${sessionId}.json`;
-
-      const { error: storageErr } = await db.storage
-        .from("session-points")
-        .upload(pointsPath, JSON.stringify(points), {
-          contentType: "application/json",
-          upsert: true,
-        });
-
-      if (storageErr) {
-        console.error(JSON.stringify({ request_id: requestId, fn: FN, error_code: "STORAGE_FAILED", detail: storageErr.message }));
-        pointsPath = null;
-      }
-
-      // 9. Create session
-      const { error: insertErr } = await db
-        .from("sessions")
-        .insert({
-          id: sessionId,
-          user_id: conn.user_id,
-          status: 3, // completed (initial=0, running=1, paused=2, completed=3, discarded=4)
-          start_time_ms: startTimeMs,
-          end_time_ms: endTimeMs,
-          total_distance_m: activity.distance ?? 0,
-          moving_ms: (activity.moving_time ?? 0) * 1000,
-          avg_pace_sec_km: avgPaceSecKm,
-          avg_bpm: activity.average_heartrate ? Math.round(activity.average_heartrate) : null,
-          max_bpm: activity.max_heartrate ? Math.round(activity.max_heartrate) : null,
-          is_verified: !hasCritical,
-          integrity_flags: uniqueFlags,
-          points_path: pointsPath,
-          is_synced: true,
-          source: "strava",
-          strava_activity_id: stravaActivityId,
-          device_name: activity.device_name ?? null,
-        });
-
-      if (insertErr) {
-        const msg = insertErr.message ?? "";
-        if (msg.includes("duplicate") || msg.includes("unique")) {
-          return jsonOk({ ignored: true, reason: "duplicate_insert" }, requestId);
-        }
-        console.error(JSON.stringify({ request_id: requestId, fn: FN, error_code: "INSERT_FAILED", detail: msg }));
-        status = 500;
-        errorCode = "INSERT_FAILED";
-        return jsonErr(500, "INTERNAL", "Failed to create session", requestId);
-      }
-
-      // 10. Link to active challenges (server-side dispatch)
-      if (!hasCritical) {
-        try {
-          await linkSessionToChallenges(db, conn.user_id, sessionId, activity);
-        } catch (e) {
-          console.error(JSON.stringify({
-            request_id: requestId, fn: FN,
-            error_code: "CHALLENGE_LINK_FAILED",
-            detail: (e as Error).message,
-          }));
-        }
-
-        db.rpc("eval_athlete_verification", { p_user_id: conn.user_id }).then(() => {}, () => {});
-
-        // Update profile_progress (XP, level, stats) and evaluate badges for this verified session
-        db.rpc("recalculate_profile_progress", { p_user_id: conn.user_id }).then(() => {
-          db.rpc("evaluate_badges_retroactive", { p_user_id: conn.user_id }).then(() => {}, () => {});
-        }, () => {});
-      }
-
-      // 11. Park detection — match GPS start to known parks
-      if (latlng && latlng.length > 0) {
-        try {
-          await detectAndLinkPark(db, conn.user_id, sessionId, stravaActivityId, activity, latlng);
-        } catch (e) {
-          console.error(JSON.stringify({
-            request_id: requestId, fn: FN,
-            error_code: "PARK_DETECTION_FAILED",
-            detail: (e as Error).message,
-          }));
-        }
-      }
-
-      // 12. Analytics
-      db.from("product_events").insert({
-        user_id: conn.user_id,
-        event_name: "strava_activity_imported",
-        properties: {
-          strava_activity_id: stravaActivityId,
-          session_id: sessionId,
-          distance_m: activity.distance,
-          moving_time_s: activity.moving_time,
-          device_name: activity.device_name,
-          integrity_flags: uniqueFlags,
-          is_verified: !hasCritical,
-          source_type: activity.type,
-        },
-      }).then(() => {}, () => {});
-
-      return jsonOk({
-        imported: true,
-        session_id: sessionId,
-        strava_activity_id: stravaActivityId,
-        distance_m: activity.distance,
-        is_verified: !hasCritical,
-        integrity_flags: uniqueFlags,
-        device_name: activity.device_name,
-      }, requestId);
-    }
-
-    // No GPS data at all — still create session but not verified
-    const sessionId = crypto.randomUUID();
-    uniqueFlags.push("TOO_FEW_POINTS");
-
-    await db.from("sessions").insert({
-      id: sessionId,
-      user_id: conn.user_id,
-      status: 3, // completed
-      start_time_ms: startTimeMs,
-      end_time_ms: endTimeMs,
-      total_distance_m: activity.distance ?? 0,
-      moving_ms: (activity.moving_time ?? 0) * 1000,
-      avg_pace_sec_km: avgPaceSecKm,
-      avg_bpm: activity.average_heartrate ? Math.round(activity.average_heartrate) : null,
-      max_bpm: activity.max_heartrate ? Math.round(activity.max_heartrate) : null,
-      is_verified: false,
-      integrity_flags: uniqueFlags,
-      is_synced: true,
-      source: "strava",
-      strava_activity_id: stravaActivityId,
-      device_name: activity.device_name ?? null,
-    });
 
     return jsonOk({
-      imported: true,
-      session_id: sessionId,
-      strava_activity_id: stravaActivityId,
-      is_verified: false,
-      integrity_flags: uniqueFlags,
-      no_gps: true,
+      queued: true,
+      owner_id: event.owner_id,
+      object_id: event.object_id,
+      aspect_type: event.aspect_type,
     }, requestId);
 
   } catch (err) {
@@ -491,6 +146,265 @@ serve(async (req: Request) => {
     }
   }
 });
+
+// ═════════════════════════════════════════════════════════════════════════════
+// processStravaEvent — Contains the full processing logic.
+// Designed to be called by a queue processor (separate cron/function).
+// ═════════════════════════════════════════════════════════════════════════════
+
+export async function processStravaEvent(
+  db: ReturnType<typeof createClient>,
+  event: { owner_id: number; object_id: number; aspect_type: string },
+  requestId: string,
+): Promise<{ imported: boolean; ignored?: boolean; reason?: string; session_id?: string }> {
+  const stravaAthleteId = event.owner_id;
+  const stravaActivityId = event.object_id;
+
+  if (event.aspect_type !== "create") {
+    return { imported: false, ignored: true, reason: `aspect_${event.aspect_type}` };
+  }
+
+  // 1. Find user by Strava athlete ID
+  const { data: conn } = await db
+    .from("strava_connections")
+    .select("user_id, access_token, refresh_token, expires_at")
+    .eq("strava_athlete_id", stravaAthleteId)
+    .maybeSingle();
+
+  if (!conn) return { imported: false, ignored: true, reason: "no_connection" };
+
+  // 2. Check for duplicate
+  const { data: existing } = await db
+    .from("sessions")
+    .select("id")
+    .eq("user_id", conn.user_id)
+    .eq("strava_activity_id", stravaActivityId)
+    .maybeSingle();
+
+  if (existing) return { imported: false, ignored: true, reason: "duplicate" };
+
+  // 3. Get valid access token (refresh if expired)
+  let accessToken = conn.access_token;
+  const now = Math.floor(Date.now() / 1000);
+
+  if (conn.expires_at < now + 300) {
+    const clientId = Deno.env.get("STRAVA_CLIENT_ID");
+    const clientSecret = Deno.env.get("STRAVA_CLIENT_SECRET");
+    if (!clientId || !clientSecret) return { imported: false, reason: "strava_config_missing" };
+
+    const refreshCtrl = new AbortController();
+    const refreshTimer = setTimeout(() => refreshCtrl.abort(), 15_000);
+    let refreshRes: Response;
+    try {
+      refreshRes = await fetch("https://www.strava.com/oauth/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          client_id: clientId,
+          client_secret: clientSecret,
+          grant_type: "refresh_token",
+          refresh_token: conn.refresh_token,
+        }),
+        signal: refreshCtrl.signal,
+      });
+    } finally {
+      clearTimeout(refreshTimer);
+    }
+
+    if (!refreshRes.ok) return { imported: false, ignored: true, reason: "token_refresh_failed" };
+
+    const tokens = await refreshRes.json();
+    accessToken = tokens.access_token;
+
+    await db
+      .from("strava_connections")
+      .update({
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token ?? conn.refresh_token,
+        expires_at: tokens.expires_at,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", conn.user_id);
+  }
+
+  // 4. Fetch activity details
+  const activityCtrl = new AbortController();
+  const activityTimer = setTimeout(() => activityCtrl.abort(), 15_000);
+  let activityRes: Response;
+  try {
+    activityRes = await fetch(
+      `https://www.strava.com/api/v3/activities/${stravaActivityId}`,
+      { headers: { Authorization: `Bearer ${accessToken}` }, signal: activityCtrl.signal },
+    );
+  } finally {
+    clearTimeout(activityTimer);
+  }
+
+  if (!activityRes.ok) return { imported: false, ignored: true, reason: "activity_fetch_failed" };
+
+  const activity = await activityRes.json();
+  const runTypes = ["Run", "TrailRun", "VirtualRun"];
+  if (!runTypes.includes(activity.type)) return { imported: false, ignored: true, reason: `type_${activity.type}` };
+
+  // 5. Fetch GPS + HR streams
+  const streamsCtrl = new AbortController();
+  const streamsTimer = setTimeout(() => streamsCtrl.abort(), 15_000);
+  let streamsRes: Response;
+  try {
+    streamsRes = await fetch(
+      `https://www.strava.com/api/v3/activities/${stravaActivityId}/streams?keys=latlng,time,heartrate,velocity_smooth,altitude,cadence&key_type=time`,
+      { headers: { Authorization: `Bearer ${accessToken}` }, signal: streamsCtrl.signal },
+    );
+  } finally {
+    clearTimeout(streamsTimer);
+  }
+
+  let streams: Record<string, { data: number[] | number[][] }> = {};
+  if (streamsRes.ok) {
+    const raw = await streamsRes.json();
+    if (Array.isArray(raw)) {
+      for (const s of raw) {
+        streams[s.type] = { data: s.data };
+      }
+    }
+  }
+
+  // 6. Anti-cheat
+  const integrityFlags: string[] = [];
+  const latlng = streams.latlng?.data as number[][] | undefined;
+  const time = streams.time?.data as number[] | undefined;
+  const velocity = streams.velocity_smooth?.data as number[] | undefined;
+  const cadence = streams.cadence?.data as number[] | undefined;
+
+  if (activity.distance < 1000) integrityFlags.push("TOO_SHORT_DISTANCE");
+  if (activity.moving_time < 60) integrityFlags.push("TOO_SHORT_DURATION");
+  if (activity.distance > 0 && activity.moving_time > 0) {
+    const paceSecKm = activity.moving_time / (activity.distance / 1000);
+    if (paceSecKm < 150) integrityFlags.push("SPEED_IMPOSSIBLE");
+    if (paceSecKm < 180 || paceSecKm > 1200) integrityFlags.push("IMPLAUSIBLE_PACE");
+  }
+
+  if (latlng && latlng.length > 0 && time && time.length === latlng.length) {
+    if (latlng.length < 10) integrityFlags.push("TOO_FEW_POINTS");
+    for (let i = 1; i < latlng.length; i++) {
+      const dt = time[i] - time[i - 1];
+      if (dt <= 0) continue;
+      const dist = haversine(latlng[i - 1][0], latlng[i - 1][1], latlng[i][0], latlng[i][1]);
+      if (dist > 500 && dt < 30) { integrityFlags.push("GPS_JUMP"); break; }
+      if (dist > 2000 && dt < 60) { integrityFlags.push("TELEPORT"); break; }
+      const speed = dist / dt;
+      if (speed > 12 && dt > 10) { integrityFlags.push("SPEED_IMPOSSIBLE"); break; }
+    }
+    let gapCount = 0;
+    for (let i = 1; i < time.length; i++) {
+      if (time[i] - time[i - 1] > 60) gapCount++;
+    }
+    if (gapCount > 3) integrityFlags.push("BACKGROUND_GPS_GAP");
+    if (velocity && velocity.length > 20) {
+      const nonZero = velocity.filter((v) => v > 0.5);
+      if (nonZero.length > 10) {
+        const mean = nonZero.reduce((a, b) => a + b, 0) / nonZero.length;
+        const variance = nonZero.reduce((a, b) => a + (b - mean) ** 2, 0) / nonZero.length;
+        const cv = Math.sqrt(variance) / mean;
+        if (cv < 0.03) integrityFlags.push("NO_MOTION_PATTERN");
+      }
+    }
+    if (cadence && velocity) {
+      let zeroCadenceHighSpeed = 0;
+      for (let i = 0; i < Math.min(cadence.length, velocity.length); i++) {
+        if (cadence[i] === 0 && velocity[i] > 5) zeroCadenceHighSpeed++;
+      }
+      if (zeroCadenceHighSpeed > cadence.length * 0.5) integrityFlags.push("VEHICLE_SUSPECTED");
+    }
+  } else if (!latlng || latlng.length === 0) {
+    integrityFlags.push("TOO_FEW_POINTS");
+  }
+
+  const uniqueFlags = [...new Set(integrityFlags)];
+  const hasCritical = uniqueFlags.some((f) =>
+    ["SPEED_IMPOSSIBLE", "GPS_JUMP", "TELEPORT", "VEHICLE_SUSPECTED",
+     "NO_MOTION_PATTERN", "BACKGROUND_GPS_GAP", "TIME_SKEW"].includes(f)
+  );
+
+  // 7. Calculate metrics
+  const startTimeMs = new Date(activity.start_date).getTime();
+  const endTimeMs = startTimeMs + (activity.elapsed_time * 1000);
+  const avgPaceSecKm = activity.distance > 0
+    ? (activity.moving_time / (activity.distance / 1000))
+    : null;
+
+  // 8. Store GPS + create session
+  let pointsPath: string | null = null;
+  const sessionId = crypto.randomUUID();
+
+  if (latlng && time && latlng.length > 0) {
+    const points = latlng.map((ll, i) => ({
+      lat: ll[0], lng: ll[1],
+      ts: startTimeMs + (time[i] * 1000),
+      alt: streams.altitude?.data?.[i] ?? null,
+      hr: streams.heartrate?.data?.[i] ?? null,
+      spd: velocity?.[i] ?? null,
+    }));
+    pointsPath = `session-points/${conn.user_id}/${sessionId}.json`;
+    const { error: storageErr } = await db.storage
+      .from("session-points")
+      .upload(pointsPath, JSON.stringify(points), { contentType: "application/json", upsert: true });
+    if (storageErr) pointsPath = null;
+  }
+
+  const { error: insertErr } = await db.from("sessions").insert({
+    id: sessionId,
+    user_id: conn.user_id,
+    status: 3,
+    start_time_ms: startTimeMs,
+    end_time_ms: endTimeMs,
+    total_distance_m: activity.distance ?? 0,
+    moving_ms: (activity.moving_time ?? 0) * 1000,
+    avg_pace_sec_km: avgPaceSecKm,
+    avg_bpm: activity.average_heartrate ? Math.round(activity.average_heartrate) : null,
+    max_bpm: activity.max_heartrate ? Math.round(activity.max_heartrate) : null,
+    is_verified: !hasCritical && !!(latlng && latlng.length > 0),
+    integrity_flags: uniqueFlags,
+    points_path: pointsPath,
+    is_synced: true,
+    source: "strava",
+    strava_activity_id: stravaActivityId,
+    device_name: activity.device_name ?? null,
+  });
+
+  if (insertErr) {
+    const msg = insertErr.message ?? "";
+    if (msg.includes("duplicate") || msg.includes("unique")) {
+      return { imported: false, ignored: true, reason: "duplicate_insert" };
+    }
+    throw new Error(`INSERT_FAILED: ${msg}`);
+  }
+
+  if (!hasCritical && latlng && latlng.length > 0) {
+    try { await linkSessionToChallenges(db, conn.user_id, sessionId, activity); } catch { /* best-effort */ }
+    db.rpc("eval_athlete_verification", { p_user_id: conn.user_id }).then(() => {}, () => {});
+    db.rpc("recalculate_profile_progress", { p_user_id: conn.user_id }).then(() => {
+      db.rpc("evaluate_badges_retroactive", { p_user_id: conn.user_id }).then(() => {}, () => {});
+    }, () => {});
+  }
+
+  if (latlng && latlng.length > 0) {
+    try { await detectAndLinkPark(db, conn.user_id, sessionId, stravaActivityId, activity, latlng); } catch { /* best-effort */ }
+  }
+
+  db.from("product_events").insert({
+    user_id: conn.user_id,
+    event_name: "strava_activity_imported",
+    properties: {
+      strava_activity_id: stravaActivityId, session_id: sessionId,
+      distance_m: activity.distance, moving_time_s: activity.moving_time,
+      device_name: activity.device_name, integrity_flags: uniqueFlags,
+      is_verified: !hasCritical, source_type: activity.type,
+    },
+  }).then(() => {}, () => {});
+
+  return { imported: true, session_id: sessionId };
+}
 
 // ── Link session to active challenges ───────────────────────────────────────
 
@@ -595,9 +509,14 @@ async function detectAndLinkPark(
   const startLat = latlng[0][0];
   const startLng = latlng[0][1];
 
+  const BBOX_DELTA = 0.1; // ~11 km bounding box
   const { data: parks } = await db
     .from("parks")
-    .select("id, center_lat, center_lng, radius_m");
+    .select("id, center_lat, center_lng, radius_m")
+    .gte("center_lat", startLat - BBOX_DELTA)
+    .lte("center_lat", startLat + BBOX_DELTA)
+    .gte("center_lng", startLng - BBOX_DELTA)
+    .lte("center_lng", startLng + BBOX_DELTA);
 
   if (!parks || parks.length === 0) return;
 
@@ -614,7 +533,7 @@ async function detectAndLinkPark(
         ? activity.moving_time / (activity.distance / 1000)
         : null;
 
-      await db.from("park_activities").insert({
+      await db.from("park_activities").upsert({
         park_id: park.id,
         user_id: userId,
         session_id: sessionId,
@@ -625,7 +544,7 @@ async function detectAndLinkPark(
         avg_pace_sec_km: avgPace,
         avg_heartrate: activity.average_heartrate ?? null,
         start_time: activity.start_date,
-      });
+      }, { onConflict: "session_id,park_id", ignoreDuplicates: true });
 
       break; // One park per activity
     }

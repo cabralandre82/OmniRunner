@@ -69,11 +69,28 @@ class AthleteEvolutionScreen extends StatelessWidget {
           AthleteEvolutionError(:final message) => Center(
               child: Padding(
                 padding: const EdgeInsets.all(DesignTokens.spacingLg),
-                child: Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style:
-                      TextStyle(color: Theme.of(context).colorScheme.error),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.cloud_off_rounded,
+                        size: 48,
+                        color: Theme.of(context).colorScheme.error),
+                    const SizedBox(height: 12),
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error),
+                    ),
+                    const SizedBox(height: 20),
+                    OutlinedButton.icon(
+                      onPressed: () => context
+                          .read<AthleteEvolutionBloc>()
+                          .add(const RefreshAthleteEvolution()),
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('Tentar novamente'),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -198,17 +215,19 @@ class _EvolutionContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (selectedTrend == null && selectedBaseline == null) {
+    final trend = selectedTrend;
+    final baseline = selectedBaseline;
+    if (trend == null && baseline == null) {
       return const _EmptyState();
     }
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingSm),
       children: [
-        if (selectedTrend != null) _TrendCard(trend: selectedTrend!),
-        if (selectedBaseline != null) ...[
+        if (trend != null) _TrendCard(trend: trend),
+        if (baseline != null) ...[
           const SizedBox(height: 12),
           _BaselineCard(
-            baseline: selectedBaseline!,
+            baseline: baseline,
             metric: selectedMetric,
           ),
         ],

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
+import { LastUpdated } from "@/components/last-updated";
 import { StatBlock, DashboardCard } from "@/components/ui";
-import { DistributeButton } from "./distribute-button";
+import { AthletesTableClient } from "./athletes-table-client";
 
 export const metadata: Metadata = { title: "Atletas" };
 export const dynamic = "force-dynamic";
@@ -18,23 +20,12 @@ interface Athlete {
   last_session_at: string | null;
 }
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  VERIFIED: { label: "Verificado", color: "bg-success-soft text-success" },
-  CALIBRATING: { label: "Calibrando", color: "bg-info-soft text-info" },
-  MONITORED: { label: "Observação", color: "bg-warning-soft text-warning" },
-  DOWNGRADED: { label: "Rebaixado", color: "bg-error-soft text-error" },
-  UNVERIFIED: { label: "Sem status", color: "bg-neutral-soft text-content-muted" },
-};
-
-import { formatKm, formatDateISO, formatDateMs } from "@/lib/format";
-
-const formatDate = formatDateISO;
-const formatJoinDate = formatDateMs;
+import { formatKm } from "@/lib/format";
 
 export default async function AthletesPage() {
   const groupId = cookies().get("portal_group_id")?.value;
   const role = cookies().get("portal_role")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
   const isAdmin = role === "admin_master";
 
   let athletes: Athlete[] = [];
@@ -44,7 +35,7 @@ export default async function AthletesPage() {
   let fetchError = false;
 
   try {
-    const db = createServiceClient();
+    const db = createClient();
 
     const { data: members } = await db
       .from("coaching_members")
@@ -60,16 +51,12 @@ export default async function AthletesPage() {
     const sessionMap = new Map<string, { total: number; distance: number; last_at: string | null }>();
 
     if (userIds.length > 0) {
-      const [verRes, sessionsRes] = await Promise.all([
+      const [verRes, statsRes] = await Promise.all([
         db
           .from("athlete_verification")
           .select("user_id, verification_status, trust_score")
           .in("user_id", userIds),
-        db
-          .from("sessions")
-          .select("user_id, total_distance_m, start_time_ms")
-          .in("user_id", userIds)
-          .gte("status", 3),
+        db.rpc("fn_athlete_session_stats", { p_user_ids: userIds }),
       ]);
 
       for (const v of verRes.data ?? []) {
@@ -77,21 +64,13 @@ export default async function AthletesPage() {
         verMap.set(row.user_id, { verification_status: row.verification_status, trust_score: row.trust_score });
       }
 
-      for (const s of sessionsRes.data ?? []) {
-        const row = s as { user_id: string; total_distance_m: number; start_time_ms: number };
-        const existing = sessionMap.get(row.user_id);
-        const startIso = new Date(row.start_time_ms).toISOString();
-        if (existing) {
-          existing.total++;
-          existing.distance += row.total_distance_m ?? 0;
-          if (!existing.last_at || startIso > existing.last_at) existing.last_at = startIso;
-        } else {
-          sessionMap.set(row.user_id, {
-            total: 1,
-            distance: row.total_distance_m ?? 0,
-            last_at: startIso,
-          });
-        }
+      for (const s of statsRes.data ?? []) {
+        const row = s as { user_id: string; session_count: number; total_distance_m: number; total_duration_s: number; last_session_at: string | null };
+        sessionMap.set(row.user_id, {
+          total: row.session_count ?? 0,
+          distance: row.total_distance_m ?? 0,
+          last_at: row.last_session_at ?? null,
+        });
       }
     }
 
@@ -161,90 +140,10 @@ export default async function AthletesPage() {
           </p>
         </DashboardCard>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-border text-sm">
-              <thead className="bg-bg-secondary">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-content-muted">
-                    Atleta
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-content-muted">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-content-muted">
-                    Trust
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-content-muted">
-                    Corridas
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-content-muted">
-                    Distância
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-content-muted">
-                    Última Corrida
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-content-muted">
-                    Membro Desde
-                  </th>
-                  {isAdmin && (
-                    <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-content-muted">
-                      OmniCoins
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-subtle">
-                {athletes.map((a) => {
-                  const s = STATUS_LABELS[a.verification_status] ?? STATUS_LABELS.UNVERIFIED;
-                  return (
-                    <tr key={a.user_id} className="hover:bg-surface-elevated transition-colors">
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <p className="font-medium text-content-primary">
-                          {a.display_name}
-                        </p>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${s.color}`}
-                        >
-                          {s.label}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-center">
-                        <span className="font-semibold text-content-primary">
-                          {a.trust_score}
-                        </span>
-                        <span className="text-xs text-content-muted">/100</span>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-center text-content-secondary">
-                        {a.total_sessions}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right text-content-secondary">
-                        {formatKm(a.total_distance_m)} km
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-content-muted">
-                        {formatDate(a.last_session_at)}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-content-muted">
-                        {formatJoinDate(a.joined_at_ms)}
-                      </td>
-                      {isAdmin && (
-                        <td className="whitespace-nowrap px-4 py-3 text-center">
-                          <DistributeButton
-                            athleteId={a.user_id}
-                            athleteName={a.display_name}
-                          />
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <AthletesTableClient athletes={athletes} isAdmin={isAdmin} />
       )}
+
+      <LastUpdated />
     </div>
   );
 }

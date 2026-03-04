@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/data/services/workout_delivery_service.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
+import 'package:omni_runner/presentation/widgets/state_widgets.dart';
+import 'package:omni_runner/presentation/widgets/error_state.dart';
 
 class AthleteDeliveryScreen extends StatefulWidget {
   const AthleteDeliveryScreen({super.key});
@@ -41,16 +43,11 @@ class _AthleteDeliveryScreenState extends State<AthleteDeliveryScreen> {
     });
     try {
       final uid = sl<UserIdentityProvider>().userId;
-      final rows = await Supabase.instance.client
-          .from('workout_delivery_items')
-          .select()
-          .eq('athlete_user_id', uid)
-          .inFilter('status', ['published'])
-          .order('created_at', ascending: false);
+      final rows = await sl<WorkoutDeliveryService>().listPublishedItems(uid);
 
       if (mounted) {
         setState(() {
-          _items = List<Map<String, dynamic>>.from(rows as List);
+          _items = rows;
           _loading = false;
         });
       }
@@ -63,7 +60,7 @@ class _AthleteDeliveryScreenState extends State<AthleteDeliveryScreen> {
       );
       if (mounted) {
         setState(() {
-          _error = 'Erro ao carregar entregas: $e';
+          _error = ErrorMessages.humanize(e);
           _loading = false;
         });
       }
@@ -75,11 +72,11 @@ class _AthleteDeliveryScreenState extends State<AthleteDeliveryScreen> {
     if (_confirmingIds.contains(itemId)) return;
     setState(() => _confirmingIds.add(itemId));
     try {
-      await Supabase.instance.client.rpc('fn_athlete_confirm_item', params: {
-        'p_item_id': itemId,
-        'p_result': result,
-        'p_reason': reason,
-      });
+      await sl<WorkoutDeliveryService>().confirmItem(
+        itemId: itemId,
+        result: result,
+        reason: reason,
+      );
       if (!mounted) return;
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -100,7 +97,7 @@ class _AthleteDeliveryScreenState extends State<AthleteDeliveryScreen> {
       if (mounted) {
         setState(() => _confirmingIds.remove(itemId));
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao confirmar: $e')),
+          SnackBar(content: Text(ErrorMessages.humanize(e))),
         );
       }
     }
@@ -165,60 +162,21 @@ class _AthleteDeliveryScreenState extends State<AthleteDeliveryScreen> {
   }
 
   Widget _buildBody() {
-    final theme = Theme.of(context);
-
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoadingState();
     }
 
     if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(DesignTokens.spacingLg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.error_outline_rounded,
-                  size: 48, color: theme.colorScheme.error),
-              const SizedBox(height: DesignTokens.spacingMd),
-              Text(
-                _error!,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.error,
-                ),
-              ),
-              const SizedBox(height: DesignTokens.spacingLg),
-              FilledButton.icon(
-                onPressed: _loadItems,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Tentar novamente'),
-              ),
-            ],
-          ),
-        ),
+      return ErrorState(
+        message: _error ?? '',
+        onRetry: _loadItems,
       );
     }
 
     if (_items.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(DesignTokens.spacingXl),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.check_circle_outline,
-                  size: 64, color: DesignTokens.success.withValues(alpha: 0.6)),
-              const SizedBox(height: DesignTokens.spacingMd),
-              Text(
-                'Nenhuma entrega pendente',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: DesignTokens.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
+      return AppEmptyState(
+        message: 'Nenhuma entrega pendente',
+        icon: Icons.check_circle_outline,
       );
     }
 

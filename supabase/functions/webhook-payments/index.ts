@@ -336,6 +336,7 @@ serve(async (req: Request) => {
   const elapsed = startTimer();
   let status = 200;
   let errorCode: string | undefined;
+  let rawBody: string | undefined;
 
   try {
     if (req.method !== "POST") {
@@ -358,7 +359,7 @@ serve(async (req: Request) => {
     }
 
     // ── 2. Verify Stripe signature ──────────────────────────────────────
-    const rawBody = await req.text();
+    rawBody = await req.text();
     const sig = req.headers.get("stripe-signature");
 
     if (!sig) {
@@ -461,13 +462,48 @@ serve(async (req: Request) => {
   } catch (err) {
     status = 500;
     errorCode = "INTERNAL";
+    const errMsg = (err as Error).message;
     logError({
       request_id: requestId,
       fn: FN,
       user_id: null,
-      error_code: `INTERNAL: ${(err as Error).message}`,
+      error_code: `INTERNAL: ${errMsg}`,
       duration_ms: elapsed(),
     });
+
+    // Dead-letter queue: persist the failed event for manual recovery
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const serviceKey =
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+        Deno.env.get("SERVICE_ROLE_KEY");
+      if (supabaseUrl && serviceKey) {
+        const dlDb = createClient(supabaseUrl, serviceKey, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+        });
+        await dlDb.from("billing_webhook_dead_letters").insert({
+          source: "stripe",
+          request_id: requestId,
+          error_message: errMsg,
+          payload: rawBody ?? null,
+          headers: Object.fromEntries(
+            [...req.headers.entries()].filter(
+              ([k]) => !["stripe-signature", "authorization", "cookie"].includes(k.toLowerCase()),
+            ),
+          ),
+          created_at: new Date().toISOString(),
+        });
+      }
+    } catch (dlErr) {
+      console.error(JSON.stringify({
+        request_id: requestId,
+        fn: FN,
+        error_code: "DEAD_LETTER_FAILED",
+        original_error: errMsg,
+        dl_error: (dlErr as Error).message,
+      }));
+    }
+
     return jsonErr(500, "INTERNAL", "Unexpected error", requestId);
   } finally {
     if (errorCode) {

@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
@@ -48,7 +48,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Semantics(
+      label: 'Tela de Configurações',
+      child: Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.settings),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -144,6 +146,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   ),
+                  ListTile(
+                    leading: const Icon(Icons.privacy_tip_outlined),
+                    title: const Text('Política de Privacidade'),
+                    subtitle: const Text(
+                      'Como seus dados são coletados e utilizados',
+                    ),
+                    trailing: const Icon(Icons.open_in_new, size: 18),
+                    onTap: () => launchUrl(
+                      Uri.parse('https://omnirunner.com.br/privacidade'),
+                      mode: LaunchMode.externalApplication,
+                    ),
+                  ),
                 ],
                 if (kDebugMode) ...[
                   const Divider(height: DesignTokens.spacingXl),
@@ -164,6 +178,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ],
             ),
+    ),
     );
   }
 
@@ -392,7 +407,7 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
 }
 
 /// Card displaying current auth state for debugging.
-/// In debug builds with remote mode, shows "Copiar JWT" and "Ping verify-session".
+/// In debug builds with remote mode, shows ping buttons for edge functions.
 class _AuthDebugCard extends StatefulWidget {
   const _AuthDebugCard();
 
@@ -437,15 +452,6 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
               _row(context, 'displayName', user.displayName),
               if (kDebugMode && mode == 'remote') ...[
                 const SizedBox(height: DesignTokens.spacingSm),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.copy, size: 16),
-                    label: const Text('Copiar JWT'),
-                    onPressed: () => _copyJwt(context),
-                  ),
-                ),
-                const SizedBox(height: DesignTokens.spacingXs),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -702,29 +708,6 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
       setState(() => _pingAnalyticsResult = 'Erro: $msg');
     } finally {
       if (mounted) setState(() => _pingingAnalytics = false);
-    }
-  }
-
-  void _copyJwt(BuildContext context) {
-    try {
-      final token = Supabase.instance.client.auth.currentSession?.accessToken;
-      if (token == null || token.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nenhuma sessao ativa — JWT indisponivel')),
-        );
-        return;
-      }
-      Clipboard.setData(ClipboardData(text: token));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('JWT copiado para o clipboard'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao copiar JWT: $e')),
-      );
     }
   }
 

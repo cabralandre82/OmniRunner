@@ -12,6 +12,7 @@ import 'package:omni_runner/presentation/blocs/crm_list/crm_list_state.dart';
 import 'package:omni_runner/presentation/screens/staff_athlete_profile_screen.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 
 /// Filterable list of athletes in the group with tags, status, and risk indicators.
 class StaffCrmListScreen extends StatelessWidget {
@@ -107,7 +108,9 @@ class _StaffCrmListViewState extends State<_StaffCrmListView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
+    return Semantics(
+      label: 'Tela de CRM de Atletas',
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('CRM Atletas'),
       ),
@@ -250,6 +253,7 @@ class _StaffCrmListViewState extends State<_StaffCrmListView> {
         icon: const Icon(Icons.label_outline),
         label: const Text('Gerenciar Tags'),
       ),
+    ),
     );
   }
 }
@@ -338,7 +342,8 @@ class _FilterSection extends StatelessWidget {
     if (hex == null || hex.isEmpty) return DesignTokens.primary;
     final c = hex.replaceFirst('#', '');
     if (c.length == 6) {
-      return Color(int.parse('FF$c', radix: 16));
+      final v = int.tryParse('FF$c', radix: 16);
+      if (v != null) return Color(v);
     }
     return DesignTokens.primary;
   }
@@ -562,7 +567,8 @@ class _CrmAthleteCard extends StatelessWidget {
     if (hex == null || hex.isEmpty) return DesignTokens.primary;
     final c = hex.replaceFirst('#', '');
     if (c.length == 6) {
-      return Color(int.parse('FF$c', radix: 16));
+      final v = int.tryParse('FF$c', radix: 16);
+      if (v != null) return Color(v);
     }
     return DesignTokens.primary;
   }
@@ -617,7 +623,7 @@ class _ManageTagsSheetState extends State<_ManageTagsSheet> {
     } on Exception catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Erro: $e';
+          _error = ErrorMessages.humanize(e);
           _loading = false;
         });
       }
@@ -641,7 +647,7 @@ class _ManageTagsSheetState extends State<_ManageTagsSheet> {
     } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: $e')),
+          SnackBar(content: Text(ErrorMessages.humanize(e))),
         );
       }
     } finally {
@@ -650,6 +656,29 @@ class _ManageTagsSheetState extends State<_ManageTagsSheet> {
   }
 
   Future<void> _deleteTag(CoachingTagEntity tag) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded, color: Colors.amber),
+        title: const Text('Confirmar exclusão'),
+        content: Text(
+          'Tem certeza que deseja excluir a tag "${tag.name}"? '
+          'Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
     try {
       await sl<ManageTags>().delete(tag.id);
       await _load();
@@ -662,7 +691,7 @@ class _ManageTagsSheetState extends State<_ManageTagsSheet> {
     } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: $e')),
+          SnackBar(content: Text(ErrorMessages.humanize(e))),
         );
       }
     }
@@ -773,7 +802,8 @@ class _ManageTagsSheetState extends State<_ManageTagsSheet> {
     if (hex == null || hex.isEmpty) return DesignTokens.primary;
     final c = hex.replaceFirst('#', '');
     if (c.length == 6) {
-      return Color(int.parse('FF$c', radix: 16));
+      final v = int.tryParse('FF$c', radix: 16);
+      if (v != null) return Color(v);
     }
     return DesignTokens.primary;
   }

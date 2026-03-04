@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import { formatBRL } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export default async function CreditsPage() {
 
   const groupId = cookies().get("portal_group_id")?.value;
   const role = cookies().get("portal_role")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   const supabase = createClient();
 

@@ -53,6 +53,8 @@ class _LoadedBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final event = state.event;
     final theme = Theme.of(context);
+    final myPart = state.myParticipation;
+    final myResult = state.myResult;
 
     return Scaffold(
       appBar: AppBar(
@@ -69,13 +71,13 @@ class _LoadedBody extends StatelessWidget {
       body: ListView(
         children: [
           _BannerCard(event: event),
-          if (state.myParticipation != null && !state.isCompleted)
+          if (myPart != null && !state.isCompleted)
             _MyProgressCard(
-              participation: state.myParticipation!,
+              participation: myPart,
               event: event,
             ),
-          if (state.myResult != null)
-            _MyResultCard(result: state.myResult!),
+          if (myResult != null)
+            _MyResultCard(result: myResult),
           _RewardsCard(event: event),
           _InfoCard(event: event, participantCount: state.participations.length),
           if (state.isCompleted && state.results.isNotEmpty) ...[
@@ -456,6 +458,7 @@ class _InfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final targetDist = event.targetDistanceM;
     final metricLabel = switch (event.metric) {
       RaceEventMetric.distance => 'Distância',
       RaceEventMetric.time => 'Tempo',
@@ -474,10 +477,10 @@ class _InfoCard extends StatelessWidget {
                     ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             _DetailRow(label: 'Métrica', value: metricLabel),
-            if (event.targetDistanceM != null)
+            if (targetDist != null)
               _DetailRow(
                   label: 'Meta',
-                  value: _fmtDist(event.targetDistanceM!)),
+                  value: _fmtDist(targetDist)),
             _DetailRow(
                 label: 'Início', value: _fmtDate(event.startsAtMs)),
             _DetailRow(

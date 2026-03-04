@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/presentation/widgets/state_widgets.dart';
+import 'package:omni_runner/presentation/widgets/error_state.dart';
 
 /// Staff screen to view and respond to championship invitations
 /// received by their assessoria from other groups.
@@ -146,31 +148,19 @@ class _StaffChampionshipInvitesScreenState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(title: const Text('Convites de campeonatos')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text(_error!),
-                  const SizedBox(height: 12),
-                  FilledButton.icon(onPressed: _load, icon: const Icon(Icons.refresh), label: const Text('Tentar novamente')),
-                ]))
+              ? ErrorState(message: _error ?? '', onRetry: _load)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _invites.isEmpty
-                      ? ListView(children: [
-                          const SizedBox(height: 80),
-                          Center(child: Column(children: [
-                            Icon(Icons.mail_outline_rounded, size: 56, color: theme.colorScheme.outline),
-                            const SizedBox(height: 16),
-                            Text('Nenhum convite recebido', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 8),
-                            Text('Quando outra assessoria convidar\nsua equipe, o convite aparecerá aqui.', textAlign: TextAlign.center, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                          ])),
-                        ])
+                      ? AppEmptyState(
+                          message: 'Nenhum convite recebido',
+                          icon: Icons.mail_outline_rounded,
+                        )
                       : ListView.builder(
                           padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingLg),
                           itemCount: _invites.length,

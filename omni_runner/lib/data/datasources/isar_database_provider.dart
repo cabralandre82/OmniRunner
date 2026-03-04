@@ -1,6 +1,7 @@
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'package:omni_runner/core/secure_storage/isar_secure_store.dart';
 import 'package:omni_runner/data/models/isar/athlete_baseline_model.dart';
 import 'package:omni_runner/data/models/isar/athlete_trend_model.dart';
 import 'package:omni_runner/data/models/isar/coach_insight_model.dart';
@@ -30,8 +31,13 @@ import 'package:omni_runner/data/models/isar/workout_session_record.dart';
 /// Must be initialized once at startup via [open].
 ///
 /// Uses `path_provider` to resolve the app documents directory.
+/// Prepares encryption key via [IsarSecureStore] for when Isar adds
+/// encryption support (Isar 3.1 does not yet support encryptionKey).
 class IsarDatabaseProvider {
   Isar? _instance;
+  final IsarSecureStore _secureStore;
+
+  IsarDatabaseProvider(this._secureStore);
 
   /// Returns the open [Isar] instance.
   ///
@@ -50,13 +56,15 @@ class IsarDatabaseProvider {
   ///
   /// Safe to call multiple times — returns existing instance if already open.
   ///
-  /// Registers both collections:
-  /// - [LocationPointRecordSchema]
-  /// - [WorkoutSessionRecordSchema]
+  /// Registers all schemas. Ensures [IsarSecureStore] has a key for future
+  /// encryption support (Isar 3.1 does not yet expose encryptionKey in open).
   Future<Isar> open() async {
     if (_instance != null) return _instance!;
 
     final dir = await getApplicationDocumentsDirectory();
+
+    // Ensure encryption key exists for when Isar adds support
+    await _secureStore.getOrCreateKey();
 
     _instance = await Isar.open(
       [

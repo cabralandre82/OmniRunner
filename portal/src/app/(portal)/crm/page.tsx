@@ -1,5 +1,7 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
+import { LastUpdated } from "@/components/last-updated";
 import Link from "next/link";
 import { formatDateISO } from "@/lib/format";
 import { CrmFilters } from "./crm-filters";
@@ -30,17 +32,24 @@ async function getCrmData(
   tagId?: string,
   status?: string,
   search?: string
-): Promise<CrmAthlete[]> {
+): Promise<{ athletes: CrmAthlete[]; totalCount: number }> {
   const supabase = createClient();
 
-  const { data: members } = await supabase
-    .from("coaching_members")
-    .select("user_id")
-    .eq("group_id", groupId)
-    .eq("role", "athlete")
-    .range(0, 99);
+  const [{ data: members }, { count: totalCount }] = await Promise.all([
+    supabase
+      .from("coaching_members")
+      .select("user_id")
+      .eq("group_id", groupId)
+      .eq("role", "athlete")
+      .range(0, 499),
+    supabase
+      .from("coaching_members")
+      .select("user_id", { count: "exact", head: true })
+      .eq("group_id", groupId)
+      .eq("role", "athlete"),
+  ]);
 
-  if (!members || members.length === 0) return [];
+  if (!members || members.length === 0) return { athletes: [], totalCount: totalCount ?? 0 };
 
   const userIds = members.map((m) => m.user_id);
 
@@ -162,7 +171,7 @@ async function getCrmData(
     );
   }
 
-  return athletes;
+  return { athletes, totalCount: totalCount ?? 0 };
 }
 
 export default async function CrmPage({
@@ -171,20 +180,23 @@ export default async function CrmPage({
   searchParams: Promise<{ tag?: string; status?: string; q?: string }>;
 }) {
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   const params = await searchParams;
 
   let athletes: CrmAthlete[] = [];
+  let totalCount = 0;
   let fetchError: string | null = null;
 
   try {
-    athletes = await getCrmData(
+    const result = await getCrmData(
       groupId,
       params.tag,
       params.status,
       params.q
     );
+    athletes = result.athletes;
+    totalCount = result.totalCount;
   } catch (e) {
     fetchError = String(e);
   }
@@ -234,10 +246,15 @@ export default async function CrmPage({
         <KpiCard label="Em risco" value={atRiskCount} color="text-orange-700" />
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        {totalCount > athletes.length && (
+          <p className="text-sm text-content-secondary">
+            Mostrando {athletes.length} de {totalCount} atletas
+          </p>
+        )}
         <a
           href={exportHref}
-          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary shadow-sm hover:bg-surface-elevated"
+          className="ml-auto rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary shadow-sm hover:bg-surface-elevated"
         >
           Exportar CSV
         </a>
@@ -348,6 +365,8 @@ export default async function CrmPage({
           <p className="text-sm text-content-secondary">Nenhum atleta encontrado.</p>
         </div>
       )}
+
+      <LastUpdated />
     </div>
   );
 }

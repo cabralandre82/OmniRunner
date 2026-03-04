@@ -1,6 +1,4 @@
-"use client";
-
-import { useEffect } from "react";
+'use client';
 
 export default function GlobalError({
   error,
@@ -9,26 +7,45 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    console.error("Global error:", error);
-  }, [error]);
-
   return (
-    <html>
+    <html lang="pt-BR">
       <body>
-        <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", fontFamily: "system-ui, sans-serif", backgroundColor: "#0a0e17" }}>
-          <div style={{ maxWidth: "400px", padding: "32px", borderRadius: "12px", backgroundColor: "#1e293b", boxShadow: "0 4px 8px rgba(0,0,0,0.2)", textAlign: "center", border: "1px solid #334155" }}>
-            <h2 style={{ fontSize: "18px", fontWeight: 600, color: "#f1f5f9" }}>Erro crítico</h2>
-            <p style={{ marginTop: "8px", fontSize: "14px", color: "#94a3b8" }}>
-              Ocorreu um erro grave. Por favor, recarregue a página.
-            </p>
-            <button
-              onClick={reset}
-              style={{ marginTop: "24px", padding: "8px 16px", borderRadius: "8px", backgroundColor: "#3b82f6", color: "white", border: "none", cursor: "pointer", fontSize: "14px", fontWeight: 500 }}
-            >
-              Recarregar
-            </button>
-          </div>
+        <div
+          style={{
+            display: 'flex',
+            minHeight: '100vh',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '1rem',
+            padding: '2rem',
+            textAlign: 'center',
+            fontFamily: 'system-ui, sans-serif',
+          }}
+        >
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1f2937' }}>
+            Algo deu errado
+          </h2>
+          <p style={{ maxWidth: '28rem', fontSize: '0.875rem', color: '#6b7280' }}>
+            Ocorreu um erro inesperado. Por favor, tente novamente ou entre em
+            contato com o suporte se o problema persistir.
+          </p>
+          <button
+            onClick={reset}
+            style={{
+              marginTop: '0.5rem',
+              padding: '0.625rem 1.5rem',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              color: '#fff',
+              backgroundColor: '#2563eb',
+              border: 'none',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+            }}
+          >
+            Tentar novamente
+          </button>
         </div>
       </body>
     </html>

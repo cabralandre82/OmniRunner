@@ -118,13 +118,17 @@ export function BadgeForm() {
     );
   }
 
-  return (
-    <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
-      <h3 className="mb-4 text-lg font-semibold text-content-primary">
-        Nova Conquista
-      </h3>
+  const tierDisplay = tiers.find((t) => t.value === tier)?.label ?? tier;
+  const catDisplay = categories.find((c) => c.value === category)?.label ?? category;
 
-      {error && (
+  return (
+    <div className="grid gap-6 lg:grid-cols-[1fr,260px]">
+      <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <h3 className="mb-4 text-lg font-semibold text-content-primary">
+          Nova Conquista
+        </h3>
+
+        {error && (
         <div className="mb-4 rounded-lg bg-error-soft border border-error/30 p-3 text-sm text-error">
           {error}
         </div>
@@ -275,6 +279,37 @@ export function BadgeForm() {
           </button>
         </div>
       </form>
+      </div>
+
+      <div className="h-fit rounded-xl border border-border bg-surface p-4 shadow-sm lg:sticky lg:top-4">
+        <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
+          Preview
+        </h4>
+        <div className="rounded-lg border border-border-subtle bg-bg-secondary p-4 text-center">
+          <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-brand/10 text-2xl text-brand">
+            🏅
+          </div>
+          <p className="font-semibold text-content-primary">
+            {name || "Nome da conquista"}
+          </p>
+          <p className="mt-1 text-xs text-content-muted">{catDisplay}</p>
+          <span
+            className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
+              tier === "bronze"
+                ? "bg-orange-100 text-orange-700"
+                : tier === "silver"
+                ? "bg-surface-elevated text-content-secondary"
+                : tier === "gold"
+                ? "bg-warning-soft text-warning"
+                : tier === "diamond"
+                ? "bg-purple-100 text-purple-700"
+                : "bg-neutral-soft text-content-muted"
+            }`}
+          >
+            {tierDisplay}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

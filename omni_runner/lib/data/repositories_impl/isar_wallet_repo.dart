@@ -1,5 +1,6 @@
 import 'package:isar/isar.dart';
 
+import 'package:omni_runner/core/cache/cache_metadata_store.dart';
 import 'package:omni_runner/data/models/isar/wallet_record.dart';
 import 'package:omni_runner/domain/entities/wallet_entity.dart';
 import 'package:omni_runner/domain/repositories/i_wallet_repo.dart';
@@ -7,8 +8,9 @@ import 'package:omni_runner/domain/repositories/i_wallet_repo.dart';
 /// Isar implementation of [IWalletRepo].
 final class IsarWalletRepo implements IWalletRepo {
   final Isar _isar;
+  final CacheMetadataStore _cacheMeta;
 
-  const IsarWalletRepo(this._isar);
+  IsarWalletRepo(this._isar, this._cacheMeta);
 
   @override
   Future<WalletEntity> getByUserId(String userId) async {
@@ -39,6 +41,7 @@ final class IsarWalletRepo implements IWalletRepo {
 
       await _isar.walletRecords.put(record);
     });
+    _cacheMeta.recordCacheWriteSync('wallet', wallet.userId);
   }
 
   // ── Mappers ──

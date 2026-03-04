@@ -43,9 +43,17 @@ serve(async (req: Request) => {
   }
 
   // First, check existing subscriptions
-  const listRes = await fetch(
-    `https://www.strava.com/api/v3/push_subscriptions?client_id=${clientId}&client_secret=${clientSecret}`,
-  );
+  const listCtrl = new AbortController();
+  const listTimer = setTimeout(() => listCtrl.abort(), 15_000);
+  let listRes: Response;
+  try {
+    listRes = await fetch(
+      `https://www.strava.com/api/v3/push_subscriptions?client_id=${clientId}&client_secret=${clientSecret}`,
+      { signal: listCtrl.signal },
+    );
+  } finally {
+    clearTimeout(listTimer);
+  }
   const existing = await listRes.json();
 
   if (Array.isArray(existing) && existing.length > 0) {
@@ -56,16 +64,24 @@ serve(async (req: Request) => {
   }
 
   // Create new subscription
-  const createRes = await fetch("https://www.strava.com/api/v3/push_subscriptions", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
-      callback_url: callbackUrl,
-      verify_token: verifyToken,
-    }),
-  });
+  const createCtrl = new AbortController();
+  const createTimer = setTimeout(() => createCtrl.abort(), 15_000);
+  let createRes: Response;
+  try {
+    createRes = await fetch("https://www.strava.com/api/v3/push_subscriptions", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        callback_url: callbackUrl,
+        verify_token: verifyToken,
+      }),
+      signal: createCtrl.signal,
+    });
+  } finally {
+    clearTimeout(createTimer);
+  }
 
   const result = await createRes.json();
 

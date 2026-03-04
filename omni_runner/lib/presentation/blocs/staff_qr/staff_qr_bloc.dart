@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:omni_runner/core/errors/coaching_failures.dart';
 import 'package:omni_runner/domain/entities/token_intent_entity.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/domain/repositories/i_token_intent_repo.dart';
 import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_event.dart';
 import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_state.dart';
@@ -35,7 +36,7 @@ class StaffQrBloc extends Bloc<StaffQrEvent, StaffQrState> {
     } on TokenIntentFailed catch (e) {
       emit(StaffQrError(e.reason));
     } on Exception catch (e) {
-      emit(StaffQrError('Erro ao gerar QR: $e'));
+      emit(StaffQrError(ErrorMessages.humanize(e)));
     }
   }
 
@@ -57,7 +58,7 @@ class StaffQrBloc extends Bloc<StaffQrEvent, StaffQrState> {
     } on FormatException {
       emit(const StaffQrError('QR inválido. Não é um token Omni Runner.'));
     } on Exception catch (e) {
-      emit(StaffQrError('Erro ao processar QR: $e'));
+      emit(StaffQrError(ErrorMessages.humanize(e)));
     }
   }
 
@@ -69,7 +70,7 @@ class StaffQrBloc extends Bloc<StaffQrEvent, StaffQrState> {
       final capacity = await _repo.getEmissionCapacity(event.groupId);
       emit(StaffQrCapacityLoaded(capacity));
     } on Exception catch (e) {
-      emit(StaffQrError('Erro ao carregar capacidade: $e'));
+      emit(StaffQrError(ErrorMessages.humanize(e)));
     }
   }
 
@@ -81,7 +82,7 @@ class StaffQrBloc extends Bloc<StaffQrEvent, StaffQrState> {
       final capacity = await _repo.getBadgeCapacity(event.groupId);
       emit(StaffQrBadgeCapacityLoaded(capacity));
     } on Exception catch (e) {
-      emit(StaffQrError('Erro ao carregar badges: $e'));
+      emit(StaffQrError(ErrorMessages.humanize(e)));
     }
   }
 

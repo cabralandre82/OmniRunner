@@ -6,14 +6,14 @@ import { rateLimit } from "@/lib/rate-limit";
 export async function POST() {
   const supabase = createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = rateLimit(`billing-portal:${session.user.id}`, { maxRequests: 5, windowMs: 60_000 });
+  const rl = rateLimit(`billing-portal:${user.id}`, { maxRequests: 5, windowMs: 60_000 });
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
@@ -23,6 +23,7 @@ export async function POST() {
     return NextResponse.json({ error: "No group selected" }, { status: 400 });
   }
 
+  const { data: { session } } = await supabase.auth.getSession();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const res = await fetch(
     `${supabaseUrl}/functions/v1/create-portal-session`,
@@ -30,7 +31,7 @@ export async function POST() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${session?.access_token}`,
       },
       body: JSON.stringify({ group_id: groupId }),
     },

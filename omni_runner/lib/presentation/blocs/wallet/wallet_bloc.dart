@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/domain/repositories/i_ledger_repo.dart';
 import 'package:omni_runner/domain/repositories/i_wallet_remote_source.dart';
 import 'package:omni_runner/domain/repositories/i_wallet_repo.dart';
@@ -45,22 +47,32 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
   Future<void> _fetch(Emitter<WalletState> emit) async {
     try {
       // Sync remote data to local repos (best-effort)
-      final remoteWallet = await _remote.fetchWallet(_userId);
-      if (remoteWallet != null) {
-        await _walletRepo.save(remoteWallet);
-      }
+      bool remoteSucceeded = true;
+      try {
+        final remoteWallet = await _remote.fetchWallet(_userId);
+        if (remoteWallet != null) {
+          await _walletRepo.save(remoteWallet);
+        }
 
-      final remoteLedger = await _remote.fetchLedger(_userId);
-      for (final entry in remoteLedger) {
-        await _ledgerRepo.append(entry);
+        final remoteLedger = await _remote.fetchLedger(_userId);
+        for (final entry in remoteLedger) {
+          await _ledgerRepo.append(entry);
+        }
+      } on Exception {
+        remoteSucceeded = false;
       }
 
       // Read from local repos (always available, even offline)
       final wallet = await _walletRepo.getByUserId(_userId);
       final history = await _ledgerRepo.getByUserId(_userId);
-      emit(WalletLoaded(wallet: wallet, history: history));
+      emit(WalletLoaded(
+        wallet: wallet,
+        history: history,
+        isOffline: !remoteSucceeded,
+      ));
     } on Exception catch (e) {
-      emit(WalletError('Erro ao carregar OmniCoins: $e'));
+      AppLogger.error('Wallet fetch failed', tag: 'WalletBloc', error: e);
+      emit(WalletError(ErrorMessages.humanize(e)));
     }
   }
 }

@@ -81,6 +81,20 @@ serve(async (req: Request) => {
 
     const { challenge_id, display_name, team: requestedTeam } = body;
 
+    if (typeof challenge_id !== "string" || challenge_id.length === 0) {
+      status = 400;
+      return jsonErr(400, "INVALID_FIELD", "challenge_id must be a non-empty string", requestId);
+    }
+
+    if (typeof display_name !== "string") {
+      status = 400;
+      return jsonErr(400, "INVALID_FIELD", "display_name must be a string", requestId);
+    }
+    if (display_name.length > 100) {
+      status = 400;
+      return jsonErr(400, "FIELD_TOO_LONG", "display_name must be at most 100 characters", requestId);
+    }
+
     // Fetch challenge
     const { data: challenge, error: fetchErr } = await db
       .from("challenges")
@@ -103,7 +117,7 @@ serve(async (req: Request) => {
     const allowedStatuses = ["pending"];
     if (!allowedStatuses.includes(challenge.status)) {
       status = 409;
-      return jsonErr(409, "INVALID_STATUS", `Desafio não está aceitando participantes (status: ${challenge.status})`, requestId);
+      return jsonErr(409, "INVALID_STATUS", "Desafio não está aceitando participantes no momento", requestId);
     }
 
     if (challenge.creator_user_id === user.id) {
@@ -176,7 +190,7 @@ serve(async (req: Request) => {
         }
       } else {
         status = 409;
-        return jsonErr(409, "CANNOT_JOIN", `Participação com status '${existingPart.status}' não pode ser alterada`, requestId);
+        return jsonErr(409, "CANNOT_JOIN", "Participação não pode ser alterada no momento", requestId);
       }
     } else {
       // Check capacity for 1v1
@@ -381,6 +395,7 @@ serve(async (req: Request) => {
               joiner_user_id: user.id,
             },
           }),
+          signal: AbortSignal.timeout(15_000),
         }).catch(() => {/* fire-and-forget */});
       }
     } catch {

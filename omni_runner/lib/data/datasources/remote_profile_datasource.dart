@@ -28,7 +28,7 @@ class RemoteProfileDataSource implements IProfileRepo {
       final uid = _uid;
       final rows = await _client
           .from(_table)
-          .select()
+          .select('id, display_name, avatar_url, onboarding_state, user_role, created_via, created_at, updated_at')
           .eq('id', uid)
           .limit(1);
 
@@ -61,7 +61,7 @@ class RemoteProfileDataSource implements IProfileRepo {
       final rows = await _client
           .from(_table)
           .upsert(payload)
-          .select();
+          .select('id, display_name, avatar_url, onboarding_state, user_role, created_via, created_at, updated_at');
 
       if (rows.isNotEmpty) {
         AppLogger.info('upsertMyProfile OK', tag: _tag);

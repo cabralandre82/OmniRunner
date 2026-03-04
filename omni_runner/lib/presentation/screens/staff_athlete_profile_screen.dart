@@ -440,6 +440,35 @@ class _NotesTab extends StatefulWidget {
 class _NotesTabState extends State<_NotesTab> {
   final _noteController = TextEditingController();
 
+  Future<void> _confirmDeleteNote(
+      BuildContext context, AthleteNoteEntity note) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded, color: Colors.amber),
+        title: const Text('Confirmar exclusão'),
+        content: const Text(
+          'Tem certeza que deseja excluir esta nota? '
+          'Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      context.read<AthleteProfileBloc>().add(DeleteNote(note.id));
+    }
+  }
+
   @override
   void dispose() {
     _noteController.dispose();
@@ -485,11 +514,7 @@ class _NotesTabState extends State<_NotesTab> {
                         final note = notes[index];
                         return _NoteCard(
                           note: note,
-                          onDelete: () {
-                            context
-                                .read<AthleteProfileBloc>()
-                                .add(DeleteNote(note.id));
-                          },
+                          onDelete: () => _confirmDeleteNote(context, note),
                         );
                       },
                     ),
@@ -595,13 +620,43 @@ Color _tagColorFromHex(String? hex) {
   if (hex == null || hex.isEmpty) return DesignTokens.primary;
   final c = hex.replaceFirst('#', '');
   if (c.length == 6) {
-    return Color(int.parse('FF$c', radix: 16));
+    final v = int.tryParse('FF$c', radix: 16);
+    if (v != null) return Color(v);
   }
   return DesignTokens.primary;
 }
 
 class _TagsTab extends StatelessWidget {
   const _TagsTab();
+
+  static Future<void> _confirmRemoveTag(
+      BuildContext context, CoachingTagEntity tag) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded, color: Colors.amber),
+        title: const Text('Confirmar remoção'),
+        content: Text(
+          'Tem certeza que deseja remover a tag "${tag.name}" do atleta? '
+          'Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Remover'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      context.read<AthleteProfileBloc>().add(RemoveTag(tag.id));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -632,11 +687,7 @@ class _TagsTab extends StatelessWidget {
                       (t) => Chip(
                         label: Text(t.name),
                         deleteIcon: const Icon(Icons.close, size: 18),
-                        onDeleted: () {
-                          context
-                              .read<AthleteProfileBloc>()
-                              .add(RemoveTag(t.id));
-                        },
+                        onDeleted: () => _confirmRemoveTag(context, t),
                         backgroundColor: _tagColorFromHex(t.color)
                             .withValues(alpha: 0.2),
                         side: BorderSide(
@@ -885,7 +936,7 @@ class _AlertasTab extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Alertas do PASSO 05 — em breve',
+              'Nenhum alerta registrado',
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.colorScheme.outline,
@@ -893,7 +944,7 @@ class _AlertasTab extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Os alertas de coaching para este atleta aparecerão aqui.',
+              'Quando houver alertas para este atleta, eles aparecerão aqui.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.outline,

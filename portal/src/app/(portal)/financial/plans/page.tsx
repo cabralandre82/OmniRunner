@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -57,7 +58,7 @@ const CYCLE_LABEL: Record<string, string> = {
 
 export default async function PlansPage() {
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   let plans: Plan[] = [];
   let fetchError: string | null = null;

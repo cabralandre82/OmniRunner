@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import Link from "next/link";
 import { formatDateISO } from "@/lib/format";
 
@@ -109,7 +110,7 @@ async function getAtRiskAthletes(groupId: string): Promise<AtRiskAthlete[]> {
 
 export default async function AtRiskPage() {
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   const athletes = await getAtRiskAthletes(groupId);
 

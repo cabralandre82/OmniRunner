@@ -7,6 +7,7 @@ import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/device_link_entity.dart';
 import 'package:omni_runner/domain/usecases/wearable/link_device.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
+import 'package:omni_runner/presentation/widgets/error_state.dart';
 
 class AthleteDeviceLinkScreen extends StatefulWidget {
   final String athleteUserId;
@@ -84,11 +85,37 @@ class _AthleteDeviceLinkScreenState extends State<AthleteDeviceLinkScreen> {
   String? _linkedId(String provider) {
     final match = _links?.where(
         (l) => deviceProviderToString(l.provider) == provider);
-    return match != null && match!.isNotEmpty ? match!.first.id : null;
+    final list = match?.toList();
+    return list != null && list.isNotEmpty ? list.first.id : null;
   }
 
   Future<void> _toggleLink(String provider) async {
     final existingId = _linkedId(provider);
+    if (existingId != null) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          icon: const Icon(Icons.warning_amber_rounded, color: Colors.amber),
+          title: const Text('Confirmar desconexão'),
+          content: Text(
+            'Tem certeza que deseja desconectar ${_providerLabels[provider]}? '
+            'Esta ação não pode ser desfeita.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Desconectar'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
     try {
       if (existingId != null) {
         await _linkDevice.unlink(existingId);
@@ -117,33 +144,21 @@ class _AthleteDeviceLinkScreenState extends State<AthleteDeviceLinkScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
+    return Semantics(
+      label: 'Tela de Dispositivos',
+      child: Scaffold(
       appBar: AppBar(title: const Text('Dispositivos')),
       body: _loading
           ? const ShimmerListLoader()
           : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.error_outline,
-                          size: 48, color: theme.colorScheme.error),
-                      const SizedBox(height: 16),
-                      Text(_error!,
-                          style: theme.textTheme.bodyMedium
-                              ?.copyWith(color: theme.colorScheme.error)),
-                      const SizedBox(height: 24),
-                      FilledButton.icon(
-                        onPressed: _load,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Tentar Novamente'),
-                      ),
-                    ],
-                  ),
+              ? ErrorState(
+                  message: _error ?? '',
+                  onRetry: _load,
                 )
-              : _links != null && _links!.isEmpty && _providers.isEmpty
+              : (_links?.isEmpty ?? false) && _providers.isEmpty
                   ? _buildEmpty(theme)
                   : _buildList(theme),
+    ),
     );
   }
 
@@ -185,8 +200,9 @@ class _AthleteDeviceLinkScreenState extends State<AthleteDeviceLinkScreen> {
         final linked = _linkedId(provider) != null;
         final linkEntity = _links?.where(
             (l) => deviceProviderToString(l.provider) == provider);
-        final linkedDate = linkEntity != null && linkEntity!.isNotEmpty
-            ? linkEntity!.first.linkedAt
+        final linkList = linkEntity?.toList();
+        final linkedDate = linkList != null && linkList.isNotEmpty
+            ? linkList.first.linkedAt
             : null;
 
         return Card(

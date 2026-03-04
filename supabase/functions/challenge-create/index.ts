@@ -112,6 +112,35 @@ serve(async (req: Request) => {
       accept_window_min,
     } = body;
 
+    if (title != null && typeof title !== "string") {
+      status = 400;
+      return jsonErr(400, "INVALID_FIELD", "title must be a string", requestId);
+    }
+    if (typeof title === "string" && title.length > 100) {
+      status = 400;
+      return jsonErr(400, "FIELD_TOO_LONG", "title must be at most 100 characters", requestId);
+    }
+
+    if (typeof creator_display_name === "string" && creator_display_name.length > 100) {
+      status = 400;
+      return jsonErr(400, "FIELD_TOO_LONG", "creator_display_name must be at most 100 characters", requestId);
+    }
+
+    if (typeof window_ms !== "number" || window_ms <= 0) {
+      status = 400;
+      return jsonErr(400, "INVALID_FIELD", "window_ms must be a positive number", requestId);
+    }
+
+    if (typeof created_at_ms !== "number" || created_at_ms <= 0) {
+      status = 400;
+      return jsonErr(400, "INVALID_FIELD", "created_at_ms must be a positive number", requestId);
+    }
+
+    if (entry_fee_coins != null && (typeof entry_fee_coins !== "number" || entry_fee_coins < 0)) {
+      status = 400;
+      return jsonErr(400, "INVALID_FIELD", "entry_fee_coins must be a non-negative number", requestId);
+    }
+
     if (!VALID_TYPES.includes(type)) {
       status = 400;
       return jsonErr(400, "INVALID_TYPE", `type must be one of: ${VALID_TYPES.join(", ")}`, requestId);

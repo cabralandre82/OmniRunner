@@ -19,13 +19,14 @@ class EventDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final participation = myParticipation;
     return Scaffold(
       appBar: AppBar(title: Text(event.title)),
       body: ListView(
         children: [
           _BannerSection(event: event),
-          if (myParticipation != null)
-            _MyProgressCard(event: event, participation: myParticipation!),
+          if (participation != null)
+            _MyProgressCard(event: event, participation: participation),
           _RewardsCard(rewards: event.rewards),
           _InfoCard(event: event),
           if (allParticipations.isNotEmpty) ...[
@@ -134,7 +135,9 @@ class _MyProgressCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final fraction = participation.progressFraction(event.targetValue);
+    final targetValue = event.targetValue;
+    final rank = participation.rank;
+    final fraction = participation.progressFraction(targetValue);
     final color =
         participation.completed ? DesignTokens.success : theme.colorScheme.primary;
 
@@ -168,17 +171,17 @@ class _MyProgressCard extends StatelessWidget {
                   style: theme.textTheme.bodyMedium
                       ?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                if (event.targetValue != null)
+                if (targetValue != null)
                   Text(
-                    'Meta: ${_formatMetric(event.targetValue!, event.metric)}',
+                    'Meta: ${_formatMetric(targetValue, event.metric)}',
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: theme.colorScheme.outline),
                   ),
               ],
             ),
-            if (participation.rank != null && participation.rank! > 0) ...[
+            if (rank != null && rank > 0) ...[
               const SizedBox(height: 4),
-              Text('Posição: #${participation.rank}',
+              Text('Posição: #$rank',
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: theme.colorScheme.primary)),
             ],
@@ -386,18 +389,21 @@ class _ParticipantTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final rank = participation.rank;
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: participation.completed
             ? DesignTokens.success.withValues(alpha: 0.15)
             : theme.colorScheme.surfaceContainerHighest,
-        child: participation.rank != null && participation.rank! > 0
-            ? Text('${participation.rank}',
+        child: rank != null && rank > 0
+            ? Text('$rank',
                 style: theme.textTheme.labelLarge
                     ?.copyWith(fontWeight: FontWeight.bold))
             : Icon(Icons.person, color: theme.colorScheme.outline),
       ),
       title: Text(participation.displayName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style:
               theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500)),
       subtitle: Text(

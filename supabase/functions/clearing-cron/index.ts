@@ -118,11 +118,31 @@ serve(async (req: Request) => {
     // ── 2. Find unmatched challenge_prize_pending ledger entries ─────────
     // Anti-join: pending entries whose (challenge_id, winner_user_id) combo
     // doesn't yet exist in clearing_case_items.
-    const { data: pendingEntries } = await db
-      .from("coin_ledger")
-      .select("id, user_id, delta_coins, ref_id")
-      .eq("reason", "challenge_prize_pending")
-      .gt("delta_coins", 0);
+    // Uses cursor-based pagination with limit(1000) per page.
+    const PAGE_LIMIT = 1000;
+    let pendingEntries: { id: string; user_id: string; delta_coins: number; ref_id: string }[] = [];
+    {
+      let lastId: string | null = null;
+      let hasMore = true;
+      while (hasMore) {
+        let q = db
+          .from("coin_ledger")
+          .select("id, user_id, delta_coins, ref_id")
+          .eq("reason", "challenge_prize_pending")
+          .gt("delta_coins", 0)
+          .order("id", { ascending: true })
+          .limit(PAGE_LIMIT);
+        if (lastId) q = q.gt("id", lastId);
+        const { data: page } = await q;
+        if (!page || page.length === 0) {
+          hasMore = false;
+        } else {
+          pendingEntries = pendingEntries.concat(page);
+          lastId = page[page.length - 1].id;
+          if (page.length < PAGE_LIMIT) hasMore = false;
+        }
+      }
+    }
 
     if (!pendingEntries || pendingEntries.length === 0) {
       // Skip to expiry
@@ -135,7 +155,8 @@ serve(async (req: Request) => {
 
       const { data: existingItems } = await db
         .from("clearing_case_items")
-        .select("challenge_id, winner_user_id");
+        .select("challenge_id, winner_user_id")
+        .limit(PAGE_LIMIT);
 
       const existingSet = new Set(
         (existingItems ?? []).map(

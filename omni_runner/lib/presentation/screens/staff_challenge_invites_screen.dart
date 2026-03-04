@@ -4,6 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/presentation/widgets/state_widgets.dart';
+import 'package:omni_runner/presentation/widgets/error_state.dart';
 
 /// Screen for staff of an assessoria to view and respond to
 /// incoming team challenge invitations from other assessorias.
@@ -22,6 +24,7 @@ class _StaffChallengeInvitesScreenState
   static const _tag = 'StaffChallengeInvites';
 
   bool _loading = true;
+  bool _busy = false;
   String? _error;
   List<_InviteData> _invites = [];
 
@@ -127,8 +130,12 @@ class _StaffChallengeInvitesScreenState
   }
 
   Future<void> _respond(String inviteId, bool accept) async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _loading = true;
+    });
     try {
-      setState(() => _loading = true);
       await Supabase.instance.client.functions.invoke(
         'challenge-accept-group-invite',
         body: {'invite_id': inviteId, 'accept': accept},
@@ -148,6 +155,8 @@ class _StaffChallengeInvitesScreenState
         ));
         setState(() => _loading = false);
       }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -164,53 +173,20 @@ class _StaffChallengeInvitesScreenState
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.error_outline, size: 48, color: cs.error),
-                      const SizedBox(height: 12),
-                      Text(_error!, style: theme.textTheme.bodyLarge),
-                      const SizedBox(height: 16),
-                      FilledButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _error = null;
-                            _loading = true;
-                          });
-                          _loadInvites();
-                        },
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Tentar novamente'),
-                      ),
-                    ],
-                  ),
+              ? ErrorState(
+                  message: _error ?? '',
+                  onRetry: () {
+                    setState(() {
+                      _error = null;
+                      _loading = true;
+                    });
+                    _loadInvites();
+                  },
                 )
               : _invites.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.shield_outlined,
-                              size: 64,
-                              color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Nenhum convite de desafio',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Quando outra assessoria desafiar a sua,\nos convites aparecerão aqui.',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: cs.onSurfaceVariant.withValues(alpha: 0.7),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
+                  ? AppEmptyState(
+                      message: 'Nenhum convite de desafio',
+                      icon: Icons.shield_outlined,
                     )
                   : RefreshIndicator(
                       onRefresh: _loadInvites,

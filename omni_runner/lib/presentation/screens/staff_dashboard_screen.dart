@@ -21,6 +21,7 @@ import 'package:omni_runner/presentation/screens/staff_join_requests_screen.dart
 import 'package:omni_runner/presentation/screens/staff_performance_screen.dart';
 import 'package:omni_runner/presentation/screens/support_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_qr_hub_screen.dart';
+import 'package:omni_runner/presentation/screens/staff_workout_assign_screen.dart';
 import 'package:omni_runner/presentation/screens/league_screen.dart';
 import 'package:omni_runner/presentation/widgets/ds/fade_in.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
@@ -47,6 +48,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
   String _groupId = '';
   CoachingMemberEntity? _membership;
   bool _loading = true;
+  String? _errorMessage;
   bool _hasPendingPrizes = false;
   int _openDisputesCount = 0;
   int _memberCount = 0;
@@ -87,7 +89,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
 
         final groupRow = await db
             .from('coaching_groups')
-            .select()
+            .select('id, name, logo_url, coach_user_id, description, city, invite_code, invite_enabled, created_at_ms, approval_status, approval_reject_reason')
             .eq('id', gid)
             .maybeSingle();
 
@@ -121,13 +123,38 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
           }
         }
 
-        // Also sync all members of this group to Isar
+        // Parallelize independent queries and Isar sync
+        final membersFuture = db
+            .from('coaching_members')
+            .select('id, user_id, group_id, display_name, role, joined_at_ms')
+            .eq('group_id', gid);
+        final walletFuture = sl<IWalletRepo>().getByUserId(uid);
+        final disputesFuture = db
+            .from('clearing_cases')
+            .select('id')
+            .or('from_group_id.eq.$gid,to_group_id.eq.$gid')
+            .inFilter('status', ['OPEN', 'SENT_CONFIRMED', 'DISPUTED']);
+        final joinReqFuture = db
+            .from('coaching_join_requests')
+            .select('id')
+            .eq('group_id', gid)
+            .eq('status', 'pending');
+
+        final results = await Future.wait<dynamic>([
+          membersFuture.catchError((Object e) { AppLogger.debug('Members fetch failed', tag: 'StaffDash', error: e); return <Map<String, dynamic>>[]; }),
+          walletFuture.then<dynamic>((v) => v).catchError((Object e) { AppLogger.debug('Wallet load failed', tag: 'StaffDash', error: e); return null; }),
+          disputesFuture.catchError((Object e) { AppLogger.debug('Clearing cases load failed', tag: 'StaffDash', error: e); return <Map<String, dynamic>>[]; }),
+          joinReqFuture.catchError((Object e) { AppLogger.debug('Join requests count failed', tag: 'StaffDash', error: e); return <Map<String, dynamic>>[]; }),
+        ]);
+
+        final allMembers = (results[0] as List).cast<Map<String, dynamic>>();
+        final wallet = results[1];
+        final disputes = results[2] as List;
+        final joinReqs = results[3] as List;
+
+        // Batch Isar sync
         try {
-          final allMembers = await db
-              .from('coaching_members')
-              .select('id, user_id, group_id, display_name, role, joined_at_ms')
-              .eq('group_id', gid);
-          for (final row in (allMembers as List).cast<Map<String, dynamic>>()) {
+          for (final row in allMembers) {
             final m = CoachingMemberEntity(
               id: row['id'] as String,
               userId: row['user_id'] as String,
@@ -139,47 +166,15 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
             await sl<ICoachingMemberRepo>().save(m);
           }
         } catch (e) {
-          AppLogger.debug('Members Isar sync failed', tag: 'StaffDash', error: e);
+          AppLogger.debug('Members Isar batch sync failed', tag: 'StaffDash', error: e);
         }
 
-        try {
-          final wallet = await sl<IWalletRepo>().getByUserId(uid);
+        if (wallet != null) {
           _hasPendingPrizes = wallet.hasPending;
-        } catch (e) {
-          AppLogger.debug('Wallet load failed', tag: 'StaffDash', error: e);
         }
-
-        try {
-          final res = await db
-              .from('clearing_cases')
-              .select('id')
-              .or('from_group_id.eq.$gid,to_group_id.eq.$gid')
-              .inFilter('status', ['OPEN', 'SENT_CONFIRMED', 'DISPUTED']);
-          _openDisputesCount = (res as List).length;
-        } catch (e) {
-          AppLogger.debug('Clearing cases load failed', tag: 'StaffDash', error: e);
-        }
-
-        try {
-          final countRes = await db
-              .from('coaching_members')
-              .select('id')
-              .eq('group_id', gid);
-          _memberCount = (countRes as List).length;
-        } catch (e) {
-          AppLogger.debug('Member count failed', tag: 'StaffDash', error: e);
-        }
-
-        try {
-          final joinRes = await db
-              .from('coaching_join_requests')
-              .select('id')
-              .eq('group_id', gid)
-              .eq('status', 'pending');
-          _pendingJoinRequests = (joinRes as List).length;
-        } catch (e) {
-          AppLogger.debug('Join requests count failed', tag: 'StaffDash', error: e);
-        }
+        _openDisputesCount = disputes.length;
+        _memberCount = allMembers.length;
+        _pendingJoinRequests = joinReqs.length;
 
         if (mounted) {
           setState(() {
@@ -222,9 +217,22 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
         }
         if (mounted) setState(() => _loading = false);
       }
+    } on PostgrestException catch (e) {
+      AppLogger.error('StaffDashboard load failed (Postgrest)', tag: 'StaffDash', error: e);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _errorMessage = 'Dados não encontrados. Verifique suas permissões.';
+        });
+      }
     } catch (e) {
       AppLogger.error('StaffDashboard load failed', tag: 'StaffDash', error: e);
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
+        });
+      }
     }
   }
 
@@ -323,6 +331,13 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
     }
   }
 
+  void _openWorkoutAssign() {
+    if (_groupId.isEmpty) return;
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => StaffWorkoutAssignScreen(groupId: _groupId),
+    ));
+  }
+
   void _openSupport() {
     if (_groupId.isEmpty) return;
     Navigator.of(context).push(MaterialPageRoute<void>(
@@ -351,12 +366,47 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
       body: _loading
           ? const ShimmerListLoader()
           : FadeIn(
-              child: _groupId.isEmpty
-                  ? _buildNoGroup(theme)
-                  : _approvalStatus != 'approved'
-                      ? _buildPlatformApprovalPending(theme)
-                      : _buildDashboard(theme, cs),
+              child: _errorMessage != null && _groupId.isEmpty
+                  ? _buildErrorState(theme)
+                  : _groupId.isEmpty
+                      ? _buildNoGroup(theme)
+                      : _approvalStatus != 'approved'
+                          ? _buildPlatformApprovalPending(theme)
+                          : _buildDashboard(theme, cs),
             ),
+    );
+  }
+
+  Widget _buildErrorState(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cloud_off_rounded,
+                size: 64, color: theme.colorScheme.error),
+            const SizedBox(height: DesignTokens.spacingMd),
+            Text(_errorMessage!,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                )),
+            const SizedBox(height: DesignTokens.spacingLg),
+            FilledButton.icon(
+              onPressed: () {
+                setState(() {
+                  _loading = true;
+                  _errorMessage = null;
+                });
+                _loadStatus();
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Tentar novamente'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -687,6 +737,14 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                     onTap: _openCreditos,
                   ),
                   // Desafios são feitos entre atletas — sem card no dashboard staff
+                  _StaffCard(
+                    icon: Icons.fitness_center_rounded,
+                    title: 'Treinos',
+                    subtitle: 'Atribuir a atletas',
+                    bgColor: DesignTokens.primary.withValues(alpha: 0.1),
+                    iconColor: DesignTokens.primary,
+                    onTap: _openWorkoutAssign,
+                  ),
                   _StaffCard(
                     icon: Icons.admin_panel_settings_rounded,
                     title: 'Administração',

@@ -9,10 +9,10 @@ export async function PATCH(
   const { id } = await params;
   const supabase = createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
@@ -31,7 +31,7 @@ export async function PATCH(
     .from("coaching_members")
     .select("role")
     .eq("group_id", groupId)
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
     .maybeSingle();
 
   const role = (membership as { role: string } | null)?.role ?? "";
@@ -88,10 +88,10 @@ export async function DELETE(
   const { id } = await params;
   const supabase = createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
@@ -104,7 +104,7 @@ export async function DELETE(
     .from("coaching_members")
     .select("role")
     .eq("group_id", groupId)
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
     .maybeSingle();
 
   const role = (membership as { role: string } | null)?.role ?? "";

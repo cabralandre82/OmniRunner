@@ -20,11 +20,16 @@ final class WalletLoading extends WalletState {
 final class WalletLoaded extends WalletState {
   final WalletEntity wallet;
   final List<LedgerEntryEntity> history;
+  final bool isOffline;
 
-  const WalletLoaded({required this.wallet, required this.history});
+  const WalletLoaded({
+    required this.wallet,
+    required this.history,
+    this.isOffline = false,
+  });
 
   @override
-  List<Object?> get props => [wallet, history];
+  List<Object?> get props => [wallet, history, isOffline];
 }
 
 final class WalletError extends WalletState {

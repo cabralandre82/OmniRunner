@@ -12,14 +12,14 @@ export async function POST(request: Request) {
   try {
   const supabase = createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = rateLimit(`distribute:${session.user.id}`, { maxRequests: 20, windowMs: 60_000 });
+  const rl = rateLimit(`distribute:${user.id}`, { maxRequests: 20, windowMs: 60_000 });
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     .from("coaching_members")
     .select("role")
     .eq("group_id", groupId)
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
     .maybeSingle();
 
   if (!callerMembership || callerMembership.role !== "admin_master") {
@@ -135,12 +135,12 @@ export async function POST(request: Request) {
     delta_coins: amount,
     reason: "institution_token_issue",
     issuer_group_id: groupId,
-    ref_id: idempotencyKey ?? `portal_${session.user.id}_${Date.now()}`,
+    ref_id: idempotencyKey ?? `portal_${user.id}_${Date.now()}`,
     created_at_ms: Date.now(),
   });
 
   await auditLog({
-    actorId: session.user.id,
+    actorId: user.id,
     groupId,
     action: "coins.distribute",
     targetType: "athlete",

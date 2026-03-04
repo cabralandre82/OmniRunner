@@ -249,22 +249,42 @@ serve(async (req: Request) => {
       const totalGroups = groups.length;
       let totalComputed = 0;
       let batchIndex = 0;
+      let groupsProcessed = 0;
       const batchErrors: { group_id: string; error: string }[] = [];
+      const DEADLINE_MS = 50_000;
+      const loopStart = Date.now();
+      let hitDeadline = false;
+      const cursor = (body.cursor as string) ?? null;
+      const cursorIdx = cursor
+        ? groups.findIndex((g: { id: string }) => g.id > cursor)
+        : 0;
+      const startIdx = cursorIdx >= 0 ? cursorIdx : 0;
 
       log("info", "batch_assessoria: starting", {
         request_id: requestId,
         total_groups: totalGroups,
+        start_index: startIdx,
         batch_size: BATCH_SIZE,
         period,
         period_key: key,
       });
 
-      for (let i = 0; i < totalGroups; i += BATCH_SIZE) {
+      for (let i = startIdx; i < totalGroups; i += BATCH_SIZE) {
+        if (Date.now() - loopStart > DEADLINE_MS) {
+          hitDeadline = true;
+          break;
+        }
+
         batchIndex++;
         const chunk = groups.slice(i, i + BATCH_SIZE);
         const batchStart = Date.now();
 
         for (const g of chunk) {
+          if (Date.now() - loopStart > DEADLINE_MS) {
+            hitDeadline = true;
+            break;
+          }
+
           try {
             const { data: count, error } = await db.rpc("compute_leaderboard_assessoria", {
               p_coaching_group_id: g.id,
@@ -284,6 +304,7 @@ serve(async (req: Request) => {
               error: err instanceof Error ? err.message : "unknown",
             });
           }
+          groupsProcessed++;
         }
 
         log("info", "batch_assessoria: batch completed", {
@@ -291,6 +312,22 @@ serve(async (req: Request) => {
           batch: batchIndex,
           groups_in_batch: chunk.length,
           batch_duration_ms: Date.now() - batchStart,
+        });
+
+        if (hitDeadline) break;
+      }
+
+      const remaining = totalGroups - startIdx - groupsProcessed;
+      const lastProcessedId = groupsProcessed > 0
+        ? groups[startIdx + groupsProcessed - 1]?.id ?? null
+        : cursor;
+
+      if (hitDeadline) {
+        log("warn", "batch_assessoria: deadline reached, returning partial", {
+          request_id: requestId,
+          groups_processed: groupsProcessed,
+          groups_remaining: remaining,
+          next_cursor: lastProcessedId,
         });
       }
 
@@ -305,20 +342,24 @@ serve(async (req: Request) => {
       log("info", "batch_assessoria: finished", {
         request_id: requestId,
         total_groups: totalGroups,
+        groups_processed: groupsProcessed,
         total_computed: totalComputed,
         failed_count: batchErrors.length,
         total_duration_ms: elapsed(),
       });
 
       return jsonOk({
-        status: "ok",
+        status: hitDeadline ? "partial" : "ok",
         scope,
         period,
         period_key: key,
         total_groups: totalGroups,
+        groups_processed: groupsProcessed,
+        groups_remaining: remaining,
         entries_computed: totalComputed,
         failed_groups: batchErrors.length,
         errors: batchErrors.length > 0 ? batchErrors.slice(0, 10) : undefined,
+        next_cursor: hitDeadline ? lastProcessedId : undefined,
       }, requestId);
     }
 

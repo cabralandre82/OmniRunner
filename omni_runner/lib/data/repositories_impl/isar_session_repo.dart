@@ -41,6 +41,7 @@ final class IsarSessionRepo implements ISessionRepo {
     final records = await _isar.workoutSessionRecords
         .where()
         .sortByStartTimeMsDesc()
+        .limit(50)
         .findAll();
     return records.map(_toEntity).toList();
   }
@@ -53,6 +54,7 @@ final class IsarSessionRepo implements ISessionRepo {
         .where()
         .statusEqualTo(_statusToInt(status))
         .sortByStartTimeMsDesc()
+        .limit(50)
         .findAll();
     return records.map(_toEntity).toList();
   }

@@ -1,6 +1,8 @@
 import 'dart:io' show Platform;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:omni_runner/core/auth/auth_repository.dart';
 import 'package:omni_runner/core/config/app_config.dart';
@@ -69,8 +71,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
 
-    if (result.failure != null) {
-      _handleFailure(result.failure!);
+    final loginFailure = result.failure;
+    if (loginFailure != null) {
+      _handleFailure(loginFailure);
       return;
     }
     widget.onSuccess();
@@ -112,8 +115,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
 
-    if (result.failure != null) {
-      _handleFailure(result.failure!);
+    final googleFailure = result.failure;
+    if (googleFailure != null) {
+      _handleFailure(googleFailure);
       return;
     }
     widget.onSuccess();
@@ -127,8 +131,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
 
-    if (result.failure != null) {
-      _handleFailure(result.failure!);
+    final appleFailure = result.failure;
+    if (appleFailure != null) {
+      _handleFailure(appleFailure);
       return;
     }
     widget.onSuccess();
@@ -151,8 +156,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
 
-    if (result.failure != null) {
-      _handleFailure(result.failure!);
+    final instaFailure = result.failure;
+    if (instaFailure != null) {
+      _handleFailure(instaFailure);
       return;
     }
     widget.onSuccess();
@@ -447,6 +453,37 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                 ),
+
+              const SizedBox(height: DesignTokens.spacingMd),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm),
+                child: RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    children: [
+                      const TextSpan(text: 'Ao continuar, você concorda com nossa '),
+                      TextSpan(
+                        text: 'Política de Privacidade',
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          decoration: TextDecoration.underline,
+                        ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            launchUrl(
+                              Uri.parse('https://omnirunner.com.br/privacidade'),
+                              mode: LaunchMode.externalApplication,
+                            );
+                          },
+                      ),
+                      const TextSpan(text: '.'),
+                    ],
+                  ),
+                ),
+              ),
 
               const Spacer(flex: 3),
             ],

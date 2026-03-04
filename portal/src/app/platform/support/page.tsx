@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 interface Ticket {
   id: string;
@@ -24,34 +25,46 @@ export default async function SupportListPage({
 
   let query = supabase
     .from("support_tickets")
-    .select()
-    .order("updated_at", { ascending: false });
+    .select("id, group_id, subject, status, created_at, updated_at", { count: "exact" })
+    .order("updated_at", { ascending: false })
+    .limit(500);
 
   if (filterStatus && filterStatus !== "all") {
     query = query.eq("status", filterStatus);
   }
 
-  const { data: rawTickets } = await query;
+  const { data: rawTickets, count: totalCount } = await query;
 
-  const tickets: Ticket[] = [];
-  for (const t of rawTickets ?? []) {
-    const { data: group } = await supabase
-      .from("coaching_groups")
-      .select("name")
-      .eq("id", t.group_id)
-      .maybeSingle();
+  const raw = rawTickets ?? [];
+  const groupIds = Array.from(new Set(raw.map((t) => t.group_id).filter(Boolean)));
+  const ticketIds = raw.map((t) => t.id);
 
-    const { count } = await supabase
-      .from("support_messages")
-      .select("id", { count: "exact", head: true })
-      .eq("ticket_id", t.id);
+  const [groupsRes, countsRes] = await Promise.all([
+    groupIds.length > 0
+      ? supabase.from("coaching_groups").select("id, name").in("id", groupIds)
+      : { data: [] as { id: string; name: string }[] },
+    ticketIds.length > 0
+      ? supabase
+          .from("support_messages")
+          .select("ticket_id", { count: "exact", head: false })
+          .in("ticket_id", ticketIds)
+      : { data: [] as { ticket_id: string }[] },
+  ]);
 
-    tickets.push({
-      ...t,
-      group_name: group?.name ?? "—",
-      message_count: count ?? 0,
-    });
+  const groupMap = new Map(
+    (groupsRes.data ?? []).map((g: { id: string; name: string }) => [g.id, g.name]),
+  );
+  const countMap = new Map<string, number>();
+  for (const m of countsRes.data ?? []) {
+    const tid = (m as { ticket_id: string }).ticket_id;
+    countMap.set(tid, (countMap.get(tid) ?? 0) + 1);
   }
+
+  const tickets: Ticket[] = raw.map((t) => ({
+    ...t,
+    group_name: groupMap.get(t.group_id) ?? "—",
+    message_count: countMap.get(t.id) ?? 0,
+  }));
 
   const openCount = tickets.filter((t) => t.status === "open").length;
   const answeredCount = tickets.filter((t) => t.status === "answered").length;
@@ -111,6 +124,12 @@ export default async function SupportListPage({
           );
         })}
       </div>
+
+      {(totalCount ?? 0) > tickets.length && (
+        <p className="text-sm text-content-secondary">
+          Mostrando {tickets.length} de {totalCount} chamados
+        </p>
+      )}
 
       {/* Tickets */}
       {tickets.length === 0 ? (

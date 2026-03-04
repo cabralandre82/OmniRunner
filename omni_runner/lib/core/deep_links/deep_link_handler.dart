@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/storage/preferences_keys.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Parsed deep link action dispatched to the UI layer.
@@ -57,7 +58,6 @@ class UnknownLinkAction extends DeepLinkAction {
 /// the OAuth redirect / app restart cycle.
 class DeepLinkHandler {
   static const _tag = 'DeepLink';
-  static const _prefKey = 'pending_invite_code';
 
   final _appLinks = AppLinks();
   final _controller = StreamController<DeepLinkAction>.broadcast();
@@ -146,16 +146,16 @@ class DeepLinkHandler {
   /// Persist an invite code so it survives login/OAuth redirects.
   Future<void> savePendingInvite(String code) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefKey, code);
+    await prefs.setString(PreferencesKeys.pendingInviteCode, code);
     AppLogger.info('Saved pending invite: $code', tag: _tag);
   }
 
   /// Read and clear the persisted invite code (consume-once).
   Future<String?> consumePendingInvite() async {
     final prefs = await SharedPreferences.getInstance();
-    final code = prefs.getString(_prefKey);
+    final code = prefs.getString(PreferencesKeys.pendingInviteCode);
     if (code != null) {
-      await prefs.remove(_prefKey);
+      await prefs.remove(PreferencesKeys.pendingInviteCode);
       AppLogger.info('Consumed pending invite: $code', tag: _tag);
     }
     return code;
@@ -164,7 +164,7 @@ class DeepLinkHandler {
   /// Check if there's a pending invite without consuming it.
   Future<String?> peekPendingInvite() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_prefKey);
+    return prefs.getString(PreferencesKeys.pendingInviteCode);
   }
 
   /// Parse an invite code from a URL string, QR data, or raw code.

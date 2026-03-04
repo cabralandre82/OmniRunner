@@ -8,10 +8,10 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const supabase = createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     .from("coaching_members")
     .select("role")
     .eq("group_id", groupId)
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
     .maybeSingle();
 
   if (

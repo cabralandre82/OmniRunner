@@ -204,6 +204,7 @@ serve(async (req: Request) => {
               rule: "challenge_team_invite_received",
               context: { challenge_id, user_ids: staffIds },
             }),
+            signal: AbortSignal.timeout(15_000),
           }).catch(() => {});
         }
       }

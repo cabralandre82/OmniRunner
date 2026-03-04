@@ -787,19 +787,7 @@ class _RunnerTile extends StatelessWidget {
         ),
       ),
       subtitle: Text('Última corrida: $recency'),
-      trailing: !isMe
-          ? IconButton(
-              icon: Icon(Icons.sports_mma_rounded,
-                  size: 20, color: cs.primary),
-              tooltip: 'Desafiar',
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Shadow racing em breve!')),
-                );
-              },
-            )
-          : null,
+      trailing: null,
     );
   }
 }

@@ -95,25 +95,27 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
           }
           if (state is StaffQrGenerated) {
             _startCountdown(state.payload);
-            if (_isIssue && _capacity != null) {
+            final cap = _capacity;
+            if (_isIssue && cap != null) {
               setState(() {
                 _capacity = EmissionCapacity(
                   availableTokens:
-                      _capacity!.availableTokens - state.payload.amount,
+                      cap.availableTokens - state.payload.amount,
                   lifetimeIssued:
-                      _capacity!.lifetimeIssued + state.payload.amount,
-                  lifetimeBurned: _capacity!.lifetimeBurned,
+                      cap.lifetimeIssued + state.payload.amount,
+                  lifetimeBurned: cap.lifetimeBurned,
                 );
               });
             }
-            if (_isBadge && _badgeCapacity != null) {
+            final badgeCap = _badgeCapacity;
+            if (_isBadge && badgeCap != null) {
               setState(() {
                 _badgeCapacity = BadgeCapacity(
                   availableBadges:
-                      _badgeCapacity!.availableBadges - state.payload.amount,
-                  lifetimePurchased: _badgeCapacity!.lifetimePurchased,
+                      badgeCap.availableBadges - state.payload.amount,
+                  lifetimePurchased: badgeCap.lifetimePurchased,
                   lifetimeActivated:
-                      _badgeCapacity!.lifetimeActivated + state.payload.amount,
+                      badgeCap.lifetimeActivated + state.payload.amount,
                 );
               });
             }
@@ -148,12 +150,14 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
 
   Widget _buildForm(BuildContext context, ThemeData theme) {
     final isBadge = widget.type == TokenIntentType.champBadgeActivate;
+    final cap = _capacity;
+    final badgeCap = _badgeCapacity;
     final exceedsCoinCapacity = _isIssue &&
-        _capacity != null &&
-        _amount > _capacity!.availableTokens;
+        cap != null &&
+        _amount > cap.availableTokens;
     final exceedsBadgeCapacity = _isBadge &&
-        _badgeCapacity != null &&
-        _badgeCapacity!.availableBadges <= 0;
+        badgeCap != null &&
+        badgeCap.availableBadges <= 0;
     final exceedsCapacity = exceedsCoinCapacity || exceedsBadgeCapacity;
 
     return Padding(
@@ -218,7 +222,7 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
               const SizedBox(height: 8),
               Text(
                 'Quantidade excede o saldo disponível '
-                '(${_capacity!.availableTokens})',
+                '(${cap.availableTokens})',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.error,
                 ),

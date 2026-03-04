@@ -1,14 +1,25 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/offline/offline_queue.dart';
 import 'package:omni_runner/domain/entities/device_link_entity.dart';
 import 'package:omni_runner/domain/entities/workout_execution_entity.dart';
 import 'package:omni_runner/domain/repositories/i_wearable_repo.dart';
 
 final class SupabaseWearableRepo implements IWearableRepo {
   final SupabaseClient _db;
+  final OfflineQueue? _offlineQueue;
 
-  const SupabaseWearableRepo(this._db);
+  const SupabaseWearableRepo(this._db, {OfflineQueue? offlineQueue})
+      : _offlineQueue = offlineQueue;
+
+  static bool _isNetworkError(Object e) {
+    final msg = e.toString().toLowerCase();
+    return msg.contains('socket') ||
+        msg.contains('timeout') ||
+        msg.contains('connection') ||
+        msg.contains('network');
+  }
 
   Future<T> _retry<T>(Future<T> Function() fn, {int maxAttempts = 3}) async {
     for (var i = 0; i < maxAttempts; i++) {
@@ -141,6 +152,20 @@ final class SupabaseWearableRepo implements IWearableRepo {
       });
     } catch (e, st) {
       AppLogger.error('Wearable.importExecution failed', error: e, stack: st);
+      if (_isNetworkError(e) && _offlineQueue != null) {
+        final params = {
+          'p_assignment_id': assignmentId,
+          'p_duration_seconds': durationSeconds,
+          'p_distance_meters': distanceMeters,
+          'p_avg_pace': avgPace,
+          'p_avg_hr': avgHr,
+          'p_max_hr': maxHr,
+          'p_calories': calories,
+          'p_source': source,
+          'p_provider_activity_id': providerActivityId,
+        };
+        await _offlineQueue.enqueue('fn_import_execution', params);
+      }
       rethrow;
     }
   }

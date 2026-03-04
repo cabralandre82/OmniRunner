@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import { trackBillingEvent } from "@/lib/analytics";
 import { formatBRL, formatDateTime } from "@/lib/format";
 
@@ -51,7 +52,7 @@ export default async function BillingPage() {
   }
 
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   const supabase = createClient();
 

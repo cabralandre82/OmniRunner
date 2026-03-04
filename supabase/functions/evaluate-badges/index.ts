@@ -343,6 +343,7 @@ serve(async (req: Request) => {
                 badge_name: badgeDef?.name ?? award.badge_id,
               },
             }),
+            signal: AbortSignal.timeout(15_000),
           }).catch(() => {});
         }
       }

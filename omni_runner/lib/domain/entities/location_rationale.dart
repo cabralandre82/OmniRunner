@@ -8,23 +8,23 @@
 /// descriptions in Info.plist (already configured in Sprint 2.3).
 abstract final class LocationRationale {
   /// Title for the background location rationale dialog.
-  static const backgroundTitle = 'Background Location Needed';
+  static const backgroundTitle = 'Localização em segundo plano';
 
   /// Body text explaining why background location is required.
   ///
   /// Shown to user before requesting ACCESS_BACKGROUND_LOCATION.
   /// Must clearly explain the benefit to the user.
   static const backgroundBody =
-      'Omni Runner needs to track your location in the background '
-      'to keep recording your run when the screen is off or you '
-      'switch to another app.\n\n'
-      'This ensures your route, distance, and pace are accurately '
-      'captured for the entire run.\n\n'
-      'On the next screen, please select "Allow all the time".';
+      'O Omni Runner precisa de acesso à localização em segundo plano '
+      'para rastrear suas corridas mesmo quando o app não está em '
+      'primeiro plano.\n\n'
+      'Isso garante que sua rota, distância e pace sejam registrados '
+      'com precisão durante toda a corrida.\n\n'
+      'Na próxima tela, selecione "Permitir o tempo todo".';
 
   /// Button text to proceed with background permission request.
-  static const backgroundProceed = 'Continue';
+  static const backgroundProceed = 'Continuar';
 
   /// Button text to skip background permission (foreground-only mode).
-  static const backgroundSkip = 'Not Now';
+  static const backgroundSkip = 'Agora não';
 }

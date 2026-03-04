@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/data/services/workout_delivery_service.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/workout_assignment_entity.dart';
 import 'package:omni_runner/domain/entities/workout_template_entity.dart';
 import 'package:omni_runner/domain/repositories/i_workout_repo.dart';
 import 'package:omni_runner/presentation/screens/athlete_delivery_screen.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
+import 'package:omni_runner/presentation/widgets/state_widgets.dart';
+import 'package:omni_runner/presentation/widgets/error_state.dart';
 
+// TODO: This screen appears to be unused. Consider removing or integrating it.
 /// Shows the athlete's workout for today (or selected date).
 /// Allows marking the workout as completed.
 class AthleteWorkoutDayScreen extends StatefulWidget {
@@ -46,13 +49,9 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
   Future<void> _loadPendingDeliveryCount() async {
     try {
       final uid = sl<UserIdentityProvider>().userId;
-      final rows = await Supabase.instance.client
-          .from('workout_delivery_items')
-          .select('id')
-          .eq('athlete_user_id', uid)
-          .inFilter('status', ['published']);
+      final count = await sl<WorkoutDeliveryService>().countPublishedItems(uid);
       if (mounted) {
-        setState(() => _pendingDeliveries = (rows as List).length);
+        setState(() => _pendingDeliveries = count);
       }
     } catch (e) {
       AppLogger.warn('Failed to load delivery count', tag: 'WorkoutDayScreen', error: e);
@@ -101,7 +100,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
       );
       if (mounted) {
         setState(() {
-          _error = 'Erro ao carregar treino: $e';
+          _error = ErrorMessages.humanize(e);
           _loading = false;
         });
       }
@@ -109,11 +108,12 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
   }
 
   Future<void> _markCompleted() async {
-    if (_assignment == null) return;
+    final assignment = _assignment;
+    if (assignment == null) return;
     setState(() => _completing = true);
     try {
       await sl<IWorkoutRepo>().updateAssignmentStatus(
-        _assignment!.id,
+        assignment.id,
         WorkoutAssignmentStatus.completed,
       );
       if (!mounted) return;
@@ -132,7 +132,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
       if (mounted) {
         setState(() => _completing = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao concluir: $e')),
+          SnackBar(content: Text(ErrorMessages.humanize(e))),
         );
       }
     }
@@ -142,7 +142,9 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
+    return Semantics(
+      label: 'Tela de Meu Treino do Dia',
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Meu Treino do Dia'),
         actions: [
@@ -169,6 +171,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
         ],
       ),
       body: _buildBody(theme),
+    ),
     );
   }
 
@@ -178,31 +181,9 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
     }
 
     if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(DesignTokens.spacingLg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.error_outline_rounded,
-                  size: 48, color: theme.colorScheme.error),
-              const SizedBox(height: 16),
-              Text(
-                _error!,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.error,
-                ),
-              ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: _loadToday,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Tentar novamente'),
-              ),
-            ],
-          ),
-        ),
+      return ErrorState(
+        message: _error ?? '',
+        onRetry: _loadToday,
       );
     }
 
@@ -214,41 +195,30 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
   }
 
   Widget _buildEmpty(ThemeData theme) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(DesignTokens.spacingXl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.event_available_outlined, size: 64, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
-            const SizedBox(height: 16),
-            Text('Sem treino agendado para hoje', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(
-              'Aproveite para descansar ou faça um treino livre!',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          ],
-        ),
-      ),
+    return AppEmptyState(
+      message: 'Sem treino agendado para hoje',
+      icon: Icons.event_available_outlined,
     );
   }
 
   Widget _buildAssignment(ThemeData theme) {
+    final assignment = _assignment;
+    final template = _template;
+    if (assignment == null) return _buildEmpty(theme);
+
     final cs = theme.colorScheme;
     final dateLabel = DateFormat('dd/MM/yyyy', 'pt_BR')
-        .format(_assignment!.scheduledDate);
+        .format(assignment.scheduledDate);
     final isCompleted =
-        _assignment!.status == WorkoutAssignmentStatus.completed;
+        assignment.status == WorkoutAssignmentStatus.completed;
 
     final isDark = theme.brightness == Brightness.dark;
-    final statusLabel = switch (_assignment!.status) {
+    final statusLabel = switch (assignment.status) {
       WorkoutAssignmentStatus.planned => 'Planejado',
       WorkoutAssignmentStatus.completed => 'Concluído',
       WorkoutAssignmentStatus.missed => 'Não realizado',
     };
-    final statusColor = switch (_assignment!.status) {
+    final statusColor = switch (assignment.status) {
       WorkoutAssignmentStatus.planned => cs.primary,
       WorkoutAssignmentStatus.completed => cs.tertiary,
       WorkoutAssignmentStatus.missed => cs.error,
@@ -297,18 +267,18 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
             ),
           ],
         ),
-        if (_template?.description != null &&
-            _template!.description!.isNotEmpty) ...[
+        if (template != null &&
+            (template.description ?? '').isNotEmpty) ...[
           const SizedBox(height: 12),
           Text(
-            _template!.description!,
+            template.description ?? '',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: cs.onSurfaceVariant,
             ),
           ),
         ],
-        if (_assignment!.notes != null &&
-            _assignment!.notes!.isNotEmpty) ...[
+        if (assignment.notes != null &&
+            (assignment.notes ?? '').isNotEmpty) ...[
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(12),
@@ -323,7 +293,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    _assignment!.notes!,
+                    assignment.notes ?? '',
                     style: theme.textTheme.bodyMedium,
                   ),
                 ),
@@ -332,7 +302,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
           ),
         ],
         const SizedBox(height: 24),
-        if (_template != null && _template!.blocks.isNotEmpty) ...[
+        if (template != null && template.blocks.isNotEmpty) ...[
           Text(
             'Blocos do Treino',
             style: theme.textTheme.titleSmall?.copyWith(
@@ -340,8 +310,8 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          ...List.generate(_template!.blocks.length, (i) {
-            final block = _template!.blocks[i];
+          ...List.generate(template.blocks.length, (i) {
+            final block = template.blocks[i];
             return _WorkoutBlockCard(block: block, index: i);
           }),
         ],
@@ -472,10 +442,10 @@ class _WorkoutBlockCard extends StatelessWidget {
                       ),
                     ),
                   ],
-                  if (block.notes != null && block.notes!.isNotEmpty) ...[
+                  if ((block.notes ?? '').isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
-                      block.notes!,
+                      block.notes ?? '',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.outline,
                         fontStyle: FontStyle.italic,

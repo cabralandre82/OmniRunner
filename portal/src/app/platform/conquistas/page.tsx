@@ -30,7 +30,7 @@ export default async function ConquistasPage() {
 
   const { data: badges, error } = await supabase
     .from("badges")
-    .select("*")
+    .select("id, name, category, tier, description, xp_reward, coins_reward, criteria_type, is_secret")
     .order("category")
     .order("tier");
 

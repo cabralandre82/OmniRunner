@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -66,7 +67,7 @@ async function getFinancialKpis(groupId: string): Promise<FinancialKpis> {
 
 export default async function FinancialDashboardPage() {
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   let kpis: FinancialKpis | null = null;
   let fetchError: string | null = null;

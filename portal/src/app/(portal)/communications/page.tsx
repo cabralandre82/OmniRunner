@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import Link from "next/link";
 import { formatDateISO, formatPercent } from "@/lib/format";
 
@@ -148,7 +149,7 @@ export default async function CommunicationsPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10));

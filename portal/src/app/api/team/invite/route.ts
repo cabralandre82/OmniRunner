@@ -9,14 +9,14 @@ import { teamInviteSchema } from "@/lib/schemas";
 export async function POST(request: Request) {
   const supabase = createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = rateLimit(`invite:${session.user.id}`, { maxRequests: 10, windowMs: 60_000 });
+  const rl = rateLimit(`invite:${user.id}`, { maxRequests: 10, windowMs: 60_000 });
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     .from("coaching_members")
     .select("role")
     .eq("group_id", groupId)
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
     .maybeSingle();
 
   if (!callerMembership || callerMembership.role !== "admin_master") {
@@ -104,7 +104,7 @@ export async function POST(request: Request) {
   }
 
   await auditLog({
-    actorId: session.user.id,
+    actorId: user.id,
     groupId: groupId,
     action: "team.invite",
     targetType: "user",

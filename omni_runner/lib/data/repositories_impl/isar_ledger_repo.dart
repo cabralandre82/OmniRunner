@@ -32,6 +32,7 @@ final class IsarLedgerRepo implements ILedgerRepo {
         .where()
         .userIdEqualTo(userId)
         .sortByCreatedAtMsDesc()
+        .limit(50)
         .findAll();
     return records.map(_toEntity).toList();
   }

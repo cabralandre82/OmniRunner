@@ -1,43 +1,41 @@
+import 'package:omni_runner/core/storage/preferences_keys.dart';
 import 'package:omni_runner/domain/entities/coach_settings_entity.dart';
 import 'package:omni_runner/domain/repositories/i_coach_settings_repo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// SharedPreferences implementation of [ICoachSettingsRepo].
 class CoachSettingsRepo implements ICoachSettingsRepo {
-  static const _kmKey = 'coach_km_enabled';
-  static const _ghostKey = 'coach_ghost_enabled';
-  static const _periodicKey = 'coach_periodic_enabled';
-  static const _hrZoneKey = 'coach_hr_zone_enabled';
-  static const _maxHrKey = 'coach_max_hr';
-  static const _imperialKey = 'coach_use_imperial';
-  static const _visibleRankingKey = 'coach_profile_visible_ranking';
-  static const _shareActivityKey = 'coach_share_activity_feed';
-
   @override
   Future<CoachSettingsEntity> load() async {
     final prefs = await SharedPreferences.getInstance();
     return CoachSettingsEntity(
-      kmEnabled: prefs.getBool(_kmKey) ?? true,
-      ghostEnabled: prefs.getBool(_ghostKey) ?? true,
-      periodicEnabled: prefs.getBool(_periodicKey) ?? true,
-      hrZoneEnabled: prefs.getBool(_hrZoneKey) ?? true,
-      maxHr: prefs.getInt(_maxHrKey) ?? 190,
-      useImperial: prefs.getBool(_imperialKey) ?? false,
-      profileVisibleInRanking: prefs.getBool(_visibleRankingKey) ?? true,
-      shareActivityInFeed: prefs.getBool(_shareActivityKey) ?? true,
+      kmEnabled: prefs.getBool(PreferencesKeys.coachKmEnabled) ?? true,
+      ghostEnabled: prefs.getBool(PreferencesKeys.coachGhostEnabled) ?? true,
+      periodicEnabled: prefs.getBool(PreferencesKeys.coachPeriodicEnabled) ?? true,
+      hrZoneEnabled: prefs.getBool(PreferencesKeys.coachHrZoneEnabled) ?? true,
+      maxHr: prefs.getInt(PreferencesKeys.coachMaxHr) ?? 190,
+      useImperial: prefs.getBool(PreferencesKeys.coachUseImperial) ?? false,
+      profileVisibleInRanking:
+          prefs.getBool(PreferencesKeys.coachProfileVisibleRanking) ?? true,
+      shareActivityInFeed:
+          prefs.getBool(PreferencesKeys.coachShareActivityFeed) ?? true,
     );
   }
 
   @override
   Future<void> save(CoachSettingsEntity settings) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_kmKey, settings.kmEnabled);
-    await prefs.setBool(_ghostKey, settings.ghostEnabled);
-    await prefs.setBool(_periodicKey, settings.periodicEnabled);
-    await prefs.setBool(_hrZoneKey, settings.hrZoneEnabled);
-    await prefs.setInt(_maxHrKey, settings.maxHr);
-    await prefs.setBool(_imperialKey, settings.useImperial);
-    await prefs.setBool(_visibleRankingKey, settings.profileVisibleInRanking);
-    await prefs.setBool(_shareActivityKey, settings.shareActivityInFeed);
+    await prefs.setBool(PreferencesKeys.coachKmEnabled, settings.kmEnabled);
+    await prefs.setBool(PreferencesKeys.coachGhostEnabled, settings.ghostEnabled);
+    await prefs.setBool(
+        PreferencesKeys.coachPeriodicEnabled, settings.periodicEnabled);
+    await prefs.setBool(
+        PreferencesKeys.coachHrZoneEnabled, settings.hrZoneEnabled);
+    await prefs.setInt(PreferencesKeys.coachMaxHr, settings.maxHr);
+    await prefs.setBool(PreferencesKeys.coachUseImperial, settings.useImperial);
+    await prefs.setBool(PreferencesKeys.coachProfileVisibleRanking,
+        settings.profileVisibleInRanking);
+    await prefs.setBool(
+        PreferencesKeys.coachShareActivityFeed, settings.shareActivityInFeed);
   }
 }

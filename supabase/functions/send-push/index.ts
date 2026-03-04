@@ -134,23 +134,24 @@ serve(async (req: Request) => {
 
     const accessToken = await getFcmAccessToken(fcmServiceAccountB64);
 
-    // ── 5. Send to each device token ─────────────────────────────────
+    // ── 5. Send to device tokens in batches with concurrency cap ─────
     const fcmUrl = `https://fcm.googleapis.com/v1/projects/${fcmProjectId}/messages:send`;
+    const CONCURRENCY = 10;
+    const BATCH_SIZE = 500;
+    const DEADLINE_MS = 50_000;
+    const fnStart = Date.now();
 
     let sent = 0;
     let failed = 0;
+    let skippedByDeadline = 0;
     const staleTokens: string[] = [];
 
-    for (const { token, platform } of tokens) {
+    function buildMessage(token: string, platform: string): Record<string, unknown> {
       const message: Record<string, unknown> = {
         token,
         notification: { title, body: notifBody },
       };
-
-      if (data) {
-        message.data = data;
-      }
-
+      if (data) message.data = data;
       if (platform === "android") {
         message.android = {
           priority: "high",
@@ -158,40 +159,75 @@ serve(async (req: Request) => {
         };
       } else if (platform === "ios") {
         message.apns = {
-          payload: {
-            aps: { sound: "default", badge: 1 },
-          },
+          payload: { aps: { sound: "default", badge: 1 } },
         };
       }
+      return message;
+    }
 
+    async function sendOne(token: string, platform: string): Promise<"sent" | "failed" | "stale"> {
+      const message = buildMessage(token, platform);
       try {
-        const res = await fetch(fcmUrl, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ message }),
-        });
-
-        if (res.ok) {
-          sent++;
-        } else {
-          const errBody = await res.json().catch(() => ({}));
-          const errCode = (errBody as Record<string, unknown>)?.error as Record<string, unknown> | undefined;
-          const errorStatus = errCode?.status as string | undefined;
-
-          if (
-            errorStatus === "NOT_FOUND" ||
-            errorStatus === "UNREGISTERED"
-          ) {
-            staleTokens.push(token);
-          }
-          failed++;
+        const fcmCtrl = new AbortController();
+        const fcmTimer = setTimeout(() => fcmCtrl.abort(), 15_000);
+        let res: Response;
+        try {
+          res = await fetch(fcmUrl, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ message }),
+            signal: fcmCtrl.signal,
+          });
+        } finally {
+          clearTimeout(fcmTimer);
         }
+        if (res.ok) return "sent";
+        const errBody = await res.json().catch(() => ({}));
+        const errObj = (errBody as Record<string, unknown>)?.error as Record<string, unknown> | undefined;
+        const errorStatus = errObj?.status as string | undefined;
+        if (errorStatus === "NOT_FOUND" || errorStatus === "UNREGISTERED") return "stale";
+        return "failed";
       } catch {
-        failed++;
+        return "failed";
       }
+    }
+
+    for (let batchStart = 0; batchStart < tokens.length; batchStart += BATCH_SIZE) {
+      if (Date.now() - fnStart > DEADLINE_MS) {
+        skippedByDeadline = tokens.length - batchStart;
+        break;
+      }
+
+      const batch = tokens.slice(batchStart, batchStart + BATCH_SIZE);
+
+      // Process batch with concurrency cap
+      for (let i = 0; i < batch.length; i += CONCURRENCY) {
+        if (Date.now() - fnStart > DEADLINE_MS) {
+          skippedByDeadline += batch.length - i;
+          break;
+        }
+
+        const chunk = batch.slice(i, i + CONCURRENCY);
+        const results = await Promise.allSettled(
+          chunk.map(({ token, platform }) => sendOne(token, platform)),
+        );
+
+        for (let j = 0; j < results.length; j++) {
+          const r = results[j];
+          if (r.status === "fulfilled") {
+            if (r.value === "sent") sent++;
+            else if (r.value === "stale") { staleTokens.push(chunk[j].token); failed++; }
+            else failed++;
+          } else {
+            failed++;
+          }
+        }
+      }
+
+      if (skippedByDeadline > 0) break;
     }
 
     // ── 6. Clean up stale tokens ─────────────────────────────────────
@@ -207,6 +243,7 @@ serve(async (req: Request) => {
       failed,
       stale_cleaned: staleTokens.length,
       total_tokens: tokens.length,
+      skipped_by_deadline: skippedByDeadline,
     }, requestId);
   } catch (_err) {
     status = 500;
@@ -256,11 +293,19 @@ async function getFcmAccessToken(serviceAccountB64: string): Promise<string> {
   );
   const jwt = `${signInput}.${encodedSig}`;
 
-  const res = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
-  });
+  const oauthCtrl = new AbortController();
+  const oauthTimer = setTimeout(() => oauthCtrl.abort(), 15_000);
+  let res: Response;
+  try {
+    res = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+      signal: oauthCtrl.signal,
+    });
+  } finally {
+    clearTimeout(oauthTimer);
+  }
 
   if (!res.ok) {
     throw new Error(`OAuth2 token exchange failed: ${res.status}`);

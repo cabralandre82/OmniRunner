@@ -7,14 +7,14 @@ import { checkoutSchema } from "@/lib/schemas";
 export async function POST(request: Request) {
   const supabase = createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = rateLimit(`checkout:${session.user.id}`, { maxRequests: 5, windowMs: 60_000 });
+  const rl = rateLimit(`checkout:${user.id}`, { maxRequests: 5, windowMs: 60_000 });
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
@@ -34,6 +34,7 @@ export async function POST(request: Request) {
   }
   const { product_id: productId, gateway } = parsed.data;
 
+  const { data: { session } } = await supabase.auth.getSession();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
   const fnName =
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
+      Authorization: `Bearer ${session?.access_token}`,
     },
     body: JSON.stringify({ product_id: productId, group_id: groupId }),
   });

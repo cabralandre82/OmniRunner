@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { startTimer, logRequest, logError } from "../_shared/obs.ts";
 import { handleCors } from "../_shared/cors.ts";
 import { jsonOk, jsonErr } from "../_shared/http.ts";
+import { requireUser, AuthError } from "../_shared/auth.ts";
 
 const FN = "trainingpeaks-sync";
 const TP_API = "https://api.trainingpeaks.com/v1";
@@ -68,6 +69,7 @@ serve(async (req: Request) => {
   const elapsed = startTimer();
   let status = 200;
   let errorCode: string | undefined;
+  let userId: string | null = null;
 
   try {
     const url = new URL(req.url);
@@ -88,12 +90,20 @@ serve(async (req: Request) => {
       return jsonErr(403, "TRAININGPEAKS_DISABLED", "TrainingPeaks integration is disabled", requestId);
     }
 
+    const { user } = await requireUser(req);
+    userId = user.id;
+
     if (req.method !== "POST") {
       status = 405;
       return jsonErr(405, "METHOD_NOT_ALLOWED", "Use POST", requestId);
     }
 
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return jsonErr(400, "INVALID_JSON", "Malformed request body", requestId);
+    }
     const action = body.action;
     const db = createClient(SUPABASE_URL, SERVICE_KEY);
 
@@ -109,66 +119,91 @@ serve(async (req: Request) => {
         return jsonOk({ pushed: 0, failed: 0 }, requestId);
       }
 
+      const athleteIds = [...new Set(pendingSyncs.map((s) => s.athlete_user_id))];
+      const assignmentIds = [...new Set(pendingSyncs.map((s) => s.assignment_id))];
+
+      const { data: deviceLinks } = await db
+        .from("coaching_device_links")
+        .select("athlete_user_id, access_token, provider_user_id, expires_at")
+        .in("athlete_user_id", athleteIds)
+        .eq("provider", "trainingpeaks");
+      const deviceLinkByAthlete = new Map(
+        (deviceLinks ?? []).map((d) => [d.athlete_user_id, d] as const),
+      );
+
+      const { data: assignments } = await db
+        .from("coaching_workout_assignments")
+        .select("id, template_id, scheduled_date")
+        .in("id", assignmentIds);
+      const assignmentById = new Map(
+        (assignments ?? []).map((a) => [a.id, a] as const),
+      );
+
+      const templateIds = [...new Set((assignments ?? []).map((a) => a.template_id).filter(Boolean))] as string[];
+      const { data: templates } = templateIds.length > 0
+        ? await db.from("coaching_workout_templates").select("id, name").in("id", templateIds)
+        : { data: null };
+      const templateById = new Map(
+        (templates ?? []).map((t) => [t.id, t] as const),
+      );
+
+      const { data: blocksRows } = templateIds.length > 0
+        ? await db
+            .from("coaching_workout_blocks")
+            .select("template_id, order_index, block_type, duration_seconds, distance_meters, target_pace_seconds_per_km, target_hr_zone, rpe_target, notes")
+            .in("template_id", templateIds)
+            .order("template_id")
+            .order("order_index")
+        : { data: null };
+      const blocksByTemplateId = new Map<string, WorkoutBlock[]>();
+      for (const b of blocksRows ?? []) {
+        const existing = blocksByTemplateId.get(b.template_id) ?? [];
+        existing.push(b as WorkoutBlock);
+        blocksByTemplateId.set(b.template_id, existing);
+      }
+
       let pushed = 0;
       let failed = 0;
+      const TIMEOUT_MS = 10_000;
+      const CONCURRENCY = 5;
 
-      for (const sync of pendingSyncs) {
+      async function processSingle(sync: typeof pendingSyncs[0]) {
+        const deviceLink = deviceLinkByAthlete.get(sync.athlete_user_id);
+        const accessToken = deviceLink?.access_token;
+
+        if (!accessToken) {
+          await db.from("coaching_tp_sync").update({
+            sync_status: "failed",
+            error_message: "No access token available",
+            updated_at: new Date().toISOString(),
+          }).eq("id", sync.id);
+          return false;
+        }
+
+        const assignment = assignmentById.get(sync.assignment_id);
+
+        if (!assignment) {
+          await db.from("coaching_tp_sync").update({
+            sync_status: "failed",
+            error_message: "Assignment not found",
+            updated_at: new Date().toISOString(),
+          }).eq("id", sync.id);
+          return false;
+        }
+
+        const template = assignment.template_id ? templateById.get(assignment.template_id) : null;
+        const blocks = assignment.template_id ? (blocksByTemplateId.get(assignment.template_id) ?? []) : [];
+
+        const tpWorkout = buildTPWorkout(
+          template?.name ?? "Treino OmniRunner",
+          assignment.scheduled_date,
+          (blocks ?? []) as WorkoutBlock[],
+        );
+
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
         try {
-          // Get the athlete's TP device link
-          const { data: deviceLink } = await db
-            .from("coaching_device_links")
-            .select("access_token, provider_user_id, expires_at")
-            .eq("athlete_user_id", sync.athlete_user_id)
-            .eq("provider", "trainingpeaks")
-            .maybeSingle();
-
-          const accessToken = deviceLink?.access_token;
-
-          if (!accessToken) {
-            await db.from("coaching_tp_sync").update({
-              sync_status: "failed",
-              error_message: "No access token available",
-              updated_at: new Date().toISOString(),
-            }).eq("id", sync.id);
-            failed++;
-            continue;
-          }
-
-          // Build workout payload from assignment data
-          const { data: assignment } = await db
-            .from("coaching_workout_assignments")
-            .select("template_id, scheduled_date")
-            .eq("id", sync.assignment_id)
-            .maybeSingle();
-
-          if (!assignment) {
-            await db.from("coaching_tp_sync").update({
-              sync_status: "failed",
-              error_message: "Assignment not found",
-              updated_at: new Date().toISOString(),
-            }).eq("id", sync.id);
-            failed++;
-            continue;
-          }
-
-          const { data: template } = await db
-            .from("coaching_workout_templates")
-            .select("name")
-            .eq("id", assignment.template_id)
-            .maybeSingle();
-
-          const { data: blocks } = await db
-            .from("coaching_workout_blocks")
-            .select("order_index, block_type, duration_seconds, distance_meters, target_pace_seconds_per_km, target_hr_zone, rpe_target, notes")
-            .eq("template_id", assignment.template_id)
-            .order("order_index");
-
-          const tpWorkout = buildTPWorkout(
-            template?.name ?? "Treino OmniRunner",
-            assignment.scheduled_date,
-            (blocks ?? []) as WorkoutBlock[],
-          );
-
           const tpRes = await fetch(`${TP_API}/workouts`, {
             method: "POST",
             headers: {
@@ -176,6 +211,7 @@ serve(async (req: Request) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify(tpWorkout),
+            signal: controller.signal,
           });
 
           if (tpRes.ok) {
@@ -186,7 +222,7 @@ serve(async (req: Request) => {
               pushed_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             }).eq("id", sync.id);
-            pushed++;
+            return true;
           } else {
             const errText = await tpRes.text();
             await db.from("coaching_tp_sync").update({
@@ -194,7 +230,7 @@ serve(async (req: Request) => {
               error_message: `TP API ${tpRes.status}: ${errText.substring(0, 200)}`,
               updated_at: new Date().toISOString(),
             }).eq("id", sync.id);
-            failed++;
+            return false;
           }
         } catch (err) {
           await db.from("coaching_tp_sync").update({
@@ -202,7 +238,18 @@ serve(async (req: Request) => {
             error_message: (err as Error).message?.substring(0, 200),
             updated_at: new Date().toISOString(),
           }).eq("id", sync.id);
-          failed++;
+          return false;
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+
+      for (let i = 0; i < pendingSyncs.length; i += CONCURRENCY) {
+        const batch = pendingSyncs.slice(i, i + CONCURRENCY);
+        const results = await Promise.allSettled(batch.map(processSingle));
+        for (const r of results) {
+          if (r.status === "fulfilled" && r.value) pushed++;
+          else failed++;
         }
       }
 
@@ -210,6 +257,12 @@ serve(async (req: Request) => {
     }
 
     // ── Action: pull — Import completed workouts from TrainingPeaks ─────
+    // KNOWN ISSUE (m18): This pull action has an N+1 pattern — for each athlete
+    // link, it fetches workouts, then calls fn_import_execution per workout in a
+    // nested loop. This should be batched (e.g. collect all executions and do a
+    // single bulk insert or use a batch RPC). However, TrainingPeaks sync is
+    // frozen behind the `trainingpeaks_enabled` feature flag and is low-traffic,
+    // so this is deferred until the integration is unfrozen.
     if (action === "pull") {
       const groupId = body.group_id;
       if (!groupId) {
@@ -235,10 +288,17 @@ serve(async (req: Request) => {
           const since = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
           const until = new Date().toISOString().slice(0, 10);
 
-          const res = await fetch(
-            `${TP_API}/workouts/${since}/${until}`,
-            { headers: { Authorization: `Bearer ${link.access_token}` } },
-          );
+          const pullCtrl = new AbortController();
+          const pullTimer = setTimeout(() => pullCtrl.abort(), 10_000);
+          let res: Response;
+          try {
+            res = await fetch(
+              `${TP_API}/workouts/${since}/${until}`,
+              { headers: { Authorization: `Bearer ${link.access_token}` }, signal: pullCtrl.signal },
+            );
+          } finally {
+            clearTimeout(pullTimer);
+          }
 
           if (!res.ok) continue;
 
@@ -270,15 +330,20 @@ serve(async (req: Request) => {
     status = 400;
     errorCode = "UNKNOWN_ACTION";
     return jsonErr(400, "UNKNOWN_ACTION", "Unknown action", requestId);
-  } catch (_err) {
+  } catch (err) {
+    if (err instanceof AuthError) {
+      status = err.status;
+      errorCode = "AUTH";
+      return jsonErr(err.status, "AUTH", err.message, requestId);
+    }
     status = 500;
     errorCode = "INTERNAL";
     return jsonErr(500, "INTERNAL", "Unexpected error", requestId);
   } finally {
     if (errorCode) {
-      logError({ request_id: requestId, fn: FN, user_id: null, error_code: errorCode, duration_ms: elapsed() });
+      logError({ request_id: requestId, fn: FN, user_id: userId, error_code: errorCode, duration_ms: elapsed() });
     } else {
-      logRequest({ request_id: requestId, fn: FN, user_id: null, status, duration_ms: elapsed() });
+      logRequest({ request_id: requestId, fn: FN, user_id: userId, status, duration_ms: elapsed() });
     }
   }
 });

@@ -21,6 +21,8 @@ import { classifyError } from "../_shared/errors.ts";
 
 const FN = "lifecycle-cron";
 const PENDING_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const MAX_ELAPSED_MS = 45_000;
+const SETTLE_CONCURRENCY = 5;
 
 serve(async (req: Request) => {
   const cors = handleCors(req);
@@ -134,7 +136,7 @@ serve(async (req: Request) => {
       }
     }
 
-    // ── 3. Challenges: settle expired active challenges ──────────────────
+    // ── 3. Challenges: settle expired active challenges (parallel) ───────
     {
       const { data: expiredChallenges } = await db
         .from("challenges")
@@ -143,7 +145,11 @@ serve(async (req: Request) => {
         .lte("ends_at_ms", nowMs)
         .limit(50);
 
-      for (const ch of expiredChallenges ?? []) {
+      const toSettle = expiredChallenges ?? [];
+
+      async function settleOne(challengeId: string): Promise<boolean> {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 15_000);
         try {
           const res = await fetch(`${supabaseUrl}/functions/v1/settle-challenge`, {
             method: "POST",
@@ -151,11 +157,29 @@ serve(async (req: Request) => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${serviceKey}`,
             },
-            body: JSON.stringify({ challenge_id: ch.id }),
+            body: JSON.stringify({ challenge_id: challengeId }),
+            signal: ctrl.signal,
           });
-          if (res.ok) challengesSettled++;
+          return res.ok;
         } catch {
-          // Log but continue with next challenge
+          return false;
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+
+      for (let i = 0; i < toSettle.length; i += SETTLE_CONCURRENCY) {
+        if (elapsed() > MAX_ELAPSED_MS) {
+          console.warn(JSON.stringify({
+            fn: FN, request_id: requestId,
+            msg: `Elapsed ${elapsed()}ms > ${MAX_ELAPSED_MS}ms, skipping ${toSettle.length - i} remaining settle calls`,
+          }));
+          break;
+        }
+        const chunk = toSettle.slice(i, i + SETTLE_CONCURRENCY);
+        const results = await Promise.allSettled(chunk.map((ch) => settleOne(ch.id)));
+        for (const r of results) {
+          if (r.status === "fulfilled" && r.value) challengesSettled++;
         }
       }
     }
@@ -182,19 +206,27 @@ serve(async (req: Request) => {
     }
 
     // ── 5. League snapshot (weekly, idempotent per week_key) ─────────
+    const skippedPhases: string[] = [];
     let leagueSnapshot = false;
     {
       const dayOfWeek = now.getUTCDay(); // 0=Sun, 1=Mon
       if (dayOfWeek === 1 && now.getUTCHours() < 1) {
         try {
-          const res = await fetch(`${supabaseUrl}/functions/v1/league-snapshot`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${serviceKey}`,
-            },
-          });
-          leagueSnapshot = res.ok;
+          const leagueCtrl = new AbortController();
+          const leagueTimer = setTimeout(() => leagueCtrl.abort(), 15_000);
+          try {
+            const res = await fetch(`${supabaseUrl}/functions/v1/league-snapshot`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${serviceKey}`,
+              },
+              signal: leagueCtrl.signal,
+            });
+            leagueSnapshot = res.ok;
+          } finally {
+            clearTimeout(leagueTimer);
+          }
         } catch {
           // Log but continue
         }
@@ -203,27 +235,12 @@ serve(async (req: Request) => {
 
     // ── 6. Push: challenge expiring (< 24h left, once per cycle) ──────
     let challengeExpiringNotifs = false;
-    {
+    if (elapsed() > MAX_ELAPSED_MS) {
+      skippedPhases.push("challenge_expiring", "inactivity_nudge", "streak_at_risk");
+    } else {
       try {
-        const res = await fetch(`${supabaseUrl}/functions/v1/notify-rules`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${serviceKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ rule: "challenge_expiring" }),
-        });
-        challengeExpiringNotifs = res.ok;
-      } catch {
-        // best-effort
-      }
-    }
-
-    // ── 7. Push: inactivity nudge (5+ days, once daily) ───────────────
-    let inactivityNudge = false;
-    {
-      const hour = now.getUTCHours();
-      if (hour >= 17 && hour < 18) {
+        const expCtrl = new AbortController();
+        const expTimer = setTimeout(() => expCtrl.abort(), 15_000);
         try {
           const res = await fetch(`${supabaseUrl}/functions/v1/notify-rules`, {
             method: "POST",
@@ -231,9 +248,42 @@ serve(async (req: Request) => {
               Authorization: `Bearer ${serviceKey}`,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ rule: "inactivity_nudge" }),
+            body: JSON.stringify({ rule: "challenge_expiring" }),
+            signal: expCtrl.signal,
           });
-          inactivityNudge = res.ok;
+          challengeExpiringNotifs = res.ok;
+        } finally {
+          clearTimeout(expTimer);
+        }
+      } catch {
+        // best-effort
+      }
+    }
+
+    // ── 7. Push: inactivity nudge (5+ days, once daily) ───────────────
+    let inactivityNudge = false;
+    if (elapsed() > MAX_ELAPSED_MS) {
+      if (!skippedPhases.includes("inactivity_nudge")) skippedPhases.push("inactivity_nudge", "streak_at_risk");
+    } else {
+      const hour = now.getUTCHours();
+      if (hour >= 17 && hour < 18) {
+        try {
+          const nudgeCtrl = new AbortController();
+          const nudgeTimer = setTimeout(() => nudgeCtrl.abort(), 15_000);
+          try {
+            const res = await fetch(`${supabaseUrl}/functions/v1/notify-rules`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${serviceKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ rule: "inactivity_nudge" }),
+              signal: nudgeCtrl.signal,
+            });
+            inactivityNudge = res.ok;
+          } finally {
+            clearTimeout(nudgeTimer);
+          }
         } catch {
           // best-effort
         }
@@ -242,23 +292,39 @@ serve(async (req: Request) => {
 
     // ── 8. Push: streak at risk (evening, once daily) ─────────────────
     let streakAtRiskNotifs = false;
-    {
+    if (elapsed() > MAX_ELAPSED_MS) {
+      if (!skippedPhases.includes("streak_at_risk")) skippedPhases.push("streak_at_risk");
+    } else {
       const hour = now.getUTCHours();
       if (hour >= 20 && hour < 21) {
         try {
-          const res = await fetch(`${supabaseUrl}/functions/v1/notify-rules`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${serviceKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ rule: "streak_at_risk" }),
-          });
-          streakAtRiskNotifs = res.ok;
+          const streakCtrl = new AbortController();
+          const streakTimer = setTimeout(() => streakCtrl.abort(), 15_000);
+          try {
+            const res = await fetch(`${supabaseUrl}/functions/v1/notify-rules`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${serviceKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ rule: "streak_at_risk" }),
+              signal: streakCtrl.signal,
+            });
+            streakAtRiskNotifs = res.ok;
+          } finally {
+            clearTimeout(streakTimer);
+          }
         } catch {
           // best-effort
         }
       }
+    }
+
+    if (skippedPhases.length > 0) {
+      console.warn(JSON.stringify({
+        fn: FN, request_id: requestId,
+        msg: `Elapsed ${elapsed()}ms, skipped phases: ${skippedPhases.join(", ")}`,
+      }));
     }
 
     return jsonOk({
@@ -270,6 +336,8 @@ serve(async (req: Request) => {
         inactivity_nudge: inactivityNudge,
         streak_at_risk: streakAtRiskNotifs,
       },
+      skipped_phases: skippedPhases.length > 0 ? skippedPhases : undefined,
+      elapsed_ms: elapsed(),
     }, requestId);
   } catch (_err) {
     status = 500;

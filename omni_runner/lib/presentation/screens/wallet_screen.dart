@@ -37,7 +37,9 @@ class _WalletScreenState extends State<WalletScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Semantics(
+      label: 'Tela de OmniCoins',
+      child: Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.coins),
         actions: [
@@ -63,7 +65,7 @@ class _WalletScreenState extends State<WalletScreen> {
         builder: (context, state) => switch (state) {
           WalletInitial() || WalletLoading() =>
             const ShimmerListLoader(itemCount: 5),
-          WalletLoaded(:final wallet, :final history) => RefreshIndicator(
+          WalletLoaded(:final wallet, :final history, :final isOffline) => RefreshIndicator(
               onRefresh: () async {
                 final uid = sl<UserIdentityProvider>().userId;
                 context.read<WalletBloc>().add(LoadWallet(uid));
@@ -71,6 +73,28 @@ class _WalletScreenState extends State<WalletScreen> {
               },
               child: ListView(
               children: [
+                if (isOffline)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: DesignTokens.spacingMd,
+                      vertical: DesignTokens.spacingSm,
+                    ),
+                    color: DesignTokens.warning,
+                    child: Row(
+                      children: [
+                        Icon(Icons.cloud_off, size: 16,
+                            color: DesignTokens.warning),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Dados offline — puxe para atualizar',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: DesignTokens.warning,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 const ContextualTipBanner(
                   tipKey: TipKey.firstWalletVisit,
                   message: 'Seus OmniCoins vêm da sua assessoria. '
@@ -163,10 +187,35 @@ class _WalletScreenState extends State<WalletScreen> {
             ),
             ),
           WalletError(:final message) => Center(
-              child: Text(message),
+              child: Padding(
+                padding: const EdgeInsets.all(DesignTokens.spacingXl),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.error_outline, size: 56,
+                        color: Theme.of(context).colorScheme.error),
+                    const SizedBox(height: DesignTokens.spacingMd),
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: DesignTokens.spacingLg),
+                    FilledButton.icon(
+                      onPressed: () {
+                        final uid = sl<UserIdentityProvider>().userId;
+                        context.read<WalletBloc>().add(LoadWallet(uid));
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Tentar novamente'),
+                    ),
+                  ],
+                ),
+              ),
             ),
         },
       ),
+    ),
     );
   }
 }

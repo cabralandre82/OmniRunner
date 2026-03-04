@@ -161,7 +161,7 @@ serve(async (req: Request) => {
       }
     }
 
-    // Calculate scores for each group
+    // Calculate scores via single SQL aggregation (replaces N+1 per-group queries)
     interface GroupScore {
       groupId: string;
       totalKm: number;
@@ -172,65 +172,41 @@ serve(async (req: Request) => {
       weekScore: number;
     }
 
+    const { data: rpcRows, error: rpcErr } = await db.rpc("fn_compute_league_snapshots", {
+      p_season_id: season.id,
+      p_window_start_ms: startMs,
+      p_window_end_ms: endMs,
+    });
+
+    if (rpcErr) throw rpcErr;
+
+    // Fetch total member counts per group for the score formula
+    const enrolledGroupIds = enrollments.map((e: { group_id: string }) => e.group_id);
+    const { data: memberCounts } = await db
+      .from("coaching_members")
+      .select("group_id")
+      .in("group_id", enrolledGroupIds)
+      .eq("role", "athlete");
+
+    const memberCountMap: Record<string, number> = {};
+    for (const m of memberCounts ?? []) {
+      memberCountMap[m.group_id] = (memberCountMap[m.group_id] ?? 0) + 1;
+    }
+
     const groupScores: GroupScore[] = [];
 
-    for (const enrollment of enrollments) {
-      const groupId = enrollment.group_id;
-
-      // Members of this group
-      const { data: members } = await db
-        .from("coaching_members")
-        .select("user_id")
-        .eq("group_id", groupId);
-
-      const memberIds = (members ?? []).map((m: { user_id: string }) => m.user_id);
-      const totalMembers = memberIds.length;
+    for (const row of rpcRows ?? []) {
+      const groupId = row.group_id as string;
+      const totalKm = Number(row.total_distance_m ?? 0) / 1000;
+      const totalSessions = Number(row.total_sessions ?? 0);
+      const activeMembers = Number(row.active_members ?? 0);
+      const challengeWins = Number(row.challenge_wins ?? 0);
+      const totalMembers = memberCountMap[groupId] ?? 0;
 
       if (totalMembers === 0) continue;
 
-      // Sessions this week
-      let totalDistanceM = 0;
-      let totalSessions = 0;
-      const activeUserIds = new Set<string>();
-
-      if (memberIds.length > 0) {
-        const { data: sessions } = await db
-          .from("sessions")
-          .select("user_id, total_distance_m")
-          .in("user_id", memberIds)
-          .eq("status", 3) // completed
-          .eq("is_verified", true)
-          .gte("start_time_ms", startMs)
-          .lte("start_time_ms", endMs);
-
-        for (const s of sessions ?? []) {
-          totalDistanceM += s.total_distance_m ?? 0;
-          totalSessions++;
-          activeUserIds.add(s.user_id);
-        }
-      }
-
-      const totalKm = totalDistanceM / 1000;
-      const activeMembers = activeUserIds.size;
-      const pctActive = totalMembers > 0 ? activeMembers / totalMembers : 0;
-
-      // Challenge wins this week
-      let challengeWins = 0;
-      if (memberIds.length > 0) {
-        const { data: wins } = await db
-          .from("challenge_results")
-          .select("id")
-          .in("user_id", memberIds)
-          .in("outcome", ["won", "completed_target"])
-          .gte("calculated_at_ms", startMs)
-          .lte("calculated_at_ms", endMs);
-
-        challengeWins = (wins ?? []).length;
-      }
-
-      const weekScore = totalMembers > 0
-        ? (totalKm * 1.0 + totalSessions * 0.5 + pctActive * 200 + challengeWins * 3.0) / totalMembers
-        : 0;
+      const pctActive = activeMembers / totalMembers;
+      const weekScore = (totalKm * 1.0 + totalSessions * 0.5 + pctActive * 200 + challengeWins * 3.0) / totalMembers;
 
       groupScores.push({
         groupId,
@@ -314,6 +290,7 @@ serve(async (req: Request) => {
                     season_name: season.name,
                   },
                 }),
+                signal: AbortSignal.timeout(15_000),
               }).catch(() => {});
             }
           } catch { /* fire-and-forget */ }

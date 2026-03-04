@@ -22,7 +22,7 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
         'name': template.name,
         'description': template.description,
         'created_by': template.createdBy,
-      }).select().single();
+      }).select('id, group_id, name, description, created_by, created_at, updated_at').single();
       return _fromTemplateRow(row);
     } catch (e, st) {
       AppLogger.error('Workout.createTemplate failed', error: e, stack: st);
@@ -42,8 +42,15 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
             'updated_at': DateTime.now().toUtc().toIso8601String(),
           })
           .eq('id', template.id)
-          .select()
-          .single();
+          .eq('updated_at', template.updatedAt.toUtc().toIso8601String())
+          .select('id, group_id, name, description, created_by, created_at, updated_at')
+          .maybeSingle();
+      if (row == null) {
+        throw Exception(
+          'Conflito: outro usuário editou este template. '
+          'Recarregue e tente novamente.',
+        );
+      }
       return _fromTemplateRow(row);
     } catch (e, st) {
       AppLogger.error('Workout.updateTemplate failed', error: e, stack: st);
@@ -69,7 +76,7 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
     try {
       final rows = await _db
           .from('coaching_workout_templates')
-          .select()
+          .select('id, group_id, name, description, created_by, created_at, updated_at')
           .eq('group_id', groupId)
           .order('name');
       return rows.map(_fromTemplateRow).toList();
@@ -84,14 +91,14 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
     try {
       final row = await _db
           .from('coaching_workout_templates')
-          .select()
+          .select('id, group_id, name, description, created_by, created_at, updated_at')
           .eq('id', templateId)
           .maybeSingle();
       if (row == null) return null;
 
       final blockRows = await _db
           .from('coaching_workout_blocks')
-          .select()
+          .select('id, template_id, order_index, block_type, duration_seconds, distance_meters, target_pace_seconds_per_km, target_hr_zone, rpe_target, notes')
           .eq('template_id', templateId)
           .order('order_index');
       final blocks = blockRows.map(_fromBlockRow).toList();

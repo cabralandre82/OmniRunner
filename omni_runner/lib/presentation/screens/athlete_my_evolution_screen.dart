@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/coaching_tag_entity.dart';
 import 'package:omni_runner/domain/entities/member_status_entity.dart';
@@ -70,7 +71,7 @@ class _AthleteMyEvolutionScreenState extends State<AthleteMyEvolutionScreen> {
     } on Object catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = ErrorMessages.humanize(e);
           _loading = false;
         });
       }

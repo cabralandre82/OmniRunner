@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/presentation/widgets/error_state.dart';
 
 /// Clearing case from the database.
 class _ClearingCase {
@@ -80,8 +81,8 @@ class _StaffDisputesScreenState extends State<StaffDisputesScreen> {
           toGroupName: (r['to_group'] as Map<String, dynamic>?)?['name'] as String? ?? '?',
           tokensTotal: r['tokens_total'] as int,
           status: r['status'] as String,
-          deadlineAt: DateTime.parse(r['deadline_at'] as String),
-          createdAt: DateTime.parse(r['created_at'] as String),
+          deadlineAt: DateTime.tryParse(r['deadline_at'] as String? ?? '') ?? DateTime.now(),
+          createdAt: DateTime.tryParse(r['created_at'] as String? ?? '') ?? DateTime.now(),
         );
       }).toList();
 
@@ -195,7 +196,7 @@ class _StaffDisputesScreenState extends State<StaffDisputesScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _ErrorBody(message: _error!, onRetry: _loadCases)
+              ? ErrorState(message: _error ?? '', onRetry: _loadCases)
               : _cases.isEmpty
                   ? const _EmptyBody()
                   : RefreshIndicator(
@@ -575,35 +576,4 @@ class _EmptyBody extends StatelessWidget {
   }
 }
 
-class _ErrorBody extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-
-  const _ErrorBody({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(DesignTokens.spacingXl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline_rounded, size: 48,
-                color: DesignTokens.error),
-            const SizedBox(height: 12),
-            Text(message,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: DesignTokens.textSecondary)),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('Tentar novamente'),
-              onPressed: onRetry,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// _ErrorBody removed — replaced by ErrorState from error_state.dart

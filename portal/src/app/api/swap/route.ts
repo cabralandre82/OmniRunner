@@ -135,8 +135,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Operation failed";
-    return NextResponse.json({ error: msg }, { status: 422 });
+    console.error("[swap] operation failed:", e);
+    return NextResponse.json({ error: "Operação falhou. Tente novamente." }, { status: 422 });
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });

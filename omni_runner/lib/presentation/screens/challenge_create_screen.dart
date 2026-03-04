@@ -55,11 +55,15 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
   late ChallengeType _type;
   late ChallengeGoal _goal;
   bool _created = false;
+  bool _busy = false;
 
   late int _quickWindowMin;
 
   int _acceptWindowMin = 10;
   int _maxParticipants = 10;
+
+  final _scrollController = ScrollController();
+  double _scrollProgress = 0;
 
   @override
   void initState() {
@@ -75,6 +79,17 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
           ? '${widget.initialTarget}'
           : '',
     );
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final max = _scrollController.position.maxScrollExtent;
+    if (max <= 0) return;
+    final progress = (_scrollController.offset / max).clamp(0.0, 1.0);
+    if ((progress - _scrollProgress).abs() > 0.01) {
+      setState(() => _scrollProgress = progress);
+    }
   }
 
   DateTime? _scheduledDate;
@@ -89,6 +104,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
         'step': 'form',
       });
     }
+    _scrollController.dispose();
     _verificationBloc.close();
     _titleCtrl.dispose();
     _targetCtrl.dispose();
@@ -96,17 +112,79 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
     super.dispose();
   }
 
+  bool get _hasUnsavedChanges =>
+      _titleCtrl.text.isNotEmpty ||
+      _targetCtrl.text.isNotEmpty ||
+      (int.tryParse(_feeCtrl.text) ?? 0) > 0;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Criar Desafio')),
+    return PopScope(
+      canPop: !_hasUnsavedChanges,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Descartar alterações?'),
+            content: const Text('Suas alterações não salvas serão perdidas.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Descartar'),
+              ),
+            ],
+          ),
+        );
+        if (shouldPop == true && context.mounted) Navigator.pop(context);
+      },
+      child: Scaffold(
+      appBar: AppBar(
+        title: const Text('Criar Desafio'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(28),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              DesignTokens.spacingMd, 0, DesignTokens.spacingMd, DesignTokens.spacingSm,
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _StepLabel(label: 'Modo', active: _scrollProgress < 0.15),
+                    _StepLabel(label: 'Tipo', active: _scrollProgress >= 0.15 && _scrollProgress < 0.35),
+                    _StepLabel(label: 'Objetivo', active: _scrollProgress >= 0.35 && _scrollProgress < 0.6),
+                    _StepLabel(label: 'Detalhes', active: _scrollProgress >= 0.6 && _scrollProgress < 0.85),
+                    _StepLabel(label: 'Enviar', active: _scrollProgress >= 0.85),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: LinearProgressIndicator(
+                    value: _scrollProgress,
+                    minHeight: 3,
+                    backgroundColor: cs.surfaceContainerHighest,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
       body: BlocListener<ChallengesBloc, ChallengesState>(
         listener: (context, state) {
           if (state is ChallengeCreated) {
             _created = true;
+            setState(() => _busy = false);
             sl<ProductEventTracker>().trackOnce(
               ProductEvents.firstChallengeCreated,
               {'type': _type.name, 'goal': _goal.name},
@@ -126,12 +204,14 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
               ),
             );
           } else if (state is ChallengesError) {
+            setState(() => _busy = false);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.message)),
             );
           }
         },
         child: SingleChildScrollView(
+          controller: _scrollController,
           padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Form(
             key: _formKey,
@@ -396,11 +476,20 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
 
                 // ── Submit ───────────────────────────────────────────
                 FilledButton.icon(
-                  icon: const Icon(Icons.emoji_events),
+                  icon: _busy
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.emoji_events),
                   label: Text(_mode == 0
                       ? 'Criar Desafio'
                       : 'Criar Desafio Agendado'),
-                  onPressed: _submit,
+                  onPressed: _busy ? null : _submit,
                 ),
                 const SizedBox(height: 16),
               ],
@@ -408,6 +497,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 
@@ -691,6 +781,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
   }
 
   Future<void> _submit() async {
+    if (_busy) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     if (_mode == 1) {
@@ -713,6 +804,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
       );
       if (!canProceed) return;
     }
+    setState(() => _busy = true);
     final identity = sl<UserIdentityProvider>();
     final uid = identity.userId;
     final displayName = identity.displayName;
@@ -1013,6 +1105,25 @@ class _TypeInfoBox extends StatelessWidget {
               color: cs.onTertiaryContainer),
           )),
         ],
+      ),
+    );
+  }
+}
+
+class _StepLabel extends StatelessWidget {
+  final String label;
+  final bool active;
+  const _StepLabel({required this.label, required this.active});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Text(
+      label,
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: active ? FontWeight.bold : FontWeight.normal,
+        color: active ? cs.primary : cs.onSurfaceVariant,
       ),
     );
   }

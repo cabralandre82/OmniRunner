@@ -82,7 +82,7 @@ class _BodyState extends State<_Body> {
         final db = Supabase.instance.client;
         final rows = await db
             .from('sessions')
-            .select()
+            .select('id, user_id, start_time_ms, end_time_ms, total_distance_m, is_verified, integrity_flags, avg_bpm, max_bpm, source')
             .eq('user_id', uid)
             .eq('status', 3)
             .gte('total_distance_m', 1000)

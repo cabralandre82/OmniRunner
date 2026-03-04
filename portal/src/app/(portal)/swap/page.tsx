@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import { SwapActions } from "./swap-actions";
 import { SwapHistory } from "./swap-history";
 import { formatUsd } from "@/lib/format";
@@ -10,23 +11,34 @@ export const dynamic = "force-dynamic";
 
 export default async function SwapPage() {
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
-  const db = createServiceClient();
+  const db = createClient();
 
-  const [openRes, myRes, groupsRes, feeRes, accountRes] = await Promise.all([
-    db.from("swap_orders").select("*").eq("status", "open").neq("seller_group_id", groupId).order("created_at", { ascending: false }).limit(20),
-    db.from("swap_orders").select("*").or(`seller_group_id.eq.${groupId},buyer_group_id.eq.${groupId}`).order("created_at", { ascending: false }).limit(50),
-    db.from("coaching_groups").select("id, name"),
+  const [openRes, myRes, feeRes, accountRes] = await Promise.all([
+    db.from("swap_orders").select("id, seller_group_id, buyer_group_id, amount_usd, fee_amount_usd, status, created_at").eq("status", "open").neq("seller_group_id", groupId).order("created_at", { ascending: false }).limit(20),
+    db.from("swap_orders").select("id, seller_group_id, buyer_group_id, amount_usd, fee_amount_usd, status, created_at").or(`seller_group_id.eq.${groupId},buyer_group_id.eq.${groupId}`).order("created_at", { ascending: false }).limit(50),
     db.from("platform_fee_config").select("rate_pct").eq("fee_type", "swap").eq("is_active", true).maybeSingle(),
     db.from("custody_accounts").select("total_deposited_usd, total_committed").eq("group_id", groupId).maybeSingle(),
   ]);
 
   const openOffers = openRes.data ?? [];
   const myOrders = myRes.data ?? [];
-  const groupMap = Object.fromEntries(
-    (groupsRes.data ?? []).map((g: { id: string; name: string }) => [g.id, g.name]),
-  );
+
+  const referencedGroupIds = Array.from(new Set([
+    ...openOffers.map((o) => o.seller_group_id as string),
+    ...openOffers.map((o) => o.buyer_group_id as string),
+    ...myOrders.map((o) => o.seller_group_id as string),
+    ...myOrders.map((o) => o.buyer_group_id as string),
+  ].filter((id): id is string => !!id && id !== groupId)));
+
+  let groupMap: Record<string, string> = {};
+  if (referencedGroupIds.length > 0) {
+    const groupsRes = await db.from("coaching_groups").select("id, name").in("id", referencedGroupIds);
+    groupMap = Object.fromEntries(
+      (groupsRes.data ?? []).map((g: { id: string; name: string }) => [g.id, g.name]),
+    );
+  }
   const feeRate = feeRes.data?.rate_pct ?? 1.0;
   const deposited = accountRes.data?.total_deposited_usd ?? 0;
   const committed = accountRes.data?.total_committed ?? 0;

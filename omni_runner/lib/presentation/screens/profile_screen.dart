@@ -2,9 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'package:omni_runner/core/auth/auth_repository.dart';
+import 'package:omni_runner/data/services/profile_data_service.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
@@ -31,9 +30,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   ProfileEntity? _profile;
   bool _loading = true;
   bool _saving = false;
+  bool _busyAuth = false;
   bool _uploadingAvatar = false;
   bool _socialColumnsAvailable = false;
   String? _error;
+
+  String _initialName = '';
+  String _initialInsta = '';
+  String _initialTiktok = '';
 
   @override
   void initState() {
@@ -59,11 +63,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       bool socialOk = false;
       if (p != null) {
         try {
-          final row = await Supabase.instance.client
-              .from('profiles')
-              .select('instagram_handle, tiktok_handle')
-              .eq('id', p.id)
-              .maybeSingle();
+          final row = await sl<ProfileDataService>().getSocialColumns(p.id);
           insta = row?['instagram_handle'] as String? ?? '';
           tiktok = row?['tiktok_handle'] as String? ?? '';
           socialOk = true;
@@ -78,6 +78,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           displayName = displayName[0].toUpperCase() + displayName.substring(1);
         }
       }
+      _initialName = displayName;
+      _initialInsta = insta;
+      _initialTiktok = tiktok;
       setState(() {
         _profile = p;
         _nameCtrl.text = displayName;
@@ -99,7 +102,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) return;
 
-    final supaUser = Supabase.instance.client.auth.currentUser;
+    final supaUser = sl<ProfileDataService>().currentUser;
     if (supaUser == null) {
       setState(() => _error = 'Você precisa estar autenticado para salvar.');
       return;
@@ -115,11 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         fields['instagram_handle'] = _instaCtrl.text.trim();
         fields['tiktok_handle'] = _tiktokCtrl.text.trim();
       }
-      final res = await Supabase.instance.client
-          .from('profiles')
-          .update(fields)
-          .eq('id', supaUser.id)
-          .select();
+      final res = await sl<ProfileDataService>().updateProfile(supaUser.id, fields);
 
       if (res.isEmpty) {
         setState(() {
@@ -170,16 +169,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final userId = sl<UserIdentityProvider>().userId;
       final ext = picked.path.split('.').last;
-      final path = 'avatars/$userId.$ext';
       final bytes = await File(picked.path).readAsBytes();
 
-      await Supabase.instance.client.storage
-          .from('avatars')
-          .uploadBinary(path, bytes,
-              fileOptions: const FileOptions(upsert: true));
-
-      final publicUrl =
-          Supabase.instance.client.storage.from('avatars').getPublicUrl(path);
+      final publicUrl = await sl<ProfileDataService>().uploadAvatar(
+        userId,
+        ext,
+        bytes,
+      );
 
       final updated = await sl<IProfileRepo>().upsertMyProfile(
         ProfilePatch(avatarUrl: publicUrl),
@@ -205,6 +201,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _signOut() async {
+    if (_busyAuth) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -229,21 +226,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
     if (confirmed != true || !mounted) return;
 
-    final failure = await sl<AuthRepository>().signOut();
-    if (!mounted) return;
+    setState(() => _busyAuth = true);
+    try {
+      final failure = await sl<AuthRepository>().signOut();
+      if (!mounted) return;
 
-    if (failure != null) {
-      setState(() => _error = failure.message);
-      return;
+      if (failure != null) {
+        setState(() => _error = failure.message);
+        return;
+      }
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => const AuthGate()),
+        (_) => false,
+      );
+    } finally {
+      if (mounted) setState(() => _busyAuth = false);
     }
-
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const AuthGate()),
-      (_) => false,
-    );
   }
 
   Future<void> _requestDeleteAccount() async {
+    if (_busyAuth) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -269,11 +272,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
     if (confirmed != true || !mounted) return;
 
+    setState(() => _busyAuth = true);
     try {
-      await Supabase.instance.client.functions.invoke(
-        'delete-account',
-        body: {},
-      );
+      await sl<ProfileDataService>().requestDeleteAccount();
       if (!mounted) return;
       await sl<AuthRepository>().signOut();
       if (!mounted) return;
@@ -293,6 +294,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           duration: const Duration(seconds: 5),
         ),
       );
+    } finally {
+      if (mounted) setState(() => _busyAuth = false);
     }
   }
 
@@ -313,12 +316,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return 'Erro inesperado. Tente novamente.';
   }
 
+  bool get _hasUnsavedChanges =>
+      _nameCtrl.text != _initialName ||
+      _instaCtrl.text != _initialInsta ||
+      _tiktokCtrl.text != _initialTiktok;
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final identity = sl<UserIdentityProvider>();
 
-    return Scaffold(
+    return PopScope(
+      canPop: !_hasUnsavedChanges,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Descartar alterações?'),
+            content: const Text('Suas alterações não salvas serão perdidas.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Descartar'),
+              ),
+            ],
+          ),
+        );
+        if (shouldPop == true && context.mounted) Navigator.pop(context);
+      },
+      child: Semantics(
+      label: 'Tela de Perfil',
+      child: Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.profile),
         backgroundColor: cs.inversePrimary,
@@ -492,8 +525,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: _signOut,
-                      icon: const Icon(Icons.logout_rounded),
+                      onPressed: _busyAuth ? null : _signOut,
+                      icon: _busyAuth
+                          ? const SizedBox(
+                              width: 16, height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.logout_rounded),
                       label: Text(context.l10n.logout),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: DesignTokens.error,
@@ -505,7 +542,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: TextButton.icon(
-                      onPressed: _requestDeleteAccount,
+                      onPressed: _busyAuth ? null : _requestDeleteAccount,
                       icon: const Icon(Icons.delete_forever_rounded, size: 18),
                       label: Text(context.l10n.delete),
                       style: TextButton.styleFrom(
@@ -516,6 +553,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ],
             ),
+    ),
+    ),
     );
   }
 

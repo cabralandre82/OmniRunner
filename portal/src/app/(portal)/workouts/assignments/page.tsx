@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import { formatDateISO } from "@/lib/format";
 import Link from "next/link";
 
@@ -98,7 +99,7 @@ export default async function WorkoutAssignmentsPage({
   searchParams: Promise<{ from?: string; to?: string; page?: string }>;
 }) {
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);

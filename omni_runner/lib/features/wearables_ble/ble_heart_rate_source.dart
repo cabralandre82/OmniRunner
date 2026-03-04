@@ -5,6 +5,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/storage/preferences_keys.dart';
 import 'package:omni_runner/features/wearables_ble/ble_reconnect_manager.dart';
 import 'package:omni_runner/features/wearables_ble/heart_rate_sample.dart';
 import 'package:omni_runner/features/wearables_ble/i_heart_rate_source.dart';
@@ -15,10 +16,6 @@ const String _kHrServiceUuid = '0000180d-0000-1000-8000-00805f9b34fb';
 
 /// Heart Rate Measurement Characteristic UUID.
 const String _kHrMeasurementUuid = '00002a37-0000-1000-8000-00805f9b34fb';
-
-/// SharedPreferences keys for last known device.
-const String _kLastDeviceIdKey = 'ble_hr_last_device_id';
-const String _kLastDeviceNameKey = 'ble_hr_last_device_name';
 
 const String _tag = 'BleHR';
 
@@ -96,26 +93,26 @@ class BleHeartRateSource implements IHeartRateSource {
   @override
   Future<String?> get lastKnownDeviceId async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_kLastDeviceIdKey);
+    return prefs.getString(PreferencesKeys.bleHrLastDeviceId);
   }
 
   @override
   Future<String?> get lastKnownDeviceName async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_kLastDeviceNameKey);
+    return prefs.getString(PreferencesKeys.bleHrLastDeviceName);
   }
 
   @override
   Future<void> clearLastKnownDevice() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_kLastDeviceIdKey);
-    await prefs.remove(_kLastDeviceNameKey);
+    await prefs.remove(PreferencesKeys.bleHrLastDeviceId);
+    await prefs.remove(PreferencesKeys.bleHrLastDeviceName);
   }
 
   Future<void> _saveLastKnownDevice(String id, String name) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kLastDeviceIdKey, id);
-    await prefs.setString(_kLastDeviceNameKey, name);
+    await prefs.setString(PreferencesKeys.bleHrLastDeviceId, id);
+    await prefs.setString(PreferencesKeys.bleHrLastDeviceName, name);
   }
 
   // ---------------------------------------------------------------------------

@@ -5,10 +5,10 @@ import { cookies } from "next/headers";
 export async function POST(request: Request) {
   const supabase = createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     .from("coaching_members")
     .select("role")
     .eq("group_id", groupId)
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
     .maybeSingle();
 
   if (
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
   const { error } = await supabase.from("coaching_athlete_notes").insert({
     group_id: groupId,
     athlete_user_id: athleteUserId,
-    created_by: session.user.id,
+    created_by: user.id,
     note: note.trim(),
   });
 

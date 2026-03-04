@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/domain/usecases/announcements/list_announcements.dart';
 import 'package:omni_runner/domain/usecases/announcements/mark_announcement_read.dart';
 import 'package:omni_runner/presentation/blocs/announcement_feed/announcement_feed_event.dart';
@@ -36,7 +37,7 @@ class AnnouncementFeedBloc
         unreadCount: unreadCount,
       ));
     } on Exception catch (e) {
-      emit(AnnouncementFeedError('Não foi possível carregar os anúncios: $e'));
+      emit(AnnouncementFeedError(ErrorMessages.humanize(e)));
     }
   }
 

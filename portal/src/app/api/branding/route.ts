@@ -37,32 +37,32 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const supabase = createClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    const rl = rateLimit(`branding:${session.user.id}`, { maxRequests: 10, windowMs: 60_000 });
-    if (!rl.allowed) {
-      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
-    }
+  const rl = rateLimit(`branding:${user.id}`, { maxRequests: 10, windowMs: 60_000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
 
-    const groupId = cookies().get("portal_group_id")?.value;
-    if (!groupId) {
-      return NextResponse.json({ error: "No group" }, { status: 400 });
-    }
+  const groupId = cookies().get("portal_group_id")?.value;
+  if (!groupId) {
+    return NextResponse.json({ error: "No group" }, { status: 400 });
+  }
 
-    const db = createServiceClient();
+  const db = createServiceClient();
 
-    const { data: membership } = await db
-      .from("coaching_members")
-      .select("role")
-      .eq("group_id", groupId)
-      .eq("user_id", session.user.id)
-      .maybeSingle();
+  const { data: membership } = await db
+    .from("coaching_members")
+    .select("role")
+    .eq("group_id", groupId)
+    .eq("user_id", user.id)
+    .maybeSingle();
 
     if (!membership || membership.role !== "admin_master") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
     }
 
     await auditLog({
-      actorId: session.user.id,
+      actorId: user.id,
       groupId,
       action: "settings.branding",
       metadata: payload,

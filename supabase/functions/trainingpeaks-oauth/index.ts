@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { startTimer, logRequest, logError } from "../_shared/obs.ts";
 import { CORS_HEADERS, handleCors } from "../_shared/cors.ts";
 import { jsonOk, jsonErr } from "../_shared/http.ts";
+import { requireUser, AuthError } from "../_shared/auth.ts";
 
 const FN = "trainingpeaks-oauth";
 const TP_CLIENT_ID = Deno.env.get("TRAININGPEAKS_CLIENT_ID") ?? "";
@@ -12,6 +13,32 @@ const TP_AUTH_URL = "https://oauth.trainingpeaks.com/OAuth/Authorize";
 const TP_TOKEN_URL = "https://oauth.trainingpeaks.com/oauth/token";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const STATE_SECRET = Deno.env.get("TRAININGPEAKS_STATE_SECRET") ?? SERVICE_KEY;
+
+async function signState(payload: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(STATE_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(payload));
+  return Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function verifyState(payload: string, receivedHmac: string): Promise<boolean> {
+  const expected = await signState(payload);
+  if (expected.length !== receivedHmac.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) {
+    diff |= expected.charCodeAt(i) ^ receivedHmac.charCodeAt(i);
+  }
+  return diff === 0;
+}
 
 serve(async (req: Request) => {
   const cors = handleCors(req);
@@ -48,11 +75,17 @@ serve(async (req: Request) => {
 
     // Step 1: Initiate OAuth — redirect user to TrainingPeaks
     if (action === "authorize") {
-      const state = url.searchParams.get("state") ?? "";
+      const statePayload = url.searchParams.get("state") ?? "";
+      if (!statePayload.includes(":")) {
+        status = 400;
+        errorCode = "INVALID_STATE";
+        return jsonErr(400, "INVALID_STATE", "State must be userId:groupId", requestId);
+      }
+      const signedState = `${statePayload}:${await signState(statePayload)}`;
       const authUrl =
         `${TP_AUTH_URL}?response_type=code&client_id=${TP_CLIENT_ID}` +
         `&redirect_uri=${encodeURIComponent(TP_REDIRECT_URI)}` +
-        `&scope=workouts:read workouts:write athlete:read&state=${state}`;
+        `&scope=workouts:read workouts:write athlete:read&state=${encodeURIComponent(signedState)}`;
       return Response.redirect(authUrl, 302);
     }
 
@@ -67,20 +100,42 @@ serve(async (req: Request) => {
         return jsonErr(400, "MISSING_PARAMS", "Missing code or state", requestId);
       }
 
-      // state = "userId:groupId"
-      const [userId, groupId] = state.split(":");
+      // state = "userId:groupId:hmac"
+      const parts = state.split(":");
+      if (parts.length < 3) {
+        status = 400;
+        errorCode = "INVALID_STATE";
+        return jsonErr(400, "INVALID_STATE", "Invalid or tampered state", requestId);
+      }
+      const receivedHmac = parts.pop()!;
+      const statePayload = parts.join(":");
+      const valid = await verifyState(statePayload, receivedHmac);
+      if (!valid) {
+        status = 400;
+        errorCode = "INVALID_STATE";
+        return jsonErr(400, "INVALID_STATE", "Invalid or tampered state", requestId);
+      }
+      const [userId, groupId] = parts;
 
-      const tokenRes = await fetch(TP_TOKEN_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          grant_type: "authorization_code",
-          code,
-          client_id: TP_CLIENT_ID,
-          client_secret: TP_CLIENT_SECRET,
-          redirect_uri: TP_REDIRECT_URI,
-        }),
-      });
+      const tokenCtrl = new AbortController();
+      const tokenTimer = setTimeout(() => tokenCtrl.abort(), 15_000);
+      let tokenRes: Response;
+      try {
+        tokenRes = await fetch(TP_TOKEN_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            grant_type: "authorization_code",
+            code,
+            client_id: TP_CLIENT_ID,
+            client_secret: TP_CLIENT_SECRET,
+            redirect_uri: TP_REDIRECT_URI,
+          }),
+          signal: tokenCtrl.signal,
+        });
+      } finally {
+        clearTimeout(tokenTimer);
+      }
 
       if (!tokenRes.ok) {
         status = 502;
@@ -95,9 +150,17 @@ serve(async (req: Request) => {
       const expiresIn = tokens.expires_in ?? 3600;
 
       // Get TP athlete profile
-      const meRes = await fetch("https://api.trainingpeaks.com/v1/athlete/profile", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const meCtrl = new AbortController();
+      const meTimer = setTimeout(() => meCtrl.abort(), 15_000);
+      let meRes: Response;
+      try {
+        meRes = await fetch("https://api.trainingpeaks.com/v1/athlete/profile", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          signal: meCtrl.signal,
+        });
+      } finally {
+        clearTimeout(meTimer);
+      }
       const meData = meRes.ok ? await meRes.json() : null;
       const tpUserId = meData?.Id?.toString() ?? null;
 
@@ -130,13 +193,26 @@ serve(async (req: Request) => {
 
     // Step 3: Refresh token
     if (action === "refresh" && req.method === "POST") {
-      const body = await req.json();
+      const { user } = await requireUser(req);
+
+      let body;
+      try {
+        body = await req.json();
+      } catch {
+        return jsonErr(400, "INVALID_JSON", "Malformed request body", requestId);
+      }
       const { user_id } = body;
 
       if (!user_id) {
         status = 400;
         errorCode = "MISSING_USER_ID";
         return jsonErr(400, "MISSING_USER_ID", "Missing user_id", requestId);
+      }
+
+      if (user_id !== user.id) {
+        status = 403;
+        errorCode = "FORBIDDEN";
+        return jsonErr(403, "FORBIDDEN", "Cannot refresh token for another user", requestId);
       }
 
       const db = createClient(SUPABASE_URL, SERVICE_KEY);
@@ -153,16 +229,24 @@ serve(async (req: Request) => {
         return jsonErr(404, "NO_REFRESH_TOKEN", "No refresh token found", requestId);
       }
 
-      const refreshRes = await fetch(TP_TOKEN_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          grant_type: "refresh_token",
-          refresh_token: link.refresh_token,
-          client_id: TP_CLIENT_ID,
-          client_secret: TP_CLIENT_SECRET,
-        }),
-      });
+      const refreshCtrl = new AbortController();
+      const refreshTimer = setTimeout(() => refreshCtrl.abort(), 15_000);
+      let refreshRes: Response;
+      try {
+        refreshRes = await fetch(TP_TOKEN_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            grant_type: "refresh_token",
+            refresh_token: link.refresh_token,
+            client_id: TP_CLIENT_ID,
+            client_secret: TP_CLIENT_SECRET,
+          }),
+          signal: refreshCtrl.signal,
+        });
+      } finally {
+        clearTimeout(refreshTimer);
+      }
 
       if (!refreshRes.ok) {
         status = 502;
@@ -187,7 +271,12 @@ serve(async (req: Request) => {
     status = 400;
     errorCode = "UNKNOWN_ACTION";
     return jsonErr(400, "UNKNOWN_ACTION", "Unknown action", requestId);
-  } catch (_err) {
+  } catch (err) {
+    if (err instanceof AuthError) {
+      status = err.status;
+      errorCode = "AUTH";
+      return jsonErr(err.status, "AUTH", err.message, requestId);
+    }
     status = 500;
     errorCode = "INTERNAL";
     return jsonErr(500, "INTERNAL", "Unexpected error", requestId);

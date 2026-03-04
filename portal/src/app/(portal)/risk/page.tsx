@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import { formatDateISO } from "@/lib/format";
 import Link from "next/link";
 import { RiskActions } from "./risk-actions";
@@ -126,7 +127,7 @@ async function getAlertsData(groupId: string) {
 
 export default async function RiskPage() {
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   let activeAlerts: AlertRow[] = [];
   let resolvedCount30d = 0;

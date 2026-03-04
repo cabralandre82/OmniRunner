@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import Link from "next/link";
 import { formatDateISO, formatDateTime } from "@/lib/format";
 import { AddNoteForm } from "./add-note-form";
@@ -150,7 +151,7 @@ export default async function AthleteDetailPage({
 }) {
   const groupId = cookies().get("portal_group_id")?.value;
   const { userId } = await params;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   const athlete = await getAthleteDetail(groupId, userId);
 

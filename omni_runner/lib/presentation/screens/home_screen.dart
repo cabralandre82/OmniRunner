@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/presentation/screens/athlete_dashboard_screen.dart';
 import 'package:omni_runner/presentation/screens/history_screen.dart';
@@ -35,12 +36,19 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildAthleteShell() {
     return Scaffold(
       body: NoConnectionBanner(
-        child: IndexedStack(index: _tab, children: [
-        const AthleteDashboardScreen(),
-        TodayScreen(isVisible: _tab == 1),
-        HistoryScreen(isVisible: _tab == 2),
-        const MoreScreen(userRole: 'ATLETA'),
-      ]),
+        child: Column(
+          children: [
+            if (AppConfig.backendMode == 'mock') _MockModeBanner(),
+            Expanded(
+              child: IndexedStack(index: _tab, children: [
+                const AthleteDashboardScreen(),
+                TodayScreen(isVisible: _tab == 1),
+                HistoryScreen(isVisible: _tab == 2),
+                const MoreScreen(userRole: 'ATLETA'),
+              ]),
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: NavigationBar(
         backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -79,10 +87,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildStaffShell() {
     return Scaffold(
       body: NoConnectionBanner(
-        child: IndexedStack(index: _tab, children: const [
-        StaffDashboardScreen(),
-        MoreScreen(userRole: 'ASSESSORIA_STAFF'),
-      ]),
+        child: Column(
+          children: [
+            if (AppConfig.backendMode == 'mock') _MockModeBanner(),
+            Expanded(
+              child: IndexedStack(index: _tab, children: const [
+                StaffDashboardScreen(),
+                MoreScreen(userRole: 'ASSESSORIA_STAFF'),
+              ]),
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: NavigationBar(
         backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -104,6 +119,39 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Mais',
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MockModeBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 4,
+          bottom: 6,
+          left: DesignTokens.spacingMd,
+          right: DesignTokens.spacingMd,
+        ),
+        color: DesignTokens.warning,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.science_outlined, size: 16, color: Colors.white),
+            SizedBox(width: 8),
+            Text(
+              'Modo demonstração — dados não serão salvos',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

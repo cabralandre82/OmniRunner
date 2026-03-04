@@ -97,6 +97,8 @@ async function sendLowCreditsNotification(
   balance: number,
   threshold: number,
 ): Promise<boolean> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15_000);
   try {
     const res = await fetch(`${supabaseUrl}/functions/v1/notify-rules`, {
       method: "POST",
@@ -108,10 +110,13 @@ async function sendLowCreditsNotification(
         rule: "low_credits_alert",
         context: { group_id: groupId, balance, threshold },
       }),
+      signal: ctrl.signal,
     });
     return res.ok;
   } catch {
     return false;
+  } finally {
+    clearTimeout(timer);
   }
 }
 

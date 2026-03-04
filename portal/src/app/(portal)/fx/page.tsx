@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import { formatUsd } from "@/lib/format";
 import { WithdrawButton } from "./withdraw-button";
 import { FxSimulator } from "./fx-simulator";
@@ -35,20 +36,20 @@ interface FxOperation {
 
 export default async function FxPage() {
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   const db = createServiceClient();
 
   const [depositsRes, withdrawalsRes, feeRes, accountRes] = await Promise.all([
     db
       .from("custody_deposits")
-      .select("*")
+      .select("id, amount_usd, original_currency, original_amount, fx_rate, fx_spread_pct, status, created_at")
       .eq("group_id", groupId)
       .order("created_at", { ascending: false })
       .limit(30),
     db
       .from("custody_withdrawals")
-      .select("*")
+      .select("id, amount_usd, target_currency, fx_rate, fx_spread_pct, fx_spread_usd, provider_fee_usd, net_local_amount, status, created_at")
       .eq("group_id", groupId)
       .order("created_at", { ascending: false })
       .limit(30),

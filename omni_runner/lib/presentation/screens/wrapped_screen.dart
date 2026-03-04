@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -71,7 +72,7 @@ class _WrappedScreenState extends State<WrappedScreen> {
           'period_type': widget.periodType,
           'period_key': widget.periodKey,
         },
-      );
+      ).timeout(const Duration(seconds: 15));
 
       final body = res.data as Map<String, dynamic>? ?? {};
       final wrapped = body['wrapped'];
@@ -88,11 +89,17 @@ class _WrappedScreenState extends State<WrappedScreen> {
         _loading = false;
         _data = wrapped as Map<String, dynamic>;
       });
+    } on TimeoutException {
+      AppLogger.warn('Wrapped load timed out', tag: _tag);
+      setState(() {
+        _loading = false;
+        _error = 'A requisição demorou demais. Tente novamente.';
+      });
     } on Exception catch (e) {
       AppLogger.warn('Wrapped load failed: $e', tag: _tag);
       setState(() {
         _loading = false;
-        _insufficientReason = 'no_data';
+        _error = 'Algo deu errado. Tente novamente.';
       });
     }
   }

@@ -35,36 +35,39 @@ serve(async (req: Request) => {
   let status = 200;
 
   try {
-    const { user, db } = await requireUser(req);
+    const { user, db, adminDb } = await requireUser(req);
     const uid = user.id;
 
-    // 1. Remove from coaching groups
-    await db.from("coaching_members").delete().eq("user_id", uid);
+    const { data: profile } = await db
+      .from("profiles")
+      .select("role")
+      .eq("id", uid)
+      .maybeSingle();
+    if (profile?.role === "admin_master") {
+      status = 403;
+      return jsonErr(403, "FORBIDDEN", "admin_master accounts cannot be self-deleted", requestId);
+    }
 
-    // 2. Cancel pending challenges
+    // 1. Cancel pending challenges (before deleting participants)
     await db
       .from("challenge_participants")
       .update({ status: "withdrawn" })
       .eq("user_id", uid)
       .in("status", ["pending", "accepted"]);
 
-    // 3. Anonymize profile
-    await db
-      .from("profiles")
-      .update({
-        display_name: "Conta excluída",
-        bio: null,
-        avatar_url: null,
-        email: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", uid);
+    // 2. Comprehensive data cleanup via SECURITY DEFINER RPC (UZ-013)
+    const { error: cleanupErr } = await adminDb.rpc("fn_delete_user_data", { p_user_id: uid });
+    if (cleanupErr) {
+      console.error(JSON.stringify({
+        request_id: requestId,
+        fn: FN,
+        error_code: "DATA_CLEANUP_FAILED",
+        detail: cleanupErr.message,
+      }));
+    }
 
-    // 4. Delete strava connection
-    await db.from("strava_connections").delete().eq("user_id", uid);
-
-    // 5. Delete auth user
-    const { error: deleteErr } = await db.auth.admin.deleteUser(uid);
+    // 5. Delete auth user (requires admin client)
+    const { error: deleteErr } = await adminDb.auth.admin.deleteUser(uid);
     if (deleteErr) {
       console.error(JSON.stringify({
         request_id: requestId,

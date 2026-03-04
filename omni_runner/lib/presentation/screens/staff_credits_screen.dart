@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/presentation/widgets/error_state.dart';
 
 /// Staff screen showing the assessoria's OmniCoin inventory,
 /// distribution history, and a CTA to contact the platform.
@@ -47,7 +48,7 @@ class _StaffCreditsScreenState extends State<StaffCreditsScreen> {
 
       final inv = await db
           .from('coaching_token_inventory')
-          .select()
+          .select('available_tokens, lifetime_issued, lifetime_burned')
           .eq('group_id', widget.groupId)
           .maybeSingle();
 
@@ -59,7 +60,7 @@ class _StaffCreditsScreenState extends State<StaffCreditsScreen> {
 
       final rows = await db
           .from('institution_credit_purchases')
-          .select()
+          .select('credits_amount, source_reference, notes, purchased_at')
           .eq('group_id', widget.groupId)
           .order('purchased_at', ascending: false)
           .limit(50);
@@ -90,12 +91,14 @@ class _StaffCreditsScreenState extends State<StaffCreditsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Semantics(
+      label: 'Tela de Créditos da Assessoria',
+      child: Scaffold(
       appBar: AppBar(title: const Text('Créditos da assessoria')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _ErrorBody(message: _error!, onRetry: _load)
+              ? ErrorState(message: _error ?? '', onRetry: _load)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
@@ -113,6 +116,7 @@ class _StaffCreditsScreenState extends State<StaffCreditsScreen> {
                     ],
                   ),
                 ),
+    ),
     );
   }
 }
@@ -249,8 +253,7 @@ class _PortalCta extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'O Portal de Assessorias está sendo desenvolvido. '
-            'Em breve você poderá gerenciar créditos e equipe pelo navegador.',
+            'Acesse o Portal Web para gerenciar créditos e equipe da sua assessoria.',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -354,28 +357,3 @@ class _EntryTile extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════════════
 // Error body
 // ═══════════════════════════════════════════════════════════════════════════
-
-class _ErrorBody extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-
-  const _ErrorBody({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(message),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh),
-            label: const Text('Tentar novamente'),
-          ),
-        ],
-      ),
-    );
-  }
-}

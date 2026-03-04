@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ interface Profile {
 
 export default async function DistributionsPage() {
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   const db = createServiceClient();
 

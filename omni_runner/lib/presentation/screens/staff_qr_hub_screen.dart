@@ -120,7 +120,8 @@ class StaffQrHubScreen extends StatelessWidget {
 
   void _pushInviteQr(BuildContext context) async {
     final group = await sl<ICoachingGroupRepo>().getById(membership.groupId);
-    if (group == null || group.inviteCode == null) {
+    final inviteCode = group?.inviteCode;
+    if (group == null || inviteCode == null || inviteCode.isEmpty) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Código de convite não disponível.')),
@@ -130,7 +131,7 @@ class StaffQrHubScreen extends StatelessWidget {
     if (!context.mounted) return;
     Navigator.of(context).push(MaterialPageRoute<void>(
       builder: (_) => InviteQrScreen(
-        inviteCode: group.inviteCode!,
+        inviteCode: inviteCode,
         groupName: group.name,
       ),
     ));

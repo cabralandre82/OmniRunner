@@ -47,7 +47,7 @@ class _CoachingGroupDetailsScreenState
 
       final groupRow = await db
           .from('coaching_groups')
-          .select()
+          .select('id, name, logo_url, coach_user_id, description, city, invite_code, invite_enabled, created_at_ms')
           .eq('id', widget.groupId)
           .maybeSingle();
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/usecases/wearable/import_execution.dart';
@@ -56,7 +57,7 @@ class _AthleteLogExecutionScreenState extends State<AthleteLogExecutionScreen> {
 
     setState(() => _submitting = true);
     try {
-      final durationMinutes = int.parse(_durationCtrl.text.trim());
+      final durationMinutes = int.tryParse(_durationCtrl.text.trim()) ?? 0;
       await _importExecution.call(
         assignmentId: widget.assignmentId,
         durationSeconds: durationMinutes * 60,
@@ -83,7 +84,7 @@ class _AthleteLogExecutionScreenState extends State<AthleteLogExecutionScreen> {
       setState(() => _submitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erro: ${e.toString()}'),
+          content: Text(ErrorMessages.humanize(e)),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -94,7 +95,9 @@ class _AthleteLogExecutionScreenState extends State<AthleteLogExecutionScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
+    return Semantics(
+      label: 'Tela de Registrar Execução',
+      child: Scaffold(
       appBar: AppBar(title: const Text('Registrar Execução')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -220,6 +223,7 @@ class _AthleteLogExecutionScreenState extends State<AthleteLogExecutionScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 }

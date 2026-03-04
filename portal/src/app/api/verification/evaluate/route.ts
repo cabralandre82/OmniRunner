@@ -22,10 +22,10 @@ export async function POST(request: Request) {
 
   const supabase = createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     .from("coaching_members")
     .select("role")
     .eq("group_id", groupId)
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
     .maybeSingle();
 
   if (!callerMembership || !["admin_master", "coach"].includes(callerMembership.role)) {
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
   }
 
   await auditLog({
-    actorId: session.user.id,
+    actorId: user.id,
     groupId: groupId,
     action: "verification.reevaluate",
     targetType: "athlete",

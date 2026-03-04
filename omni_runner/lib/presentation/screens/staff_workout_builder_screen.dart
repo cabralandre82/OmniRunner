@@ -88,6 +88,35 @@ class _BuilderViewState extends State<_BuilderView> {
     });
   }
 
+  Future<void> _confirmRemoveBlock(
+      BuildContext context, WorkoutBlockEntity block) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded, color: Colors.amber),
+        title: const Text('Confirmar remoção'),
+        content: const Text(
+          'Tem certeza que deseja remover este bloco do treino? '
+          'Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Remover'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      context.read<WorkoutBuilderBloc>().add(RemoveBlock(blockId: block.id));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<WorkoutBuilderBloc, WorkoutBuilderState>(
@@ -108,7 +137,9 @@ class _BuilderViewState extends State<_BuilderView> {
       builder: (context, state) {
         final isSaving = state is BuilderSaving;
 
-        return Scaffold(
+        return Semantics(
+          label: 'Tela de Editor de Template de Treino',
+          child: Scaffold(
           appBar: AppBar(
             title: Text(_isEdit ? 'Editar Template' : 'Novo Template'),
             actions: [
@@ -129,6 +160,7 @@ class _BuilderViewState extends State<_BuilderView> {
             ],
           ),
           body: _buildBody(context, state),
+        ),
         );
       },
     );
@@ -259,11 +291,7 @@ class _BuilderViewState extends State<_BuilderView> {
                   key: ValueKey(block.id),
                   block: block,
                   index: index,
-                  onRemove: () {
-                    context
-                        .read<WorkoutBuilderBloc>()
-                        .add(RemoveBlock(blockId: block.id));
-                  },
+                  onRemove: () => _confirmRemoveBlock(context, block),
                 );
               },
             ),

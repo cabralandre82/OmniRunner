@@ -32,6 +32,7 @@ export function TicketChat({
   const [sending, setSending] = useState(false);
   const [closing, setClosing] = useState(false);
   const [reopening, setReopening] = useState(false);
+  const sendingRef = useRef(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,8 +41,9 @@ export function TicketChat({
 
   async function handleSend() {
     const text = body.trim();
-    if (!text) return;
+    if (!text || sendingRef.current) return;
 
+    sendingRef.current = true;
     setSending(true);
     try {
       const res = await fetch(`/api/platform/support`, {
@@ -75,6 +77,7 @@ export function TicketChat({
         },
       ]);
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }

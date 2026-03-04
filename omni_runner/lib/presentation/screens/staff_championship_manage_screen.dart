@@ -9,6 +9,7 @@ import 'package:omni_runner/domain/repositories/i_token_intent_repo.dart';
 import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_bloc.dart';
 import 'package:omni_runner/presentation/screens/staff_generate_qr_screen.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/presentation/widgets/error_state.dart';
 
 /// Staff screen for managing a single championship: open it, invite groups,
 /// view invites, and see participants.
@@ -35,6 +36,7 @@ class _StaffChampionshipManageScreenState
   static const _tag = 'ChampManage';
 
   bool _loading = true;
+  bool _busy = false;
   String? _error;
   _ChampData? _champ;
   List<_InviteData> _invites = [];
@@ -58,7 +60,7 @@ class _StaffChampionshipManageScreenState
       // Load championship details
       final champRes = await _db
           .from('championships')
-          .select()
+          .select('id, name, description, metric, status, requires_badge, max_participants, start_at, end_at')
           .eq('id', widget.championshipId)
           .maybeSingle();
 
@@ -146,6 +148,7 @@ class _StaffChampionshipManageScreenState
   }
 
   Future<void> _openChampionship() async {
+    if (_busy) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -162,6 +165,7 @@ class _StaffChampionshipManageScreenState
     );
     if (confirmed != true || !mounted) return;
 
+    setState(() => _busy = true);
     try {
       final res = await _db.functions.invoke('champ-open', body: {
         'championship_id': widget.championshipId,
@@ -189,6 +193,8 @@ class _StaffChampionshipManageScreenState
           const SnackBar(content: Text('Erro ao abrir campeonato.')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -206,6 +212,7 @@ class _StaffChampionshipManageScreenState
   }
 
   Future<void> _cancelChampionship() async {
+    if (_busy) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -229,6 +236,7 @@ class _StaffChampionshipManageScreenState
     );
     if (confirmed != true || !mounted) return;
 
+    setState(() => _busy = true);
     try {
       final res = await _db.functions.invoke('champ-cancel', body: {
         'championship_id': widget.championshipId,
@@ -256,10 +264,13 @@ class _StaffChampionshipManageScreenState
           const SnackBar(content: Text('Erro ao cancelar campeonato.')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _inviteGroup() async {
+    if (_busy) return;
     // Fetch available groups (excluding host + already invited)
     List<Map<String, String>> availableGroups = [];
     try {
@@ -296,13 +307,14 @@ class _StaffChampionshipManageScreenState
         title: const Text('Convidar assessoria'),
         children: availableGroups.map((g) => SimpleDialogOption(
           onPressed: () => Navigator.pop(ctx, g['id']),
-          child: Text(g['name']!),
+          child: Text(g['name']?.toString() ?? ''),
         )).toList(),
       ),
     );
 
     if (selected == null || !mounted) return;
 
+    setState(() => _busy = true);
     try {
       final res = await _db.functions.invoke('champ-invite', body: {
         'championship_id': widget.championshipId,
@@ -331,6 +343,8 @@ class _StaffChampionshipManageScreenState
           const SnackBar(content: Text('Erro ao enviar convite.')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -347,22 +361,20 @@ class _StaffChampionshipManageScreenState
     if (_error != null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Gerenciar Campeonato')),
-        body: Center(child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_error!),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: _loadAll,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Tentar novamente'),
-            ),
-          ],
-        )),
+        body: ErrorState(
+          message: _error ?? '',
+          onRetry: _loadAll,
+        ),
       );
     }
 
-    final c = _champ!;
+    final c = _champ;
+    if (c == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Gerenciar Campeonato')),
+        body: const Center(child: Text('Campeonato não encontrado')),
+      );
+    }
     final isDraft = c.status == 'draft';
     final cs = theme.colorScheme;
 
@@ -421,7 +433,7 @@ class _StaffChampionshipManageScreenState
               FilledButton.icon(
                 icon: const Icon(Icons.lock_open_rounded),
                 label: const Text('Abrir para inscrições'),
-                onPressed: _openChampionship,
+                onPressed: _busy ? null : _openChampionship,
                 style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
               ),
               const SizedBox(height: 8),
@@ -438,7 +450,7 @@ class _StaffChampionshipManageScreenState
               OutlinedButton.icon(
                 icon: const Icon(Icons.cancel_outlined, size: 18),
                 label: const Text('Cancelar campeonato'),
-                onPressed: _cancelChampionship,
+                onPressed: _busy ? null : _cancelChampionship,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: DesignTokens.error,
                   side: const BorderSide(color: DesignTokens.error),
@@ -503,7 +515,7 @@ class _StaffChampionshipManageScreenState
                   TextButton.icon(
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text('Convidar'),
-                    onPressed: _inviteGroup,
+                    onPressed: _busy ? null : _inviteGroup,
                   ),
               ],
             ),
@@ -599,7 +611,7 @@ class _StaffChampionshipManageScreenState
         backgroundColor: theme.colorScheme.primaryContainer,
         child: Text('$rank', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
       ),
-      title: Text(p.displayName),
+      title: Text(p.displayName, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(_participantStatusLabel(p.status), style: theme.textTheme.bodySmall),
       trailing: p.progressValue > 0
           ? Text(_fmtProgress(p.progressValue, metric), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))

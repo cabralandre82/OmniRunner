@@ -70,10 +70,13 @@ serve(async (req: Request) => {
   let user: { id: string; [key: string]: unknown };
   // deno-lint-ignore no-explicit-any
   let db: any;
+  // deno-lint-ignore no-explicit-any
+  let adminDb: any;
   try {
     const auth = await requireUser(req);
     user = auth.user;
     db = auth.db;
+    adminDb = auth.adminDb;
     userId = user.id;
   } catch (e) {
     errorCode = "AUTH_ERROR";
@@ -115,7 +118,7 @@ serve(async (req: Request) => {
 
   const nowMs = Date.now();
 
-  let query = db.from("challenges").select("*").in("status", ["active", "completing"]);
+  let query = db.from("challenges").select("*").eq("status", "active");
   if (body.challenge_id) {
     query = query.eq("id", body.challenge_id);
   } else {
@@ -153,7 +156,7 @@ serve(async (req: Request) => {
       .from("challenges")
       .update({ status: "completing" })
       .eq("id", ch.id)
-      .in("status", ["active", "completing"])
+      .eq("status", "active")
       .select("id");
 
     if (!claimed || claimed.length === 0) {
@@ -173,7 +176,20 @@ serve(async (req: Request) => {
       continue;
     }
 
-    const parts = participants as Participant[];
+    // M17 fix: re-fetch participants after atomic claim to exclude anyone
+    // who withdrew between the initial query and this point.
+    const { data: freshParticipants } = await db
+      .from("challenge_participants")
+      .select("*")
+      .eq("challenge_id", ch.id)
+      .eq("status", "accepted");
+
+    if (!freshParticipants || freshParticipants.length === 0) {
+      await db.from("challenges").update({ status: "expired" }).eq("id", ch.id);
+      continue;
+    }
+
+    const parts = freshParticipants as Participant[];
     const goal = ch.goal ?? "most_distance";
     const lowerIsBetter = goal === "fastest_at_distance" || goal === "best_pace_at_distance";
 
@@ -392,14 +408,15 @@ serve(async (req: Request) => {
         // Skip ranking — go straight to write
         await db.from("challenge_results").upsert(results, { onConflict: "challenge_id,user_id" });
         if (ledgerEntries.length > 0) {
-          await db.from("coin_ledger").insert(ledgerEntries);
-          await Promise.all(
-            ledgerEntries.map((entry) =>
-              db.rpc("increment_wallet_balance", {
-                p_user_id: entry.user_id, p_delta: entry.delta_coins,
-              })
-            )
-          );
+          await adminDb.rpc("fn_increment_wallets_batch", {
+            p_entries: ledgerEntries.map((entry) => ({
+              user_id: entry.user_id,
+              delta: entry.delta_coins,
+              reason: entry.reason,
+              ref_id: entry.ref_id,
+              group_id: entry.issuer_group_id ?? null,
+            })),
+          });
         }
         await db.from("challenges").update({ status: "completed" }).eq("id", ch.id);
         settled++;
@@ -514,15 +531,15 @@ serve(async (req: Request) => {
     await db.from("challenge_results").upsert(results, { onConflict: "challenge_id,user_id" });
 
     if (ledgerEntries.length > 0) {
-      await db.from("coin_ledger").insert(ledgerEntries);
-      await Promise.all(
-        ledgerEntries.map((entry) =>
-          db.rpc("increment_wallet_balance", {
-            p_user_id: entry.user_id,
-            p_delta: entry.delta_coins,
-          })
-        )
-      );
+      await adminDb.rpc("fn_increment_wallets_batch", {
+        p_entries: ledgerEntries.map((entry) => ({
+          user_id: entry.user_id,
+          delta: entry.delta_coins,
+          reason: entry.reason,
+          ref_id: entry.ref_id,
+          group_id: entry.issuer_group_id ?? null,
+        })),
+      });
     }
 
     await db.from("challenges").update({ status: "completed" }).eq("id", ch.id);
@@ -542,6 +559,7 @@ serve(async (req: Request) => {
             rule: "challenge_settled",
             context: { challenge_id: ch.id },
           }),
+          signal: AbortSignal.timeout(15_000),
         }).catch(() => {});
       }
     } catch { /* fire-and-forget */ }

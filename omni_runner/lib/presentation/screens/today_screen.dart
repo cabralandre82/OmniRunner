@@ -59,6 +59,8 @@
 /// start_latlng). Park polygon database can be seeded from OpenStreetMap
 /// leisure=park data for Brazilian cities. No real-time tracking needed.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/l10n/l10n.dart';
@@ -76,17 +78,17 @@ import 'package:omni_runner/features/parks/data/park_detection_service.dart';
 import 'package:omni_runner/features/parks/data/parks_seed.dart';
 import 'package:omni_runner/features/parks/domain/park_entity.dart';
 import 'package:omni_runner/features/parks/presentation/park_screen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/push/notification_rules_service.dart';
+import 'package:omni_runner/data/services/today_data_service.dart';
 import 'package:omni_runner/presentation/screens/athlete_championships_screen.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/presentation/screens/challenge_details_screen.dart';
-import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/widgets/run_share_card.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/presentation/screens/streaks_leaderboard_screen.dart';
 
 class TodayScreen extends StatefulWidget {
   final bool isVisible;
@@ -102,9 +104,12 @@ class _TodayScreenState extends State<TodayScreen> {
   WorkoutSessionEntity? _previousRun;
   bool _stravaConnected = false;
   bool _loading = true;
+  String? _errorMessage;
   ParkEntity? _detectedPark;
   List<ChallengeEntity> _activeChallenges = const [];
   List<Map<String, dynamic>> _activeChampionships = const [];
+  DateTime? _lastLoadTime;
+  bool _connectingStrava = false;
 
   @override
   void initState() {
@@ -121,14 +126,17 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 
   Future<void> _load() async {
+    if (_lastLoadTime != null &&
+        DateTime.now().difference(_lastLoadTime!) < const Duration(seconds: 60)) {
+      return;
+    }
     try {
       final uid = sl<UserIdentityProvider>().userId;
 
       // Ensure profile_progress is up-to-date (awards XP for
       // Strava sessions that never went through calculate-progression)
       try {
-        await Supabase.instance.client
-            .rpc('recalculate_profile_progress', params: {'p_user_id': uid});
+        await sl<TodayDataService>().recalculateProfileProgress(uid);
       } catch (e) {
         AppLogger.debug('recalculate_profile_progress failed', tag: 'Today', error: e);
       }
@@ -136,12 +144,7 @@ class _TodayScreenState extends State<TodayScreen> {
       // Profile progress: Supabase first (authoritative), fallback to Isar
       ProfileProgressEntity profile;
       try {
-        final db = Supabase.instance.client;
-        final row = await db
-            .from('profile_progress')
-            .select()
-            .eq('user_id', uid)
-            .maybeSingle();
+        final row = await sl<TodayDataService>().getProfileProgress(uid);
         if (row != null) {
           profile = ProfileProgressEntity(
             userId: uid,
@@ -186,18 +189,8 @@ class _TodayScreenState extends State<TodayScreen> {
       // Only sessions >= 1km count as real runs
       List<WorkoutSessionEntity> remoteCompleted = const [];
       try {
-        final db = Supabase.instance.client;
-        final rows = await db
-            .from('sessions')
-            .select()
-            .eq('user_id', uid)
-            .eq('status', 3)
-            .gte('total_distance_m', 1000)
-            .order('start_time_ms', ascending: false)
-            .limit(5);
-        remoteCompleted = (rows as List)
-            .map((r) => _remoteSessionToEntity(r))
-            .toList();
+        final rows = await sl<TodayDataService>().getRemoteSessions(uid);
+        remoteCompleted = rows.map((r) => _remoteSessionToEntity(r)).toList();
       } catch (e) {
         AppLogger.debug('Remote sessions fetch failed', tag: 'Today', error: e);
       }
@@ -210,22 +203,11 @@ class _TodayScreenState extends State<TodayScreen> {
       // Active challenges: Supabase first, fallback to Isar
       List<ChallengeEntity> active = const [];
       try {
-        final db = Supabase.instance.client;
-        final myParts = await db
-            .from('challenge_participants')
-            .select('challenge_id')
-            .eq('user_id', uid)
-            .inFilter('status', ['accepted', 'invited']);
-        final partIds = (myParts as List)
-            .map((r) => r['challenge_id'] as String)
-            .toList();
+        final partIds = await sl<TodayDataService>().getActiveChallengeIds(uid);
         if (partIds.isNotEmpty) {
-          final challRows = await db
-              .from('challenges')
-              .select('id, title, type, status, ends_at_ms, entry_fee_coins')
-              .inFilter('id', partIds)
-              .eq('status', 'active');
-          active = (challRows as List).map((r) {
+          final challRows =
+              await sl<TodayDataService>().getChallengesByIds(partIds);
+          active = challRows.map((r) {
             final typeStr = r['type'] as String? ?? 'one_vs_one';
             return ChallengeEntity(
               id: r['id'] as String,
@@ -263,21 +245,10 @@ class _TodayScreenState extends State<TodayScreen> {
 
       List<Map<String, dynamic>> champs = const [];
       try {
-        final db = Supabase.instance.client;
-        final parts = await db
-            .from('championship_participants')
-            .select('championship_id')
-            .eq('user_id', uid);
-        if ((parts as List).isNotEmpty) {
-          final ids = parts
-              .map((r) => r['championship_id'] as String)
-              .toList();
-          final rows = await db
-              .from('championships')
-              .select('id, name, status')
-              .inFilter('id', ids)
-              .eq('status', 'active');
-          champs = List<Map<String, dynamic>>.from(rows as List);
+        final ids = await sl<TodayDataService>().getActiveChampionshipIds(uid);
+        if (ids.isNotEmpty) {
+          champs =
+              await sl<TodayDataService>().getChampionshipsByIds(ids);
         }
       } catch (e) {
         AppLogger.debug('Championships fetch failed', tag: 'Today', error: e);
@@ -292,6 +263,7 @@ class _TodayScreenState extends State<TodayScreen> {
       }
 
       if (!mounted) return;
+      _lastLoadTime = DateTime.now();
       setState(() {
         _profile = profile;
         _lastRun = lastRun;
@@ -301,12 +273,18 @@ class _TodayScreenState extends State<TodayScreen> {
         _activeChallenges = active;
         _activeChampionships = champs;
         _loading = false;
+        _errorMessage = null;
       });
 
       _checkStreakAtRisk(uid, profile, lastRun);
     } catch (e) {
       AppLogger.error('Today data load failed', tag: 'Today', error: e);
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _errorMessage = 'Não foi possível carregar seus dados.';
+        });
+      }
     }
   }
 
@@ -370,10 +348,51 @@ class _TodayScreenState extends State<TodayScreen> {
     }
   }
 
+  Future<void> _connectStrava() async {
+    setState(() => _connectingStrava = true);
+    try {
+      final controller = sl<StravaConnectController>();
+      final connected = await controller.startConnect();
+      if (mounted) {
+        setState(() {
+          _stravaConnected = true;
+          _connectingStrava = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Strava conectado como ${connected.athleteName}!'),
+          ),
+        );
+        _lastLoadTime = null;
+        _load();
+      }
+    } catch (e) {
+      final controller = sl<StravaConnectController>();
+      final stillConnected = await controller.isConnected;
+      if (mounted) {
+        if (stillConnected) {
+          controller.retryBackfillIfNeeded().ignore();
+          setState(() {
+            _stravaConnected = true;
+            _connectingStrava = false;
+          });
+          _lastLoadTime = null;
+          _load();
+        } else {
+          setState(() => _connectingStrava = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Erro ao conectar Strava. Tente novamente.')),
+          );
+        }
+      }
+    }
+  }
+
   bool get _ranToday {
-    if (_lastRun == null) return false;
+    final lastRun = _lastRun;
+    if (lastRun == null) return false;
     final now = DateTime.now();
-    final runDate = DateTime.fromMillisecondsSinceEpoch(_lastRun!.startTimeMs);
+    final runDate = DateTime.fromMillisecondsSinceEpoch(lastRun.startTimeMs);
     return runDate.year == now.year &&
         runDate.month == now.month &&
         runDate.day == now.day;
@@ -384,12 +403,48 @@ class _TodayScreenState extends State<TodayScreen> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    return Scaffold(
+    return Semantics(
+      label: 'Tela de Hoje',
+      child: Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.today),
         backgroundColor: cs.inversePrimary,
       ),
-      body: _loading
+      body: _errorMessage != null && _profile == null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(DesignTokens.spacingXl),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.cloud_off_rounded,
+                        size: 64, color: cs.outline),
+                    const SizedBox(height: DesignTokens.spacingMd),
+                    Text(
+                      _errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: DesignTokens.spacingLg),
+                    FilledButton.icon(
+                      onPressed: () {
+                        _lastLoadTime = null;
+                        setState(() {
+                          _loading = true;
+                          _errorMessage = null;
+                        });
+                        _load();
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Tentar novamente'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : _loading
           ? Padding(
               padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 12, DesignTokens.spacingMd, DesignTokens.spacingLg),
               child: ShimmerLoading(
@@ -482,13 +537,8 @@ class _TodayScreenState extends State<TodayScreen> {
                   _BoraCorrerCard(
                     stravaConnected: _stravaConnected,
                     ranToday: _ranToday,
-                    onOpenSettings: () {
-                      Navigator.of(context)
-                          .push(MaterialPageRoute<void>(
-                            builder: (_) => const SettingsScreen(),
-                          ))
-                          .then((_) => _load());
-                    },
+                    connectingStrava: _connectingStrava,
+                    onConnectStrava: _connectStrava,
                   ),
                   const SizedBox(height: 14),
 
@@ -522,6 +572,7 @@ class _TodayScreenState extends State<TodayScreen> {
                 ],
               ),
             ),
+    ),
     );
   }
 
@@ -546,79 +597,147 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 
   Future<void> _openJournal(WorkoutSessionEntity run) async {
-    final controller = TextEditingController();
+    final uid = sl<UserIdentityProvider>().userId;
+    String? initialNotes;
+    String? initialMood;
+    try {
+      final row = await sl<TodayDataService>().getJournalEntry(run.id, uid);
+      if (row != null) {
+        initialNotes = row['notes'] as String?;
+        initialMood = row['mood_emoji'] as String?;
+      }
+    } catch (e) {
+      AppLogger.debug('Journal load failed', tag: 'Today', error: e);
+    }
+
+    final controller = TextEditingController(text: initialNotes ?? '');
+    String? selectedMood = initialMood;
+    Timer? debounceTimer;
+
+    Future<void> saveJournal(String notes, String? mood) async {
+      try {
+        await sl<TodayDataService>().upsertJournalEntry(
+          sessionId: run.id,
+          userId: uid,
+          notes: notes.isEmpty ? null : notes,
+          moodEmoji: mood,
+        );
+      } catch (e) {
+        AppLogger.debug('Journal save failed', tag: 'Today', error: e);
+      }
+    }
+
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(DesignTokens.spacingLg, DesignTokens.spacingLg, DesignTokens.spacingLg, MediaQuery.of(ctx).viewInsets.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Diário de corrida',
-              style: Theme.of(ctx)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              DesignTokens.spacingLg,
+              DesignTokens.spacingLg,
+              DesignTokens.spacingLg,
+              MediaQuery.of(ctx).viewInsets.bottom + 24,
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Como foi essa corrida? Anote o que sentiu, '
-              'o clima, seu humor...',
-              style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(ctx).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              maxLines: 4,
-              autofocus: true,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Hoje acordei cedo e corri no parque...',
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Humor:'),
-                const SizedBox(width: 8),
-                ..._moodOptions(ctx),
+                Text(
+                  'Diário de corrida',
+                  style: Theme.of(ctx)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Como foi essa corrida? Anote o que sentiu, '
+                  'o clima, seu humor...',
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  maxLines: 4,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Hoje acordei cedo e corri no parque...',
+                  ),
+                  onChanged: (value) {
+                    debounceTimer?.cancel();
+                    debounceTimer = Timer(const Duration(seconds: 1), () {
+                      saveJournal(value, selectedMood);
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Text('Humor:'),
+                    const SizedBox(width: 8),
+                    ..._moodOptions(ctx, selectedMood, (mood) {
+                      setModalState(() => selectedMood = mood);
+                      debounceTimer?.cancel();
+                      debounceTimer = Timer(const Duration(milliseconds: 500), () {
+                        saveJournal(controller.text, mood);
+                      });
+                    }),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () async {
+                      debounceTimer?.cancel();
+                      await saveJournal(controller.text, selectedMood);
+                      if (!ctx.mounted) return;
+                      Navigator.pop(ctx, controller.text);
+                    },
+                    child: Text(ctx.l10n.save),
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => Navigator.pop(ctx, controller.text),
-                child: Text(ctx.l10n.save),
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
 
-    if (result != null && result.isNotEmpty && mounted) {
+    debounceTimer?.cancel();
+    if (result != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Anotação salva!')),
       );
     }
   }
 
-  List<Widget> _moodOptions(BuildContext ctx) {
+  List<Widget> _moodOptions(
+    BuildContext ctx,
+    String? selectedMood,
+    void Function(String) onMoodSelected,
+  ) {
     const moods = ['😴', '😐', '😊', '💪', '🔥'];
     return moods
         .map((m) => Padding(
               padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingXs),
               child: GestureDetector(
-                onTap: () {},
-                child: Text(m, style: const TextStyle(fontSize: 24)),
+                onTap: () => onMoodSelected(m),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    color: selectedMood == m
+                        ? Theme.of(ctx).colorScheme.primaryContainer
+                        : null,
+                  ),
+                  child: Text(m, style: const TextStyle(fontSize: 24)),
+                ),
               ),
             ))
         .toList();
@@ -721,6 +840,23 @@ class _StreakBanner extends StatelessWidget {
                   const SizedBox(height: 6),
                   _StreakMilestones(current: streak),
                 ],
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute<void>(
+                      builder: (_) => const StreaksLeaderboardScreen(),
+                    ));
+                  },
+                  child: Text(
+                    'Ver ranking →',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: isActive
+                          ? Colors.white.withValues(alpha: 0.85)
+                          : theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -796,12 +932,14 @@ class _StreakMilestones extends StatelessWidget {
 class _BoraCorrerCard extends StatelessWidget {
   final bool stravaConnected;
   final bool ranToday;
-  final VoidCallback onOpenSettings;
+  final bool connectingStrava;
+  final VoidCallback onConnectStrava;
 
   const _BoraCorrerCard({
     required this.stravaConnected,
     required this.ranToday,
-    required this.onOpenSettings,
+    required this.connectingStrava,
+    required this.onConnectStrava,
   });
 
   @override
@@ -893,16 +1031,22 @@ class _BoraCorrerCard extends StatelessWidget {
             style: TextStyle(fontSize: 13, color: Color(0xFF5D4037)),
           ),
           const SizedBox(height: 14),
-          FilledButton.icon(
-            onPressed: onOpenSettings,
-            icon: const Icon(Icons.link, size: 18),
-            label: const Text('Conectar Strava'),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFFC4C02),
-              padding: const EdgeInsets.symmetric(
-                  horizontal: DesignTokens.spacingLg, vertical: 12),
-            ),
-          ),
+          connectingStrava
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : FilledButton.icon(
+                  onPressed: onConnectStrava,
+                  icon: const Icon(Icons.link, size: 18),
+                  label: const Text('Conectar Strava'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFFC4C02),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: DesignTokens.spacingLg, vertical: 12),
+                  ),
+                ),
         ],
       ),
     );
@@ -1033,8 +1177,8 @@ class _RunRecapCard extends StatelessWidget {
             ),
 
           // Comparison with previous run
-          if (previousRun != null)
-            _ComparisonRow(current: run, previous: previousRun!),
+          if (previousRun case final prev?)
+            _ComparisonRow(current: run, previous: prev),
 
           // Action buttons
           Padding(
@@ -1517,8 +1661,9 @@ class _ActiveChallengeRow extends StatelessWidget {
   }
 
   static String? _timeRemaining(ChallengeEntity c) {
-    if (c.endsAtMs == null) return null;
-    final diff = c.endsAtMs! - DateTime.now().millisecondsSinceEpoch;
+    final endsAtMs = c.endsAtMs;
+    if (endsAtMs == null) return null;
+    final diff = endsAtMs - DateTime.now().millisecondsSinceEpoch;
     if (diff <= 0) return 'Encerrado';
     final hours = diff ~/ 3600000;
     final minutes = (diff % 3600000) ~/ 60000;

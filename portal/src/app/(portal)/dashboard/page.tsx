@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { NoGroupSelected } from "@/components/no-group-selected";
+import { LastUpdated } from "@/components/last-updated";
+import { WelcomeBanner } from "@/components/welcome-banner";
 import { formatKm } from "@/lib/format";
 import { StatBlock, DashboardCard } from "@/components/ui";
 import { DashboardCharts } from "./dashboard-charts";
@@ -14,7 +17,7 @@ const LOW_CREDIT_THRESHOLD = 50;
 export default async function DashboardPage() {
   const groupId = cookies().get("portal_group_id")?.value;
   const role = cookies().get("portal_role")?.value ?? "assistant";
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   let credits = 0;
   let athleteCount = 0;
@@ -158,6 +161,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <WelcomeBanner />
       <div>
         <h1 className="text-2xl font-bold text-content-primary">Dashboard</h1>
         <p className="mt-1 text-sm text-content-secondary">Visão geral da assessoria</p>
@@ -280,6 +284,8 @@ export default async function DashboardPage() {
           </div>
         </DashboardCard>
       )}
+
+      <LastUpdated />
     </div>
   );
 }

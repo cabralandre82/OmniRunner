@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/deep_links/deep_link_handler.dart';
+import 'package:omni_runner/core/offline/connectivity_monitor.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/push/push_navigation_handler.dart';
 import 'package:omni_runner/core/push/push_notification_service.dart';
@@ -90,6 +91,10 @@ Future<void> main() async {
 
 Future<void> _bootstrap() async {
   // Initialize Supabase only when both env vars are present and non-empty.
+  // NOTE (M11): supabase_flutter v2 does not expose an httpClient parameter on
+  // Supabase.initialize, so there is no way to inject a global HTTP timeout.
+  // Individual RPC/REST calls should use `.timeout()` on the Future instead.
+  // This is a known SDK limitation — track: https://github.com/supabase/supabase-flutter/issues
   if (AppConfig.isSupabaseConfigured) {
     try {
       await Supabase.initialize(
@@ -153,6 +158,15 @@ Future<void> _bootstrap() async {
   // Auto-sync pending sessions on startup and when connectivity restores.
   final autoSync = AutoSyncManager(syncRepo: sl<ISyncRepo>());
   await autoSync.init();
+
+  // Offline queue: replay failed RPC calls when connectivity restores.
+  if (AppConfig.isSupabaseReady) {
+    try {
+      sl<ConnectivityMonitor>().start();
+    } catch (_) {
+      // OfflineQueue/ConnectivityMonitor may not be registered if setup failed
+    }
+  }
 
   await themeNotifier.load();
 

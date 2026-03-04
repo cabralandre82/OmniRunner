@@ -1,5 +1,17 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+
+class _AvatarCacheManager {
+  static const key = 'omni_avatar_cache';
+  static final instance = CacheManager(
+    Config(
+      key,
+      maxNrOfCacheObjects: 500,
+      stalePeriod: const Duration(days: 7),
+    ),
+  );
+}
 
 class CachedAvatar extends StatelessWidget {
   final String? url;
@@ -32,6 +44,7 @@ class CachedAvatar extends StatelessWidget {
     }
     return CachedNetworkImage(
       imageUrl: url!,
+      cacheManager: _AvatarCacheManager.instance,
       imageBuilder: (_, imageProvider) => CircleAvatar(
         radius: radius,
         backgroundImage: imageProvider,
@@ -65,9 +78,10 @@ class CachedAvatar extends StatelessWidget {
 
   static String _initials(String name) {
     final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length >= 2) {
+    if (parts.length >= 2 && parts.first.isNotEmpty && parts.last.isNotEmpty) {
       return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
     }
-    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final trimmed = name.trim();
+    return trimmed.isNotEmpty ? trimmed[0].toUpperCase() : '?';
   }
 }

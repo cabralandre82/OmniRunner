@@ -135,7 +135,7 @@ class _OnboardingRoleScreenState extends State<OnboardingRoleScreen> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = 'Não foi possível salvar. Verifique sua conexão e tente novamente.';
+        _error = 'Estamos com um problema temporário. Tente novamente em alguns minutos.';
       });
     }
   }

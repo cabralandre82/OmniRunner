@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import { formatDateISO } from "@/lib/format";
 import Link from "next/link";
 
@@ -66,7 +67,7 @@ export default async function SubscriptionsPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   const params = await searchParams;
   const statusFilter = params.status ?? "all";

@@ -9,10 +9,10 @@ import { logger } from "@/lib/logger";
 async function requireStaff() {
   const supabase = createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) return { error: "Não autorizado", status: 401 } as const;
+  if (!user) return { error: "Não autorizado", status: 401 } as const;
 
   const groupId = cookies().get("portal_group_id")?.value;
   if (!groupId) return { error: "Grupo não selecionado", status: 400 } as const;
@@ -22,7 +22,7 @@ async function requireStaff() {
     .from("coaching_members")
     .select("role")
     .eq("group_id", groupId)
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
     .maybeSingle();
 
   if (
@@ -34,7 +34,7 @@ async function requireStaff() {
     return { error: "Sem permissão", status: 403 } as const;
   }
 
-  return { session, groupId } as const;
+  return { user, groupId } as const;
 }
 
 export async function GET(req: NextRequest) {

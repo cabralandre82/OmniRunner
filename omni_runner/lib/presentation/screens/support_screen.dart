@@ -18,7 +18,10 @@ class SupportScreen extends StatefulWidget {
 
 class _SupportScreenState extends State<SupportScreen> {
   bool _loading = true;
+  bool _busy = false;
+  String? _error;
   List<Map<String, dynamic>> _tickets = [];
+  _NewTicketResult? _pendingTicket;
 
   @override
   void initState() {
@@ -27,11 +30,14 @@ class _SupportScreenState extends State<SupportScreen> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final res = await Supabase.instance.client
           .from('support_tickets')
-          .select()
+          .select('id, group_id, subject, status, created_at, updated_at')
           .eq('group_id', widget.groupId)
           .order('updated_at', ascending: false);
 
@@ -43,17 +49,27 @@ class _SupportScreenState extends State<SupportScreen> {
       }
     } on Exception catch (e) {
       AppLogger.warn('Caught error', tag: 'SupportScreen', error: e);
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = 'Não foi possível carregar os chamados.';
+        });
+      }
     }
   }
 
   Future<void> _newTicket() async {
+    if (_busy) return;
     final result = await showDialog<_NewTicketResult>(
       context: context,
-      builder: (_) => const _NewTicketDialog(),
+      builder: (_) => _NewTicketDialog(
+        initialSubject: _pendingTicket?.subject,
+        initialMessage: _pendingTicket?.message,
+      ),
     );
     if (result == null || !mounted) return;
 
+    setState(() => _busy = true);
     try {
       final uid = sl<UserIdentityProvider>().userId;
 
@@ -63,7 +79,7 @@ class _SupportScreenState extends State<SupportScreen> {
             'group_id': widget.groupId,
             'subject': result.subject,
           })
-          .select()
+          .select('id, group_id, subject, status, created_at, updated_at')
           .single();
 
       final ticketId = ticketRes['id'] as String;
@@ -74,6 +90,8 @@ class _SupportScreenState extends State<SupportScreen> {
         'sender_role': 'staff',
         'body': result.message,
       });
+
+      _pendingTicket = null;
 
       if (mounted) {
         await _load();
@@ -86,12 +104,17 @@ class _SupportScreenState extends State<SupportScreen> {
           ));
         }
       }
-    } on Exception catch (e) {
+    } on Exception {
+      _pendingTicket = result;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao criar chamado: $e')),
+          const SnackBar(
+            content: Text('Erro ao criar chamado. Sua mensagem foi preservada — tente novamente.'),
+          ),
         );
       }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -112,7 +135,34 @@ class _SupportScreenState extends State<SupportScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
+          : _error != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(DesignTokens.spacingXl),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.cloud_off_rounded,
+                            size: 48, color: cs.error),
+                        const SizedBox(height: 16),
+                        Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: cs.error,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        FilledButton.icon(
+                          onPressed: _load,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Tentar novamente'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : RefreshIndicator(
               onRefresh: _load,
               child: _tickets.isEmpty
                   ? ListView(
@@ -291,16 +341,26 @@ class _NewTicketResult {
 }
 
 class _NewTicketDialog extends StatefulWidget {
-  const _NewTicketDialog();
+  final String? initialSubject;
+  final String? initialMessage;
+
+  const _NewTicketDialog({this.initialSubject, this.initialMessage});
 
   @override
   State<_NewTicketDialog> createState() => _NewTicketDialogState();
 }
 
 class _NewTicketDialogState extends State<_NewTicketDialog> {
-  final _subjectCtrl = TextEditingController();
-  final _messageCtrl = TextEditingController();
+  late final TextEditingController _subjectCtrl;
+  late final TextEditingController _messageCtrl;
   final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _subjectCtrl = TextEditingController(text: widget.initialSubject ?? '');
+    _messageCtrl = TextEditingController(text: widget.initialMessage ?? '');
+  }
 
   @override
   void dispose() {

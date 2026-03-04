@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/feature_flags.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/domain/entities/workout_template_entity.dart';
@@ -14,6 +15,7 @@ import 'package:omni_runner/domain/usecases/wearable/push_to_trainingpeaks.dart'
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
+// TODO: This screen appears to be unused. Consider removing or integrating it.
 /// Screen for staff to assign a workout template to an athlete on a date.
 class StaffWorkoutAssignScreen extends StatefulWidget {
   final String groupId;
@@ -80,7 +82,7 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
       );
       if (mounted) {
         setState(() {
-          _error = 'Erro ao carregar dados: $e';
+          _error = ErrorMessages.humanize(e);
           _loading = false;
         });
       }
@@ -115,9 +117,12 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
     });
 
     try {
+      final template = _selectedTemplate;
+      final athlete = _selectedAthlete;
+      if (template == null || athlete == null) return;
       final assignment = await sl<IWorkoutRepo>().assignWorkout(
-        templateId: _selectedTemplate!.id,
-        athleteUserId: _selectedAthlete!.userId,
+        templateId: template.id,
+        athleteUserId: athlete.userId,
         scheduledDate: _selectedDate,
         notes: _notesController.text.trim().isEmpty
             ? null
@@ -144,7 +149,7 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = 'Erro ao atribuir: $e';
+          _error = ErrorMessages.humanize(e);
         });
       }
     }
@@ -188,7 +193,7 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro: $e')),
+        SnackBar(content: Text(ErrorMessages.humanize(e))),
       );
     }
   }
@@ -238,7 +243,9 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
     final dateLabel =
         DateFormat('dd/MM/yyyy', 'pt_BR').format(_selectedDate);
 
-    return Scaffold(
+    return Semantics(
+      label: 'Tela de Atribuir Treino',
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Atribuir Treino'),
       ),
@@ -322,7 +329,7 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                _error!,
+                                _error ?? '',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: cs.onErrorContainer,
                                 ),
@@ -351,6 +358,7 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
                     ),
                   ],
                 ),
+    ),
     );
   }
 
@@ -365,7 +373,7 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
                 size: 48, color: theme.colorScheme.error),
             const SizedBox(height: 16),
             Text(
-              _error!,
+              _error ?? '',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.error,

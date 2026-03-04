@@ -98,6 +98,7 @@ serve(async (req: Request) => {
     }
 
     const mpAccessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
+    const mpWebhookSecret = Deno.env.get("MERCADOPAGO_WEBHOOK_SECRET");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceKey =
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
@@ -109,7 +110,42 @@ serve(async (req: Request) => {
       return jsonErr(500, "INTERNAL", "Server misconfiguration", requestId);
     }
 
-    // MP sends data as JSON body or query params
+    if (mpWebhookSecret) {
+      const xSignature = req.headers.get("x-signature") ?? "";
+      const xRequestId = req.headers.get("x-request-id") ?? "";
+
+      const parts = Object.fromEntries(
+        xSignature.split(",").map((p) => {
+          const [k, ...v] = p.split("=");
+          return [k.trim(), v.join("=").trim()];
+        }),
+      );
+      const ts = parts["ts"] ?? "";
+      const receivedHash = parts["v1"] ?? "";
+
+      const url = new URL(req.url);
+      const dataId = url.searchParams.get("data.id") ?? "";
+
+      const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
+      const key = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(mpWebhookSecret),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"],
+      );
+      const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(manifest));
+      const computedHash = Array.from(new Uint8Array(sig))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+
+      if (computedHash !== receivedHash) {
+        status = 401;
+        errorCode = "INVALID_SIGNATURE";
+        return jsonErr(401, "INVALID_SIGNATURE", "HMAC verification failed", requestId);
+      }
+    }
+
     let paymentId: string | null = null;
     let notificationType: string | null = null;
 
@@ -136,12 +172,20 @@ serve(async (req: Request) => {
     }
 
     // Fetch payment details from MP API
-    const mpRes = await fetch(
-      `https://api.mercadopago.com/v1/payments/${paymentId}`,
-      {
-        headers: { Authorization: `Bearer ${mpAccessToken}` },
-      },
-    );
+    const mpCtrl = new AbortController();
+    const mpTimer = setTimeout(() => mpCtrl.abort(), 15_000);
+    let mpRes: Response;
+    try {
+      mpRes = await fetch(
+        `https://api.mercadopago.com/v1/payments/${paymentId}`,
+        {
+          headers: { Authorization: `Bearer ${mpAccessToken}` },
+          signal: mpCtrl.signal,
+        },
+      );
+    } finally {
+      clearTimeout(mpTimer);
+    }
 
     if (!mpRes.ok) {
       const errText = await mpRes.text();
@@ -283,13 +327,52 @@ serve(async (req: Request) => {
         gateway: "mercadopago",
       });
     } else if (mpStatus === "refunded") {
-      await insertEvent(db, purchaseId, "refunded", {
+      const isNew = await insertEvent(db, purchaseId, "refunded", {
         mp_payment_id: paymentId,
         mp_status: mpStatus,
         amount_refunded: payment.transaction_amount_refunded ?? payment.transaction_amount,
         currency: payment.currency_id,
         request_id: requestId,
       });
+
+      if (isNew) {
+        const { data: purchase } = await db
+          .from("billing_purchases")
+          .select("status, group_id, credits_amount")
+          .eq("id", purchaseId)
+          .maybeSingle();
+
+        if (purchase?.status === "fulfilled" && purchase.credits_amount > 0) {
+          await db
+            .from("billing_purchases")
+            .update({ status: "refunded", updated_at: new Date().toISOString() })
+            .eq("id", purchaseId)
+            .eq("status", "fulfilled");
+
+          const { error: clawbackErr } = await db.rpc("fn_credit_institution", {
+            p_group_id: purchase.group_id,
+            p_delta: -purchase.credits_amount,
+            p_reason: `refund:${purchaseId}`,
+          });
+
+          if (clawbackErr) {
+            console.error(JSON.stringify({
+              request_id: requestId,
+              fn: FN,
+              error_code: "CLAWBACK_FAILED",
+              purchase_id: purchaseId,
+              detail: clawbackErr.message,
+            }));
+          }
+
+          await insertEvent(db, purchaseId, "credits_clawback", {
+            mp_payment_id: paymentId,
+            credits_amount: purchase.credits_amount,
+            group_id: purchase.group_id,
+            request_id: requestId,
+          });
+        }
+      }
     }
     // "pending", "in_process", "authorized" — no action needed, wait for final status
 
@@ -305,13 +388,46 @@ serve(async (req: Request) => {
   } catch (err) {
     status = 500;
     errorCode = "INTERNAL";
+    const errMsg = (err as Error).message;
     logError({
       request_id: requestId,
       fn: FN,
       user_id: null,
-      error_code: `INTERNAL: ${(err as Error).message}`,
+      error_code: `INTERNAL: ${errMsg}`,
       duration_ms: elapsed(),
     });
+
+    // Dead-letter queue: persist the failed event for manual recovery
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const serviceKey =
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+        Deno.env.get("SERVICE_ROLE_KEY");
+      if (supabaseUrl && serviceKey) {
+        const dlDb = createClient(supabaseUrl, serviceKey, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+        });
+        let rawBody: string | undefined;
+        try { rawBody = await req.clone().text(); } catch { /* body already consumed */ }
+        await dlDb.from("billing_webhook_dead_letters").insert({
+          source: "mercadopago",
+          request_id: requestId,
+          error_message: errMsg,
+          payload: rawBody ?? null,
+          headers: Object.fromEntries(req.headers.entries()),
+          created_at: new Date().toISOString(),
+        });
+      }
+    } catch (dlErr) {
+      console.error(JSON.stringify({
+        request_id: requestId,
+        fn: FN,
+        error_code: "DEAD_LETTER_FAILED",
+        original_error: errMsg,
+        dl_error: (dlErr as Error).message,
+      }));
+    }
+
     return jsonErr(500, "INTERNAL", "Unexpected error", requestId);
   } finally {
     if (errorCode) {

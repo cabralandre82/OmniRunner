@@ -70,7 +70,9 @@ class _ChallengesListScreenState extends State<ChallengesListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Semantics(
+      label: 'Tela de Desafios',
+      child: Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.challenges),
         actions: [
@@ -121,6 +123,7 @@ class _ChallengesListScreenState extends State<ChallengesListScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 

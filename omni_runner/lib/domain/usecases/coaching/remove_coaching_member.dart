@@ -10,6 +10,15 @@ import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
 /// - Target is not the admin_master (owner cannot be removed).
 /// - Assistentes cannot remove other staff members.
 ///
+/// KNOWN RISK (m14): If a coach removes a member while that member has an
+/// in-flight action (e.g. confirming a delivery item, submitting a challenge
+/// result), the action may succeed or fail depending on timing. The server-side
+/// RPCs check membership via `coaching_members`, so removal mid-action will
+/// cause the RPC to raise 'forbidden'. This is acceptable — the athlete sees
+/// an error and must re-authenticate. A full fix would require row-level locks
+/// on the member row during critical operations, which is not worth the
+/// complexity for this edge case.
+///
 /// Throws [CoachingFailure] on validation error.
 final class RemoveCoachingMember {
   final ICoachingMemberRepo _memberRepo;

@@ -59,6 +59,11 @@
 	<string>Omni Runner connects to Bluetooth heart rate monitors (Garmin, Polar, Wahoo) to display your live heart rate during runs.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Omni Runner connects to Bluetooth heart rate monitors to display your live heart rate during runs.</string>
+	<!-- Camera & Photo Library -->
+	<key>NSCameraUsageDescription</key>
+	<string>O Omni Runner usa a câmera para capturar sua foto de perfil.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>O Omni Runner acessa suas fotos para definir sua foto de perfil.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

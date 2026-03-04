@@ -37,12 +37,28 @@ export async function middleware(request: NextRequest) {
   const isAuthOnly = AUTH_ONLY_PREFIXES.some((p) => pathname.startsWith(p));
 
   if (isAuthOnly) {
-    const { user, supabaseResponse } = await updateSession(request);
+    const { user, supabaseResponse, supabase } = await updateSession(request);
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.searchParams.set("next", pathname);
       return NextResponse.redirect(url);
+    }
+    // Server-side platform admin gate: verify platform_role (admin_master equivalent for platform)
+    if (pathname.startsWith("/platform") || pathname.startsWith("/api/platform/")) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("platform_role")
+        .eq("id", user.id)
+        .single();
+      if (profile?.platform_role !== "admin") {
+        if (pathname.startsWith("/api/")) {
+          return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+        const url = request.nextUrl.clone();
+        url.pathname = "/";
+        return NextResponse.redirect(url);
+      }
     }
     return supabaseResponse;
   }
@@ -57,9 +73,35 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Step 2: verify staff membership (check cookie cache first)
+  // Step 2: verify staff membership (check cookie cache first, re-verify group membership)
   let groupId = request.cookies.get("portal_group_id")?.value;
   let role = request.cookies.get("portal_role")?.value;
+
+  // Re-verify: user must belong to the group stored in cookie (prevents tampering)
+  if (groupId) {
+    const { data: membership } = await supabase
+      .from("coaching_members")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("group_id", groupId)
+      .in("role", ["admin_master", "coach", "assistant"])
+      .maybeSingle();
+    if (!membership) {
+      groupId = undefined;
+      role = undefined;
+      const clearOpts = { path: "/", maxAge: 0 };
+      supabaseResponse.cookies.set("portal_group_id", "", clearOpts);
+      supabaseResponse.cookies.set("portal_role", "", clearOpts);
+    } else {
+      role = membership.role as string;
+      supabaseResponse.cookies.set("portal_role", role, {
+        path: "/",
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 8,
+      });
+    }
+  }
 
   if (!groupId || !role) {
     const { data: memberships } = await supabase

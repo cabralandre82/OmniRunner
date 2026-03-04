@@ -53,7 +53,7 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
 
       final msgs = await Supabase.instance.client
           .from('support_messages')
-          .select()
+          .select('ticket_id, sender_id, sender_role, body, created_at')
           .eq('ticket_id', widget.ticketId)
           .order('created_at', ascending: true);
 

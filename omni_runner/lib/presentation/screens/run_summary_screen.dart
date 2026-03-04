@@ -78,16 +78,17 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
   void dispose() { _mapTimeout?.cancel(); super.dispose(); }
 
   Future<void> _onStyleLoaded() async {
-    if (!mounted || _mapCtrl == null) return;
+    final ctrl = _mapCtrl;
+    if (!mounted || ctrl == null) return;
     _mapTimeout?.cancel();
     setState(() { _mapReady = true; _mapTimedOut = false; });
-    await _addRouteLayer();
+    await _addRouteLayer(ctrl);
     _fitBounds();
   }
 
-  Future<void> _addRouteLayer() async {
-    await _mapCtrl!.addGeoJsonSource(_srcId, _buildGeoJson());
-    await _mapCtrl!.addLineLayer(_srcId, _layerId, const LineLayerProperties(
+  Future<void> _addRouteLayer(MapLibreMapController ctrl) async {
+    await ctrl.addGeoJsonSource(_srcId, _buildGeoJson());
+    await ctrl.addLineLayer(_srcId, _layerId, const LineLayerProperties(
       lineColor: '#2196F3', lineWidth: 5.0, lineJoin: 'round', lineCap: 'round',
     ),);
   }
@@ -109,8 +110,9 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
   Widget? _buildExtra() {
     final ghost = _buildGhostCard();
     final integrity = _buildIntegrityCard();
-    final challengeBanner = widget.challengeId != null
-        ? ChallengeSessionBanner(challengeId: widget.challengeId!)
+    final challengeId = widget.challengeId;
+    final challengeBanner = challengeId != null
+        ? ChallengeSessionBanner(challengeId: challengeId)
         : null;
     if (ghost == null && integrity == null && challengeBanner == null) {
       return Padding(
@@ -176,8 +178,9 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
 
   void _shareRun() {
     final distKm = widget.totalDistanceM / 1000;
-    final paceStr = widget.avgPaceSecPerKm != null
-        ? "${widget.avgPaceSecPerKm! ~/ 60}'${(widget.avgPaceSecPerKm! % 60).toInt().toString().padLeft(2, '0')}\""
+    final avgPace = widget.avgPaceSecPerKm;
+    final paceStr = avgPace != null
+        ? "${avgPace ~/ 60}'${(avgPace % 60).toInt().toString().padLeft(2, '0')}\""
         : '--';
     final durSec = widget.elapsedMs ~/ 1000;
     final h = durSec ~/ 3600;
@@ -211,7 +214,9 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Semantics(
+      label: 'Tela de Resumo da Corrida',
+      child: Scaffold(
       body: Stack(children: [
         MapLibreMap(
           initialCameraPosition: CameraPosition(target: _center, zoom: 14),
@@ -241,6 +246,7 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
           ),
         ),
       ],),
+    ),
     );
   }
 }

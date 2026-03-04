@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { NoGroupSelected } from "@/components/no-group-selected";
 import { formatDateISO } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -90,7 +91,7 @@ export default async function ExecutionsPage({
   searchParams: { from?: string; to?: string };
 }) {
   const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) return null;
+  if (!groupId) return <NoGroupSelected />;
 
   let executions: Execution[] = [];
   let fetchError: string | null = null;

@@ -69,8 +69,8 @@ class ProfileEntity {
             OnboardingState.fromString(j['onboarding_state'] as String?),
         userRole: j['user_role'] as String?,
         createdVia: j['created_via'] as String?,
-        createdAt: DateTime.parse(j['created_at'] as String),
-        updatedAt: DateTime.parse(j['updated_at'] as String),
+        createdAt: DateTime.tryParse(j['created_at'] as String? ?? '') ?? DateTime.now(),
+        updatedAt: DateTime.tryParse(j['updated_at'] as String? ?? '') ?? DateTime.now(),
       );
 
   Map<String, dynamic> toJson() => {

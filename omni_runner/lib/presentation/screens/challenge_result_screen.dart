@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
@@ -894,6 +895,14 @@ class _CtaBar extends StatelessWidget {
     }
   }
 
+  void _shareResult(BuildContext context) {
+    final c = challenge;
+    final goalLabel = c.rules.goal.name;
+    final text = 'Acabei de completar o desafio "${c.title}" '
+        '($goalLabel) no OmniRunner! 🏃‍♂️🏅';
+    Share.share(text);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -965,13 +974,7 @@ class _CtaBar extends StatelessWidget {
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.share_rounded, size: 16),
                   label: const Text('Enviar'),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Compartilhamento em breve!'),
-                      ),
-                    );
-                  },
+                  onPressed: () => _shareResult(context),
                 ),
               ),
             ],

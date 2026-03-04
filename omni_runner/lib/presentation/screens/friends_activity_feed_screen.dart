@@ -18,6 +18,8 @@ class FriendsActivityFeedScreen extends StatefulWidget {
 
 class _FriendsActivityFeedScreenState extends State<FriendsActivityFeedScreen> {
   static const _pageSize = 30;
+  static const _maxRetries = 3;
+  static const _retryDelayMs = 800;
 
   final List<_FeedItem> _items = [];
   bool _loading = true;
@@ -38,32 +40,43 @@ class _FriendsActivityFeedScreenState extends State<FriendsActivityFeedScreen> {
       });
     }
 
-    try {
-      final offset = loadMore ? _items.length : 0;
-      final rows = await Supabase.instance.client.rpc(
-        'fn_friends_activity_feed',
-        params: {'p_limit': _pageSize, 'p_offset': offset},
-      );
+    Exception? lastError;
+    for (var attempt = 0; attempt < _maxRetries; attempt++) {
+      try {
+        final offset = loadMore ? _items.length : 0;
+        final rows = await Supabase.instance.client.rpc(
+          'fn_friends_activity_feed',
+          params: {'p_limit': _pageSize, 'p_offset': offset},
+        );
 
-      final newItems = (rows as List<dynamic>)
-          .cast<Map<String, dynamic>>()
-          .map(_FeedItem.fromJson)
-          .toList();
+        final newItems = (rows as List<dynamic>)
+            .cast<Map<String, dynamic>>()
+            .map(_FeedItem.fromJson)
+            .toList();
 
-      if (!mounted) return;
-      setState(() {
-        if (!loadMore) _items.clear();
-        _items.addAll(newItems);
-        _hasMore = newItems.length >= _pageSize;
-        _loading = false;
-      });
-    } on Exception catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = 'Erro ao carregar feed: $e';
-      });
+        if (!mounted) return;
+        setState(() {
+          if (!loadMore) _items.clear();
+          _items.addAll(newItems);
+          _hasMore = newItems.length >= _pageSize;
+          _loading = false;
+        });
+        return;
+      } on Exception catch (e) {
+        lastError = e;
+        if (attempt < _maxRetries - 1) {
+          await Future<void>.delayed(
+            Duration(milliseconds: _retryDelayMs * (attempt + 1)),
+          );
+        }
+      }
     }
+
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
+      _error = 'Erro ao carregar feed: $lastError';
+    });
   }
 
   @override
@@ -273,6 +286,8 @@ class _ActivityTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(item.displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodyMedium
                               ?.copyWith(fontWeight: FontWeight.w600)),
                       Text(item.timeAgo,

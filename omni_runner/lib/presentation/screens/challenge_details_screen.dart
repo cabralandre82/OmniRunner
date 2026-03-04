@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,7 +30,9 @@ class ChallengeDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Semantics(
+      label: 'Tela de Detalhes do Desafio',
+      child: Scaffold(
       appBar: AppBar(title: Text(context.l10n.challengeDetails)),
       body: BlocBuilder<ChallengesBloc, ChallengesState>(
         builder: (context, state) => switch (state) {
@@ -48,6 +52,7 @@ class ChallengeDetailsScreen extends StatelessWidget {
           _ => const Center(child: CircularProgressIndicator()),
         },
       ),
+    ),
     );
   }
 }
@@ -64,6 +69,9 @@ class _Body extends StatefulWidget {
 
 class _BodyState extends State<_Body> {
   bool _settlementTriggered = false;
+  DateTime? _settlementStartedAt;
+  bool _settlementTimedOut = false;
+  Timer? _settlementTimer;
 
   ChallengeEntity get challenge => widget.challenge;
   ChallengeResultEntity? get result => widget.result;
@@ -72,6 +80,12 @@ class _BodyState extends State<_Body> {
   void initState() {
     super.initState();
     _tryAutoSettle();
+  }
+
+  @override
+  void dispose() {
+    _settlementTimer?.cancel();
+    super.dispose();
   }
 
   void _tryAutoSettle() {
@@ -84,6 +98,10 @@ class _BodyState extends State<_Body> {
     if (now <= challenge.endsAtMs!) return;
 
     _settlementTriggered = true;
+    _settlementStartedAt = DateTime.now();
+    _settlementTimer = Timer(const Duration(seconds: 30), () {
+      if (mounted) setState(() => _settlementTimedOut = true);
+    });
     AppLogger.info(
       'Challenge ${challenge.id} window expired, triggering settlement',
       tag: 'ChallengeDetails',
@@ -91,13 +109,16 @@ class _BodyState extends State<_Body> {
     Supabase.instance.client.functions
         .invoke('settle-challenge', body: {'challenge_id': challenge.id})
         .then((_) {
+      _settlementTimer?.cancel();
       if (!mounted) return;
       final uid = sl<UserIdentityProvider>().userId;
       context.read<ChallengesBloc>().add(ViewChallengeDetails(challenge.id));
       context.read<ChallengesBloc>().add(LoadChallenges(uid));
     })
         .catchError((e) {
+      _settlementTimer?.cancel();
       AppLogger.warn('Auto-settle failed: $e', tag: 'ChallengeDetails');
+      if (mounted) setState(() => _settlementTimedOut = true);
     });
   }
 
@@ -231,21 +252,27 @@ class _BodyState extends State<_Body> {
               padding: const EdgeInsets.all(DesignTokens.spacingMd),
               child: Row(
                 children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: DesignTokens.warning,
-                    ),
-                  ),
+                  if (!_settlementTimedOut)
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: DesignTokens.warning,
+                      ),
+                    )
+                  else
+                    Icon(Icons.hourglass_bottom,
+                        size: 20, color: DesignTokens.warning),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Calculando resultado...',
+                          _settlementTimedOut
+                              ? 'Apuração em andamento'
+                              : 'Calculando resultado...',
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: DesignTokens.warning,
@@ -253,7 +280,9 @@ class _BodyState extends State<_Body> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'O período do desafio terminou. O resultado será exibido em instantes.',
+                          _settlementTimedOut
+                              ? 'A apuração está demorando mais que o esperado. Volte mais tarde para ver o resultado.'
+                              : 'O período do desafio terminou. O resultado será exibido em instantes.',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: DesignTokens.warning,
                           ),
@@ -618,6 +647,7 @@ class _AcceptDeclineCard extends StatefulWidget {
 
 class _AcceptDeclineCardState extends State<_AcceptDeclineCard> {
   VerificationBloc? _verificationBloc;
+  bool _busy = false;
 
   @override
   void initState() {
@@ -635,21 +665,27 @@ class _AcceptDeclineCardState extends State<_AcceptDeclineCard> {
   }
 
   Future<void> _onAccept() async {
-    if (widget.hasStake) {
-      final canProceed = await checkVerificationGate(
-        context,
-        verification: _verificationBloc?.cached,
-        entryFeeCoins: widget.challenge.rules.entryFeeCoins,
-      );
-      if (!canProceed) return;
-    }
-    if (!mounted) return;
-    context.read<ChallengesBloc>().add(
-          JoinChallengeRequested(
-            challengeId: widget.challenge.id,
-            userId: widget.userId,
-          ),
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      if (widget.hasStake) {
+        final canProceed = await checkVerificationGate(
+          context,
+          verification: _verificationBloc?.cached,
+          entryFeeCoins: widget.challenge.rules.entryFeeCoins,
         );
+        if (!canProceed) return;
+      }
+      if (!mounted) return;
+      context.read<ChallengesBloc>().add(
+            JoinChallengeRequested(
+              challengeId: widget.challenge.id,
+              userId: widget.userId,
+            ),
+          );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override
@@ -704,9 +740,18 @@ class _AcceptDeclineCardState extends State<_AcceptDeclineCard> {
               children: [
                 Expanded(
                   child: FilledButton.icon(
-                    icon: const Icon(Icons.check_rounded, size: 18),
-                    label: const Text('Aceitar'),
-                    onPressed: _onAccept,
+                    icon: _busy
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.check_rounded, size: 18),
+                    label: Text(_busy ? 'Aceitando...' : 'Aceitar'),
+                    onPressed: _busy ? null : _onAccept,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -1450,7 +1495,7 @@ class _ClearingInfoState extends State<_ClearingInfo> {
       }
 
       final status = caseData['status'] as String;
-      final deadline = DateTime.parse(caseData['deadline_at'] as String);
+      final deadline = DateTime.tryParse(caseData['deadline_at'] as String? ?? '') ?? DateTime.now();
 
       final phase = switch (status) {
         'OPEN' => DisputePhase.pendingClearing,
