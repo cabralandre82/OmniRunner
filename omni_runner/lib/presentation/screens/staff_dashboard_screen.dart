@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/coaching_group_entity.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_group_repo.dart';
@@ -21,6 +22,7 @@ import 'package:omni_runner/presentation/screens/staff_performance_screen.dart';
 import 'package:omni_runner/presentation/screens/support_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_qr_hub_screen.dart';
 import 'package:omni_runner/presentation/screens/league_screen.dart';
+import 'package:omni_runner/presentation/widgets/ds/fade_in.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 
@@ -348,69 +350,76 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
       ),
       body: _loading
           ? const ShimmerListLoader()
-          : _groupId.isEmpty
-              ? _buildNoGroup(theme)
-              : _approvalStatus != 'approved'
-                  ? _buildPlatformApprovalPending(theme)
-                  : _buildDashboard(theme, cs),
+          : FadeIn(
+              child: _groupId.isEmpty
+                  ? _buildNoGroup(theme)
+                  : _approvalStatus != 'approved'
+                      ? _buildPlatformApprovalPending(theme)
+                      : _buildDashboard(theme, cs),
+            ),
     );
   }
 
   Widget _buildNoGroup(ThemeData theme) {
+    final cs = theme.colorScheme;
+
     if (_pendingProfessorGroupName != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(DesignTokens.spacingXl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.hourglass_top_rounded,
-                  size: 72, color: Colors.orange.shade400),
-              const SizedBox(height: 20),
+                  size: 72, color: DesignTokens.warning),
+              const SizedBox(height: DesignTokens.spacingLg),
               Text('Solicitação pendente',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   )),
-              const SizedBox(height: 12),
+              const SizedBox(height: DesignTokens.spacingMd),
               Text(
                 'Sua solicitação para entrar como professor na assessoria '
                 '"$_pendingProfessorGroupName" está aguardando aprovação '
                 'do administrador.',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: cs.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: DesignTokens.spacingLg),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 12,
+                  horizontal: DesignTokens.spacingMd,
+                  vertical: DesignTokens.spacingSm,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.orange.shade200),
+                  color: DesignTokens.warning.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                  border: Border.all(
+                    color: DesignTokens.warning.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.info_outline,
-                        size: 18, color: Colors.orange.shade700),
-                    const SizedBox(width: 8),
+                        size: 18, color: DesignTokens.warning),
+                    const SizedBox(width: DesignTokens.spacingSm),
                     Flexible(
                       child: Text(
                         'Você será notificado quando o administrador '
                         'aprovar sua entrada.',
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.orange.shade800,
+                          color: DesignTokens.warning,
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: DesignTokens.spacingLg),
               OutlinedButton.icon(
                 onPressed: () {
                   setState(() => _loading = true);
@@ -427,16 +436,16 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.business_rounded, size: 64,
                 color: theme.colorScheme.outline),
-            const SizedBox(height: 16),
+            const SizedBox(height: DesignTokens.spacingMd),
             Text('Nenhuma assessoria encontrada',
                 style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
+            const SizedBox(height: DesignTokens.spacingSm),
             Text(
               'Não foi possível carregar os dados da sua assessoria. '
               'Tente sair e entrar novamente.',
@@ -445,7 +454,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                 color: theme.colorScheme.outline,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: DesignTokens.spacingLg),
             FilledButton.icon(
               onPressed: () {
                 setState(() => _loading = true);
@@ -471,14 +480,14 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
 
     if (isSuspended) {
       icon = Icons.block_rounded;
-      iconColor = Colors.red.shade400;
+      iconColor = DesignTokens.error;
       title = 'Assessoria suspensa';
       message = 'A assessoria "$_groupName" foi suspensa pela plataforma.'
           '${_approvalRejectReason != null && _approvalRejectReason!.isNotEmpty ? '\n\nMotivo: $_approvalRejectReason' : ''}'
           '\n\nEntre em contato com o suporte para mais informações.';
     } else if (isRejected) {
       icon = Icons.cancel_outlined;
-      iconColor = Colors.red.shade400;
+      iconColor = DesignTokens.error;
       title = 'Assessoria não aprovada';
       message = 'A solicitação de cadastro da assessoria "$_groupName" '
           'não foi aprovada pela plataforma.'
@@ -486,7 +495,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
           '\n\nVocê pode entrar em contato com o suporte para mais informações.';
     } else {
       icon = Icons.hourglass_top_rounded;
-      iconColor = Colors.orange.shade400;
+      iconColor = DesignTokens.warning;
       title = 'Aguardando aprovação da plataforma';
       message = 'A assessoria "$_groupName" foi criada com sucesso e está '
           'aguardando aprovação da plataforma Omni Runner.\n\n'
@@ -497,18 +506,18 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 72, color: iconColor),
-            const SizedBox(height: 20),
+            const SizedBox(height: DesignTokens.spacingLg),
             Text(title,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
                 textAlign: TextAlign.center),
-            const SizedBox(height: 12),
+            const SizedBox(height: DesignTokens.spacingMd),
             Text(
               message,
               textAlign: TextAlign.center,
@@ -516,37 +525,40 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: DesignTokens.spacingLg),
             if (!isRejected && !isSuspended)
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 12,
+                  horizontal: DesignTokens.spacingMd,
+                  vertical: DesignTokens.spacingSm,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.shade200),
+                  color: DesignTokens.info.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                  border: Border.all(
+                    color: DesignTokens.info.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.info_outline,
-                        size: 18, color: Colors.blue.shade700),
-                    const SizedBox(width: 8),
+                        size: 18, color: DesignTokens.info),
+                    const SizedBox(width: DesignTokens.spacingSm),
                     Flexible(
                       child: Text(
                         'Código de convite: ${_inviteCode ?? "..."}',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Colors.blue.shade800,
+                          color: DesignTokens.info,
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DesignTokens.spacingMd),
             OutlinedButton.icon(
               onPressed: () {
                 setState(() => _loading = true);
@@ -563,7 +575,12 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
 
   Widget _buildDashboard(ThemeData theme, ColorScheme cs) {
     return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+        padding: const EdgeInsets.fromLTRB(
+          DesignTokens.spacingLg,
+          DesignTokens.spacingLg,
+          DesignTokens.spacingLg,
+          DesignTokens.spacingMd,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -575,14 +592,14 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: DesignTokens.spacingXs),
             Text(
               'Painel da assessoria',
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: cs.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DesignTokens.spacingMd),
             const TipBanner(
               tipKey: TipKey.staffWelcome,
               icon: Icons.lightbulb_outline_rounded,
@@ -600,8 +617,8 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                 onRefresh: () async { await _loadStatus(); },
                 child: GridView.count(
                 crossAxisCount: 2,
-                mainAxisSpacing: 14,
-                crossAxisSpacing: 14,
+                mainAxisSpacing: DesignTokens.spacingMd,
+                crossAxisSpacing: DesignTokens.spacingMd,
                 childAspectRatio: 0.95,
                 children: [
                   _StaffCard(
@@ -616,8 +633,8 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                     icon: Icons.person_add_rounded,
                     title: 'Solicitações',
                     subtitle: 'Entrada de atletas',
-                    bgColor: Colors.green.shade50,
-                    iconColor: Colors.green.shade700,
+                    bgColor: DesignTokens.success.withValues(alpha: 0.1),
+                    iconColor: DesignTokens.success,
                     alert: _pendingJoinRequests > 0
                         ? '$_pendingJoinRequests ${_pendingJoinRequests == 1 ? "pendente" : "pendentes"}'
                         : null,
@@ -627,8 +644,8 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                     icon: Icons.handshake_rounded,
                     title: 'Confirmações',
                     subtitle: 'Entre assessorias',
-                    bgColor: Colors.indigo.shade50,
-                    iconColor: Colors.indigo.shade700,
+                    bgColor: DesignTokens.info.withValues(alpha: 0.1),
+                    iconColor: DesignTokens.info,
                     alert: _openDisputesCount > 0
                         ? '$_openDisputesCount ${_openDisputesCount == 1 ? "caso pendente" : "casos pendentes"}'
                         : null,
@@ -638,32 +655,32 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                     icon: Icons.bar_chart_rounded,
                     title: 'Performance',
                     subtitle: 'Visão geral da assessoria',
-                    bgColor: Colors.teal.shade50,
-                    iconColor: Colors.teal.shade700,
+                    bgColor: DesignTokens.success.withValues(alpha: 0.1),
+                    iconColor: DesignTokens.success,
                     onTap: _openPerformance,
                   ),
                   _StaffCard(
                     icon: Icons.emoji_events_rounded,
                     title: 'Campeonatos',
                     subtitle: 'Gerenciar e criar',
-                    bgColor: Colors.orange.shade50,
-                    iconColor: Colors.orange.shade800,
+                    bgColor: DesignTokens.warning.withValues(alpha: 0.1),
+                    iconColor: DesignTokens.warning,
                     onTap: _openCampeonatos,
                   ),
                   _StaffCard(
                     icon: Icons.mail_rounded,
                     title: 'Convites',
                     subtitle: 'Campeonatos recebidos',
-                    bgColor: Colors.purple.shade50,
-                    iconColor: Colors.purple.shade700,
+                    bgColor: DesignTokens.primary.withValues(alpha: 0.1),
+                    iconColor: DesignTokens.primary,
                     onTap: _openConvites,
                   ),
                   _StaffCard(
                     icon: Icons.toll_rounded,
                     title: 'Créditos',
                     subtitle: 'Seus OmniCoins',
-                    bgColor: Colors.amber.shade100,
-                    iconColor: Colors.amber.shade800,
+                    bgColor: DesignTokens.warning.withValues(alpha: 0.15),
+                    iconColor: DesignTokens.warning,
                     alert: _hasPendingPrizes
                         ? 'Prêmios pendentes de liberação'
                         : null,
@@ -682,24 +699,24 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                     icon: Icons.shield_rounded,
                     title: 'Liga',
                     subtitle: 'Ranking entre assessorias',
-                    bgColor: Colors.indigo.shade50,
-                    iconColor: Colors.indigo.shade700,
+                    bgColor: DesignTokens.info.withValues(alpha: 0.1),
+                    iconColor: DesignTokens.info,
                     onTap: _openLiga,
                   ),
                   _StaffCard(
                     icon: Icons.open_in_browser_rounded,
                     title: 'Portal',
                     subtitle: 'Abrir no navegador',
-                    bgColor: Colors.blue.shade50,
-                    iconColor: Colors.blue.shade700,
+                    bgColor: DesignTokens.info.withValues(alpha: 0.1),
+                    iconColor: DesignTokens.info,
                     onTap: _openPortal,
                   ),
                   _StaffCard(
                     icon: Icons.support_agent,
                     title: 'Suporte',
                     subtitle: 'Falar com a equipe',
-                    bgColor: Colors.teal.shade50,
-                    iconColor: Colors.teal.shade700,
+                    bgColor: DesignTokens.success.withValues(alpha: 0.1),
+                    iconColor: DesignTokens.success,
                     onTap: _openSupport,
                   ),
                 ],
@@ -740,26 +757,27 @@ class _StaffCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final cardBg = isDark
-        ? theme.colorScheme.surfaceContainerHighest
-        : bgColor;
+    final cardBg = isDark ? DesignTokens.surface : bgColor;
     final titleColor = dimmed
-        ? (isDark ? Colors.grey.shade400 : Colors.grey.shade600)
-        : theme.colorScheme.onSurface;
+        ? cs.onSurface.withValues(alpha: 0.6)
+        : cs.onSurface;
     final subtitleColor = dimmed
-        ? (isDark ? Colors.grey.shade500 : Colors.grey.shade500)
-        : theme.colorScheme.onSurfaceVariant;
+        ? cs.onSurface.withValues(alpha: 0.6)
+        : cs.onSurfaceVariant;
 
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+      ),
       color: cardBg,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
         child: Padding(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -768,7 +786,7 @@ class _StaffCard extends StatelessWidget {
                 height: 48,
                 decoration: BoxDecoration(
                   color: iconColor.withValues(alpha: isDark ? 0.25 : 0.15),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                 ),
                 child: Icon(icon, size: 26, color: iconColor),
               ),
@@ -780,7 +798,7 @@ class _StaffCard extends StatelessWidget {
                   color: titleColor,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: DesignTokens.spacingXs),
               Text(
                 subtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -790,17 +808,17 @@ class _StaffCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               if (alert != null) ...[
-                const SizedBox(height: 6),
+                const SizedBox(height: DesignTokens.spacingSm),
                 Row(
                   children: [
                     Icon(Icons.info_outline_rounded,
-                        size: 14, color: Colors.orange.shade400),
-                    const SizedBox(width: 4),
+                        size: 14, color: DesignTokens.warning),
+                    const SizedBox(width: DesignTokens.spacingXs),
                     Flexible(
                       child: Text(
                         alert!,
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: Colors.orange.shade400,
+                          color: DesignTokens.warning,
                           fontWeight: FontWeight.w600,
                         ),
                         maxLines: 1,

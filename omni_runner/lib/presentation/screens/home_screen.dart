@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/presentation/screens/athlete_dashboard_screen.dart';
 import 'package:omni_runner/presentation/screens/history_screen.dart';
 import 'package:omni_runner/presentation/screens/more_screen.dart';
@@ -42,6 +43,9 @@ class _HomeScreenState extends State<HomeScreen> {
       ]),
       ),
       bottomNavigationBar: NavigationBar(
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? DesignTokens.bgSecondary
+            : null,
         selectedIndex: _tab,
         onDestinationSelected: (i) => setState(() => _tab = i),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
@@ -81,6 +85,9 @@ class _HomeScreenState extends State<HomeScreen> {
       ]),
       ),
       bottomNavigationBar: NavigationBar(
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? DesignTokens.bgSecondary
+            : null,
         selectedIndex: _tab,
         onDestinationSelected: (i) => setState(() => _tab = i),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,

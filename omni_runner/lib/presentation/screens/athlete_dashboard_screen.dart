@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_group_repo.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
@@ -31,6 +32,7 @@ import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
+import 'package:omni_runner/presentation/widgets/ds/fade_in.dart';
 
 /// Athlete home dashboard — 6 cards providing quick access to the main features.
 ///
@@ -287,208 +289,215 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
         title: const Text('Omni Runner'),
         backgroundColor: cs.inversePrimary,
       ),
-      body: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _displayName != null ? 'Olá, $_displayName!' : 'Olá, atleta!',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'O que deseja fazer hoje?',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const TipBanner(
-              tipKey: TipKey.dashboardWelcome,
-              icon: Icons.rocket_launch_rounded,
-              text: 'Primeiros passos:\n'
-                  '1. Conecte seu Strava e faça sua primeira corrida\n'
-                  '2. Entre em uma assessoria (peça o código ao professor)\n'
-                  '3. Crie ou encontre um desafio para competir\n'
-                  '4. Complete corridas para se tornar Atleta Verificado',
-            ),
-            if (_pendingRequestGroupName != null && !hasAssessoria) ...[
-              const SizedBox(height: 8),
-              Card(
-                color: Colors.orange.shade50,
-                margin: EdgeInsets.zero,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: Colors.orange.shade200),
+      body: FadeIn(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            DesignTokens.spacingLg,
+            DesignTokens.spacingLg,
+            DesignTokens.spacingLg,
+            DesignTokens.spacingMd,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _displayName != null ? 'Olá, $_displayName!' : 'Olá, atleta!',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Row(
-                    children: [
-                      Icon(Icons.hourglass_top_rounded,
-                          color: Colors.orange.shade700, size: 28),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Solicitação pendente',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: Colors.orange.shade900,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Aguardando aprovação da assessoria '
-                              '"$_pendingRequestGroupName". Você será '
-                              'notificado quando a assessoria aprovar.',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: Colors.orange.shade800,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+              ),
+              const SizedBox(height: DesignTokens.spacingXs),
+              Text(
+                'O que deseja fazer hoje?',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: cs.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+              const SizedBox(height: DesignTokens.spacingMd),
+              const TipBanner(
+                tipKey: TipKey.dashboardWelcome,
+                icon: Icons.rocket_launch_rounded,
+                text: 'Primeiros passos:\n'
+                    '1. Conecte seu Strava e faça sua primeira corrida\n'
+                    '2. Entre em uma assessoria (peça o código ao professor)\n'
+                    '3. Crie ou encontre um desafio para competir\n'
+                    '4. Complete corridas para se tornar Atleta Verificado',
+              ),
+              if (_pendingRequestGroupName != null && !hasAssessoria) ...[
+                const SizedBox(height: DesignTokens.spacingSm),
+                Card(
+                  color: DesignTokens.warning.withValues(alpha: 0.1),
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                    side: BorderSide(color: DesignTokens.warning.withValues(alpha: 0.3)),
                   ),
-                ),
-              ),
-            ],
-            if (hasAssessoria && _assessoriaGroupId != null) ...[
-              const SizedBox(height: 8),
-              Card(
-                color: cs.primaryContainer.withValues(alpha: 0.3),
-                margin: EdgeInsets.zero,
-                child: ListTile(
-                  dense: true,
-                  leading:
-                      Icon(Icons.forum_rounded, color: cs.primary, size: 22),
-                  title: Text(
-                    'Feed da $_assessoriaName',
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  trailing: Icon(Icons.chevron_right, color: cs.primary),
-                  onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute<void>(
-                      builder: (_) => BlocProvider<AssessoriaFeedBloc>(
-                        create: (_) => sl<AssessoriaFeedBloc>()
-                          ..add(LoadFeed(_assessoriaGroupId!)),
-                        child: const AssessoriaFeedScreen(),
-                      ),
-                    ));
-                  },
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-            Expanded(
-              child: _loading
-                ? ShimmerLoading(
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 14,
-                      crossAxisSpacing: 14,
-                      childAspectRatio: 0.95,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: List.generate(6, (_) => const SkeletonCard()),
-                    ),
-                  )
-                : FadeTransition(
-                    opacity: CurvedAnimation(
-                      parent: _staggerCtrl,
-                      curve: Curves.easeOut,
-                    ),
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 14,
-                      crossAxisSpacing: 14,
-                      childAspectRatio: 0.95,
+                  child: Padding(
+                    padding: const EdgeInsets.all(DesignTokens.spacingMd),
+                    child: Row(
                       children: [
-                  _DashCard(
-                    icon: Icons.sports_kabaddi_rounded,
-                    title: 'Meus desafios',
-                    subtitle: 'Competir e acompanhar',
-                    bgColor: cs.primaryContainer,
-                    iconColor: cs.onPrimaryContainer,
-                    onTap: _openChallenges,
-                  ),
-                  _DashCard(
-                    icon: hasAssessoria
-                        ? Icons.groups_rounded
-                        : Icons.group_add_rounded,
-                    title: hasAssessoria
-                        ? 'Minha assessoria'
-                        : 'Entrar em assessoria',
-                    subtitle: _loading
-                        ? '...'
-                        : _assessoriaName ?? 'Toque para se juntar',
-                    bgColor: hasAssessoria
-                        ? cs.secondaryContainer
-                        : Colors.blue.shade50,
-                    iconColor: hasAssessoria
-                        ? cs.onSecondaryContainer
-                        : Colors.blue.shade700,
-                    isEmpty: !hasAssessoria && !_loading,
-                    onTap: hasAssessoria
-                        ? _openAssessoria
-                        : _openJoinAssessoria,
-                  ),
-                  _DashCard(
-                    icon: Icons.trending_up_rounded,
-                    title: 'Meu progresso',
-                    subtitle: 'XP, badges e missões',
-                    bgColor: cs.tertiaryContainer,
-                    iconColor: cs.onTertiaryContainer,
-                    badge: _stravaConnected ? null : 'Conecte Strava',
-                    onTap: _openProgress,
-                  ),
-                  _DashCard(
-                    icon: Icons.verified_user_rounded,
-                    title: 'Verificação',
-                    subtitle: 'Status de atleta verificado',
-                    bgColor: Colors.blue.shade50,
-                    iconColor: Colors.blue.shade700,
-                    onTap: _openVerification,
-                  ),
-                  _DashCard(
-                    icon: Icons.emoji_events_rounded,
-                    title: 'Campeonatos',
-                    subtitle: 'Competir entre assessorias',
-                    bgColor: Colors.orange.shade50,
-                    iconColor: Colors.orange.shade800,
-                    onTap: _openChampionships,
-                  ),
-                  _DashCard(
-                    icon: Icons.park_rounded,
-                    title: 'Parques',
-                    subtitle: 'Rankings e comunidade',
-                    bgColor: Colors.green.shade50,
-                    iconColor: Colors.green.shade700,
-                    onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute<void>(
-                        builder: (_) => const MyParksScreen(),
-                      ));
-                    },
-                  ),
-                  _DashCard(
-                    icon: Icons.toll_rounded,
-                    title: 'Meus créditos',
-                    subtitle: 'Seus OmniCoins',
-                    bgColor: Colors.amber.shade100,
-                    iconColor: Colors.amber.shade800,
-                    onTap: _openWallet,
-                  ),
+                        const Icon(Icons.hourglass_top_rounded,
+                            color: DesignTokens.warning, size: 28),
+                        const SizedBox(width: DesignTokens.spacingSm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Solicitação pendente',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: DesignTokens.warning,
+                                ),
+                              ),
+                              const SizedBox(height: DesignTokens.spacingXs),
+                              Text(
+                                'Aguardando aprovação da assessoria '
+                                '"$_pendingRequestGroupName". Você será '
+                                'notificado quando a assessoria aprovar.',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: DesignTokens.warning,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
-            ),
-          ],
+                ),
+              ],
+              if (hasAssessoria && _assessoriaGroupId != null) ...[
+                const SizedBox(height: DesignTokens.spacingSm),
+                Card(
+                  color: cs.primaryContainer.withValues(alpha: 0.3),
+                  margin: EdgeInsets.zero,
+                  child: ListTile(
+                    dense: true,
+                    leading:
+                        Icon(Icons.forum_rounded, color: cs.primary, size: 22),
+                    title: Text(
+                      'Feed da $_assessoriaName',
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    trailing: Icon(Icons.chevron_right, color: cs.primary),
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute<void>(
+                        builder: (_) => BlocProvider<AssessoriaFeedBloc>(
+                          create: (_) => sl<AssessoriaFeedBloc>()
+                            ..add(LoadFeed(_assessoriaGroupId!)),
+                          child: const AssessoriaFeedScreen(),
+                        ),
+                      ));
+                    },
+                  ),
+                ),
+                const SizedBox(height: DesignTokens.spacingSm),
+              ],
+              Expanded(
+                child: _loading
+                  ? ShimmerLoading(
+                      child: GridView.count(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: DesignTokens.spacingMd,
+                        crossAxisSpacing: DesignTokens.spacingMd,
+                        childAspectRatio: 0.95,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: List.generate(6, (_) => const SkeletonCard()),
+                      ),
+                    )
+                  : FadeTransition(
+                      opacity: CurvedAnimation(
+                        parent: _staggerCtrl,
+                        curve: Curves.easeOut,
+                      ),
+                      child: GridView.count(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: DesignTokens.spacingMd,
+                        crossAxisSpacing: DesignTokens.spacingMd,
+                        childAspectRatio: 0.95,
+                        children: [
+                    _DashCard(
+                      icon: Icons.sports_kabaddi_rounded,
+                      title: 'Meus desafios',
+                      subtitle: 'Competir e acompanhar',
+                      bgColor: cs.primaryContainer,
+                      iconColor: cs.onPrimaryContainer,
+                      onTap: _openChallenges,
+                    ),
+                    _DashCard(
+                      icon: hasAssessoria
+                          ? Icons.groups_rounded
+                          : Icons.group_add_rounded,
+                      title: hasAssessoria
+                          ? 'Minha assessoria'
+                          : 'Entrar em assessoria',
+                      subtitle: _loading
+                          ? '...'
+                          : _assessoriaName ?? 'Toque para se juntar',
+                      bgColor: hasAssessoria
+                          ? cs.secondaryContainer
+                          : DesignTokens.info.withValues(alpha: 0.1),
+                      iconColor: hasAssessoria
+                          ? cs.onSecondaryContainer
+                          : DesignTokens.info,
+                      isEmpty: !hasAssessoria && !_loading,
+                      onTap: hasAssessoria
+                          ? _openAssessoria
+                          : _openJoinAssessoria,
+                    ),
+                    _DashCard(
+                      icon: Icons.trending_up_rounded,
+                      title: 'Meu progresso',
+                      subtitle: 'XP, badges e missões',
+                      bgColor: cs.tertiaryContainer,
+                      iconColor: cs.onTertiaryContainer,
+                      badge: _stravaConnected ? null : 'Conecte Strava',
+                      onTap: _openProgress,
+                    ),
+                    _DashCard(
+                      icon: Icons.verified_user_rounded,
+                      title: 'Verificação',
+                      subtitle: 'Status de atleta verificado',
+                      bgColor: DesignTokens.info.withValues(alpha: 0.1),
+                      iconColor: DesignTokens.info,
+                      onTap: _openVerification,
+                    ),
+                    _DashCard(
+                      icon: Icons.emoji_events_rounded,
+                      title: 'Campeonatos',
+                      subtitle: 'Competir entre assessorias',
+                      bgColor: DesignTokens.warning.withValues(alpha: 0.1),
+                      iconColor: DesignTokens.warning,
+                      onTap: _openChampionships,
+                    ),
+                    _DashCard(
+                      icon: Icons.park_rounded,
+                      title: 'Parques',
+                      subtitle: 'Rankings e comunidade',
+                      bgColor: DesignTokens.success.withValues(alpha: 0.1),
+                      iconColor: DesignTokens.success,
+                      onTap: () {
+                        Navigator.of(context).push(MaterialPageRoute<void>(
+                          builder: (_) => const MyParksScreen(),
+                        ));
+                      },
+                    ),
+                    _DashCard(
+                      icon: Icons.toll_rounded,
+                      title: 'Meus créditos',
+                      subtitle: 'Seus OmniCoins',
+                      bgColor: DesignTokens.warning.withValues(alpha: 0.15),
+                      iconColor: DesignTokens.warning,
+                      onTap: _openWallet,
+                    ),
+                        ],
+                      ),
+                    ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -524,64 +533,63 @@ class _DashCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final cardBg = isDark
-        ? theme.colorScheme.surfaceContainerHighest
-        : bgColor;
+    final cs = theme.colorScheme;
+    final cardBg = isDark ? DesignTokens.surface : bgColor;
     final titleColor = isEmpty
-        ? (isDark ? Colors.grey.shade400 : Colors.grey.shade600)
-        : theme.colorScheme.onSurface;
+        ? cs.onSurface.withValues(alpha: isDark ? 0.4 : 0.6)
+        : cs.onSurface;
     final subtitleColor = isEmpty
-        ? (isDark ? Colors.grey.shade500 : Colors.grey.shade500)
-        : theme.colorScheme.onSurfaceVariant;
+        ? cs.onSurface.withValues(alpha: 0.4)
+        : cs.onSurface.withValues(alpha: 0.6);
 
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+      ),
       color: cardBg,
       child: InkWell(
         onTap: () {
           HapticFeedback.selectionClick();
           onTap();
         },
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
         child: Padding(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   Container(
-                    width: 48,
-                    height: 48,
+                    width: DesignTokens.spacingXxl,
+                    height: DesignTokens.spacingXxl,
                     decoration: BoxDecoration(
                       color: iconColor.withValues(alpha: isDark ? 0.25 : 0.15),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                     ),
                     child: Icon(icon, size: 26, color: iconColor),
                   ),
                   if (badge != null) ...[
-                    const SizedBox(width: 6),
+                    const SizedBox(width: DesignTokens.spacingSm),
                     Flexible(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 3,
+                          horizontal: DesignTokens.spacingSm,
+                          vertical: DesignTokens.spacingXs,
                         ),
                         decoration: BoxDecoration(
                           color: isDark
-                              ? Colors.orange.shade900.withValues(alpha: 0.4)
-                              : Colors.orange.shade100,
-                          borderRadius: BorderRadius.circular(8),
+                              ? DesignTokens.warning.withValues(alpha: 0.4)
+                              : DesignTokens.warning.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                         ),
                         child: Text(
                           badge!,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
-                            color: isDark
-                                ? Colors.orange.shade300
-                                : Colors.orange.shade800,
+                            color: DesignTokens.warning,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -598,7 +606,7 @@ class _DashCard extends StatelessWidget {
                   color: titleColor,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: DesignTokens.spacingXs),
               Text(
                 subtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -608,11 +616,11 @@ class _DashCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               if (isEmpty) ...[
-                const SizedBox(height: 6),
+                const SizedBox(height: DesignTokens.spacingSm),
                 Text(
                   'Toque para encontrar',
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.primary,
+                    color: cs.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

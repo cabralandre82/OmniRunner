@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/auth/auth_repository.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_bloc.dart';
@@ -47,7 +48,7 @@ class MoreScreen extends StatelessWidget {
         backgroundColor: cs.inversePrimary,
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
         children: [
           if (!_isStaff) ...[
             _header(context, 'Assessoria'),
@@ -170,22 +171,22 @@ class MoreScreen extends StatelessWidget {
             },
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: DesignTokens.spacingMd),
           if (sl<UserIdentityProvider>().isAnonymous)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd),
               child: Card(
-                color: Colors.amber.shade50,
+                color: DesignTokens.warning.withValues(alpha: 0.1),
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(DesignTokens.spacingMd),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      const Row(
                         children: [
                           Icon(Icons.person_outline,
-                              color: Colors.amber.shade800, size: 28),
-                          const SizedBox(width: 12),
+                              color: DesignTokens.warning, size: 28),
+                          SizedBox(width: DesignTokens.spacingMd),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,20 +194,20 @@ class MoreScreen extends StatelessWidget {
                                 Text('Modo Offline',
                                     style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.amber.shade900)),
-                                const SizedBox(height: 2),
+                                        color: DesignTokens.warning)),
+                                SizedBox(height: DesignTokens.spacingXs),
                                 Text(
                                   'Crie uma conta para desbloquear desafios, '
                                   'campeonatos e assessorias.',
                                   style: TextStyle(
-                                      fontSize: 12, color: Colors.amber.shade800),
+                                      fontSize: 12, color: DesignTokens.warning),
                                 ),
                               ],
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: DesignTokens.spacingSm),
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
@@ -221,7 +222,7 @@ class MoreScreen extends StatelessWidget {
                           icon: const Icon(Icons.login_rounded, size: 18),
                           label: const Text('Criar conta / Entrar'),
                           style: FilledButton.styleFrom(
-                            backgroundColor: Colors.amber.shade800,
+                            backgroundColor: DesignTokens.warning,
                           ),
                         ),
                       ),
@@ -231,9 +232,9 @@ class MoreScreen extends StatelessWidget {
               ),
             ),
           if (!sl<UserIdentityProvider>().isAnonymous) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: DesignTokens.spacingMd),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd),
               child: SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -241,25 +242,26 @@ class MoreScreen extends StatelessWidget {
                   icon: const Icon(Icons.logout_rounded),
                   label: Text(context.l10n.logout),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    foregroundColor: cs.error,
+                    side: BorderSide(color: cs.error),
+                    padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
                   ),
                 ),
               ),
             ),
           ],
-          const SizedBox(height: 24),
+          const SizedBox(height: DesignTokens.spacingLg),
         ],
       ),
     );
   }
 
   Future<void> _signOut(BuildContext context) async {
+    final cs = Theme.of(context).colorScheme;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        icon: Icon(Icons.logout_rounded, color: Colors.red.shade600, size: 40),
+        icon: Icon(Icons.logout_rounded, color: cs.error, size: 40),
         title: const Text('Sair da conta?'),
         content: const Text(
           'Você será redirecionado para a tela de login. '
@@ -271,7 +273,7 @@ class MoreScreen extends StatelessWidget {
             child: Text(context.l10n.cancel),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: cs.error),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(context.l10n.logout),
           ),
@@ -381,11 +383,16 @@ class MoreScreen extends StatelessWidget {
 
   Widget _header(BuildContext context, String text) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      padding: const EdgeInsets.fromLTRB(
+        DesignTokens.spacingMd,
+        DesignTokens.spacingMd,
+        DesignTokens.spacingMd,
+        DesignTokens.spacingXs,
+      ),
       child: Text(
         text,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
       ),
     );
@@ -443,14 +450,15 @@ class _ComingSoonTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return ListTile(
-      leading: Icon(icon, color: Colors.grey),
+      leading: Icon(icon, color: cs.onSurface.withValues(alpha: 0.38)),
       title:
-          Text(title, style: TextStyle(color: Colors.grey.shade600)),
+          Text(title, style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6))),
       subtitle: Text(subtitle),
       trailing: Chip(
         label: const Text('Em breve', style: TextStyle(fontSize: 10)),
-        backgroundColor: Colors.grey.shade200,
+        backgroundColor: cs.surfaceContainerHighest,
         visualDensity: VisualDensity.compact,
         side: BorderSide.none,
       ),
@@ -460,4 +468,3 @@ class _ComingSoonTile extends StatelessWidget {
     );
   }
 }
-

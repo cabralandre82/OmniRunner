@@ -3,12 +3,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/workout_session_entity.dart';
 import 'package:omni_runner/domain/entities/workout_status.dart';
 import 'package:omni_runner/domain/repositories/i_session_repo.dart';
 import 'package:omni_runner/domain/repositories/i_sync_repo.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/screens/run_details_screen.dart';
+import 'package:omni_runner/presentation/widgets/ds/fade_in.dart';
 import 'package:omni_runner/presentation/widgets/empty_state.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 
@@ -152,7 +154,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         actions: widget.pickGhostMode ? null : [
           if (pending > 0)
             Padding(
-              padding: const EdgeInsets.only(right: 4),
+              padding: const EdgeInsets.only(right: DesignTokens.spacingXs),
               child: Center(child: Text('$pending pendente${pending > 1 ? 's' : ''}', style: const TextStyle(fontSize: 12))),
             ),
           IconButton(
@@ -162,41 +164,43 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
         ],
       ),
-      body: _loading
-          ? const ShimmerListLoader()
-          : _sessions == null || _sessions!.isEmpty
-              ? const EmptyState(
-                  icon: Icons.directions_run_rounded,
-                  title: 'Nenhuma corrida ainda',
-                  subtitle: 'Conecte o Strava e faça sua primeira corrida.\n'
-                      'Ela aparecerá aqui automaticamente!',
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadSessions,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _sessions!.length + (_hasMore ? 1 : 0),
-                    itemBuilder: (context, i) {
-                      if (i == _sessions!.length) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: Center(
-                            child: OutlinedButton(
-                              onPressed: () => _loadSessions(loadMore: true),
-                              child: const Text('Carregar mais'),
+      body: FadeIn(
+        child: _loading
+            ? const ShimmerListLoader()
+            : _sessions == null || _sessions!.isEmpty
+                ? const EmptyState(
+                    icon: Icons.directions_run_rounded,
+                    title: 'Nenhuma corrida ainda',
+                    subtitle: 'Conecte o Strava e faça sua primeira corrida.\n'
+                        'Ela aparecerá aqui automaticamente!',
+                  )
+                : RefreshIndicator(
+                    onRefresh: _loadSessions,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(DesignTokens.spacingMd),
+                      itemCount: _sessions!.length + (_hasMore ? 1 : 0),
+                      itemBuilder: (context, i) {
+                        if (i == _sessions!.length) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
+                            child: Center(
+                              child: OutlinedButton(
+                                onPressed: () => _loadSessions(loadMore: true),
+                                child: const Text('Carregar mais'),
+                              ),
                             ),
+                          );
+                        }
+                        return RepaintBoundary(
+                          child: _SessionTile(
+                            session: _sessions![i],
+                            pickGhostMode: widget.pickGhostMode,
                           ),
                         );
-                      }
-                      return RepaintBoundary(
-                        child: _SessionTile(
-                          session: _sessions![i],
-                          pickGhostMode: widget.pickGhostMode,
-                        ),
-                      );
-                    },
+                      },
+                    ),
                   ),
-                ),
+      ),
     );
   }
 }
@@ -221,11 +225,11 @@ class _SessionTile extends StatelessWidget {
     final (sourceIcon, sourceColor, sourceTooltip) = _sourceInfo(session.source);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
       child: ListTile(
         leading: Icon(
           canGhost ? Icons.person_add_alt_1 : sourceIcon,
-          color: canGhost ? Colors.purple : statusColor, size: 32,
+          color: canGhost ? DesignTokens.info : statusColor, size: 32,
         ),
         title: Row(children: [
           Text('$dateStr  $timeStr'),
@@ -240,9 +244,9 @@ class _SessionTile extends StatelessWidget {
             _SyncBadge(synced: session.isSynced),
         ],),
         trailing: canGhost
-            ? const Chip(
-                label: Text('Fantasma', style: TextStyle(fontSize: 11)),
-                backgroundColor: Color(0xFFE1BEE7),
+            ? Chip(
+                label: const Text('Fantasma', style: TextStyle(fontSize: 11)),
+                backgroundColor: Theme.of(context).colorScheme.tertiaryContainer,
                 visualDensity: VisualDensity.compact,
               )
             : const Icon(Icons.chevron_right),
@@ -272,18 +276,18 @@ class _SessionTile extends StatelessWidget {
   }
 
   static (String, Color) _statusInfo(WorkoutStatus status) => switch (status) {
-    WorkoutStatus.completed => ('Concluída', Colors.green),
-    WorkoutStatus.running => ('Em andamento', Colors.blue),
-    WorkoutStatus.paused => ('Pausada', Colors.orange),
-    WorkoutStatus.discarded => ('Descartada', Colors.grey),
-    WorkoutStatus.initial => ('Inicial', Colors.grey),
+    WorkoutStatus.completed => ('Concluída', DesignTokens.success),
+    WorkoutStatus.running => ('Em andamento', DesignTokens.info),
+    WorkoutStatus.paused => ('Pausada', DesignTokens.warning),
+    WorkoutStatus.discarded => ('Descartada', DesignTokens.textMuted),
+    WorkoutStatus.initial => ('Inicial', DesignTokens.textMuted),
   };
 
   static (IconData, Color, String) _sourceInfo(String source) => switch (source) {
-    'strava' => (Icons.watch, const Color(0xFFFC4C02), 'Via Strava'),
-    'watch' => (Icons.watch, Colors.blueGrey, 'Relógio'),
-    'manual' => (Icons.edit, Colors.grey, 'Manual'),
-    _ => (Icons.directions_run, Colors.green, 'OmniRunner'),
+    'strava' => (Icons.watch, DesignTokens.warning, 'Via Strava'),
+    'watch' => (Icons.watch, DesignTokens.textSecondary, 'Relógio'),
+    'manual' => (Icons.edit, DesignTokens.textMuted, 'Manual'),
+    _ => (Icons.directions_run, DesignTokens.success, 'OmniRunner'),
   };
 }
 
@@ -295,19 +299,20 @@ class _SourceBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, bgColor) = switch (source) {
-      'strava' => (deviceName ?? 'Strava', const Color(0xFFFC4C02)),
-      'watch' => (deviceName ?? 'Relógio', Colors.blueGrey),
-      'manual' => ('Manual', Colors.grey),
-      _ => ('App', Colors.green),
+      'strava' => (deviceName ?? 'Strava', DesignTokens.warning),
+      'watch' => (deviceName ?? 'Relógio', DesignTokens.textSecondary),
+      'manual' => ('Manual', DesignTokens.textMuted),
+      _ => ('App', DesignTokens.success),
     };
 
     return Tooltip(
       message: deviceName != null ? 'Gravado no $deviceName via Strava' : 'Importado via $source',
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+        padding: const EdgeInsets.symmetric(
+            horizontal: DesignTokens.spacingXs, vertical: DesignTokens.spacingXs),
         decoration: BoxDecoration(
           color: bgColor.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
           border: Border.all(color: bgColor.withValues(alpha: 0.4), width: 0.5),
         ),
         child: Text(
@@ -325,15 +330,22 @@ class _SyncBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(
+          horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
       decoration: BoxDecoration(
-        color: synced ? Colors.green.shade50 : Colors.orange.shade50,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: synced ? Colors.green : Colors.orange, width: 0.5),
+        color: synced
+            ? DesignTokens.success.withValues(alpha: 0.1)
+            : DesignTokens.warning.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+        border: Border.all(
+            color: synced ? DesignTokens.success : DesignTokens.warning, width: 0.5),
       ),
       child: Text(
         synced ? 'SYNC' : 'PENDENTE',
-        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: synced ? Colors.green.shade800 : Colors.orange.shade800),
+        style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: synced ? DesignTokens.success : DesignTokens.warning),
       ),
     );
   }

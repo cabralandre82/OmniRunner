@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/domain/entities/profile_progress_entity.dart';
 import 'package:omni_runner/domain/entities/weekly_goal_entity.dart';
@@ -7,6 +8,7 @@ import 'package:omni_runner/presentation/blocs/progression/progression_bloc.dart
 import 'package:omni_runner/presentation/blocs/progression/progression_event.dart';
 import 'package:omni_runner/presentation/blocs/progression/progression_state.dart';
 import 'package:omni_runner/l10n/l10n.dart';
+import 'package:omni_runner/presentation/widgets/ds/fade_in.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 
 class ProgressionScreen extends StatelessWidget {
@@ -27,49 +29,51 @@ class ProgressionScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: BlocBuilder<ProgressionBloc, ProgressionState>(
-        builder: (context, state) => switch (state) {
-          ProgressionInitial() => const _EmptyState(),
-          ProgressionLoading() => const Center(
-              child: CircularProgressIndicator(),
-            ),
-          ProgressionLoaded(
-            :final profile,
-            :final recentXp,
-            :final weeklyGoal,
-            :final badgeCatalog,
-            :final earnedBadgeIds,
-          ) =>
-            profile.lifetimeSessionCount == 0
-                ? const _EmptyState()
-                : _LoadedBody(
-                    profile: profile,
-                    recentXp: recentXp,
-                    weeklyGoal: weeklyGoal,
-                    badgeCatalog: badgeCatalog,
-                    earnedBadgeIds: earnedBadgeIds,
-                  ),
-          ProgressionError(:final message) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.error_outline,
-                        size: 48,
-                        color: Theme.of(context).colorScheme.error),
-                    const SizedBox(height: 12),
-                    Text(
-                      message,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error),
+      body: FadeIn(
+        child: BlocBuilder<ProgressionBloc, ProgressionState>(
+          builder: (context, state) => switch (state) {
+            ProgressionInitial() => const _EmptyState(),
+            ProgressionLoading() => const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ProgressionLoaded(
+              :final profile,
+              :final recentXp,
+              :final weeklyGoal,
+              :final badgeCatalog,
+              :final earnedBadgeIds,
+            ) =>
+              profile.lifetimeSessionCount == 0
+                  ? const _EmptyState()
+                  : _LoadedBody(
+                      profile: profile,
+                      recentXp: recentXp,
+                      weeklyGoal: weeklyGoal,
+                      badgeCatalog: badgeCatalog,
+                      earnedBadgeIds: earnedBadgeIds,
                     ),
-                  ],
+            ProgressionError(:final message) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(DesignTokens.spacingLg),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.error_outline,
+                          size: 48,
+                          color: Theme.of(context).colorScheme.error),
+                      const SizedBox(height: 12),
+                      Text(
+                        message,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-        },
+          },
+        ),
       ),
     );
   }
@@ -87,7 +91,7 @@ class _EmptyState extends StatelessWidget {
     final theme = Theme.of(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -106,7 +110,7 @@ class _EmptyState extends StatelessWidget {
               'Corra para ganhar XP, subir de nível e '
               'acompanhar sua evolução semana a semana.',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.outline,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               textAlign: TextAlign.center,
             ),
@@ -145,10 +149,11 @@ class _LoadedBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: DesignTokens.spacingLg),
       children: [
         const Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+          padding: EdgeInsets.fromLTRB(
+              DesignTokens.spacingMd, DesignTokens.spacingSm, DesignTokens.spacingMd, 0),
           child: TipBanner(
             tipKey: TipKey.progressionHowTo,
             icon: Icons.lightbulb_outline_rounded,
@@ -164,14 +169,14 @@ class _LoadedBody extends StatelessWidget {
 
         // ── Block 2: Streak ──────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd),
           child: _StreakCard(profile: profile),
         ),
         const SizedBox(height: 12),
 
         // ── Block 3: Weekly Goal ─────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd),
           child: weeklyGoal != null
               ? _WeeklyGoalCard(goal: weeklyGoal!)
               : const _NoGoalCard(),
@@ -180,7 +185,7 @@ class _LoadedBody extends StatelessWidget {
 
         // ── Stats summary ────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd),
           child: _LifetimeStatsCard(profile: profile),
         ),
 
@@ -188,7 +193,8 @@ class _LoadedBody extends StatelessWidget {
         if (badgeCatalog.isNotEmpty) ...[
           const Divider(height: 32),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            padding: const EdgeInsets.fromLTRB(
+                DesignTokens.spacingMd, 0, DesignTokens.spacingMd, DesignTokens.spacingSm),
             child: Row(
               children: [
                 Text(
@@ -199,17 +205,18 @@ class _LoadedBody extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
                   decoration: BoxDecoration(
-                    color: Colors.amber.shade100,
-                    borderRadius: BorderRadius.circular(12),
+                    color: DesignTokens.warning.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   ),
                   child: Text(
                     '${earnedBadgeIds.length}/${badgeCatalog.length}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Colors.amber.shade800,
+                      color: DesignTokens.warning,
                     ),
                   ),
                 ),
@@ -225,7 +232,8 @@ class _LoadedBody extends StatelessWidget {
         // ── XP History ───────────────────────────────────────────────
         const Divider(height: 32),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+              DesignTokens.spacingMd, 0, DesignTokens.spacingMd, DesignTokens.spacingSm),
           child: Text(
             'Histórico de XP',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -235,7 +243,7 @@ class _LoadedBody extends StatelessWidget {
         ),
         if (recentXp.isEmpty)
           const Padding(
-            padding: EdgeInsets.all(32),
+            padding: EdgeInsets.all(DesignTokens.spacingXl),
             child: Center(
               child: Text(
                 'Nenhum XP registrado ainda.\nCorra para ganhar XP!',
@@ -271,7 +279,8 @@ class _LevelCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
+      padding: const EdgeInsets.symmetric(
+          vertical: DesignTokens.spacingXl, horizontal: DesignTokens.spacingLg),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [cs.primaryContainer, cs.primary.withValues(alpha: 0.15)],
@@ -316,7 +325,7 @@ class _LevelCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
             child: LinearProgressIndicator(
               value: fraction,
               minHeight: 12,
@@ -355,12 +364,13 @@ class _StreakCard extends StatelessWidget {
 
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
       color: isActive
-          ? Colors.orange.withValues(alpha: 0.08)
+          ? DesignTokens.warning.withValues(alpha: 0.08)
           : theme.colorScheme.surfaceContainerHighest,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -371,14 +381,14 @@ class _StreakCard extends StatelessWidget {
                   height: 48,
                   decoration: BoxDecoration(
                     color: isActive
-                        ? Colors.orange.withValues(alpha: 0.2)
+                        ? DesignTokens.warning.withValues(alpha: 0.2)
                         : theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   ),
                   child: Icon(
                     Icons.local_fire_department,
                     color: isActive
-                        ? Colors.orange
+                        ? DesignTokens.warning
                         : theme.colorScheme.outline,
                     size: 28,
                   ),
@@ -398,19 +408,20 @@ class _StreakCard extends StatelessWidget {
                         Text(
                           'Recorde: $best ${best == 1 ? 'dia' : 'dias'}',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.outline,
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6),
                           ),
                         ),
                     ],
                   ),
                 ),
                 if (hasFreeze)
-                  Tooltip(
+                  const Tooltip(
                     message: 'Você pode faltar 1 dia sem perder a sequência',
                     child: Chip(
                       avatar: Icon(Icons.ac_unit,
-                          size: 16, color: Colors.blue.shade700),
-                      label: const Text('Proteção'),
+                          size: 16, color: DesignTokens.info),
+                      label: Text('Proteção'),
                       padding: EdgeInsets.zero,
                       visualDensity: VisualDensity.compact,
                     ),
@@ -423,7 +434,7 @@ class _StreakCard extends StatelessWidget {
                   ? 'Continue correndo para manter sua sequência!'
                   : 'Corra hoje para iniciar uma sequência.',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.outline,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -450,12 +461,13 @@ class _WeeklyGoalCard extends StatelessWidget {
 
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
       color: completed
-          ? Colors.green.withValues(alpha: 0.08)
+          ? DesignTokens.success.withValues(alpha: 0.08)
           : cs.secondaryContainer.withValues(alpha: 0.5),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -466,13 +478,13 @@ class _WeeklyGoalCard extends StatelessWidget {
                   height: 48,
                   decoration: BoxDecoration(
                     color: completed
-                        ? Colors.green.withValues(alpha: 0.2)
+                        ? DesignTokens.success.withValues(alpha: 0.2)
                         : cs.secondary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   ),
                   child: Icon(
                     completed ? Icons.check_circle : Icons.flag_rounded,
-                    color: completed ? Colors.green : cs.secondary,
+                    color: completed ? DesignTokens.success : cs.secondary,
                     size: 28,
                   ),
                 ),
@@ -493,8 +505,8 @@ class _WeeklyGoalCard extends StatelessWidget {
                             : '${goal.currentLabel} de ${goal.targetLabel}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: completed
-                              ? Colors.green.shade700
-                              : theme.colorScheme.outline,
+                              ? DesignTokens.success
+                              : cs.onSurface.withValues(alpha: 0.6),
                           fontWeight:
                               completed ? FontWeight.w600 : FontWeight.normal,
                         ),
@@ -506,20 +518,20 @@ class _WeeklyGoalCard extends StatelessWidget {
                   '${pct.toStringAsFixed(0)}%',
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: completed ? Colors.green : cs.primary,
+                    color: completed ? DesignTokens.success : cs.primary,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             ClipRRect(
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               child: LinearProgressIndicator(
                 value: goal.progressFraction,
                 minHeight: 10,
                 backgroundColor: cs.onSurface.withValues(alpha: 0.1),
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  completed ? Colors.green : cs.primary,
+                  completed ? DesignTokens.success : cs.primary,
                 ),
               ),
             ),
@@ -528,7 +540,7 @@ class _WeeklyGoalCard extends StatelessWidget {
               Text(
                 _remainingMessage(goal),
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.outline,
+                  color: cs.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -558,10 +570,11 @@ class _NoGoalCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
       color: theme.colorScheme.surfaceContainerHighest,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Row(
           children: [
             Container(
@@ -569,7 +582,7 @@ class _NoGoalCard extends StatelessWidget {
               height: 48,
               decoration: BoxDecoration(
                 color: theme.colorScheme.outline.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
               ),
               child: Icon(Icons.flag_outlined,
                   size: 28, color: theme.colorScheme.outline),
@@ -588,7 +601,8 @@ class _NoGoalCard extends StatelessWidget {
                   Text(
                     'Corra esta semana para gerar sua meta automática.',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.outline,
+                      color: theme.colorScheme.onSurface
+                          .withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -614,9 +628,10 @@ class _LifetimeStatsCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -708,7 +723,7 @@ class _StatTile extends StatelessWidget {
           Text(
             label,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.outline,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             textAlign: TextAlign.center,
           ),
@@ -739,8 +754,8 @@ class _XpTile extends StatelessWidget {
       subtitle: Text(_formatDate(tx.createdAtMs)),
       trailing: Text(
         '+${tx.xp}',
-        style: TextStyle(
-          color: Colors.green.shade700,
+        style: const TextStyle(
+          color: DesignTokens.success,
           fontWeight: FontWeight.bold,
           fontSize: 16,
         ),
@@ -765,11 +780,11 @@ class _XpTile extends StatelessWidget {
       };
 
   static Color _sourceColor(XpSource s) => switch (s) {
-        XpSource.session => Colors.blue,
-        XpSource.badge => Colors.amber,
-        XpSource.mission => Colors.green,
-        XpSource.streak => Colors.orange,
-        XpSource.challenge => Colors.purple,
+        XpSource.session => DesignTokens.info,
+        XpSource.badge => DesignTokens.warning,
+        XpSource.mission => DesignTokens.success,
+        XpSource.streak => DesignTokens.warning,
+        XpSource.challenge => DesignTokens.info,
       };
 
   static String _formatDate(int ms) {
@@ -799,7 +814,7 @@ class _BadgeGrid extends StatelessWidget {
     final sorted = [...earned, ...locked];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd),
       child: Wrap(
         spacing: 10,
         runSpacing: 10,
@@ -834,12 +849,12 @@ class _BadgeTile extends StatelessWidget {
       onTap: () => _showDetail(context, name, desc, tier, xp),
       child: Container(
         width: (MediaQuery.of(context).size.width - 42) / 3,
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(DesignTokens.spacingSm),
         decoration: BoxDecoration(
           color: isEarned
               ? tierColor.withValues(alpha: 0.12)
               : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
           border: isEarned
               ? Border.all(color: tierColor.withValues(alpha: 0.5), width: 1.5)
               : Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
@@ -865,10 +880,11 @@ class _BadgeTile extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
               decoration: BoxDecoration(
                 color: tierColor.withValues(alpha: isEarned ? 0.2 : 0.1),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               ),
               child: Text(
                 _tierLabel(tier),
@@ -890,17 +906,17 @@ class _BadgeTile extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(DesignTokens.radiusXl)),
       ),
       builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(DesignTokens.spacingLg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               _tierIcon(tier),
               size: 56,
-              color: isEarned ? tierColor : Colors.grey,
+              color: isEarned ? tierColor : DesignTokens.textMuted,
             ),
             const SizedBox(height: 12),
             Text(
@@ -923,10 +939,11 @@ class _BadgeTile extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
                   decoration: BoxDecoration(
                     color: tierColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                   ),
                   child: Text(
                     _tierLabel(tier),
@@ -938,16 +955,17 @@ class _BadgeTile extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    color: DesignTokens.info.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                   ),
                   child: Text(
                     '+$xp XP',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade700,
+                      color: DesignTokens.info,
                     ),
                   ),
                 ),
@@ -955,16 +973,16 @@ class _BadgeTile extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             if (isEarned)
-              Row(
+              const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle, color: Colors.green.shade600, size: 20),
-                  const SizedBox(width: 6),
+                  Icon(Icons.check_circle, color: DesignTokens.success, size: 20),
+                  SizedBox(width: 6),
                   Text(
                     'Desbloqueada!',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.green.shade600,
+                      color: DesignTokens.success,
                     ),
                   ),
                 ],
@@ -984,10 +1002,10 @@ class _BadgeTile extends StatelessWidget {
   }
 
   static Color _tierColor(String tier) => switch (tier) {
-        'diamond' => Colors.deepPurple,
-        'gold' => Colors.amber.shade700,
-        'silver' => Colors.blueGrey,
-        _ => Colors.brown.shade400,
+        'diamond' => DesignTokens.info,
+        'gold' => DesignTokens.warning,
+        'silver' => DesignTokens.textSecondary,
+        _ => DesignTokens.textMuted,
       };
 
   static String _tierLabel(String tier) => switch (tier) {

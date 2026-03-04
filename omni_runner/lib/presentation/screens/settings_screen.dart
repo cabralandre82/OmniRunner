@@ -10,6 +10,7 @@ import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/errors/strava_failures.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/coach_settings_entity.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 
@@ -55,12 +56,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
               children: [
                 if (!widget.isStaff) ...[
                   _header('Integrações'),
                   const _StravaIntegrationTile(),
-                  const Divider(height: 32),
+                  const Divider(height: DesignTokens.spacingXl),
                 ],
                 _header('Aparência'),
                 ValueListenableBuilder<ThemeMode>(
@@ -92,7 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 if (!widget.isStaff) ...[
-                  const Divider(height: 32),
+                  const Divider(height: DesignTokens.spacingXl),
                   _header('Unidades'),
                   ListTile(
                     leading: const Icon(Icons.straighten),
@@ -106,7 +107,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           _update(_settings.copyWith(useImperial: v)),
                     ),
                   ),
-                  const Divider(height: 32),
+                  const Divider(height: DesignTokens.spacingXl),
                   _header('Privacidade'),
                   SwitchListTile(
                     title: const Text('Perfil visível no ranking'),
@@ -128,7 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onChanged: (v) =>
                         _update(_settings.copyWith(shareActivityInFeed: v)),
                   ),
-                  const Divider(height: 32),
+                  const Divider(height: DesignTokens.spacingXl),
                   _header('Ajuda'),
                   ListTile(
                     leading: const Icon(Icons.help_outline_rounded),
@@ -145,10 +146,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
                 if (kDebugMode) ...[
-                  const Divider(height: 32),
+                  const Divider(height: DesignTokens.spacingXl),
                   _header('Auth Debug'),
                   const _AuthDebugCard(),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: DesignTokens.spacingMd),
                   ListTile(
                     leading: const Icon(Icons.bug_report),
                     title: Text(context.l10n.diagnostics),
@@ -167,11 +168,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _header(String text) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+        padding: const EdgeInsets.fromLTRB(
+          DesignTokens.spacingMd,
+          DesignTokens.spacingSm,
+          DesignTokens.spacingMd,
+          DesignTokens.spacingXs,
+        ),
         child: Text(
           text,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
         ),
       );
@@ -210,13 +216,11 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Strava conectado como ${connected.athleteName}!'),
-            backgroundColor: const Color(0xFFFC4C02),
+            backgroundColor: DesignTokens.warning,
           ),
         );
       }
     } on AuthCancelled {
-      // Could be a real cancellation or a Chrome Custom Tab race condition.
-      // Re-check state in case the connection actually succeeded.
       await _loadState();
       if (mounted && _state is StravaConnected) {
         final controller = sl<StravaConnectController>();
@@ -226,13 +230,11 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
             content: Text(
               'Strava conectado como ${(_state as StravaConnected).athleteName}!',
             ),
-            backgroundColor: const Color(0xFFFC4C02),
+            backgroundColor: DesignTokens.warning,
           ),
         );
       }
     } on IntegrationFailure {
-      // Connection may have succeeded despite error (e.g. Chrome Custom Tab
-      // closing race condition). Re-check actual state before showing error.
       await _loadState();
       if (mounted && _state is StravaConnected) {
         final controller = sl<StravaConnectController>();
@@ -242,7 +244,7 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
             content: Text(
               'Strava conectado como ${(_state as StravaConnected).athleteName}!',
             ),
-            backgroundColor: const Color(0xFFFC4C02),
+            backgroundColor: DesignTokens.warning,
           ),
         );
       } else if (mounted) {
@@ -256,6 +258,7 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
   }
 
   Future<void> _disconnect() async {
+    final cs = Theme.of(context).colorScheme;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -272,7 +275,7 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: cs.error),
             child: const Text('Desconectar'),
           ),
         ],
@@ -298,6 +301,7 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final connected = _state is StravaConnected;
     final athleteName =
         _state is StravaConnected ? (_state as StravaConnected).athleteName : null;
@@ -311,10 +315,12 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: connected ? const Color(0xFFFC4C02) : Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(8),
+              color: connected
+                  ? DesignTokens.warning
+                  : cs.onSurface.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
             ),
-            child: const Icon(Icons.watch, color: Colors.white, size: 22),
+            child: Icon(Icons.watch, color: cs.onPrimary, size: 22),
           ),
           title: const Text('Strava'),
           subtitle: Text(
@@ -326,8 +332,8 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
           ),
           trailing: _busy
               ? const SizedBox(
-                  width: 24,
-                  height: 24,
+                  width: DesignTokens.spacingLg,
+                  height: DesignTokens.spacingLg,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : connected
@@ -340,43 +346,43 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
                       icon: const Icon(Icons.link, size: 18),
                       label: const Text('Conectar'),
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFFC4C02),
+                        backgroundColor: DesignTokens.warning,
                       ),
                     ),
         ),
         if (!connected && !needsReauth)
           Padding(
-            padding: const EdgeInsets.fromLTRB(72, 0, 16, 12),
+            padding: const EdgeInsets.fromLTRB(72, 0, DesignTokens.spacingMd, DesignTokens.spacingMd),
             child: Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(DesignTokens.spacingSm),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF3E0),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFFFCC80), width: 0.5),
+                color: DesignTokens.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                border: Border.all(color: DesignTokens.warning.withValues(alpha: 0.3), width: 0.5),
               ),
               child: const Text(
                 'Corra só com seu Garmin, Coros, Suunto ou Apple Watch! '
                 'Conectando ao Strava, suas corridas são importadas '
                 'automaticamente e contam para os desafios. '
                 'GPS e ritmo cardíaco são verificados pelo anti-cheat.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF5D4037)),
+                style: TextStyle(fontSize: 12, color: DesignTokens.warning),
               ),
             ),
           ),
         if (connected)
           Padding(
-            padding: const EdgeInsets.fromLTRB(72, 0, 16, 12),
+            padding: const EdgeInsets.fromLTRB(72, 0, DesignTokens.spacingMd, DesignTokens.spacingMd),
             child: Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(DesignTokens.spacingSm),
               decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFA5D6A7), width: 0.5),
+                color: DesignTokens.success.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                border: Border.all(color: DesignTokens.success.withValues(alpha: 0.3), width: 0.5),
               ),
               child: const Text(
                 'Suas corridas gravadas no relógio serão importadas '
                 'automaticamente via Strava e contarão para seus desafios.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF2E7D32)),
+                style: TextStyle(fontSize: 12, color: DesignTokens.success),
               ),
             ),
           ),
@@ -404,18 +410,22 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final identity = sl<UserIdentityProvider>();
     final user = identity.authUser;
     final mode = AppConfig.backendMode;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: DesignTokens.spacingMd,
+        vertical: DesignTokens.spacingXs,
+      ),
       child: Card(
         color: mode == 'remote'
-            ? Colors.green.shade50
-            : Colors.grey.shade100,
+            ? DesignTokens.success.withValues(alpha: 0.1)
+            : cs.surfaceContainerHighest,
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -426,7 +436,7 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
               _row(context, 'isAnonymous', '${user.isAnonymous}'),
               _row(context, 'displayName', user.displayName),
               if (kDebugMode && mode == 'remote') ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: DesignTokens.spacingSm),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -435,14 +445,14 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
                     onPressed: () => _copyJwt(context),
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: DesignTokens.spacingXs),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     icon: _pinging
                         ? const SizedBox(
-                            width: 16,
-                            height: 16,
+                            width: DesignTokens.spacingMd,
+                            height: DesignTokens.spacingMd,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.network_ping, size: 16),
@@ -451,13 +461,13 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
                   ),
                 ),
                 if (_pingResult != null) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: DesignTokens.spacingSm),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(DesignTokens.spacingSm),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(6),
+                      color: cs.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                     ),
                     child: SelectableText(
                       _pingResult!,
@@ -465,14 +475,14 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 4),
+                const SizedBox(height: DesignTokens.spacingXs),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     icon: _pingingAnalytics
                         ? const SizedBox(
-                            width: 16,
-                            height: 16,
+                            width: DesignTokens.spacingMd,
+                            height: DesignTokens.spacingMd,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.analytics_outlined, size: 16),
@@ -481,13 +491,13 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
                   ),
                 ),
                 if (_pingAnalyticsResult != null) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: DesignTokens.spacingSm),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(DesignTokens.spacingSm),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(6),
+                      color: cs.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                     ),
                     child: SelectableText(
                       _pingAnalyticsResult!,
@@ -495,14 +505,14 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 4),
+                const SizedBox(height: DesignTokens.spacingXs),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     icon: _pingingLeaderboard
                         ? const SizedBox(
-                            width: 16,
-                            height: 16,
+                            width: DesignTokens.spacingMd,
+                            height: DesignTokens.spacingMd,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.leaderboard_outlined, size: 16),
@@ -511,13 +521,13 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
                   ),
                 ),
                 if (_pingLeaderboardResult != null) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: DesignTokens.spacingSm),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(DesignTokens.spacingSm),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(6),
+                      color: cs.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                     ),
                     child: SelectableText(
                       _pingLeaderboardResult!,
@@ -720,7 +730,7 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
 
   Widget _row(BuildContext context, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingXs),
       child: Row(
         children: [
           SizedBox(

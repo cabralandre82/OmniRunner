@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_bloc.dart';
 import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_event.dart';
@@ -39,7 +40,7 @@ class CoachingGroupsScreen extends StatelessWidget {
               : _body(context, groups),
           CoachingGroupsError(:final message) => Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(DesignTokens.spacingLg),
                 child: Text(
                   message,
                   textAlign: TextAlign.center,
@@ -60,9 +61,9 @@ class CoachingGroupsScreen extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.sports, size: 64, color: theme.colorScheme.outline),
-          const SizedBox(height: 16),
+          const SizedBox(height: DesignTokens.spacingMd),
           Text('Nenhuma assessoria', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
+          const SizedBox(height: DesignTokens.spacingSm),
           Text(
             'Você ainda não participa de\nnenhum grupo de assessoria.',
             textAlign: TextAlign.center,
@@ -79,7 +80,7 @@ class CoachingGroupsScreen extends StatelessWidget {
     List<CoachingGroupItem> groups,
   ) {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
       itemCount: groups.length,
       itemBuilder: (context, index) =>
           _CoachingGroupCard(item: groups[index]),
@@ -104,16 +105,16 @@ class _CoachingGroupCard extends StatelessWidget {
       CoachingRole.athlete => 'Atleta',
     };
     final roleColor = switch (role) {
-      CoachingRole.adminMaster => Colors.amber.shade700,
-      CoachingRole.coach => Colors.deepPurple,
-      CoachingRole.assistant => Colors.blue,
+      CoachingRole.adminMaster => DesignTokens.warning,
+      CoachingRole.coach => DesignTokens.primary,
+      CoachingRole.assistant => DesignTokens.info,
       CoachingRole.athlete => theme.colorScheme.primary,
     };
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         onTap: () {
           final uid = sl<UserIdentityProvider>().userId;
           Navigator.of(context).push(MaterialPageRoute<void>(
@@ -124,7 +125,7 @@ class _CoachingGroupCard extends StatelessWidget {
           ));
         },
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Row(
             children: [
               CircleAvatar(
@@ -138,7 +139,7 @@ class _CoachingGroupCard extends StatelessWidget {
                         color: theme.colorScheme.primary, size: 24)
                     : null,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: DesignTokens.spacingMd),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,7 +152,7 @@ class _CoachingGroupCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (group.city.isNotEmpty) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: DesignTokens.spacingXs),
                       Text(
                         group.city,
                         style: theme.textTheme.bodySmall
@@ -160,15 +161,15 @@ class _CoachingGroupCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    const SizedBox(height: 6),
+                    const SizedBox(height: DesignTokens.spacingSm),
                     Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                              horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
                           decoration: BoxDecoration(
                             color: roleColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                           ),
                           child: Text(
                             roleLabel,
@@ -178,10 +179,10 @@ class _CoachingGroupCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: DesignTokens.spacingMd),
                         Icon(Icons.people,
                             size: 14, color: theme.colorScheme.outline),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: DesignTokens.spacingXs),
                         Text(
                           '${item.memberCount}',
                           style: theme.textTheme.labelSmall
@@ -200,4 +201,3 @@ class _CoachingGroupCard extends StatelessWidget {
     );
   }
 }
-

@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/coaching_group_entity.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_bloc.dart';
@@ -65,7 +66,7 @@ class MyAssessoriaScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   CircularProgressIndicator(),
-                  SizedBox(height: 16),
+                  SizedBox(height: DesignTokens.spacingMd),
                   Text('Trocando assessoria...'),
                 ],
               ),
@@ -122,17 +123,17 @@ class _LoadedBody extends StatelessWidget {
     };
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(DesignTokens.spacingMd),
       children: [
         _CurrentGroupCard(group: currentGroup!, roleLabel: roleLabel),
-        const SizedBox(height: 20),
+        const SizedBox(height: DesignTokens.spacingLg),
         _QuickAccessSection(groupId: currentGroup!.id),
-        const SizedBox(height: 24),
+        const SizedBox(height: DesignTokens.spacingLg),
         if (availableGroups.isNotEmpty) ...[
           Text('Trocar para outra assessoria',
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
+          const SizedBox(height: DesignTokens.spacingSm),
           ...availableGroups.map((g) => _AvailableGroupTile(
                 group: g,
                 onTap: () => _showBurnWarning(context, g),
@@ -141,11 +142,11 @@ class _LoadedBody extends StatelessWidget {
           Card(
             color: theme.colorScheme.surfaceContainerHighest,
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(DesignTokens.spacingMd),
               child: Row(
                 children: [
                   Icon(Icons.info_outline, color: theme.colorScheme.outline),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: DesignTokens.spacingMd),
                   Expanded(
                     child: Text(
                       'Para trocar de assessoria, solicite um convite '
@@ -166,8 +167,8 @@ class _LoadedBody extends StatelessWidget {
     showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        icon: Icon(Icons.warning_amber_rounded,
-            color: Colors.orange.shade700, size: 48),
+        icon: const Icon(Icons.warning_amber_rounded,
+            color: DesignTokens.warning, size: 48),
         title: Text(context.l10n.switchAssessoria),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -179,51 +180,51 @@ class _LoadedBody extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: DesignTokens.spacingMd),
             const _ImpactRow(
               icon: Icons.check_circle,
-              color: Colors.green,
+              color: DesignTokens.success,
               text: 'Seus treinos e histórico permanecem',
             ),
             const _ImpactRow(
               icon: Icons.check_circle,
-              color: Colors.green,
+              color: DesignTokens.success,
               text: 'Desafios em andamento continuam normalmente',
             ),
             const _ImpactRow(
               icon: Icons.check_circle,
-              color: Colors.green,
+              color: DesignTokens.success,
               text: 'Seu status de verificação não muda',
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: DesignTokens.spacingSm),
             const _ImpactRow(
               icon: Icons.cancel,
-              color: Colors.red,
+              color: DesignTokens.error,
               text: 'Você será removido do grupo atual',
             ),
             const _ImpactRow(
               icon: Icons.cancel,
-              color: Colors.red,
+              color: DesignTokens.error,
               text: 'OmniCoins pendentes entre assessorias serão perdidos',
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: DesignTokens.spacingMd),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(DesignTokens.spacingMd),
               decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red.shade200),
+                color: DesignTokens.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                border: Border.all(color: DesignTokens.error.withValues(alpha: 0.4)),
               ),
-              child: Row(
+              child: const Row(
                 children: [
                   Icon(Icons.local_fire_department,
-                      color: Colors.red.shade700, size: 20),
-                  const SizedBox(width: 8),
+                      color: DesignTokens.error, size: 20),
+                  SizedBox(width: DesignTokens.spacingSm),
                   Expanded(
                     child: Text(
                       'Esta ação não pode ser desfeita.',
                       style: TextStyle(
-                        color: Colors.red.shade700,
+                        color: DesignTokens.error,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
@@ -241,7 +242,7 @@ class _LoadedBody extends StatelessWidget {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
+              backgroundColor: DesignTokens.error,
             ),
             onPressed: () {
               Navigator.of(ctx).pop(true);
@@ -271,7 +272,7 @@ class _CurrentGroupCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(DesignTokens.spacingLg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -288,7 +289,7 @@ class _CurrentGroupCard extends StatelessWidget {
                           color: theme.colorScheme.primary, size: 28)
                       : null,
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: DesignTokens.spacingMd),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,7 +297,7 @@ class _CurrentGroupCard extends StatelessWidget {
                       Text(group.name,
                           style: theme.textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: DesignTokens.spacingXs),
                       if (group.city.isNotEmpty)
                         Text(group.city,
                             style: theme.textTheme.bodySmall
@@ -307,15 +308,15 @@ class _CurrentGroupCard extends StatelessWidget {
               ],
             ),
             if (group.description.isNotEmpty) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: DesignTokens.spacingMd),
               Text(group.description, style: theme.textTheme.bodyMedium),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: DesignTokens.spacingMd),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               ),
               child: Text(
                 roleLabel,
@@ -345,7 +346,7 @@ class _AvailableGroupTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: theme.colorScheme.surfaceContainerHighest,
@@ -384,10 +385,10 @@ class _QuickAccessSection extends StatelessWidget {
           style: theme.textTheme.titleSmall
               ?.copyWith(fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: DesignTokens.spacingSm),
         _QuickTile(
           icon: Icons.forum_rounded,
-          iconColor: Colors.teal,
+          iconColor: DesignTokens.success,
           title: 'Feed da assessoria',
           subtitle: 'Atividades recentes do grupo',
           onTap: () {
@@ -401,7 +402,7 @@ class _QuickAccessSection extends StatelessWidget {
         ),
         _QuickTile(
           icon: Icons.emoji_events_rounded,
-          iconColor: Colors.orange.shade800,
+          iconColor: DesignTokens.warning,
           title: 'Campeonatos',
           subtitle: 'Competições abertas e em andamento',
           onTap: () {
@@ -412,7 +413,7 @@ class _QuickAccessSection extends StatelessWidget {
         ),
         _QuickTile(
           icon: Icons.shield_rounded,
-          iconColor: Colors.indigo,
+          iconColor: DesignTokens.info,
           title: 'Liga de Assessorias',
           subtitle: 'Ranking entre assessorias da plataforma',
           onTap: () {
@@ -423,7 +424,7 @@ class _QuickAccessSection extends StatelessWidget {
         ),
         _QuickTile(
           icon: Icons.sports_kabaddi_rounded,
-          iconColor: Colors.deepPurple,
+          iconColor: DesignTokens.primary,
           title: 'Desafios',
           subtitle: 'Desafios disponíveis e aceitos',
           onTap: () {
@@ -460,7 +461,7 @@ class _QuickTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-      margin: const EdgeInsets.only(bottom: 6),
+      margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
       elevation: 0,
       color: theme.colorScheme.surfaceContainerLow,
       child: ListTile(
@@ -494,11 +495,11 @@ class _ImpactRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingXs),
       child: Row(
         children: [
           Icon(icon, size: 18, color: color),
-          const SizedBox(width: 8),
+          const SizedBox(width: DesignTokens.spacingSm),
           Expanded(
             child: Text(text, style: const TextStyle(fontSize: 13)),
           ),
@@ -585,19 +586,19 @@ class _NoAssessoriaBodyState extends State<_NoAssessoriaBody> {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (_pendingStatus == 'pending') ...[
-              Icon(Icons.hourglass_top_rounded,
-                  size: 72, color: Colors.orange.shade400),
-              const SizedBox(height: 20),
+              const Icon(Icons.hourglass_top_rounded,
+                  size: 72, color: DesignTokens.warning),
+              const SizedBox(height: DesignTokens.spacingLg),
               Text('Solicitação pendente',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   )),
-              const SizedBox(height: 8),
+              const SizedBox(height: DesignTokens.spacingSm),
               Text(
                 'Sua solicitação para entrar na assessoria '
                 '"$_pendingGroupName" está aguardando aprovação.\n\n'
@@ -607,27 +608,27 @@ class _NoAssessoriaBodyState extends State<_NoAssessoriaBody> {
                 style: theme.textTheme.bodyMedium
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: DesignTokens.spacingLg),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 10,
+                  horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingSm,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.orange.shade200),
+                  color: DesignTokens.warning.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                  border: Border.all(color: DesignTokens.warning.withValues(alpha: 0.4)),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.info_outline,
-                        size: 18, color: Colors.orange.shade700),
-                    const SizedBox(width: 8),
+                        size: 18, color: DesignTokens.warning),
+                    SizedBox(width: DesignTokens.spacingSm),
                     Text(
                       'Enquanto isso, explore o app normalmente.',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.orange.shade800,
+                        color: DesignTokens.warning,
                       ),
                     ),
                   ],
@@ -636,12 +637,12 @@ class _NoAssessoriaBodyState extends State<_NoAssessoriaBody> {
             ] else if (_pendingStatus == 'rejected') ...[
               Icon(Icons.cancel_outlined,
                   size: 72, color: theme.colorScheme.error),
-              const SizedBox(height: 20),
+              const SizedBox(height: DesignTokens.spacingLg),
               Text('Solicitação não aprovada',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   )),
-              const SizedBox(height: 8),
+              const SizedBox(height: DesignTokens.spacingSm),
               Text(
                 'Sua solicitação para "$_pendingGroupName" não foi aprovada. '
                 'Você pode tentar outra assessoria.',
@@ -649,7 +650,7 @@ class _NoAssessoriaBodyState extends State<_NoAssessoriaBody> {
                 style: theme.textTheme.bodyMedium
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: DesignTokens.spacingLg),
               FilledButton.icon(
                 onPressed: () {
                   Navigator.of(context).push(MaterialPageRoute<void>(
@@ -664,12 +665,12 @@ class _NoAssessoriaBodyState extends State<_NoAssessoriaBody> {
             ] else ...[
               Icon(Icons.groups_outlined,
                   size: 72, color: theme.colorScheme.outline),
-              const SizedBox(height: 20),
+              const SizedBox(height: DesignTokens.spacingLg),
               Text('Sem assessoria',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   )),
-              const SizedBox(height: 8),
+              const SizedBox(height: DesignTokens.spacingSm),
               Text(
                 'Você ainda não está em nenhuma assessoria.\n'
                 'Busque pelo nome, QR ou aceite um convite.',
@@ -677,7 +678,7 @@ class _NoAssessoriaBodyState extends State<_NoAssessoriaBody> {
                 style: theme.textTheme.bodyMedium
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: DesignTokens.spacingLg),
               FilledButton.icon(
                 onPressed: () {
                   Navigator.of(context).push(MaterialPageRoute<void>(
