@@ -16,22 +16,22 @@ export function KpiCard({
   alert = false,
 }: KpiCardProps) {
   const borderClass = alert
-    ? "border-red-200 bg-red-50"
-    : "border-gray-200 bg-white";
+    ? "border-error/30 bg-error-soft"
+    : "border-border bg-surface";
 
   return (
-    <div className={`rounded-xl border p-5 ${borderClass}`}>
+    <div className={`rounded-xl border p-5 shadow-sm transition-colors ${borderClass}`}>
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-gray-500">{label}</p>
-        {icon && <span className="text-gray-400">{icon}</span>}
+        <p className="text-sm font-medium text-content-muted">{label}</p>
+        {icon && <span className="text-content-muted">{icon}</span>}
       </div>
-      <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
+      <p className="mt-2 text-3xl font-bold text-content-primary">{value}</p>
       {trend != null && (
         <div className="mt-2 flex items-center gap-1">
           {trend > 0 ? (
             <svg
               aria-hidden="true"
-              className="h-4 w-4 text-green-600"
+              className="h-4 w-4 text-success"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={2}
@@ -46,7 +46,7 @@ export function KpiCard({
           ) : trend < 0 ? (
             <svg
               aria-hidden="true"
-              className="h-4 w-4 text-red-600"
+              className="h-4 w-4 text-error"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={2}
@@ -62,17 +62,17 @@ export function KpiCard({
           <span
             className={`text-xs font-medium ${
               trend > 0
-                ? "text-green-600"
+                ? "text-success"
                 : trend < 0
-                  ? "text-red-600"
-                  : "text-gray-500"
+                  ? "text-error"
+                  : "text-content-muted"
             }`}
           >
             {trend > 0 ? "+" : ""}
             {trend}%
           </span>
           {trendLabel && (
-            <span className="text-xs text-gray-400">{trendLabel}</span>
+            <span className="text-xs text-content-muted">{trendLabel}</span>
           )}
         </div>
       )}

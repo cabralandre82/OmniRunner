@@ -111,7 +111,7 @@ export function GatewaySelector({ currentGateway }: GatewaySelectorProps) {
               className={`relative rounded-xl border-2 p-5 text-left transition-all ${
                 isSelected
                   ? `${gw.selectedBorder} ${gw.selectedBg} shadow-md`
-                  : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+                  : "border-border bg-surface hover:border-border hover:shadow-sm"
               }`}
             >
               {isSelected && (
@@ -122,18 +122,18 @@ export function GatewaySelector({ currentGateway }: GatewaySelectorProps) {
                 </span>
               )}
 
-              <h3 className={`text-lg font-bold ${isSelected ? gw.color : "text-gray-900"}`}>
+              <h3 className={`text-lg font-bold ${isSelected ? gw.color : "text-content-primary"}`}>
                 {gw.name}
               </h3>
-              <p className="mt-0.5 text-xs text-gray-500">{gw.tagline}</p>
+              <p className="mt-0.5 text-xs text-content-secondary">{gw.tagline}</p>
 
               <div className="mt-4 space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-green-700">
+                <p className="text-xs font-semibold uppercase tracking-wide text-success">
                   Vantagens
                 </p>
                 <ul className="space-y-1">
                   {gw.pros.map((pro, i) => (
-                    <li key={i} className="flex items-start gap-1.5 text-xs text-gray-700">
+                    <li key={i} className="flex items-start gap-1.5 text-xs text-content-secondary">
                       <span className="mt-0.5 text-green-500 shrink-0">+</span>
                       {pro}
                     </li>
@@ -147,7 +147,7 @@ export function GatewaySelector({ currentGateway }: GatewaySelectorProps) {
                 </p>
                 <ul className="space-y-1">
                   {gw.cons.map((con, i) => (
-                    <li key={i} className="flex items-start gap-1.5 text-xs text-gray-500">
+                    <li key={i} className="flex items-start gap-1.5 text-xs text-content-secondary">
                       <span className="mt-0.5 text-amber-500 shrink-0">-</span>
                       {con}
                     </li>
@@ -164,21 +164,21 @@ export function GatewaySelector({ currentGateway }: GatewaySelectorProps) {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+            className="rounded-lg bg-brand px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 disabled:opacity-50"
           >
             {saving ? "Salvando..." : "Salvar Preferência"}
           </button>
           <button
             onClick={() => { setSelected(currentGateway); setError(null); }}
-            className="text-sm text-gray-500 hover:text-gray-700"
+            className="text-sm text-content-secondary hover:text-content-secondary"
           >
             Cancelar
           </button>
         </div>
       )}
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {success && <p className="text-sm text-green-600">Preferência salva com sucesso!</p>}
+      {error && <p className="text-sm text-error">{error}</p>}
+      {success && <p className="text-sm text-success">Preferência salva com sucesso!</p>}
     </div>
   );
 }

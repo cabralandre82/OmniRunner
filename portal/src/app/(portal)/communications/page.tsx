@@ -168,8 +168,8 @@ export default async function CommunicationsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Comunicação</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">Comunicação</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Visão geral dos avisos e taxas de leitura
         </p>
       </div>
@@ -182,7 +182,7 @@ export default async function CommunicationsPage({
         <KpiCard
           label="Taxa média de leitura (%)"
           value={formatPercent(avgReadRate)}
-          color="text-blue-700"
+          color="text-brand"
         />
         <KpiCard
           label="Avisos fixados"
@@ -192,63 +192,63 @@ export default async function CommunicationsPage({
         <KpiCard
           label="Avisos últimos 7 dias"
           value={thisWeekCount}
-          color="text-green-700"
+          color="text-success"
         />
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-          <h2 className="text-sm font-semibold text-gray-900">
+      <div className="rounded-xl border border-border bg-surface shadow-sm">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h2 className="text-sm font-semibold text-content-primary">
             Avisos recentes
           </h2>
           <Link
             href="/announcements"
-            className="rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800"
+            className="rounded-lg bg-surface-elevated px-3 py-1.5 text-sm font-medium text-white hover:bg-bg-secondary"
           >
             Ver todos
           </Link>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-bg-secondary">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">
                   Título
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">
                   Autor
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">
                   Data
                 </th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">
                   Fixado
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">
                   Leituras
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">
                   Taxa (%)
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border-subtle">
               {announcements.map((a) => {
                 const rate = readRate(a.read_count, a.total_members);
                 return (
-                  <tr key={a.id} className="hover:bg-gray-50">
+                  <tr key={a.id} className="hover:bg-surface-elevated">
                     <td className="whitespace-nowrap px-4 py-3">
                       <Link
                         href={`/announcements/${a.id}`}
-                        className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                        className="font-medium text-brand hover:text-brand hover:underline"
                       >
                         {a.title}
                       </Link>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                    <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                       {a.display_name ?? "—"}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                    <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                       {formatDateISO(a.created_at)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-center">
@@ -260,10 +260,10 @@ export default async function CommunicationsPage({
                         "—"
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                    <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                       {a.read_count}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                    <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                       {formatPercent(rate)}
                     </td>
                   </tr>
@@ -273,20 +273,20 @@ export default async function CommunicationsPage({
           </table>
         </div>
         {announcements.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-gray-500">
+          <div className="px-4 py-8 text-center text-sm text-content-secondary">
             Nenhum aviso ainda.
           </div>
         )}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-gray-200 px-4 py-3">
-            <p className="text-xs text-gray-500">
+          <div className="flex items-center justify-between border-t border-border px-4 py-3">
+            <p className="text-xs text-content-secondary">
               Página {page} de {totalPages}
             </p>
             <div className="flex gap-2">
               {page > 1 && (
                 <Link
                   href={`/communications?page=${page - 1}`}
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-content-secondary hover:bg-surface-elevated"
                 >
                   Anterior
                 </Link>
@@ -294,7 +294,7 @@ export default async function CommunicationsPage({
               {page < totalPages && (
                 <Link
                   href={`/communications?page=${page + 1}`}
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-content-secondary hover:bg-surface-elevated"
                 >
                   Próxima
                 </Link>
@@ -310,15 +310,15 @@ export default async function CommunicationsPage({
 function KpiCard({
   label,
   value,
-  color = "text-gray-900",
+  color = "text-content-primary",
 }: {
   label: string;
   value: number | string;
   color?: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+      <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">
         {label}
       </p>
       <p className={`mt-1 text-xl font-bold ${color}`}>{value}</p>

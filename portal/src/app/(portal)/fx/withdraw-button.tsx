@@ -72,8 +72,8 @@ export function WithdrawButton({ available }: { available: number }) {
 
   if (success) {
     return (
-      <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-        <p className="font-medium text-green-800">Retirada processada com sucesso!</p>
+      <div className="rounded-lg border border-success/30 bg-success-soft p-4">
+        <p className="font-medium text-success">Retirada processada com sucesso!</p>
       </div>
     );
   }
@@ -81,7 +81,7 @@ export function WithdrawButton({ available }: { available: number }) {
   return (
     <form onSubmit={handleSubmit} className="flex items-end gap-3">
       <div>
-        <label className="block text-xs font-medium text-gray-500">Valor (USD)</label>
+        <label className="block text-xs font-medium text-content-secondary">Valor (USD)</label>
         <input
           type="number"
           step="0.01"
@@ -89,28 +89,28 @@ export function WithdrawButton({ available }: { available: number }) {
           max={available}
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          className="mt-1 w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="mt-1 w-28 rounded-lg border border-border px-3 py-2 text-sm"
           placeholder="100.00"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-500">Cotacao ({currency}/USD)</label>
+        <label className="block text-xs font-medium text-content-secondary">Cotacao ({currency}/USD)</label>
         <input
           type="number"
           step="0.0001"
           min="0.01"
           value={fxRate}
           onChange={(e) => setFxRate(e.target.value)}
-          className="mt-1 w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="mt-1 w-28 rounded-lg border border-border px-3 py-2 text-sm"
           placeholder="5.2500"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-500">Moeda</label>
+        <label className="block text-xs font-medium text-content-secondary">Moeda</label>
         <select
           value={currency}
           onChange={(e) => setCurrency(e.target.value)}
-          className="mt-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="mt-1 rounded-lg border border-border px-3 py-2 text-sm"
         >
           <option value="BRL">BRL</option>
           <option value="EUR">EUR</option>
@@ -127,11 +127,11 @@ export function WithdrawButton({ available }: { available: number }) {
       <button
         type="button"
         onClick={() => setOpen(false)}
-        className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+        className="rounded-lg border border-border px-3 py-2 text-sm text-content-secondary hover:bg-surface-elevated"
       >
         Cancelar
       </button>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-error">{error}</p>}
     </form>
   );
 }

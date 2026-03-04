@@ -59,7 +59,7 @@ export function DistributeButton({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100"
+        className="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-brand hover:bg-indigo-100"
       >
         {ta("distribute")}
       </button>
@@ -75,13 +75,13 @@ export function DistributeButton({
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
         placeholder="Qtd"
-        className="w-20 rounded-lg border border-gray-300 px-2 py-1 text-xs focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        className="w-20 rounded-lg border border-border px-2 py-1 text-xs focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         disabled={loading}
       />
       <button
         onClick={handleSubmit}
         disabled={loading}
-        className="rounded-lg bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+        className="rounded-lg bg-brand px-2.5 py-1 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
       >
         {loading ? "..." : tc("confirm")}
       </button>
@@ -90,17 +90,17 @@ export function DistributeButton({
           setOpen(false);
           setResult(null);
         }}
-        className="text-xs text-gray-400 hover:text-gray-600"
+        className="text-xs text-content-muted hover:text-content-secondary"
       >
         {tc("cancel")}
       </button>
       {result?.ok && (
-        <span className="text-xs font-medium text-green-600">
+        <span className="text-xs font-medium text-success">
           {amount} OmniCoins enviadas para {athleteName}
         </span>
       )}
       {result?.error && (
-        <span className="text-xs font-medium text-red-600">{result.error}</span>
+        <span className="text-xs font-medium text-error">{result.error}</span>
       )}
     </div>
   );

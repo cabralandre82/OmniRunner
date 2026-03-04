@@ -175,15 +175,15 @@ export default async function AttendanceAnalyticsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-content-primary">
           Análise de Presença
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-content-secondary">
           Métricas e tendências de presença nos treinos
         </p>
       </div>
 
-      <Suspense fallback={<div className="h-14 animate-pulse rounded-lg border border-gray-200 bg-gray-50" />}>
+      <Suspense fallback={<div className="h-14 animate-pulse rounded-lg border border-border bg-bg-secondary" />}>
         <AttendanceAnalyticsFilters />
       </Suspense>
 
@@ -191,65 +191,65 @@ export default async function AttendanceAnalyticsPage({
         <KpiCard
           label="Taxa média de presença"
           value={formatPercent(avgRate)}
-          color="text-blue-700"
+          color="text-brand"
         />
         <KpiCard label="Total de treinos no período" value={sessions.length} />
-        <KpiCard label="Total de check-ins" value={totalCheckIns} color="text-green-700" />
+        <KpiCard label="Total de check-ins" value={totalCheckIns} color="text-success" />
         <KpiCard
           label="Treinos com presença < 50%"
           value={lowCount}
-          color={lowCount > 0 ? "text-amber-700" : "text-gray-900"}
+          color={lowCount > 0 ? "text-amber-700" : "text-content-primary"}
         />
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="border-b border-gray-200 px-4 py-3">
-          <h2 className="text-sm font-semibold text-gray-900">
+      <div className="rounded-xl border border-border bg-surface shadow-sm">
+        <div className="border-b border-border px-4 py-3">
+          <h2 className="text-sm font-semibold text-content-primary">
             Treinos com Baixa Presença
           </h2>
-          <p className="mt-0.5 text-xs text-gray-500">
+          <p className="mt-0.5 text-xs text-content-secondary">
             Sessões com taxa de presença inferior a 50%
           </p>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-bg-secondary">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">
                   Título
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">
                   Data
                 </th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">
                   Presentes
                 </th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">
                   Total Atletas
                 </th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">
                   Taxa (%)
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border-subtle">
               {lowAttendance.map((session) => (
                 <tr key={session.id}>
                   <td className="whitespace-nowrap px-4 py-3">
                     <Link
                       href={`/attendance/${session.id}`}
-                      className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                      className="font-medium text-brand hover:text-brand hover:underline"
                     >
                       {session.title}
                     </Link>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                  <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                     {formatDateISO(session.starts_at)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-center font-medium text-gray-900">
+                  <td className="whitespace-nowrap px-4 py-3 text-center font-medium text-content-primary">
                     {session.presentes}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-center text-gray-600">
+                  <td className="whitespace-nowrap px-4 py-3 text-center text-content-secondary">
                     {session.totalAthletes}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-center font-medium text-amber-700">
@@ -261,51 +261,51 @@ export default async function AttendanceAnalyticsPage({
           </table>
         </div>
         {lowAttendance.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-gray-500">
+          <div className="px-4 py-8 text-center text-sm text-content-secondary">
             Nenhum treino com presença inferior a 50% no período.
           </div>
         )}
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="border-b border-gray-200 px-4 py-3">
-          <h2 className="text-sm font-semibold text-gray-900">
+      <div className="rounded-xl border border-border bg-surface shadow-sm">
+        <div className="border-b border-border px-4 py-3">
+          <h2 className="text-sm font-semibold text-content-primary">
             Presença por Atleta
           </h2>
-          <p className="mt-0.5 text-xs text-gray-500">
+          <p className="mt-0.5 text-xs text-content-secondary">
             Número de treinos presentes e taxa por atleta
           </p>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-bg-secondary">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">
                   Atleta
                 </th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">
                   Check-ins
                 </th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">
                   Taxa (%)
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border-subtle">
               {athleteList.map((a) => (
                 <tr key={a.userId}>
                   <td className="whitespace-nowrap px-4 py-3">
                     <Link
                       href={`/crm/${a.userId}`}
-                      className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                      className="font-medium text-brand hover:text-brand hover:underline"
                     >
                       {a.display_name}
                     </Link>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-center font-medium text-gray-900">
+                  <td className="whitespace-nowrap px-4 py-3 text-center font-medium text-content-primary">
                     {a.count}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-center font-medium text-gray-900">
+                  <td className="whitespace-nowrap px-4 py-3 text-center font-medium text-content-primary">
                     {formatPercent(a.rate)}
                   </td>
                 </tr>
@@ -314,7 +314,7 @@ export default async function AttendanceAnalyticsPage({
           </table>
         </div>
         {athleteList.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-gray-500">
+          <div className="px-4 py-8 text-center text-sm text-content-secondary">
             Nenhum atleta no grupo.
           </div>
         )}
@@ -326,15 +326,15 @@ export default async function AttendanceAnalyticsPage({
 function KpiCard({
   label,
   value,
-  color = "text-gray-900",
+  color = "text-content-primary",
 }: {
   label: string;
   value: number | string;
   color?: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+      <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">
         {label}
       </p>
       <p className={`mt-1 text-xl font-bold ${color}`}>{value}</p>

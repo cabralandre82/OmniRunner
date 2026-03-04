@@ -45,8 +45,8 @@ export default async function SwapPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Swap de Lastro</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-content-primary">Swap de Lastro</h1>
+          <p className="mt-1 text-sm text-content-secondary">
             Mercado B2B de liquidez entre assessorias &mdash; Taxa: {feeRate}%
           </p>
         </div>
@@ -55,58 +55,58 @@ export default async function SwapPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Disponivel para Swap</p>
-          <p className={`mt-1 text-2xl font-bold ${available > 0 ? "text-green-600" : "text-red-600"}`}>{formatUsd(available)}</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Disponivel para Swap</p>
+          <p className={`mt-1 text-2xl font-bold ${available > 0 ? "text-success" : "text-error"}`}>{formatUsd(available)}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Volume 7d / 30d</p>
-          <p className="mt-1 text-lg font-bold text-gray-900">{formatUsd(vol7d)} / {formatUsd(vol30d)}</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Volume 7d / 30d</p>
+          <p className="mt-1 text-lg font-bold text-content-primary">{formatUsd(vol7d)} / {formatUsd(vol30d)}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Taxas Pagas</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Taxas Pagas</p>
           <p className="mt-1 text-2xl font-bold text-orange-600">{formatUsd(feesPaid)}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Ofertas Abertas</p>
-          <p className="mt-1 text-2xl font-bold text-blue-600">{openCount}</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Ofertas Abertas</p>
+          <p className="mt-1 text-2xl font-bold text-brand">{openCount}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Melhor Oferta</p>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{bestOffer > 0 ? formatUsd(bestOffer) : "-"}</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Melhor Oferta</p>
+          <p className="mt-1 text-2xl font-bold text-content-primary">{bestOffer > 0 ? formatUsd(bestOffer) : "-"}</p>
         </div>
       </div>
 
       {/* Open offers */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="border-b border-gray-200 px-6 py-4">
-          <h2 className="text-lg font-semibold text-gray-900">Ofertas Disponiveis</h2>
+      <div className="rounded-xl border border-border bg-surface shadow-sm">
+        <div className="border-b border-border px-6 py-4">
+          <h2 className="text-lg font-semibold text-content-primary">Ofertas Disponiveis</h2>
         </div>
         {openOffers.length === 0 ? (
-          <div className="px-6 py-8 text-center text-gray-500">Nenhuma oferta disponivel.</div>
+          <div className="px-6 py-8 text-center text-content-secondary">Nenhuma oferta disponivel.</div>
         ) : (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-bg-secondary">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Vendedor</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">Valor</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">Taxa ({feeRate}%)</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">Voce Recebe</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Data</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">Acao</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-content-secondary">Vendedor</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-content-secondary">Valor</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-content-secondary">Taxa ({feeRate}%)</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-content-secondary">Voce Recebe</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-content-secondary">Data</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-content-secondary">Acao</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-border">
               {openOffers.map((o) => {
                 const fee = o.fee_amount_usd ?? 0;
                 const net = (o.amount_usd ?? 0) - fee;
                 return (
                   <tr key={o.id}>
-                    <td className="px-6 py-4 text-sm text-gray-900">{groupMap[o.seller_group_id] ?? (o.seller_group_id as string).slice(0, 8)}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium text-gray-900">{formatUsd(o.amount_usd as number)}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-500">{formatUsd(fee)}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-bold text-green-700">{formatUsd(net)}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-content-primary">{groupMap[o.seller_group_id] ?? (o.seller_group_id as string).slice(0, 8)}</td>
+                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium text-content-primary">{formatUsd(o.amount_usd as number)}</td>
+                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm text-content-secondary">{formatUsd(fee)}</td>
+                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-bold text-success">{formatUsd(net)}</td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-content-secondary">
                       {new Date(o.created_at as string).toLocaleDateString("pt-BR")}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-right">

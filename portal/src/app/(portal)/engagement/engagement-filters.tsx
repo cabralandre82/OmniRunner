@@ -20,8 +20,8 @@ export function EngagementFilters() {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <span className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface p-4 shadow-sm">
+      <span className="text-xs font-medium uppercase tracking-wide text-content-secondary">
         Período
       </span>
       <div className="flex gap-1">
@@ -32,8 +32,8 @@ export function EngagementFilters() {
             onClick={() => handlePeriod(value)}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
               current === value
-                ? "bg-gray-900 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-brand text-white"
+                : "bg-surface-elevated text-content-secondary hover:bg-bg-secondary"
             }`}
           >
             {label}

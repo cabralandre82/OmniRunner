@@ -77,8 +77,8 @@ export function LeagueAdmin({
         <div
           className={`rounded-lg px-4 py-3 text-sm ${
             message.startsWith("Erro")
-              ? "bg-red-50 text-red-700"
-              : "bg-green-50 text-green-700"
+              ? "bg-error-soft text-error"
+              : "bg-success-soft text-success"
           }`}
         >
           {message}
@@ -86,9 +86,9 @@ export function LeagueAdmin({
       )}
 
       {/* Active season card */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
+      <div className="rounded-xl border border-border bg-surface p-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-content-primary">
             Temporada Ativa
           </h2>
           <div className="flex gap-2">
@@ -97,7 +97,7 @@ export function LeagueAdmin({
                 <button
                   onClick={() => apiCall({ action: "trigger_snapshot" })}
                   disabled={loading}
-                  className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white hover:brightness-110 disabled:opacity-50"
                 >
                   Gerar Snapshot Agora
                 </button>
@@ -109,7 +109,7 @@ export function LeagueAdmin({
                     })
                   }
                   disabled={loading}
-                  className="rounded-lg bg-gray-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+                  className="rounded-lg bg-surface-elevated px-3 py-1.5 text-xs font-medium text-content-primary hover:bg-bg-secondary disabled:opacity-50"
                 >
                   Encerrar
                 </button>
@@ -162,7 +162,7 @@ export function LeagueAdmin({
             />
           </div>
         ) : (
-          <p className="mt-4 text-sm text-gray-400">
+          <p className="mt-4 text-sm text-content-muted">
             Nenhuma temporada ativa. Crie ou ative uma temporada abaixo.
           </p>
         )}
@@ -170,13 +170,13 @@ export function LeagueAdmin({
 
       {/* Ranking */}
       {snapshots.length > 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <h2 className="text-lg font-semibold text-content-primary mb-4">
             Ranking — {snapshots[0].week_key as string}
           </h2>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+              <tr className="border-b border-border-subtle text-left text-xs text-content-secondary">
                 <th className="pb-2 pr-4">#</th>
                 <th className="pb-2 pr-4">Assessoria</th>
                 <th className="pb-2 pr-4">Local</th>
@@ -200,7 +200,7 @@ export function LeagueAdmin({
                 return (
                   <tr
                     key={i}
-                    className="border-b border-gray-50 hover:bg-gray-50"
+                    className="border-b border-border-subtle hover:bg-surface-elevated"
                   >
                     <td className="py-2.5 pr-4 font-semibold">
                       {rank <= 3
@@ -218,18 +218,18 @@ export function LeagueAdmin({
                         </span>
                       )}
                     </td>
-                    <td className="py-2.5 pr-4 font-medium text-gray-900">
+                    <td className="py-2.5 pr-4 font-medium text-content-primary">
                       {s.group_name as string}
                     </td>
-                    <td className="py-2.5 pr-4 text-gray-500">
+                    <td className="py-2.5 pr-4 text-content-secondary">
                       {[s.city, s.state]
                         .filter((v) => v && v !== "")
                         .join(", ") || "—"}
                     </td>
-                    <td className="py-2.5 pr-4 text-right font-semibold text-blue-600">
+                    <td className="py-2.5 pr-4 text-right font-semibold text-brand">
                       {(s.cumulative_score as number).toFixed(0)}
                     </td>
-                    <td className="py-2.5 pr-4 text-right text-gray-500">
+                    <td className="py-2.5 pr-4 text-right text-content-secondary">
                       {(s.week_score as number).toFixed(1)}
                     </td>
                     <td className="py-2.5 pr-4 text-right">
@@ -250,9 +250,9 @@ export function LeagueAdmin({
       )}
 
       {/* All seasons */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
+      <div className="rounded-xl border border-border bg-surface p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-content-primary">
             Todas as Temporadas
           </h2>
           <button
@@ -264,9 +264,9 @@ export function LeagueAdmin({
         </div>
 
         {showCreate && (
-          <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
+          <div className="mb-6 rounded-lg border border-border bg-bg-secondary p-4 space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-content-secondary mb-1">
                 Nome
               </label>
               <input
@@ -274,30 +274,30 @@ export function LeagueAdmin({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Liga Q1 2026"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+                <label className="block text-xs font-medium text-content-secondary mb-1">
                   Início
                 </label>
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+                <label className="block text-xs font-medium text-content-secondary mb-1">
                   Fim
                 </label>
                 <input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                 />
               </div>
             </div>
@@ -311,7 +311,7 @@ export function LeagueAdmin({
               </button>
               <button
                 onClick={() => setShowCreate(false)}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-content-secondary hover:bg-bg-secondary"
               >
                 Cancelar
               </button>
@@ -320,11 +320,11 @@ export function LeagueAdmin({
         )}
 
         {seasons.length === 0 ? (
-          <p className="text-sm text-gray-400">Nenhuma temporada criada.</p>
+          <p className="text-sm text-content-muted">Nenhuma temporada criada.</p>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+              <tr className="border-b border-border-subtle text-left text-xs text-content-secondary">
                 <th className="pb-2 pr-4">Nome</th>
                 <th className="pb-2 pr-4">Início</th>
                 <th className="pb-2 pr-4">Fim</th>
@@ -336,17 +336,17 @@ export function LeagueAdmin({
               {seasons.map((s) => (
                 <tr
                   key={s.id as string}
-                  className="border-b border-gray-50 hover:bg-gray-50"
+                  className="border-b border-border-subtle hover:bg-surface-elevated"
                 >
-                  <td className="py-2.5 pr-4 font-medium text-gray-900">
+                  <td className="py-2.5 pr-4 font-medium text-content-primary">
                     {s.name as string}
                   </td>
-                  <td className="py-2.5 pr-4 text-gray-500">
+                  <td className="py-2.5 pr-4 text-content-secondary">
                     {new Date(s.start_at_ms as number).toLocaleDateString(
                       "pt-BR",
                     )}
                   </td>
-                  <td className="py-2.5 pr-4 text-gray-500">
+                  <td className="py-2.5 pr-4 text-content-secondary">
                     {new Date(s.end_at_ms as number).toLocaleDateString(
                       "pt-BR",
                     )}
@@ -364,7 +364,7 @@ export function LeagueAdmin({
                           })
                         }
                         disabled={loading}
-                        className="rounded bg-blue-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                        className="rounded bg-brand px-2.5 py-1 text-xs font-medium text-white hover:brightness-110 disabled:opacity-50"
                       >
                         Ativar
                       </button>
@@ -378,7 +378,7 @@ export function LeagueAdmin({
                           })
                         }
                         disabled={loading}
-                        className="rounded bg-gray-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+                        className="rounded bg-surface-elevated px-2.5 py-1 text-xs font-medium text-content-primary hover:bg-bg-secondary disabled:opacity-50"
                       >
                         Encerrar
                       </button>
@@ -397,17 +397,17 @@ export function LeagueAdmin({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="text-lg font-semibold text-gray-900">{value}</p>
+      <p className="text-xs text-content-secondary">{label}</p>
+      <p className="text-lg font-semibold text-content-primary">{value}</p>
     </div>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    upcoming: "bg-yellow-50 text-yellow-700",
-    active: "bg-green-50 text-green-700",
-    completed: "bg-gray-100 text-gray-500",
+    upcoming: "bg-warning-soft text-warning",
+    active: "bg-success-soft text-success",
+    completed: "bg-surface-elevated text-content-secondary",
   };
   const labels: Record<string, string> = {
     upcoming: "Programada",
@@ -418,7 +418,7 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span
       className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
-        styles[status] ?? "bg-gray-100 text-gray-500"
+        styles[status] ?? "bg-surface-elevated text-content-secondary"
       }`}
     >
       {labels[status] ?? status}

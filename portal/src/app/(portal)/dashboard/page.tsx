@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { formatKm } from "@/lib/format";
+import { StatBlock, DashboardCard } from "@/components/ui";
 import { DashboardCharts } from "./dashboard-charts";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -147,9 +148,9 @@ export default async function DashboardPage() {
   if (fetchError) {
     return (
       <div className="p-6">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
-          <h2 className="text-lg font-semibold text-red-800">Erro ao carregar dados</h2>
-          <p className="mt-2 text-sm text-red-600">Não foi possível conectar ao servidor. Tente recarregar a página.</p>
+        <div className="rounded-xl border border-error/30 bg-error-soft p-8 text-center">
+          <h2 className="text-lg font-semibold text-error">Erro ao carregar dados</h2>
+          <p className="mt-2 text-sm text-content-secondary">Não foi possível conectar ao servidor. Tente recarregar a página.</p>
         </div>
       </div>
     );
@@ -158,15 +159,14 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-500">Visão geral da assessoria</p>
+        <h1 className="text-2xl font-bold text-content-primary">Dashboard</h1>
+        <p className="mt-1 text-sm text-content-secondary">Visão geral da assessoria</p>
       </div>
 
-      {/* Credit alert */}
       {lowCredits && (
-        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+        <div className="flex items-start gap-3 rounded-xl border border-error/30 bg-error-soft p-4">
           <svg
-            className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600"
+            className="mt-0.5 h-5 w-5 flex-shrink-0 text-error"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={2}
@@ -179,16 +179,16 @@ export default async function DashboardPage() {
             />
           </svg>
           <div>
-            <p className="text-sm font-medium text-red-800">
+            <p className="text-sm font-medium text-error">
               Créditos baixos: {credits} restantes
             </p>
-            <p className="mt-1 text-xs text-red-700">
+            <p className="mt-1 text-xs text-content-secondary">
               Recarregue para continuar distribuindo OmniCoins aos atletas.
             </p>
             {role === "admin_master" && (
               <a
                 href="/credits"
-                className="mt-2 inline-block rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
+                className="mt-2 inline-block rounded-lg bg-error px-3 py-1.5 text-xs font-medium text-white hover:brightness-110 transition-all"
               >
                 Recarregar Agora
               </a>
@@ -197,28 +197,28 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* KPIs row 1 */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
+        <StatBlock
           label="Créditos Disponíveis"
           value={credits.toLocaleString("pt-BR")}
-          color={lowCredits ? "text-red-600" : "text-gray-900"}
+          alert={lowCredits}
+          accentClass={lowCredits ? "text-error" : undefined}
         />
-        <KpiCard label="Atletas" value={athleteCount.toLocaleString("pt-BR")} />
-        <KpiCard
+        <StatBlock label="Atletas" value={athleteCount.toLocaleString("pt-BR")} />
+        <StatBlock
           label="Verificados"
           value={verifiedCount.toLocaleString("pt-BR")}
-          color="text-green-700"
+          accentClass="text-success"
           detail={
             athleteCount > 0
               ? `${Math.round((verifiedCount / athleteCount) * 100)}% do total`
               : undefined
           }
         />
-        <KpiCard
+        <StatBlock
           label="Ativos (7d)"
           value={wau.toLocaleString("pt-BR")}
-          color="text-blue-700"
+          accentClass="text-info"
           detail={
             athleteCount > 0
               ? `${Math.round((wau / athleteCount) * 100)}% do total`
@@ -227,25 +227,24 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* KPIs row 2 — activity */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
+        <StatBlock
           label="Corridas (7d)"
           value={weekSessions.length.toLocaleString("pt-BR")}
           trend={sessionsTrend}
         />
-        <KpiCard
+        <StatBlock
           label="Km (7d)"
           value={formatKm(weekDistance)}
           trend={distanceTrend}
         />
-        <KpiCard
+        <StatBlock
           label="Desafios (30d)"
           value={challengeCount.toLocaleString("pt-BR")}
-          color="text-indigo-700"
+          accentClass="text-brand"
         />
         {role === "admin_master" && (
-          <KpiCard
+          <StatBlock
             label="Compras"
             value={purchasesFulfilled.toLocaleString("pt-BR")}
             detail={`${totalCreditsBought.toLocaleString("pt-BR")} créditos adquiridos`}
@@ -253,81 +252,34 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {/* Activity charts */}
       <DashboardCharts dailyBreakdown={dailyBreakdown} />
 
-      {/* Quick links */}
       {role === "admin_master" && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-gray-900">Acesso Rápido</h2>
-          <div className="mt-3 flex flex-wrap gap-2">
+        <DashboardCard title="Acesso Rápido">
+          <div className="flex flex-wrap gap-2">
             <a
               href="/credits"
-              className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+              className="rounded-lg bg-brand-soft px-3 py-1.5 text-xs font-medium text-brand hover:brightness-110 transition-all"
             >
               Comprar Créditos
             </a>
-            <a
-              href="/athletes"
-              className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
-            >
-              Ver Atletas
-            </a>
-            <a
-              href="/engagement"
-              className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
-            >
-              Engajamento
-            </a>
-            <a
-              href="/verification"
-              className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
-            >
-              Verificação
-            </a>
-            <a
-              href="/settings"
-              className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
-            >
-              Configurações
-            </a>
+            {[
+              { href: "/athletes", label: "Ver Atletas" },
+              { href: "/engagement", label: "Engajamento" },
+              { href: "/verification", label: "Verificação" },
+              { href: "/settings", label: "Configurações" },
+            ].map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="rounded-lg bg-surface-elevated px-3 py-1.5 text-xs font-medium text-content-secondary hover:text-content-primary hover:bg-bg-secondary transition-colors"
+              >
+                {link.label}
+              </a>
+            ))}
           </div>
-        </div>
+        </DashboardCard>
       )}
-    </div>
-  );
-}
-
-function KpiCard({
-  label,
-  value,
-  color = "text-gray-900",
-  detail,
-  trend,
-}: {
-  label: string;
-  value: string;
-  color?: string;
-  detail?: string;
-  trend?: number;
-}) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-        {label}
-      </p>
-      <div className="mt-2 flex items-baseline gap-2">
-        <p className={`text-2xl font-bold ${color}`}>{value}</p>
-        {trend !== undefined && trend !== 0 && (
-          <span
-            className={`text-xs font-semibold ${trend > 0 ? "text-green-600" : "text-red-500"}`}
-          >
-            {trend > 0 ? "+" : ""}
-            {trend}%
-          </span>
-        )}
-      </div>
-      {detail && <p className="mt-1 text-xs text-gray-400">{detail}</p>}
     </div>
   );
 }

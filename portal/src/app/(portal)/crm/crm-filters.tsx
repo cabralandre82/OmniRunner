@@ -46,17 +46,17 @@ export function CrmFilters({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+      className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm"
     >
       <div>
-        <label htmlFor="tag" className="block text-xs font-medium text-gray-500">
+        <label htmlFor="tag" className="block text-xs font-medium text-content-secondary">
           Tag
         </label>
         <select
           id="tag"
           name="tag"
           defaultValue={tagId ?? ""}
-          className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+          className="mt-1 block rounded-md border border-border px-2 py-1.5 text-sm"
         >
           <option value="">Todas</option>
           {tags.map((t) => (
@@ -67,14 +67,14 @@ export function CrmFilters({
         </select>
       </div>
       <div>
-        <label htmlFor="status" className="block text-xs font-medium text-gray-500">
+        <label htmlFor="status" className="block text-xs font-medium text-content-secondary">
           Status
         </label>
         <select
           id="status"
           name="status"
           defaultValue={status ?? ""}
-          className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+          className="mt-1 block rounded-md border border-border px-2 py-1.5 text-sm"
         >
           <option value="">Todos</option>
           <option value="active">Ativo</option>
@@ -85,7 +85,7 @@ export function CrmFilters({
         </select>
       </div>
       <div>
-        <label htmlFor="q" className="block text-xs font-medium text-gray-500">
+        <label htmlFor="q" className="block text-xs font-medium text-content-secondary">
           Buscar nome
         </label>
         <input
@@ -94,12 +94,12 @@ export function CrmFilters({
           type="text"
           defaultValue={search ?? ""}
           placeholder="Nome do atleta"
-          className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+          className="mt-1 block rounded-md border border-border px-2 py-1.5 text-sm"
         />
       </div>
       <button
         type="submit"
-        className="rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800"
+        className="rounded-lg bg-surface-elevated px-3 py-1.5 text-sm font-medium text-white hover:bg-bg-secondary"
       >
         Filtrar
       </button>

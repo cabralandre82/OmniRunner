@@ -69,28 +69,28 @@ export default async function CreditsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Créditos</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">Créditos</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Estoque atual e pacotes disponíveis para compra
         </p>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+      <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">
           Saldo Disponível
         </p>
-        <p className="mt-2 text-3xl font-bold text-gray-900">
+        <p className="mt-2 text-3xl font-bold text-content-primary">
           {balance.toLocaleString("pt-BR")}
         </p>
-        <p className="mt-1 text-xs text-gray-400">OmniCoins</p>
+        <p className="mt-1 text-xs text-content-muted">OmniCoins</p>
       </div>
 
       {isAdmin && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-content-primary">
             Pacotes de Créditos
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-content-secondary">
             Selecione um pacote para adquirir créditos via Pix, boleto ou cartão
           </p>
 
@@ -102,20 +102,20 @@ export default async function CreditsPage() {
               return (
                 <div
                   key={product.id}
-                  className="flex flex-col justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md"
+                  className="flex flex-col justify-between rounded-xl border border-border bg-surface p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md"
                 >
                   <div>
-                    <h3 className="text-base font-semibold text-gray-900">
+                    <h3 className="text-base font-semibold text-content-primary">
                       {product.name}
                     </h3>
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-content-secondary">
                       {product.description}
                     </p>
                     <div className="mt-4 space-y-1">
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-2xl font-bold text-content-primary">
                         {formatBRL(priceCents)}
                       </p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-content-muted">
                         {costPerCoin(priceCents, credits)} por OmniCoin
                       </p>
                     </div>
@@ -134,8 +134,8 @@ export default async function CreditsPage() {
       )}
 
       {!isAdmin && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <p className="text-sm text-gray-500">
+        <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
+          <p className="text-sm text-content-secondary">
             Apenas o administrador da assessoria pode adquirir novos pacotes de
             créditos. Entre em contato com o responsável.
           </p>

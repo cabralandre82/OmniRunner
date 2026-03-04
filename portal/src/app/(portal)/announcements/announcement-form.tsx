@@ -59,13 +59,13 @@ export function AnnouncementForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-lg border border-error/30 bg-error-soft p-4 text-sm text-error">
           {error}
         </div>
       )}
 
       <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="title" className="block text-sm font-medium text-content-secondary">
           Título
         </label>
         <input
@@ -73,7 +73,7 @@ export function AnnouncementForm({
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:ring-1 focus:ring-brand"
           placeholder="Título do aviso"
           required
           minLength={2}
@@ -82,7 +82,7 @@ export function AnnouncementForm({
       </div>
 
       <div>
-        <label htmlFor="body" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="body" className="block text-sm font-medium text-content-secondary">
           Conteúdo
         </label>
         <textarea
@@ -90,7 +90,7 @@ export function AnnouncementForm({
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={6}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:ring-1 focus:ring-brand"
           placeholder="Escreva o conteúdo do aviso..."
           required
         />
@@ -102,9 +102,9 @@ export function AnnouncementForm({
           type="checkbox"
           checked={pinned}
           onChange={(e) => setPinned(e.target.checked)}
-          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          className="h-4 w-4 rounded border-border text-brand focus:ring-brand"
         />
-        <label htmlFor="pinned" className="text-sm text-gray-700">
+        <label htmlFor="pinned" className="text-sm text-content-secondary">
           Fixar no topo do mural
         </label>
       </div>
@@ -113,14 +113,14 @@ export function AnnouncementForm({
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
         >
           {loading ? "Salvando..." : editId ? "Salvar alterações" : "Publicar aviso"}
         </button>
         <button
           type="button"
           onClick={() => onCancel ? onCancel() : router.back()}
-          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-content-secondary hover:bg-surface-elevated"
         >
           Cancelar
         </button>

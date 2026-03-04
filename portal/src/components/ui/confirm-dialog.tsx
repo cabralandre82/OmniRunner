@@ -40,8 +40,8 @@ export function ConfirmDialog({
 
   const confirmClass =
     variant === "danger"
-      ? "bg-red-600 text-white hover:bg-red-700"
-      : "bg-blue-600 text-white hover:bg-blue-700";
+      ? "bg-error text-white hover:brightness-110"
+      : "bg-brand text-white hover:brightness-110";
 
   return (
     <dialog
@@ -50,19 +50,19 @@ export function ConfirmDialog({
       role="alertdialog"
       aria-labelledby="confirm-dialog-title"
       aria-describedby={description ? "confirm-dialog-desc" : undefined}
-      className="w-full max-w-md rounded-xl bg-white p-0 shadow-xl backdrop:bg-black/30"
+      className="w-full max-w-md rounded-xl border border-border bg-surface p-0 shadow-lg backdrop:bg-overlay"
     >
       <div className="p-6">
-        <h2 id="confirm-dialog-title" className="text-lg font-semibold text-gray-900">{title}</h2>
+        <h2 id="confirm-dialog-title" className="text-lg font-semibold text-content-primary">{title}</h2>
         {description && (
-          <p id="confirm-dialog-desc" className="mt-2 text-sm text-gray-500">{description}</p>
+          <p id="confirm-dialog-desc" className="mt-2 text-sm text-content-secondary">{description}</p>
         )}
         <div className="mt-6 flex justify-end gap-3">
           <button
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-content-secondary hover:bg-surface-elevated disabled:opacity-50 transition-colors"
           >
             {resolvedCancelLabel}
           </button>
@@ -70,7 +70,7 @@ export function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className={`rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50 ${confirmClass}`}
+            className={`rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50 transition-all ${confirmClass}`}
           >
             {loading ? "..." : resolvedConfirmLabel}
           </button>

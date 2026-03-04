@@ -51,9 +51,9 @@ export function AttendanceAnalyticsFilters() {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
   return (
-    <div className="flex flex-wrap items-end gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+    <div className="flex flex-wrap items-end gap-4 rounded-lg border border-border bg-surface p-4 shadow-sm">
       <div className="flex items-center gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide text-gray-500">
+        <span className="text-xs font-medium uppercase tracking-wide text-content-secondary">
           Período
         </span>
         <div className="flex gap-1">
@@ -64,8 +64,8 @@ export function AttendanceAnalyticsFilters() {
               onClick={() => handlePeriod(value)}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 current === value && !showCustom
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  ? "bg-brand text-white"
+                  : "bg-surface-elevated text-content-secondary hover:bg-bg-secondary"
               }`}
             >
               {label}
@@ -76,8 +76,8 @@ export function AttendanceAnalyticsFilters() {
             onClick={() => handlePeriod("custom")}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
               showCustom || current === "custom"
-                ? "bg-gray-900 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-brand text-white"
+                : "bg-surface-elevated text-content-secondary hover:bg-bg-secondary"
             }`}
           >
             Personalizado
@@ -88,7 +88,7 @@ export function AttendanceAnalyticsFilters() {
       {showCustom && (
         <form onSubmit={handleCustomSubmit} className="flex items-end gap-3">
           <div>
-            <label htmlFor="att-from" className="block text-xs font-medium text-gray-500">
+            <label htmlFor="att-from" className="block text-xs font-medium text-content-secondary">
               De
             </label>
             <input
@@ -96,11 +96,11 @@ export function AttendanceAnalyticsFilters() {
               name="from"
               type="date"
               defaultValue={from || thirtyDaysAgo}
-              className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+              className="mt-1 block rounded-md border border-border px-2 py-1.5 text-sm"
             />
           </div>
           <div>
-            <label htmlFor="att-to" className="block text-xs font-medium text-gray-500">
+            <label htmlFor="att-to" className="block text-xs font-medium text-content-secondary">
               Até
             </label>
             <input
@@ -108,12 +108,12 @@ export function AttendanceAnalyticsFilters() {
               name="to"
               type="date"
               defaultValue={to || today}
-              className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+              className="mt-1 block rounded-md border border-border px-2 py-1.5 text-sm"
             />
           </div>
           <button
             type="submit"
-            className="rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800"
+            className="rounded-lg bg-surface-elevated px-3 py-1.5 text-sm font-medium text-white hover:bg-bg-secondary"
           >
             Filtrar
           </button>

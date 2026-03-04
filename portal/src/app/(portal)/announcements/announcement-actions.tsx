@@ -52,7 +52,7 @@ export function AnnouncementActions({
     <div className="flex items-center gap-2">
       <Link
         href={`/announcements/${id}`}
-        className="rounded border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+        className="rounded border border-border bg-surface px-2 py-1 text-xs font-medium text-content-secondary hover:bg-surface-elevated"
       >
         Ver
       </Link>
@@ -60,7 +60,7 @@ export function AnnouncementActions({
         <>
           <Link
             href={`/announcements/${id}/edit`}
-            className="rounded border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded border border-border bg-surface px-2 py-1 text-xs font-medium text-content-secondary hover:bg-surface-elevated"
           >
             Editar
           </Link>
@@ -68,7 +68,7 @@ export function AnnouncementActions({
             type="button"
             onClick={handleTogglePin}
             disabled={pinning}
-            className="rounded border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="rounded border border-border bg-surface px-2 py-1 text-xs font-medium text-content-secondary hover:bg-surface-elevated disabled:opacity-50"
           >
             {pinned ? "Desfixar" : "Fixar"}
           </button>
@@ -76,7 +76,7 @@ export function AnnouncementActions({
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+            className="rounded border border-error/30 bg-error-soft px-2 py-1 text-xs font-medium text-error hover:bg-error-soft disabled:opacity-50"
           >
             {deleting ? "Excluindo…" : "Excluir"}
           </button>

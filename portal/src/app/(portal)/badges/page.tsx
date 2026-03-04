@@ -49,57 +49,57 @@ export default async function BadgesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-content-primary">
           Badges de Campeonato
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-content-secondary">
           Gerencie seus créditos de badges para inscrição em campeonatos
         </p>
       </div>
 
       {/* KPIs */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">
             Disponíveis
           </p>
           <p
-            className={`mt-2 text-3xl font-bold ${available === 0 ? "text-red-600" : available <= 5 ? "text-orange-600" : "text-gray-900"}`}
+            className={`mt-2 text-3xl font-bold ${available === 0 ? "text-error" : available <= 5 ? "text-orange-600" : "text-content-primary"}`}
           >
             {available}
           </p>
-          <p className="mt-1 text-xs text-gray-400">badges para ativar</p>
+          <p className="mt-1 text-xs text-content-muted">badges para ativar</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">
             Comprados (total)
           </p>
-          <p className="mt-2 text-3xl font-bold text-gray-900">{purchased}</p>
-          <p className="mt-1 text-xs text-gray-400">desde o início</p>
+          <p className="mt-2 text-3xl font-bold text-content-primary">{purchased}</p>
+          <p className="mt-1 text-xs text-content-muted">desde o início</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">
             Ativados (total)
           </p>
-          <p className="mt-2 text-3xl font-bold text-gray-900">{activated}</p>
-          <p className="mt-1 text-xs text-gray-400">badges utilizados</p>
+          <p className="mt-2 text-3xl font-bold text-content-primary">{activated}</p>
+          <p className="mt-1 text-xs text-content-muted">badges utilizados</p>
         </div>
       </div>
 
       {/* Buy section */}
       {isAdmin && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-content-primary">
             Adquirir Badges
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-content-secondary">
             Selecione um pacote para comprar créditos de badges via Pix, boleto
             ou cartão
           </p>
 
           {products.length === 0 ? (
-            <div className="mt-4 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
-              <p className="text-sm text-gray-500">
+            <div className="mt-4 rounded-xl border border-dashed border-border bg-bg-secondary p-8 text-center">
+              <p className="text-sm text-content-secondary">
                 Nenhum pacote de badges disponível no momento. Entre em contato
                 com a plataforma.
               </p>
@@ -121,20 +121,20 @@ export default async function BadgesPage() {
                 return (
                   <div
                     key={product.id}
-                    className="flex flex-col justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-purple-200 hover:shadow-md"
+                    className="flex flex-col justify-between rounded-xl border border-border bg-surface p-5 shadow-sm transition hover:border-purple-200 hover:shadow-md"
                   >
                     <div>
-                      <h3 className="text-base font-semibold text-gray-900">
+                      <h3 className="text-base font-semibold text-content-primary">
                         {product.name}
                       </h3>
-                      <p className="mt-1 text-xs text-gray-500">
+                      <p className="mt-1 text-xs text-content-secondary">
                         {product.description}
                       </p>
                       <div className="mt-4 space-y-1">
-                        <p className="text-2xl font-bold text-gray-900">
+                        <p className="text-2xl font-bold text-content-primary">
                           {formatBRL(priceCents)}
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-content-muted">
                           {unitPrice} por badge
                         </p>
                       </div>
@@ -154,8 +154,8 @@ export default async function BadgesPage() {
       )}
 
       {!isAdmin && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <p className="text-sm text-gray-500">
+        <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
+          <p className="text-sm text-content-secondary">
             Apenas o administrador da assessoria pode adquirir novos badges.
             Entre em contato com o responsável.
           </p>

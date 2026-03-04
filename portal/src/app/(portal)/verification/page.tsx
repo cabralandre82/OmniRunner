@@ -19,11 +19,11 @@ interface AthleteRow {
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  VERIFIED: { label: "Verificado", color: "bg-green-100 text-green-800" },
-  CALIBRATING: { label: "Calibrando", color: "bg-blue-100 text-blue-800" },
-  MONITORED: { label: "Em Observação", color: "bg-yellow-100 text-yellow-800" },
-  DOWNGRADED: { label: "Rebaixado", color: "bg-red-100 text-red-800" },
-  UNVERIFIED: { label: "Não Verificado", color: "bg-gray-100 text-gray-600" },
+  VERIFIED: { label: "Verificado", color: "bg-success-soft text-success" },
+  CALIBRATING: { label: "Calibrando", color: "bg-info-soft text-info" },
+  MONITORED: { label: "Em Observação", color: "bg-warning-soft text-warning" },
+  DOWNGRADED: { label: "Rebaixado", color: "bg-error-soft text-error" },
+  UNVERIFIED: { label: "Não Verificado", color: "bg-surface-elevated text-content-secondary" },
 };
 
 const formatDate = formatDateISO;
@@ -107,10 +107,10 @@ export default async function VerificationPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-content-primary">
           Verificação de Atletas
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-content-secondary">
           Status de verificação dos atletas da assessoria. Somente leitura —
           o servidor decide automaticamente.
         </p>
@@ -119,17 +119,17 @@ export default async function VerificationPage() {
       {/* KPI cards */}
       <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <KpiCard label="Total" value={counts.total} />
-        <KpiCard label="Verificados" value={counts.verified} color="text-green-700" />
-        <KpiCard label="Calibrando" value={counts.calibrating} color="text-blue-700" />
-        <KpiCard label="Observação" value={counts.monitored} color="text-yellow-700" />
-        <KpiCard label="Rebaixados" value={counts.downgraded} color="text-red-700" />
-        <KpiCard label="Sem Status" value={counts.unverified} color="text-gray-500" />
+        <KpiCard label="Verificados" value={counts.verified} color="text-success" />
+        <KpiCard label="Calibrando" value={counts.calibrating} color="text-brand" />
+        <KpiCard label="Observação" value={counts.monitored} color="text-warning" />
+        <KpiCard label="Rebaixados" value={counts.downgraded} color="text-error" />
+        <KpiCard label="Sem Status" value={counts.unverified} color="text-content-secondary" />
       </div>
 
       {/* Info banner */}
-      <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
+      <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-brand-soft p-4">
         <svg
-          className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600"
+          className="mt-0.5 h-5 w-5 flex-shrink-0 text-brand"
           fill="none"
           viewBox="0 0 24 24"
           strokeWidth={2}
@@ -141,7 +141,7 @@ export default async function VerificationPage() {
             d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"
           />
         </svg>
-        <p className="text-sm text-blue-800">
+        <p className="text-sm text-info">
           A verificação é automática e baseada no histórico de corridas de cada
           atleta. Nenhum ajuste manual é possível. O botão &quot;Reavaliar&quot;
           apenas executa as mesmas regras novamente — não é um override.
@@ -150,52 +150,52 @@ export default async function VerificationPage() {
 
       {/* Athlete table */}
       {athletes.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
-          <p className="text-sm text-gray-500">
+        <div className="rounded-xl border border-border bg-surface p-8 text-center">
+          <p className="text-sm text-content-secondary">
             Nenhum atleta vinculado à assessoria.
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-border">
+              <thead className="bg-bg-secondary">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-content-secondary">
                     Atleta
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-content-secondary">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-content-secondary">
                     Trust
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-content-secondary">
                     Corridas
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-content-secondary">
                     Flags
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-content-secondary">
                     Última Avaliação
                   </th>
                   {canEval && (
-                    <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500">
+                    <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-content-secondary">
                       Ação
                     </th>
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border-subtle">
                 {athletes.map((a) => {
                   const s = STATUS_LABELS[a.verification_status] ?? STATUS_LABELS.UNVERIFIED;
                   return (
-                    <tr key={a.user_id} className="hover:bg-gray-50">
+                    <tr key={a.user_id} className="hover:bg-surface-elevated">
                       <td className="whitespace-nowrap px-4 py-3">
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-content-primary">
                           {a.display_name}
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-content-muted">
                           {a.user_id.slice(0, 8)}...
                         </p>
                       </td>
@@ -207,12 +207,12 @@ export default async function VerificationPage() {
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-center">
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-sm font-semibold text-content-primary">
                           {a.trust_score}
                         </span>
-                        <span className="text-xs text-gray-400">/100</span>
+                        <span className="text-xs text-content-muted">/100</span>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-gray-700">
+                      <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-content-secondary">
                         {a.calibration_valid_runs}
                       </td>
                       <td className="px-4 py-3">
@@ -221,22 +221,22 @@ export default async function VerificationPage() {
                             {a.verification_flags.slice(0, 3).map((f) => (
                               <span
                                 key={f}
-                                className="rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-700"
+                                className="rounded bg-error-soft px-1.5 py-0.5 text-[10px] font-medium text-error"
                               >
                                 {f}
                               </span>
                             ))}
                             {a.verification_flags.length > 3 && (
-                              <span className="text-[10px] text-gray-400">
+                              <span className="text-[10px] text-content-muted">
                                 +{a.verification_flags.length - 3}
                               </span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-xs text-gray-400">—</span>
+                          <span className="text-xs text-content-muted">—</span>
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-500">
+                      <td className="whitespace-nowrap px-4 py-3 text-xs text-content-secondary">
                         {formatDate(a.last_eval_at)}
                       </td>
                       {canEval && (
@@ -259,15 +259,15 @@ export default async function VerificationPage() {
 function KpiCard({
   label,
   value,
-  color = "text-gray-900",
+  color = "text-content-primary",
 }: {
   label: string;
   value: number;
   color?: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+      <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">
         {label}
       </p>
       <p className={`mt-1 text-xl font-bold ${color}`}>{value}</p>

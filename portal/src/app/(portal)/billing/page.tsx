@@ -7,10 +7,10 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  pending:   { label: "Pendente",   color: "bg-yellow-100 text-yellow-800" },
-  paid:      { label: "Pago",       color: "bg-blue-100 text-blue-800" },
-  fulfilled: { label: "Concluído",  color: "bg-green-100 text-green-800" },
-  cancelled: { label: "Cancelado",  color: "bg-gray-100 text-gray-500" },
+  pending:   { label: "Pendente",   color: "bg-warning-soft text-warning" },
+  paid:      { label: "Pago",       color: "bg-info-soft text-info" },
+  fulfilled: { label: "Concluído",  color: "bg-success-soft text-success" },
+  cancelled: { label: "Cancelado",  color: "bg-surface-elevated text-content-secondary" },
 };
 
 const METHOD_LABELS: Record<string, string> = {
@@ -86,14 +86,14 @@ export default async function BillingPage() {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Faturamento</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-content-primary">Faturamento</h1>
+          <p className="mt-1 text-sm text-content-secondary">
             Histórico de compras e recibos da assessoria
           </p>
         </div>
         <Link
           href="/credits"
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700"
+          className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:brightness-110"
         >
           Adquirir Créditos
         </Link>
@@ -101,18 +101,18 @@ export default async function BillingPage() {
 
       {/* Summary cards */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Total Compras</p>
-          <p className="mt-2 text-2xl font-bold text-gray-900">{count ?? 0}</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">Total Compras</p>
+          <p className="mt-2 text-2xl font-bold text-content-primary">{count ?? 0}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Total Pago</p>
-          <p className="mt-2 text-2xl font-bold text-gray-900">{formatBRL(totalPaid)}</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">Total Pago</p>
+          <p className="mt-2 text-2xl font-bold text-content-primary">{formatBRL(totalPaid)}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Créditos Adquiridos</p>
-          <p className="mt-2 text-2xl font-bold text-gray-900">{totalCredits.toLocaleString("pt-BR")}</p>
-          <p className="mt-1 text-xs text-gray-400">OmniCoins</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">Créditos Adquiridos</p>
+          <p className="mt-2 text-2xl font-bold text-content-primary">{totalCredits.toLocaleString("pt-BR")}</p>
+          <p className="mt-1 text-xs text-content-muted">OmniCoins</p>
         </div>
       </div>
 
@@ -120,7 +120,7 @@ export default async function BillingPage() {
       {Object.keys(summary).length > 0 && (
         <div className="flex flex-wrap gap-3">
           {Object.values(summary).map((s) => {
-            const cfg = STATUS_LABELS[s.status] ?? { label: s.status, color: "bg-gray-100 text-gray-600" };
+            const cfg = STATUS_LABELS[s.status] ?? { label: s.status, color: "bg-surface-elevated text-content-secondary" };
             return (
               <span
                 key={s.status}
@@ -135,46 +135,46 @@ export default async function BillingPage() {
 
       {/* Purchases table */}
       {rows.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-gray-500">Nenhuma compra registrada.</p>
+        <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
+          <p className="text-sm text-content-secondary">Nenhuma compra registrada.</p>
           <Link
             href="/credits"
-            className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
+            className="mt-3 inline-block text-sm font-medium text-brand hover:text-brand"
           >
             Adquirir créditos
           </Link>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-border text-sm">
+              <thead className="bg-bg-secondary">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Data</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Créditos</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Valor</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Método</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Status</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Recibo</th>
+                  <th className="px-4 py-3 text-left font-medium text-content-secondary">Data</th>
+                  <th className="px-4 py-3 text-left font-medium text-content-secondary">Créditos</th>
+                  <th className="px-4 py-3 text-left font-medium text-content-secondary">Valor</th>
+                  <th className="px-4 py-3 text-left font-medium text-content-secondary">Método</th>
+                  <th className="px-4 py-3 text-left font-medium text-content-secondary">Status</th>
+                  <th className="px-4 py-3 text-left font-medium text-content-secondary">Recibo</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border-subtle">
                 {rows.map((p) => {
-                  const cfg = STATUS_LABELS[p.status] ?? { label: p.status, color: "bg-gray-100 text-gray-600" };
+                  const cfg = STATUS_LABELS[p.status] ?? { label: p.status, color: "bg-surface-elevated text-content-secondary" };
                   const method = p.payment_method ? (METHOD_LABELS[p.payment_method] ?? p.payment_method) : "—";
 
                   return (
-                    <tr key={p.id} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-4 py-3 text-gray-700">
+                    <tr key={p.id} className="hover:bg-surface-elevated">
+                      <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                         {formatDate(p.created_at)}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-900">
+                      <td className="whitespace-nowrap px-4 py-3 font-medium text-content-primary">
                         {p.credits_amount.toLocaleString("pt-BR")}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-gray-700">
+                      <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                         {formatBRL(p.price_cents)}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                      <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                         {method}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
@@ -188,14 +188,14 @@ export default async function BillingPage() {
                             href={p.invoice_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-700 hover:underline"
+                            className="text-brand hover:text-brand hover:underline"
                           >
                             Ver recibo
                           </a>
                         ) : p.status === "pending" ? (
-                          <span className="text-gray-400">Aguardando</span>
+                          <span className="text-content-muted">Aguardando</span>
                         ) : (
-                          <span className="text-gray-400">—</span>
+                          <span className="text-content-muted">—</span>
                         )}
                       </td>
                     </tr>

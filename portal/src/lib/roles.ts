@@ -43,6 +43,6 @@ export function isAdmin(role: string): boolean {
 export const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   [ROLE.ADMIN_MASTER]: { label: "Admin", color: "bg-purple-100 text-purple-800" },
   [ROLE.COACH]: { label: "Coach", color: "bg-blue-100 text-blue-800" },
-  [ROLE.ASSISTANT]: { label: "Assistente", color: "bg-gray-100 text-gray-700" },
-  [ROLE.ATHLETE]: { label: "Atleta", color: "bg-green-100 text-green-700" },
+  [ROLE.ASSISTANT]: { label: "Assistente", color: "bg-surface-elevated text-content-secondary" },
+  [ROLE.ATHLETE]: { label: "Atleta", color: "bg-success-soft text-success" },
 };

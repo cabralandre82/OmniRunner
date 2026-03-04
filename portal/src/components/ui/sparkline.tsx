@@ -11,15 +11,11 @@ interface SparklineProps {
   label?: string;
 }
 
-/**
- * Minimal SVG sparkline chart — zero dependencies.
- * Renders a smooth area chart for KPI trend visualization.
- */
 export function Sparkline({
   data,
   width = 200,
   height = 50,
-  color = "#3b82f6",
+  color = "var(--primary)",
   fillOpacity = 0.15,
   strokeWidth = 2,
   className = "",
@@ -28,7 +24,7 @@ export function Sparkline({
   if (data.length < 2) {
     return (
       <svg width={width} height={height} className={className} role="img" aria-label={label}>
-        <text x={width / 2} y={height / 2} textAnchor="middle" className="fill-gray-300 text-xs">
+        <text x={width / 2} y={height / 2} textAnchor="middle" className="fill-content-muted text-xs">
           —
         </text>
       </svg>

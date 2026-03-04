@@ -38,7 +38,13 @@ const config: Config = {
         },
         overlay: "var(--overlay)",
 
-        // Backward compat: Tailwind default references
+        "success-soft": "var(--success-soft)",
+        "warning-soft": "var(--warning-soft)",
+        "error-soft": "var(--error-soft)",
+        "info-soft": "var(--info-soft)",
+        "neutral-soft": "var(--neutral-soft)",
+        skeleton: { DEFAULT: "var(--skeleton)", shimmer: "var(--skeleton-shimmer)" },
+
         background: "var(--bg-primary)",
         foreground: "var(--text-primary)",
       },

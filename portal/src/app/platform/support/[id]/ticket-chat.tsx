@@ -128,11 +128,11 @@ export function TicketChat({
   const isClosed = status === "closed";
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+    <div className="rounded-xl border border-border bg-surface shadow-sm">
       {/* Messages */}
       <div className="max-h-[60vh] overflow-y-auto p-4 space-y-3">
         {messages.length === 0 ? (
-          <p className="py-8 text-center text-sm text-gray-400">
+          <p className="py-8 text-center text-sm text-content-muted">
             Nenhuma mensagem.
           </p>
         ) : (
@@ -153,8 +153,8 @@ export function TicketChat({
                 <div
                   className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
                     isPlatform
-                      ? "rounded-br-md bg-blue-600 text-white"
-                      : "rounded-bl-md bg-gray-100 text-gray-900"
+                      ? "rounded-br-md bg-brand text-white"
+                      : "rounded-bl-md bg-surface-elevated text-content-primary"
                   }`}
                 >
                   <p className="text-xs font-semibold mb-0.5 opacity-70">
@@ -165,7 +165,7 @@ export function TicketChat({
                   </p>
                   <p
                     className={`mt-1 text-[10px] ${
-                      isPlatform ? "text-blue-200" : "text-gray-400"
+                      isPlatform ? "text-blue-200" : "text-content-muted"
                     }`}
                   >
                     {time}
@@ -179,14 +179,14 @@ export function TicketChat({
       </div>
 
       {/* Input / Actions */}
-      <div className="border-t border-gray-200 p-4">
+      <div className="border-t border-border p-4">
         {isClosed ? (
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">Chamado encerrado.</p>
+            <p className="text-sm text-content-secondary">Chamado encerrado.</p>
             <button
               onClick={handleReopen}
               disabled={reopening}
-              className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-200 disabled:opacity-50"
+              className="rounded-lg bg-surface-elevated px-3 py-1.5 text-xs font-medium text-content-secondary hover:bg-bg-secondary disabled:opacity-50"
             >
               {reopening ? "..." : "Reabrir"}
             </button>
@@ -199,7 +199,7 @@ export function TicketChat({
                 onChange={(e) => setBody(e.target.value)}
                 placeholder="Responder como plataforma..."
                 rows={2}
-                className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="flex-1 resize-none rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -212,14 +212,14 @@ export function TicketChat({
               <button
                 onClick={handleClose}
                 disabled={closing}
-                className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-200 disabled:opacity-50"
+                className="rounded-lg bg-surface-elevated px-3 py-1.5 text-xs font-medium text-content-secondary hover:bg-bg-secondary disabled:opacity-50"
               >
                 {closing ? "..." : "Fechar chamado"}
               </button>
               <button
                 onClick={handleSend}
                 disabled={sending || !body.trim()}
-                className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                className="rounded-lg bg-brand px-4 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
               >
                 {sending ? "Enviando..." : "Enviar"}
               </button>

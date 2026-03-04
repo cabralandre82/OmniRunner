@@ -38,7 +38,7 @@ export function AutoTopupForm({ currentSettings, products, hasStripePaymentMetho
 
   if (products.length === 0) {
     return (
-      <p className="mt-4 text-sm text-gray-500">
+      <p className="mt-4 text-sm text-content-secondary">
         Nenhum pacote de créditos disponível para configurar recarga automática.
       </p>
     );
@@ -113,10 +113,10 @@ export function AutoTopupForm({ currentSettings, products, hasStripePaymentMetho
       {/* Toggle */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-900">
+          <p className="text-sm font-medium text-content-primary">
             {enabled ? "Ativa" : "Desativada"}
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-content-secondary">
             {enabled
               ? hasStripePaymentMethod
                 ? "O sistema recarregará automaticamente quando os créditos estiverem baixos"
@@ -130,12 +130,12 @@ export function AutoTopupForm({ currentSettings, products, hasStripePaymentMetho
           aria-checked={enabled}
           onClick={handleToggle}
           disabled={loading}
-          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 ${
-            enabled ? "bg-blue-600" : "bg-gray-200"
+          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50 ${
+            enabled ? "bg-brand" : "bg-surface-elevated"
           }`}
         >
           <span
-            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface shadow ring-0 transition duration-200 ease-in-out ${
               enabled ? "translate-x-5" : "translate-x-0"
             }`}
           />
@@ -144,13 +144,13 @@ export function AutoTopupForm({ currentSettings, products, hasStripePaymentMetho
 
       {/* Config fields (shown when enabled or when initial setup) */}
       {(enabled || !currentSettings) && (
-        <div className="space-y-4 rounded-lg border border-gray-100 bg-gray-50 p-4">
+        <div className="space-y-4 rounded-lg border border-border-subtle bg-bg-secondary p-4">
           {/* Threshold */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-content-secondary">
               Limite mínimo de créditos
             </label>
-            <p className="text-xs text-gray-500 mb-1">
+            <p className="text-xs text-content-secondary mb-1">
               A recarga dispara quando o saldo cair abaixo deste valor (10–10.000)
             </p>
             <input
@@ -159,22 +159,22 @@ export function AutoTopupForm({ currentSettings, products, hasStripePaymentMetho
               max={10000}
               value={threshold}
               onChange={(e) => setThreshold(Number(e.target.value))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:w-40"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand sm:w-40"
             />
           </div>
 
           {/* Product */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-content-secondary">
               Pacote de recarga
             </label>
-            <p className="text-xs text-gray-500 mb-1">
+            <p className="text-xs text-content-secondary mb-1">
               O pacote que será comprado automaticamente
             </p>
             <select
               value={productId}
               onChange={(e) => setProductId(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
             >
               {products.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -186,10 +186,10 @@ export function AutoTopupForm({ currentSettings, products, hasStripePaymentMetho
 
           {/* Max per month */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-content-secondary">
               Máximo de recargas por mês
             </label>
-            <p className="text-xs text-gray-500 mb-1">
+            <p className="text-xs text-content-secondary mb-1">
               Limite de segurança: quantas vezes pode recarregar no mês (1–10)
             </p>
             <input
@@ -198,13 +198,13 @@ export function AutoTopupForm({ currentSettings, products, hasStripePaymentMetho
               max={10}
               value={maxPerMonth}
               onChange={(e) => setMaxPerMonth(Number(e.target.value))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:w-40"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand sm:w-40"
             />
           </div>
 
           {/* Summary */}
           {selectedProduct && enabled && (
-            <div className={`rounded-lg p-3 text-sm ${hasStripePaymentMethod ? "bg-blue-50 text-blue-800" : "bg-amber-50 text-amber-800"}`}>
+            <div className={`rounded-lg p-3 text-sm ${hasStripePaymentMethod ? "bg-brand-soft text-info" : "bg-amber-50 text-amber-800"}`}>
               Quando o saldo cair abaixo de{" "}
               <strong>{threshold.toLocaleString("pt-BR")}</strong> créditos:
               {hasStripePaymentMethod ? (
@@ -219,14 +219,14 @@ export function AutoTopupForm({ currentSettings, products, hasStripePaymentMetho
           <button
             onClick={handleSave}
             disabled={loading || !productId}
-            className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+            className="rounded-lg bg-brand px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
           >
             {loading ? "Salvando..." : "Salvar Configurações"}
           </button>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-error">{error}</p>}
           {success && (
-            <p className="text-sm text-green-600">Configurações salvas!</p>
+            <p className="text-sm text-success">Configurações salvas!</p>
           )}
         </div>
       )}

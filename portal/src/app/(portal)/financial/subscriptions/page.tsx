@@ -54,10 +54,10 @@ async function getSubscriptions(
 }
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  active: { label: "Ativo", cls: "bg-green-100 text-green-800" },
-  late: { label: "Inadimplente", cls: "bg-red-100 text-red-800" },
-  paused: { label: "Pausado", cls: "bg-yellow-100 text-yellow-800" },
-  cancelled: { label: "Cancelado", cls: "bg-gray-100 text-gray-600" },
+  active: { label: "Ativo", cls: "bg-success-soft text-success" },
+  late: { label: "Inadimplente", cls: "bg-error-soft text-error" },
+  paused: { label: "Pausado", cls: "bg-warning-soft text-warning" },
+  cancelled: { label: "Cancelado", cls: "bg-surface-elevated text-content-secondary" },
 };
 
 export default async function SubscriptionsPage({
@@ -84,22 +84,22 @@ export default async function SubscriptionsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Assinaturas</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-content-primary">Assinaturas</h1>
+          <p className="mt-1 text-sm text-content-secondary">
             Gerencie as assinaturas dos atletas
           </p>
         </div>
         <Link
           href="/financial"
-          className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+          className="text-sm text-brand hover:text-brand hover:underline"
         >
           ← Dashboard
         </Link>
       </div>
 
       {fetchError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-red-600">Erro ao carregar dados. Tente recarregar a página.</p>
+        <div className="rounded-lg border border-error/30 bg-error-soft p-6 text-center">
+          <p className="text-error">Erro ao carregar dados. Tente recarregar a página.</p>
         </div>
       )}
 
@@ -110,8 +110,8 @@ export default async function SubscriptionsPage({
             href={`/financial/subscriptions${s !== "all" ? `?status=${s}` : ""}`}
             className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
               statusFilter === s
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-brand text-white"
+                : "bg-surface-elevated text-content-secondary hover:bg-bg-secondary"
             }`}
           >
             {s === "all" ? "Todos" : (STATUS_BADGE[s]?.label ?? s)}
@@ -119,30 +119,30 @@ export default async function SubscriptionsPage({
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-bg-secondary">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Atleta</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Plano</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Status</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Próximo Vencimento</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Último Pagamento</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Atleta</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Plano</th>
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">Status</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Próximo Vencimento</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Último Pagamento</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border-subtle">
               {subscriptions.map((sub) => {
                 const badge = STATUS_BADGE[sub.status] ?? {
                   label: sub.status,
-                  cls: "bg-gray-100 text-gray-600",
+                  cls: "bg-surface-elevated text-content-secondary",
                 };
                 return (
-                  <tr key={sub.id} className="hover:bg-gray-50">
-                    <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-900">
+                  <tr key={sub.id} className="hover:bg-surface-elevated">
+                    <td className="whitespace-nowrap px-4 py-3 font-medium text-content-primary">
                       {sub.athlete_display_name}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                    <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                       {sub.plan_name}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-center">
@@ -152,10 +152,10 @@ export default async function SubscriptionsPage({
                         {badge.label}
                       </span>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                    <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                       {sub.next_due_date ? formatDateISO(sub.next_due_date) : "—"}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                    <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                       {sub.last_payment_at ? formatDateISO(sub.last_payment_at) : "—"}
                     </td>
                   </tr>
@@ -167,8 +167,8 @@ export default async function SubscriptionsPage({
       </div>
 
       {subscriptions.length === 0 && !fetchError && (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-gray-500">Nenhuma assinatura encontrada.</p>
+        <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
+          <p className="text-sm text-content-secondary">Nenhuma assinatura encontrada.</p>
         </div>
       )}
     </div>

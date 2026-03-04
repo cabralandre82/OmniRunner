@@ -5,7 +5,7 @@ interface SkeletonProps {
 export function Skeleton({ className = "" }: SkeletonProps) {
   return (
     <div
-      className={`animate-pulse rounded-md bg-gray-200 ${className}`}
+      className={`animate-shimmer rounded-md ${className}`}
       aria-hidden="true"
     />
   );
@@ -13,7 +13,7 @@ export function Skeleton({ className = "" }: SkeletonProps) {
 
 export function KpiCardSkeleton() {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5">
+    <div className="rounded-xl border border-border bg-surface p-5">
       <Skeleton className="h-4 w-24" />
       <Skeleton className="mt-3 h-8 w-20" />
       <Skeleton className="mt-3 h-3 w-16" />
@@ -46,7 +46,7 @@ export function PageSkeleton() {
         <KpiCardSkeleton />
         <KpiCardSkeleton />
       </div>
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
+      <div className="rounded-xl border border-border bg-surface p-6">
         <Skeleton className="h-5 w-32" />
         <div className="mt-4 space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (

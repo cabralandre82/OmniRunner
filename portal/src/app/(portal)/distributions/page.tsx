@@ -94,8 +94,8 @@ export default async function DistributionsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Distribuição de OmniCoins</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">Distribuição de OmniCoins</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Histórico completo de distribuições para atletas
         </p>
       </div>
@@ -108,24 +108,24 @@ export default async function DistributionsPage() {
       </div>
 
       {entries.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
+        <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-content-secondary">
           Nenhuma distribuição realizada ainda.
           <br />
-          Distribua OmniCoins pela página de <a href="/athletes" className="text-blue-600 hover:underline">Atletas</a>.
+          Distribua OmniCoins pela página de <a href="/athletes" className="text-brand hover:underline">Atletas</a>.
         </div>
       ) : (
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                <tr className="border-b bg-bg-secondary text-left text-xs font-medium uppercase tracking-wide text-content-secondary">
                   <th className="px-4 py-3">Data</th>
                   <th className="px-4 py-3">Atleta</th>
                   <th className="px-4 py-3 text-right">Quantidade</th>
                   <th className="px-4 py-3">Distribuído por</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border-subtle">
                 {entries.map((entry) => {
                   const date = new Date(entry.created_at);
                   const athleteName = profileMap.get(entry.user_id) ?? "Atleta";
@@ -133,27 +133,27 @@ export default async function DistributionsPage() {
                   const actorName = actorId ? (profileMap.get(actorId) ?? "Staff") : "—";
 
                   return (
-                    <tr key={entry.id} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-4 py-3 text-gray-700">
+                    <tr key={entry.id} className="hover:bg-surface-elevated">
+                      <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                         {date.toLocaleDateString("pt-BR", {
                           day: "2-digit",
                           month: "2-digit",
                           year: "numeric",
                         })}{" "}
-                        <span className="text-gray-400">
+                        <span className="text-content-muted">
                           {date.toLocaleTimeString("pt-BR", {
                             hour: "2-digit",
                             minute: "2-digit",
                           })}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-medium text-gray-900">
+                      <td className="px-4 py-3 font-medium text-content-primary">
                         {athleteName}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-emerald-600">
                         +{entry.delta_coins.toLocaleString("pt-BR")}
                       </td>
-                      <td className="px-4 py-3 text-gray-500">{actorName}</td>
+                      <td className="px-4 py-3 text-content-secondary">{actorName}</td>
                     </tr>
                   );
                 })}
@@ -168,10 +168,10 @@ export default async function DistributionsPage() {
 
 function KPI({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-gray-900">{value}</p>
-      <p className="mt-1 text-xs text-gray-400">{sub}</p>
+    <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+      <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">{label}</p>
+      <p className="mt-2 text-2xl font-bold text-content-primary">{value}</p>
+      <p className="mt-1 text-xs text-content-muted">{sub}</p>
     </div>
   );
 }

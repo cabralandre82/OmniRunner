@@ -87,7 +87,7 @@ export function SwapActions({
     return (
       <button
         onClick={() => setShowCreate(true)}
-        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
+        className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:brightness-110 transition"
       >
         Criar Oferta de Venda
       </button>
@@ -95,8 +95,8 @@ export function SwapActions({
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-lg w-72">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">
+    <div className="rounded-xl border border-border bg-surface p-4 shadow-lg w-72">
+      <h3 className="text-sm font-semibold text-content-primary mb-3">
         Vender Lastro
       </h3>
 
@@ -107,24 +107,24 @@ export function SwapActions({
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
         placeholder="5000"
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm mb-3"
+        className="w-full rounded-lg border border-border px-3 py-2 text-sm mb-3"
       />
 
       {message && (
-        <p className="text-xs text-red-600 mb-2">{message}</p>
+        <p className="text-xs text-error mb-2">{message}</p>
       )}
 
       <div className="flex gap-2">
         <button
           onClick={handleCreate}
           disabled={loading}
-          className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition"
+          className="flex-1 rounded-lg bg-brand px-3 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50 transition"
         >
           {loading ? "..." : "Publicar"}
         </button>
         <button
           onClick={() => setShowCreate(false)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition"
+          className="rounded-lg border border-border px-3 py-2 text-sm text-content-secondary hover:bg-surface-elevated transition"
         >
           Cancelar
         </button>

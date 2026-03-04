@@ -6,9 +6,9 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  planned: { label: "Planejado", color: "bg-blue-100 text-blue-800" },
-  completed: { label: "Concluído", color: "bg-green-100 text-green-800" },
-  missed: { label: "Perdido", color: "bg-red-100 text-red-800" },
+  planned: { label: "Planejado", color: "bg-info-soft text-info" },
+  completed: { label: "Concluído", color: "bg-success-soft text-success" },
+  missed: { label: "Perdido", color: "bg-error-soft text-error" },
 };
 
 const PAGE_SIZE = 25;
@@ -128,21 +128,21 @@ export default async function WorkoutAssignmentsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Atribuições de Treino</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">Atribuições de Treino</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Treinos atribuídos aos atletas
         </p>
       </div>
 
       {fetchError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-red-600">Erro ao carregar dados. Tente recarregar a página.</p>
+        <div className="rounded-lg border border-error/30 bg-error-soft p-6 text-center">
+          <p className="text-error">Erro ao carregar dados. Tente recarregar a página.</p>
         </div>
       )}
 
       <form className="flex flex-wrap items-end gap-3">
         <div>
-          <label htmlFor="from" className="block text-xs font-medium text-gray-500">
+          <label htmlFor="from" className="block text-xs font-medium text-content-secondary">
             De
           </label>
           <input
@@ -150,11 +150,11 @@ export default async function WorkoutAssignmentsPage({
             id="from"
             name="from"
             defaultValue={params.from ?? ""}
-            className="mt-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="mt-1 rounded-lg border border-border px-3 py-1.5 text-sm shadow-sm focus:border-brand focus:ring-1 focus:ring-brand"
           />
         </div>
         <div>
-          <label htmlFor="to" className="block text-xs font-medium text-gray-500">
+          <label htmlFor="to" className="block text-xs font-medium text-content-secondary">
             Até
           </label>
           <input
@@ -162,41 +162,41 @@ export default async function WorkoutAssignmentsPage({
             id="to"
             name="to"
             defaultValue={params.to ?? ""}
-            className="mt-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="mt-1 rounded-lg border border-border px-3 py-1.5 text-sm shadow-sm focus:border-brand focus:ring-1 focus:ring-brand"
           />
         </div>
         <button
           type="submit"
-          className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+          className="rounded-lg bg-brand px-4 py-1.5 text-sm font-medium text-white shadow-sm hover:brightness-110"
         >
           Filtrar
         </button>
       </form>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-bg-secondary">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Atleta</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Template</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Data</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Status</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Atleta</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Template</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Data</th>
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border-subtle">
               {assignments.map((a) => {
                 const statusInfo =
-                  STATUS_LABELS[a.status] ?? { label: a.status, color: "bg-gray-100 text-gray-800" };
+                  STATUS_LABELS[a.status] ?? { label: a.status, color: "bg-surface-elevated text-content-primary" };
                 return (
-                  <tr key={a.id} className="hover:bg-gray-50">
-                    <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-900">
+                  <tr key={a.id} className="hover:bg-surface-elevated">
+                    <td className="whitespace-nowrap px-4 py-3 font-medium text-content-primary">
                       {a.athlete_name}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                    <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                       {a.template_name}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                    <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                       {formatDateISO(a.scheduled_date)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-center">
@@ -215,8 +215,8 @@ export default async function WorkoutAssignmentsPage({
       </div>
 
       {assignments.length === 0 && !fetchError && (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-gray-500">Nenhuma atribuição encontrada.</p>
+        <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
+          <p className="text-sm text-content-secondary">Nenhuma atribuição encontrada.</p>
         </div>
       )}
 
@@ -225,18 +225,18 @@ export default async function WorkoutAssignmentsPage({
           {page > 1 && (
             <Link
               href={buildPageUrl(page - 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary shadow-sm hover:bg-surface-elevated"
             >
               Anterior
             </Link>
           )}
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-content-secondary">
             Página {page} de {totalPages}
           </span>
           {page < totalPages && (
             <Link
               href={buildPageUrl(page + 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary shadow-sm hover:bg-surface-elevated"
             >
               Próxima
             </Link>

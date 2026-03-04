@@ -11,7 +11,7 @@ export default async function TrainingPeaksPage() {
   if (!groupId) {
     return (
       <div className="p-6">
-        <p className="text-gray-500">Selecione um grupo primeiro.</p>
+        <p className="text-content-secondary">Selecione um grupo primeiro.</p>
       </div>
     );
   }
@@ -32,55 +32,55 @@ export default async function TrainingPeaksPage() {
 
   const statusColor = (status: string) => {
     switch (status) {
-      case "pushed": return "bg-green-100 text-green-800";
-      case "pending": return "bg-yellow-100 text-yellow-800";
-      case "completed": return "bg-blue-100 text-blue-800";
-      case "failed": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "pushed": return "bg-success-soft text-success";
+      case "pending": return "bg-warning-soft text-warning";
+      case "completed": return "bg-info-soft text-info";
+      case "failed": return "bg-error-soft text-error";
+      default: return "bg-surface-elevated text-content-primary";
     }
   };
 
   return (
     <div className="space-y-8 p-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">TrainingPeaks</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">TrainingPeaks</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Sincronização de treinos com TrainingPeaks
         </p>
       </div>
 
       {/* Linked Athletes */}
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <h2 className="text-lg font-semibold text-content-primary mb-4">
           Atletas Vinculados ({links?.length ?? 0})
         </h2>
         {!links?.length ? (
-          <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center">
-            <p className="text-gray-500">Nenhum atleta vinculou TrainingPeaks ainda.</p>
-            <p className="mt-2 text-sm text-gray-400">
+          <div className="rounded-xl border border-dashed border-border p-8 text-center">
+            <p className="text-content-secondary">Nenhum atleta vinculou TrainingPeaks ainda.</p>
+            <p className="mt-2 text-sm text-content-muted">
               Os atletas podem vincular pelo aplicativo em Configurações → Dispositivos.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto rounded-xl border">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-border">
+              <thead className="bg-bg-secondary">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Atleta</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">TP User ID</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vinculado em</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Token Expira</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-content-secondary uppercase">Atleta</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-content-secondary uppercase">TP User ID</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-content-secondary uppercase">Vinculado em</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-content-secondary uppercase">Token Expira</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="divide-y divide-border bg-surface">
                 {links.map((link: any, i: number) => (
                   <tr key={i}>
                     <td className="px-4 py-3 text-sm">{link.athlete_user_id?.slice(0, 8)}...</td>
-                    <td className="px-4 py-3 text-sm text-gray-500">{link.provider_user_id ?? "—"}</td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-sm text-content-secondary">{link.provider_user_id ?? "—"}</td>
+                    <td className="px-4 py-3 text-sm text-content-secondary">
                       {new Date(link.linked_at).toLocaleDateString("pt-BR")}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-sm text-content-secondary">
                       {link.expires_at
                         ? new Date(link.expires_at).toLocaleDateString("pt-BR")
                         : "—"}
@@ -95,26 +95,26 @@ export default async function TrainingPeaksPage() {
 
       {/* Sync Status */}
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <h2 className="text-lg font-semibold text-content-primary mb-4">
           Status de Sincronização ({syncs.length})
         </h2>
         {!syncs.length ? (
-          <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center">
-            <p className="text-gray-500">Nenhum treino sincronizado ainda.</p>
+          <div className="rounded-xl border border-dashed border-border p-8 text-center">
+            <p className="text-content-secondary">Nenhum treino sincronizado ainda.</p>
           </div>
         ) : (
           <div className="overflow-x-auto rounded-xl border">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-border">
+              <thead className="bg-bg-secondary">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assignment</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Atleta</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Enviado em</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Erro</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-content-secondary uppercase">Assignment</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-content-secondary uppercase">Atleta</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-content-secondary uppercase">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-content-secondary uppercase">Enviado em</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-content-secondary uppercase">Erro</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="divide-y divide-border bg-surface">
                 {syncs.map((s: any) => (
                   <tr key={s.sync_id}>
                     <td className="px-4 py-3 text-sm font-mono">{s.assignment_id?.slice(0, 8)}...</td>
@@ -124,7 +124,7 @@ export default async function TrainingPeaksPage() {
                         {s.sync_status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-sm text-content-secondary">
                       {s.pushed_at ? new Date(s.pushed_at).toLocaleString("pt-BR") : "—"}
                     </td>
                     <td className="px-4 py-3 text-sm text-red-500">{s.error_message ?? "—"}</td>

@@ -33,14 +33,14 @@ export default async function ProdutosPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Produtos</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-content-primary">Produtos</h1>
+          <p className="mt-1 text-sm text-content-secondary">
             {active.length} ativo(s) · {inactive.length} inativo(s)
           </p>
         </div>
         <Link
           href="/platform"
-          className="text-sm text-gray-500 hover:text-gray-700"
+          className="text-sm text-content-secondary hover:text-content-secondary"
         >
           ← Dashboard
         </Link>
@@ -49,7 +49,7 @@ export default async function ProdutosPage() {
       {/* Active products */}
       {active.length > 0 && (
         <div>
-          <h2 className="mb-3 text-sm font-semibold text-gray-900">Ativos</h2>
+          <h2 className="mb-3 text-sm font-semibold text-content-primary">Ativos</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {active.map((p) => (
               <ProductCard key={p.id} product={p} />
@@ -61,7 +61,7 @@ export default async function ProdutosPage() {
       {/* Inactive products */}
       {inactive.length > 0 && (
         <div>
-          <h2 className="mb-3 text-sm font-semibold text-gray-500">Inativos</h2>
+          <h2 className="mb-3 text-sm font-semibold text-content-secondary">Inativos</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {inactive.map((p) => (
               <ProductCard key={p.id} product={p} />
@@ -71,8 +71,8 @@ export default async function ProdutosPage() {
       )}
 
       {/* New product form */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-4 text-base font-semibold text-gray-900">
+      <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+        <h2 className="mb-4 text-base font-semibold text-content-primary">
           Novo pacote
         </h2>
         <ProductForm />

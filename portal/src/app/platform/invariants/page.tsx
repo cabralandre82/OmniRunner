@@ -48,10 +48,10 @@ export default async function InvariantsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-content-primary">
           Invariantes do Sistema
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-content-secondary">
           Verificação em tempo real das invariantes contábeis de custódia.
         </p>
       </div>
@@ -59,8 +59,8 @@ export default async function InvariantsPage() {
       <div
         className={`rounded-xl border-2 p-6 ${
           healthy
-            ? "border-green-200 bg-green-50"
-            : "border-red-300 bg-red-50"
+            ? "border-green-200 bg-success-soft"
+            : "border-red-300 bg-error-soft"
         }`}
       >
         <div className="flex items-center gap-3">
@@ -68,14 +68,14 @@ export default async function InvariantsPage() {
           <div>
             <h2
               className={`text-lg font-bold ${
-                healthy ? "text-green-800" : "text-red-800"
+                healthy ? "text-success" : "text-error"
               }`}
             >
               {healthy ? "Sistema Saudável" : "Violações Detectadas"}
             </h2>
             <p
               className={`text-sm ${
-                healthy ? "text-green-600" : "text-red-600"
+                healthy ? "text-green-600" : "text-error"
               }`}
             >
               {healthy
@@ -87,23 +87,23 @@ export default async function InvariantsPage() {
       </div>
 
       {!healthy && (
-        <div className="rounded-xl border border-red-200 bg-white overflow-hidden">
+        <div className="rounded-xl border border-error/30 bg-surface overflow-hidden">
           <table className="min-w-full text-sm">
-            <thead className="bg-red-50">
+            <thead className="bg-error-soft">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold text-red-800">
+                <th className="px-4 py-3 text-left font-semibold text-error">
                   Grupo
                 </th>
-                <th className="px-4 py-3 text-right font-semibold text-red-800">
+                <th className="px-4 py-3 text-right font-semibold text-error">
                   D (Depositado)
                 </th>
-                <th className="px-4 py-3 text-right font-semibold text-red-800">
+                <th className="px-4 py-3 text-right font-semibold text-error">
                   R (Committed)
                 </th>
-                <th className="px-4 py-3 text-right font-semibold text-red-800">
+                <th className="px-4 py-3 text-right font-semibold text-error">
                   A (Disponível)
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-red-800">
+                <th className="px-4 py-3 text-left font-semibold text-error">
                   Violação
                 </th>
               </tr>
@@ -120,10 +120,10 @@ export default async function InvariantsPage() {
                   <td className="px-4 py-2 text-right tabular-nums">
                     ${v.total_committed.toFixed(2)}
                   </td>
-                  <td className="px-4 py-2 text-right tabular-nums text-red-600">
+                  <td className="px-4 py-2 text-right tabular-nums text-error">
                     ${v.computed_available.toFixed(2)}
                   </td>
-                  <td className="px-4 py-2 text-red-700 font-medium">
+                  <td className="px-4 py-2 text-error font-medium">
                     {violationLabels[v.violation] ?? v.violation}
                   </td>
                 </tr>
@@ -140,40 +140,40 @@ export default async function InvariantsPage() {
         <KPI label="Total Liquidado" value={globalSettled} />
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-900">
+      <div className="rounded-xl border border-border bg-surface overflow-hidden">
+        <div className="px-4 py-3 border-b border-border-subtle">
+          <h3 className="font-semibold text-content-primary">
             Contas de Custódia ({accts.length})
           </h3>
         </div>
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50">
+          <thead className="bg-bg-secondary">
             <tr>
-              <th className="px-4 py-2 text-left font-medium text-gray-600">
+              <th className="px-4 py-2 text-left font-medium text-content-secondary">
                 Grupo
               </th>
-              <th className="px-4 py-2 text-right font-medium text-gray-600">
+              <th className="px-4 py-2 text-right font-medium text-content-secondary">
                 D
               </th>
-              <th className="px-4 py-2 text-right font-medium text-gray-600">
+              <th className="px-4 py-2 text-right font-medium text-content-secondary">
                 R
               </th>
-              <th className="px-4 py-2 text-right font-medium text-gray-600">
+              <th className="px-4 py-2 text-right font-medium text-content-secondary">
                 A
               </th>
-              <th className="px-4 py-2 text-right font-medium text-gray-600">
+              <th className="px-4 py-2 text-right font-medium text-content-secondary">
                 Liquidado
               </th>
-              <th className="px-4 py-2 text-center font-medium text-gray-600">
+              <th className="px-4 py-2 text-center font-medium text-content-secondary">
                 Status
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border-subtle">
             {accts.map((a) => {
               const avail = a.total_deposited_usd - a.total_committed;
               return (
-                <tr key={a.group_id} className="hover:bg-gray-50">
+                <tr key={a.group_id} className="hover:bg-surface-elevated">
                   <td className="px-4 py-2 font-mono text-xs">
                     {a.group_id.slice(0, 8)}...
                   </td>
@@ -185,21 +185,21 @@ export default async function InvariantsPage() {
                   </td>
                   <td
                     className={`px-4 py-2 text-right tabular-nums ${
-                      avail < 0 ? "text-red-600 font-bold" : ""
+                      avail < 0 ? "text-error font-bold" : ""
                     }`}
                   >
                     ${avail.toFixed(2)}
                   </td>
-                  <td className="px-4 py-2 text-right tabular-nums text-gray-500">
+                  <td className="px-4 py-2 text-right tabular-nums text-content-secondary">
                     ${a.total_settled_usd.toFixed(2)}
                   </td>
                   <td className="px-4 py-2 text-center">
                     {a.is_blocked ? (
-                      <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                      <span className="inline-flex items-center rounded-full bg-error-soft px-2 py-0.5 text-xs font-medium text-error">
                         Bloqueado
                       </span>
                     ) : (
-                      <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                      <span className="inline-flex items-center rounded-full bg-success-soft px-2 py-0.5 text-xs font-medium text-success">
                         Ativo
                       </span>
                     )}
@@ -209,7 +209,7 @@ export default async function InvariantsPage() {
             })}
             {accts.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-content-muted">
                   Nenhuma conta de custódia encontrada.
                 </td>
               </tr>
@@ -218,7 +218,7 @@ export default async function InvariantsPage() {
         </table>
       </div>
 
-      <div className="rounded-lg bg-gray-50 border border-gray-200 p-4 text-xs text-gray-500 space-y-1">
+      <div className="rounded-lg bg-bg-secondary border border-border p-4 text-xs text-content-secondary space-y-1">
         <p>
           <strong>Invariantes verificadas:</strong> D &ge; 0, R &ge; 0, D &ge;
           R (para cada clube)
@@ -238,9 +238,9 @@ export default async function InvariantsPage() {
 
 function KPI({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
-      <p className="text-xs font-medium text-gray-500">{label}</p>
-      <p className="mt-1 text-xl font-bold tabular-nums text-gray-900">
+    <div className="rounded-xl border border-border bg-surface p-4">
+      <p className="text-xs font-medium text-content-secondary">{label}</p>
+      <p className="mt-1 text-xl font-bold tabular-nums text-content-primary">
         ${value.toFixed(2)}
       </p>
     </div>

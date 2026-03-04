@@ -68,7 +68,7 @@ function LoginForm() {
           type="button"
           disabled={isDisabled}
           onClick={() => handleSocialLogin("google")}
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-medium text-content-secondary shadow-sm hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
         >
           {socialLoading === "google" ? (
             <Spinner />
@@ -99,7 +99,7 @@ function LoginForm() {
           type="button"
           disabled={isDisabled}
           onClick={() => handleSocialLogin("apple")}
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-black px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-black px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-bg-secondary focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
         >
           {socialLoading === "apple" ? (
             <Spinner />
@@ -115,10 +115,10 @@ function LoginForm() {
       {/* Divider */}
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200" />
+          <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-white px-4 text-gray-400">ou</span>
+          <span className="bg-surface px-4 text-content-muted">ou</span>
         </div>
       </div>
 
@@ -127,7 +127,7 @@ function LoginForm() {
         <div>
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-content-secondary"
           >
             E-mail
           </label>
@@ -138,7 +138,7 @@ function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={isDisabled}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+            className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:opacity-50"
             placeholder="seu@email.com"
           />
         </div>
@@ -146,7 +146,7 @@ function LoginForm() {
         <div>
           <label
             htmlFor="password"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-content-secondary"
           >
             Senha
           </label>
@@ -157,13 +157,13 @@ function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={isDisabled}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+            className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:opacity-50"
             placeholder="••••••••"
           />
         </div>
 
         {error && (
-          <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          <p className="rounded-lg bg-error-soft p-3 text-sm text-error">
             {error}
           </p>
         )}
@@ -171,7 +171,7 @@ function LoginForm() {
         <button
           type="submit"
           disabled={isDisabled}
-          className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+          className="w-full rounded-lg bg-brand px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
         >
           {loading ? "Entrando..." : "Entrar com e-mail"}
         </button>
@@ -207,16 +207,16 @@ function Spinner() {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm space-y-6 rounded-xl bg-white p-6 sm:p-8 shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-bg-secondary px-4">
+      <div className="w-full max-w-sm space-y-6 rounded-xl bg-surface p-6 sm:p-8 shadow-lg">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Omni Runner</h1>
-          <p className="mt-1 text-sm text-gray-500">Portal da Assessoria</p>
+          <h1 className="text-2xl font-bold text-content-primary">Omni Runner</h1>
+          <p className="mt-1 text-sm text-content-secondary">Portal da Assessoria</p>
         </div>
 
         <Suspense
           fallback={
-            <div className="py-8 text-center text-sm text-gray-400">
+            <div className="py-8 text-center text-sm text-content-muted">
               Carregando...
             </div>
           }

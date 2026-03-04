@@ -39,11 +39,11 @@ export default async function AttendanceDetailPage({
   if (!session) {
     return (
       <div className="space-y-6">
-        <Link href="/attendance" className="text-sm text-blue-600 hover:underline">
+        <Link href="/attendance" className="text-sm text-brand hover:underline">
           ← Voltar ao relatório
         </Link>
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-gray-500">Treino não encontrado.</p>
+        <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
+          <p className="text-sm text-content-secondary">Treino não encontrado.</p>
         </div>
       </div>
     );
@@ -84,38 +84,38 @@ export default async function AttendanceDetailPage({
 
   return (
     <div className="space-y-6">
-      <Link href="/attendance" className="text-sm text-blue-600 hover:underline">
+      <Link href="/attendance" className="text-sm text-brand hover:underline">
         ← Voltar ao relatório
       </Link>
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{session.title}</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">{session.title}</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Detalhes da presença no treino
         </p>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-gray-900">Informações do treino</h2>
+      <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-content-primary">Informações do treino</h2>
         <dl className="mt-3 grid gap-2 sm:grid-cols-2">
           <div>
-            <dt className="text-xs text-gray-500">Data</dt>
-            <dd className="text-sm font-medium text-gray-900">{formatDateISO(session.starts_at)}</dd>
+            <dt className="text-xs text-content-secondary">Data</dt>
+            <dd className="text-sm font-medium text-content-primary">{formatDateISO(session.starts_at)}</dd>
           </div>
           <div>
-            <dt className="text-xs text-gray-500">Local</dt>
-            <dd className="text-sm font-medium text-gray-900">{session.location_name || "—"}</dd>
+            <dt className="text-xs text-content-secondary">Local</dt>
+            <dd className="text-sm font-medium text-content-primary">{session.location_name || "—"}</dd>
           </div>
           <div>
-            <dt className="text-xs text-gray-500">Status</dt>
-            <dd className="text-sm font-medium text-gray-900">
+            <dt className="text-xs text-content-secondary">Status</dt>
+            <dd className="text-sm font-medium text-content-primary">
               <span
                 className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
                   session.status === "done"
-                    ? "bg-green-100 text-green-800"
+                    ? "bg-success-soft text-success"
                     : session.status === "cancelled"
-                      ? "bg-red-100 text-red-800"
-                      : "bg-blue-100 text-blue-800"
+                      ? "bg-error-soft text-error"
+                      : "bg-info-soft text-info"
                 }`}
               >
                 {session.status === "done" ? "Realizado" : session.status === "cancelled" ? "Cancelado" : "Agendado"}
@@ -125,13 +125,13 @@ export default async function AttendanceDetailPage({
         </dl>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900">Presença</h2>
+          <h2 className="text-sm font-semibold text-content-primary">Presença</h2>
           {canMarkAttendance && (
             <button
               type="button"
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary shadow-sm hover:bg-surface-elevated"
               disabled
               title="Em breve"
             >
@@ -139,44 +139,44 @@ export default async function AttendanceDetailPage({
             </button>
           )}
         </div>
-        <p className="mt-2 text-2xl font-bold text-gray-900">
+        <p className="mt-2 text-2xl font-bold text-content-primary">
           {presentes} / {total} atletas = {pct.toFixed(1)}%
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-bg-secondary">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Nome</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Check-in</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Método</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Status</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Nome</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Check-in</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Método</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border-subtle">
               {(attendance ?? []).map((a) => (
-                <tr key={a.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-900">
+                <tr key={a.id} className="hover:bg-surface-elevated">
+                  <td className="whitespace-nowrap px-4 py-3 font-medium text-content-primary">
                     {profileMap.get(a.athlete_user_id) ?? "—"}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                  <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                     {formatDateTime(a.checked_at)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                  <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                     {METHOD_LABELS[a.method] ?? a.method}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
                     <span
                       className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
                         a.status === "present"
-                          ? "bg-green-100 text-green-800"
+                          ? "bg-success-soft text-success"
                           : a.status === "late"
-                            ? "bg-yellow-100 text-yellow-800"
+                            ? "bg-warning-soft text-warning"
                             : a.status === "excused"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-gray-100 text-gray-600"
+                              ? "bg-info-soft text-info"
+                              : "bg-surface-elevated text-content-secondary"
                       }`}
                     >
                       {STATUS_LABELS[a.status] ?? a.status}
@@ -190,8 +190,8 @@ export default async function AttendanceDetailPage({
       </div>
 
       {(attendance ?? []).length === 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-gray-500">
+        <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
+          <p className="text-sm text-content-secondary">
             Nenhum check-in registrado neste treino.
           </p>
         </div>

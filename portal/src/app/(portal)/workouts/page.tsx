@@ -62,42 +62,42 @@ export default async function WorkoutsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Templates de Treino</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">Templates de Treino</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Gerencie os templates de treino do grupo
         </p>
       </div>
 
       {fetchError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-red-600">Erro ao carregar dados. Tente recarregar a página.</p>
+        <div className="rounded-lg border border-error/30 bg-error-soft p-6 text-center">
+          <p className="text-error">Erro ao carregar dados. Tente recarregar a página.</p>
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-bg-secondary">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Nome</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Descrição</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Blocos</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Criado em</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Nome</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Descrição</th>
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">Blocos</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Criado em</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border-subtle">
               {templates.map((t) => (
-                <tr key={t.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-900">
+                <tr key={t.id} className="hover:bg-surface-elevated">
+                  <td className="whitespace-nowrap px-4 py-3 font-medium text-content-primary">
                     {t.name}
                   </td>
-                  <td className="max-w-[300px] truncate px-4 py-3 text-gray-600">
+                  <td className="max-w-[300px] truncate px-4 py-3 text-content-secondary">
                     {t.description ?? "—"}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-center text-gray-700">
+                  <td className="whitespace-nowrap px-4 py-3 text-center text-content-secondary">
                     {t.block_count}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                  <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                     {formatDateISO(t.created_at)}
                   </td>
                 </tr>
@@ -108,8 +108,8 @@ export default async function WorkoutsPage() {
       </div>
 
       {templates.length === 0 && !fetchError && (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-gray-500">Nenhum template criado.</p>
+        <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
+          <p className="text-sm text-content-secondary">Nenhum template criado.</p>
         </div>
       )}
     </div>

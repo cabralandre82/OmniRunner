@@ -78,7 +78,7 @@ export function BrandingForm() {
 
   if (loading) {
     return (
-      <div className="py-6 text-center text-sm text-gray-400">
+      <div className="py-6 text-center text-sm text-content-muted">
         Carregando...
       </div>
     );
@@ -88,7 +88,7 @@ export function BrandingForm() {
     <div className="space-y-6">
       {/* Presets */}
       <div>
-        <label className="mb-2 block text-xs font-medium text-gray-600">
+        <label className="mb-2 block text-xs font-medium text-content-secondary">
           Temas Prontos
         </label>
         <div className="flex flex-wrap gap-2">
@@ -96,10 +96,10 @@ export function BrandingForm() {
             <button
               key={p.name}
               onClick={() => applyPreset(p)}
-              className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+              className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium text-content-secondary hover:bg-surface-elevated"
             >
               <span
-                className="inline-block h-4 w-4 rounded-full border border-gray-300"
+                className="inline-block h-4 w-4 rounded-full border border-border"
                 style={{ backgroundColor: p.primary }}
               />
               {p.name}
@@ -110,7 +110,7 @@ export function BrandingForm() {
 
       {/* Logo URL */}
       <div>
-        <label className="mb-1 block text-xs font-medium text-gray-600">
+        <label className="mb-1 block text-xs font-medium text-content-secondary">
           Logo URL
         </label>
         <input
@@ -118,9 +118,9 @@ export function BrandingForm() {
           value={data.logo_url ?? ""}
           onChange={(e) => setData({ ...data, logo_url: e.target.value || null })}
           placeholder="https://exemplo.com/logo.png"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
         />
-        <p className="mt-1 text-xs text-gray-400">
+        <p className="mt-1 text-xs text-content-muted">
           Use uma imagem quadrada PNG ou SVG. Recomendado: 128x128px.
         </p>
       </div>
@@ -151,10 +151,10 @@ export function BrandingForm() {
 
       {/* Preview */}
       <div>
-        <label className="mb-2 block text-xs font-medium text-gray-600">
+        <label className="mb-2 block text-xs font-medium text-content-secondary">
           Preview
         </label>
-        <div className="flex overflow-hidden rounded-lg border border-gray-200" style={{ height: 160 }}>
+        <div className="flex overflow-hidden rounded-lg border border-border" style={{ height: 160 }}>
           <div
             className="flex w-40 flex-col p-3"
             style={{ backgroundColor: data.sidebar_bg, color: data.sidebar_text }}
@@ -183,12 +183,12 @@ export function BrandingForm() {
               <div className="rounded px-2 py-1 text-xs opacity-70">Créditos</div>
             </div>
           </div>
-          <div className="flex-1 bg-gray-50 p-3">
+          <div className="flex-1 bg-bg-secondary p-3">
             <div
               className="h-2 w-20 rounded"
               style={{ backgroundColor: data.primary_color }}
             />
-            <div className="mt-2 h-2 w-32 rounded bg-gray-200" />
+            <div className="mt-2 h-2 w-32 rounded bg-surface-elevated" />
             <div className="mt-4 flex gap-2">
               <div
                 className="rounded px-3 py-1 text-xs font-medium text-white"
@@ -212,17 +212,17 @@ export function BrandingForm() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
         >
           {saving ? "Salvando..." : "Salvar Branding"}
         </button>
         {result?.ok && (
-          <span className="text-sm font-medium text-green-600">
+          <span className="text-sm font-medium text-success">
             Salvo! Recarregando...
           </span>
         )}
         {result?.error && (
-          <span className="text-sm font-medium text-red-600">
+          <span className="text-sm font-medium text-error">
             {result.error}
           </span>
         )}
@@ -242,7 +242,7 @@ function ColorPicker({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-xs font-medium text-gray-600">
+      <label className="mb-1 block text-xs font-medium text-content-secondary">
         {label}
       </label>
       <div className="flex items-center gap-2">
@@ -250,7 +250,7 @@ function ColorPicker({
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-9 w-9 cursor-pointer rounded border border-gray-300"
+          className="h-9 w-9 cursor-pointer rounded border border-border"
         />
         <input
           type="text"
@@ -259,7 +259,7 @@ function ColorPicker({
             const v = e.target.value;
             if (/^#[0-9a-fA-F]{0,6}$/.test(v)) onChange(v);
           }}
-          className="w-24 rounded-lg border border-gray-300 px-2 py-1.5 text-sm font-mono focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-24 rounded-lg border border-border px-2 py-1.5 text-sm font-mono focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
         />
       </div>
     </div>

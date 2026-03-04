@@ -80,15 +80,15 @@ export default async function FinancialDashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard Financeiro</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">Dashboard Financeiro</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Visão geral da saúde financeira do grupo
         </p>
       </div>
 
       {fetchError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-red-600">Erro ao carregar dados. Tente recarregar a página.</p>
+        <div className="rounded-lg border border-error/30 bg-error-soft p-6 text-center">
+          <p className="text-error">Erro ao carregar dados. Tente recarregar a página.</p>
         </div>
       )}
 
@@ -97,20 +97,20 @@ export default async function FinancialDashboardPage() {
           <KpiCard
             label="Receita do Mês"
             value={`R$ ${kpis.revenueThisMonth.toFixed(2)}`}
-            bg="bg-green-50"
-            color="text-green-700"
+            bg="bg-success-soft"
+            color="text-success"
           />
           <KpiCard
             label="Assinantes Ativos"
             value={kpis.activeSubscribers}
-            bg="bg-blue-50"
-            color="text-blue-700"
+            bg="bg-brand-soft"
+            color="text-brand"
           />
           <KpiCard
             label="Inadimplentes"
             value={kpis.lateSubscribers}
-            bg="bg-red-50"
-            color="text-red-700"
+            bg="bg-error-soft"
+            color="text-error"
           />
           <KpiCard
             label="Crescimento %"
@@ -124,19 +124,19 @@ export default async function FinancialDashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2">
         <Link
           href="/financial/subscriptions"
-          className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:border-blue-300 hover:shadow transition"
+          className="rounded-xl border border-border bg-surface p-6 shadow-sm hover:border-blue-300 hover:shadow transition"
         >
-          <h3 className="font-semibold text-gray-900">Assinaturas</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <h3 className="font-semibold text-content-primary">Assinaturas</h3>
+          <p className="mt-1 text-sm text-content-secondary">
             Gerencie assinaturas e status de pagamento dos atletas
           </p>
         </Link>
         <Link
           href="/financial/plans"
-          className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:border-blue-300 hover:shadow transition"
+          className="rounded-xl border border-border bg-surface p-6 shadow-sm hover:border-blue-300 hover:shadow transition"
         >
-          <h3 className="font-semibold text-gray-900">Planos</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <h3 className="font-semibold text-content-primary">Planos</h3>
+          <p className="mt-1 text-sm text-content-secondary">
             Configure planos, preços e ciclos de cobrança
           </p>
         </Link>
@@ -145,7 +145,7 @@ export default async function FinancialDashboardPage() {
       <div className="flex justify-end">
         <a
           href="/api/export/financial"
-          className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary shadow-sm hover:bg-surface-elevated"
         >
           Exportar Ledger CSV
         </a>
@@ -157,8 +157,8 @@ export default async function FinancialDashboardPage() {
 function KpiCard({
   label,
   value,
-  bg = "bg-white",
-  color = "text-gray-900",
+  bg = "bg-surface",
+  color = "text-content-primary",
 }: {
   label: string;
   value: number | string;
@@ -166,8 +166,8 @@ function KpiCard({
   color?: string;
 }) {
   return (
-    <div className={`rounded-xl border border-gray-200 ${bg} p-4 shadow-sm`}>
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    <div className={`rounded-xl border border-border ${bg} p-4 shadow-sm`}>
+      <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">
         {label}
       </p>
       <p className={`mt-1 text-xl font-bold ${color}`}>{value}</p>

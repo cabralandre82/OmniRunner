@@ -9,12 +9,12 @@ export const metadata: Metadata = { title: "Conversao Cambial" };
 export const dynamic = "force-dynamic";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  pending: { label: "Pendente", color: "bg-yellow-100 text-yellow-800" },
-  processing: { label: "Processando", color: "bg-blue-100 text-blue-800" },
-  completed: { label: "Concluido", color: "bg-green-100 text-green-800" },
-  failed: { label: "Falhou", color: "bg-red-100 text-red-800" },
-  cancelled: { label: "Cancelado", color: "bg-gray-100 text-gray-600" },
-  confirmed: { label: "Confirmado", color: "bg-green-100 text-green-800" },
+  pending: { label: "Pendente", color: "bg-warning-soft text-warning" },
+  processing: { label: "Processando", color: "bg-info-soft text-info" },
+  completed: { label: "Concluido", color: "bg-success-soft text-success" },
+  failed: { label: "Falhou", color: "bg-error-soft text-error" },
+  cancelled: { label: "Cancelado", color: "bg-surface-elevated text-content-secondary" },
+  confirmed: { label: "Confirmado", color: "bg-success-soft text-success" },
 };
 
 interface FxOperation {
@@ -111,8 +111,8 @@ export default async function FxPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Conversao Cambial (FX)</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-content-primary">Conversao Cambial (FX)</h1>
+          <p className="mt-1 text-sm text-content-secondary">
             Spread atual: {spreadRate}% &mdash; Depositos com FX e retiradas em moeda local
           </p>
         </div>
@@ -120,81 +120,81 @@ export default async function FxPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Disponivel para Retirada</p>
-          <p className={`mt-1 text-2xl font-bold ${available > 0 ? "text-green-600" : "text-red-600"}`}>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Disponivel para Retirada</p>
+          <p className={`mt-1 text-2xl font-bold ${available > 0 ? "text-success" : "text-error"}`}>
             {formatUsd(available)}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Spread Atual</p>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{spreadRate}%</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Spread Atual</p>
+          <p className="mt-1 text-2xl font-bold text-content-primary">{spreadRate}%</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Spread Pago (total)</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Spread Pago (total)</p>
           <p className="mt-1 text-2xl font-bold text-orange-600">{formatUsd(totalSpreadPaid)}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Taxas de Provedor</p>
-          <p className="mt-1 text-2xl font-bold text-gray-600">{formatUsd(totalProviderFees)}</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Taxas de Provedor</p>
+          <p className="mt-1 text-2xl font-bold text-content-secondary">{formatUsd(totalProviderFees)}</p>
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="border-b border-gray-200 px-6 py-4">
-          <h2 className="text-lg font-semibold text-gray-900">Historico de Operacoes FX</h2>
+      <div className="rounded-xl border border-border bg-surface shadow-sm">
+        <div className="border-b border-border px-6 py-4">
+          <h2 className="text-lg font-semibold text-content-primary">Historico de Operacoes FX</h2>
         </div>
 
         {allOps.length === 0 ? (
-          <div className="px-6 py-12 text-center text-gray-500">
+          <div className="px-6 py-12 text-center text-content-secondary">
             Nenhuma operacao de conversao cambial registrada.
           </div>
         ) : (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-bg-secondary">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Data</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Tipo</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">USD</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Moeda</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">Cotacao</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">Spread</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">Valor Local</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-content-secondary">Data</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-content-secondary">Tipo</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-content-secondary">USD</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-content-secondary">Moeda</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-content-secondary">Cotacao</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-content-secondary">Spread</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-content-secondary">Valor Local</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-content-secondary">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-border">
               {allOps.map((op) => {
-                const st = STATUS_LABELS[op.status] ?? { label: op.status, color: "bg-gray-100 text-gray-600" };
+                const st = STATUS_LABELS[op.status] ?? { label: op.status, color: "bg-surface-elevated text-content-secondary" };
                 const currency = op.type === "deposit" ? op.original_currency : op.target_currency;
                 const localAmount = op.type === "deposit" ? op.original_amount : op.net_local_amount;
 
                 return (
                   <tr key={op.id}>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700">
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-content-secondary">
                       {new Date(op.created_at).toLocaleDateString("pt-BR", {
                         day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit",
                       })}
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      <span className={`font-medium ${op.type === "deposit" ? "text-green-600" : "text-orange-600"}`}>
+                      <span className={`font-medium ${op.type === "deposit" ? "text-success" : "text-orange-600"}`}>
                         {op.type === "deposit" ? "Entrada" : "Saida"}
                       </span>
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium text-gray-900">
+                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium text-content-primary">
                       {formatUsd(op.amount_usd)}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{currency ?? "USD"}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-700">
+                    <td className="px-6 py-4 text-sm text-content-secondary">{currency ?? "USD"}</td>
+                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm text-content-secondary">
                       {op.fx_rate?.toFixed(4) ?? "-"}
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-500">
+                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm text-content-secondary">
                       {op.fx_spread_pct}%
                       {op.fx_spread_usd != null && (
-                        <span className="ml-1 text-xs text-gray-400">({formatUsd(op.fx_spread_usd)})</span>
+                        <span className="ml-1 text-xs text-content-muted">({formatUsd(op.fx_spread_usd)})</span>
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-700">
+                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm text-content-secondary">
                       {localAmount != null
                         ? localAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                         : "-"}
@@ -214,9 +214,9 @@ export default async function FxPage() {
 
       <FxSimulator spreadRate={spreadRate} />
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900">Politica de Cambio</h2>
-        <div className="mt-3 space-y-2 text-sm text-gray-600">
+      <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-content-primary">Politica de Cambio</h2>
+        <div className="mt-3 space-y-2 text-sm text-content-secondary">
           <p><strong>Cotacao:</strong> Determinada pela cotacao de referencia do provedor no momento da operacao.</p>
           <p><strong>Travamento:</strong> A cotacao e travada no momento da confirmacao pelo gateway.</p>
           <p><strong>Spread:</strong> Aplicado sobre o valor convertido. Configuravel pela plataforma.</p>

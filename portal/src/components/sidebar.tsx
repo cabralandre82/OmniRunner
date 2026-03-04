@@ -70,31 +70,27 @@ export function Sidebar({
 
   const navContent = (
     <>
-      <div className="border-b px-4 py-5 flex items-center justify-between" style={{ borderColor: "var(--brand-sidebar-text, #e5e7eb)", opacity: 0.2 }}>
+      <div className="border-b border-border-subtle px-4 py-5 flex items-center justify-between opacity-20">
       </div>
       <div className="px-4 py-5 flex items-center justify-between" style={{ marginTop: "-3.5rem" }}>
         <div className="flex items-center gap-2.5 min-w-0">
           {logoUrl ? (
             <Image src={logoUrl} alt="Logo" width={32} height={32} className="rounded-lg object-cover flex-shrink-0" />
           ) : (
-            <span
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold text-white flex-shrink-0"
-              style={{ backgroundColor: "var(--brand-primary, #2563eb)" }}
-            >
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-sm font-bold text-white flex-shrink-0">
               {(groupName ?? "O").charAt(0).toUpperCase()}
             </span>
           )}
           <div className="min-w-0">
-            <h2 className="text-sm font-bold truncate" style={{ color: "var(--brand-sidebar-text, #111827)" }}>
+            <h2 className="text-sm font-bold text-content-primary truncate">
               {groupName ?? "Omni Runner"}
             </h2>
-            <p className="text-xs opacity-60" style={{ color: "var(--brand-sidebar-text, #6b7280)" }}>Portal</p>
+            <p className="text-xs text-content-muted">Portal</p>
           </div>
         </div>
         <button
           onClick={() => setOpen(false)}
-          className="rounded-lg p-1.5 opacity-50 hover:opacity-100 lg:hidden"
-          style={{ color: "var(--brand-sidebar-text, #9ca3af)" }}
+          className="rounded-lg p-1.5 text-content-muted hover:text-content-primary lg:hidden transition-colors"
           aria-label="Fechar menu"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -103,25 +99,18 @@ export function Sidebar({
         </button>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-4">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-4">
         {visibleItems.map((item) => {
           const active = pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className="block rounded-lg px-3 py-2.5 text-sm font-medium transition"
-              style={
+              className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 active
-                  ? {
-                      backgroundColor: "var(--brand-accent, #2563eb)" + "18",
-                      color: "var(--brand-accent, #2563eb)",
-                    }
-                  : {
-                      color: "var(--brand-sidebar-text, #4b5563)",
-                      opacity: 0.8,
-                    }
-              }
+                  ? "bg-brand-soft text-brand"
+                  : "text-content-secondary hover:bg-surface-elevated hover:text-content-primary"
+              }`}
             >
               {item.label}
             </Link>
@@ -130,17 +119,17 @@ export function Sidebar({
       </nav>
 
       {isPlatformAdmin && (
-        <div className="border-t border-gray-200 px-2 py-2">
+        <div className="border-t border-border px-2 py-2">
           {PLATFORM_ITEMS.map((item) => {
             const active = pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   active
-                    ? "bg-red-50 text-red-700"
-                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                    ? "bg-error-soft text-error"
+                    : "text-content-muted hover:bg-surface-elevated hover:text-content-primary"
                 }`}
               >
                 {item.label}
@@ -150,36 +139,29 @@ export function Sidebar({
         </div>
       )}
 
-      <div className="border-t px-4 py-3" style={{ borderColor: "var(--brand-sidebar-text, #e5e7eb)", opacity: 0.6 }}>
-        <p className="truncate text-xs" style={{ color: "var(--brand-sidebar-text, #9ca3af)" }}>{role}</p>
+      <div className="border-t border-border px-4 py-3">
+        <p className="truncate text-xs text-content-muted">{role}</p>
       </div>
     </>
   );
 
   return (
     <>
-      {/* Desktop sidebar */}
-      <aside
-        className="hidden lg:flex h-screen w-56 flex-shrink-0 flex-col border-r border-gray-200"
-        style={{ backgroundColor: "var(--brand-sidebar-bg, #ffffff)" }}
-      >
+      <aside className="hidden lg:flex h-screen w-56 flex-shrink-0 flex-col border-r border-border bg-bg-secondary">
         {navContent}
       </aside>
 
-      {/* Mobile overlay */}
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+          className="fixed inset-0 z-40 bg-overlay lg:hidden"
           onClick={() => setOpen(false)}
         />
       )}
 
-      {/* Mobile drawer */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col shadow-xl transition-transform duration-200 lg:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-bg-secondary shadow-lg transition-transform duration-200 lg:hidden ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
-        style={{ backgroundColor: "var(--brand-sidebar-bg, #ffffff)" }}
       >
         {navContent}
       </aside>
@@ -193,7 +175,7 @@ export function SidebarTrigger() {
       onClick={() => {
         window.dispatchEvent(new CustomEvent("toggle-sidebar"));
       }}
-      className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden"
+      className="rounded-lg p-2 text-content-muted hover:bg-surface-elevated hover:text-content-primary lg:hidden transition-colors"
       aria-label="Abrir menu"
     >
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

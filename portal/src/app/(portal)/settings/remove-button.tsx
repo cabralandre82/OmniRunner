@@ -51,7 +51,7 @@ export function RemoveButton({ memberId, memberName }: RemoveButtonProps) {
       <button
         onClick={handleRemove}
         disabled={loading}
-        className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+        className="text-sm font-medium text-error hover:text-error disabled:opacity-50"
       >
         {loading ? tc("loading") : tc("remove")}
       </button>

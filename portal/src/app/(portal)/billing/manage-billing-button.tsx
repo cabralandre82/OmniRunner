@@ -36,7 +36,7 @@ export function ManageBillingButton() {
       <button
         onClick={handleOpen}
         disabled={loading}
-        className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-lg bg-surface-elevated px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-bg-secondary focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
       >
         <svg
           className="h-4 w-4"
@@ -53,7 +53,7 @@ export function ManageBillingButton() {
         </svg>
         {loading ? "Abrindo..." : "Gerenciar Cobrança"}
       </button>
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-error">{error}</p>}
     </div>
   );
 }

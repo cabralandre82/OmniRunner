@@ -104,8 +104,8 @@ export default async function ExecutionsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Execuções de Treino</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">Execuções de Treino</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Histórico de execuções dos atletas do grupo
         </p>
       </div>
@@ -113,7 +113,7 @@ export default async function ExecutionsPage({
       {/* Date range filters */}
       <form className="flex flex-wrap items-end gap-4">
         <div>
-          <label htmlFor="from" className="block text-xs font-medium text-gray-500 mb-1">
+          <label htmlFor="from" className="block text-xs font-medium text-content-secondary mb-1">
             De
           </label>
           <input
@@ -121,11 +121,11 @@ export default async function ExecutionsPage({
             id="from"
             name="from"
             defaultValue={searchParams.from ?? ""}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="rounded-lg border border-border px-3 py-2 text-sm"
           />
         </div>
         <div>
-          <label htmlFor="to" className="block text-xs font-medium text-gray-500 mb-1">
+          <label htmlFor="to" className="block text-xs font-medium text-content-secondary mb-1">
             Até
           </label>
           <input
@@ -133,65 +133,65 @@ export default async function ExecutionsPage({
             id="to"
             name="to"
             defaultValue={searchParams.to ?? ""}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="rounded-lg border border-border px-3 py-2 text-sm"
           />
         </div>
         <button
           type="submit"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:brightness-110"
         >
           Filtrar
         </button>
       </form>
 
       {fetchError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-red-600">Erro ao carregar dados. Tente recarregar a página.</p>
+        <div className="rounded-lg border border-error/30 bg-error-soft p-6 text-center">
+          <p className="text-error">Erro ao carregar dados. Tente recarregar a página.</p>
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-bg-secondary">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Atleta</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Treino</th>
-                <th className="px-4 py-3 text-right font-medium text-gray-500">Duração</th>
-                <th className="px-4 py-3 text-right font-medium text-gray-500">Distância</th>
-                <th className="px-4 py-3 text-right font-medium text-gray-500">Pace</th>
-                <th className="px-4 py-3 text-right font-medium text-gray-500">FC</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Fonte</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Data</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Atleta</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Treino</th>
+                <th className="px-4 py-3 text-right font-medium text-content-secondary">Duração</th>
+                <th className="px-4 py-3 text-right font-medium text-content-secondary">Distância</th>
+                <th className="px-4 py-3 text-right font-medium text-content-secondary">Pace</th>
+                <th className="px-4 py-3 text-right font-medium text-content-secondary">FC</th>
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">Fonte</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Data</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border-subtle">
               {executions.map((ex) => (
-                <tr key={ex.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-900">
+                <tr key={ex.id} className="hover:bg-surface-elevated">
+                  <td className="whitespace-nowrap px-4 py-3 font-medium text-content-primary">
                     {ex.athlete_name ?? "—"}
                   </td>
-                  <td className="max-w-[200px] truncate px-4 py-3 text-gray-600">
+                  <td className="max-w-[200px] truncate px-4 py-3 text-content-secondary">
                     {ex.template_name ?? "—"}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-gray-700">
+                  <td className="whitespace-nowrap px-4 py-3 text-right text-content-secondary">
                     {formatDuration(ex.actual_duration_seconds)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-gray-700">
+                  <td className="whitespace-nowrap px-4 py-3 text-right text-content-secondary">
                     {formatDistance(ex.actual_distance_meters)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-gray-700">
+                  <td className="whitespace-nowrap px-4 py-3 text-right text-content-secondary">
                     {formatPace(ex.avg_pace_seconds_per_km)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-gray-700">
+                  <td className="whitespace-nowrap px-4 py-3 text-right text-content-secondary">
                     {ex.avg_hr ? `${ex.avg_hr} bpm` : "—"}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-center">
-                    <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                    <span className="inline-block rounded-full bg-surface-elevated px-2 py-0.5 text-xs font-medium text-content-secondary">
                       {ex.source}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                  <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                     {formatDateISO(ex.completed_at)}
                   </td>
                 </tr>
@@ -202,8 +202,8 @@ export default async function ExecutionsPage({
       </div>
 
       {executions.length === 0 && !fetchError && (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-gray-500">Nenhuma execução registrada.</p>
+        <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
+          <p className="text-sm text-content-secondary">Nenhuma execução registrada.</p>
         </div>
       )}
     </div>

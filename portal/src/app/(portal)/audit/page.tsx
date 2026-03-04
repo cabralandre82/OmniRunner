@@ -31,10 +31,10 @@ interface Settlement {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  settled: "bg-green-100 text-green-800",
-  insufficient: "bg-red-100 text-red-800",
-  failed: "bg-gray-100 text-gray-600",
+  pending: "bg-warning-soft text-warning",
+  settled: "bg-success-soft text-success",
+  insufficient: "bg-error-soft text-error",
+  failed: "bg-surface-elevated text-content-secondary",
 };
 
 export default async function AuditPage() {
@@ -75,23 +75,23 @@ export default async function AuditPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Auditoria</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">Auditoria</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Trilha completa: burn &rarr; breakdown &rarr; settlements (por burn_id)
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Total de Burns</p>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{events.length}</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Total de Burns</p>
+          <p className="mt-1 text-2xl font-bold text-content-primary">{events.length}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Settlements Gerados</p>
-          <p className="mt-1 text-2xl font-bold text-blue-600">{settlements.length}</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Settlements Gerados</p>
+          <p className="mt-1 text-2xl font-bold text-brand">{settlements.length}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Burns Interclub</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Burns Interclub</p>
           <p className="mt-1 text-2xl font-bold text-orange-600">
             {events.filter((e) => e.breakdown.some((b) => b.issuer_group_id !== e.redeemer_group_id)).length}
           </p>
@@ -99,7 +99,7 @@ export default async function AuditPage() {
       </div>
 
       {events.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 bg-white px-6 py-12 text-center text-gray-500 shadow-sm">
+        <div className="rounded-xl border border-border bg-surface px-6 py-12 text-center text-content-secondary shadow-sm">
           Nenhum burn registrado para este clube.
         </div>
       ) : (
@@ -113,28 +113,28 @@ export default async function AuditPage() {
             return (
               <div
                 key={event.id}
-                className="rounded-xl border border-gray-200 bg-white shadow-sm"
+                className="rounded-xl border border-border bg-surface shadow-sm"
               >
-                <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+                <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4">
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-900">
-                      Burn: <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs">{event.burn_ref_id}</code>
+                    <h3 className="text-sm font-semibold text-content-primary">
+                      Burn: <code className="rounded bg-surface-elevated px-1.5 py-0.5 text-xs">{event.burn_ref_id}</code>
                     </h3>
-                    <p className="mt-0.5 text-xs text-gray-500">
+                    <p className="mt-0.5 text-xs text-content-secondary">
                       {new Date(event.created_at).toLocaleString("pt-BR")} &bull;{" "}
                       {event.total_coins} coins &bull;{" "}
                       {hasInterclub ? "Interclub" : "Intra-club"}
                     </p>
                   </div>
                   <span
-                    className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${hasInterclub ? "bg-orange-100 text-orange-800" : "bg-green-100 text-green-800"}`}
+                    className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${hasInterclub ? "bg-orange-100 text-orange-800" : "bg-success-soft text-success"}`}
                   >
                     {hasInterclub ? "Interclub" : "Intra-club"}
                   </span>
                 </div>
 
                 <div className="px-6 py-3">
-                  <p className="mb-2 text-xs font-medium uppercase text-gray-500">
+                  <p className="mb-2 text-xs font-medium uppercase text-content-secondary">
                     Breakdown por Emissor
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -143,7 +143,7 @@ export default async function AuditPage() {
                         key={i}
                         className={`inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-medium ${
                           b.issuer_group_id === event.redeemer_group_id
-                            ? "bg-green-50 text-green-700"
+                            ? "bg-success-soft text-success"
                             : "bg-orange-50 text-orange-700"
                         }`}
                       >
@@ -156,13 +156,13 @@ export default async function AuditPage() {
                 </div>
 
                 {eventSettlements.length > 0 && (
-                  <div className="border-t border-gray-100 px-6 py-3">
-                    <p className="mb-2 text-xs font-medium uppercase text-gray-500">
+                  <div className="border-t border-border-subtle px-6 py-3">
+                    <p className="mb-2 text-xs font-medium uppercase text-content-secondary">
                       Settlements
                     </p>
                     <table className="min-w-full text-sm">
                       <thead>
-                        <tr className="text-left text-xs text-gray-500">
+                        <tr className="text-left text-xs text-content-secondary">
                           <th className="pb-1 pr-4">Devedor</th>
                           <th className="pb-1 pr-4">Credor</th>
                           <th className="pb-1 pr-4 text-right">Coins</th>
@@ -175,20 +175,20 @@ export default async function AuditPage() {
                       <tbody>
                         {eventSettlements.map((s) => (
                           <tr key={s.id}>
-                            <td className="pr-4 py-1 text-gray-700">
+                            <td className="pr-4 py-1 text-content-secondary">
                               {groupMap.get(s.debtor_group_id) ?? s.debtor_group_id.slice(0, 8)}
                             </td>
-                            <td className="pr-4 py-1 text-gray-700">
+                            <td className="pr-4 py-1 text-content-secondary">
                               {groupMap.get(s.creditor_group_id) ?? s.creditor_group_id.slice(0, 8)}
                             </td>
-                            <td className="pr-4 py-1 text-right text-gray-700">{s.coin_amount}</td>
-                            <td className="pr-4 py-1 text-right text-gray-700">{formatUsd(s.gross_amount_usd)}</td>
-                            <td className="pr-4 py-1 text-right text-gray-500">
+                            <td className="pr-4 py-1 text-right text-content-secondary">{s.coin_amount}</td>
+                            <td className="pr-4 py-1 text-right text-content-secondary">{formatUsd(s.gross_amount_usd)}</td>
+                            <td className="pr-4 py-1 text-right text-content-secondary">
                               {formatUsd(s.fee_amount_usd)} ({s.fee_rate_pct}%)
                             </td>
-                            <td className="pr-4 py-1 text-right font-medium text-gray-900">{formatUsd(s.net_amount_usd)}</td>
+                            <td className="pr-4 py-1 text-right font-medium text-content-primary">{formatUsd(s.net_amount_usd)}</td>
                             <td className="py-1">
-                              <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[s.status] ?? "bg-gray-100 text-gray-600"}`}>
+                              <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[s.status] ?? "bg-surface-elevated text-content-secondary"}`}>
                                 {s.status}
                               </span>
                             </td>

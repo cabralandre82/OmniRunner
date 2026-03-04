@@ -47,7 +47,7 @@ export function DepositButton() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
+        className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:brightness-110 transition"
       >
         Depositar Lastro
       </button>
@@ -55,12 +55,12 @@ export function DepositButton() {
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-lg w-80">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">
+    <div className="rounded-xl border border-border bg-surface p-4 shadow-lg w-80">
+      <h3 className="text-sm font-semibold text-content-primary mb-3">
         Novo Depósito de Lastro
       </h3>
 
-      <label className="block text-xs font-medium text-gray-600 mb-1">
+      <label className="block text-xs font-medium text-content-secondary mb-1">
         Valor (USD)
       </label>
       <input
@@ -70,23 +70,23 @@ export function DepositButton() {
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
         placeholder="1000"
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm mb-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+        className="w-full rounded-lg border border-border px-3 py-2 text-sm mb-3 focus:border-brand focus:ring-1 focus:ring-brand"
       />
 
-      <label className="block text-xs font-medium text-gray-600 mb-1">
+      <label className="block text-xs font-medium text-content-secondary mb-1">
         Gateway
       </label>
       <select
         value={gateway}
         onChange={(e) => setGateway(e.target.value as "stripe" | "mercadopago")}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm mb-3"
+        className="w-full rounded-lg border border-border px-3 py-2 text-sm mb-3"
       >
         <option value="stripe">Stripe</option>
         <option value="mercadopago">MercadoPago</option>
       </select>
 
       {amount && parseFloat(amount) >= 10 && (
-        <p className="text-xs text-gray-500 mb-3">
+        <p className="text-xs text-content-secondary mb-3">
           Equivale a{" "}
           <span className="font-semibold">
             {Math.floor(parseFloat(amount)).toLocaleString()} coins
@@ -95,7 +95,7 @@ export function DepositButton() {
       )}
 
       {message && (
-        <p className={`text-xs mb-3 ${message.includes("sucesso") ? "text-green-600" : "text-red-600"}`}>
+        <p className={`text-xs mb-3 ${message.includes("sucesso") ? "text-success" : "text-error"}`}>
           {message}
         </p>
       )}
@@ -104,7 +104,7 @@ export function DepositButton() {
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition"
+          className="flex-1 rounded-lg bg-brand px-3 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50 transition"
         >
           {loading ? "Processando..." : "Confirmar"}
         </button>
@@ -113,7 +113,7 @@ export function DepositButton() {
             setOpen(false);
             setMessage("");
           }}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition"
+          className="rounded-lg border border-border px-3 py-2 text-sm text-content-secondary hover:bg-surface-elevated transition"
         >
           Cancelar
         </button>

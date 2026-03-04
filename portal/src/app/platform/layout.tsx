@@ -27,22 +27,22 @@ export default async function PlatformLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-bg-secondary">
       <PlatformSidebar email={user.email ?? ""} />
 
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
-        <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-6">
+        <header className="flex h-14 items-center justify-between border-b border-border bg-surface px-4 sm:px-6">
           <div className="flex items-center gap-2">
             <button
               id="platform-menu-btn"
-              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden"
+              className="rounded-lg p-2 text-content-secondary hover:bg-bg-secondary lg:hidden"
               aria-label="Abrir menu"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
               </svg>
             </button>
-            <h3 className="text-sm font-semibold text-gray-900">
+            <h3 className="text-sm font-semibold text-content-primary">
               Administração da Plataforma
             </h3>
           </div>

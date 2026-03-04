@@ -116,15 +116,15 @@ export default async function AtRiskPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Atletas em Risco</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">Atletas em Risco</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Atletas com alertas ativos para acompanhamento
         </p>
       </div>
 
       {athletes.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-gray-500">
+        <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
+          <p className="text-sm text-content-secondary">
             Nenhum atleta em risco no momento.
           </p>
         </div>
@@ -134,10 +134,10 @@ export default async function AtRiskPage() {
             <Link
               key={a.user_id}
               href={`/crm/${a.user_id}`}
-              className="block rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-gray-300 hover:shadow-md"
+              className="block rounded-xl border border-border bg-surface p-4 shadow-sm transition hover:border-border hover:shadow-md"
             >
-              <h3 className="font-semibold text-gray-900">{a.display_name}</h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <h3 className="font-semibold text-content-primary">{a.display_name}</h3>
+              <p className="mt-1 text-sm text-content-secondary">
                 {a.status ? STATUS_LABELS[a.status] ?? a.status : "Sem status"}
               </p>
               {a.tags.length > 0 && (
@@ -145,34 +145,34 @@ export default async function AtRiskPage() {
                   {a.tags.slice(0, 3).map((t) => (
                     <span
                       key={t}
-                      className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-700"
+                      className="rounded bg-surface-elevated px-1.5 py-0.5 text-xs text-content-secondary"
                     >
                       {t}
                     </span>
                   ))}
                 </div>
               )}
-              <div className="mt-3 space-y-1 border-t border-gray-100 pt-3">
+              <div className="mt-3 space-y-1 border-t border-border-subtle pt-3">
                 {a.alerts.slice(0, 2).map((al, i) => (
                   <div key={i} className="text-xs">
                     <span
                       className={
                         al.severity === "critical"
-                          ? "font-medium text-red-600"
+                          ? "font-medium text-error"
                           : al.severity === "warning"
                             ? "font-medium text-orange-600"
-                            : "text-gray-600"
+                            : "text-content-secondary"
                       }
                     >
                       {al.title}
                     </span>
-                    <span className="ml-1 text-gray-400">
+                    <span className="ml-1 text-content-muted">
                       ({formatDateISO(al.day)})
                     </span>
                   </div>
                 ))}
                 {a.alerts.length > 2 && (
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-content-muted">
                     +{a.alerts.length - 2} outros alertas
                   </p>
                 )}

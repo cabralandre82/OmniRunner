@@ -40,9 +40,9 @@ export function AttendanceFilters({
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+    <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm">
       <div>
-        <label htmlFor="from" className="block text-xs font-medium text-gray-500">
+        <label htmlFor="from" className="block text-xs font-medium text-content-secondary">
           De
         </label>
         <input
@@ -50,11 +50,11 @@ export function AttendanceFilters({
           name="from"
           type="date"
           defaultValue={from ?? thirtyDaysAgo}
-          className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+          className="mt-1 block rounded-md border border-border px-2 py-1.5 text-sm"
         />
       </div>
       <div>
-        <label htmlFor="to" className="block text-xs font-medium text-gray-500">
+        <label htmlFor="to" className="block text-xs font-medium text-content-secondary">
           Até
         </label>
         <input
@@ -62,11 +62,11 @@ export function AttendanceFilters({
           name="to"
           type="date"
           defaultValue={to ?? today}
-          className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+          className="mt-1 block rounded-md border border-border px-2 py-1.5 text-sm"
         />
       </div>
       <div>
-        <label htmlFor="session_id" className="block text-xs font-medium text-gray-500">
+        <label htmlFor="session_id" className="block text-xs font-medium text-content-secondary">
           Treino
         </label>
         <select
@@ -74,7 +74,7 @@ export function AttendanceFilters({
           name="session_id"
           key={sessionId ?? "all"}
           defaultValue={sessionId ?? ""}
-          className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+          className="mt-1 block rounded-md border border-border px-2 py-1.5 text-sm"
         >
           <option value="">Todos</option>
           {sessions.map((s) => (
@@ -86,7 +86,7 @@ export function AttendanceFilters({
       </div>
       <button
         type="submit"
-        className="rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800"
+        className="rounded-lg bg-surface-elevated px-3 py-1.5 text-sm font-medium text-white hover:bg-bg-secondary"
       >
         Filtrar
       </button>

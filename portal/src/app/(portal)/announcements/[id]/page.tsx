@@ -33,11 +33,11 @@ export default async function AnnouncementDetailPage({
   if (!announcement) {
     return (
       <div className="space-y-6">
-        <Link href="/announcements" className="text-sm text-blue-600 hover:underline">
+        <Link href="/announcements" className="text-sm text-brand hover:underline">
           ← Voltar ao mural
         </Link>
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-gray-500">Aviso não encontrado.</p>
+        <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
+          <p className="text-sm text-content-secondary">Aviso não encontrado.</p>
         </div>
       </div>
     );
@@ -85,15 +85,15 @@ export default async function AnnouncementDetailPage({
 
   return (
     <div className="space-y-6">
-      <Link href="/announcements" className="text-sm text-blue-600 hover:underline">
+      <Link href="/announcements" className="text-sm text-brand hover:underline">
         ← Voltar ao mural
       </Link>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{announcement.title}</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-2xl font-bold text-content-primary">{announcement.title}</h1>
+            <p className="mt-1 text-sm text-content-secondary">
               Por {(author as { display_name: string } | null)?.display_name ?? "—"} em{" "}
               {formatDateTime(announcement.created_at)}
               {announcement.pinned && (
@@ -106,43 +106,43 @@ export default async function AnnouncementDetailPage({
           {isStaff && (
             <Link
               href={`/announcements/${id}/edit`}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-content-secondary shadow-sm hover:bg-surface-elevated"
             >
               Editar
             </Link>
           )}
         </div>
-        <div className="mt-4 whitespace-pre-wrap text-gray-700">
+        <div className="mt-4 whitespace-pre-wrap text-content-secondary">
           {announcement.body}
         </div>
       </div>
 
       {isStaff && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-gray-900">Estatísticas de leitura</h2>
-          <p className="mt-2 text-2xl font-bold text-gray-900">
+        <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
+          <h2 className="text-sm font-semibold text-content-primary">Estatísticas de leitura</h2>
+          <p className="mt-2 text-2xl font-bold text-content-primary">
             Lido por {readCount} de {total} ({readRate.toFixed(1)}%)
           </p>
           {readList.length > 0 ? (
-            <div className="mt-4 overflow-hidden rounded-lg border border-gray-200">
-              <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
+            <div className="mt-4 overflow-hidden rounded-lg border border-border">
+              <table className="min-w-full divide-y divide-border text-sm">
+                <thead className="bg-bg-secondary">
                   <tr>
-                    <th className="px-4 py-2 text-left font-medium text-gray-500">
+                    <th className="px-4 py-2 text-left font-medium text-content-secondary">
                       Membro
                     </th>
-                    <th className="px-4 py-2 text-left font-medium text-gray-500">
+                    <th className="px-4 py-2 text-left font-medium text-content-secondary">
                       Lido em
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-border-subtle">
                   {readList.map((r) => (
-                    <tr key={r.user_id + r.read_at} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-4 py-2 font-medium text-gray-900">
+                    <tr key={r.user_id + r.read_at} className="hover:bg-surface-elevated">
+                      <td className="whitespace-nowrap px-4 py-2 font-medium text-content-primary">
                         {r.display_name ?? "—"}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-2 text-gray-600">
+                      <td className="whitespace-nowrap px-4 py-2 text-content-secondary">
                         {formatDateTime(r.read_at)}
                       </td>
                     </tr>
@@ -151,7 +151,7 @@ export default async function AnnouncementDetailPage({
               </table>
             </div>
           ) : (
-            <p className="mt-2 text-sm text-gray-500">Ninguém leu este aviso ainda.</p>
+            <p className="mt-2 text-sm text-content-secondary">Ninguém leu este aviso ainda.</p>
           )}
         </div>
       )}

@@ -32,12 +32,12 @@ function ExportCard({
   const href = exportHref + (params.toString() ? `?${params.toString()}` : "");
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <h3 className="font-semibold text-gray-900">{title}</h3>
-      <p className="mt-1 text-sm text-gray-500">{description}</p>
+    <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+      <h3 className="font-semibold text-content-primary">{title}</h3>
+      <p className="mt-1 text-sm text-content-secondary">{description}</p>
       <div className="mt-4 flex flex-wrap items-end gap-3">
         <div>
-          <label htmlFor={`${title}-from`} className="block text-xs font-medium text-gray-500">
+          <label htmlFor={`${title}-from`} className="block text-xs font-medium text-content-secondary">
             De
           </label>
           <input
@@ -45,11 +45,11 @@ function ExportCard({
             type="date"
             value={from}
             onChange={(e) => onFromChange(e.target.value)}
-            className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+            className="mt-1 block rounded-md border border-border px-2 py-1.5 text-sm"
           />
         </div>
         <div>
-          <label htmlFor={`${title}-to`} className="block text-xs font-medium text-gray-500">
+          <label htmlFor={`${title}-to`} className="block text-xs font-medium text-content-secondary">
             Até
           </label>
           <input
@@ -57,12 +57,12 @@ function ExportCard({
             type="date"
             value={to}
             onChange={(e) => onToChange(e.target.value)}
-            className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+            className="mt-1 block rounded-md border border-border px-2 py-1.5 text-sm"
           />
         </div>
         <a
           href={href}
-          className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
+          className="rounded-lg bg-surface-elevated px-3 py-2 text-sm font-medium text-white hover:bg-bg-secondary"
         >
           Exportar CSV
         </a>
@@ -86,8 +86,8 @@ export default function ExportsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Central de Exports</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">Central de Exports</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Exporte dados CSV de todos os módulos
         </p>
       </div>

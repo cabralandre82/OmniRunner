@@ -45,15 +45,15 @@ export default async function SupportTicketPage({ params }: Props) {
       <div>
         <a
           href="/platform/support"
-          className="mb-3 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+          className="mb-3 inline-flex items-center gap-1 text-sm text-content-secondary hover:text-content-secondary"
         >
           ← Voltar
         </a>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-xl font-bold text-gray-900">{ticket.subject}</h1>
+          <h1 className="text-xl font-bold text-content-primary">{ticket.subject}</h1>
           <StatusBadge status={ticket.status} />
         </div>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-content-secondary">
           {group?.name ?? "—"} ·{" "}
           {new Date(ticket.created_at).toLocaleDateString("pt-BR", {
             day: "2-digit",
@@ -79,8 +79,8 @@ export default async function SupportTicketPage({ params }: Props) {
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     open: "bg-orange-100 text-orange-700",
-    answered: "bg-blue-100 text-blue-700",
-    closed: "bg-gray-200 text-gray-600",
+    answered: "bg-blue-100 text-brand",
+    closed: "bg-surface-elevated text-content-secondary",
   };
   const labels: Record<string, string> = {
     open: "Aberto",
@@ -91,7 +91,7 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span
       className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-        styles[status] ?? "bg-gray-100"
+        styles[status] ?? "bg-surface-elevated"
       }`}
     >
       {labels[status] ?? status}

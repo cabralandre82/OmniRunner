@@ -43,22 +43,22 @@ export default async function NoAccessPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="max-w-sm space-y-4 rounded-xl bg-white p-8 text-center shadow-lg">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-          <span className="text-xl text-red-600">✕</span>
+    <div className="flex min-h-screen items-center justify-center bg-bg-secondary">
+      <div className="max-w-sm space-y-4 rounded-xl bg-surface p-8 text-center shadow-lg">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-error-soft">
+          <span className="text-xl text-error">✕</span>
         </div>
-        <h1 className="text-xl font-bold text-gray-900">Acesso Negado</h1>
-        <p className="text-sm text-gray-500">{reason}</p>
+        <h1 className="text-xl font-bold text-content-primary">Acesso Negado</h1>
+        <p className="text-sm text-content-secondary">{reason}</p>
         {email && (
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-content-muted">
             Logado como: {email}
           </p>
         )}
         <form action={signOut}>
           <button
             type="submit"
-            className="mt-2 inline-block rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+            className="mt-2 inline-block rounded-lg bg-surface-elevated px-4 py-2 text-sm font-medium text-content-secondary hover:bg-bg-secondary"
           >
             Sair e usar outra conta
           </button>

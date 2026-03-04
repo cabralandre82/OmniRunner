@@ -85,13 +85,13 @@ export default async function CustodyPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Custodia</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-content-primary">Custodia</h1>
+          <p className="mt-1 text-sm text-content-secondary">
             Lastro obrigatorio &mdash; 1 coin = US$ 1.00
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/swap" className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+          <Link href="/swap" className="rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-content-secondary hover:bg-surface-elevated">
             Swap
           </Link>
           <DepositButton />
@@ -99,8 +99,8 @@ export default async function CustodyPage() {
       </div>
 
       {isBlocked && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-          <p className="font-medium text-red-800">
+        <div className="rounded-lg border border-error/30 bg-error-soft p-4">
+          <p className="font-medium text-error">
             Emissao bloqueada &mdash; {account?.blocked_reason ?? "saldo insuficiente"}
           </p>
         </div>
@@ -108,40 +108,40 @@ export default async function CustodyPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Total Depositado</p>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{formatUsd(deposited)}</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Total Depositado</p>
+          <p className="mt-1 text-2xl font-bold text-content-primary">{formatUsd(deposited)}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Reservado (Lastro)</p>
-          <p className="mt-1 text-2xl font-bold text-blue-600">{formatUsd(committed)}</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Reservado (Lastro)</p>
+          <p className="mt-1 text-2xl font-bold text-brand">{formatUsd(committed)}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Disponivel</p>
-          <p className={`mt-1 text-2xl font-bold ${available > 0 ? "text-green-600" : "text-red-600"}`}>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Disponivel</p>
+          <p className={`mt-1 text-2xl font-bold ${available > 0 ? "text-success" : "text-error"}`}>
             {formatUsd(available)}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Coins Vivas</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Coins Vivas</p>
           <p className="mt-1 text-2xl font-bold text-purple-600">{coinsAlive.toLocaleString()}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Total Liquidado</p>
-          <p className="mt-1 text-2xl font-bold text-gray-600">{formatUsd(settled)}</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Total Liquidado</p>
+          <p className="mt-1 text-2xl font-bold text-content-secondary">{formatUsd(settled)}</p>
         </div>
       </div>
 
       {/* Invariant Badges */}
       <div className="flex flex-wrap gap-3">
-        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${invTotalOk ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${invTotalOk ? "bg-success-soft text-success" : "bg-error-soft text-error"}`}>
           {invTotalOk ? "\u2713" : "\u26A0"} Total = Reservado + Disponivel
         </span>
-        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${invReservedOk ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${invReservedOk ? "bg-success-soft text-success" : "bg-error-soft text-error"}`}>
           {invReservedOk ? "\u2713" : "\u26A0"} Reservado = Coins Vivas ({coinsAlive})
         </span>
         {(!invTotalOk || !invReservedOk) && (
-          <Link href="/audit" className="text-xs font-medium text-red-600 underline">
+          <Link href="/audit" className="text-xs font-medium text-error underline">
             Ver Auditoria
           </Link>
         )}

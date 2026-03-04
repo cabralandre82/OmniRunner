@@ -43,7 +43,7 @@ export function RiskActions({ alertId, onResolved }: RiskActionsProps) {
         type="button"
         onClick={() => resolve("resolver")}
         disabled={!!loading}
-        className="rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+        className="rounded-lg bg-brand px-2.5 py-1.5 text-xs font-medium text-white hover:brightness-110 disabled:opacity-50"
       >
         {loading === "resolver" ? "..." : "Resolver"}
       </button>
@@ -51,7 +51,7 @@ export function RiskActions({ alertId, onResolved }: RiskActionsProps) {
         type="button"
         onClick={() => resolve("dispensar")}
         disabled={!!loading}
-        className="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs font-medium text-content-secondary hover:bg-surface-elevated disabled:opacity-50"
       >
         {loading === "dispensar" ? "..." : "Dispensar"}
       </button>

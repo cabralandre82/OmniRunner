@@ -131,16 +131,16 @@ export default async function AnnouncementsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Mural de Avisos</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-content-primary">Mural de Avisos</h1>
+          <p className="mt-1 text-sm text-content-secondary">
             Avisos do grupo e taxa de leitura
           </p>
         </div>
       </div>
 
       {fetchError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-red-600">Erro ao carregar dados. Tente recarregar a página.</p>
+        <div className="rounded-lg border border-error/30 bg-error-soft p-6 text-center">
+          <p className="text-error">Erro ao carregar dados. Tente recarregar a página.</p>
         </div>
       )}
 
@@ -149,12 +149,12 @@ export default async function AnnouncementsPage() {
         <KpiCard
           label="Taxa média de leitura"
           value={formatPercent(avgReadRate)}
-          color="text-blue-700"
+          color="text-brand"
         />
         <KpiCard
           label="Avisos esta semana"
           value={thisWeek}
-          color="text-green-700"
+          color="text-success"
         />
       </div>
 
@@ -165,8 +165,8 @@ export default async function AnnouncementsPage() {
       />
 
       {!fetchError && announcements.length === 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-gray-500">Nenhum aviso publicado ainda.</p>
+        <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
+          <p className="text-sm text-content-secondary">Nenhum aviso publicado ainda.</p>
         </div>
       )}
     </div>
@@ -176,15 +176,15 @@ export default async function AnnouncementsPage() {
 function KpiCard({
   label,
   value,
-  color = "text-gray-900",
+  color = "text-content-primary",
 }: {
   label: string;
   value: number | string;
   color?: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+      <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">
         {label}
       </p>
       <p className={`mt-1 text-xl font-bold ${color}`}>{value}</p>

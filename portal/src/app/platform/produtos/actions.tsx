@@ -66,19 +66,19 @@ export function ProductCard({ product: p }: { product: Product }) {
 
   return (
     <div
-      className={`rounded-xl border bg-white p-4 shadow-sm ${
-        p.is_active ? "border-gray-200" : "border-dashed border-gray-300 opacity-60"
+      className={`rounded-xl border bg-surface p-4 shadow-sm ${
+        p.is_active ? "border-border" : "border-dashed border-border opacity-60"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-gray-900">{p.name}</h3>
+            <h3 className="text-sm font-semibold text-content-primary">{p.name}</h3>
             <span
               className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                 p.product_type === "badges"
                   ? "bg-purple-100 text-purple-700"
-                  : "bg-blue-100 text-blue-700"
+                  : "bg-blue-100 text-brand"
               }`}
             >
               {p.product_type === "badges" ? "Badge" : "Coins"}
@@ -86,21 +86,21 @@ export function ProductCard({ product: p }: { product: Product }) {
             <span
               className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                 p.is_active
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-200 text-gray-500"
+                  ? "bg-success-soft text-success"
+                  : "bg-surface-elevated text-content-secondary"
               }`}
             >
               {p.is_active ? "Ativo" : "Inativo"}
             </span>
           </div>
           {p.description && (
-            <p className="mt-1 text-xs text-gray-500">{p.description}</p>
+            <p className="mt-1 text-xs text-content-secondary">{p.description}</p>
           )}
         </div>
-        <span className="text-xs text-gray-400">#{p.sort_order}</span>
+        <span className="text-xs text-content-muted">#{p.sort_order}</span>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-content-secondary">
         <span>
           <strong>{p.credits_amount}</strong> créditos
         </span>
@@ -110,10 +110,10 @@ export function ProductCard({ product: p }: { product: Product }) {
         <span>R$ {unitPrice}/créd.</span>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2 border-t border-gray-100 pt-3">
+      <div className="mt-3 flex flex-wrap gap-2 border-t border-border-subtle pt-3">
         <button
           onClick={() => setEditing(true)}
-          className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
+          className="rounded-lg bg-surface-elevated px-3 py-1.5 text-xs font-medium text-content-secondary hover:bg-bg-secondary"
         >
           Editar
         </button>
@@ -123,7 +123,7 @@ export function ProductCard({ product: p }: { product: Product }) {
           className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
             p.is_active
               ? "bg-orange-50 text-orange-600 hover:bg-orange-100"
-              : "bg-green-50 text-green-600 hover:bg-green-100"
+              : "bg-success-soft text-green-600 hover:bg-success-soft"
           }`}
         >
           {loading ? "..." : p.is_active ? "Suspender" : "Ativar"}
@@ -131,7 +131,7 @@ export function ProductCard({ product: p }: { product: Product }) {
         <button
           onClick={handleDelete}
           disabled={loading}
-          className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100"
+          className="rounded-lg bg-error-soft px-3 py-1.5 text-xs font-medium text-error hover:bg-error-soft"
         >
           {loading ? "..." : "Remover"}
         </button>
@@ -183,8 +183,8 @@ function EditForm({
   }
 
   return (
-    <div className="rounded-xl border-2 border-blue-300 bg-blue-50/30 p-4 shadow-sm">
-      <h3 className="mb-3 text-sm font-semibold text-gray-900">
+    <div className="rounded-xl border-2 border-blue-300 bg-brand-soft/30 p-4 shadow-sm">
+      <h3 className="mb-3 text-sm font-semibold text-content-primary">
         Editando: {p.name}
       </h3>
       <form onSubmit={handleSubmit} className="space-y-3">
@@ -219,14 +219,14 @@ function EditForm({
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-lg bg-brand px-4 py-1.5 text-xs font-medium text-white hover:brightness-110 disabled:opacity-50"
           >
             {loading ? "Salvando..." : "Salvar"}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg bg-gray-100 px-4 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-200"
+            className="rounded-lg bg-surface-elevated px-4 py-1.5 text-xs font-medium text-content-secondary hover:bg-bg-secondary"
           >
             Cancelar
           </button>
@@ -251,7 +251,7 @@ function Input({
 }) {
   return (
     <div>
-      <label className="block text-[10px] font-medium text-gray-500 mb-0.5">
+      <label className="block text-[10px] font-medium text-content-secondary mb-0.5">
         {label}
       </label>
       <input
@@ -259,7 +259,7 @@ function Input({
         type={type}
         defaultValue={defaultValue}
         required={required}
-        className="w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="w-full rounded-lg border border-border px-2.5 py-1.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
       />
     </div>
   );
@@ -310,28 +310,28 @@ export function ProductForm() {
       className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
     >
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">
+        <label className="block text-xs font-medium text-content-secondary mb-1">
           Nome *
         </label>
         <input
           name="name"
           required
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           placeholder="Ex: Plus"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">
+        <label className="block text-xs font-medium text-content-secondary mb-1">
           Descrição
         </label>
         <input
           name="description"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           placeholder="Ex: 300 OmniCoins — melhor custo-benefício"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">
+        <label className="block text-xs font-medium text-content-secondary mb-1">
           Créditos *
         </label>
         <input
@@ -339,40 +339,40 @@ export function ProductForm() {
           type="number"
           min={1}
           required
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           placeholder="300"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">
+        <label className="block text-xs font-medium text-content-secondary mb-1">
           Preço (R$) *
         </label>
         <input
           name="price"
           required
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           placeholder="129,90"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">
+        <label className="block text-xs font-medium text-content-secondary mb-1">
           Ordem
         </label>
         <input
           name="sort_order"
           type="number"
           defaultValue={0}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">
+        <label className="block text-xs font-medium text-content-secondary mb-1">
           Tipo
         </label>
         <select
           name="product_type"
           defaultValue="coins"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
         >
           <option value="coins">OmniCoins</option>
           <option value="badges">Badge Campeonato</option>
@@ -382,7 +382,7 @@ export function ProductForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="w-full rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
         >
           {loading ? "Criando..." : "Criar pacote"}
         </button>

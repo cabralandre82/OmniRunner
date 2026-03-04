@@ -82,10 +82,10 @@ export default async function PortalLayout({
 
   const branding: Branding = {
     logo_url: brandingRes.data?.logo_url ?? null,
-    primary_color: brandingRes.data?.primary_color ?? "#2563eb",
-    sidebar_bg: brandingRes.data?.sidebar_bg ?? "#ffffff",
-    sidebar_text: brandingRes.data?.sidebar_text ?? "#111827",
-    accent_color: brandingRes.data?.accent_color ?? "#2563eb",
+    primary_color: brandingRes.data?.primary_color ?? "#3b82f6",
+    sidebar_bg: brandingRes.data?.sidebar_bg ?? "#111827",
+    sidebar_text: brandingRes.data?.sidebar_text ?? "#f1f5f9",
+    accent_color: brandingRes.data?.accent_color ?? "#3b82f6",
   };
 
   const cssVars = {
@@ -96,7 +96,7 @@ export default async function PortalLayout({
   } as React.CSSProperties;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50" style={cssVars}>
+    <div className="flex h-screen overflow-hidden bg-bg-primary" style={cssVars}>
       <Sidebar
         role={role}
         isPlatformAdmin={isPlatformAdmin}
@@ -112,7 +112,7 @@ export default async function PortalLayout({
           environment={environment}
           isBlocked={isBlocked}
         />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-bg-primary p-4 sm:p-6">{children}</main>
       </div>
     </div>
   );

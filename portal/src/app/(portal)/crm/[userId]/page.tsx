@@ -7,11 +7,11 @@ import { AddNoteForm } from "./add-note-form";
 export const dynamic = "force-dynamic";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  active: { label: "Ativo", color: "bg-green-100 text-green-800" },
+  active: { label: "Ativo", color: "bg-success-soft text-success" },
   paused: { label: "Pausado", color: "bg-orange-100 text-orange-800" },
-  injured: { label: "Lesionado", color: "bg-red-100 text-red-800" },
-  inactive: { label: "Inativo", color: "bg-gray-100 text-gray-800" },
-  trial: { label: "Teste", color: "bg-blue-100 text-blue-800" },
+  injured: { label: "Lesionado", color: "bg-error-soft text-error" },
+  inactive: { label: "Inativo", color: "bg-surface-elevated text-content-primary" },
+  trial: { label: "Teste", color: "bg-info-soft text-info" },
 };
 
 interface AthleteDetail {
@@ -156,9 +156,9 @@ export default async function AthleteDetailPage({
 
   if (!athlete) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-        <p className="text-sm text-gray-500">Atleta não encontrado.</p>
-        <Link href="/crm" className="mt-4 inline-block text-blue-600 hover:underline">
+      <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
+        <p className="text-sm text-content-secondary">Atleta não encontrado.</p>
+        <Link href="/crm" className="mt-4 inline-block text-brand hover:underline">
           Voltar ao CRM
         </Link>
       </div>
@@ -168,7 +168,7 @@ export default async function AthleteDetailPage({
   const statusInfo = athlete.status
     ? STATUS_LABELS[athlete.status] ?? {
         label: athlete.status,
-        color: "bg-gray-100 text-gray-800",
+        color: "bg-surface-elevated text-content-primary",
       }
     : null;
 
@@ -179,20 +179,20 @@ export default async function AthleteDetailPage({
       <div className="flex items-center gap-4">
         <Link
           href="/crm"
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-brand hover:underline"
         >
           ← CRM
         </Link>
       </div>
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{athlete.display_name}</h1>
-        <p className="mt-1 text-sm text-gray-500">Detalhes do atleta</p>
+        <h1 className="text-2xl font-bold text-content-primary">{athlete.display_name}</h1>
+        <p className="mt-1 text-sm text-content-secondary">Detalhes do atleta</p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <h2 className="font-semibold text-gray-900">Status e Tags</h2>
+        <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+          <h2 className="font-semibold text-content-primary">Status e Tags</h2>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {statusInfo ? (
               <span
@@ -201,12 +201,12 @@ export default async function AthleteDetailPage({
                 {statusInfo.label}
               </span>
             ) : (
-              <span className="text-gray-400">Sem status</span>
+              <span className="text-content-muted">Sem status</span>
             )}
             {athlete.tags.map((t) => (
               <span
                 key={t.id}
-                className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
+                className="rounded bg-surface-elevated px-2 py-0.5 text-xs text-content-secondary"
               >
                 {t.name}
               </span>
@@ -216,20 +216,20 @@ export default async function AthleteDetailPage({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <h2 className="font-semibold text-gray-900">Notas</h2>
+        <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+          <h2 className="font-semibold text-content-primary">Notas</h2>
           <AddNoteForm groupId={groupId} athleteUserId={userId} />
           <div className="mt-4 space-y-3 max-h-64 overflow-y-auto">
             {athlete.notes.length === 0 ? (
-              <p className="text-sm text-gray-500">Nenhuma nota.</p>
+              <p className="text-sm text-content-secondary">Nenhuma nota.</p>
             ) : (
               athlete.notes.map((n) => (
                 <div
                   key={n.id}
-                  className="rounded-lg border border-gray-100 bg-gray-50 p-3"
+                  className="rounded-lg border border-border-subtle bg-bg-secondary p-3"
                 >
-                  <p className="text-sm text-gray-900">{n.note}</p>
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="text-sm text-content-primary">{n.note}</p>
+                  <p className="mt-1 text-xs text-content-secondary">
                     {n.author_name} · {formatDateTime(n.created_at)}
                   </p>
                 </div>
@@ -238,8 +238,8 @@ export default async function AthleteDetailPage({
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <h2 className="font-semibold text-gray-900">Presença (últimos 30 dias)</h2>
+        <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+          <h2 className="font-semibold text-content-primary">Presença (últimos 30 dias)</h2>
           <div className="mt-4 flex items-end gap-0.5 h-24">
             {athlete.attendanceByDay.map((d) => (
               <div
@@ -248,7 +248,7 @@ export default async function AthleteDetailPage({
                 title={`${d.date}: ${d.count}`}
               >
                 <div
-                  className="w-full rounded-t bg-blue-500 transition-opacity hover:opacity-80"
+                  className="w-full rounded-t bg-brand transition-opacity hover:opacity-80"
                   style={{
                     height: `${(d.count / maxCount) * 100}%`,
                     minHeight: d.count > 0 ? "4px" : "0",
@@ -257,29 +257,29 @@ export default async function AthleteDetailPage({
               </div>
             ))}
           </div>
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-2 text-xs text-content-secondary">
             Total: {athlete.attendanceByDay.reduce((s, d) => s + d.count, 0)} presenças
           </p>
         </div>
       </div>
 
       {athlete.alerts.length > 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <h2 className="font-semibold text-gray-900">Alertas Ativos</h2>
+        <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+          <h2 className="font-semibold text-content-primary">Alertas Ativos</h2>
           <ul className="mt-2 space-y-2">
             {athlete.alerts.map((a) => (
               <li
                 key={a.id}
                 className={
                   a.severity === "critical"
-                    ? "rounded-lg border border-red-200 bg-red-50 p-3 text-red-800"
+                    ? "rounded-lg border border-error/30 bg-error-soft p-3 text-error"
                     : a.severity === "warning"
                       ? "rounded-lg border border-orange-200 bg-orange-50 p-3 text-orange-800"
-                      : "rounded-lg border border-gray-200 bg-gray-50 p-3"
+                      : "rounded-lg border border-border bg-bg-secondary p-3"
                 }
               >
                 <p className="font-medium">{a.title}</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-content-secondary">
                   {formatDateISO(a.day)} · {a.alert_type}
                 </p>
               </li>

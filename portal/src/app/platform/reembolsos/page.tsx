@@ -98,9 +98,9 @@ export default async function ReembolsosPage({
 
   const statusColor: Record<string, string> = {
     requested: "bg-orange-100 text-orange-700",
-    approved: "bg-blue-100 text-blue-700",
-    processed: "bg-green-100 text-green-700",
-    rejected: "bg-red-100 text-red-700",
+    approved: "bg-blue-100 text-brand",
+    processed: "bg-success-soft text-success",
+    rejected: "bg-error-soft text-error",
   };
 
   const filters = [
@@ -115,8 +115,8 @@ export default async function ReembolsosPage({
     <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reembolsos</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-content-primary">Reembolsos</h1>
+          <p className="mt-1 text-sm text-content-secondary">
             {pendingCount > 0
               ? `${pendingCount} reembolso(s) aguardando ação`
               : "Nenhum reembolso pendente"}
@@ -124,7 +124,7 @@ export default async function ReembolsosPage({
         </div>
         <Link
           href="/platform"
-          className="text-sm text-gray-500 hover:text-gray-700"
+          className="text-sm text-content-secondary hover:text-content-secondary"
         >
           ← Dashboard
         </Link>
@@ -142,8 +142,8 @@ export default async function ReembolsosPage({
               href={`/platform/reembolsos?status=${f.key}`}
               className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
                 active
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-surface-elevated text-white"
+                  : "bg-surface-elevated text-content-secondary hover:bg-bg-secondary"
               }`}
             >
               {f.label}
@@ -155,7 +155,7 @@ export default async function ReembolsosPage({
       {/* List */}
       {requests.length === 0 ? (
         <div className="py-16 text-center">
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-content-muted">
             Nenhum reembolso encontrado.
           </p>
         </div>
@@ -170,27 +170,27 @@ export default async function ReembolsosPage({
             return (
               <div
                 key={r.id}
-                className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm"
+                className="rounded-xl border border-border bg-surface p-4 sm:p-5 shadow-sm"
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-sm font-semibold text-gray-900">
+                      <h3 className="text-sm font-semibold text-content-primary">
                         {r.group_name}
                       </h3>
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          statusColor[r.status] ?? "bg-gray-100"
+                          statusColor[r.status] ?? "bg-surface-elevated"
                         }`}
                       >
                         {statusLabel[r.status] ?? r.status}
                       </span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-content-muted">
                         {r.refund_type === "partial" ? "Parcial" : "Total"}
                       </span>
                     </div>
 
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-content-secondary">
                       <span>
                         Valor: <strong>{fmt(refundAmount)}</strong>
                       </span>
@@ -207,12 +207,12 @@ export default async function ReembolsosPage({
                       </span>
                     </div>
 
-                    <p className="mt-2 text-xs text-gray-600">
+                    <p className="mt-2 text-xs text-content-secondary">
                       Motivo: {r.reason}
                     </p>
 
                     {r.review_notes && (
-                      <p className="mt-1 text-xs text-blue-600">
+                      <p className="mt-1 text-xs text-brand">
                         Nota: {r.review_notes}
                       </p>
                     )}
@@ -225,13 +225,13 @@ export default async function ReembolsosPage({
                           refundId={r.id}
                           action="approve"
                           label="Aprovar"
-                          className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+                          className="rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white hover:brightness-110"
                         />
                         <RefundActions
                           refundId={r.id}
                           action="reject"
                           label="Rejeitar"
-                          className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100"
+                          className="rounded-lg bg-error-soft px-3 py-1.5 text-xs font-medium text-error hover:bg-error-soft"
                           requireNotes
                         />
                       </>

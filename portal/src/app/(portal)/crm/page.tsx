@@ -7,11 +7,11 @@ import { CrmFilters } from "./crm-filters";
 export const dynamic = "force-dynamic";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  active: { label: "Ativo", color: "bg-green-100 text-green-800" },
+  active: { label: "Ativo", color: "bg-success-soft text-success" },
   paused: { label: "Pausado", color: "bg-orange-100 text-orange-800" },
-  injured: { label: "Lesionado", color: "bg-red-100 text-red-800" },
-  inactive: { label: "Inativo", color: "bg-gray-100 text-gray-800" },
-  trial: { label: "Teste", color: "bg-blue-100 text-blue-800" },
+  injured: { label: "Lesionado", color: "bg-error-soft text-error" },
+  inactive: { label: "Inativo", color: "bg-surface-elevated text-content-primary" },
+  trial: { label: "Teste", color: "bg-info-soft text-info" },
 };
 
 interface CrmAthlete {
@@ -202,8 +202,8 @@ export default async function CrmPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">CRM de Atletas</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-content-primary">CRM de Atletas</h1>
+          <p className="mt-1 text-sm text-content-secondary">
             Status, tags, presenças e alertas dos atletas
           </p>
         </div>
@@ -216,8 +216,8 @@ export default async function CrmPage({
       </div>
 
       {fetchError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-red-600">Erro ao carregar dados. Tente recarregar a página.</p>
+        <div className="rounded-lg border border-error/30 bg-error-soft p-6 text-center">
+          <p className="text-error">Erro ao carregar dados. Tente recarregar a página.</p>
         </div>
       )}
 
@@ -230,55 +230,55 @@ export default async function CrmPage({
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard label="Total atletas" value={athletes.length} />
-        <KpiCard label="Ativos" value={activeCount} color="text-green-700" />
+        <KpiCard label="Ativos" value={activeCount} color="text-success" />
         <KpiCard label="Em risco" value={atRiskCount} color="text-orange-700" />
       </div>
 
       <div className="flex justify-end">
         <a
           href={exportHref}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary shadow-sm hover:bg-surface-elevated"
         >
           Exportar CSV
         </a>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-bg-secondary">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">
                   Nome
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">
                   Status
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">
                   Tags
                 </th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">
                   Presenças
                 </th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">
                   Alertas
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">
                   Última Nota
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border-subtle">
               {athletes.map((a) => {
                 const statusInfo = a.status
-                  ? STATUS_LABELS[a.status] ?? { label: a.status, color: "bg-gray-100 text-gray-800" }
+                  ? STATUS_LABELS[a.status] ?? { label: a.status, color: "bg-surface-elevated text-content-primary" }
                   : null;
                 return (
-                  <tr key={a.user_id} className="hover:bg-gray-50">
+                  <tr key={a.user_id} className="hover:bg-surface-elevated">
                     <td className="whitespace-nowrap px-4 py-3">
                       <Link
                         href={`/crm/${a.user_id}`}
-                        className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                        className="font-medium text-brand hover:text-brand hover:underline"
                       >
                         {a.display_name}
                       </Link>
@@ -291,7 +291,7 @@ export default async function CrmPage({
                           {statusInfo.label}
                         </span>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <span className="text-content-muted">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -300,7 +300,7 @@ export default async function CrmPage({
                           ? a.tags.slice(0, 3).map((t) => (
                               <span
                                 key={t}
-                                className="inline-flex rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-700"
+                                className="inline-flex rounded bg-surface-elevated px-1.5 py-0.5 text-xs text-content-secondary"
                               >
                                 {t}
                               </span>
@@ -308,7 +308,7 @@ export default async function CrmPage({
                           : "—"}
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-center text-gray-700">
+                    <td className="whitespace-nowrap px-4 py-3 text-center text-content-secondary">
                       {a.attendance_count}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-center">
@@ -317,10 +317,10 @@ export default async function CrmPage({
                           {a.active_alerts}
                         </span>
                       ) : (
-                        <span className="text-gray-400">0</span>
+                        <span className="text-content-muted">0</span>
                       )}
                     </td>
-                    <td className="max-w-[200px] truncate px-4 py-3 text-gray-600">
+                    <td className="max-w-[200px] truncate px-4 py-3 text-content-secondary">
                       {a.last_note ? (
                         <span title={a.last_note}>
                           {a.last_note.slice(0, 50)}
@@ -330,7 +330,7 @@ export default async function CrmPage({
                         "—"
                       )}
                       {a.last_note_at && (
-                        <span className="ml-1 text-xs text-gray-400">
+                        <span className="ml-1 text-xs text-content-muted">
                           ({formatDateISO(a.last_note_at)})
                         </span>
                       )}
@@ -344,8 +344,8 @@ export default async function CrmPage({
       </div>
 
       {athletes.length === 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-gray-500">Nenhum atleta encontrado.</p>
+        <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
+          <p className="text-sm text-content-secondary">Nenhum atleta encontrado.</p>
         </div>
       )}
     </div>
@@ -355,15 +355,15 @@ export default async function CrmPage({
 function KpiCard({
   label,
   value,
-  color = "text-gray-900",
+  color = "text-content-primary",
 }: {
   label: string;
   value: number | string;
   color?: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+      <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">
         {label}
       </p>
       <p className={`mt-1 text-xl font-bold ${color}`}>{value}</p>

@@ -71,6 +71,17 @@
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
 
+  /* -- Semantic soft backgrounds (for badges, alerts) -- */
+  --success-soft: rgba(16, 185, 129, 0.1);
+  --warning-soft: rgba(245, 158, 11, 0.1);
+  --error-soft: rgba(239, 68, 68, 0.1);
+  --info-soft: rgba(56, 189, 248, 0.1);
+  --neutral-soft: rgba(100, 116, 139, 0.08);
+
+  /* -- Skeleton shimmer -- */
+  --skeleton: #e2e8f0;
+  --skeleton-shimmer: #f1f5f9;
+
   /* -- Transitions -- */
   --duration-fast: 150ms;
   --duration-normal: 250ms;
@@ -108,4 +119,15 @@
   --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.15);
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.25);
+
+  /* -- Semantic soft backgrounds (for badges, alerts) -- */
+  --success-soft: rgba(16, 185, 129, 0.15);
+  --warning-soft: rgba(245, 158, 11, 0.15);
+  --error-soft: rgba(239, 68, 68, 0.15);
+  --info-soft: rgba(56, 189, 248, 0.15);
+  --neutral-soft: rgba(148, 163, 184, 0.12);
+
+  /* -- Skeleton shimmer -- */
+  --skeleton: #1e293b;
+  --skeleton-shimmer: #283548;
 }

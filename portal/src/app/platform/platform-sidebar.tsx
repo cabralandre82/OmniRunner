@@ -23,14 +23,14 @@ export function PlatformSidebar({ email }: { email: string }) {
 
   const content = (
     <>
-      <div className="border-b border-gray-200 px-4 py-5 flex items-center justify-between">
+      <div className="border-b border-border px-4 py-5 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">Omni Runner</h2>
+          <h2 className="text-lg font-bold text-content-primary">Omni Runner</h2>
           <p className="text-xs text-red-500 font-semibold">Admin Plataforma</p>
         </div>
         <button
           onClick={() => setOpen(false)}
-          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 lg:hidden"
+          className="rounded-lg p-1.5 text-content-muted hover:bg-bg-secondary lg:hidden"
           aria-label="Fechar menu"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -53,18 +53,18 @@ export function PlatformSidebar({ email }: { email: string }) {
         <SidebarLink href="/platform/feature-flags" label="Feature Flags" pathname={pathname} />
         <Link
           href="/select-group"
-          className="block rounded-lg px-3 py-2.5 text-sm font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600"
+          className="block rounded-lg px-3 py-2.5 text-sm font-medium text-content-muted hover:bg-surface-elevated hover:text-content-secondary"
         >
           ← Portal Assessoria
         </Link>
       </nav>
 
-      <div className="border-t border-gray-200 px-4 py-3 space-y-2">
-        <p className="truncate text-xs text-gray-400">{email}</p>
+      <div className="border-t border-border px-4 py-3 space-y-2">
+        <p className="truncate text-xs text-content-muted">{email}</p>
         <form action={signOut}>
           <button
             type="submit"
-            className="w-full rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 text-left"
+            className="w-full rounded-lg px-3 py-1.5 text-xs font-medium text-content-secondary hover:bg-bg-secondary text-left"
           >
             Sair
           </button>
@@ -75,19 +75,19 @@ export function PlatformSidebar({ email }: { email: string }) {
 
   return (
     <>
-      <aside className="hidden lg:flex h-screen w-56 flex-shrink-0 flex-col border-r border-gray-200 bg-white">
+      <aside className="hidden lg:flex h-screen w-56 flex-shrink-0 flex-col border-r border-border bg-surface">
         {content}
       </aside>
 
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+          className="fixed inset-0 z-40 bg-overlay lg:hidden"
           onClick={() => setOpen(false)}
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white shadow-xl transition-transform duration-200 lg:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-surface shadow-lg transition-transform duration-200 lg:hidden ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -117,8 +117,8 @@ function SidebarLink({
       href={href}
       className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition ${
         active
-          ? "bg-red-50 text-red-700"
-          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          ? "bg-error-soft text-error"
+          : "text-content-secondary hover:bg-surface-elevated hover:text-content-primary"
       }`}
     >
       {label}

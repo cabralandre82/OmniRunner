@@ -69,35 +69,35 @@ export default async function ClearingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Compensacoes (Clearing)</h1>
-        <p className="mt-1 text-sm text-gray-500">Contas a pagar / contas a receber interclub</p>
+        <h1 className="text-2xl font-bold text-content-primary">Compensacoes (Clearing)</h1>
+        <p className="mt-1 text-sm text-content-secondary">Contas a pagar / contas a receber interclub</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">A Receber</p>
-          <p className="mt-1 text-2xl font-bold text-green-600">{formatUsd(totalReceivable)}</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">A Receber</p>
+          <p className="mt-1 text-2xl font-bold text-success">{formatUsd(totalReceivable)}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">A Pagar</p>
-          <p className="mt-1 text-2xl font-bold text-red-600">{formatUsd(totalPayable)}</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">A Pagar</p>
+          <p className="mt-1 text-2xl font-bold text-error">{formatUsd(totalPayable)}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Recebido</p>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{formatUsd(totalSettledIn)}</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Recebido</p>
+          <p className="mt-1 text-2xl font-bold text-content-primary">{formatUsd(totalSettledIn)}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Pago</p>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{formatUsd(totalSettledOut)}</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Pago</p>
+          <p className="mt-1 text-2xl font-bold text-content-primary">{formatUsd(totalSettledOut)}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Taxas Pagas</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">Taxas Pagas</p>
           <p className="mt-1 text-2xl font-bold text-orange-600">{formatUsd(totalFeesPaid)}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">SLA Medio</p>
-          <p className="mt-1 text-2xl font-bold text-gray-600">{avgSettleSec}s</p>
-          <p className="text-xs text-gray-400">{interclubBurns} burns interclub</p>
+        <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+          <p className="text-sm font-medium text-content-secondary">SLA Medio</p>
+          <p className="mt-1 text-2xl font-bold text-content-secondary">{avgSettleSec}s</p>
+          <p className="text-xs text-content-muted">{interclubBurns} burns interclub</p>
         </div>
       </div>
 

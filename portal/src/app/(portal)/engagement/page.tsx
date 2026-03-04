@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
 import { formatKm } from "@/lib/format";
+import { StatBlock, DashboardCard } from "@/components/ui";
 import { EngagementFilters } from "./engagement-filters";
 
 export const dynamic = "force-dynamic";
@@ -184,85 +185,77 @@ export default async function EngagementPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Engajamento</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">Engajamento</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Métricas de atividade e retenção dos atletas
         </p>
       </div>
 
-      <Suspense fallback={<div className="h-14 animate-pulse rounded-lg border border-gray-200 bg-gray-50" />}>
+      <Suspense fallback={<div className="h-14 animate-shimmer rounded-xl border border-border" />}>
         <EngagementFilters />
       </Suspense>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="DAU (hoje)" value={dau} color="text-blue-700" />
-        <KpiCard label="WAU (7 dias)" value={wau} color="text-blue-700" />
-        <KpiCard label="MAU (30 dias)" value={mau} color="text-blue-700" />
-        <KpiCard
+        <StatBlock label="DAU (hoje)" value={dau} accentClass="text-info" />
+        <StatBlock label="WAU (7 dias)" value={wau} accentClass="text-info" />
+        <StatBlock label="MAU (30 dias)" value={mau} accentClass="text-info" />
+        <StatBlock
           label="Retenção 30d"
           value={`${retentionRate}%`}
-          color={
+          accentClass={
             retentionRate >= 50
-              ? "text-green-700"
+              ? "text-success"
               : retentionRate >= 25
-                ? "text-yellow-700"
-                : "text-red-700"
+                ? "text-warning"
+                : "text-error"
           }
         />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <KpiCard label="Corridas (7d)" value={weekSessions.length} />
-        <KpiCard label="Km (7d)" value={formatKm(weekDistance)} />
-        <KpiCard label="Corridas (30d)" value={monthSessions.length} />
-        <KpiCard label="Km (30d)" value={formatKm(monthDistance)} />
-        <KpiCard label="Desafios (30d)" value={challengeCount} color="text-indigo-700" />
-        <KpiCard
+        <StatBlock label="Corridas (7d)" value={weekSessions.length} />
+        <StatBlock label="Km (7d)" value={formatKm(weekDistance)} />
+        <StatBlock label="Corridas (30d)" value={monthSessions.length} />
+        <StatBlock label="Km (30d)" value={formatKm(monthDistance)} />
+        <StatBlock label="Desafios (30d)" value={challengeCount} accentClass="text-brand" />
+        <StatBlock
           label="Score Médio (30d)"
           value={avgEngagement30d}
-          color="text-emerald-700"
+          accentClass="text-success"
         />
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-gray-900">
-          Atividade dos últimos {period} dias
-        </h2>
-        <p className="mt-1 text-xs text-gray-500">
-          Corridas por dia · Atletas únicos ativos
-        </p>
-
-        <div className="mt-6 flex items-end gap-2 sm:gap-3" style={{ height: 160 }}>
+      <DashboardCard
+        title={`Atividade dos últimos ${period} dias`}
+        description="Corridas por dia · Atletas únicos ativos"
+      >
+        <div className="flex items-end gap-2 sm:gap-3" style={{ height: 160 }}>
           {dailyBreakdown.map((d) => {
             const heightPct = Math.max((d.sessions / maxSessions) * 100, 4);
             return (
               <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
-                <span className="text-xs font-semibold text-gray-900">
+                <span className="text-xs font-semibold text-content-primary">
                   {d.sessions}
                 </span>
                 <div
-                  className="w-full rounded-t-md bg-blue-500 transition-all"
+                  className="w-full rounded-t-md bg-brand transition-all"
                   style={{ height: `${heightPct}%`, minHeight: 4 }}
                 />
-                <span className="text-[10px] text-gray-500">{d.label}</span>
-                <span className="text-[10px] text-gray-400">{d.date}</span>
+                <span className="text-[10px] text-content-secondary">{d.label}</span>
+                <span className="text-[10px] text-content-muted">{d.date}</span>
               </div>
             );
           })}
         </div>
-      </div>
+      </DashboardCard>
 
       {kpisDaily.length > 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-gray-900">
-            Tendência de Score
-          </h2>
-          <p className="mt-1 text-xs text-gray-500">
-            Score de engajamento médio por dia (últimos 30 dias)
-          </p>
-
+        <DashboardCard
+          title="Tendência de Score"
+          description="Score de engajamento médio por dia (últimos 30 dias)"
+        >
           <div
-            className="mt-6 flex items-end gap-1"
+            className="flex items-end gap-1"
             style={{ height: 120 }}
           >
             {[...kpisDaily].reverse().slice(-14).map((d) => {
@@ -273,14 +266,14 @@ export default async function EngagementPage({
                   className="flex flex-1 flex-col items-center gap-0.5"
                   title={`${d.day}: ${d.engagement_score}`}
                 >
-                  <span className="text-[10px] font-medium text-gray-700">
+                  <span className="text-[10px] font-medium text-content-secondary">
                     {d.engagement_score}
                   </span>
                   <div
-                    className="w-full rounded-t bg-emerald-500 transition-all"
+                    className="w-full rounded-t bg-success transition-all"
                     style={{ height: `${heightPct}%`, minHeight: 4 }}
                   />
-                  <span className="text-[9px] text-gray-400">
+                  <span className="text-[9px] text-content-muted">
                     {new Date(d.day).toLocaleDateString("pt-BR", {
                       day: "2-digit",
                       month: "2-digit",
@@ -290,13 +283,13 @@ export default async function EngagementPage({
               );
             })}
           </div>
-        </div>
+        </DashboardCard>
       )}
 
       {totalAthletes > 0 && mau < totalAthletes && (
-        <div className="flex items-start gap-3 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+        <div className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning-soft p-4">
           <svg
-            className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600"
+            className="mt-0.5 h-5 w-5 flex-shrink-0 text-warning"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={2}
@@ -309,10 +302,10 @@ export default async function EngagementPage({
             />
           </svg>
           <div>
-            <p className="text-sm font-medium text-yellow-800">
+            <p className="text-sm font-medium text-warning">
               {totalAthletes - mau} atleta(s) sem atividade nos últimos 30 dias
             </p>
-            <p className="mt-1 text-xs text-yellow-700">
+            <p className="mt-1 text-xs text-content-secondary">
               Considere enviar uma mensagem de motivação ou verificar se estão
               com dificuldades.
             </p>
@@ -321,50 +314,28 @@ export default async function EngagementPage({
       )}
 
       {inactiveList.length > 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-gray-900">
-            Atletas Inativos (30d)
-          </h2>
-          <p className="mt-1 text-xs text-gray-500">
-            Membros do grupo sem sessões nos últimos 30 dias
-          </p>
-          <ul className="mt-4 space-y-2">
+        <DashboardCard
+          title="Atletas Inativos (30d)"
+          description="Membros do grupo sem sessões nos últimos 30 dias"
+        >
+          <ul className="space-y-2">
             {inactiveList.map((a) => (
               <li
                 key={a.user_id}
-                className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-4 py-2 text-sm"
+                className="flex items-center justify-between rounded-lg border border-border-subtle bg-bg-secondary px-4 py-2 text-sm"
               >
-                <span className="font-medium text-gray-900">{a.display_name}</span>
+                <span className="font-medium text-content-primary">{a.display_name}</span>
                 <a
                   href={`/crm/${a.user_id}`}
-                  className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                  className="text-xs text-brand hover:brightness-125 hover:underline transition-all"
                 >
                   Ver perfil
                 </a>
               </li>
             ))}
           </ul>
-        </div>
+        </DashboardCard>
       )}
-    </div>
-  );
-}
-
-function KpiCard({
-  label,
-  value,
-  color = "text-gray-900",
-}: {
-  label: string;
-  value: number | string;
-  color?: string;
-}) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-        {label}
-      </p>
-      <p className={`mt-1 text-xl font-bold ${color}`}>{value}</p>
     </div>
   );
 }

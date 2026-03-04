@@ -13,9 +13,9 @@ interface HeaderProps {
 }
 
 const ENV_BADGE: Record<string, { label: string; color: string }> = {
-  production: { label: "PROD", color: "bg-green-100 text-green-800" },
-  sandbox: { label: "SANDBOX", color: "bg-yellow-100 text-yellow-800" },
-  staging: { label: "STAGING", color: "bg-blue-100 text-blue-800" },
+  production: { label: "PROD", color: "bg-success-soft text-success" },
+  sandbox: { label: "SANDBOX", color: "bg-warning-soft text-warning" },
+  staging: { label: "STAGING", color: "bg-info-soft text-info" },
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -35,20 +35,20 @@ export function Header({
   const env = ENV_BADGE[environment] ?? ENV_BADGE.production;
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-6">
+    <header className="flex h-14 items-center justify-between border-b border-border bg-surface px-4 sm:px-6">
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <SidebarTrigger />
-        <h3 className="truncate text-sm font-semibold text-gray-900">
+        <h3 className="truncate text-sm font-semibold text-content-primary">
           {groupName}
         </h3>
         <span className={`hidden sm:inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${env.color}`}>
           {env.label}
         </span>
-        <span className="hidden sm:inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 uppercase">
+        <span className="hidden sm:inline-flex rounded-full bg-neutral-soft px-2 py-0.5 text-[10px] font-medium text-content-secondary uppercase">
           {ROLE_LABELS[role] ?? role}
         </span>
         {isBlocked && (
-          <span className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-800 uppercase">
+          <span className="inline-flex rounded-full bg-error-soft px-2 py-0.5 text-[10px] font-bold text-error uppercase">
             Bloqueado
           </span>
         )}
@@ -56,7 +56,7 @@ export function Header({
           <form action={clearPortalGroup}>
             <button
               type="submit"
-              className="flex-shrink-0 rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-200"
+              className="flex-shrink-0 rounded-lg bg-surface-elevated px-2 py-0.5 text-xs text-content-muted hover:text-content-primary hover:bg-bg-secondary transition-colors"
             >
               trocar
             </button>
@@ -65,13 +65,13 @@ export function Header({
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
-        <span className="hidden text-xs text-gray-500 sm:inline">
+        <span className="hidden text-xs text-content-muted sm:inline">
           {userEmail}
         </span>
         <form action={signOut}>
           <button
             type="submit"
-            className="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100"
+            className="rounded-lg px-3 py-1.5 text-xs font-medium text-content-secondary hover:bg-surface-elevated hover:text-content-primary transition-colors"
           >
             Sair
           </button>

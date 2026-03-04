@@ -36,31 +36,31 @@ export default async function FeesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Taxas da Plataforma</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">Taxas da Plataforma</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Configure as taxas aplicadas nas operações B2B
         </p>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="rounded-xl border border-border bg-surface shadow-sm">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-bg-secondary">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase text-content-secondary">
                 Tipo
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase text-content-secondary">
                 Taxa (%)
               </th>
-              <th className="px-6 py-3 text-center text-xs font-medium uppercase text-gray-500">
+              <th className="px-6 py-3 text-center text-xs font-medium uppercase text-content-secondary">
                 Ativa
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">
+              <th className="px-6 py-3 text-right text-xs font-medium uppercase text-content-secondary">
                 Ação
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-border">
             {(fees ?? []).map((fee: Fee) => {
               const info = FEE_LABELS[fee.fee_type] ?? {
                 label: fee.fee_type,

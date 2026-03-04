@@ -52,8 +52,8 @@ export function FeeRow({
   return (
     <tr>
       <td className="px-6 py-4">
-        <div className="text-sm font-medium text-gray-900">{label}</div>
-        <div className="text-xs text-gray-500">{description}</div>
+        <div className="text-sm font-medium text-content-primary">{label}</div>
+        <div className="text-xs text-content-secondary">{description}</div>
       </td>
       <td className="px-6 py-4">
         <div className="flex items-center gap-2">
@@ -66,7 +66,7 @@ export function FeeRow({
             onChange={(e) => setRate(Number(e.target.value))}
             className="w-24"
           />
-          <span className="text-sm font-mono font-medium text-gray-900 w-12">
+          <span className="text-sm font-mono font-medium text-content-primary w-12">
             {rate}%
           </span>
         </div>
@@ -75,12 +75,12 @@ export function FeeRow({
         <button
           onClick={() => setActive(!active)}
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
-            active ? "bg-green-500" : "bg-gray-300"
+            active ? "bg-success" : "bg-surface-elevated"
           }`}
           aria-label={`Toggle ${fee.fee_type}`}
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+            className={`inline-block h-4 w-4 transform rounded-full bg-surface transition ${
               active ? "translate-x-6" : "translate-x-1"
             }`}
           />
@@ -91,7 +91,7 @@ export function FeeRow({
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition"
+            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white hover:brightness-110 disabled:opacity-50 transition"
           >
             {saving ? "..." : "Salvar"}
           </button>

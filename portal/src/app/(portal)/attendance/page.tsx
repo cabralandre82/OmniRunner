@@ -120,51 +120,51 @@ export default async function AttendancePage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Relatório de Presença</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">Relatório de Presença</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Treinos e check-ins dos últimos 30 dias
         </p>
       </div>
 
       {fetchError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-red-600">Erro ao carregar dados. Tente recarregar a página.</p>
+        <div className="rounded-lg border border-error/30 bg-error-soft p-6 text-center">
+          <p className="text-error">Erro ao carregar dados. Tente recarregar a página.</p>
         </div>
       )}
 
-      <Suspense fallback={<div className="h-24 animate-pulse rounded-lg border border-gray-200 bg-gray-50" />}>
+      <Suspense fallback={<div className="h-24 animate-pulse rounded-lg border border-border bg-bg-secondary" />}>
         <AttendanceFilters from={params.from} to={params.to} sessionId={params.session_id} sessions={allSessionsForFilter} />
       </Suspense>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard label="Treinos (período)" value={totalSessions} />
-        <KpiCard label="Presença média" value={formatPercent(avgAttendancePct)} color="text-blue-700" />
-        <KpiCard label="Total check-ins" value={totalCheckIns} color="text-green-700" />
+        <KpiCard label="Presença média" value={formatPercent(avgAttendancePct)} color="text-brand" />
+        <KpiCard label="Total check-ins" value={totalCheckIns} color="text-success" />
         <KpiCard label="Atletas no grupo" value={athleteCount} />
       </div>
 
       <div className="flex justify-end">
         <a
           href={exportHref}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary shadow-sm hover:bg-surface-elevated"
         >
           Exportar CSV
         </a>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-bg-secondary">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Treino</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Data</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Presentes</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Total Atletas</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">%</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Treino</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Data</th>
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">Presentes</th>
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">Total Atletas</th>
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">%</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border-subtle">
               {sessions.map((session) => {
                 const presentes = attendanceBySession.get(session.id) ?? 0;
                 const total = athleteCount || 1;
@@ -174,21 +174,21 @@ export default async function AttendancePage({
                     <td className="whitespace-nowrap px-4 py-3">
                       <Link
                         href={`/attendance/${session.id}`}
-                        className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                        className="font-medium text-brand hover:text-brand hover:underline"
                       >
                         {session.title}
                       </Link>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                    <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                       {formatDateISO(session.starts_at)}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-center font-medium text-gray-900">
+                    <td className="whitespace-nowrap px-4 py-3 text-center font-medium text-content-primary">
                       {presentes}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-center text-gray-600">
+                    <td className="whitespace-nowrap px-4 py-3 text-center text-content-secondary">
                       {athleteCount}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-center font-medium text-gray-900">
+                    <td className="whitespace-nowrap px-4 py-3 text-center font-medium text-content-primary">
                       {formatPercent(pct)}
                     </td>
                   </tr>
@@ -200,8 +200,8 @@ export default async function AttendancePage({
       </div>
 
       {sessions.length === 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-gray-500">
+        <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
+          <p className="text-sm text-content-secondary">
             Nenhum treino encontrado no período.
           </p>
         </div>
@@ -213,15 +213,15 @@ export default async function AttendancePage({
 function KpiCard({
   label,
   value,
-  color = "text-gray-900",
+  color = "text-content-primary",
 }: {
   label: string;
   value: number | string;
   color?: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+      <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">
         {label}
       </p>
       <p className={`mt-1 text-xl font-bold ${color}`}>{value}</p>

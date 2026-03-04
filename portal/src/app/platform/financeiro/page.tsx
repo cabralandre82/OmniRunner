@@ -89,10 +89,10 @@ export default async function FinanceiroPage({
 
   const statusColor: Record<string, string> = {
     pending: "bg-orange-100 text-orange-700",
-    paid: "bg-blue-100 text-blue-700",
-    fulfilled: "bg-green-100 text-green-700",
-    cancelled: "bg-gray-200 text-gray-600",
-    refunded: "bg-red-100 text-red-700",
+    paid: "bg-blue-100 text-brand",
+    fulfilled: "bg-success-soft text-success",
+    cancelled: "bg-surface-elevated text-content-secondary",
+    refunded: "bg-error-soft text-error",
   };
 
   const statuses = ["all", "pending", "paid", "fulfilled", "cancelled", "refunded"];
@@ -106,14 +106,14 @@ export default async function FinanceiroPage({
     <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Financeiro</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-content-primary">Financeiro</h1>
+          <p className="mt-1 text-sm text-content-secondary">
             Todas as compras de créditos das assessorias
           </p>
         </div>
         <Link
           href="/platform"
-          className="text-sm text-gray-500 hover:text-gray-700"
+          className="text-sm text-content-secondary hover:text-content-secondary"
         >
           ← Dashboard
         </Link>
@@ -121,27 +121,27 @@ export default async function FinanceiroPage({
 
       {/* Revenue cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-        <div className="rounded-xl border border-gray-200 bg-emerald-50 p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+        <div className="rounded-xl border border-border bg-emerald-50 p-5 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">
             Receita (filtro atual)
           </p>
           <p className="mt-2 text-2xl font-bold text-emerald-600">
             {fmt(totalRevenue)}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-orange-50 p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+        <div className="rounded-xl border border-border bg-orange-50 p-5 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">
             Pendente
           </p>
           <p className="mt-2 text-2xl font-bold text-orange-600">
             {fmt(totalPending)}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+        <div className="rounded-xl border border-border bg-bg-secondary p-5 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">
             Compras
           </p>
-          <p className="mt-2 text-2xl font-bold text-gray-700">
+          <p className="mt-2 text-2xl font-bold text-content-secondary">
             {purchases.length}
           </p>
         </div>
@@ -150,7 +150,7 @@ export default async function FinanceiroPage({
       {/* Filters */}
       <div className="flex flex-wrap gap-4">
         <div className="flex flex-wrap gap-1.5">
-          <span className="self-center text-xs font-medium text-gray-500 mr-1">
+          <span className="self-center text-xs font-medium text-content-secondary mr-1">
             Status:
           </span>
           {statuses.map((s) => {
@@ -162,8 +162,8 @@ export default async function FinanceiroPage({
                 href={`/platform/financeiro?status=${s}&period=${filterPeriod ?? "all"}`}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                   active
-                    ? "bg-gray-900 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    ? "bg-surface-elevated text-white"
+                    : "bg-surface-elevated text-content-secondary hover:bg-bg-secondary"
                 }`}
               >
                 {statusLabel[s] ?? "Todos"}
@@ -172,7 +172,7 @@ export default async function FinanceiroPage({
           })}
         </div>
         <div className="flex flex-wrap gap-1.5">
-          <span className="self-center text-xs font-medium text-gray-500 mr-1">
+          <span className="self-center text-xs font-medium text-content-secondary mr-1">
             Período:
           </span>
           {periods.map((p) => {
@@ -185,8 +185,8 @@ export default async function FinanceiroPage({
                 href={`/platform/financeiro?status=${filterStatus ?? "all"}&period=${p.key}`}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                   active
-                    ? "bg-gray-900 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    ? "bg-surface-elevated text-white"
+                    : "bg-surface-elevated text-content-secondary hover:bg-bg-secondary"
                 }`}
               >
                 {p.label}
@@ -199,52 +199,52 @@ export default async function FinanceiroPage({
       {/* Table */}
       {purchases.length === 0 ? (
         <div className="py-16 text-center">
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-content-muted">
             Nenhuma compra encontrada com esses filtros.
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50 text-left">
-                <th className="px-4 py-3 font-medium text-gray-500">Assessoria</th>
-                <th className="px-4 py-3 font-medium text-gray-500">Créditos</th>
-                <th className="px-4 py-3 font-medium text-gray-500">Valor</th>
-                <th className="px-4 py-3 font-medium text-gray-500">Status</th>
-                <th className="px-4 py-3 font-medium text-gray-500">Método</th>
-                <th className="px-4 py-3 font-medium text-gray-500">Origem</th>
-                <th className="px-4 py-3 font-medium text-gray-500">Data</th>
+              <tr className="border-b border-border-subtle bg-bg-secondary text-left">
+                <th className="px-4 py-3 font-medium text-content-secondary">Assessoria</th>
+                <th className="px-4 py-3 font-medium text-content-secondary">Créditos</th>
+                <th className="px-4 py-3 font-medium text-content-secondary">Valor</th>
+                <th className="px-4 py-3 font-medium text-content-secondary">Status</th>
+                <th className="px-4 py-3 font-medium text-content-secondary">Método</th>
+                <th className="px-4 py-3 font-medium text-content-secondary">Origem</th>
+                <th className="px-4 py-3 font-medium text-content-secondary">Data</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border-subtle">
               {purchases.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">
+                <tr key={p.id} className="hover:bg-surface-elevated">
+                  <td className="px-4 py-3 font-medium text-content-primary">
                     {p.group_name}
                   </td>
-                  <td className="px-4 py-3 text-gray-700">
+                  <td className="px-4 py-3 text-content-secondary">
                     {p.credits_amount}
                   </td>
-                  <td className="px-4 py-3 text-gray-700">
+                  <td className="px-4 py-3 text-content-secondary">
                     {fmt(p.price_cents)}
                   </td>
                   <td className="px-4 py-3">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        statusColor[p.status] ?? "bg-gray-100"
+                        statusColor[p.status] ?? "bg-surface-elevated"
                       }`}
                     >
                       {statusLabel[p.status] ?? p.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">
+                  <td className="px-4 py-3 text-content-secondary">
                     {p.payment_method ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-gray-500">
+                  <td className="px-4 py-3 text-content-secondary">
                     {p.source === "auto_topup" ? "Auto" : "Manual"}
                   </td>
-                  <td className="px-4 py-3 text-gray-500">
+                  <td className="px-4 py-3 text-content-secondary">
                     {new Date(p.created_at).toLocaleDateString("pt-BR", {
                       day: "2-digit",
                       month: "short",

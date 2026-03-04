@@ -76,8 +76,8 @@ export default async function AssessoriasPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Assessorias</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">Assessorias</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Gerencie as assessorias cadastradas na plataforma
         </p>
       </div>
@@ -94,19 +94,19 @@ export default async function AssessoriasPage() {
           label="Aprovadas"
           value={approved.length}
           color="text-green-600"
-          bg="bg-green-50"
+          bg="bg-success-soft"
         />
         <StatCard
           label="Rejeitadas"
           value={rejected.length}
-          color="text-red-600"
-          bg="bg-red-50"
+          color="text-error"
+          bg="bg-error-soft"
         />
         <StatCard
           label="Suspensas"
           value={suspended.length}
-          color="text-gray-600"
-          bg="bg-gray-100"
+          color="text-content-secondary"
+          bg="bg-surface-elevated"
         />
       </div>
 
@@ -122,7 +122,7 @@ export default async function AssessoriasPage() {
       {/* Approved */}
       <Section title="Aprovadas" badge={approved.length}>
         {approved.length === 0 ? (
-          <p className="py-8 text-center text-sm text-gray-400">
+          <p className="py-8 text-center text-sm text-content-muted">
             Nenhuma assessoria aprovada ainda.
           </p>
         ) : (
@@ -160,9 +160,9 @@ function StatCard({
 }) {
   return (
     <div
-      className={`rounded-xl border border-gray-200 ${bg} p-5 shadow-sm`}
+      className={`rounded-xl border border-border ${bg} p-5 shadow-sm`}
     >
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+      <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">
         {label}
       </p>
       <p className={`mt-2 text-2xl font-bold ${color}`}>{value}</p>
@@ -182,8 +182,8 @@ function Section({
   return (
     <div>
       <div className="mb-3 flex items-center gap-2">
-        <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
-        <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600">
+        <h2 className="text-sm font-semibold text-content-primary">{title}</h2>
+        <span className="rounded-full bg-surface-elevated px-2 py-0.5 text-xs font-medium text-content-secondary">
           {badge}
         </span>
       </div>
@@ -212,9 +212,9 @@ function AssessoriaCard({
 
   const statusColor: Record<string, string> = {
     pending_approval: "bg-orange-100 text-orange-700",
-    approved: "bg-green-100 text-green-700",
-    rejected: "bg-red-100 text-red-700",
-    suspended: "bg-gray-200 text-gray-700",
+    approved: "bg-success-soft text-success",
+    rejected: "bg-error-soft text-error",
+    suspended: "bg-surface-elevated text-content-secondary",
   };
 
   const createdAt = new Date(assessoria.created_at).toLocaleDateString(
@@ -222,30 +222,30 @@ function AssessoriaCard({
   );
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
+    <div className="rounded-xl border border-border bg-surface p-4 sm:p-5 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm sm:text-base font-semibold text-gray-900">
+            <h3 className="text-sm sm:text-base font-semibold text-content-primary">
               {assessoria.name}
             </h3>
             <span
               className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                statusColor[assessoria.approval_status] ?? "bg-gray-100"
+                statusColor[assessoria.approval_status] ?? "bg-surface-elevated"
               }`}
             >
               {statusLabel[assessoria.approval_status] ??
                 assessoria.approval_status}
             </span>
           </div>
-          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-content-secondary">
             {assessoria.city && <span>{assessoria.city}</span>}
             <span>{assessoria.coach_name}</span>
             <span>{assessoria.member_count} membros</span>
             <span>{createdAt}</span>
           </div>
           {assessoria.approval_reject_reason && (
-            <p className="mt-2 text-xs text-red-600">
+            <p className="mt-2 text-xs text-error">
               Motivo: {assessoria.approval_reject_reason}
             </p>
           )}
@@ -264,7 +264,7 @@ function AssessoriaCard({
                 groupId={assessoria.id}
                 action="reject"
                 label="Rejeitar"
-                className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100"
+                className="rounded-lg bg-error-soft px-3 py-1.5 text-xs font-medium text-error hover:bg-error-soft"
                 requireReason
               />
             </>
@@ -274,7 +274,7 @@ function AssessoriaCard({
               groupId={assessoria.id}
               action="suspend"
               label="Suspender"
-              className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-200"
+              className="rounded-lg bg-surface-elevated px-3 py-1.5 text-xs font-medium text-content-secondary hover:bg-bg-secondary"
               requireReason
             />
           )}
@@ -283,7 +283,7 @@ function AssessoriaCard({
               groupId={assessoria.id}
               action="approve"
               label="Reaprovar"
-              className="rounded-lg bg-green-50 px-3 py-1.5 text-xs font-medium text-green-600 hover:bg-green-100"
+              className="rounded-lg bg-success-soft px-3 py-1.5 text-xs font-medium text-green-600 hover:bg-success-soft"
             />
           )}
         </div>

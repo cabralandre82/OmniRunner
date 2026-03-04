@@ -12,8 +12,8 @@ const tierLabel: Record<string, string> = {
 };
 const tierColor: Record<string, string> = {
   bronze: "bg-orange-100 text-orange-700",
-  silver: "bg-gray-100 text-gray-700",
-  gold: "bg-yellow-100 text-yellow-700",
+  silver: "bg-surface-elevated text-content-secondary",
+  gold: "bg-warning-soft text-warning",
   diamond: "bg-purple-100 text-purple-700",
 };
 const catLabel: Record<string, string> = {
@@ -49,8 +49,8 @@ export default async function ConquistasPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Conquistas</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-content-primary">Conquistas</h1>
+          <p className="mt-1 text-sm text-content-secondary">
             {allBadges.length} conquistas cadastradas · {totalAwards ?? 0}{" "}
             desbloqueios totais
           </p>
@@ -63,63 +63,63 @@ export default async function ConquistasPage() {
         const catBadges = allBadges.filter((b) => b.category === cat);
         return (
           <div key={cat}>
-            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
               {catLabel[cat] ?? cat} ({catBadges.length})
             </h2>
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-              <table className="min-w-full divide-y divide-gray-100">
-                <thead className="bg-gray-50">
+            <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+              <table className="min-w-full divide-y divide-border-subtle">
+                <thead className="bg-bg-secondary">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-content-secondary">
                       Nome
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-content-secondary">
                       Tier
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-content-secondary">
                       Descrição
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium uppercase text-gray-500">
+                    <th className="px-4 py-3 text-center text-xs font-medium uppercase text-content-secondary">
                       XP
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium uppercase text-gray-500">
+                    <th className="px-4 py-3 text-center text-xs font-medium uppercase text-content-secondary">
                       Coins
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium uppercase text-gray-500">
+                    <th className="px-4 py-3 text-center text-xs font-medium uppercase text-content-secondary">
                       Critério
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium uppercase text-gray-500">
+                    <th className="px-4 py-3 text-center text-xs font-medium uppercase text-content-secondary">
                       Secreta
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-border-subtle">
                   {catBadges.map((b) => (
-                    <tr key={b.id} className="hover:bg-gray-50">
+                    <tr key={b.id} className="hover:bg-surface-elevated">
                       <td className="px-4 py-3">
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-content-primary">
                           {b.name}
                         </p>
-                        <p className="text-xs text-gray-400">{b.id}</p>
+                        <p className="text-xs text-content-muted">{b.id}</p>
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${tierColor[b.tier] ?? "bg-gray-100"}`}
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${tierColor[b.tier] ?? "bg-surface-elevated"}`}
                         >
                           {tierLabel[b.tier] ?? b.tier}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">
+                      <td className="px-4 py-3 text-sm text-content-secondary max-w-xs truncate">
                         {b.description}
                       </td>
-                      <td className="px-4 py-3 text-center text-sm font-medium text-blue-600">
+                      <td className="px-4 py-3 text-center text-sm font-medium text-brand">
                         {b.xp_reward}
                       </td>
                       <td className="px-4 py-3 text-center text-sm font-medium text-amber-600">
                         {b.coins_reward > 0 ? b.coins_reward : "—"}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                        <code className="rounded bg-surface-elevated px-1.5 py-0.5 text-xs text-content-secondary">
                           {b.criteria_type}
                         </code>
                       </td>

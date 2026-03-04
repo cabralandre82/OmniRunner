@@ -63,11 +63,11 @@ export default async function WorkoutAnalyticsPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Análise de Treinos</h1>
-          <p className="mt-1 text-sm text-gray-500">Métricas de treinos e execuções</p>
+          <h1 className="text-2xl font-bold text-content-primary">Análise de Treinos</h1>
+          <p className="mt-1 text-sm text-content-secondary">Métricas de treinos e execuções</p>
         </div>
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-          <p className="text-sm text-red-800">Erro ao carregar dados: {error}</p>
+        <div className="rounded-lg border border-error/30 bg-error-soft p-4">
+          <p className="text-sm text-error">Erro ao carregar dados: {error}</p>
         </div>
       </div>
     );
@@ -79,37 +79,37 @@ export default async function WorkoutAnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Análise de Treinos</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">Análise de Treinos</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Métricas de treinos e execuções (últimos 30 dias)
         </p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="Templates Ativos" value={activeTemplates} color="text-blue-700" />
+        <KpiCard label="Templates Ativos" value={activeTemplates} color="text-brand" />
         <KpiCard label="Atribuições (mês)" value={monthAssignments} />
         <KpiCard
           label="Taxa de Conclusão %"
           value={`${completionRate}%`}
           color={
             completionRate >= 70
-              ? "text-green-700"
+              ? "text-success"
               : completionRate >= 40
-                ? "text-yellow-700"
-                : "text-red-700"
+                ? "text-warning"
+                : "text-error"
           }
         />
         <KpiCard
           label="Carga Média (min)"
           value={avgDurationMin}
-          color="text-indigo-700"
+          color="text-brand"
         />
       </div>
 
       {isEmpty && (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+        <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
           <svg
-            className="mx-auto h-12 w-12 text-gray-300"
+            className="mx-auto h-12 w-12 text-content-muted"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={1.5}
@@ -121,10 +121,10 @@ export default async function WorkoutAnalyticsPage() {
               d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5"
             />
           </svg>
-          <h3 className="mt-4 text-sm font-semibold text-gray-900">
+          <h3 className="mt-4 text-sm font-semibold text-content-primary">
             Sem dados de treinos
           </h3>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-content-secondary">
             Crie templates e atribua treinos para ver as métricas aqui.
           </p>
         </div>
@@ -136,15 +136,15 @@ export default async function WorkoutAnalyticsPage() {
 function KpiCard({
   label,
   value,
-  color = "text-gray-900",
+  color = "text-content-primary",
 }: {
   label: string;
   value: number | string;
   color?: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+      <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">
         {label}
       </p>
       <p className={`mt-1 text-xl font-bold ${color}`}>{value}</p>

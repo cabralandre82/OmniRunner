@@ -71,11 +71,11 @@ export function BuyButton({ productId, preferredGateway }: BuyButtonProps) {
       <button
         onClick={() => handleBuy(altGateway)}
         disabled={loading}
-        className="w-full rounded-lg border border-gray-200 bg-white px-4 py-1.5 text-xs font-medium text-gray-500 transition hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50"
+        className="w-full rounded-lg border border-border bg-surface px-4 py-1.5 text-xs font-medium text-content-secondary transition hover:bg-surface-elevated hover:text-content-secondary disabled:opacity-50"
       >
         ou {altStyle.label.toLowerCase()}
       </button>
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-error">{error}</p>}
     </div>
   );
 }

@@ -111,9 +111,9 @@ export default async function PlatformDashboard() {
 
   const statusColor: Record<string, string> = {
     pending_approval: "bg-orange-100 text-orange-700",
-    approved: "bg-green-100 text-green-700",
-    rejected: "bg-red-100 text-red-700",
-    suspended: "bg-gray-200 text-gray-700",
+    approved: "bg-success-soft text-success",
+    rejected: "bg-error-soft text-error",
+    suspended: "bg-surface-elevated text-content-secondary",
   };
 
   const statusLabel: Record<string, string> = {
@@ -126,10 +126,10 @@ export default async function PlatformDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-content-primary">
           Dashboard da Plataforma
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-content-secondary">
           Visão estratégica do Omni Runner
         </p>
       </div>
@@ -155,14 +155,14 @@ export default async function PlatformDashboard() {
       {(pendingRefunds ?? 0) > 0 && (
         <Link
           href="/platform/reembolsos"
-          className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 hover:bg-red-100 transition"
+          className="flex items-start gap-3 rounded-lg border border-error/30 bg-error-soft p-4 hover:bg-error-soft transition"
         >
           <span className="text-xl">↩️</span>
           <div>
-            <p className="text-sm font-medium text-red-800">
+            <p className="text-sm font-medium text-error">
               {pendingRefunds} reembolso(s) pendentes
             </p>
-            <p className="text-xs text-red-700">
+            <p className="text-xs text-error">
               Clique para processar
             </p>
           </div>
@@ -171,7 +171,7 @@ export default async function PlatformDashboard() {
 
       {/* KPI Row 1: Overview */}
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
           Visão Geral
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -179,15 +179,15 @@ export default async function PlatformDashboard() {
             label="Assessorias Ativas"
             value={fmtNum(activeGroups ?? 0)}
             detail={`${fmtNum(totalGroups ?? 0)} total`}
-            color="text-green-700"
-            bg="bg-green-50"
+            color="text-success"
+            bg="bg-success-soft"
           />
           <KpiCard
             label="Atletas"
             value={fmtNum(totalAthletes ?? 0)}
             detail={`~${avgAthletesPerGroup} por assessoria`}
-            color="text-blue-700"
-            bg="bg-blue-50"
+            color="text-brand"
+            bg="bg-brand-soft"
           />
           <KpiCard
             label="Verificados"
@@ -207,7 +207,7 @@ export default async function PlatformDashboard() {
 
       {/* KPI Row 2: Financial */}
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
           Financeiro
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -227,72 +227,72 @@ export default async function PlatformDashboard() {
           <KpiCard
             label="Compras do Mês"
             value={fmtNum(monthPurchases.length)}
-            color="text-gray-700"
-            bg="bg-gray-50"
+            color="text-content-secondary"
+            bg="bg-bg-secondary"
           />
           <KpiCard
             label="Pendentes"
             value={fmtNum(pendingPurchases.length)}
-            color={pendingPurchases.length > 0 ? "text-orange-700" : "text-gray-700"}
-            bg={pendingPurchases.length > 0 ? "bg-orange-50" : "bg-gray-50"}
+            color={pendingPurchases.length > 0 ? "text-orange-700" : "text-content-secondary"}
+            bg={pendingPurchases.length > 0 ? "bg-orange-50" : "bg-bg-secondary"}
           />
         </div>
       </div>
 
       {/* KPI Row 3: Operations */}
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
           Operações
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           <KpiCard
             label="Chamados Abertos"
             value={fmtNum(openTickets ?? 0)}
-            color={openTickets && openTickets > 0 ? "text-yellow-700" : "text-gray-700"}
-            bg={openTickets && openTickets > 0 ? "bg-yellow-50" : "bg-gray-50"}
+            color={openTickets && openTickets > 0 ? "text-warning" : "text-content-secondary"}
+            bg={openTickets && openTickets > 0 ? "bg-warning-soft" : "bg-bg-secondary"}
           />
           <KpiCard
             label="Reembolsos"
             value={fmtNum(pendingRefunds ?? 0)}
-            color={pendingRefunds && pendingRefunds > 0 ? "text-red-700" : "text-gray-700"}
-            bg={pendingRefunds && pendingRefunds > 0 ? "bg-red-50" : "bg-gray-50"}
+            color={pendingRefunds && pendingRefunds > 0 ? "text-error" : "text-content-secondary"}
+            bg={pendingRefunds && pendingRefunds > 0 ? "bg-error-soft" : "bg-bg-secondary"}
           />
           <KpiCard
             label="Aprovações Pendentes"
             value={fmtNum(pendingGroups ?? 0)}
-            color={pendingGroups && pendingGroups > 0 ? "text-orange-700" : "text-gray-700"}
-            bg={pendingGroups && pendingGroups > 0 ? "bg-orange-50" : "bg-gray-50"}
+            color={pendingGroups && pendingGroups > 0 ? "text-orange-700" : "text-content-secondary"}
+            bg={pendingGroups && pendingGroups > 0 ? "bg-orange-50" : "bg-bg-secondary"}
           />
         </div>
       </div>
 
       {/* Recent assessorias */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-          <h2 className="text-sm font-semibold text-gray-900">
+      <div className="rounded-xl border border-border bg-surface shadow-sm">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <h2 className="text-sm font-semibold text-content-primary">
             Assessorias Recentes
           </h2>
           <Link
             href="/platform/assessorias"
-            className="text-xs font-medium text-blue-600 hover:text-blue-800"
+            className="text-xs font-medium text-brand hover:text-blue-800"
           >
             Ver todas →
           </Link>
         </div>
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-border-subtle">
           {(recentGroups ?? []).map((g) => (
             <div key={g.id} className="flex items-center justify-between px-5 py-3">
               <div>
-                <p className="text-sm font-medium text-gray-900">{g.name}</p>
-                <p className="text-xs text-gray-500">{g.city ?? "Sem cidade"}</p>
+                <p className="text-sm font-medium text-content-primary">{g.name}</p>
+                <p className="text-xs text-content-secondary">{g.city ?? "Sem cidade"}</p>
               </div>
               <div className="flex items-center gap-3">
                 <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColor[g.approval_status] ?? "bg-gray-100"}`}
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColor[g.approval_status] ?? "bg-surface-elevated"}`}
                 >
                   {statusLabel[g.approval_status] ?? g.approval_status}
                 </span>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-content-muted">
                   {new Date(g.created_at).toLocaleDateString("pt-BR")}
                 </span>
               </div>
@@ -303,7 +303,7 @@ export default async function PlatformDashboard() {
 
       {/* Quick links */}
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
           Acesso Rápido
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -336,8 +336,8 @@ function KpiCard({
   trend?: number;
 }) {
   return (
-    <div className={`rounded-xl border border-gray-200 ${bg} p-4 sm:p-5 shadow-sm`}>
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    <div className={`rounded-xl border border-border ${bg} p-4 sm:p-5 shadow-sm`}>
+      <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">
         {label}
       </p>
       <div className="mt-2 flex items-baseline gap-2">
@@ -351,7 +351,7 @@ function KpiCard({
           </span>
         )}
       </div>
-      {detail && <p className="mt-1 text-xs text-gray-400">{detail}</p>}
+      {detail && <p className="mt-1 text-xs text-content-muted">{detail}</p>}
     </div>
   );
 }
@@ -368,10 +368,10 @@ function QuickLink({
   return (
     <Link
       href={href}
-      className="flex items-center gap-2.5 rounded-xl border border-gray-200 bg-white p-3.5 shadow-sm transition hover:border-gray-300 hover:shadow"
+      className="flex items-center gap-2.5 rounded-xl border border-border bg-surface p-3.5 shadow-sm transition hover:border-border hover:shadow"
     >
       <span className="text-xl">{icon}</span>
-      <p className="text-sm font-semibold text-gray-900">{title}</p>
+      <p className="text-sm font-semibold text-content-primary">{title}</p>
     </Link>
   );
 }

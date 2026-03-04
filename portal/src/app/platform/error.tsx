@@ -18,9 +18,9 @@ export default function PlatformError({
   }, [error]);
   return (
     <div className="flex flex-col items-center justify-center px-6 py-24 text-center">
-      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
+      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-error-soft">
         <svg
-          className="h-7 w-7 text-red-600"
+          className="h-7 w-7 text-error"
           fill="none"
           viewBox="0 0 24 24"
           strokeWidth={1.5}
@@ -33,20 +33,20 @@ export default function PlatformError({
           />
         </svg>
       </div>
-      <h2 className="text-lg font-semibold text-gray-900">
+      <h2 className="text-lg font-semibold text-content-primary">
         {te("generic")}
       </h2>
-      <p className="mt-2 max-w-md text-sm text-gray-500">
+      <p className="mt-2 max-w-md text-sm text-content-secondary">
         {error.message || te("generic")}
       </p>
       {error.digest && (
-        <p className="mt-1 font-mono text-xs text-gray-400">
+        <p className="mt-1 font-mono text-xs text-content-muted">
           Ref: {error.digest}
         </p>
       )}
       <button
         onClick={reset}
-        className="mt-6 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
+        className="mt-6 rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-white hover:brightness-110"
       >
         {tc("retry")}
       </button>

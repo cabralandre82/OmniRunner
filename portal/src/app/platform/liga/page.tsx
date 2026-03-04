@@ -70,10 +70,10 @@ export default async function LigaPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-content-primary">
           Liga de Assessorias
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-content-secondary">
           Gerenciar temporadas e visualizar ranking
         </p>
       </div>

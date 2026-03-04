@@ -111,7 +111,7 @@ export function BadgeForm() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition"
+        className="rounded-lg bg-error px-4 py-2 text-sm font-medium text-white hover:brightness-110 transition"
       >
         + Nova Conquista
       </button>
@@ -119,18 +119,18 @@ export function BadgeForm() {
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h3 className="mb-4 text-lg font-semibold text-gray-900">
+    <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
+      <h3 className="mb-4 text-lg font-semibold text-content-primary">
         Nova Conquista
       </h3>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+        <div className="mb-4 rounded-lg bg-error-soft border border-error/30 p-3 text-sm text-error">
           {error}
         </div>
       )}
       {success && (
-        <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-700">
+        <div className="mb-4 rounded-lg bg-success-soft border border-green-200 p-3 text-sm text-success">
           {success}
         </div>
       )}
@@ -138,47 +138,47 @@ export function BadgeForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700">ID (opcional)</label>
+            <label className="block text-sm font-medium text-content-secondary">ID (opcional)</label>
             <input
               type="text"
               value={id}
               onChange={(e) => setId(e.target.value)}
               placeholder="badge_custom_name"
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-red-500 focus:ring-red-500"
+              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-red-500 focus:ring-red-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nome *</label>
+            <label className="block text-sm font-medium text-content-secondary">Nome *</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
               placeholder="Corredor Ultra"
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-red-500 focus:ring-red-500"
+              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-red-500 focus:ring-red-500"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Descrição *</label>
+          <label className="block text-sm font-medium text-content-secondary">Descrição *</label>
           <input
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
             placeholder="Complete 1 sessão ≥ 50 km"
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-red-500 focus:ring-red-500"
+            className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-red-500 focus:ring-red-500"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Categoria</label>
+            <label className="block text-sm font-medium text-content-secondary">Categoria</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm"
+              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm"
             >
               {categories.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
@@ -186,11 +186,11 @@ export function BadgeForm() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Tier</label>
+            <label className="block text-sm font-medium text-content-secondary">Tier</label>
             <select
               value={tier}
               onChange={(e) => setTier(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm"
+              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm"
             >
               {tiers.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
@@ -198,28 +198,28 @@ export function BadgeForm() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">XP</label>
+            <label className="block text-sm font-medium text-content-secondary">XP</label>
             <input
               type="number"
               value={xpReward}
               onChange={(e) => setXpReward(Number(e.target.value))}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm"
+              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Coins</label>
+            <label className="block text-sm font-medium text-content-secondary">Coins</label>
             <input
               type="number"
               value={coinsReward}
               onChange={(e) => setCoinsReward(Number(e.target.value))}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm"
+              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Tipo de critério</label>
+            <label className="block text-sm font-medium text-content-secondary">Tipo de critério</label>
             <select
               value={criteriaType}
               onChange={(e) => {
@@ -227,7 +227,7 @@ export function BadgeForm() {
                 const ct = criteriaTypes.find((c) => c.value === e.target.value);
                 if (ct) setCriteriaJson(ct.placeholder);
               }}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm"
+              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm"
             >
               {criteriaTypes.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
@@ -235,12 +235,12 @@ export function BadgeForm() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Critério (JSON)</label>
+            <label className="block text-sm font-medium text-content-secondary">Critério (JSON)</label>
             <input
               type="text"
               value={criteriaJson}
               onChange={(e) => setCriteriaJson(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono shadow-sm focus:border-red-500 focus:ring-red-500"
+              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm font-mono shadow-sm focus:border-red-500 focus:ring-red-500"
             />
           </div>
         </div>
@@ -251,9 +251,9 @@ export function BadgeForm() {
             id="isSecret"
             checked={isSecret}
             onChange={(e) => setIsSecret(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+            className="h-4 w-4 rounded border-border text-error focus:ring-red-500"
           />
-          <label htmlFor="isSecret" className="text-sm text-gray-700">
+          <label htmlFor="isSecret" className="text-sm text-content-secondary">
             Conquista secreta (oculta até ser desbloqueada)
           </label>
         </div>
@@ -262,14 +262,14 @@ export function BadgeForm() {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 transition"
+            className="rounded-lg bg-error px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50 transition"
           >
             {saving ? "Salvando..." : "Criar Conquista"}
           </button>
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-content-secondary hover:bg-surface-elevated transition"
           >
             Cancelar
           </button>

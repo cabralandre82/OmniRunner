@@ -72,65 +72,65 @@ export default async function PlansPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Planos</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-content-primary">Planos</h1>
+          <p className="mt-1 text-sm text-content-secondary">
             Configure planos e preços da assessoria
           </p>
         </div>
         <Link
           href="/financial"
-          className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+          className="text-sm text-brand hover:text-brand hover:underline"
         >
           ← Dashboard
         </Link>
       </div>
 
       {fetchError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-red-600">Erro ao carregar dados. Tente recarregar a página.</p>
+        <div className="rounded-lg border border-error/30 bg-error-soft p-6 text-center">
+          <p className="text-error">Erro ao carregar dados. Tente recarregar a página.</p>
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-bg-secondary">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Nome</th>
-                <th className="px-4 py-3 text-right font-medium text-gray-500">Preço Mensal</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Ciclo</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Limite Treinos/Sem</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Status</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Assinantes</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Nome</th>
+                <th className="px-4 py-3 text-right font-medium text-content-secondary">Preço Mensal</th>
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">Ciclo</th>
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">Limite Treinos/Sem</th>
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">Status</th>
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">Assinantes</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border-subtle">
               {plans.map((plan) => (
-                <tr key={plan.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-900">
+                <tr key={plan.id} className="hover:bg-surface-elevated">
+                  <td className="whitespace-nowrap px-4 py-3 font-medium text-content-primary">
                     {plan.name}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-gray-700">
+                  <td className="whitespace-nowrap px-4 py-3 text-right text-content-secondary">
                     R$ {plan.monthly_price.toFixed(2)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-center text-gray-600">
+                  <td className="whitespace-nowrap px-4 py-3 text-center text-content-secondary">
                     {CYCLE_LABEL[plan.billing_cycle] ?? plan.billing_cycle}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-center text-gray-600">
+                  <td className="whitespace-nowrap px-4 py-3 text-center text-content-secondary">
                     {plan.max_workouts_per_week ?? "Ilimitado"}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-center">
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                         plan.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-600"
+                          ? "bg-success-soft text-success"
+                          : "bg-surface-elevated text-content-secondary"
                       }`}
                     >
                       {plan.status === "active" ? "Ativo" : "Inativo"}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-center font-medium text-gray-900">
+                  <td className="whitespace-nowrap px-4 py-3 text-center font-medium text-content-primary">
                     {plan.subscriber_count}
                   </td>
                 </tr>
@@ -141,8 +141,8 @@ export default async function PlansPage() {
       </div>
 
       {plans.length === 0 && !fetchError && (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-gray-500">Nenhum plano criado.</p>
+        <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
+          <p className="text-sm text-content-secondary">Nenhum plano criado.</p>
         </div>
       )}
     </div>

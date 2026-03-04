@@ -40,8 +40,8 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale}>
-      <body className={`${geistSans.variable} font-sans antialiased`}>
+    <html lang={locale} className="dark">
+      <body className={`${geistSans.variable} font-sans antialiased bg-bg-primary text-content-primary`}>
         <NextIntlClientProvider messages={messages}>
           <WebVitals />
           {children}

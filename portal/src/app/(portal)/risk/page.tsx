@@ -150,30 +150,30 @@ export default async function RiskPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Alertas e Risco</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">Alertas e Risco</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Atletas com alertas ativos para acompanhamento
         </p>
       </div>
 
       {fetchError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-red-600">Erro ao carregar dados. Tente recarregar a página.</p>
+        <div className="rounded-lg border border-error/30 bg-error-soft p-6 text-center">
+          <p className="text-error">Erro ao carregar dados. Tente recarregar a página.</p>
         </div>
       )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="Total alertas ativos" value={activeAlerts.length} color="text-gray-900" />
-        <KpiCard label="Atletas em risco alto" value={highCount} color="text-red-700" />
+        <KpiCard label="Total alertas ativos" value={activeAlerts.length} color="text-content-primary" />
+        <KpiCard label="Atletas em risco alto" value={highCount} color="text-error" />
         <KpiCard label="Atletas em risco médio" value={mediumCount} color="text-amber-600" />
-        <KpiCard label="Alertas resolvidos (30d)" value={resolvedCount30d} color="text-green-700" />
+        <KpiCard label="Alertas resolvidos (30d)" value={resolvedCount30d} color="text-success" />
       </div>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Risco Alto</h2>
+        <h2 className="text-lg font-semibold text-content-primary">Risco Alto</h2>
         {highRiskAlerts.length === 0 ? (
-          <div className="rounded-xl border border-gray-200 bg-white p-6 text-center shadow-sm">
-            <p className="text-sm text-gray-500">Nenhum atleta em risco alto no momento.</p>
+          <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-sm">
+            <p className="text-sm text-content-secondary">Nenhum atleta em risco alto no momento.</p>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -185,10 +185,10 @@ export default async function RiskPage() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Risco Médio</h2>
+        <h2 className="text-lg font-semibold text-content-primary">Risco Médio</h2>
         {mediumRiskAlerts.length === 0 ? (
-          <div className="rounded-xl border border-gray-200 bg-white p-6 text-center shadow-sm">
-            <p className="text-sm text-gray-500">Nenhum atleta em risco médio no momento.</p>
+          <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-sm">
+            <p className="text-sm text-content-secondary">Nenhum atleta em risco médio no momento.</p>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -205,15 +205,15 @@ export default async function RiskPage() {
 function KpiCard({
   label,
   value,
-  color = "text-gray-900",
+  color = "text-content-primary",
 }: {
   label: string;
   value: number;
   color?: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
+    <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+      <p className="text-xs font-medium uppercase tracking-wide text-content-secondary">{label}</p>
       <p className={`mt-1 text-xl font-bold ${color}`}>{value}</p>
     </div>
   );
@@ -225,18 +225,18 @@ function AlertCard({ alert }: { alert: AlertRow }) {
   const statusLabel = alert.status ? STATUS_LABELS[alert.status] ?? alert.status : "Sem status";
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+    <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <Link
           href={`/crm/${alert.user_id}`}
-          className="font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+          className="font-semibold text-brand hover:text-brand hover:underline"
         >
           {alert.display_name ?? "Sem nome"}
         </Link>
       </div>
-      <p className="mt-1 text-xs font-medium text-gray-500">{label}</p>
-      <p className="mt-0.5 text-xs text-gray-400">{formatDateISO(alert.day)}</p>
-      <p className="mt-2 text-xs text-gray-600">Status: {statusLabel}</p>
+      <p className="mt-1 text-xs font-medium text-content-secondary">{label}</p>
+      <p className="mt-0.5 text-xs text-content-muted">{formatDateISO(alert.day)}</p>
+      <p className="mt-2 text-xs text-content-secondary">Status: {statusLabel}</p>
       <div className="mt-4 flex gap-2">
         <RiskActions alertId={alert.id} />
       </div>

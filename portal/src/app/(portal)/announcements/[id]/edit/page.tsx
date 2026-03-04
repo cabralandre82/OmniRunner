@@ -30,11 +30,11 @@ export default async function AnnouncementEditPage({
   if (!announcement) {
     return (
       <div className="space-y-6">
-        <Link href="/announcements" className="text-sm text-blue-600 hover:underline">
+        <Link href="/announcements" className="text-sm text-brand hover:underline">
           ← Voltar ao mural
         </Link>
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-gray-500">Aviso não encontrado.</p>
+        <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
+          <p className="text-sm text-content-secondary">Aviso não encontrado.</p>
         </div>
       </div>
     );
@@ -42,12 +42,12 @@ export default async function AnnouncementEditPage({
 
   return (
     <div className="space-y-6">
-      <Link href="/announcements" className="text-sm text-blue-600 hover:underline">
+      <Link href="/announcements" className="text-sm text-brand hover:underline">
         ← Voltar ao mural
       </Link>
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Editar aviso</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-content-primary">Editar aviso</h1>
+        <p className="mt-1 text-sm text-content-secondary">
           Alterar título, conteúdo ou fixar/desfixar
         </p>
       </div>

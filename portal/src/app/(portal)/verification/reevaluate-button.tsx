@@ -39,15 +39,15 @@ export function ReevaluateButton({ userId }: ReevaluateButtonProps) {
       <button
         onClick={handleClick}
         disabled={loading}
-        className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-200 disabled:opacity-50"
+        className="rounded-md bg-surface-elevated px-2.5 py-1 text-xs font-medium text-content-secondary transition hover:bg-bg-secondary disabled:opacity-50"
       >
         {loading ? "..." : "Reavaliar"}
       </button>
       {result === "ok" && (
-        <span className="text-[10px] text-green-600">Feito</span>
+        <span className="text-[10px] text-success">Feito</span>
       )}
       {result === "error" && (
-        <span className="text-[10px] text-red-600">Erro</span>
+        <span className="text-[10px] text-error">Erro</span>
       )}
     </div>
   );

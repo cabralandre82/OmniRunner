@@ -37,13 +37,13 @@ export default async function SelectGroupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md space-y-6 rounded-xl bg-white p-8 shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-bg-secondary">
+      <div className="w-full max-w-md space-y-6 rounded-xl bg-surface p-8 shadow-lg">
         <div className="text-center">
-          <h1 className="text-xl font-bold text-gray-900">
+          <h1 className="text-xl font-bold text-content-primary">
             Selecione a Assessoria
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-content-secondary">
             Você pertence a mais de uma assessoria
           </p>
         </div>
@@ -64,15 +64,15 @@ export default async function SelectGroupPage() {
               <form key={groupId} action={setPortalGroup.bind(null, groupId, role)}>
                 <button
                   type="submit"
-                  className="flex w-full items-center justify-between rounded-lg border border-gray-200 p-4 text-left transition hover:border-blue-300 hover:bg-blue-50"
+                  className="flex w-full items-center justify-between rounded-lg border border-border p-4 text-left transition hover:border-blue-300 hover:bg-brand-soft"
                 >
                   <div>
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-content-primary">
                       {groupName ?? "Assessoria"}
                     </p>
-                    <p className="text-xs text-gray-500">{role}</p>
+                    <p className="text-xs text-content-secondary">{role}</p>
                   </div>
-                  <span className="text-gray-400">→</span>
+                  <span className="text-content-muted">→</span>
                 </button>
               </form>
             );

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
+import { StatBlock, DashboardCard } from "@/components/ui";
 import { DistributeButton } from "./distribute-button";
 
 export const metadata: Metadata = { title: "Atletas" };
@@ -18,11 +19,11 @@ interface Athlete {
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  VERIFIED: { label: "Verificado", color: "bg-green-100 text-green-800" },
-  CALIBRATING: { label: "Calibrando", color: "bg-blue-100 text-blue-800" },
-  MONITORED: { label: "Observação", color: "bg-yellow-100 text-yellow-800" },
-  DOWNGRADED: { label: "Rebaixado", color: "bg-red-100 text-red-800" },
-  UNVERIFIED: { label: "Sem status", color: "bg-gray-100 text-gray-600" },
+  VERIFIED: { label: "Verificado", color: "bg-success-soft text-success" },
+  CALIBRATING: { label: "Calibrando", color: "bg-info-soft text-info" },
+  MONITORED: { label: "Observação", color: "bg-warning-soft text-warning" },
+  DOWNGRADED: { label: "Rebaixado", color: "bg-error-soft text-error" },
+  UNVERIFIED: { label: "Sem status", color: "bg-neutral-soft text-content-muted" },
 };
 
 import { formatKm, formatDateISO, formatDateMs } from "@/lib/format";
@@ -119,9 +120,9 @@ export default async function AthletesPage() {
   if (fetchError) {
     return (
       <div className="p-6">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
-          <h2 className="text-lg font-semibold text-red-800">Erro ao carregar dados</h2>
-          <p className="mt-2 text-sm text-red-600">Não foi possível conectar ao servidor. Tente recarregar a página.</p>
+        <div className="rounded-xl border border-error/30 bg-error-soft p-8 text-center">
+          <h2 className="text-lg font-semibold text-error">Erro ao carregar dados</h2>
+          <p className="mt-2 text-sm text-content-secondary">Não foi possível conectar ao servidor. Tente recarregar a página.</p>
         </div>
       </div>
     );
@@ -131,15 +132,15 @@ export default async function AthletesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Atletas</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-content-primary">Atletas</h1>
+          <p className="mt-1 text-sm text-content-secondary">
             Todos os atletas vinculados à assessoria
           </p>
         </div>
         {athletes.length > 0 && (
           <a
             href="/api/export/athletes"
-            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary shadow-sm hover:bg-surface-elevated hover:text-content-primary transition-colors"
           >
             Exportar CSV
           </a>
@@ -147,59 +148,59 @@ export default async function AthletesPage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="Total" value={athletes.length} />
-        <KpiCard label="Ativos (1+ corrida)" value={activeCount} color="text-blue-700" />
-        <KpiCard label="Verificados" value={verifiedCount} color="text-green-700" />
-        <KpiCard label="Km totais" value={formatKm(totalKm)} color="text-indigo-700" />
+        <StatBlock label="Total" value={athletes.length} />
+        <StatBlock label="Ativos (1+ corrida)" value={activeCount} accentClass="text-info" />
+        <StatBlock label="Verificados" value={verifiedCount} accentClass="text-success" />
+        <StatBlock label="Km totais" value={formatKm(totalKm)} accentClass="text-brand" />
       </div>
 
       {athletes.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-gray-500">
+        <DashboardCard>
+          <p className="py-4 text-center text-sm text-content-muted">
             Nenhum atleta vinculado à assessoria.
           </p>
-        </div>
+        </DashboardCard>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-border text-sm">
+              <thead className="bg-bg-secondary">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-content-muted">
                     Atleta
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-content-muted">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-500">
+                  <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-content-muted">
                     Trust
                   </th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-500">
+                  <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-content-muted">
                     Corridas
                   </th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-500">
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-content-muted">
                     Distância
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-content-muted">
                     Última Corrida
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-content-muted">
                     Membro Desde
                   </th>
                   {isAdmin && (
-                    <th className="px-4 py-3 text-center font-medium text-gray-500">
+                    <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-content-muted">
                       OmniCoins
                     </th>
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border-subtle">
                 {athletes.map((a) => {
                   const s = STATUS_LABELS[a.verification_status] ?? STATUS_LABELS.UNVERIFIED;
                   return (
-                    <tr key={a.user_id} className="hover:bg-gray-50">
+                    <tr key={a.user_id} className="hover:bg-surface-elevated transition-colors">
                       <td className="whitespace-nowrap px-4 py-3">
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-content-primary">
                           {a.display_name}
                         </p>
                       </td>
@@ -211,21 +212,21 @@ export default async function AthletesPage() {
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-center">
-                        <span className="font-semibold text-gray-900">
+                        <span className="font-semibold text-content-primary">
                           {a.trust_score}
                         </span>
-                        <span className="text-xs text-gray-400">/100</span>
+                        <span className="text-xs text-content-muted">/100</span>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-center text-gray-700">
+                      <td className="whitespace-nowrap px-4 py-3 text-center text-content-secondary">
                         {a.total_sessions}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right text-gray-700">
+                      <td className="whitespace-nowrap px-4 py-3 text-right text-content-secondary">
                         {formatKm(a.total_distance_m)} km
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-gray-500">
+                      <td className="whitespace-nowrap px-4 py-3 text-content-muted">
                         {formatDate(a.last_session_at)}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-gray-500">
+                      <td className="whitespace-nowrap px-4 py-3 text-content-muted">
                         {formatJoinDate(a.joined_at_ms)}
                       </td>
                       {isAdmin && (
@@ -244,25 +245,6 @@ export default async function AthletesPage() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function KpiCard({
-  label,
-  value,
-  color = "text-gray-900",
-}: {
-  label: string;
-  value: number | string;
-  color?: string;
-}) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-        {label}
-      </p>
-      <p className={`mt-1 text-xl font-bold ${color}`}>{value}</p>
     </div>
   );
 }
