@@ -10,6 +10,7 @@ import 'package:omni_runner/domain/repositories/i_training_attendance_repo.dart'
 import 'package:omni_runner/presentation/blocs/athlete_profile/athlete_profile_bloc.dart';
 import 'package:omni_runner/presentation/blocs/athlete_profile/athlete_profile_event.dart';
 import 'package:omni_runner/presentation/blocs/athlete_profile/athlete_profile_state.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Tabbed profile view for a specific athlete (staff perspective).
 class StaffAthleteProfileScreen extends StatefulWidget {
@@ -116,7 +117,7 @@ class _OverviewTab extends StatelessWidget {
             ),
           AthleteProfileError(:final message) => Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(DesignTokens.spacingLg),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -152,7 +153,7 @@ class _OverviewTab extends StatelessWidget {
             :final tags,
             :final notes,
           ) => SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(DesignTokens.spacingMd),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -223,7 +224,7 @@ class _StatusCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -239,11 +240,11 @@ class _StatusCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
-                    vertical: 8,
+                    vertical: DesignTokens.spacingSm,
                   ),
                   decoration: BoxDecoration(
                     color: info.color.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                   ),
                   child: Text(
                     info.label,
@@ -288,14 +289,14 @@ class _StatusCard extends StatelessWidget {
       ThemeData theme, MemberStatusValue v) {
     return switch (v) {
       MemberStatusValue.active =>
-        (label: 'Ativo', color: Colors.green.shade700),
+        (label: 'Ativo', color: DesignTokens.success),
       MemberStatusValue.paused =>
-        (label: 'Pausado', color: Colors.orange.shade700),
+        (label: 'Pausado', color: DesignTokens.warning),
       MemberStatusValue.injured =>
-        (label: 'Lesionado', color: Colors.red.shade700),
+        (label: 'Lesionado', color: DesignTokens.error),
       MemberStatusValue.inactive =>
-        (label: 'Inativo', color: Colors.grey.shade600),
-      MemberStatusValue.trial => (label: 'Trial', color: Colors.blue.shade700),
+        (label: 'Inativo', color: DesignTokens.textSecondary),
+      MemberStatusValue.trial => (label: 'Trial', color: DesignTokens.primary),
     };
   }
 }
@@ -356,7 +357,7 @@ class _StatChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
       ),
       child: Column(
         children: [
@@ -386,7 +387,7 @@ class _NotePreviewCard extends StatelessWidget {
     final fmt = DateFormat('d MMM HH:mm', 'pt_BR');
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -478,7 +479,7 @@ class _NotesTabState extends State<_NotesTab> {
                       ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(DesignTokens.spacingMd),
                       itemCount: notes.length,
                       itemBuilder: (context, index) {
                         final note = notes[index];
@@ -495,7 +496,7 @@ class _NotesTabState extends State<_NotesTab> {
             ),
             SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(DesignTokens.spacingMd),
                 child: Row(
                   children: [
                     Expanded(
@@ -554,7 +555,7 @@ class _NoteCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -591,12 +592,12 @@ class _NoteCard extends StatelessWidget {
 }
 
 Color _tagColorFromHex(String? hex) {
-  if (hex == null || hex.isEmpty) return Colors.blue;
+  if (hex == null || hex.isEmpty) return DesignTokens.primary;
   final c = hex.replaceFirst('#', '');
   if (c.length == 6) {
     return Color(int.parse('FF$c', radix: 16));
   }
-  return Colors.blue;
+  return DesignTokens.primary;
 }
 
 class _TagsTab extends StatelessWidget {
@@ -619,7 +620,7 @@ class _TagsTab extends StatelessWidget {
             .toList();
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -676,7 +677,7 @@ class _TagsTab extends StatelessWidget {
       context: context,
       builder: (ctx) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(DesignTokens.spacingLg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -736,7 +737,7 @@ class _PresencaTab extends StatelessWidget {
         if (snap.hasError) {
           return Center(
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(DesignTokens.spacingLg),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -768,7 +769,7 @@ class _PresencaTab extends StatelessWidget {
           );
         }
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           itemCount: list.length,
           itemBuilder: (context, index) =>
               _AttendanceCard(attendance: list[index]),
@@ -792,7 +793,7 @@ class _AttendanceCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -823,10 +824,10 @@ class _AttendanceCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
               decoration: BoxDecoration(
                 color: statusInfo.color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               ),
               child: Text(
                 statusInfo.label,
@@ -846,15 +847,15 @@ class _AttendanceCard extends StatelessWidget {
     return switch (attendance.status) {
       AttendanceStatus.present => (
           label: 'Presente',
-          color: Colors.green.shade700,
+          color: DesignTokens.success,
         ),
       AttendanceStatus.late_ => (
           label: 'Atrasado',
-          color: Colors.orange.shade700,
+          color: DesignTokens.warning,
         ),
       AttendanceStatus.excused => (
           label: 'Justificado',
-          color: Colors.blue.shade700,
+          color: DesignTokens.primary,
         ),
       AttendanceStatus.absent => (
           label: 'Ausente',
@@ -873,7 +874,7 @@ class _AlertasTab extends StatelessWidget {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

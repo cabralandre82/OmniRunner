@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class PartnerAssessoriasScreen extends StatefulWidget {
   final String groupId;
@@ -145,7 +146,7 @@ class _PartnersTabState extends State<_PartnersTab> {
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingXs),
                     itemCount: _partners.length,
                     itemBuilder: (_, i) => _partnerTile(_partners[i], theme),
                   ),
@@ -158,7 +159,7 @@ class _PartnersTabState extends State<_PartnersTab> {
   Widget _emptyState(ThemeData theme) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -184,19 +185,19 @@ class _PartnersTabState extends State<_PartnersTab> {
     final isIncoming = isPending && !p.isRequester;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: DesignTokens.spacingXs),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
             CircleAvatar(
               radius: 22,
-              backgroundColor: isPending ? Colors.orange.shade100 : cs.primaryContainer,
+              backgroundColor: isPending ? DesignTokens.warning : cs.primaryContainer,
               child: Text(
                 p.partnerName.isNotEmpty ? p.partnerName[0].toUpperCase() : '?',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: isPending ? Colors.orange.shade800 : cs.onPrimaryContainer,
+                  color: isPending ? DesignTokens.warning : cs.onPrimaryContainer,
                 ),
               ),
             ),
@@ -211,7 +212,7 @@ class _PartnersTabState extends State<_PartnersTab> {
                       style: theme.textTheme.bodySmall?.copyWith(color: cs.outline)),
                   if (isPending && p.isRequester)
                     Text('Convite enviado — aguardando resposta',
-                        style: theme.textTheme.bodySmall?.copyWith(color: Colors.orange)),
+                        style: theme.textTheme.bodySmall?.copyWith(color: DesignTokens.warning)),
                 ],
               ),
             ),
@@ -219,7 +220,7 @@ class _PartnersTabState extends State<_PartnersTab> {
               IconButton(
                 onPressed: () => _respond(p.partnershipId, true),
                 icon: const Icon(Icons.check_circle),
-                color: Colors.green,
+                color: DesignTokens.success,
                 tooltip: 'Aceitar',
               ),
               IconButton(
@@ -229,7 +230,7 @@ class _PartnersTabState extends State<_PartnersTab> {
                 tooltip: 'Recusar',
               ),
             ] else if (!isPending) ...[
-              Icon(Icons.check_circle, color: Colors.green.shade400, size: 20),
+              Icon(Icons.check_circle, color: DesignTokens.success, size: 20),
             ],
           ],
         ),
@@ -333,7 +334,7 @@ class _ChampionshipsTabState extends State<_ChampionshipsTab> {
     if (_champs.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(DesignTokens.spacingXl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -356,7 +357,7 @@ class _ChampionshipsTabState extends State<_ChampionshipsTab> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
         itemCount: _champs.length,
         itemBuilder: (_, i) => _champTile(_champs[i], theme),
       ),
@@ -374,7 +375,7 @@ class _ChampionshipsTabState extends State<_ChampionshipsTab> {
     }[c.metric] ?? c.metric;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: DesignTokens.spacingXs),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -382,24 +383,24 @@ class _ChampionshipsTabState extends State<_ChampionshipsTab> {
           children: [
             Row(
               children: [
-                Icon(Icons.emoji_events, color: Colors.amber.shade700, size: 20),
+                Icon(Icons.emoji_events, color: DesignTokens.warning, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(c.name,
                       style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 2),
                   decoration: BoxDecoration(
-                    color: c.status == 'open' ? Colors.green.shade50 : Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(12),
+                    color: c.status == 'open' ? DesignTokens.success : DesignTokens.primary,
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   ),
                   child: Text(
                     c.status == 'open' ? 'Aberto' : 'Ativo',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: c.status == 'open' ? Colors.green.shade800 : Colors.blue.shade800,
+                      color: c.status == 'open' ? DesignTokens.success : DesignTokens.primary,
                     ),
                   ),
                 ),
@@ -422,15 +423,15 @@ class _ChampionshipsTabState extends State<_ChampionshipsTab> {
             if (c.alreadyInvited)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(8),
+                  color: DesignTokens.success,
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                 ),
                 child: const Text(
                   'Já inscrito / solicitação enviada',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 13, color: DesignTokens.success, fontWeight: FontWeight.w600),
                 ),
               )
             else
@@ -563,7 +564,7 @@ class _SearchAssessoriaDialogState extends State<_SearchAssessoriaDialog> {
             const SizedBox(height: 12),
             if (_searching)
               const Padding(
-                padding: EdgeInsets.all(16),
+                padding: EdgeInsets.all(DesignTokens.spacingMd),
                 child: CircularProgressIndicator(),
               ),
             if (!_searching && _results.isNotEmpty)
@@ -589,7 +590,7 @@ class _SearchAssessoriaDialogState extends State<_SearchAssessoriaDialog> {
               ),
             if (!_searching && _results.isEmpty && _ctrl.text.length >= 2)
               const Padding(
-                padding: EdgeInsets.all(16),
+                padding: EdgeInsets.all(DesignTokens.spacingMd),
                 child: Text('Nenhuma assessoria encontrada.'),
               ),
           ],

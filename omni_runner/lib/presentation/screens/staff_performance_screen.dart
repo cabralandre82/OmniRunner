@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/presentation/screens/staff_retention_dashboard_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_weekly_report_screen.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Assessoria performance dashboard — 4 KPIs + drill-down.
 ///
@@ -263,7 +264,7 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(DesignTokens.spacingMd),
                     children: [
                       _SectionTitle(widget.groupName),
                       const SizedBox(height: 12),
@@ -413,14 +414,14 @@ class _KpiGrid extends StatelessWidget {
           title: 'Atletas ativos',
           value: '$activeAthletes',
           subtitle: 'de $totalMembers ${totalMembers == 1 ? 'atleta' : 'atletas'}',
-          color: Colors.blue,
+          color: DesignTokens.primary,
         ),
         _KpiCard(
           icon: Icons.route_rounded,
           title: 'Corridas na semana',
           value: '$weeklyRuns',
           subtitle: '${weeklyDistanceKm.toStringAsFixed(1)} km totais',
-          color: Colors.green,
+          color: DesignTokens.success,
           trend: prevWeekRuns > 0
               ? _trendLabel(weeklyRuns, prevWeekRuns)
               : null,
@@ -431,14 +432,14 @@ class _KpiGrid extends StatelessWidget {
           title: 'Desafios',
           value: '$challengesDone',
           subtitle: '$challengesWon ${challengesWon == 1 ? 'vitória' : 'vitórias'}',
-          color: Colors.deepPurple,
+          color: DesignTokens.info,
         ),
         _KpiCard(
           icon: Icons.emoji_events_rounded,
           title: 'Campeonatos',
           value: '$champParticipants',
           subtitle: '$champCompleted ${champCompleted == 1 ? 'concluído' : 'concluídos'}',
-          color: Colors.amber.shade800,
+          color: DesignTokens.warning,
         ),
       ],
     );
@@ -472,7 +473,7 @@ class _KpiCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
@@ -518,7 +519,7 @@ class _KpiCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
-                color: trendUp ? Colors.green.shade700 : Colors.red.shade700,
+                color: trendUp ? DesignTokens.success : DesignTokens.error,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -550,7 +551,7 @@ class _TopAthletesSection extends StatelessWidget {
         const SizedBox(height: 8),
         if (athletes.isEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
+            padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingLg),
             child: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -614,14 +615,14 @@ class _AthleteActivityTile extends StatelessWidget {
       leading: CircleAvatar(
         radius: 16,
         backgroundColor: isTop3
-            ? Colors.amber.shade100
+            ? DesignTokens.warning.withValues(alpha: 0.15)
             : theme.colorScheme.surfaceContainerHighest,
         child: Text(
           '$rank',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 13,
-            color: isTop3 ? Colors.amber.shade900 : theme.colorScheme.outline,
+            color: isTop3 ? DesignTokens.warning : theme.colorScheme.outline,
           ),
         ),
       ),

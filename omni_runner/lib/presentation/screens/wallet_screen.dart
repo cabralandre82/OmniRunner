@@ -13,6 +13,7 @@ import 'package:omni_runner/presentation/screens/staff_scan_qr_screen.dart';
 import 'package:omni_runner/domain/repositories/i_token_intent_repo.dart';
 import 'package:omni_runner/presentation/widgets/contextual_tip_banner.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 enum _WalletFilter { all, earned, spent }
 
@@ -75,7 +76,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   message: 'Seus OmniCoins vêm da sua assessoria. '
                       'Use-os como inscrição em desafios.',
                   icon: Icons.account_balance_wallet_rounded,
-                  color: Color(0xFFFFA000),
+                  color: DesignTokens.warning,
                 ),
                 _BalanceCard(
                   total: wallet.totalCoins,
@@ -86,7 +87,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 ),
                 const Divider(height: 1),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                  padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingXs),
                   child: Text(
                     'Histórico',
                     style: Theme.of(context).textTheme.titleMedium,
@@ -94,7 +95,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 ),
                 if (history.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd),
                     child: Wrap(
                       spacing: 8,
                       children: [
@@ -123,7 +124,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 if (history.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 32, vertical: 40),
+                        horizontal: DesignTokens.spacingXl, vertical: 40),
                     child: Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -192,7 +193,7 @@ class _BalanceCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingXl, horizontal: DesignTokens.spacingLg),
       color: theme.colorScheme.primaryContainer,
       child: Column(
         children: [
@@ -222,13 +223,13 @@ class _BalanceCard extends StatelessWidget {
                 icon: Icons.check_circle_outline,
                 label: 'Disponível',
                 value: '$available',
-                color: Colors.green,
+                color: DesignTokens.success,
               ),
               _StatChip(
                 icon: Icons.hourglass_top,
                 label: 'Pendente',
                 value: '$pending',
-                color: Colors.orange,
+                color: DesignTokens.warning,
               ),
             ],
           ),
@@ -237,13 +238,13 @@ class _BalanceCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
+                color: DesignTokens.warning,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
                 children: [
                   Icon(Icons.info_outline, size: 16,
-                      color: Colors.orange.shade800),
+                      color: DesignTokens.warning),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -251,7 +252,7 @@ class _BalanceCard extends StatelessWidget {
                       'diferentes. Serão liberados automaticamente após confirmação '
                       'do staff da assessoria adversária (até 48h).',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.orange.shade800,
+                        color: DesignTokens.warning,
                       ),
                     ),
                   ),
@@ -267,7 +268,7 @@ class _BalanceCard extends StatelessWidget {
                 icon: Icons.arrow_upward,
                 label: 'Ganhos',
                 value: '$earned',
-                color: Colors.green,
+                color: DesignTokens.success,
               ),
               const SizedBox(width: 24),
               _StatChip(
@@ -323,7 +324,7 @@ class _LedgerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCredit = entry.isCredit;
-    final color = isCredit ? Colors.green : Theme.of(context).colorScheme.error;
+    final color = isCredit ? DesignTokens.success : Theme.of(context).colorScheme.error;
     final sign = isCredit ? '+' : '';
 
     return ListTile(

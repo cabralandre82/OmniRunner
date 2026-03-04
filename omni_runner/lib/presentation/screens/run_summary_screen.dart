@@ -13,6 +13,7 @@ import 'package:omni_runner/presentation/widgets/invalidated_run_card.dart';
 import 'package:omni_runner/presentation/widgets/run_share_card.dart';
 import 'package:omni_runner/presentation/widgets/summary_metrics_panel.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 const _srcId = 'summary-route-src';
 const _layerId = 'summary-route-layer';
@@ -101,7 +102,7 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
     }
     _mapCtrl?.animateCamera(CameraUpdate.newLatLngBounds(
       LatLngBounds(southwest: LatLng(minLat, minLng), northeast: LatLng(maxLat, maxLng)),
-      left: 48, top: 48, right: 48, bottom: 200,
+      left: DesignTokens.spacingXxl, top: DesignTokens.spacingXxl, right: DesignTokens.spacingXxl, bottom: 200,
     ),);
   }
 
@@ -113,15 +114,15 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
         : null;
     if (ghost == null && integrity == null && challengeBanner == null) {
       return Padding(
-        padding: const EdgeInsets.only(top: 8),
+        padding: const EdgeInsets.only(top: DesignTokens.spacingSm),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.schedule, size: 14, color: Colors.grey.shade500),
+            Icon(Icons.schedule, size: 14, color: DesignTokens.textMuted),
             const SizedBox(width: 4),
             Text(
               'Verificação final pelo servidor ao sincronizar',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              style: TextStyle(fontSize: 11, color: DesignTokens.textMuted),
             ),
           ],
         ),
@@ -133,17 +134,17 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
       if (integrity != null) integrity,
       if (integrity == null)
         Padding(
-          padding: const EdgeInsets.only(top: 8),
+          padding: const EdgeInsets.only(top: DesignTokens.spacingSm),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.schedule, size: 14, color: Colors.grey.shade500),
+              Icon(Icons.schedule, size: 14, color: DesignTokens.textMuted),
               const SizedBox(width: 4),
               Text(
                 'Verificação final pelo servidor ao sincronizar',
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.grey.shade500,
+                  color: DesignTokens.textMuted,
                 ),
               ),
             ],
@@ -224,9 +225,9 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
           const Center(child: CircularProgressIndicator())
         else if (_mapTimedOut)
           Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.map_outlined, size: 48, color: Colors.grey.shade400),
+            Icon(Icons.map_outlined, size: 48, color: DesignTokens.textMuted),
             const SizedBox(height: 8),
-            Text('Mapa indisponível offline', style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
+            Text('Mapa indisponível offline', style: TextStyle(color: DesignTokens.textSecondary, fontSize: 14)),
           ])),
         Positioned(top: 0, left: 0, right: 0, child: _TopBar(onShare: _shareRun)),
         Positioned(
@@ -252,7 +253,7 @@ class _TopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
     return Container(
-      padding: EdgeInsets.only(top: top, left: 8, right: 8, bottom: 8),
+      padding: EdgeInsets.only(top: top, left: DesignTokens.spacingSm, right: DesignTokens.spacingSm, bottom: DesignTokens.spacingSm),
       decoration: BoxDecoration(gradient: LinearGradient(
         begin: Alignment.topCenter, end: Alignment.bottomCenter,
         colors: [Colors.black54, Colors.black.withAlpha(0)],

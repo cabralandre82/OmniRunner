@@ -11,6 +11,7 @@ import 'package:omni_runner/presentation/blocs/crm_list/crm_list_event.dart';
 import 'package:omni_runner/presentation/blocs/crm_list/crm_list_state.dart';
 import 'package:omni_runner/presentation/screens/staff_athlete_profile_screen.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Filterable list of athletes in the group with tags, status, and risk indicators.
 class StaffCrmListScreen extends StatelessWidget {
@@ -158,7 +159,7 @@ class _StaffCrmListViewState extends State<_StaffCrmListView> {
                     const ShimmerListLoader(),
                   CrmListError(:final message) => Center(
                       child: Padding(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(DesignTokens.spacingLg),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -195,7 +196,7 @@ class _StaffCrmListViewState extends State<_StaffCrmListView> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.people_outline, size: 64, color: Colors.grey.shade400),
+                                  Icon(Icons.people_outline, size: 64, color: DesignTokens.textMuted),
                                   const SizedBox(height: 16),
                                   const Text(
                                     'Nenhum atleta encontrado',
@@ -204,7 +205,7 @@ class _StaffCrmListViewState extends State<_StaffCrmListView> {
                                   const SizedBox(height: 8),
                                   Text(
                                     'Convide atletas para sua assessoria',
-                                    style: TextStyle(color: Colors.grey.shade600),
+                                    style: TextStyle(color: DesignTokens.textSecondary),
                                   ),
                                 ],
                               ),
@@ -217,12 +218,12 @@ class _StaffCrmListViewState extends State<_StaffCrmListView> {
                               },
                               child: ListView.builder(
                                 controller: _scrollController,
-                                padding: const EdgeInsets.all(16),
+                                padding: const EdgeInsets.all(DesignTokens.spacingMd),
                                 itemCount: athletes.length + (loadingMore ? 1 : 0),
                                 itemBuilder: (context, index) {
                                   if (index >= athletes.length) {
                                     return const Padding(
-                                      padding: EdgeInsets.symmetric(vertical: 16),
+                                      padding: EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
                                       child: Center(child: CircularProgressIndicator()),
                                     );
                                   }
@@ -279,7 +280,7 @@ class _FilterSection extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -334,12 +335,12 @@ class _FilterSection extends StatelessWidget {
   }
 
   Color _tagColor(String? hex) {
-    if (hex == null || hex.isEmpty) return Colors.blue;
+    if (hex == null || hex.isEmpty) return DesignTokens.primary;
     final c = hex.replaceFirst('#', '');
     if (c.length == 6) {
       return Color(int.parse('FF$c', radix: 16));
     }
-    return Colors.blue;
+    return DesignTokens.primary;
   }
 }
 
@@ -367,7 +368,7 @@ class _StatusDropdown extends StatelessWidget {
       value: value,
       decoration: const InputDecoration(
         isDense: true,
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: DesignTokens.spacingSm),
       ),
       items: _options
           .map(
@@ -402,9 +403,9 @@ class _CrmAthleteCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Row(
             children: [
               CircleAvatar(
@@ -445,7 +446,7 @@ class _CrmAthleteCard extends StatelessWidget {
                         if (athlete.status != null)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
+                              horizontal: DesignTokens.spacingSm,
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
@@ -492,18 +493,18 @@ class _CrmAthleteCard extends StatelessWidget {
                   if (athlete.hasActiveAlerts)
                     Icon(
                       Icons.warning_amber_rounded,
-                      color: Colors.amber.shade700,
+                      color: DesignTokens.warning,
                       size: 22,
                     ),
                   if (athlete.attendanceCount > 0)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
+                        horizontal: DesignTokens.spacingSm,
+                        vertical: DesignTokens.spacingXs,
                       ),
                       decoration: BoxDecoration(
                         color: cs.primaryContainer,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                       ),
                       child: Text(
                         '${athlete.attendanceCount}',
@@ -535,35 +536,35 @@ class _CrmAthleteCard extends StatelessWidget {
     return switch (athlete.status) {
       MemberStatusValue.active => (
           label: 'Ativo',
-          color: Colors.green.shade700,
+          color: DesignTokens.success,
         ),
       MemberStatusValue.paused => (
           label: 'Pausado',
-          color: Colors.orange.shade700,
+          color: DesignTokens.warning,
         ),
       MemberStatusValue.injured => (
           label: 'Lesionado',
-          color: Colors.red.shade700,
+          color: DesignTokens.error,
         ),
       MemberStatusValue.inactive => (
           label: 'Inativo',
-          color: Colors.grey.shade600,
+          color: DesignTokens.textSecondary,
         ),
       MemberStatusValue.trial => (
           label: 'Trial',
-          color: Colors.blue.shade700,
+          color: DesignTokens.primary,
         ),
       null => (label: '-', color: theme.colorScheme.outline),
     };
   }
 
   Color _tagColor(String? hex) {
-    if (hex == null || hex.isEmpty) return Colors.blue;
+    if (hex == null || hex.isEmpty) return DesignTokens.primary;
     final c = hex.replaceFirst('#', '');
     if (c.length == 6) {
       return Color(int.parse('FF$c', radix: 16));
     }
-    return Colors.blue;
+    return DesignTokens.primary;
   }
 }
 
@@ -678,7 +679,7 @@ class _ManageTagsSheetState extends State<_ManageTagsSheet> {
       expand: false,
       builder: (context, scrollController) {
         return Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(DesignTokens.spacingLg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -769,11 +770,11 @@ class _ManageTagsSheetState extends State<_ManageTagsSheet> {
   }
 
   Color _tagColor(String? hex) {
-    if (hex == null || hex.isEmpty) return Colors.blue;
+    if (hex == null || hex.isEmpty) return DesignTokens.primary;
     final c = hex.replaceFirst('#', '');
     if (c.length == 6) {
       return Color(int.parse('FF$c', radix: 16));
     }
-    return Colors.blue;
+    return DesignTokens.primary;
   }
 }

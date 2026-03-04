@@ -6,6 +6,7 @@ import 'package:omni_runner/presentation/blocs/missions/missions_bloc.dart';
 import 'package:omni_runner/presentation/blocs/missions/missions_event.dart';
 import 'package:omni_runner/presentation/blocs/missions/missions_state.dart';
 import 'package:omni_runner/l10n/l10n.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class MissionsScreen extends StatelessWidget {
   const MissionsScreen({super.key});
@@ -38,7 +39,7 @@ class MissionsScreen extends StatelessWidget {
                 : _body(context, active, completed, missionDefs),
           MissionsError(:final message) => Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(DesignTokens.spacingLg),
                 child: Text(
                   message,
                   textAlign: TextAlign.center,
@@ -92,7 +93,7 @@ class MissionsScreen extends StatelessWidget {
             title: 'Ativas',
             count: active.length,
             icon: Icons.flag,
-            color: Colors.green,
+            color: DesignTokens.success,
           ),
           ...active.map((m) => _MissionTile(progress: m, isActive: true, def: defs[m.missionId])),
         ],
@@ -101,7 +102,7 @@ class MissionsScreen extends StatelessWidget {
             title: 'Completadas',
             count: completed.length,
             icon: Icons.check_circle,
-            color: Colors.teal,
+            color: DesignTokens.success,
           ),
           ...completed.map((m) => _MissionTile(progress: m, isActive: false, def: defs[m.missionId])),
         ],
@@ -130,7 +131,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingSm),
       child: Row(
         children: [
           Icon(icon, size: 20, color: color),
@@ -143,7 +144,7 @@ class _SectionHeader extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 2),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
@@ -181,9 +182,9 @@ class _MissionTile extends StatelessWidget {
     final displayTitle = def?.title ?? 'Missão ${progress.missionId.length > 8 ? progress.missionId.substring(0, 8) : progress.missionId}';
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -194,14 +195,14 @@ class _MissionTile extends StatelessWidget {
                   height: 40,
                   decoration: BoxDecoration(
                     color: isDone
-                        ? Colors.teal.withValues(alpha: 0.15)
+                        ? DesignTokens.success.withValues(alpha: 0.15)
                         : theme.colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     isDone ? Icons.check : Icons.flag,
                     color: isDone
-                        ? Colors.teal
+                        ? DesignTokens.success
                         : theme.colorScheme.primary,
                     size: 22,
                   ),
@@ -243,7 +244,7 @@ class _MissionTile extends StatelessWidget {
                   '$percent%',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isDone ? Colors.teal : theme.colorScheme.primary,
+                    color: isDone ? DesignTokens.success : theme.colorScheme.primary,
                   ),
                 ),
               ],
@@ -256,7 +257,7 @@ class _MissionTile extends StatelessWidget {
                 minHeight: 8,
                 backgroundColor: theme.colorScheme.surfaceContainerHighest,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  isDone ? Colors.teal : theme.colorScheme.primary,
+                  isDone ? DesignTokens.success : theme.colorScheme.primary,
                 ),
               ),
             ),
@@ -292,9 +293,9 @@ class _MissionTile extends StatelessWidget {
       };
 
   static Color _statusColor(MissionProgressStatus s) => switch (s) {
-        MissionProgressStatus.active => Colors.blue,
-        MissionProgressStatus.completed => Colors.teal,
-        MissionProgressStatus.expired => Colors.grey,
+        MissionProgressStatus.active => DesignTokens.primary,
+        MissionProgressStatus.completed => DesignTokens.success,
+        MissionProgressStatus.expired => DesignTokens.textMuted,
       };
 
   static String _formatProgress(double current, double target) {

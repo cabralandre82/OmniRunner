@@ -21,6 +21,7 @@ import 'package:omni_runner/presentation/blocs/verification/verification_event.d
 import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/widgets/verification_gate.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Queue-based matchmaking screen.
 ///
@@ -416,14 +417,14 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DesignTokens.spacingMd),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [cs.primaryContainer, cs.tertiaryContainer],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
             ),
             child: Column(
               children: [
@@ -451,14 +452,14 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange.shade200),
+                color: DesignTokens.warning,
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                border: Border.all(color: DesignTokens.warning),
               ),
               child: Row(
                 children: [
                   Icon(Icons.warning_amber_rounded,
-                      size: 20, color: Colors.orange.shade700),
+                      size: 20, color: DesignTokens.warning),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -469,7 +470,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
-                            color: Colors.orange.shade800,
+                            color: DesignTokens.warning,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -478,7 +479,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
                           'para contar no desafio. Conecte nas Configurações.',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.orange.shade700,
+                            color: DesignTokens.warning,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -513,7 +514,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: cs.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -543,26 +544,26 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
           ),
           if (_preferredParkName != null)
             Padding(
-              padding: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(top: DesignTokens.spacingSm),
               child: Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: DesignTokens.spacingSm),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade50,
+                  color: DesignTokens.success,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.green.shade200),
+                  border: Border.all(color: DesignTokens.success),
                 ),
                 child: Row(
                   children: [
                     Icon(Icons.park,
-                        size: 16, color: Colors.green.shade700),
+                        size: 16, color: DesignTokens.success),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Prioridade: oponentes do $_preferredParkName',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.green.shade800,
+                          color: DesignTokens.success,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -643,7 +644,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: cs.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
             ),
             child: Row(
               children: [
@@ -668,7 +669,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
             label: const Text('Buscar Oponente'),
             onPressed: _startMatchmaking,
             style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
               textStyle: theme.textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.bold),
             ),
@@ -694,7 +695,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
             const SizedBox(height: 12),
             ..._assessoriaMembers.take(5).map((m) => ListTile(
                   dense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingXs),
                   leading: CircleAvatar(
                     radius: 18,
                     backgroundColor: cs.primaryContainer,
@@ -763,7 +764,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
     return Center(
       key: const ValueKey('searching'),
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -821,7 +822,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
               const SizedBox(height: 12),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingSm),
                 decoration: BoxDecoration(
                   color: cs.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(20),
@@ -866,7 +867,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
 
     return SingleChildScrollView(
       key: const ValueKey('pending_confirm'),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(DesignTokens.spacingLg),
       child: Column(
         children: [
           Container(
@@ -874,13 +875,13 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
             height: 100,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.amber.shade50,
-              border: Border.all(color: Colors.amber.shade400, width: 3),
+              color: DesignTokens.warning,
+              border: Border.all(color: DesignTokens.warning, width: 3),
             ),
             child: Icon(
               Icons.handshake_rounded,
               size: 48,
-              color: Colors.amber.shade700,
+              color: DesignTokens.warning,
             ),
           ),
           const SizedBox(height: 20),
@@ -898,7 +899,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
           const SizedBox(height: 24),
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(DesignTokens.spacingMd),
               child: Column(
                 children: [
                   _ConfirmRow(
@@ -932,7 +933,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
                       icon: Icons.toll,
                       label: 'Inscrição',
                       value: '$fee OmniCoins',
-                      valueColor: Colors.orange.shade700,
+                      valueColor: DesignTokens.warning,
                     ),
                   ],
                   if (_skillBracket != null) ...[
@@ -952,14 +953,14 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange.shade200),
+                color: DesignTokens.warning,
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                border: Border.all(color: DesignTokens.warning),
               ),
               child: Row(
                 children: [
                   Icon(Icons.info_outline,
-                      size: 18, color: Colors.orange.shade700),
+                      size: 18, color: DesignTokens.warning),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -967,7 +968,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
                       'como entrada do desafio.',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.orange.shade800,
+                        color: DesignTokens.warning,
                       ),
                     ),
                   ),
@@ -983,8 +984,8 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
               label: const Text('Aceitar Desafio'),
               onPressed: _acceptMatch,
               style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                backgroundColor: Colors.green,
+                padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
+                backgroundColor: DesignTokens.success,
                 textStyle: theme.textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.bold),
               ),
@@ -1061,7 +1062,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
     return Center(
       key: const ValueKey('matched'),
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1070,13 +1071,13 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
               height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.green.shade50,
-                border: Border.all(color: Colors.green, width: 3),
+                color: DesignTokens.success,
+                border: Border.all(color: DesignTokens.success, width: 3),
               ),
               child: const Icon(
                 Icons.check_circle_rounded,
                 size: 60,
-                color: Colors.green,
+                color: DesignTokens.success,
               ),
             ),
             const SizedBox(height: 24),
@@ -1084,7 +1085,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
               'Oponente encontrado!',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.green.shade700,
+                color: DesignTokens.success,
               ),
             ),
             const SizedBox(height: 12),
@@ -1092,7 +1093,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
                 color: cs.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1117,7 +1118,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
               onPressed: _goToChallenge,
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 32, vertical: 16),
+                    horizontal: DesignTokens.spacingXl, vertical: DesignTokens.spacingMd),
                 textStyle: theme.textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.bold),
               ),
@@ -1137,7 +1138,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
     return Center(
       key: const ValueKey('error'),
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

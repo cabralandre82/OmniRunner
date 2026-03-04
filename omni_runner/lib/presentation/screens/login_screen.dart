@@ -7,6 +7,7 @@ import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/failures/auth_failure.dart';
 import 'package:omni_runner/l10n/l10n.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Login screen with social sign-in buttons (Google, Apple, Instagram, TikTok).
 ///
@@ -174,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingXl),
           child: Column(
             children: [
               const Spacer(flex: 3),
@@ -207,10 +208,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 20),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: 12),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   ),
                   child: Row(
                     children: [
@@ -237,7 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // Buttons or spinner
               if (_busy)
                 const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
+                  padding: EdgeInsets.symmetric(vertical: DesignTokens.spacingLg),
                   child: CircularProgressIndicator(),
                 )
               else ...[
@@ -252,7 +253,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.black87,
                       backgroundColor: Colors.white,
-                      side: BorderSide(color: Colors.grey.shade300),
+                      side: BorderSide(color: DesignTokens.textMuted),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -335,8 +336,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     icon: const Icon(Icons.email_outlined, size: 22),
                     label: const Text('Continuar com Email'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.grey.shade700,
-                      side: BorderSide(color: Colors.grey.shade400),
+                      foregroundColor: DesignTokens.textSecondary,
+                      side: BorderSide(color: DesignTokens.textMuted),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -358,7 +359,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       labelText: 'Email',
                       prefixIcon: const Icon(Icons.email_outlined),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                       ),
                     ),
                   ),
@@ -372,7 +373,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       labelText: 'Senha',
                       prefixIcon: const Icon(Icons.lock_outline),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                       ),
                     ),
                   ),
@@ -384,7 +385,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: _signInWithEmail,
                       style: FilledButton.styleFrom(
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                         ),
                       ),
                       child: Text(_isSignUp ? context.l10n.signUp : context.l10n.login),
@@ -407,7 +408,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       if (!_isSignUp) ...[
                         Text('·',
-                            style: TextStyle(color: Colors.grey.shade400)),
+                            style: TextStyle(color: DesignTokens.textMuted)),
                         TextButton(
                           onPressed: _resetPassword,
                           child: Text(
@@ -427,7 +428,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // Error message
               if (_errorMessage != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.only(top: DesignTokens.spacingSm),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

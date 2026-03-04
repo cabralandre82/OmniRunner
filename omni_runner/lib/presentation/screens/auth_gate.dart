@@ -19,6 +19,7 @@ import 'package:omni_runner/presentation/screens/onboarding_role_screen.dart';
 import 'package:omni_runner/presentation/screens/onboarding_tour_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_setup_screen.dart';
 import 'package:omni_runner/presentation/screens/welcome_screen.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Single entry-point guard that routes users based on auth + onboarding state.
 ///
@@ -180,7 +181,7 @@ class _AuthGateState extends State<AuthGate> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Você já é membro da assessoria $groupName.'),
-            backgroundColor: Colors.green,
+            backgroundColor: DesignTokens.success,
           ),
         );
       } else if (status == 'already_requested') {
@@ -190,7 +191,7 @@ class _AuthGateState extends State<AuthGate> {
               'Você já tem uma solicitação pendente para "$groupName". '
               'Aguarde a aprovação.',
             ),
-            backgroundColor: Colors.orange,
+            backgroundColor: DesignTokens.warning,
           ),
         );
       } else {
@@ -200,7 +201,7 @@ class _AuthGateState extends State<AuthGate> {
               'Solicitação enviada para "$groupName"! '
               'Aguarde a aprovação da assessoria.',
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: DesignTokens.success,
           ),
         );
       }

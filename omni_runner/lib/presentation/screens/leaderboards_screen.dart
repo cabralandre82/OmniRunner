@@ -12,6 +12,7 @@ import 'package:omni_runner/presentation/blocs/leaderboards/leaderboards_state.d
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/l10n/l10n.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class LeaderboardsScreen extends StatefulWidget {
   const LeaderboardsScreen({super.key});
@@ -164,7 +165,7 @@ class _LeaderboardsScreenState extends State<LeaderboardsScreen>
         children: [
           // ── Tip banner ─────────────────────────────────────────────
           const Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingSm, DesignTokens.spacingMd, 0),
             child: TipBanner(
               tipKey: TipKey.rankingsHowTo,
               icon: Icons.lightbulb_outline_rounded,
@@ -176,7 +177,7 @@ class _LeaderboardsScreenState extends State<LeaderboardsScreen>
 
           // ── Period filter ──────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingSm, DesignTokens.spacingMd, DesignTokens.spacingXs),
             child: Row(
               children: [
                 _PeriodChip(
@@ -221,7 +222,7 @@ class _LeaderboardsScreenState extends State<LeaderboardsScreen>
                         ),
                 LeaderboardsError(:final message) => Center(
                     child: Padding(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(DesignTokens.spacingLg),
                       child: Text(message,
                           textAlign: TextAlign.center,
                           style: TextStyle(color: theme.colorScheme.error)),
@@ -269,7 +270,7 @@ class _LeaderboardsScreenState extends State<LeaderboardsScreen>
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -322,7 +323,7 @@ class _PeriodChip extends StatelessWidget {
       selectedColor: cs.primaryContainer,
       showCheckmark: false,
       side: selected ? BorderSide.none : null,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingXs),
       visualDensity: VisualDensity.compact,
     );
   }
@@ -389,7 +390,7 @@ class _LeaderboardList extends StatelessWidget {
     final metric = leaderboard.metric;
 
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 4, bottom: 24),
+      padding: const EdgeInsets.only(top: DesignTokens.spacingXs, bottom: DesignTokens.spacingLg),
       itemCount: entries.length + 1,
       itemBuilder: (context, index) {
         if (index == entries.length) {
@@ -429,9 +430,9 @@ class _EntryTile extends StatelessWidget {
     final isTop3 = entry.rank <= 3;
 
     final rankColor = switch (entry.rank) {
-      1 => Colors.amber,
-      2 => Colors.grey.shade400,
-      3 => Colors.brown.shade300,
+      1 => DesignTokens.warning,
+      2 => DesignTokens.textMuted,
+      3 => DesignTokens.warning,
       _ => cs.outline,
     };
 
@@ -467,7 +468,7 @@ class _EntryTile extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                 decoration: BoxDecoration(
                   color: cs.primary,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                 ),
                 child: Text('Você',
                     style: theme.textTheme.labelSmall
@@ -531,11 +532,11 @@ class _ScoringExplanation extends StatelessWidget {
     };
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      margin: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 12, DesignTokens.spacingMd, 0),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
       ),
       child: Row(
         children: [

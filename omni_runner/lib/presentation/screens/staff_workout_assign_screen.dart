@@ -11,6 +11,7 @@ import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
 import 'package:omni_runner/domain/repositories/i_workout_repo.dart';
 import 'package:omni_runner/domain/usecases/wearable/push_to_trainingpeaks.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Screen for staff to assign a workout template to an athlete on a date.
 class StaffWorkoutAssignScreen extends StatefulWidget {
@@ -275,7 +276,7 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: cs.errorContainer,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                         ),
                         child: Row(
                           children: [
@@ -308,7 +309,7 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
                       label: Text(
                           _saving ? 'Atribuindo...' : 'Confirmar atribuição'),
                       style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
                       ),
                     ),
                   ],
@@ -319,7 +320,7 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
   Widget _buildError(ThemeData theme) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(DesignTokens.spacingLg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

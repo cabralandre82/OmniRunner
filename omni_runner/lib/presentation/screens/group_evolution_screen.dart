@@ -5,6 +5,7 @@ import 'package:omni_runner/domain/entities/evolution_metric_entity.dart';
 import 'package:omni_runner/presentation/blocs/group_evolution/group_evolution_bloc.dart';
 import 'package:omni_runner/presentation/blocs/group_evolution/group_evolution_event.dart';
 import 'package:omni_runner/presentation/blocs/group_evolution/group_evolution_state.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class GroupEvolutionScreen extends StatelessWidget {
   final String groupName;
@@ -63,7 +64,7 @@ class GroupEvolutionScreen extends StatelessWidget {
             ),
           GroupEvolutionError(:final message) => Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(DesignTokens.spacingLg),
                 child: Text(
                   message,
                   textAlign: TextAlign.center,
@@ -103,13 +104,13 @@ class _DirectionFilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = [null, ...TrendDirection.values];
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 12, DesignTokens.spacingMd, DesignTokens.spacingSm),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: items.map((d) {
             return Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: DesignTokens.spacingSm),
               child: ChoiceChip(
                 label: Text(_directionFilterLabel(d)),
                 selected: d == selected,
@@ -153,7 +154,7 @@ class _GroupContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd),
       children: [
         _SummaryBar(
           improving: improvingCount,
@@ -188,14 +189,14 @@ class _SummaryBar extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: DesignTokens.spacingMd),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _CountBadge(
               icon: Icons.trending_up,
               count: improving,
-              color: Colors.green,
+              color: DesignTokens.success,
               label: 'Melhorando',
               theme: theme,
             ),
@@ -273,7 +274,7 @@ class _AthleteTrendTile extends StatelessWidget {
     final color = _directionColor(trend.direction, cs);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: color.withAlpha(25),
@@ -327,7 +328,7 @@ class _AthleteTrendTile extends StatelessWidget {
       };
 
   static Color _directionColor(TrendDirection d, ColorScheme cs) => switch (d) {
-        TrendDirection.improving => Colors.green,
+        TrendDirection.improving => DesignTokens.success,
         TrendDirection.stable => cs.primary,
         TrendDirection.declining => cs.error,
         TrendDirection.insufficient => cs.outline,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Weekly report for the assessoria staff.
 ///
@@ -235,7 +236,7 @@ class _StaffWeeklyReportScreenState extends State<StaffWeeklyReportScreen> {
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(DesignTokens.spacingMd),
                     children: [
                       // Week navigator
                       _WeekNav(
@@ -280,7 +281,7 @@ class _StaffWeeklyReportScreenState extends State<StaffWeeklyReportScreen> {
                       if (_ranking.isEmpty ||
                           _ranking.every((a) => a.runs == 0))
                         Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingLg),
                           child: Center(
                             child: Text(
                               'Nenhuma corrida registrada nesta semana.',
@@ -403,7 +404,7 @@ class _SummaryCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(DesignTokens.spacingMd),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(14),
@@ -509,11 +510,11 @@ class _ProgressionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingMd, horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.deepPurple.shade50,
+        color: DesignTokens.info.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.deepPurple.shade100),
+        border: Border.all(color: DesignTokens.info.withValues(alpha: 0.15)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -522,21 +523,21 @@ class _ProgressionCard extends StatelessWidget {
             label: 'XP médio',
             value: avgXp.toStringAsFixed(0),
             icon: Icons.star_rounded,
-            color: Colors.amber.shade700,
+            color: DesignTokens.warning,
           ),
-          Container(width: 1, height: 40, color: Colors.deepPurple.shade100),
+          Container(width: 1, height: 40, color: DesignTokens.info.withValues(alpha: 0.15)),
           _ProgStat(
             label: 'Nível médio',
             value: avgLevel.toStringAsFixed(1),
             icon: Icons.trending_up_rounded,
-            color: Colors.deepPurple,
+            color: DesignTokens.info,
           ),
-          Container(width: 1, height: 40, color: Colors.deepPurple.shade100),
+          Container(width: 1, height: 40, color: DesignTokens.info.withValues(alpha: 0.15)),
           _ProgStat(
             label: 'Sequência média',
             value: '${avgStreak.toStringAsFixed(1)} dias',
             icon: Icons.local_fire_department_rounded,
-            color: Colors.deepOrange,
+            color: DesignTokens.warning,
           ),
         ],
       ),
@@ -600,7 +601,7 @@ class _RankingTile extends StatelessWidget {
       leading: CircleAvatar(
         radius: 16,
         backgroundColor: isTop3
-            ? Colors.amber.shade100
+            ? DesignTokens.warning.withValues(alpha: 0.15)
             : theme.colorScheme.surfaceContainerHighest,
         child: Text(
           '$rank',
@@ -608,7 +609,7 @@ class _RankingTile extends StatelessWidget {
             fontWeight: FontWeight.bold,
             fontSize: 13,
             color:
-                isTop3 ? Colors.amber.shade900 : theme.colorScheme.outline,
+                isTop3 ? DesignTokens.warning : theme.colorScheme.outline,
           ),
         ),
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/presentation/screens/athlete_championship_ranking_screen.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 
@@ -203,7 +204,7 @@ class _AthleteChampionshipsScreenState
       children: [
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 12, DesignTokens.spacingMd, 0),
           child: Row(
             children: [
               _filterChip('Todos', 'all'),
@@ -226,7 +227,7 @@ class _AthleteChampionshipsScreenState
                   ),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 12, DesignTokens.spacingMd, DesignTokens.spacingLg),
                   itemCount: filtered.length,
                   itemBuilder: (_, i) {
                     final c = filtered[i];
@@ -335,14 +336,14 @@ class _ChampCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Icon(Icons.emoji_events_rounded,
-                    size: 22, color: Colors.amber.shade800),
+                    size: 22, color: DesignTokens.warning),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(champ.name,
@@ -351,10 +352,10 @@ class _ChampCard extends StatelessWidget {
                 ),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 3),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                   ),
                   child: Text(
                     _statusLabel(champ.status),
@@ -418,18 +419,18 @@ class _ChampCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.1),
+                        color: DesignTokens.success.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.check_circle_rounded,
-                              size: 18, color: Colors.green),
+                              size: 18, color: DesignTokens.success),
                           SizedBox(width: 6),
                           Text('Inscrito',
                               style: TextStyle(
-                                  color: Colors.green, fontWeight: FontWeight.w600)),
+                                  color: DesignTokens.success, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),
@@ -480,10 +481,10 @@ class _ChampCard extends StatelessWidget {
       };
 
   static Color _statusColor(String s) => switch (s) {
-        'open' => Colors.green,
-        'active' => Colors.blue,
-        'completed' => Colors.grey,
-        _ => Colors.grey,
+        'open' => DesignTokens.success,
+        'active' => DesignTokens.primary,
+        'completed' => DesignTokens.textMuted,
+        _ => DesignTokens.textMuted,
       };
 
   static String _fmtDate(DateTime dt) =>
@@ -502,10 +503,10 @@ class _InfoChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -5,6 +5,7 @@ import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/l10n/l10n.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Shows who's on a streak and a consistency ranking for the user's assessoria.
 ///
@@ -164,7 +165,7 @@ class _StreaksLeaderboardScreenState extends State<StreaksLeaderboardScreen> {
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(DesignTokens.spacingMd),
                         children: [
                           Text(
                             _groupName,
@@ -184,7 +185,7 @@ class _StreaksLeaderboardScreenState extends State<StreaksLeaderboardScreen> {
                           const _SectionHeader(
                             icon: Icons.local_fire_department_rounded,
                             title: 'Correndo consecutivamente',
-                            color: Colors.deepOrange,
+                            color: DesignTokens.warning,
                           ),
                           const SizedBox(height: 8),
                           if (_activeStreaks.isEmpty)
@@ -203,7 +204,7 @@ class _StreaksLeaderboardScreenState extends State<StreaksLeaderboardScreen> {
                           _SectionHeader(
                             icon: Icons.emoji_events_rounded,
                             title: 'Ranking de consistência',
-                            color: Colors.amber.shade800,
+                            color: DesignTokens.warning,
                           ),
                           const SizedBox(height: 8),
                           if (_consistencyRanking.isEmpty)
@@ -300,16 +301,16 @@ class _ActiveStreakTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.deepOrange.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12),
+        color: DesignTokens.warning.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         border: isCurrentUser
-            ? Border.all(color: Colors.deepOrange.withValues(alpha: 0.4))
+            ? Border.all(color: DesignTokens.warning.withValues(alpha: 0.4))
             : null,
       ),
       child: Row(
         children: [
           const Icon(Icons.local_fire_department_rounded,
-              color: Colors.deepOrange, size: 24),
+              color: DesignTokens.warning, size: 24),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -338,7 +339,7 @@ class _ActiveStreakTile extends StatelessWidget {
                 '${entry.streakCurrent} ${entry.streakCurrent == 1 ? 'dia' : 'dias'}',
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Colors.deepOrange,
+                  color: DesignTokens.warning,
                 ),
               ),
               Text(
@@ -380,7 +381,7 @@ class _ConsistencyTile extends StatelessWidget {
       leading: CircleAvatar(
         radius: 16,
         backgroundColor: isTop3
-            ? Colors.amber.shade100
+            ? DesignTokens.warning
             : theme.colorScheme.surfaceContainerHighest,
         child: Text(
           '$rank',
@@ -388,7 +389,7 @@ class _ConsistencyTile extends StatelessWidget {
             fontWeight: FontWeight.bold,
             fontSize: 13,
             color:
-                isTop3 ? Colors.amber.shade900 : theme.colorScheme.outline,
+                isTop3 ? DesignTokens.warning : theme.colorScheme.outline,
           ),
         ),
       ),
@@ -403,7 +404,7 @@ class _ConsistencyTile extends StatelessWidget {
           Icon(Icons.local_fire_department_rounded,
               size: 14,
               color: entry.streakCurrent > 0
-                  ? Colors.deepOrange
+                  ? DesignTokens.warning
                   : theme.colorScheme.outline),
           const SizedBox(width: 4),
           Text(
@@ -412,7 +413,7 @@ class _ConsistencyTile extends StatelessWidget {
                 : 'sem dias consecutivos',
             style: theme.textTheme.bodySmall?.copyWith(
               color: entry.streakCurrent > 0
-                  ? Colors.deepOrange
+                  ? DesignTokens.warning
                   : theme.colorScheme.outline,
             ),
           ),
@@ -452,7 +453,7 @@ class _EmptyHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
       child: Center(
         child: Text(
           text,
@@ -474,7 +475,7 @@ class _NoGroupBody extends StatelessWidget {
     final theme = Theme.of(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

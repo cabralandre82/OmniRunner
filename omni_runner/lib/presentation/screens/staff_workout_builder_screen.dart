@@ -9,6 +9,7 @@ import 'package:omni_runner/presentation/blocs/workout_builder/workout_builder_b
 import 'package:omni_runner/presentation/blocs/workout_builder/workout_builder_event.dart';
 import 'package:omni_runner/presentation/blocs/workout_builder/workout_builder_state.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Form to create or edit a workout template with its blocks.
 class StaffWorkoutBuilderScreen extends StatelessWidget {
@@ -113,7 +114,7 @@ class _BuilderViewState extends State<_BuilderView> {
             actions: [
               if (isSaving)
                 const Padding(
-                  padding: EdgeInsets.all(16),
+                  padding: EdgeInsets.all(DesignTokens.spacingMd),
                   child: SizedBox(
                     width: 24,
                     height: 24,
@@ -143,7 +144,7 @@ class _BuilderViewState extends State<_BuilderView> {
       BuilderSaved() => const SizedBox.shrink(),
       BuilderError(:final message) => Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(DesignTokens.spacingLg),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -232,7 +233,7 @@ class _BuilderViewState extends State<_BuilderView> {
           const SizedBox(height: 8),
           if (loaded.blocks.isEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 32),
+              padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingXl),
               child: Center(
                 child: Text(
                   'Nenhum bloco adicionado',
@@ -293,11 +294,11 @@ class _BlockTile extends StatelessWidget {
   };
 
   static const _typeColors = {
-    WorkoutBlockType.warmup: Colors.orange,
-    WorkoutBlockType.interval: Colors.red,
-    WorkoutBlockType.recovery: Colors.green,
-    WorkoutBlockType.cooldown: Colors.blue,
-    WorkoutBlockType.steady: Colors.teal,
+    WorkoutBlockType.warmup: DesignTokens.warning,
+    WorkoutBlockType.interval: DesignTokens.error,
+    WorkoutBlockType.recovery: DesignTokens.success,
+    WorkoutBlockType.cooldown: DesignTokens.primary,
+    WorkoutBlockType.steady: DesignTokens.success,
   };
 
   @override
@@ -330,21 +331,21 @@ class _BlockTile extends StatelessWidget {
     }
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
       child: ListTile(
         leading: Container(
           width: 8,
           height: 48,
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(DesignTokens.spacingXs),
           ),
         ),
         title: Row(
           children: [
             Container(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 2),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: isDark ? 0.25 : 0.15),
                 borderRadius: BorderRadius.circular(6),
@@ -518,7 +519,7 @@ class _AddBlockSheetState extends State<_AddBlockSheet> {
                   ),
                 ),
                 const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4),
+                  padding: EdgeInsets.symmetric(horizontal: DesignTokens.spacingXs),
                   child: Text(':'),
                 ),
                 Expanded(
@@ -577,7 +578,7 @@ class _AddBlockSheetState extends State<_AddBlockSheet> {
               icon: const Icon(Icons.check),
               label: const Text('Adicionar'),
               style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
               ),
             ),
             ],

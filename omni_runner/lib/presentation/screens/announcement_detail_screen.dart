@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/announcement_entity.dart';
 import 'package:omni_runner/presentation/blocs/announcement_detail/announcement_detail_bloc.dart';
 import 'package:omni_runner/presentation/blocs/announcement_detail/announcement_detail_event.dart';
@@ -214,7 +215,7 @@ class _AnnouncementDetailView extends StatelessWidget {
               ),
             AnnouncementDetailError(:final message) => Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(DesignTokens.spacingLg),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -236,13 +237,13 @@ class _AnnouncementDetailView extends StatelessWidget {
               :final readStats,
             ) =>
               SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(DesignTokens.spacingMd),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Card(
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(DesignTokens.spacingMd),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -272,7 +273,7 @@ class _AnnouncementDetailView extends StatelessWidget {
                       const SizedBox(height: 16),
                       Card(
                         child: Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(DesignTokens.spacingMd),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [

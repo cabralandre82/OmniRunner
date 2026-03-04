@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/presentation/screens/friend_profile_screen.dart';
 
 /// Athlete screen showing the ranking/participants for a championship.
@@ -112,16 +113,16 @@ class _AthleteChampionshipRankingScreenState
                           ])),
                         ])
                       : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                          padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingLg),
                           itemCount: _participants.length,
                           itemBuilder: (_, i) {
                             final p = _participants[i];
                             final rank = i + 1;
                             final isMe = p.userId == uid;
                             return Card(
-                              margin: const EdgeInsets.only(bottom: 8),
+                              margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
                               color: isMe ? cs.primaryContainer.withValues(alpha: 0.3) : null,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusMd)),
                               child: ListTile(
                                 leading: CircleAvatar(
                                   radius: 18,
@@ -160,7 +161,7 @@ class _AthleteChampionshipRankingScreenState
     );
   }
 
-  static Color _medalColor(int rank) => switch (rank) { 1 => Colors.amber.shade700, 2 => Colors.grey.shade500, 3 => Colors.brown.shade400, _ => Colors.grey };
+  static Color _medalColor(int rank) => switch (rank) { 1 => DesignTokens.warning, 2 => DesignTokens.textMuted, 3 => Colors.brown.shade400, _ => DesignTokens.textMuted };
   static String _statusLabel(String s) => switch (s) { 'enrolled' => 'Inscrito', 'active' => 'Ativo', 'completed' => 'Completou', 'withdrawn' => 'Desistiu', _ => s };
   static String _fmtProgress(double v, String metric) => switch (metric) {
     'distance' => '${(v / 1000).toStringAsFixed(1)} km',

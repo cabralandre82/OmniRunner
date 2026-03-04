@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Displays a chronological feed of verified workout sessions from the
 /// current user's accepted friends.
@@ -84,7 +85,7 @@ class _FriendsActivityFeedScreenState extends State<FriendsActivityFeedScreen> {
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
                         itemCount: _items.length + (_hasMore ? 1 : 0),
                         itemBuilder: (context, i) {
                           if (i == _items.length) {
@@ -102,7 +103,7 @@ class _FriendsActivityFeedScreenState extends State<FriendsActivityFeedScreen> {
   Widget _errorState(ThemeData theme) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(DesignTokens.spacingLg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -123,7 +124,7 @@ class _FriendsActivityFeedScreenState extends State<FriendsActivityFeedScreen> {
   Widget _emptyState(ThemeData theme) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -151,7 +152,7 @@ class _FriendsActivityFeedScreenState extends State<FriendsActivityFeedScreen> {
 
   Widget _loadMoreButton() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(DesignTokens.spacingMd),
       child: Center(
         child: OutlinedButton(
           onPressed: () => _load(loadMore: true),
@@ -239,7 +240,7 @@ class _ActivityTile extends StatelessWidget {
     final dur = item.duration;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: DesignTokens.spacingXs),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -291,21 +292,21 @@ class _ActivityTile extends StatelessWidget {
                 _MetricChip(
                   icon: Icons.straighten,
                   value: '${distKm.toStringAsFixed(1)} km',
-                  color: Colors.blue,
+                  color: DesignTokens.primary,
                 ),
                 const SizedBox(width: 8),
                 if (pace != null)
                   _MetricChip(
                     icon: Icons.speed,
                     value: _formatPace(pace),
-                    color: Colors.orange,
+                    color: DesignTokens.warning,
                   ),
                 if (pace != null) const SizedBox(width: 8),
                 if (dur != null)
                   _MetricChip(
                     icon: Icons.timer_outlined,
                     value: _formatDuration(dur),
-                    color: Colors.green,
+                    color: DesignTokens.success,
                   ),
               ],
             ),
@@ -343,10 +344,10 @@ class _MetricChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

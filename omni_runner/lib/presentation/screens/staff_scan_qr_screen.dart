@@ -6,6 +6,7 @@ import 'package:omni_runner/domain/entities/token_intent_entity.dart';
 import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_bloc.dart';
 import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_event.dart';
 import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_state.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Camera-based QR scanner that reads and consumes a token intent.
 ///
@@ -40,7 +41,7 @@ class _StaffScanQrScreenState extends State<StaffScanQrScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(_successMessage(state.type)),
-                backgroundColor: Colors.green,
+                backgroundColor: DesignTokens.success,
               ),
             );
             Navigator.of(context).pop();
@@ -98,7 +99,7 @@ class _StaffScanQrScreenState extends State<StaffScanQrScreen> {
                           color: theme.colorScheme.primary,
                           width: 3,
                         ),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                       ),
                     ),
                   ],
@@ -122,7 +123,7 @@ class _StaffScanQrScreenState extends State<StaffScanQrScreen> {
                     Text(
                       'O QR possui validade limitada',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.orange.shade700,
+                        color: DesignTokens.warning,
                         fontStyle: FontStyle.italic,
                       ),
                     ),

@@ -5,6 +5,7 @@ import 'package:omni_runner/presentation/blocs/groups/groups_bloc.dart';
 import 'package:omni_runner/presentation/blocs/groups/groups_event.dart';
 import 'package:omni_runner/presentation/blocs/groups/groups_state.dart';
 import 'package:omni_runner/l10n/l10n.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class GroupsScreen extends StatelessWidget {
   const GroupsScreen({super.key});
@@ -34,7 +35,7 @@ class GroupsScreen extends StatelessWidget {
               : _body(context, groups),
           GroupsError(:final message) => Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(DesignTokens.spacingLg),
                 child: Text(message,
                     textAlign: TextAlign.center,
                     style:
@@ -69,7 +70,7 @@ class GroupsScreen extends StatelessWidget {
 
   static Widget _body(BuildContext context, List<GroupEntity> groups) {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
       itemCount: groups.length,
       itemBuilder: (context, index) => _GroupCard(group: groups[index]),
     );
@@ -95,12 +96,12 @@ class _GroupCard extends StatelessWidget {
     };
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         onTap: () {},
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Row(
             children: [
               CircleAvatar(

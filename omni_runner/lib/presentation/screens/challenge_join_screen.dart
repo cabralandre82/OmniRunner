@@ -6,6 +6,7 @@ import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/presentation/widgets/login_required_sheet.dart';
 import 'package:omni_runner/presentation/widgets/success_overlay.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Screen shown when a user opens a challenge deep link.
 ///
@@ -185,7 +186,7 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
   Widget _buildError(ThemeData theme) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -221,7 +222,7 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
       children: [
         // Header
         Icon(Icons.emoji_events_rounded,
-            size: 56, color: Colors.amber.shade700),
+            size: 56, color: DesignTokens.warning),
         const SizedBox(height: 12),
         Text(
           c.title ?? _defaultTitle(c.type),
@@ -247,7 +248,7 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
             side: BorderSide(color: cs.primaryContainer.withValues(alpha: 0.4)),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DesignTokens.spacingMd),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -293,7 +294,7 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
             borderRadius: BorderRadius.circular(14),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DesignTokens.spacingMd),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -330,7 +331,7 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
             side: BorderSide(color: cs.secondaryContainer),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DesignTokens.spacingMd),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -379,7 +380,7 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
                     ? Icons.check_circle
                     : Icons.hourglass_empty,
                 color:
-                    p.status == 'accepted' ? Colors.green : Colors.orange,
+                    p.status == 'accepted' ? DesignTokens.success : DesignTokens.warning,
                 size: 20,
               ),
               title: Row(
@@ -422,7 +423,7 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
               Expanded(
                 child: _TeamButton(
                   label: 'Time A',
-                  color: Colors.blue,
+                  color: DesignTokens.primary,
                   selected: _selectedTeam == 'A',
                   onTap: () => setState(() => _selectedTeam = 'A'),
                 ),
@@ -431,7 +432,7 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
               Expanded(
                 child: _TeamButton(
                   label: 'Time B',
-                  color: Colors.red,
+                  color: DesignTokens.error,
                   selected: _selectedTeam == 'B',
                   onTap: () => setState(() => _selectedTeam = 'B'),
                 ),
@@ -467,15 +468,15 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
 
         if (_alreadyJoined)
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DesignTokens.spacingMd),
             decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.08),
+              color: DesignTokens.success.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+              border: Border.all(color: DesignTokens.success.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.check_circle, color: Colors.green),
+                const Icon(Icons.check_circle, color: DesignTokens.success),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -490,7 +491,7 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
 
         if (isCreator)
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DesignTokens.spacingMd),
             decoration: BoxDecoration(
               color: cs.primaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(14),
@@ -511,7 +512,7 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
 
         if (c.status != 'pending')
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DesignTokens.spacingMd),
             decoration: BoxDecoration(
               color: cs.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(14),
@@ -603,13 +604,13 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
       };
 
   static Color _statusColor(String s) => switch (s) {
-        'pending' => Colors.orange,
-        'active' => Colors.green,
-        'completing' => Colors.blue,
-        'completed' => Colors.teal,
-        'cancelled' => Colors.red,
-        'expired' => Colors.grey,
-        _ => Colors.grey,
+        'pending' => DesignTokens.warning,
+        'active' => DesignTokens.success,
+        'completing' => DesignTokens.primary,
+        'completed' => DesignTokens.info,
+        'cancelled' => DesignTokens.error,
+        'expired' => DesignTokens.textMuted,
+        _ => DesignTokens.textMuted,
       };
 
   static String _winnerExplain(String type, String goal) {
@@ -704,24 +705,24 @@ class _TeamButton extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
         decoration: BoxDecoration(
           color: selected ? color.withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? color : Colors.grey.shade300,
+            color: selected ? color : DesignTokens.border,
             width: selected ? 2 : 1,
           ),
         ),
         child: Column(
           children: [
             Icon(Icons.shield_rounded, size: 32,
-                color: selected ? color : Colors.grey),
+                color: selected ? color : DesignTokens.textMuted),
             const SizedBox(height: 6),
             Text(label,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: selected ? color : Colors.grey,
+                  color: selected ? color : DesignTokens.textMuted,
                 )),
           ],
         ),

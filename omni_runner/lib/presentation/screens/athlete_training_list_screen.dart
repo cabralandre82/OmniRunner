@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/training_session_entity.dart';
 import 'package:omni_runner/presentation/blocs/training_list/training_list_bloc.dart';
 import 'package:omni_runner/presentation/blocs/training_list/training_list_event.dart';
@@ -79,7 +80,7 @@ class AthleteTrainingListScreen extends StatelessWidget {
   Widget _buildError(BuildContext context, String message) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(DesignTokens.spacingLg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -114,7 +115,7 @@ class AthleteTrainingListScreen extends StatelessWidget {
         await context.read<TrainingListBloc>().stream.first;
       },
       child: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm, horizontal: DesignTokens.spacingMd),
         children: [
           if (upcoming.isNotEmpty) ...[
             _SectionHeader(title: 'Próximos'),
@@ -150,7 +151,7 @@ class AthleteTrainingListScreen extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       builder: (context) => Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(DesignTokens.spacingLg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -204,7 +205,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8, top: 8),
+      padding: const EdgeInsets.only(bottom: DesignTokens.spacingSm, top: DesignTokens.spacingSm),
       child: Text(
         title,
         style: theme.textTheme.titleSmall?.copyWith(
@@ -235,18 +236,18 @@ class _TrainingCard extends StatelessWidget {
     };
     final statusColor = switch (session.status) {
       TrainingSessionStatus.scheduled =>
-          session.isUpcoming ? Colors.green : theme.colorScheme.outline,
+          session.isUpcoming ? DesignTokens.success : theme.colorScheme.outline,
       TrainingSessionStatus.cancelled => theme.colorScheme.error,
       TrainingSessionStatus.done => theme.colorScheme.outline,
     };
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -263,10 +264,10 @@ class _TrainingCard extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                     ),
                     child: Text(
                       statusLabel,

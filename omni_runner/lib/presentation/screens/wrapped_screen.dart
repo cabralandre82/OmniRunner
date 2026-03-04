@@ -12,6 +12,7 @@ import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 const _tag = 'WrappedScreen';
 
@@ -134,7 +135,7 @@ class _WrappedScreenState extends State<WrappedScreen> {
     if (_error != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(DesignTokens.spacingXl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -156,7 +157,7 @@ class _WrappedScreenState extends State<WrappedScreen> {
     if (_insufficientReason != null) {
       return const Center(
         child: Padding(
-          padding: EdgeInsets.all(32),
+          padding: EdgeInsets.all(DesignTokens.spacingXl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -222,7 +223,7 @@ class _WrappedScreenState extends State<WrappedScreen> {
           ),
         // Dots indicator
         Positioned(
-          bottom: 48,
+          bottom: DesignTokens.spacingXxl,
           left: 0,
           right: 0,
           child: Row(
@@ -231,7 +232,7 @@ class _WrappedScreenState extends State<WrappedScreen> {
               _totalSlides,
               (i) => AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
+                margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingXs),
                 width: i == _currentPage ? 24 : 8,
                 height: 8,
                 decoration: BoxDecoration(
@@ -344,7 +345,7 @@ class _SlidePace extends StatelessWidget {
             SizedBox(
               height: 180,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingLg),
                 child: _PaceChart(evolution: evolution),
               ),
             )
@@ -703,7 +704,7 @@ class _SlidePatterns extends StatelessWidget {
             if (distribution.length >= 7) ...[
               const SizedBox(height: 32),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingLg),
                 child: SizedBox(
                   height: 120,
                   child: _DayDistributionChart(distribution: distribution),
@@ -779,7 +780,7 @@ class _CuriosityRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingXl),
       child: Row(
         children: [
           Icon(icon, color: Colors.white60, size: 20),
@@ -837,11 +838,11 @@ class _SlideShare extends StatelessWidget {
           const SizedBox(height: 24),
           // Preview summary
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 24),
+            margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingLg),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
               border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
             ),
             child: Column(
@@ -882,7 +883,7 @@ class _SlideShare extends StatelessWidget {
             icon: const Icon(Icons.share_rounded),
             label: Text(context.l10n.share),
             style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingXl, vertical: 14),
               textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
@@ -946,7 +947,7 @@ class _SlideContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(gradient: gradient),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd),
       child: SafeArea(child: child),
     );
   }
@@ -1135,7 +1136,7 @@ class _WrappedShareCardContent extends StatelessWidget {
         color: Colors.transparent,
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -1154,10 +1155,10 @@ class _WrappedShareCardContent extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(DesignTokens.spacingSm),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                     ),
                     child: const Icon(Icons.auto_awesome_rounded,
                         color: Colors.amberAccent, size: 24),
@@ -1259,7 +1260,7 @@ class _WrappedShareCardContent extends StatelessWidget {
               const SizedBox(height: 24),
 
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingSm),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),

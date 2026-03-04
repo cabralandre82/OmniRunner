@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/analytics/product_event_tracker.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Onboarding screen for ASSESSORIA_STAFF users.
 ///
@@ -133,7 +134,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
           icon: Icon(Icons.check_circle_outline,
-              size: 48, color: Colors.green.shade600),
+              size: 48, color: DesignTokens.success),
           title: const Text('Assessoria criada!'),
           content: const Text(
             'Sua assessoria foi criada com sucesso e está '
@@ -277,7 +278,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
         icon: Icon(
           alreadyExists ? Icons.info_outline : Icons.check_circle_outline,
           size: 48,
-          color: alreadyExists ? Colors.orange : Colors.green,
+          color: alreadyExists ? DesignTokens.warning : DesignTokens.success,
         ),
         title: Text(
           alreadyExists
@@ -495,7 +496,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
         title: const Text('Criar assessoria'),
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: DesignTokens.spacingLg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -589,7 +590,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
                 onPressed: !_busy ? _createAssessoria : null,
                 style: FilledButton.styleFrom(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                   ),
                   textStyle: const TextStyle(
                     fontSize: 17,
@@ -637,7 +638,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
         title: const Text('Entrar como professor'),
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -707,7 +708,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search_rounded, size: 56, color: Colors.grey.shade300),
+            Icon(Icons.search_rounded, size: 56, color: DesignTokens.textMuted),
             const SizedBox(height: 12),
             Text(
               'Digite o nome da assessoria\nou escaneie um QR',
@@ -790,12 +791,12 @@ class _OptionCard extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+          border: Border.all(color: DesignTokens.textMuted),
           color: theme.colorScheme.surface,
         ),
         child: Row(
@@ -805,7 +806,7 @@ class _OptionCard extends StatelessWidget {
               height: 48,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
               ),
               child: Icon(icon, size: 28, color: color),
             ),

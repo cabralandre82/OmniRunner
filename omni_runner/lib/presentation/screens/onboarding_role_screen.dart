@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/domain/entities/profile_entity.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Onboarding screen where the user picks their role.
 ///
@@ -43,7 +44,7 @@ class _OnboardingRoleScreenState extends State<OnboardingRoleScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         icon: Icon(Icons.warning_amber_rounded,
-            color: Colors.orange.shade700, size: 48),
+            color: DesignTokens.warning, size: 48),
         title: Text('Confirmar: $roleName'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -55,13 +56,13 @@ class _OnboardingRoleScreenState extends State<OnboardingRoleScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red.shade200),
+                color: DesignTokens.error,
+                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                border: Border.all(color: DesignTokens.error),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.lock, size: 18, color: Colors.red.shade700),
+                  Icon(Icons.lock, size: 18, color: DesignTokens.error),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -70,7 +71,7 @@ class _OnboardingRoleScreenState extends State<OnboardingRoleScreen> {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: Colors.red.shade700,
+                        color: DesignTokens.error,
                       ),
                     ),
                   ),
@@ -233,7 +234,7 @@ class _OnboardingRoleScreenState extends State<OnboardingRoleScreen> {
                       : null,
                   style: FilledButton.styleFrom(
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                     ),
                     textStyle: const TextStyle(
                       fontSize: 17,
@@ -285,9 +286,9 @@ class _RoleOption extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         border: Border.all(
-          color: selected ? primary : Colors.grey.shade300,
+          color: selected ? primary : DesignTokens.textMuted,
           width: selected ? 2 : 1,
         ),
         color: selected
@@ -296,7 +297,7 @@ class _RoleOption extends StatelessWidget {
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Row(
@@ -307,10 +308,10 @@ class _RoleOption extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: selected
                       ? primary.withValues(alpha: 0.12)
-                      : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
+                      : DesignTokens.surfaceElevated,
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 ),
-                child: Icon(icon, size: 28, color: selected ? primary : Colors.grey.shade600),
+                child: Icon(icon, size: 28, color: selected ? primary : DesignTokens.textSecondary),
               ),
               const SizedBox(width: 16),
               Expanded(

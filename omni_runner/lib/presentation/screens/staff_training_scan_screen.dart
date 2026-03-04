@@ -7,6 +7,7 @@ import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/presentation/blocs/checkin/checkin_bloc.dart';
 import 'package:omni_runner/presentation/blocs/checkin/checkin_event.dart';
 import 'package:omni_runner/presentation/blocs/checkin/checkin_state.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Camera-based QR scanner for training check-in.
 /// Scans athlete's check-in QR and dispatches [ConsumeCheckinQr] to [CheckinBloc].
@@ -52,7 +53,7 @@ class _StaffTrainingScanScreenState extends State<StaffTrainingScanScreen> {
                         ? 'Presença já registrada'
                         : 'Presença registrada com sucesso',
                   ),
-                  backgroundColor: Colors.green,
+                  backgroundColor: DesignTokens.success,
                 ),
               );
               Navigator.of(context).pop(true);
@@ -121,7 +122,7 @@ class _StaffTrainingScanScreenState extends State<StaffTrainingScanScreen> {
                             color: cs.primary,
                             width: 3,
                           ),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                         ),
                       ),
                     ],
@@ -148,7 +149,7 @@ class _StaffTrainingScanScreenState extends State<StaffTrainingScanScreen> {
                       Text(
                         'O QR possui validade limitada',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.orange.shade700,
+                          color: DesignTokens.warning,
                           fontStyle: FontStyle.italic,
                         ),
                       ),

@@ -8,6 +8,7 @@ import 'package:omni_runner/domain/entities/token_intent_entity.dart';
 import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_bloc.dart';
 import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_event.dart';
 import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_state.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Displays a generated QR code for a token intent with a countdown timer.
 ///
@@ -156,7 +157,7 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
     final exceedsCapacity = exceedsCoinCapacity || exceedsBadgeCapacity;
 
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(DesignTokens.spacingLg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -249,7 +250,7 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
     if (_capacityLoading) {
       return Card(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -279,10 +280,10 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
       color: available == 0
           ? theme.colorScheme.errorContainer
           : low
-              ? Colors.orange.shade50
-              : Colors.green.shade50,
+              ? DesignTokens.warning.withValues(alpha: 0.08)
+              : DesignTokens.success.withValues(alpha: 0.08),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: 12),
         child: Column(
           children: [
             Row(
@@ -296,8 +297,8 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
                   color: available == 0
                       ? theme.colorScheme.error
                       : low
-                          ? Colors.orange.shade700
-                          : Colors.green.shade700,
+                          ? DesignTokens.warning
+                          : DesignTokens.success,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -307,8 +308,8 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
                     color: available == 0
                         ? theme.colorScheme.error
                         : low
-                            ? Colors.orange.shade700
-                            : Colors.green.shade700,
+                            ? DesignTokens.warning
+                            : DesignTokens.success,
                   ),
                 ),
               ],
@@ -332,7 +333,7 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
                       .add(LoadEmissionCapacity(widget.groupId));
                 },
                 child: Padding(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(DesignTokens.spacingXs),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -379,7 +380,7 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
     if (_capacityLoading) {
       return Card(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -409,10 +410,10 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
       color: available == 0
           ? theme.colorScheme.errorContainer
           : low
-              ? Colors.orange.shade50
-              : Colors.purple.shade50,
+              ? DesignTokens.warning.withValues(alpha: 0.08)
+              : DesignTokens.info.withValues(alpha: 0.08),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: 12),
         child: Column(
           children: [
             Row(
@@ -426,8 +427,8 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
                   color: available == 0
                       ? theme.colorScheme.error
                       : low
-                          ? Colors.orange.shade700
-                          : Colors.purple.shade700,
+                          ? DesignTokens.warning
+                          : DesignTokens.info,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -437,8 +438,8 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
                     color: available == 0
                         ? theme.colorScheme.error
                         : low
-                            ? Colors.orange.shade700
-                            : Colors.purple.shade700,
+                            ? DesignTokens.warning
+                            : DesignTokens.info,
                   ),
                 ),
               ],
@@ -472,7 +473,7 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
                       .add(LoadBadgeCapacity(widget.groupId));
                 },
                 child: Padding(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(DesignTokens.spacingXs),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -506,7 +507,7 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
     final seconds = _remaining.inSeconds % 60;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(DesignTokens.spacingLg),
       child: Column(
         children: [
           Text(
@@ -519,8 +520,8 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
             decoration: BoxDecoration(
               color: expired
                   ? theme.colorScheme.errorContainer
-                  : Colors.green.shade50,
-              borderRadius: BorderRadius.circular(8),
+                  : DesignTokens.success.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -528,7 +529,7 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
                 Icon(
                   expired ? Icons.timer_off : Icons.timer,
                   size: 18,
-                  color: expired ? theme.colorScheme.error : Colors.green,
+                  color: expired ? theme.colorScheme.error : DesignTokens.success,
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -537,7 +538,7 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
                       : 'Expira em ${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: expired ? theme.colorScheme.error : Colors.green,
+                    color: expired ? theme.colorScheme.error : DesignTokens.success,
                   ),
                 ),
               ],
@@ -546,11 +547,11 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
           const SizedBox(height: 20),
           if (!expired)
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(DesignTokens.spacingMd),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                border: Border.all(color: DesignTokens.textMuted),
               ),
               child: QrImageView(
                 data: payload.encode(),
@@ -564,8 +565,8 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
               width: 250,
               height: 250,
               decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(12),
+                color: DesignTokens.surface,
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
               ),
               child: Center(
                 child: Column(

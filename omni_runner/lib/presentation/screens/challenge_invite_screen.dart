@@ -7,6 +7,7 @@ import 'package:omni_runner/domain/entities/challenge_participant_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_state.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Post-creation screen: invite opponents via link or assessoria contacts.
 ///
@@ -106,7 +107,7 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
           children: [
             // Success header
             Icon(Icons.check_circle_rounded,
-                size: 56, color: Colors.green.shade600),
+                size: 56, color: DesignTokens.success),
             const SizedBox(height: 12),
             Text(
               'Desafio criado!',
@@ -133,10 +134,10 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
                     ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: DesignTokens.spacingSm),
               decoration: BoxDecoration(
                 color: cs.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 border: Border.all(
                     color: cs.outlineVariant.withValues(alpha: 0.5)),
               ),
@@ -202,8 +203,8 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
                           ? Icons.check_circle
                           : Icons.hourglass_empty,
                       color: p.status == ParticipantStatus.accepted
-                          ? Colors.green
-                          : Colors.orange,
+                          ? DesignTokens.success
+                          : DesignTokens.warning,
                       size: 20,
                     ),
                     title: Text(p.displayName),
@@ -216,7 +217,7 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
                   )),
               if (_pendingSlots > 0)
                 Padding(
-                  padding: const EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.only(top: DesignTokens.spacingXs),
                   child: Text(
                     _challenge.type == ChallengeType.oneVsOne
                         ? 'Falta 1 oponente para iniciar'
@@ -285,7 +286,7 @@ class _AsyncExplainerCard extends StatelessWidget {
             color: cs.primaryContainer.withValues(alpha: 0.5)),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -340,7 +341,7 @@ class _AsyncExplainerCard extends StatelessWidget {
 
   Widget _step(ThemeData theme, String number, String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

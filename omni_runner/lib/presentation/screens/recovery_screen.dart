@@ -5,6 +5,7 @@ import 'package:omni_runner/domain/entities/workout_metrics_entity.dart';
 import 'package:omni_runner/domain/entities/workout_status.dart';
 import 'package:omni_runner/domain/usecases/recover_active_session.dart';
 import 'package:omni_runner/l10n/l10n.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Screen shown when a previous active session is found on app start.
 ///
@@ -35,7 +36,7 @@ class RecoveryScreen extends StatelessWidget {
         backgroundColor: theme.colorScheme.inversePrimary,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(DesignTokens.spacingLg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -66,7 +67,7 @@ class RecoveryScreen extends StatelessWidget {
               icon: const Icon(Icons.save),
               label: const Text('Salvar e continuar'),
               style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
               ),
             ),
             const SizedBox(height: 12),
@@ -75,8 +76,8 @@ class RecoveryScreen extends StatelessWidget {
               icon: const Icon(Icons.delete_outline),
               label: Text(context.l10n.discardSession),
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.red,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                foregroundColor: DesignTokens.error,
+                padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
               ),
             ),
           ],
@@ -92,7 +93,7 @@ class RecoveryScreen extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           children: [
             _row(context.l10n.distance, '$distKm km'),
@@ -110,7 +111,7 @@ class RecoveryScreen extends StatelessWidget {
 
   Widget _row(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingXs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -142,7 +143,7 @@ class RecoveryScreen extends StatelessWidget {
               Navigator.of(ctx).pop();
               onDiscard();
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: DesignTokens.error),
             child: Text(context.l10n.discardRun),
           ),
         ],

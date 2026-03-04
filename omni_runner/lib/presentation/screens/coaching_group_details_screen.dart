@@ -4,6 +4,7 @@ import 'package:omni_runner/domain/entities/coaching_group_entity.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/presentation/screens/invite_qr_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Displays group details and member list, querying Supabase directly.
 class CoachingGroupDetailsScreen extends StatefulWidget {
@@ -167,7 +168,7 @@ class _CoachingGroupDetailsScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${member.displayName} removido da assessoria.'),
-            backgroundColor: Colors.green,
+            backgroundColor: DesignTokens.success,
           ),
         );
         _load();
@@ -208,7 +209,7 @@ class _CoachingGroupDetailsScreenState
         appBar: AppBar(title: const Text('Atletas e Staff')),
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(DesignTokens.spacingLg),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -244,7 +245,7 @@ class _CoachingGroupDetailsScreenState
           children: [
             _HeaderCard(group: group, memberCount: _members.length),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+              padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 20, DesignTokens.spacingMd, DesignTokens.spacingSm),
               child: Row(
                 children: [
                   Text(
@@ -263,7 +264,7 @@ class _CoachingGroupDetailsScreenState
             ),
             if (visibleMembers.isEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd),
                 child: Text(
                   'Nenhum membro encontrado.',
                   style: theme.textTheme.bodyMedium
@@ -297,7 +298,7 @@ class _HeaderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(DesignTokens.spacingMd),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -391,9 +392,9 @@ class _CoachingMemberTile extends StatelessWidget {
       CoachingRole.athlete => 'Atleta',
     };
     final roleColor = switch (member.role) {
-      CoachingRole.adminMaster => Colors.amber.shade700,
-      CoachingRole.coach => Colors.deepPurple,
-      CoachingRole.assistant => Colors.blue,
+      CoachingRole.adminMaster => DesignTokens.warning,
+      CoachingRole.coach => DesignTokens.info,
+      CoachingRole.assistant => DesignTokens.primary,
       CoachingRole.athlete => theme.colorScheme.outline,
     };
 
@@ -415,11 +416,11 @@ class _CoachingMemberTile extends StatelessWidget {
       subtitle: Align(
         alignment: Alignment.centerLeft,
         child: Container(
-          margin: const EdgeInsets.only(top: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          margin: const EdgeInsets.only(top: DesignTokens.spacingXs),
+          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 2),
           decoration: BoxDecoration(
             color: roleColor.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
           ),
           child: Text(
             roleLabel,

@@ -19,6 +19,7 @@ import 'package:omni_runner/presentation/blocs/verification/verification_event.d
 import 'package:omni_runner/presentation/screens/challenge_result_screen.dart';
 import 'package:omni_runner/presentation/widgets/dispute_status_card.dart';
 import 'package:omni_runner/presentation/widgets/verification_gate.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class ChallengeDetailsScreen extends StatelessWidget {
   final String challengeId;
@@ -37,7 +38,7 @@ class ChallengeDetailsScreen extends StatelessWidget {
             const Center(child: CircularProgressIndicator()),
           ChallengesError(:final message) => Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(DesignTokens.spacingLg),
                 child: Text(message,
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -118,16 +119,16 @@ class _BodyState extends State<_Body> {
         result == null;
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(DesignTokens.spacingMd),
       children: [
         // ── Header ───────────────────────────────────────────────────
         Card(
           elevation: 0,
           color: cs.primaryContainer.withValues(alpha: 0.3),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DesignTokens.spacingMd),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -221,13 +222,13 @@ class _BodyState extends State<_Body> {
         if (windowExpired) ...[
           Card(
             elevation: 0,
-            color: Colors.orange.shade50,
+            color: DesignTokens.warning,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
-              side: BorderSide(color: Colors.orange.shade200),
+              side: BorderSide(color: DesignTokens.warning),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(DesignTokens.spacingMd),
               child: Row(
                 children: [
                   SizedBox(
@@ -235,7 +236,7 @@ class _BodyState extends State<_Body> {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      color: Colors.orange.shade700,
+                      color: DesignTokens.warning,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -247,14 +248,14 @@ class _BodyState extends State<_Body> {
                           'Calculando resultado...',
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: Colors.orange.shade800,
+                            color: DesignTokens.warning,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'O período do desafio terminou. O resultado será exibido em instantes.',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.orange.shade700,
+                            color: DesignTokens.warning,
                           ),
                         ),
                       ],
@@ -382,12 +383,12 @@ class _BodyState extends State<_Body> {
       };
 
   static Color _statusColor(ChallengeStatus s, ThemeData theme) => switch (s) {
-        ChallengeStatus.pending => Colors.orange,
-        ChallengeStatus.active => Colors.green,
-        ChallengeStatus.completing => Colors.blue,
-        ChallengeStatus.completed => Colors.teal,
+        ChallengeStatus.pending => DesignTokens.warning,
+        ChallengeStatus.active => DesignTokens.success,
+        ChallengeStatus.completing => DesignTokens.primary,
+        ChallengeStatus.completed => DesignTokens.info,
         ChallengeStatus.cancelled => theme.colorScheme.error,
-        ChallengeStatus.expired => Colors.grey,
+        ChallengeStatus.expired => DesignTokens.textMuted,
       };
 }
 
@@ -425,21 +426,21 @@ class _AcceptDeadlineCardState extends State<_AcceptDeadlineCard> {
         if (remainMs <= 0) {
           return Card(
             elevation: 0,
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: DesignTokens.textMuted.withValues(alpha: 0.1),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
-              side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+              side: BorderSide(color: DesignTokens.textMuted.withValues(alpha: 0.3)),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(DesignTokens.spacingMd),
               child: Row(
                 children: [
-                  const Icon(Icons.timer_off, color: Colors.grey, size: 24),
+                  const Icon(Icons.timer_off, color: DesignTokens.textMuted, size: 24),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text('Prazo para aceitar encerrado',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey)),
+                            color: DesignTokens.textMuted)),
                   ),
                 ],
               ),
@@ -453,24 +454,24 @@ class _AcceptDeadlineCardState extends State<_AcceptDeadlineCard> {
 
         return Card(
           elevation: 0,
-          color: Colors.blue.withValues(alpha: 0.08),
+          color: DesignTokens.primary.withValues(alpha: 0.08),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
-            side: BorderSide(color: Colors.blue.withValues(alpha: 0.3)),
+            side: BorderSide(color: DesignTokens.primary.withValues(alpha: 0.3)),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DesignTokens.spacingMd),
             child: Column(
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.group_add_rounded, color: Colors.blue, size: 24),
+                    const Icon(Icons.group_add_rounded, color: DesignTokens.primary, size: 24),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text('Aguardando todos aceitarem',
                           style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.blue.shade800)),
+                              color: DesignTokens.primary)),
                     ),
                   ],
                 ),
@@ -478,7 +479,7 @@ class _AcceptDeadlineCardState extends State<_AcceptDeadlineCard> {
                 Text(countdown,
                     style: theme.textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.w900,
-                        color: Colors.blue.shade800,
+                        color: DesignTokens.primary,
                         letterSpacing: 3)),
                 const SizedBox(height: 4),
                 Text('Quando todos aceitarem, a corrida inicia em 5 minutos.',
@@ -528,21 +529,21 @@ class _WarmupCardState extends State<_WarmupCard> {
         if (remainMs <= 0) {
           return Card(
             elevation: 0,
-            color: Colors.green.withValues(alpha: 0.1),
+            color: DesignTokens.success.withValues(alpha: 0.1),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
-              side: BorderSide(color: Colors.green.withValues(alpha: 0.4)),
+              side: BorderSide(color: DesignTokens.success.withValues(alpha: 0.4)),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(DesignTokens.spacingMd),
               child: Row(
                 children: [
-                  const Icon(Icons.directions_run, color: Colors.green, size: 28),
+                  const Icon(Icons.directions_run, color: DesignTokens.success, size: 28),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text('Valendo! Vá correr!',
                         style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold, color: Colors.green)),
+                            fontWeight: FontWeight.bold, color: DesignTokens.success)),
                   ),
                 ],
               ),
@@ -556,23 +557,23 @@ class _WarmupCardState extends State<_WarmupCard> {
 
         return Card(
           elevation: 0,
-          color: Colors.orange.withValues(alpha: 0.1),
+          color: DesignTokens.warning.withValues(alpha: 0.1),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
-            side: BorderSide(color: Colors.orange.withValues(alpha: 0.4)),
+            side: BorderSide(color: DesignTokens.warning.withValues(alpha: 0.4)),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DesignTokens.spacingMd),
             child: Column(
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.timer_rounded, color: Colors.orange, size: 28),
+                    const Icon(Icons.timer_rounded, color: DesignTokens.warning, size: 28),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text('Preparem-se!',
                           style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold, color: Colors.orange.shade800)),
+                              fontWeight: FontWeight.bold, color: DesignTokens.warning)),
                     ),
                   ],
                 ),
@@ -580,7 +581,7 @@ class _WarmupCardState extends State<_WarmupCard> {
                 Text(countdown,
                     style: theme.textTheme.displaySmall?.copyWith(
                         fontWeight: FontWeight.w900,
-                        color: Colors.orange.shade800,
+                        color: DesignTokens.warning,
                         letterSpacing: 4)),
                 const SizedBox(height: 4),
                 Text('O desafio começa em breve. Use esse tempo para se preparar!',
@@ -659,20 +660,20 @@ class _AcceptDeclineCardState extends State<_AcceptDeclineCard> {
 
     return Card(
       elevation: 0,
-      color: Colors.amber.withValues(alpha: 0.08),
+      color: DesignTokens.warning.withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: Colors.amber.withValues(alpha: 0.3)),
+        side: BorderSide(color: DesignTokens.warning.withValues(alpha: 0.3)),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 const Icon(Icons.notifications_active,
-                    color: Colors.amber, size: 20),
+                    color: DesignTokens.warning, size: 20),
                 const SizedBox(width: 8),
                 Text('Você foi convidado!',
                     style: theme.textTheme.titleSmall
@@ -766,7 +767,7 @@ class _ShareInviteCard extends StatelessWidget {
         side: BorderSide(color: cs.secondaryContainer),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -871,7 +872,7 @@ class _RulesCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1031,7 +1032,7 @@ class _ParticipantsCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1062,10 +1063,10 @@ class _ParticipantsCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     final (statusIcon, statusColor) = switch (p.status) {
-      ParticipantStatus.accepted => (Icons.check_circle, Colors.green),
-      ParticipantStatus.invited => (Icons.hourglass_empty, Colors.orange),
-      ParticipantStatus.declined => (Icons.cancel, Colors.red),
-      ParticipantStatus.withdrawn => (Icons.exit_to_app, Colors.grey),
+      ParticipantStatus.accepted => (Icons.check_circle, DesignTokens.success),
+      ParticipantStatus.invited => (Icons.hourglass_empty, DesignTokens.warning),
+      ParticipantStatus.declined => (Icons.cancel, DesignTokens.error),
+      ParticipantStatus.withdrawn => (Icons.exit_to_app, DesignTokens.textMuted),
     };
 
     // During active challenges, only show own progress.
@@ -1075,12 +1076,12 @@ class _ParticipantsCard extends StatelessWidget {
       final hasSubmitted = p.contributingSessionIds.isNotEmpty ||
           p.progressValue > 0;
       trailing = Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 3),
         decoration: BoxDecoration(
           color: hasSubmitted
-              ? Colors.green.shade50
-              : Colors.orange.shade50,
-          borderRadius: BorderRadius.circular(8),
+              ? DesignTokens.success
+              : DesignTokens.warning,
+          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
         ),
         child: Text(
           hasSubmitted ? 'Correu' : 'Aguardando',
@@ -1088,8 +1089,8 @@ class _ParticipantsCard extends StatelessWidget {
             fontSize: 11,
             fontWeight: FontWeight.w600,
             color: hasSubmitted
-                ? Colors.green.shade700
-                : Colors.orange.shade700,
+                ? DesignTokens.success
+                : DesignTokens.warning,
           ),
         ),
       );
@@ -1111,8 +1112,8 @@ class _ParticipantsCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
                 color: p.team == 'A'
-                    ? Colors.blue.shade100
-                    : Colors.red.shade100,
+                    ? DesignTokens.primary
+                    : DesignTokens.error,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -1121,8 +1122,8 @@ class _ParticipantsCard extends StatelessWidget {
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                   color: p.team == 'A'
-                      ? Colors.blue.shade800
-                      : Colors.red.shade800,
+                      ? DesignTokens.primary
+                      : DesignTokens.error,
                 ),
               ),
             ),
@@ -1181,7 +1182,7 @@ class _ResultsCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1208,11 +1209,11 @@ class _ResultsCard extends StatelessWidget {
   Widget _resultTile(
       BuildContext context, ParticipantResult pr, ChallengeEntity ch) {
     final (icon, color) = switch (pr.outcome) {
-      ParticipantOutcome.won => (Icons.emoji_events, Colors.amber),
-      ParticipantOutcome.tied => (Icons.handshake, Colors.blue),
+      ParticipantOutcome.won => (Icons.emoji_events, DesignTokens.warning),
+      ParticipantOutcome.tied => (Icons.handshake, DesignTokens.primary),
       ParticipantOutcome.completedTarget =>
-        (Icons.check_circle, Colors.green),
-      _ => (Icons.directions_run, Colors.grey),
+        (Icons.check_circle, DesignTokens.success),
+      _ => (Icons.directions_run, DesignTokens.textMuted),
     };
 
     final displayName = ch.participants
@@ -1231,7 +1232,7 @@ class _ResultsCard extends StatelessWidget {
       trailing: pr.coinsEarned > 0
           ? Text('+${pr.coinsEarned} OmniCoins',
               style: TextStyle(
-                  color: Colors.green.shade700,
+                  color: DesignTokens.success,
                   fontWeight: FontWeight.bold,
                   fontSize: 12))
           : null,
@@ -1295,7 +1296,7 @@ class _GroupLiveProgressCard extends StatelessWidget {
     final metTarget = lowerIsBetter
         ? (collective > 0 && collective <= target)
         : (collective >= target);
-    final progressColor = metTarget ? Colors.green : cs.primary;
+    final progressColor = metTarget ? DesignTokens.success : cs.primary;
     final pct = (fraction * 100).toStringAsFixed(0);
 
     String formatVal(double v) => switch (metric) {
@@ -1373,20 +1374,20 @@ class _GroupLiveProgressCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: Colors.green.withAlpha(20),
-                  borderRadius: BorderRadius.circular(8),
+                  color: DesignTokens.success.withAlpha(20),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.check_circle,
-                        size: 15, color: Colors.green.shade700),
+                        size: 15, color: DesignTokens.success),
                     const SizedBox(width: 6),
                     Text(
                       'Meta atingida!',
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: Colors.green.shade700,
+                        color: DesignTokens.success,
                       ),
                     ),
                   ],

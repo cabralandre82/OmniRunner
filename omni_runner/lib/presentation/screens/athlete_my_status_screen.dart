@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/member_status_entity.dart';
 import 'package:omni_runner/domain/repositories/i_crm_repo.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
@@ -74,7 +75,7 @@ class _AthleteMyStatusScreenState extends State<AthleteMyStatusScreen> {
     if (_error != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(DesignTokens.spacingLg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -116,10 +117,10 @@ class _AthleteMyStatusScreenState extends State<AthleteMyStatusScreen> {
     final (label, color) = _statusBadge(status.status);
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(DesignTokens.spacingMd),
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(DesignTokens.spacingLg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -130,7 +131,7 @@ class _AthleteMyStatusScreenState extends State<AthleteMyStatusScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                     ),
                     child: Text(
                       label,
@@ -158,11 +159,11 @@ class _AthleteMyStatusScreenState extends State<AthleteMyStatusScreen> {
 
   (String label, Color color) _statusBadge(MemberStatusValue status) {
     return switch (status) {
-      MemberStatusValue.active => ('Ativo', Colors.green),
-      MemberStatusValue.paused => ('Pausado', Colors.orange),
-      MemberStatusValue.injured => ('Lesionado', Colors.red),
-      MemberStatusValue.inactive => ('Inativo', Colors.grey),
-      MemberStatusValue.trial => ('Teste', Colors.blue),
+      MemberStatusValue.active => ('Ativo', DesignTokens.success),
+      MemberStatusValue.paused => ('Pausado', DesignTokens.warning),
+      MemberStatusValue.injured => ('Lesionado', DesignTokens.error),
+      MemberStatusValue.inactive => ('Inativo', DesignTokens.textMuted),
+      MemberStatusValue.trial => ('Teste', DesignTokens.primary),
     };
   }
 }

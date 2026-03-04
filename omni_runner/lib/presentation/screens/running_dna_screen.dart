@@ -12,6 +12,7 @@ import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 const _tag = 'RunningDnaScreen';
 
@@ -110,7 +111,7 @@ class _RunningDnaScreenState extends State<RunningDnaScreen> {
     if (_error != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(DesignTokens.spacingXl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -132,11 +133,11 @@ class _RunningDnaScreenState extends State<RunningDnaScreen> {
     if (_insufficientReason != null) {
       return const Center(
         child: Padding(
-          padding: EdgeInsets.all(32),
+          padding: EdgeInsets.all(DesignTokens.spacingXl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.science_outlined, size: 64, color: Colors.grey),
+              Icon(Icons.science_outlined, size: 64, color: DesignTokens.textMuted),
               SizedBox(height: 16),
               Text(
                 'Continue correndo!',
@@ -146,7 +147,7 @@ class _RunningDnaScreenState extends State<RunningDnaScreen> {
               Text(
                 'Precisamos de pelo menos 10 corridas verificadas\nnos últimos 6 meses para gerar seu DNA.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: DesignTokens.textMuted),
               ),
             ],
           ),
@@ -165,7 +166,7 @@ class _RunningDnaScreenState extends State<RunningDnaScreen> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
-        padding: const EdgeInsets.only(bottom: 48),
+        padding: const EdgeInsets.only(bottom: DesignTokens.spacingXxl),
         children: [
           _RadarCard(scores: radar),
           _ScoresBreakdown(scores: radar),
@@ -202,7 +203,7 @@ class _RadarCard extends StatelessWidget {
     final values = _axes.map((a) => (scores[a.$1] as num?)?.toDouble() ?? 0).toList();
 
     return Card(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(DesignTokens.spacingMd),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -285,9 +286,9 @@ class _ScoresBreakdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: _axes.map((a) {
@@ -350,10 +351,10 @@ class _ScoresBreakdown extends StatelessWidget {
   }
 
   Color _barColor(double v) {
-    if (v >= 80) return Colors.green;
-    if (v >= 60) return Colors.lightGreen;
-    if (v >= 40) return Colors.amber;
-    if (v >= 20) return Colors.orange;
+    if (v >= 80) return DesignTokens.success;
+    if (v >= 60) return DesignTokens.success;
+    if (v >= 40) return DesignTokens.warning;
+    if (v >= 20) return DesignTokens.warning;
     return Colors.redAccent;
   }
 
@@ -378,9 +379,9 @@ class _InsightsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -428,9 +429,9 @@ class _PrPredictionsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -486,10 +487,10 @@ class _PrRow extends StatelessWidget {
               const Spacer(),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 2),
                 decoration: BoxDecoration(
                   color: cs.secondaryContainer,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 ),
                 child: Text(
                   '$confidence%',
@@ -552,10 +553,10 @@ class _StatsCard extends StatelessWidget {
     final avgPerWeek = (stats['avg_sessions_per_week'] as num?)?.toDouble() ?? 0;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -600,7 +601,7 @@ class _StatChip extends StatelessWidget {
             style:
                 const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         Text(label,
-            style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            style: const TextStyle(fontSize: 11, color: DesignTokens.textMuted)),
       ],
     );
   }
@@ -617,7 +618,7 @@ class _ShareButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: 12),
       child: FilledButton.icon(
         onPressed: () => _shareDna(context),
         icon: const Icon(Icons.share_rounded),
@@ -742,7 +743,7 @@ class _DnaShareCardContent extends StatelessWidget {
         color: Colors.transparent,
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -761,10 +762,10 @@ class _DnaShareCardContent extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(DesignTokens.spacingSm),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                     ),
                     child: const Icon(Icons.hexagon_outlined,
                         color: Colors.cyanAccent, size: 24),
@@ -875,7 +876,7 @@ class _DnaShareCardContent extends StatelessWidget {
               const SizedBox(height: 20),
 
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingSm),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),

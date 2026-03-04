@@ -9,6 +9,7 @@ import 'package:omni_runner/core/deep_links/deep_link_handler.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/push/notification_rules_service.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Onboarding screen for athletes to join a coaching group (assessoria).
 ///
@@ -357,7 +358,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
         icon: Icon(
           alreadyExists ? Icons.info_outline : Icons.check_circle_outline,
           size: 48,
-          color: alreadyExists ? Colors.orange : Colors.green,
+          color: alreadyExists ? DesignTokens.warning : DesignTokens.success,
         ),
         title: Text(
           alreadyExists
@@ -651,7 +652,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
+                    horizontal: DesignTokens.spacingMd,
                     vertical: 14,
                   ),
                 ),
@@ -735,7 +736,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
     if (_loadingSearch) {
       return const Center(
         child: Padding(
-          padding: EdgeInsets.only(top: 32),
+          padding: EdgeInsets.only(top: DesignTokens.spacingXl),
           child: CircularProgressIndicator(),
         ),
       );
@@ -751,7 +752,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.groups_outlined,
-                size: 64, color: Colors.grey.shade300),
+                size: 64, color: DesignTokens.border),
             const SizedBox(height: 12),
             Text(
               'Digite o nome da assessoria\npara buscar',
@@ -770,7 +771,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
         // Pending invites
         if (hasInvites) ...[
           Padding(
-            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            padding: const EdgeInsets.only(top: DesignTokens.spacingXs, bottom: DesignTokens.spacingSm),
             child: Text(
               'Convites pendentes',
               style: theme.textTheme.titleSmall?.copyWith(
@@ -795,7 +796,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
         // Search results
         if (hasQuery && hasResults) ...[
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
             child: Text(
               'Resultados',
               style: theme.textTheme.titleSmall?.copyWith(
@@ -815,7 +816,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
 
         if (hasQuery && !hasResults)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32),
+            padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingXl),
             child: Center(
               child: Text(
                 'Nenhuma assessoria encontrada.',
@@ -864,7 +865,7 @@ class _GroupTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Row(
             children: [
               Container(

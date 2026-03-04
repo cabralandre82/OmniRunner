@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/l10n/l10n.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Displays personal performance evolution over the last 12 weeks.
 ///
@@ -159,7 +160,7 @@ class _PersonalEvolutionScreenState extends State<PersonalEvolutionScreen> {
           : _error != null
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(DesignTokens.spacingLg),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -178,7 +179,7 @@ class _PersonalEvolutionScreenState extends State<PersonalEvolutionScreen> {
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(DesignTokens.spacingMd),
                     children: [
                       _prCards(theme),
                       const SizedBox(height: 24),
@@ -212,7 +213,7 @@ class _PersonalEvolutionScreenState extends State<PersonalEvolutionScreen> {
             value: _prPaceSecKm != null
                 ? _formatPace(_prPaceSecKm!)
                 : '—',
-            color: Colors.orange,
+            color: DesignTokens.warning,
           ),
         ),
         const SizedBox(width: 12),
@@ -223,7 +224,7 @@ class _PersonalEvolutionScreenState extends State<PersonalEvolutionScreen> {
             value: _prDistanceM != null
                 ? '${(_prDistanceM! / 1000).toStringAsFixed(1)} km'
                 : '—',
-            color: Colors.blue,
+            color: DesignTokens.primary,
           ),
         ),
       ],
@@ -293,7 +294,7 @@ class _PersonalEvolutionScreenState extends State<PersonalEvolutionScreen> {
                   final idx = v.toInt();
                   if (idx < 0 || idx >= _buckets.length) return const SizedBox();
                   return Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.only(top: DesignTokens.spacingXs),
                     child: Text(_buckets[idx].label,
                         style: theme.textTheme.labelSmall),
                   );
@@ -364,7 +365,7 @@ class _PersonalEvolutionScreenState extends State<PersonalEvolutionScreen> {
               BarChartRodData(
                 toY: _buckets[i].distanceKm,
                 width: 14,
-                color: Colors.blue.shade400,
+                color: DesignTokens.primary,
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(4)),
               ),
@@ -398,7 +399,7 @@ class _PersonalEvolutionScreenState extends State<PersonalEvolutionScreen> {
                   if (idx < 0 || idx >= _buckets.length) return const SizedBox();
                   if (idx % 2 != 0) return const SizedBox();
                   return Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.only(top: DesignTokens.spacingXs),
                     child: Text(_buckets[idx].label,
                         style: theme.textTheme.labelSmall),
                   );
@@ -447,7 +448,7 @@ class _PersonalEvolutionScreenState extends State<PersonalEvolutionScreen> {
               BarChartRodData(
                 toY: _buckets[i].runs.toDouble(),
                 width: 14,
-                color: Colors.green.shade400,
+                color: DesignTokens.success,
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(4)),
               ),
@@ -482,7 +483,7 @@ class _PersonalEvolutionScreenState extends State<PersonalEvolutionScreen> {
                   if (idx < 0 || idx >= _buckets.length) return const SizedBox();
                   if (idx % 2 != 0) return const SizedBox();
                   return Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.only(top: DesignTokens.spacingXs),
                     child: Text(_buckets[idx].label,
                         style: theme.textTheme.labelSmall),
                   );
@@ -519,7 +520,7 @@ class _PersonalEvolutionScreenState extends State<PersonalEvolutionScreen> {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
       ),
       child: Text(message,
           style: Theme.of(context)
@@ -585,7 +586,7 @@ class _PrCard extends StatelessWidget {
     return Card(
       color: color.withValues(alpha: 0.08),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           children: [
             Icon(icon, color: color, size: 28),

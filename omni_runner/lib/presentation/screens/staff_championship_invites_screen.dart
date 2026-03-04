@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Staff screen to view and respond to championship invitations
 /// received by their assessoria from other groups.
@@ -104,7 +105,7 @@ class _StaffChampionshipInvitesScreenState
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: accept ? null : FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: accept ? null : FilledButton.styleFrom(backgroundColor: DesignTokens.error),
             child: Text(accept ? 'Aceitar' : 'Recusar'),
           ),
         ],
@@ -171,7 +172,7 @@ class _StaffChampionshipInvitesScreenState
                           ])),
                         ])
                       : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                          padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingLg),
                           itemCount: _invites.length,
                           itemBuilder: (_, i) => _InviteCard(
                             invite: _invites[i],
@@ -211,24 +212,24 @@ class _InviteCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(Icons.emoji_events_rounded, size: 22, color: Colors.amber.shade800),
+                Icon(Icons.emoji_events_rounded, size: 22, color: DesignTokens.warning),
                 const SizedBox(width: 8),
                 Expanded(child: Text(invite.champName, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600))),
                 if (!isPending) Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 3),
                   decoration: BoxDecoration(
-                    color: (invite.inviteStatus == 'accepted' ? Colors.green : Colors.red).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
+                    color: (invite.inviteStatus == 'accepted' ? DesignTokens.success : DesignTokens.error).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                   ),
                   child: Text(
                     invite.inviteStatus == 'accepted' ? 'Aceito' : 'Recusado',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: invite.inviteStatus == 'accepted' ? Colors.green : Colors.red),
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: invite.inviteStatus == 'accepted' ? DesignTokens.success : DesignTokens.error),
                   ),
                 ),
               ],
@@ -272,8 +273,8 @@ class _InviteCard extends StatelessWidget {
 
   Widget _chip(IconData icon, String label, ColorScheme cs) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
+      decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(DesignTokens.radiusSm)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 14, color: cs.onSurfaceVariant),
         const SizedBox(width: 4),

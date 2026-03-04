@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/training_attendance_entity.dart';
 import 'package:omni_runner/domain/repositories/i_training_attendance_repo.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
@@ -80,7 +81,7 @@ class _AthleteAttendanceScreenState extends State<AthleteAttendanceScreen> {
     if (_error != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(DesignTokens.spacingLg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -144,7 +145,7 @@ class _AthleteAttendanceScreenState extends State<AthleteAttendanceScreen> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm, horizontal: DesignTokens.spacingMd),
         itemCount: list.length,
         itemBuilder: (context, index) => _AttendanceCard(attendance: list[index]),
       ),
@@ -163,9 +164,9 @@ class _AttendanceCard extends StatelessWidget {
     final statusInfo = _statusInfo(theme);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -192,10 +193,10 @@ class _AttendanceCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
               decoration: BoxDecoration(
                 color: statusInfo.color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               ),
               child: Text(
                 statusInfo.label,
@@ -215,15 +216,15 @@ class _AttendanceCard extends StatelessWidget {
     return switch (attendance.status) {
       AttendanceStatus.present => (
           label: 'Presente',
-          color: Colors.green.shade700,
+          color: DesignTokens.success,
         ),
       AttendanceStatus.late_ => (
           label: 'Atrasado',
-          color: Colors.orange.shade700,
+          color: DesignTokens.warning,
         ),
       AttendanceStatus.excused => (
           label: 'Justificado',
-          color: Colors.blue.shade700,
+          color: DesignTokens.primary,
         ),
       AttendanceStatus.absent => (
           label: 'Ausente',

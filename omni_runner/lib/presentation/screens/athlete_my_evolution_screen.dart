@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/coaching_tag_entity.dart';
 import 'package:omni_runner/domain/entities/member_status_entity.dart';
 import 'package:omni_runner/domain/entities/training_attendance_entity.dart';
@@ -112,7 +113,7 @@ class _AthleteMyEvolutionScreenState extends State<AthleteMyEvolutionScreen> {
     if (_error != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(DesignTokens.spacingLg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -133,7 +134,7 @@ class _AthleteMyEvolutionScreenState extends State<AthleteMyEvolutionScreen> {
     return RefreshIndicator(
       onRefresh: _loadData,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         children: [
           _buildStatusCard(),
           const SizedBox(height: 16),
@@ -149,12 +150,12 @@ class _AthleteMyEvolutionScreenState extends State<AthleteMyEvolutionScreen> {
 
   Widget _buildStatusCard() {
     final (label, color) = _status == null
-        ? ('Não definido', Colors.grey)
+        ? ('Não definido', DesignTokens.textMuted)
         : _statusBadge(_status!.status);
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Row(
           children: [
             Container(
@@ -188,7 +189,7 @@ class _AthleteMyEvolutionScreenState extends State<AthleteMyEvolutionScreen> {
   Widget _buildTagsCard() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -229,18 +230,18 @@ class _AthleteMyEvolutionScreenState extends State<AthleteMyEvolutionScreen> {
   }
 
   Color _parseTagColor(String? hex) {
-    if (hex == null || hex.isEmpty) return Colors.blue;
+    if (hex == null || hex.isEmpty) return DesignTokens.primary;
     try {
       return Color(int.parse(hex.substring(1), radix: 16) + 0xFF000000);
     } on Object catch (_) {
-      return Colors.blue;
+      return DesignTokens.primary;
     }
   }
 
   Widget _buildAttendanceSummary() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -275,7 +276,7 @@ class _AthleteMyEvolutionScreenState extends State<AthleteMyEvolutionScreen> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -296,13 +297,13 @@ class _AthleteMyEvolutionScreenState extends State<AthleteMyEvolutionScreen> {
             ] else ...[
               const SizedBox(height: 12),
               ...recent.map((a) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
                     child: Row(
                       children: [
                         Icon(
                           Icons.check_circle,
                           size: 18,
-                          color: Colors.green.shade700,
+                          color: DesignTokens.success,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -332,11 +333,11 @@ class _AthleteMyEvolutionScreenState extends State<AthleteMyEvolutionScreen> {
 
   (String label, Color color) _statusBadge(MemberStatusValue status) {
     return switch (status) {
-      MemberStatusValue.active => ('Ativo', Colors.green),
-      MemberStatusValue.paused => ('Pausado', Colors.orange),
-      MemberStatusValue.injured => ('Lesionado', Colors.red),
-      MemberStatusValue.inactive => ('Inativo', Colors.grey),
-      MemberStatusValue.trial => ('Teste', Colors.blue),
+      MemberStatusValue.active => ('Ativo', DesignTokens.success),
+      MemberStatusValue.paused => ('Pausado', DesignTokens.warning),
+      MemberStatusValue.injured => ('Lesionado', DesignTokens.error),
+      MemberStatusValue.inactive => ('Inativo', DesignTokens.textMuted),
+      MemberStatusValue.trial => ('Teste', DesignTokens.primary),
     };
   }
 }

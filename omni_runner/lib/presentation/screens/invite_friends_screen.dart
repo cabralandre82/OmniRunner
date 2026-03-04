@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Athlete screen to invite friends to the Omni Runner app.
 ///
@@ -30,7 +31,7 @@ class InviteFriendsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Convidar amigos')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingLg, vertical: 28),
         child: Column(
           children: [
             // Hero section
@@ -58,8 +59,8 @@ class InviteFriendsScreen extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                border: Border.all(color: DesignTokens.border),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.06),
@@ -99,7 +100,7 @@ class InviteFriendsScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
               ),
               child: Row(
                 children: [
@@ -120,9 +121,9 @@ class InviteFriendsScreen extends StatelessWidget {
                   const SizedBox(width: 8),
                   InkWell(
                     onTap: () => _copyLink(context),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                     child: Padding(
-                      padding: const EdgeInsets.all(4),
+                      padding: const EdgeInsets.all(DesignTokens.spacingXs),
                       child: Icon(Icons.copy_rounded,
                           size: 18, color: theme.colorScheme.primary),
                     ),
@@ -143,7 +144,7 @@ class InviteFriendsScreen extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                       ),
                     ),
                   ),
@@ -157,7 +158,7 @@ class InviteFriendsScreen extends StatelessWidget {
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                       ),
                     ),
                   ),
@@ -223,7 +224,7 @@ class _InfoCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(DesignTokens.spacingMd),
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(14),

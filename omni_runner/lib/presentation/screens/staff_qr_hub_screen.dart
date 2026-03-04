@@ -10,6 +10,7 @@ import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_bloc.dart';
 import 'package:omni_runner/presentation/screens/invite_qr_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_generate_qr_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_scan_qr_screen.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Hub screen for staff QR operations. Gated by [CoachingMemberEntity.isStaff].
 ///
@@ -32,7 +33,7 @@ class StaffQrHubScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Operações QR')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         children: [
           _SectionHeader(title: 'Convite da Assessoria', theme: theme),
           _OperationCard(
@@ -48,7 +49,7 @@ class StaffQrHubScreen extends StatelessWidget {
             icon: Icons.card_giftcard,
             title: 'Emitir OmniCoins',
             subtitle: 'Gerar QR para atleta receber moedas',
-            color: Colors.green,
+            color: DesignTokens.success,
             onTap: () => _pushGenerate(
               context,
               TokenIntentType.issueToAthlete,
@@ -59,7 +60,7 @@ class StaffQrHubScreen extends StatelessWidget {
             icon: Icons.local_fire_department,
             title: 'Recolher OmniCoins',
             subtitle: 'Gerar QR para atleta devolver moedas',
-            color: Colors.orange,
+            color: DesignTokens.warning,
             onTap: () => _pushGenerate(
               context,
               TokenIntentType.burnFromAthlete,
@@ -70,7 +71,7 @@ class StaffQrHubScreen extends StatelessWidget {
             icon: Icons.military_tech,
             title: 'Ativar Badge de Campeonato',
             subtitle: 'Gerar QR para inscrição via badge temporário',
-            color: Colors.indigo,
+            color: DesignTokens.primary,
             onTap: () => _pushGenerate(
               context,
               TokenIntentType.champBadgeActivate,
@@ -89,15 +90,15 @@ class StaffQrHubScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.amber.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.amber.shade200),
+              color: DesignTokens.warning.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+              border: Border.all(color: DesignTokens.warning.withValues(alpha: 0.25)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(Icons.info_outline,
-                    color: Colors.amber.shade800, size: 20),
+                    color: DesignTokens.warning, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -105,7 +106,7 @@ class StaffQrHubScreen extends StatelessWidget {
                     'Após expirar ou ser utilizado, não pode ser reaproveitado.',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.amber.shade900,
+                      color: DesignTokens.warning,
                     ),
                   ),
                 ),
@@ -162,7 +163,7 @@ class StaffQrHubScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Operações QR')),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(DesignTokens.spacingXl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -197,7 +198,7 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8, top: 4),
+      padding: const EdgeInsets.only(bottom: DesignTokens.spacingSm, top: DesignTokens.spacingXs),
       child: Text(
         title,
         style: theme.textTheme.titleSmall?.copyWith(
@@ -230,7 +231,7 @@ class _OperationCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Row(
             children: [
               CircleAvatar(

@@ -7,6 +7,7 @@ import 'package:omni_runner/domain/repositories/i_workout_repo.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/presentation/screens/staff_workout_builder_screen.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Lists workout templates for the current coaching group.
 /// Staff can tap to edit or use FAB to create new templates.
@@ -110,7 +111,7 @@ class _StaffWorkoutTemplatesScreenState
     if (_error != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(DesignTokens.spacingLg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -147,7 +148,7 @@ class _StaffWorkoutTemplatesScreenState
     return RefreshIndicator(
       onRefresh: _loadTemplates,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         itemCount: templates.length,
         itemBuilder: (context, index) {
           final template = templates[index];
@@ -163,11 +164,11 @@ class _StaffWorkoutTemplatesScreenState
   Widget _buildEmpty(ThemeData theme) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.fitness_center_outlined, size: 64, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4)),
+            Icon(Icons.fitness_center_outlined, size: 64, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
             const SizedBox(height: 16),
             Text('Nenhum template criado', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
@@ -204,9 +205,9 @@ class _TemplateCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

@@ -8,6 +8,7 @@ import 'package:omni_runner/core/utils/format_pace.dart';
 import 'package:omni_runner/domain/entities/location_point_entity.dart';
 import 'package:omni_runner/domain/usecases/replay_analyzer.dart';
 import 'package:omni_runner/presentation/map/map_style.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 const _routeSrcId = 'replay-route-src';
 const _routeLayerId = 'replay-route-layer';
@@ -134,7 +135,7 @@ class _RunReplayScreenState extends State<RunReplayScreen>
         southwest: LatLng(minLat, minLng),
         northeast: LatLng(maxLat, maxLng),
       ),
-      left: 48, top: 48, right: 48, bottom: 300,
+      left: DesignTokens.spacingXxl, top: DesignTokens.spacingXxl, right: DesignTokens.spacingXxl, bottom: 300,
     ));
   }
 
@@ -205,9 +206,9 @@ class _RunReplayScreenState extends State<RunReplayScreen>
             const Center(child: CircularProgressIndicator())
           else if (_mapTimedOut)
             Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.map_outlined, size: 48, color: Colors.grey.shade400),
+              Icon(Icons.map_outlined, size: 48, color: DesignTokens.textMuted),
               const SizedBox(height: 8),
-              Text('Mapa indisponível offline', style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
+              Text('Mapa indisponível offline', style: TextStyle(color: DesignTokens.textSecondary, fontSize: 14)),
             ])),
           _TopBar(),
           Positioned(
@@ -279,7 +280,7 @@ class _TopBar extends StatelessWidget {
       left: 0,
       right: 0,
       child: Container(
-        padding: EdgeInsets.only(top: top, left: 8, right: 8, bottom: 8),
+        padding: EdgeInsets.only(top: top, left: DesignTokens.spacingSm, right: DesignTokens.spacingSm, bottom: DesignTokens.spacingSm),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -336,7 +337,7 @@ class _BottomPanel extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      padding: EdgeInsets.only(bottom: pad + 12, top: 12, left: 16, right: 16),
+      padding: EdgeInsets.only(bottom: pad + 12, top: 12, left: DesignTokens.spacingMd, right: DesignTokens.spacingMd),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -423,13 +424,13 @@ class _SprintCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.deepOrange.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.deepOrange.shade200),
+        color: DesignTokens.warning,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        border: Border.all(color: DesignTokens.warning),
       ),
       child: Row(
         children: [
-          Icon(Icons.bolt, color: Colors.deepOrange.shade700, size: 22),
+          Icon(Icons.bolt, color: DesignTokens.warning, size: 22),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -440,7 +441,7 @@ class _SprintCard extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
-                    color: Colors.deepOrange.shade800,
+                    color: DesignTokens.warning,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -453,17 +454,17 @@ class _SprintCard extends StatelessWidget {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
             decoration: BoxDecoration(
-              color: Colors.deepOrange.shade100,
-              borderRadius: BorderRadius.circular(8),
+              color: DesignTokens.warning,
+              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
             ),
             child: Text(
               formatPace(sprint.paceSecPerKm),
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
-                color: Colors.deepOrange.shade800,
+                color: DesignTokens.warning,
               ),
             ),
           ),
@@ -532,10 +533,10 @@ class _SplitRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 5),
       margin: const EdgeInsets.only(bottom: 2),
       decoration: BoxDecoration(
-        color: isBest ? Colors.green.withAlpha(20) : Colors.transparent,
+        color: isBest ? DesignTokens.success.withAlpha(20) : Colors.transparent,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -547,7 +548,7 @@ class _SplitRow extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: isBest ? Colors.green.shade800 : Colors.black54,
+                color: isBest ? DesignTokens.success : Colors.black54,
               ),
             ),
           ),
@@ -566,13 +567,13 @@ class _SplitRow extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isBest ? FontWeight.bold : FontWeight.w500,
-                color: isBest ? Colors.green.shade800 : Colors.black87,
+                color: isBest ? DesignTokens.success : Colors.black87,
               ),
             ),
           ),
           if (isBest) ...[
             const SizedBox(width: 4),
-            Icon(Icons.star, size: 14, color: Colors.green.shade600),
+            Icon(Icons.star, size: 14, color: DesignTokens.success),
           ],
         ],
       ),
@@ -597,9 +598,9 @@ class _PaceBar extends StatelessWidget {
       child: LinearProgressIndicator(
         value: math.max(normalized, 0.05),
         minHeight: 10,
-        backgroundColor: Colors.grey.withAlpha(30),
+        backgroundColor: DesignTokens.textMuted.withAlpha(30),
         valueColor: AlwaysStoppedAnimation(
-          isBest ? Colors.green : Colors.blue.shade300,
+          isBest ? DesignTokens.success : DesignTokens.primary,
         ),
       ),
     );

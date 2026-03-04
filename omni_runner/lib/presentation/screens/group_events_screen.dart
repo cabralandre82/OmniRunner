@@ -4,6 +4,7 @@ import 'package:omni_runner/domain/entities/race_event_entity.dart';
 import 'package:omni_runner/presentation/blocs/race_events/race_events_bloc.dart';
 import 'package:omni_runner/presentation/blocs/race_events/race_events_event.dart';
 import 'package:omni_runner/presentation/blocs/race_events/race_events_state.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class GroupEventsScreen extends StatelessWidget {
   final String groupName;
@@ -35,7 +36,7 @@ class GroupEventsScreen extends StatelessWidget {
           RaceEventsEmpty() => const _EmptyState(),
           RaceEventsError(:final message) => Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(DesignTokens.spacingLg),
                 child: Text(
                   message,
                   textAlign: TextAlign.center,
@@ -64,7 +65,7 @@ class _EventList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
       itemCount: events.length,
       itemBuilder: (context, index) {
         final event = events[index];
@@ -95,12 +96,12 @@ class _RaceEventCard extends StatelessWidget {
     final statusLabel = _statusLabel(event.status);
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: 6),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         onTap: () {},
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -144,10 +145,10 @@ class _RaceEventCard extends StatelessWidget {
                   ),
                   Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 3),
                     decoration: BoxDecoration(
                       color: statusColor.withAlpha(20),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                     ),
                     child: Text(
                       statusLabel,
@@ -187,14 +188,14 @@ class _RaceEventCard extends StatelessWidget {
                     if (event.xpReward > 0)
                       _RewardBadge(
                         label: '${event.xpReward} XP',
-                        color: Colors.amber,
+                        color: DesignTokens.warning,
                       ),
                     if (event.xpReward > 0 && event.coinsReward > 0)
                       const SizedBox(width: 6),
                     if (event.coinsReward > 0)
                       _RewardBadge(
                         label: '${event.coinsReward} Coins',
-                        color: Colors.teal,
+                        color: DesignTokens.info,
                       ),
                   ],
                 ),
@@ -207,10 +208,10 @@ class _RaceEventCard extends StatelessWidget {
   }
 
   static Color _statusColor(RaceEventStatus s) => switch (s) {
-        RaceEventStatus.active => Colors.green,
-        RaceEventStatus.upcoming => Colors.blue,
-        RaceEventStatus.completed => Colors.grey,
-        RaceEventStatus.cancelled => Colors.red,
+        RaceEventStatus.active => DesignTokens.success,
+        RaceEventStatus.upcoming => DesignTokens.primary,
+        RaceEventStatus.completed => DesignTokens.textMuted,
+        RaceEventStatus.cancelled => DesignTokens.error,
       };
 
   static String _statusLabel(RaceEventStatus s) => switch (s) {
@@ -268,7 +269,7 @@ class _RewardBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 2),
       decoration: BoxDecoration(
         color: color.withAlpha(20),
         borderRadius: BorderRadius.circular(6),

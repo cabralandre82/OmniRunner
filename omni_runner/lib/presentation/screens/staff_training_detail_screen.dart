@@ -9,6 +9,7 @@ import 'package:omni_runner/presentation/blocs/training_detail/training_detail_b
 import 'package:omni_runner/presentation/blocs/training_detail/training_detail_event.dart';
 import 'package:omni_runner/presentation/blocs/training_detail/training_detail_state.dart';
 import 'package:omni_runner/presentation/screens/staff_training_scan_screen.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Detail screen for a training session with attendance list and scan button.
 /// Requires [sessionId]. Wraps with [TrainingDetailBloc] at navigation.
@@ -63,7 +64,7 @@ class _StaffTrainingDetailView extends StatelessWidget {
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: DesignTokens.error,
             ),
             child: const Text('Cancelar treino'),
           ),
@@ -150,7 +151,7 @@ class _StaffTrainingDetailView extends StatelessWidget {
               ),
             TrainingDetailError(:final message) => Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(DesignTokens.spacingLg),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -202,7 +203,7 @@ class _StaffTrainingDetailView extends StatelessWidget {
                     ),
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                        padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingLg, DesignTokens.spacingMd, DesignTokens.spacingSm),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -225,12 +226,12 @@ class _StaffTrainingDetailView extends StatelessWidget {
                     if (attendance.isEmpty)
                       const SliverToBoxAdapter(
                         child: Padding(
-                          padding: EdgeInsets.all(32),
+                          padding: EdgeInsets.all(DesignTokens.spacingXl),
                           child: Center(
                             child: Text(
                               'Nenhuma presença registrada',
                               style: TextStyle(
-                                color: Colors.grey,
+                                color: DesignTokens.textMuted,
                                 fontStyle: FontStyle.italic,
                               ),
                             ),
@@ -239,7 +240,7 @@ class _StaffTrainingDetailView extends StatelessWidget {
                       )
                     else
                       SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd),
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) => _AttendanceTile(
@@ -291,9 +292,9 @@ class _SessionInfoCard extends StatelessWidget {
     final cs = theme.colorScheme;
 
     final statusColor = switch (session.status) {
-      TrainingSessionStatus.scheduled => Colors.blue,
-      TrainingSessionStatus.done => Colors.green,
-      TrainingSessionStatus.cancelled => Colors.red,
+      TrainingSessionStatus.scheduled => DesignTokens.primary,
+      TrainingSessionStatus.done => DesignTokens.success,
+      TrainingSessionStatus.cancelled => DesignTokens.error,
     };
 
     final statusLabel = switch (session.status) {
@@ -303,9 +304,9 @@ class _SessionInfoCard extends StatelessWidget {
     };
 
     return Card(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(DesignTokens.spacingMd),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -377,15 +378,15 @@ class _SessionInfoCard extends StatelessWidget {
             ],
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: DesignTokens.spacingXs),
               decoration: BoxDecoration(
                 color: statusColor.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               ),
               child: Text(
                 statusLabel,
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: statusColor.shade700,
+                  color: statusColor,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -414,7 +415,7 @@ class _AttendanceTile extends StatelessWidget {
     };
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: cs.primaryContainer,
@@ -433,10 +434,10 @@ class _AttendanceTile extends StatelessWidget {
           ),
         ),
         trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
           decoration: BoxDecoration(
             color: cs.secondaryContainer,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
           ),
           child: Text(
             methodLabel,

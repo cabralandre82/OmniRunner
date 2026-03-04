@@ -10,6 +10,7 @@ import 'package:omni_runner/domain/usecases/social/send_friend_invite.dart';
 import 'package:omni_runner/presentation/screens/challenge_create_screen.dart';
 import 'package:omni_runner/presentation/screens/leaderboards_screen.dart';
 import 'package:uuid/uuid.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Post-challenge result screen.
 ///
@@ -39,7 +40,7 @@ class ChallengeResultScreen extends StatelessWidget {
           children: [
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingSm, DesignTokens.spacingMd, DesignTokens.spacingMd),
                 children: [
                   _HeroSection(
                     challenge: challenge,
@@ -153,7 +154,7 @@ class _HeroSection extends StatelessWidget {
               Icon(
                 isTeam ? Icons.shield_rounded : Icons.emoji_events,
                 size: 16,
-                color: Colors.amber,
+                color: DesignTokens.warning,
               ),
               const SizedBox(width: 4),
               Flexible(
@@ -170,7 +171,7 @@ class _HeroSection extends StatelessWidget {
         ],
         const SizedBox(height: 12),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: DesignTokens.spacingSm),
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(10),
@@ -192,35 +193,35 @@ class _HeroSection extends StatelessWidget {
       switch (o) {
         ParticipantOutcome.won => (
             Icons.emoji_events,
-            Colors.amber.shade700,
+            DesignTokens.warning,
             'Você venceu!'
           ),
         ParticipantOutcome.tied => (
             Icons.handshake,
-            Colors.blue.shade600,
+            DesignTokens.primary,
             'Empate!'
           ),
         ParticipantOutcome.completedTarget => (
             Icons.check_circle,
-            Colors.green.shade600,
+            DesignTokens.success,
             'Meta atingida!'
           ),
         ParticipantOutcome.lost => (
             Icons.sentiment_neutral,
-            Colors.orange.shade600,
+            DesignTokens.warning,
             'Boa tentativa!'
           ),
         ParticipantOutcome.participated => (
             Icons.directions_run,
-            Colors.teal,
+            DesignTokens.info,
             'Você participou!'
           ),
         ParticipantOutcome.didNotFinish => (
             Icons.cancel_outlined,
-            Colors.grey,
+            DesignTokens.textMuted,
             'Não concluído'
           ),
-        null => (Icons.help_outline, Colors.grey, 'Resultado'),
+        null => (Icons.help_outline, DesignTokens.textMuted, 'Resultado'),
       };
 }
 
@@ -288,7 +289,7 @@ class _ParticipantResults extends StatelessWidget {
       progressFraction = (collectiveValue / target).clamp(0.0, 1.0);
     }
 
-    final progressColor = metTarget ? Colors.green : cs.primary;
+    final progressColor = metTarget ? DesignTokens.success : cs.primary;
 
     return Column(
       children: [
@@ -296,7 +297,7 @@ class _ParticipantResults extends StatelessWidget {
           elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DesignTokens.spacingMd),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -347,9 +348,9 @@ class _ParticipantResults extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: metTarget
-                        ? Colors.green.withAlpha(20)
-                        : Colors.orange.withAlpha(20),
-                    borderRadius: BorderRadius.circular(8),
+                        ? DesignTokens.success.withAlpha(20)
+                        : DesignTokens.warning.withAlpha(20),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -357,7 +358,7 @@ class _ParticipantResults extends StatelessWidget {
                       Icon(
                         metTarget ? Icons.check_circle : Icons.cancel_outlined,
                         size: 16,
-                        color: metTarget ? Colors.green.shade700 : Colors.orange.shade700,
+                        color: metTarget ? DesignTokens.success : DesignTokens.warning,
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -365,8 +366,8 @@ class _ParticipantResults extends StatelessWidget {
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: metTarget
-                              ? Colors.green.shade700
-                              : Colors.orange.shade700,
+                              ? DesignTokens.success
+                              : DesignTokens.warning,
                         ),
                       ),
                     ],
@@ -381,7 +382,7 @@ class _ParticipantResults extends StatelessWidget {
           elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DesignTokens.spacingMd),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -420,7 +421,7 @@ class _ParticipantResults extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -468,11 +469,11 @@ class _ResultRow extends StatelessWidget {
     final theme = Theme.of(context);
 
     final (icon, iconColor) = switch (pr.outcome) {
-      ParticipantOutcome.won => (Icons.emoji_events, Colors.amber.shade700),
-      ParticipantOutcome.tied => (Icons.handshake, Colors.blue),
+      ParticipantOutcome.won => (Icons.emoji_events, DesignTokens.warning),
+      ParticipantOutcome.tied => (Icons.handshake, DesignTokens.primary),
       ParticipantOutcome.completedTarget =>
-        (Icons.check_circle, Colors.green),
-      _ => (Icons.circle_outlined, Colors.grey),
+        (Icons.check_circle, DesignTokens.success),
+      _ => (Icons.circle_outlined, DesignTokens.textMuted),
     };
 
     return Container(
@@ -497,7 +498,7 @@ class _ResultRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: pr.rank == 1 ? Colors.amber.shade700 : Colors.grey,
+                      color: pr.rank == 1 ? DesignTokens.warning : DesignTokens.textMuted,
                     ),
                   )
                 : Icon(icon, size: 18, color: iconColor),
@@ -547,15 +548,15 @@ class _ResultRow extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                borderRadius: BorderRadius.circular(8),
+                color: DesignTokens.success,
+                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               ),
               child: Text(
                 '+${pr.coinsEarned}',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: Colors.green.shade700,
+                  color: DesignTokens.success,
                 ),
               ),
             ),
@@ -591,18 +592,18 @@ class _TeamScoreColumn extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isWinner
-            ? Colors.amber.withAlpha(20)
+            ? DesignTokens.warning.withAlpha(20)
             : theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         border: isWinner
-            ? Border.all(color: Colors.amber.shade600, width: 1.5)
+            ? Border.all(color: DesignTokens.warning, width: 1.5)
             : null,
       ),
       child: Column(
         children: [
           if (isWinner)
             Icon(Icons.emoji_events_rounded,
-                size: 20, color: Colors.amber.shade700),
+                size: 20, color: DesignTokens.warning),
           Text(
             name,
             style: theme.textTheme.labelMedium?.copyWith(
@@ -617,7 +618,7 @@ class _TeamScoreColumn extends StatelessWidget {
             score,
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              color: isWinner ? Colors.amber.shade800 : null,
+              color: isWinner ? DesignTokens.warning : null,
             ),
             textAlign: TextAlign.center,
           ),
@@ -659,7 +660,7 @@ class _TeamMemberCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -668,7 +669,7 @@ class _TeamMemberCard extends StatelessWidget {
                 Icon(
                   isWinner ? Icons.emoji_events_rounded : Icons.shield_outlined,
                   size: 18,
-                  color: isWinner ? Colors.amber.shade700 : Colors.grey,
+                  color: isWinner ? DesignTokens.warning : DesignTokens.textMuted,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -682,17 +683,17 @@ class _TeamMemberCard extends StatelessWidget {
                 ),
                 if (isWinner)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 3),
                     decoration: BoxDecoration(
-                      color: Colors.amber.withAlpha(25),
-                      borderRadius: BorderRadius.circular(8),
+                      color: DesignTokens.warning.withAlpha(25),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                     ),
                     child: Text(
                       'Vencedora',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: Colors.amber.shade800,
+                        color: DesignTokens.warning,
                       ),
                     ),
                   ),
@@ -753,16 +754,16 @@ class _RewardCard extends StatelessWidget {
 
     if (isCompleted) {
       statusIcon = Icons.check_circle;
-      statusColor = Colors.green;
-      statusTextColor = Colors.green.shade800;
+      statusColor = DesignTokens.success;
+      statusTextColor = DesignTokens.success;
       statusLabel = 'OmniCoins';
       statusSub = myCoins > 0
           ? 'Você ganhou $myCoins OmniCoins do desafio'
           : 'Você perdeu sua inscrição neste desafio';
     } else {
       statusIcon = Icons.hourglass_top_rounded;
-      statusColor = Colors.orange;
-      statusTextColor = Colors.orange.shade800;
+      statusColor = DesignTokens.warning;
+      statusTextColor = DesignTokens.warning;
       statusLabel = 'Resultado pendente';
       statusSub = 'O resultado está sendo processado.';
     }
@@ -775,7 +776,7 @@ class _RewardCard extends StatelessWidget {
         side: BorderSide(color: statusColor.withAlpha(50)),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -850,7 +851,7 @@ class _CtaBar extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Padding(
-                    padding: EdgeInsets.all(16),
+                    padding: EdgeInsets.all(DesignTokens.spacingMd),
                     child: Text('Adicionar como amigo',
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold)),
@@ -900,7 +901,7 @@ class _CtaBar extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.only(
-          left: 16, right: 16, top: 12, bottom: pad + 12),
+          left: DesignTokens.spacingMd, right: DesignTokens.spacingMd, top: 12, bottom: pad + 12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         boxShadow: [

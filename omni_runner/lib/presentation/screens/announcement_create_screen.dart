@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/announcement_entity.dart';
 import 'package:omni_runner/domain/repositories/i_announcement_repo.dart';
 import 'package:omni_runner/domain/usecases/announcements/create_announcement.dart';
@@ -103,7 +104,7 @@ class _AnnouncementCreateScreenState extends State<AnnouncementCreateScreen> {
         actions: [
           if (_saving)
             const Padding(
-              padding: EdgeInsets.only(right: 16),
+              padding: EdgeInsets.only(right: DesignTokens.spacingMd),
               child: Center(
                 child: SizedBox(
                   width: 24,
@@ -123,7 +124,7 @@ class _AnnouncementCreateScreenState extends State<AnnouncementCreateScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           children: [
             TextFormField(
               controller: _titleController,

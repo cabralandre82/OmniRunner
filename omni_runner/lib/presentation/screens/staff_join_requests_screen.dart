@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/push/notification_rules_service.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Staff screen to view and approve/reject athlete join requests.
 class StaffJoinRequestsScreen extends StatefulWidget {
@@ -107,7 +108,7 @@ class _StaffJoinRequestsScreenState extends State<StaffJoinRequestsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${req.displayName} aprovado!'),
-            backgroundColor: Colors.green,
+            backgroundColor: DesignTokens.success,
           ),
         );
         _load();
@@ -204,7 +205,7 @@ class _StaffJoinRequestsScreenState extends State<StaffJoinRequestsScreen> {
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(DesignTokens.spacingMd),
                     children: [
                       if (_pending.isEmpty && _processed.isEmpty)
                         _buildEmpty(theme),
@@ -305,7 +306,7 @@ class _RequestCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -332,7 +333,7 @@ class _RequestCard extends StatelessWidget {
                             : 'Solicitou entrada · $ago',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: request.requestedRole == 'coach'
-                              ? Colors.deepPurple
+                              ? DesignTokens.info
                               : theme.colorScheme.onSurfaceVariant,
                           fontWeight: request.requestedRole == 'coach'
                               ? FontWeight.w600
@@ -393,23 +394,23 @@ class _ProcessedTile extends StatelessWidget {
     final isApproved = request.status == 'approved';
 
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingXs),
       leading: CircleAvatar(
         radius: 18,
         backgroundColor: isApproved
-            ? Colors.green.withValues(alpha: 0.12)
-            : Colors.red.withValues(alpha: 0.12),
+            ? DesignTokens.success.withValues(alpha: 0.12)
+            : DesignTokens.error.withValues(alpha: 0.12),
         child: Icon(
           isApproved ? Icons.check_rounded : Icons.close_rounded,
           size: 18,
-          color: isApproved ? Colors.green : Colors.red,
+          color: isApproved ? DesignTokens.success : DesignTokens.error,
         ),
       ),
       title: Text(request.displayName),
       subtitle: Text(
         isApproved ? 'Aprovado' : 'Rejeitado',
         style: theme.textTheme.bodySmall?.copyWith(
-          color: isApproved ? Colors.green : Colors.red,
+          color: isApproved ? DesignTokens.success : DesignTokens.error,
         ),
       ),
     );

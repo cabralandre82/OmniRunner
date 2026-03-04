@@ -8,6 +8,7 @@ import 'package:omni_runner/presentation/blocs/badges/badges_event.dart';
 import 'package:omni_runner/presentation/blocs/badges/badges_state.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class BadgesScreen extends StatelessWidget {
   const BadgesScreen({super.key});
@@ -37,7 +38,7 @@ class BadgesScreen extends StatelessWidget {
               : _LoadedBody(catalog: catalog, awards: awards),
           BadgesError(:final message) => Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(DesignTokens.spacingLg),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -73,7 +74,7 @@ class _EmptyState extends StatelessWidget {
     final theme = Theme.of(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -133,11 +134,11 @@ class _LoadedBody extends StatelessWidget {
     }
 
     return ListView(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: DesignTokens.spacingLg),
       children: [
         // ── Tip banner ───────────────────────────────────────────────
         const Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+          padding: EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingSm, DesignTokens.spacingMd, 0),
           child: TipBanner(
             tipKey: TipKey.badgesHowTo,
             icon: Icons.lightbulb_outline_rounded,
@@ -153,7 +154,7 @@ class _LoadedBody extends StatelessWidget {
         // ── Recent unlocks ───────────────────────────────────────────
         if (recentBadges.isNotEmpty) ...[
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+            padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 20, DesignTokens.spacingMd, DesignTokens.spacingSm),
             child: Text(
               'Desbloqueadas recentemente',
               style: theme.textTheme.titleMedium?.copyWith(
@@ -165,7 +166,7 @@ class _LoadedBody extends StatelessWidget {
             height: 148,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd),
               itemCount: recentBadges.length,
               separatorBuilder: (_, __) => const SizedBox(width: 10),
               itemBuilder: (_, i) {
@@ -182,14 +183,14 @@ class _LoadedBody extends StatelessWidget {
         // ── No unlocks yet ───────────────────────────────────────────
         if (recentBadges.isEmpty)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+            padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 20, DesignTokens.spacingMd, DesignTokens.spacingXs),
             child: Card(
               elevation: 0,
               color: theme.colorScheme.surfaceContainerHighest,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14)),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(DesignTokens.spacingMd),
                 child: Row(
                   children: [
                     Icon(Icons.military_tech_outlined,
@@ -212,7 +213,7 @@ class _LoadedBody extends StatelessWidget {
 
         // ── Collection by category ───────────────────────────────────
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+          padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 20, DesignTokens.spacingMd, DesignTokens.spacingXs),
           child: Text(
             'Coleção',
             style: theme.textTheme.titleLarge?.copyWith(
@@ -222,7 +223,7 @@ class _LoadedBody extends StatelessWidget {
         ),
         for (final entry in grouped.entries) ...[
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+            padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 14, DesignTokens.spacingMd, DesignTokens.spacingSm),
             child: Text(
               _categoryLabel(entry.key),
               style: theme.textTheme.titleSmall?.copyWith(
@@ -269,7 +270,7 @@ class _SummaryHeader extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingLg, horizontal: DesignTokens.spacingLg),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [cs.primaryContainer, cs.primary.withValues(alpha: 0.12)],
@@ -295,7 +296,7 @@ class _SummaryHeader extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
             child: LinearProgressIndicator(
               value: fraction,
               minHeight: 10,
@@ -331,7 +332,7 @@ class _RecentBadgeCard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: tierColor.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           border: Border.all(color: tierColor.withValues(alpha: 0.3)),
         ),
         child: Column(
@@ -394,7 +395,7 @@ class _BadgeListTile extends StatelessWidget {
 
     return ListTile(
       onTap: () => _showBadgeDetail(context, badge, unlocked, award),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       leading: Container(
         width: 44,
         height: 44,
@@ -402,7 +403,7 @@ class _BadgeListTile extends StatelessWidget {
           color: unlocked
               ? tierColor.withValues(alpha: 0.12)
               : theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
           border: unlocked
               ? Border.all(color: tierColor.withValues(alpha: 0.4))
               : null,
@@ -472,7 +473,7 @@ void _showBadgeDetail(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
     builder: (_) => Padding(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+      padding: const EdgeInsets.fromLTRB(DesignTokens.spacingLg, 20, DesignTokens.spacingLg, DesignTokens.spacingLg),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -518,7 +519,7 @@ void _showBadgeDetail(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -549,14 +550,14 @@ void _showBadgeDetail(
               _RewardTag(
                 icon: Icons.auto_awesome,
                 value: '+${badge.xpReward} XP',
-                color: Colors.blue,
+                color: DesignTokens.primary,
               ),
               if (badge.coinsReward > 0) ...[
                 const SizedBox(width: 16),
                 _RewardTag(
                   icon: Icons.toll_rounded,
                   value: '+${badge.coinsReward} OmniCoins',
-                  color: Colors.amber.shade700,
+                  color: DesignTokens.warning,
                 ),
               ],
             ],
@@ -568,12 +569,12 @@ void _showBadgeDetail(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.check_circle,
-                    size: 16, color: Colors.green.shade700),
+                    size: 16, color: DesignTokens.success),
                 const SizedBox(width: 6),
                 Text(
                   'Desbloqueada em ${_formatDate(award.unlockedAtMs)}',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.green.shade700,
+                    color: DesignTokens.success,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

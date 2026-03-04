@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/athlete_verification_entity.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/domain/entities/workout_session_entity.dart';
@@ -149,7 +150,7 @@ class _BodyState extends State<_Body> {
             .add(const LoadVerificationState());
       },
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         children: [
           const ContextualTipBanner(
             tipKey: TipKey.firstVerificationVisit,
@@ -272,11 +273,11 @@ class _StatusCard extends StatelessWidget {
       elevation: 0,
       color: color.withValues(alpha: 0.12),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         side: BorderSide(color: color.withValues(alpha: 0.3)),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Row(children: [
           Container(
             padding: const EdgeInsets.all(12),
@@ -318,7 +319,7 @@ class _StatusCard extends StatelessWidget {
     return switch (v.status) {
       VerificationStatus.unverified => (
           Icons.hourglass_empty,
-          Colors.grey,
+          DesignTokens.textMuted,
           'Não Verificado',
           remaining > 0
               ? 'Faça $remaining corrida${remaining == 1 ? '' : 's'} para começar a calibração.'
@@ -326,26 +327,26 @@ class _StatusCard extends StatelessWidget {
         ),
       VerificationStatus.calibrating => (
           Icons.trending_up,
-          Colors.blue,
+          DesignTokens.primary,
           'Em Calibração',
           runsMsg,
         ),
       VerificationStatus.monitored => (
           Icons.visibility,
-          Colors.orange,
+          DesignTokens.warning,
           'Em Observação',
           'Seu score está em ${v.trustScore}/100 (mínimo: ${v.requiredTrustScore}). '
               'Continue treinando para aumentar!',
         ),
       VerificationStatus.verified => (
           Icons.verified,
-          Colors.green,
+          DesignTokens.success,
           'Atleta Verificado',
           'Você pode criar e participar de desafios com inscrição!',
         ),
       VerificationStatus.downgraded => (
           Icons.warning_amber_rounded,
-          Colors.red,
+          DesignTokens.error,
           'Rebaixado',
           'Problemas de integridade detectados. Continue treinando limpo para '
               'recuperar seu status.',
@@ -386,13 +387,13 @@ class _ProgressSection extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
           child: LinearProgressIndicator(
             value: v.progress,
             minHeight: 10,
             backgroundColor: cs.surfaceContainerHighest,
             valueColor: AlwaysStoppedAnimation(
-              v.isVerified ? Colors.green : cs.primary,
+              v.isVerified ? DesignTokens.success : cs.primary,
             ),
           ),
         ),
@@ -423,7 +424,7 @@ class _ChecklistCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -494,7 +495,7 @@ class _CheckItem extends StatelessWidget {
             child: Icon(
               done ? Icons.check_circle : Icons.radio_button_unchecked,
               size: 20,
-              color: done ? Colors.green : cs.outline,
+              color: done ? DesignTokens.success : cs.outline,
             ),
           ),
           const SizedBox(width: 12),
@@ -537,7 +538,7 @@ class _StatsCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -621,7 +622,7 @@ class _RecentSessionsCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -651,7 +652,7 @@ class _RecentSessionsCard extends StatelessWidget {
               final durMin = elapsed ~/ 60000;
 
               return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
                 child: Row(
                   children: [
                     SizedBox(
@@ -718,7 +719,7 @@ class _ErrorView extends StatelessWidget {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

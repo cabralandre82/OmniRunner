@@ -5,6 +5,7 @@ import 'package:omni_runner/domain/entities/insight_type_enum.dart';
 import 'package:omni_runner/presentation/blocs/coach_insights/coach_insights_bloc.dart';
 import 'package:omni_runner/presentation/blocs/coach_insights/coach_insights_event.dart';
 import 'package:omni_runner/presentation/blocs/coach_insights/coach_insights_state.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class CoachInsightsScreen extends StatelessWidget {
   final String groupName;
@@ -52,7 +53,7 @@ class CoachInsightsScreen extends StatelessWidget {
             ),
           CoachInsightsError(:final message) => Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(DesignTokens.spacingLg),
                 child: Text(
                   message,
                   textAlign: TextAlign.center,
@@ -90,7 +91,7 @@ class _LoadedBody extends StatelessWidget {
       unreadCount: unreadCount,
       child: Expanded(
         child: ListView.builder(
-          padding: const EdgeInsets.only(bottom: 24),
+          padding: const EdgeInsets.only(bottom: DesignTokens.spacingLg),
           itemCount: insights.length,
           itemBuilder: (context, i) =>
               _InsightCard(insight: insights[i]),
@@ -143,7 +144,7 @@ class _UnreadBanner extends StatelessWidget {
           .add(FilterUnreadOnly(!active)),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: 10),
         color: active
             ? theme.colorScheme.primaryContainer
             : theme.colorScheme.surfaceContainerHighest,
@@ -181,13 +182,13 @@ class _TypeFilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = <InsightType?>[null, ..._displayedTypes];
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingSm, DesignTokens.spacingMd, DesignTokens.spacingXs),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: items.map((t) {
             return Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: DesignTokens.spacingSm),
               child: ChoiceChip(
                 label: Text(_typeFilterLabel(t)),
                 selected: t == selected,
@@ -241,16 +242,16 @@ class _InsightCard extends StatelessWidget {
     final isUnread = !insight.isRead && !insight.dismissed;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       elevation: isUnread ? 2 : 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         side: isUnread
             ? BorderSide(color: priorityColor.withAlpha(80), width: 1.5)
             : BorderSide.none,
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         onTap: () {
           if (!insight.isRead) {
             context
@@ -259,7 +260,7 @@ class _InsightCard extends StatelessWidget {
           }
         },
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -409,10 +410,10 @@ class _ChangeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPositive = changePercent >= 0;
-    final color = isPositive ? Colors.green : Colors.red;
+    final color = isPositive ? DesignTokens.success : DesignTokens.error;
     final sign = isPositive ? '+' : '';
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 3),
       decoration: BoxDecoration(
         color: color.withAlpha(20),
         borderRadius: BorderRadius.circular(6),
@@ -449,12 +450,12 @@ class _DismissButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
       onTap: () => context
           .read<CoachInsightsBloc>()
           .add(DismissInsight(insightId)),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -522,7 +523,7 @@ IconData _typeIcon(InsightType t) => switch (t) {
 
 Color _priorityColor(InsightPriority p, ColorScheme cs) => switch (p) {
       InsightPriority.low => cs.outline,
-      InsightPriority.medium => Colors.amber.shade700,
-      InsightPriority.high => Colors.deepOrange,
+      InsightPriority.medium => DesignTokens.warning,
+      InsightPriority.high => DesignTokens.warning,
       InsightPriority.critical => cs.error,
     };

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/usecases/wearable/import_execution.dart';
 
 class AthleteLogExecutionScreen extends StatefulWidget {
@@ -106,7 +107,7 @@ class _AthleteLogExecutionScreenState extends State<AthleteLogExecutionScreen> {
                 Card(
                   color: theme.colorScheme.primaryContainer,
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(DesignTokens.spacingMd),
                     child: Row(
                       children: [
                         Icon(Icons.fitness_center,

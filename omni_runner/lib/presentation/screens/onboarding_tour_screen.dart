@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:omni_runner/core/tips/first_use_tips.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Full-screen guided tour shown once after the user completes structural
 /// onboarding (role + assessoria). Explains key features via a swipeable
@@ -79,7 +80,7 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen> {
     ),
     _SlideData(
       icon: Icons.monetization_on_rounded,
-      color: Color(0xFFFFA000),
+      color: DesignTokens.warning,
       title: 'OmniCoins',
       body:
           'Suas OmniCoins vêm da sua assessoria de corrida.\n'
@@ -155,14 +156,14 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen> {
 
             // Dots
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(_slides.length, (i) {
                   final active = i == _currentPage;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingXs),
                     width: active ? 24 : 8,
                     height: 8,
                     decoration: BoxDecoration(
@@ -178,7 +179,7 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen> {
 
             // CTA button
             Padding(
-              padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
+              padding: const EdgeInsets.fromLTRB(DesignTokens.spacingXl, 0, DesignTokens.spacingXl, DesignTokens.spacingXl),
               child: SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -187,7 +188,7 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen> {
                   style: FilledButton.styleFrom(
                     backgroundColor: _slides[_currentPage].color,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                     ),
                     textStyle: const TextStyle(
                       fontSize: 17,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/device_link_entity.dart';
 import 'package:omni_runner/domain/usecases/wearable/link_device.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
@@ -141,11 +142,11 @@ class _AthleteDeviceLinkScreenState extends State<AthleteDeviceLinkScreen> {
   Widget _buildEmpty(ThemeData theme) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.watch_outlined, size: 64, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4)),
+            Icon(Icons.watch_outlined, size: 64, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
             const SizedBox(height: 16),
             Text('Nenhum dispositivo conectado', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
@@ -168,7 +169,7 @@ class _AthleteDeviceLinkScreenState extends State<AthleteDeviceLinkScreen> {
 
   Widget _buildList(ThemeData theme) {
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(DesignTokens.spacingMd),
       itemCount: _providers.length,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {

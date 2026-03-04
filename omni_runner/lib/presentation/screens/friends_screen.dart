@@ -16,6 +16,7 @@ import 'package:omni_runner/presentation/widgets/error_state.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/widgets/cached_avatar.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class FriendsScreen extends StatelessWidget {
   const FriendsScreen({super.key});
@@ -149,7 +150,7 @@ class _BodyState extends State<_Body> {
             title: 'Pedidos recebidos',
             count: s.pendingReceived.length,
             icon: Icons.person_add,
-            color: Colors.orange,
+            color: DesignTokens.warning,
           ),
           ...s.pendingReceived.map((f) => _PendingReceivedTile(
                 friendship: f,
@@ -162,7 +163,7 @@ class _BodyState extends State<_Body> {
             title: 'Amigos',
             count: s.accepted.length,
             icon: Icons.people,
-            color: Colors.green,
+            color: DesignTokens.success,
           ),
           ...s.accepted.map((f) => _AcceptedTile(
                 friendship: f,
@@ -175,7 +176,7 @@ class _BodyState extends State<_Body> {
             title: 'Enviados',
             count: s.pendingSent.length,
             icon: Icons.send,
-            color: Colors.grey,
+            color: DesignTokens.textMuted,
           ),
           ...s.pendingSent.map((f) => _PendingSentTile(
                 friendship: f,
@@ -185,7 +186,7 @@ class _BodyState extends State<_Body> {
         ],
         if (_loadingNames)
           const Padding(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.all(DesignTokens.spacingMd),
             child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
           ),
         const SizedBox(height: 24),
@@ -247,7 +248,7 @@ class _AcceptedTile extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: DesignTokens.error),
             child: const Text('Remover'),
           ),
         ],
@@ -318,12 +319,12 @@ class _PendingReceivedTile extends StatelessWidget {
 
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: Colors.orange.shade50,
-        child: const Icon(Icons.person_add, color: Colors.orange),
+        backgroundColor: DesignTokens.warning,
+        child: const Icon(Icons.person_add, color: DesignTokens.warning),
       ),
       title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
       subtitle: const Text('Quer ser seu amigo',
-          style: TextStyle(color: Colors.orange, fontSize: 12)),
+          style: TextStyle(color: DesignTokens.warning, fontSize: 12)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -368,12 +369,12 @@ class _PendingSentTile extends StatelessWidget {
 
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: Colors.grey.shade100,
-        child: const Icon(Icons.hourglass_top, color: Colors.grey),
+        backgroundColor: DesignTokens.borderSubtle,
+        child: const Icon(Icons.hourglass_top, color: DesignTokens.textMuted),
       ),
       title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
       subtitle: const Text('Aguardando resposta',
-          style: TextStyle(color: Colors.grey, fontSize: 12)),
+          style: TextStyle(color: DesignTokens.textMuted, fontSize: 12)),
       trailing: IconButton(
         icon: Icon(Icons.close_rounded, color: cs.error, size: 20),
         tooltip: 'Cancelar convite',
@@ -399,7 +400,7 @@ Widget? _socialSubtitle(_UserInfo? info) {
   }
   if (parts.isEmpty) return null;
   return Text(parts.join(' · '),
-      style: const TextStyle(fontSize: 12, color: Colors.grey));
+      style: const TextStyle(fontSize: 12, color: DesignTokens.textMuted));
 }
 
 class _SectionHeader extends StatelessWidget {
@@ -418,7 +419,7 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingSm),
       child: Row(
         children: [
           Icon(icon, size: 20, color: color),
@@ -428,7 +429,7 @@ class _SectionHeader extends StatelessWidget {
                   const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(width: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 2),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
@@ -528,7 +529,7 @@ class _FriendSearchScreenState extends State<_FriendSearchScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DesignTokens.spacingMd),
             child: TextField(
               controller: _controller,
               autofocus: true,
@@ -536,7 +537,7 @@ class _FriendSearchScreenState extends State<_FriendSearchScreen> {
                 hintText: 'Nome do corredor...',
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd)),
                 filled: true,
               ),
               onChanged: _search,
@@ -573,7 +574,7 @@ class _FriendSearchScreenState extends State<_FriendSearchScreen> {
                         subtitle: insta != null && insta.isNotEmpty
                             ? Text('@$insta',
                                 style: const TextStyle(
-                                    fontSize: 12, color: Colors.grey))
+                                    fontSize: 12, color: DesignTokens.textMuted))
                             : null,
                         trailing: alreadyFriend
                             ? const Chip(

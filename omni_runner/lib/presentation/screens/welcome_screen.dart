@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// First screen a new user sees before login.
 ///
@@ -66,7 +67,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingXl),
           child: Column(
             children: [
               const Spacer(flex: 2),
@@ -135,7 +136,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     onPressed: widget.onStart,
                     style: FilledButton.styleFrom(
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                       ),
                       textStyle: const TextStyle(
                         fontSize: 18,

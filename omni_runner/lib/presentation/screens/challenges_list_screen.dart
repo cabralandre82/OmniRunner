@@ -20,6 +20,7 @@ import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 void _openMatchmaking(BuildContext context) async {
   final challengeId = await Navigator.of(context).push<String>(
@@ -127,7 +128,7 @@ class _ChallengesListScreenState extends State<ChallengesListScreen> {
     final theme = Theme.of(context);
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -189,7 +190,7 @@ class _ChallengesListScreenState extends State<ChallengesListScreen> {
       child: Column(
         children: [
           const Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingSm, DesignTokens.spacingMd, 0),
             child: TipBanner(
               tipKey: TipKey.challengeHowTo,
               icon: Icons.emoji_events_outlined,
@@ -199,7 +200,7 @@ class _ChallengesListScreenState extends State<ChallengesListScreen> {
             ),
           ),
           const Padding(
-            padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
+            padding: EdgeInsets.fromLTRB(DesignTokens.spacingMd, 0, DesignTokens.spacingMd, 0),
             child: TipBanner(
               tipKey: TipKey.matchmakingHowTo,
               icon: Icons.sports_mma_rounded,
@@ -232,7 +233,7 @@ class _ChallengesListScreenState extends State<ChallengesListScreen> {
         .toList();
 
     return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
       children: [
         if (active.isNotEmpty) ...[
           _SectionHeader(title: 'Ativos', count: active.length),
@@ -330,12 +331,12 @@ class _ChallengeListTile extends StatelessWidget {
       };
 
   static Color _statusColor(ChallengeStatus s, ThemeData theme) => switch (s) {
-        ChallengeStatus.pending => Colors.orange,
-        ChallengeStatus.active => Colors.green,
-        ChallengeStatus.completing => Colors.blue,
-        ChallengeStatus.completed => Colors.teal,
+        ChallengeStatus.pending => DesignTokens.warning,
+        ChallengeStatus.active => DesignTokens.success,
+        ChallengeStatus.completing => DesignTokens.primary,
+        ChallengeStatus.completed => DesignTokens.info,
         ChallengeStatus.cancelled => theme.colorScheme.error,
-        ChallengeStatus.expired => Colors.grey,
+        ChallengeStatus.expired => DesignTokens.textMuted,
       };
 
   static String _modeTag(ChallengeRulesEntity rules) =>
@@ -354,7 +355,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingXs),
       child: Row(
         children: [
           Text(
@@ -366,7 +367,7 @@ class _SectionHeader extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 2),
             decoration: BoxDecoration(
               color: theme.colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(10),
@@ -398,7 +399,7 @@ class _StravaConnectBanner extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      margin: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingSm, DesignTokens.spacingMd, DesignTokens.spacingXs),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -423,7 +424,7 @@ class _StravaConnectBanner extends StatelessWidget {
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFC4C02),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                 ),
                 child: const Icon(Icons.watch, color: Colors.white, size: 18),
               ),
@@ -479,7 +480,7 @@ class _StravaConnectBanner extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFFFC4C02),
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
+                      horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingSm),
                   textStyle: const TextStyle(fontSize: 13),
                 ),
               ),

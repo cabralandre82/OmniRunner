@@ -8,6 +8,7 @@ import 'package:omni_runner/domain/entities/token_intent_entity.dart';
 import 'package:omni_runner/domain/repositories/i_token_intent_repo.dart';
 import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_bloc.dart';
 import 'package:omni_runner/presentation/screens/staff_generate_qr_screen.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Staff screen for managing a single championship: open it, invite groups,
 /// view invites, and see participants.
@@ -220,7 +221,7 @@ class _StaffChampionshipManageScreenState
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: DesignTokens.error),
             child: const Text('Cancelar campeonato'),
           ),
         ],
@@ -370,7 +371,7 @@ class _StaffChampionshipManageScreenState
       body: RefreshIndicator(
         onRefresh: _loadAll,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           children: [
             // ── Status header ──
             Card(
@@ -378,20 +379,20 @@ class _StaffChampionshipManageScreenState
               color: _statusColor(c.status).withValues(alpha: 0.08),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(DesignTokens.spacingMd),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.emoji_events_rounded, color: Colors.amber.shade800),
+                        Icon(Icons.emoji_events_rounded, color: DesignTokens.warning),
                         const SizedBox(width: 8),
                         Expanded(child: Text(c.name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold))),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 3),
                           decoration: BoxDecoration(
                             color: _statusColor(c.status).withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                           ),
                           child: Text(_statusLabel(c.status), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _statusColor(c.status))),
                         ),
@@ -439,8 +440,8 @@ class _StaffChampionshipManageScreenState
                 label: const Text('Cancelar campeonato'),
                 onPressed: _cancelChampionship,
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  side: const BorderSide(color: Colors.red),
+                  foregroundColor: DesignTokens.error,
+                  side: const BorderSide(color: DesignTokens.error),
                   minimumSize: const Size.fromHeight(44),
                 ),
               ),
@@ -451,19 +452,19 @@ class _StaffChampionshipManageScreenState
             if (c.requiresBadge && (c.status == 'open' || c.status == 'active')) ...[
               Card(
                 elevation: 0,
-                color: Colors.indigo.shade50,
+                color: DesignTokens.primary.withValues(alpha: 0.08),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
-                  side: BorderSide(color: Colors.indigo.shade100),
+                  side: BorderSide(color: DesignTokens.primary.withValues(alpha: 0.15)),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(DesignTokens.spacingMd),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.military_tech_rounded, size: 22, color: Colors.indigo.shade700),
+                          Icon(Icons.military_tech_rounded, size: 22, color: DesignTokens.primary),
                           const SizedBox(width: 8),
                           Text('Badges de participação', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
                         ],
@@ -479,7 +480,7 @@ class _StaffChampionshipManageScreenState
                         icon: const Icon(Icons.qr_code_rounded, size: 18),
                         label: const Text('Gerar QR de Badge'),
                         style: FilledButton.styleFrom(
-                          backgroundColor: Colors.indigo,
+                          backgroundColor: DesignTokens.primary,
                           minimumSize: const Size.fromHeight(44),
                         ),
                         onPressed: () => _generateBadgeQr(),
@@ -509,7 +510,7 @@ class _StaffChampionshipManageScreenState
             const SizedBox(height: 8),
             if (c.startAt != null && (isDraft || c.status == 'open'))
               Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
                 child: Row(children: [
                   Icon(Icons.info_outline_rounded, size: 16, color: cs.outline),
                   const SizedBox(width: 6),
@@ -522,7 +523,7 @@ class _StaffChampionshipManageScreenState
               ),
             if (_invites.isEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
                 child: Text('Nenhum convite enviado ainda.', style: theme.textTheme.bodySmall?.copyWith(color: cs.outline)),
               )
             else
@@ -540,7 +541,7 @@ class _StaffChampionshipManageScreenState
             const SizedBox(height: 8),
             if (_participants.isEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
                 child: Text(
                   isDraft
                       ? 'Abra o campeonato para receber inscrições.'
@@ -559,8 +560,8 @@ class _StaffChampionshipManageScreenState
 
   Widget _chip(IconData icon, String label, ColorScheme cs) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
+      decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(DesignTokens.radiusSm)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 14, color: cs.onSurfaceVariant),
         const SizedBox(width: 4),
@@ -571,10 +572,10 @@ class _StaffChampionshipManageScreenState
 
   Widget _inviteTile(ThemeData theme, _InviteData inv) {
     final (icon, color) = switch (inv.status) {
-      'accepted' => (Icons.check_circle, Colors.green),
-      'declined' => (Icons.cancel, Colors.red),
-      'revoked' => (Icons.block, Colors.grey),
-      _ => (Icons.hourglass_empty, Colors.orange),
+      'accepted' => (Icons.check_circle, DesignTokens.success),
+      'declined' => (Icons.cancel, DesignTokens.error),
+      'revoked' => (Icons.block, DesignTokens.textMuted),
+      _ => (Icons.hourglass_empty, DesignTokens.warning),
     };
 
     return ListTile(
@@ -607,7 +608,7 @@ class _StaffChampionshipManageScreenState
   }
 
   static String _statusLabel(String s) => switch (s) { 'draft' => 'Rascunho', 'open' => 'Aberto', 'active' => 'Em andamento', 'completed' => 'Encerrado', 'cancelled' => 'Cancelado', _ => s };
-  static Color _statusColor(String s) => switch (s) { 'draft' => Colors.grey, 'open' => Colors.green, 'active' => Colors.blue, 'completed' => Colors.teal, 'cancelled' => Colors.red, _ => Colors.grey };
+  static Color _statusColor(String s) => switch (s) { 'draft' => DesignTokens.textMuted, 'open' => DesignTokens.success, 'active' => DesignTokens.primary, 'completed' => DesignTokens.success, 'cancelled' => DesignTokens.error, _ => DesignTokens.textMuted };
   static String _metricLabel(String m) => switch (m) { 'distance' => 'Distância', 'time' => 'Tempo', 'pace' => 'Pace', 'sessions' => 'Sessões', 'elevation' => 'Elevação', _ => m };
   static String _inviteStatusLabel(String s) => switch (s) { 'pending' => 'Pendente', 'accepted' => 'Aceito', 'declined' => 'Recusado', 'revoked' => 'Revogado', _ => s };
   static String _participantStatusLabel(String s) => switch (s) { 'enrolled' => 'Inscrito', 'active' => 'Ativo', 'completed' => 'Completou', 'withdrawn' => 'Desistiu', 'disqualified' => 'Não elegível', _ => s };

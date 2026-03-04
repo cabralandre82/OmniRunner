@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/workout_assignment_entity.dart';
 import 'package:omni_runner/domain/entities/workout_template_entity.dart';
 import 'package:omni_runner/domain/repositories/i_workout_repo.dart';
@@ -144,7 +145,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
     if (_error != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(DesignTokens.spacingLg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -180,11 +181,11 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
   Widget _buildEmpty(ThemeData theme) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.event_available_outlined, size: 64, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4)),
+            Icon(Icons.event_available_outlined, size: 64, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
             const SizedBox(height: 16),
             Text('Sem treino agendado para hoje', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
@@ -236,7 +237,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: statusColor.withValues(alpha: isDark ? 0.25 : 0.2),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               ),
               child: Text(
                 statusLabel,
@@ -278,7 +279,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: cs.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,7 +324,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
             label: Text(
                 _completing ? 'Marcando...' : 'Marcar como Concluído'),
             style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
             ),
           ),
       ],
@@ -346,11 +347,11 @@ class _WorkoutBlockCard extends StatelessWidget {
   };
 
   static const _typeColors = {
-    WorkoutBlockType.warmup: Colors.orange,
-    WorkoutBlockType.interval: Colors.red,
-    WorkoutBlockType.recovery: Colors.green,
-    WorkoutBlockType.cooldown: Colors.blue,
-    WorkoutBlockType.steady: Colors.teal,
+    WorkoutBlockType.warmup: DesignTokens.warning,
+    WorkoutBlockType.interval: DesignTokens.error,
+    WorkoutBlockType.recovery: DesignTokens.success,
+    WorkoutBlockType.cooldown: DesignTokens.primary,
+    WorkoutBlockType.steady: DesignTokens.success,
   };
 
   @override
@@ -383,7 +384,7 @@ class _WorkoutBlockCard extends StatelessWidget {
     if (block.rpeTarget != null) details.add('RPE ${block.rpeTarget}');
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -405,7 +406,7 @@ class _WorkoutBlockCard extends StatelessWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                            horizontal: DesignTokens.spacingSm, vertical: 2),
                         decoration: BoxDecoration(
                           color: color.withValues(alpha: isDark ? 0.25 : 0.15),
                           borderRadius: BorderRadius.circular(6),

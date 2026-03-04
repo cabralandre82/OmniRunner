@@ -19,6 +19,7 @@ import 'package:omni_runner/presentation/map/polyline_builder.dart';
 import 'package:omni_runner/features/integrations_export/presentation/export_screen.dart';
 import 'package:omni_runner/presentation/widgets/invalidated_run_card.dart';
 import 'package:omni_runner/presentation/widgets/summary_metrics_panel.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 const _srcId = 'details-route-src';
 const _layerId = 'details-route-layer';
@@ -157,7 +158,7 @@ class _RunDetailsScreenState extends State<RunDetailsScreen> {
     }
     _mapCtrl?.animateCamera(CameraUpdate.newLatLngBounds(
       LatLngBounds(southwest: LatLng(sLat, sLng), northeast: LatLng(nLat, nLng)),
-      left: 48, top: 48, right: 48, bottom: 200,
+      left: DesignTokens.spacingXxl, top: DesignTokens.spacingXxl, right: DesignTokens.spacingXxl, bottom: 200,
     ),);
   }
 
@@ -188,8 +189,8 @@ class _RunDetailsScreenState extends State<RunDetailsScreen> {
     return Column(mainAxisSize: MainAxisSize.min, children: [
       if (!s.isVerified || s.integrityFlags.isNotEmpty)
         InvalidatedRunCard(integrityFlags: s.integrityFlags),
-      Padding(padding: const EdgeInsets.only(top: 8), child: Wrap(spacing: 6, runSpacing: 4, children: [
-        Chip(label: Text(s.isSynced ? 'Sincronizada' : 'Pendente', style: const TextStyle(fontSize: 10)), backgroundColor: s.isSynced ? Colors.green.shade100 : Colors.orange.shade100, visualDensity: VisualDensity.compact, side: BorderSide.none,),
+      Padding(padding: const EdgeInsets.only(top: DesignTokens.spacingSm), child: Wrap(spacing: 6, runSpacing: 4, children: [
+        Chip(label: Text(s.isSynced ? 'Sincronizada' : 'Pendente', style: const TextStyle(fontSize: 10)), backgroundColor: s.isSynced ? DesignTokens.success : DesignTokens.warning, visualDensity: VisualDensity.compact, side: BorderSide.none,),
         if (s.ghostSessionId != null) const Chip(avatar: Icon(Icons.directions_run, size: 14), label: Text('vs Fantasma', style: TextStyle(fontSize: 10)), visualDensity: VisualDensity.compact, side: BorderSide.none,),
       ],),),
     ]);
@@ -213,9 +214,9 @@ class _RunDetailsScreenState extends State<RunDetailsScreen> {
             const Center(child: CircularProgressIndicator())
           else if (_mapTimedOut)
             Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.map_outlined, size: 48, color: Colors.grey.shade400),
+              Icon(Icons.map_outlined, size: 48, color: DesignTokens.textMuted),
               const SizedBox(height: 8),
-              Text('Mapa indisponível offline', style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
+              Text('Mapa indisponível offline', style: TextStyle(color: DesignTokens.textSecondary, fontSize: 14)),
             ])),
           Positioned(
             top: 0, left: 0, right: 0,
@@ -249,7 +250,7 @@ class _TopBar extends StatelessWidget {
     final label = '${date.day.toString().padLeft(2, '0')}/'
         '${date.month.toString().padLeft(2, '0')}/${date.year}';
     return Container(
-      padding: EdgeInsets.only(top: top, left: 8, right: 8, bottom: 8),
+      padding: EdgeInsets.only(top: top, left: DesignTokens.spacingSm, right: DesignTokens.spacingSm, bottom: DesignTokens.spacingSm),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter, end: Alignment.bottomCenter,

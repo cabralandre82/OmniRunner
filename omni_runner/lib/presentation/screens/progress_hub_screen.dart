@@ -31,6 +31,7 @@ import 'package:omni_runner/presentation/screens/running_dna_screen.dart';
 import 'package:omni_runner/presentation/screens/wallet_screen.dart';
 import 'package:omni_runner/presentation/screens/wrapped_screen.dart';
 import 'package:omni_runner/l10n/l10n.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Hub listing all gamification / progress features.
 ///
@@ -49,7 +50,7 @@ class ProgressHubScreen extends StatelessWidget {
         backgroundColor: cs.inversePrimary,
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
         children: const [
           _Tile(
             icon: Icons.trending_up,
@@ -218,7 +219,7 @@ class _Tile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Padding(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.all(DesignTokens.spacingMd),
               child: Text(
                 'Escolha o período',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),

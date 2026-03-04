@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/announcement_entity.dart';
 import 'package:omni_runner/presentation/blocs/announcement_feed/announcement_feed_bloc.dart';
 import 'package:omni_runner/presentation/blocs/announcement_feed/announcement_feed_event.dart';
@@ -131,7 +132,7 @@ class _AnnouncementFeedView extends StatelessWidget {
               ListView(children: List.generate(5, (_) => const ShimmerCard())),
             AnnouncementFeedError(:final message) => Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(DesignTokens.spacingLg),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -163,11 +164,11 @@ class _AnnouncementFeedView extends StatelessWidget {
             AnnouncementFeedLoaded(:final announcements) => announcements.isEmpty
                 ? Center(
                     child: Padding(
-                      padding: const EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(DesignTokens.spacingXl),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.campaign_outlined, size: 64, color: cs.onSurfaceVariant.withOpacity(0.4)),
+                          Icon(Icons.campaign_outlined, size: 64, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
                           const SizedBox(height: 16),
                           Text('Nenhum aviso publicado', style: theme.textTheme.titleMedium),
                           const SizedBox(height: 8),
@@ -182,7 +183,7 @@ class _AnnouncementFeedView extends StatelessWidget {
                 : RefreshIndicator(
                     onRefresh: () => _onRefresh(context),
                     child: ListView.builder(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(DesignTokens.spacingMd),
                       itemCount: announcements.length,
                       itemBuilder: (context, index) {
                         final a = announcements[index];

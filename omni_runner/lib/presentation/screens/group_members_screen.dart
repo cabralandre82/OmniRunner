@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Full-list view of all members in a coaching group.
 ///
@@ -31,7 +32,7 @@ class GroupMembersScreen extends StatelessWidget {
               ),
             )
           : ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
               itemCount: members.length,
               separatorBuilder: (_, __) =>
                   const Divider(height: 1, indent: 72),
@@ -67,9 +68,9 @@ class _MemberRow extends StatelessWidget {
       CoachingRole.athlete => 'Atleta',
     };
     final roleColor = switch (member.role) {
-      CoachingRole.adminMaster => Colors.amber.shade700,
-      CoachingRole.coach => Colors.deepPurple,
-      CoachingRole.assistant => Colors.blue,
+      CoachingRole.adminMaster => DesignTokens.warning,
+      CoachingRole.coach => DesignTokens.info,
+      CoachingRole.assistant => DesignTokens.primary,
       CoachingRole.athlete => theme.colorScheme.outline,
     };
     final roleIcon = switch (member.role) {
@@ -106,10 +107,10 @@ class _MemberRow extends StatelessWidget {
             ?.copyWith(color: theme.colorScheme.outline),
       ),
       trailing: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 2),
         decoration: BoxDecoration(
           color: roleColor.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
         ),
         child: Text(
           roleLabel,

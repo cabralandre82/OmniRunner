@@ -18,6 +18,7 @@ import 'package:omni_runner/presentation/widgets/success_overlay.dart';
 import 'package:omni_runner/presentation/widgets/contextual_tip_banner.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/presentation/widgets/verification_gate.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class ChallengeCreateScreen extends StatefulWidget {
   final ChallengeType? initialType;
@@ -131,7 +132,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
           }
         },
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Form(
             key: _formKey,
             child: Column(
@@ -365,7 +366,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                         'criar o desafio. O vencedor leva o pool de '
                         'inscrições de todos os participantes.',
                     icon: Icons.monetization_on_rounded,
-                    color: Color(0xFFFFA000),
+                    color: DesignTokens.warning,
                   ),
                 const SizedBox(height: 16),
 
@@ -374,7 +375,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: cs.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -802,15 +803,15 @@ class _GoalCard extends StatelessWidget {
 
     return Material(
       color: selected ? cs.primaryContainer : cs.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
             border: Border.all(
               color: selected ? cs.primary : Colors.transparent,
               width: 2,
@@ -922,7 +923,7 @@ class _MatchmakingBanner extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: 14),
           child: Row(
             children: [
               Container(

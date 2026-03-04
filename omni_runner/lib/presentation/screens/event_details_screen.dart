@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:omni_runner/domain/entities/event_entity.dart';
 import 'package:omni_runner/domain/entities/event_participation_entity.dart';
 import 'package:omni_runner/domain/entities/group_entity.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class EventDetailsScreen extends StatelessWidget {
   final EventEntity event;
@@ -29,7 +30,7 @@ class EventDetailsScreen extends StatelessWidget {
           _InfoCard(event: event),
           if (allParticipations.isNotEmpty) ...[
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingSm),
               child: Text('Participantes (${allParticipations.length})',
                   style: theme.textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.bold)),
@@ -52,10 +53,10 @@ class _BannerSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final statusColor = switch (event.status) {
-      EventStatus.active => Colors.green,
-      EventStatus.upcoming => Colors.blue,
-      EventStatus.completed => Colors.grey,
-      EventStatus.cancelled => Colors.red,
+      EventStatus.active => DesignTokens.success,
+      EventStatus.upcoming => DesignTokens.primary,
+      EventStatus.completed => DesignTokens.textMuted,
+      EventStatus.cancelled => DesignTokens.error,
     };
     final statusLabel = switch (event.status) {
       EventStatus.active => 'Em andamento',
@@ -65,7 +66,7 @@ class _BannerSection extends StatelessWidget {
     };
 
     return Card(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(DesignTokens.spacingMd),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -78,7 +79,7 @@ class _BannerSection extends StatelessWidget {
                   height: 48,
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   ),
                   child: Icon(
                     event.createdBySystem ? Icons.star : Icons.event,
@@ -97,10 +98,10 @@ class _BannerSection extends StatelessWidget {
                       const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                            horizontal: DesignTokens.spacingSm, vertical: 2),
                         decoration: BoxDecoration(
                           color: statusColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                         ),
                         child: Text(statusLabel,
                             style: theme.textTheme.labelSmall?.copyWith(
@@ -135,12 +136,12 @@ class _MyProgressCard extends StatelessWidget {
     final theme = Theme.of(context);
     final fraction = participation.progressFraction(event.targetValue);
     final color =
-        participation.completed ? Colors.teal : theme.colorScheme.primary;
+        participation.completed ? DesignTokens.success : theme.colorScheme.primary;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -185,11 +186,11 @@ class _MyProgressCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.check_circle, color: Colors.teal, size: 18),
+                  const Icon(Icons.check_circle, color: DesignTokens.success, size: 18),
                   const SizedBox(width: 6),
                   Text('Meta atingida!',
                       style: theme.textTheme.bodyMedium
-                          ?.copyWith(color: Colors.teal)),
+                          ?.copyWith(color: DesignTokens.success)),
                 ],
               ),
             ],
@@ -216,9 +217,9 @@ class _RewardsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -229,7 +230,7 @@ class _RewardsCard extends StatelessWidget {
             if (rewards.xpCompletion > 0 || rewards.coinsCompletion > 0)
               _RewardRow(
                 icon: Icons.emoji_events,
-                color: Colors.amber,
+                color: DesignTokens.warning,
                 label: 'Completar meta',
                 detail: [
                   if (rewards.xpCompletion > 0) '${rewards.xpCompletion} XP',
@@ -240,14 +241,14 @@ class _RewardsCard extends StatelessWidget {
             if (rewards.xpParticipation > 0)
               _RewardRow(
                 icon: Icons.directions_run,
-                color: Colors.green,
+                color: DesignTokens.success,
                 label: 'Participação',
                 detail: '${rewards.xpParticipation} XP',
               ),
             if (rewards.badgeId != null)
               const _RewardRow(
                 icon: Icons.military_tech,
-                color: Colors.purple,
+                color: DesignTokens.info,
                 label: 'Badge exclusiva',
                 detail: 'Desbloqueada ao completar',
               ),
@@ -275,7 +276,7 @@ class _RewardRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingXs),
       child: Row(
         children: [
           Icon(icon, size: 20, color: color),
@@ -315,9 +316,9 @@ class _InfoCard extends StatelessWidget {
     };
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -388,7 +389,7 @@ class _ParticipantTile extends StatelessWidget {
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: participation.completed
-            ? Colors.teal.withValues(alpha: 0.15)
+            ? DesignTokens.success.withValues(alpha: 0.15)
             : theme.colorScheme.surfaceContainerHighest,
         child: participation.rank != null && participation.rank! > 0
             ? Text('${participation.rank}',
@@ -405,7 +406,7 @@ class _ParticipantTile extends StatelessWidget {
             ?.copyWith(color: theme.colorScheme.outline),
       ),
       trailing: participation.completed
-          ? const Icon(Icons.check_circle, color: Colors.teal, size: 20)
+          ? const Icon(Icons.check_circle, color: DesignTokens.success, size: 20)
           : null,
     );
   }

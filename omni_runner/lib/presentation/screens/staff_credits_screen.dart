@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Staff screen showing the assessoria's OmniCoin inventory,
 /// distribution history, and a CTA to contact the platform.
@@ -98,7 +99,7 @@ class _StaffCreditsScreenState extends State<StaffCreditsScreen> {
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(DesignTokens.spacingMd),
                     children: [
                       _InventoryCard(
                         available: _available,
@@ -139,25 +140,25 @@ class _InventoryCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.amber.shade50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.amber.shade200),
+        color: DesignTokens.warning.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+        border: Border.all(color: DesignTokens.warning.withValues(alpha: 0.25)),
       ),
       child: Column(
         children: [
-          Icon(Icons.toll_rounded, size: 36, color: Colors.amber.shade800),
+          Icon(Icons.toll_rounded, size: 36, color: DesignTokens.warning),
           const SizedBox(height: 8),
           Text(
             '$available',
             style: theme.textTheme.displaySmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.amber.shade900,
+              color: DesignTokens.warning,
             ),
           ),
           Text(
             'OmniCoins disponíveis',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.amber.shade800,
+              color: DesignTokens.warning,
             ),
           ),
           const SizedBox(height: 16),
@@ -168,13 +169,13 @@ class _InventoryCard extends StatelessWidget {
                 label: 'Distribuídos',
                 value: '$issued',
                 icon: Icons.arrow_upward_rounded,
-                color: Colors.green,
+                color: DesignTokens.success,
               ),
               _MiniStat(
                 label: 'Devolvidos',
                 value: '$burned',
                 icon: Icons.arrow_downward_rounded,
-                color: Colors.red.shade400,
+                color: DesignTokens.error,
               ),
             ],
           ),
@@ -223,7 +224,7 @@ class _PortalCta extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(DesignTokens.spacingMd),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(14),
@@ -281,7 +282,7 @@ class _HistorySection extends StatelessWidget {
         const SizedBox(height: 8),
         if (entries.isEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32),
+            padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingXl),
             child: Center(
               child: Text(
                 'Nenhum registro de créditos ainda.',
@@ -325,9 +326,9 @@ class _EntryTile extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
         radius: 18,
-        backgroundColor: Colors.green.withValues(alpha: 0.1),
+        backgroundColor: DesignTokens.success.withValues(alpha: 0.1),
         child: const Icon(Icons.add_circle_outline,
-            color: Colors.green, size: 20),
+            color: DesignTokens.success, size: 20),
       ),
       title: Text('+${entry.credits} OmniCoins'),
       subtitle: Text(

@@ -5,6 +5,7 @@ import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/training_session_entity.dart';
 import 'package:omni_runner/domain/repositories/i_training_session_repo.dart';
 import 'package:omni_runner/domain/usecases/training/create_training_session.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Form to create or edit a training session.
 /// Uses [groupId] and [userId] from constructor; [existing] for edit mode.
@@ -185,7 +186,7 @@ class _StaffTrainingCreateScreenState extends State<StaffTrainingCreateScreen> {
         actions: [
           if (_saving)
             const Padding(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.all(DesignTokens.spacingMd),
               child: SizedBox(
                 width: 24,
                 height: 24,
@@ -275,7 +276,7 @@ class _StaffTrainingCreateScreenState extends State<StaffTrainingCreateScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: cs.errorContainer,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                 ),
                 child: Row(
                   children: [
@@ -305,7 +306,7 @@ class _StaffTrainingCreateScreenState extends State<StaffTrainingCreateScreen> {
                   : const Icon(Icons.check),
               label: Text(_saving ? 'Salvando...' : 'Salvar treino'),
               style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
               ),
             ),
           ],

@@ -11,6 +11,7 @@ import 'package:omni_runner/domain/repositories/i_friendship_repo.dart';
 import 'package:omni_runner/presentation/widgets/cached_avatar.dart';
 import 'package:omni_runner/domain/usecases/social/send_friend_invite.dart';
 import 'package:uuid/uuid.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 const _tag = 'FriendProfileScreen';
 
@@ -105,7 +106,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
-                    padding: const EdgeInsets.only(bottom: 32),
+                    padding: const EdgeInsets.only(bottom: DesignTokens.spacingXl),
                     children: [
                       _ProfileHeader(profile: _profile!, progress: _progress),
                       _FriendActionButton(
@@ -173,28 +174,28 @@ class _FriendActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     if (status == 'accepted') {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingSm),
         child: Chip(
-          avatar: const Icon(Icons.check_circle, color: Colors.green, size: 18),
+          avatar: const Icon(Icons.check_circle, color: DesignTokens.success, size: 18),
           label: const Text('Amigos'),
-          backgroundColor: Colors.green.shade50,
+          backgroundColor: DesignTokens.success,
         ),
       );
     }
 
     if (status == 'pending') {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingSm),
         child: Chip(
-          avatar: const Icon(Icons.hourglass_top, color: Colors.orange, size: 18),
+          avatar: const Icon(Icons.hourglass_top, color: DesignTokens.warning, size: 18),
           label: const Text('Convite pendente'),
-          backgroundColor: Colors.orange.shade50,
+          backgroundColor: DesignTokens.warning,
         ),
       );
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingSm),
       child: SizedBox(
         width: double.infinity,
         child: FilledButton.icon(
@@ -232,7 +233,7 @@ class _ProfileHeader extends StatelessWidget {
     final level = _levelFromXp(totalXp);
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(DesignTokens.spacingLg),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [cs.primaryContainer, cs.surface],
@@ -254,10 +255,10 @@ class _ProfileHeader extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: DesignTokens.spacingXs),
             decoration: BoxDecoration(
               color: cs.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
             ),
             child: Text(
               'Nível $level · $totalXp XP',
@@ -302,9 +303,9 @@ class _DnaPreview extends StatelessWidget {
     final scores = dna['radar_scores'] as Map<String, dynamic>? ?? {};
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingSm),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -378,9 +379,9 @@ class _SocialLinks extends StatelessWidget {
     }
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -425,9 +426,9 @@ class _SocialRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
       child: InkWell(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
         onTap: () async {
           final uri = Uri.parse(url);
           if (await canLaunchUrl(uri)) {
@@ -435,7 +436,7 @@ class _SocialRow extends StatelessWidget {
           }
         },
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: DesignTokens.spacingXs),
           child: Row(
             children: [
               Icon(icon, size: 20, color: cs.primary),
@@ -474,9 +475,9 @@ class _StatsCard extends StatelessWidget {
     final streak = progress!['streak_best'] as int? ?? 0;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -514,7 +515,7 @@ class _MiniStat extends StatelessWidget {
             style:
                 const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         Text(label,
-            style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            style: const TextStyle(fontSize: 11, color: DesignTokens.textMuted)),
       ],
     );
   }

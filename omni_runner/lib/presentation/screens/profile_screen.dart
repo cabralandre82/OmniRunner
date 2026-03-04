@@ -13,6 +13,7 @@ import 'package:omni_runner/domain/repositories/i_profile_repo.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/widgets/cached_avatar.dart';
 import 'package:omni_runner/presentation/screens/auth_gate.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Screen showing the user's Supabase profile with editable display_name.
 class ProfileScreen extends StatefulWidget {
@@ -207,7 +208,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        icon: Icon(Icons.logout_rounded, color: Colors.red.shade600, size: 40),
+        icon: Icon(Icons.logout_rounded, color: DesignTokens.error, size: 40),
         title: const Text('Sair da conta?'),
         content: const Text(
           'Você será redirecionado para a tela de login. '
@@ -219,7 +220,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: DesignTokens.error),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Sair'),
           ),
@@ -246,7 +247,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        icon: Icon(Icons.warning_rounded, color: Colors.red.shade700, size: 40),
+        icon: Icon(Icons.warning_rounded, color: DesignTokens.error, size: 40),
         title: const Text('Excluir conta permanentemente?'),
         content: const Text(
           'Todos os seus dados serão apagados permanentemente: '
@@ -259,7 +260,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: DesignTokens.error),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Excluir conta'),
           ),
@@ -325,7 +326,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(DesignTokens.spacingMd),
               children: [
                 // ── Avatar ──
                 Center(
@@ -348,7 +349,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 : _pickAndUploadAvatar,
                             customBorder: const CircleBorder(),
                             child: Padding(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(DesignTokens.spacingSm),
                               child: _uploadingAvatar
                                   ? const SizedBox(
                                       width: 16,
@@ -462,19 +463,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 if (_error != null) ...[
                   const SizedBox(height: 16),
                   Card(
-                    color: Colors.red.shade50,
+                    color: DesignTokens.error,
                     child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Row(
                         children: [
                           Icon(Icons.error_outline,
-                              color: Colors.red.shade700, size: 20),
+                              color: DesignTokens.error, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _error!,
                               style: TextStyle(
-                                  color: Colors.red.shade800, fontSize: 13),
+                                  color: DesignTokens.error, fontSize: 13),
                             ),
                           ),
                         ],
@@ -495,8 +496,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: const Icon(Icons.logout_rounded),
                       label: Text(context.l10n.logout),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
+                        foregroundColor: DesignTokens.error,
+                        side: const BorderSide(color: DesignTokens.error),
                       ),
                     ),
                   ),
@@ -508,7 +509,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: const Icon(Icons.delete_forever_rounded, size: 18),
                       label: Text(context.l10n.delete),
                       style: TextButton.styleFrom(
-                        foregroundColor: Colors.red.shade300,
+                        foregroundColor: DesignTokens.error,
                       ),
                     ),
                   ),

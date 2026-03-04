@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class SupportTicketScreen extends StatefulWidget {
   final String ticketId;
@@ -144,7 +145,7 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
                       )
                     : ListView.builder(
                         controller: _scrollCtrl,
-                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                        padding: const EdgeInsets.fromLTRB(12, 12, 12, DesignTokens.spacingSm),
                         itemCount: _messages.length,
                         itemBuilder: (ctx, i) => _MessageBubble(
                           message: _messages[i],
@@ -154,8 +155,7 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
           ),
           if (!isClosed)
             Container(
-              padding: EdgeInsets.fromLTRB(
-                  12, 8, 12, MediaQuery.of(context).padding.bottom + 8),
+              padding: EdgeInsets.fromLTRB(12, DesignTokens.spacingSm, 12, MediaQuery.of(context).padding.bottom + 8),
               decoration: BoxDecoration(
                 color: theme.scaffoldBackgroundColor,
                 border: Border(
@@ -169,10 +169,10 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
                       decoration: InputDecoration(
                         hintText: 'Escreva sua mensagem...',
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
+                            horizontal: DesignTokens.spacingMd, vertical: 10),
                         isDense: true,
                       ),
                       textCapitalization: TextCapitalization.sentences,
@@ -198,7 +198,7 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
             )
           else
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(DesignTokens.spacingMd),
               color: cs.surfaceContainerHighest,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -240,13 +240,13 @@ class _MessageBubble extends StatelessWidget {
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.78,
         ),
-        margin: const EdgeInsets.only(bottom: 8),
+        margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: isMe
               ? cs.primaryContainer
               : isPlatform
-                  ? (isDark ? Colors.blue.shade900.withValues(alpha: 0.4) : Colors.blue.shade50)
+                  ? (isDark ? DesignTokens.primary.withValues(alpha: 0.4) : DesignTokens.primary)
                   : cs.surfaceContainerHighest,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
@@ -261,20 +261,20 @@ class _MessageBubble extends StatelessWidget {
           children: [
             if (isPlatform)
               Padding(
-                padding: const EdgeInsets.only(bottom: 4),
+                padding: const EdgeInsets.only(bottom: DesignTokens.spacingXs),
                 child: Text(
                   'Equipe Omni Runner',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.blue.shade300 : Colors.blue.shade700,
+                    color: isDark ? DesignTokens.primary : DesignTokens.primary,
                   ),
                 ),
               ),
             Text(body, style: const TextStyle(fontSize: 14, height: 1.4)),
             if (createdAt != null)
               Padding(
-                padding: const EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.only(top: DesignTokens.spacingXs),
                 child: Text(
                   _formatTime(createdAt),
                   style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
@@ -308,28 +308,28 @@ class _StatusChip extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final (Color bg, Color fg, String label) = switch (status) {
       'open' => (
-        isDark ? Colors.orange.shade900.withValues(alpha: 0.4) : Colors.orange.shade100,
-        isDark ? Colors.orange.shade300 : Colors.orange.shade800,
+        isDark ? DesignTokens.warning.withValues(alpha: 0.4) : DesignTokens.warning,
+        isDark ? DesignTokens.warning : DesignTokens.warning,
         'Aberto'),
       'answered' => (
-        isDark ? Colors.blue.shade900.withValues(alpha: 0.4) : Colors.blue.shade100,
-        isDark ? Colors.blue.shade300 : Colors.blue.shade800,
+        isDark ? DesignTokens.primary.withValues(alpha: 0.4) : DesignTokens.primary,
+        isDark ? DesignTokens.primary : DesignTokens.primary,
         'Respondido'),
       'closed' => (
-        isDark ? Colors.grey.shade800 : Colors.grey.shade200,
-        isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+        isDark ? DesignTokens.textPrimary : DesignTokens.surface,
+        isDark ? DesignTokens.textMuted : DesignTokens.textSecondary,
         'Fechado'),
       _ => (
-        isDark ? Colors.grey.shade800 : Colors.grey.shade100,
-        isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+        isDark ? DesignTokens.textPrimary : DesignTokens.surfaceElevated,
+        isDark ? DesignTokens.textMuted : DesignTokens.textSecondary,
         status),
     };
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: DesignTokens.spacingXs),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
       ),
       child: Text(label,
           style:

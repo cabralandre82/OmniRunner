@@ -4,6 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Displays a persistent QR code for an assessoria invite link.
 ///
@@ -72,7 +73,7 @@ class _InviteQrScreenState extends State<InviteQrScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Convite da Assessoria')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingLg, vertical: DesignTokens.spacingXl),
         child: Column(
           children: [
             Icon(
@@ -104,8 +105,8 @@ class _InviteQrScreenState extends State<InviteQrScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                border: Border.all(color: DesignTokens.border),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.06),
@@ -133,10 +134,10 @@ class _InviteQrScreenState extends State<InviteQrScreen> {
 
             // Invite code chip
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: 10),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -191,8 +192,8 @@ class _InviteQrScreenState extends State<InviteQrScreen> {
                                   ? Icons.check_circle
                                   : Icons.cancel,
                               color: _inviteEnabled!
-                                  ? Colors.green
-                                  : Colors.red,
+                                  ? DesignTokens.success
+                                  : DesignTokens.error,
                               size: 28,
                             ),
                             const SizedBox(height: 4),
@@ -201,8 +202,8 @@ class _InviteQrScreenState extends State<InviteQrScreen> {
                               style: theme.textTheme.bodySmall?.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: _inviteEnabled!
-                                    ? Colors.green
-                                    : Colors.red,
+                                    ? DesignTokens.success
+                                    : DesignTokens.error,
                               ),
                             ),
                           ],
@@ -224,7 +225,7 @@ class _InviteQrScreenState extends State<InviteQrScreen> {
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                       ),
                     ),
                   ),
@@ -238,7 +239,7 @@ class _InviteQrScreenState extends State<InviteQrScreen> {
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                       ),
                     ),
                   ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/athlete_baseline_entity.dart';
 import 'package:omni_runner/domain/entities/athlete_trend_entity.dart';
 import 'package:omni_runner/domain/entities/evolution_metric_entity.dart';
@@ -67,7 +68,7 @@ class AthleteEvolutionScreen extends StatelessWidget {
             ),
           AthleteEvolutionError(:final message) => Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(DesignTokens.spacingLg),
                 child: Text(
                   message,
                   textAlign: TextAlign.center,
@@ -114,11 +115,11 @@ class _PeriodFilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 12, DesignTokens.spacingMd, 0),
       child: Row(
         children: EvolutionPeriod.values.map((p) {
           return Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: DesignTokens.spacingSm),
             child: ChoiceChip(
               label: Text(_periodLabel(p)),
               selected: p == selected,
@@ -147,13 +148,13 @@ class _MetricFilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingSm, DesignTokens.spacingMd, DesignTokens.spacingSm),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: EvolutionMetric.values.map((m) {
             return Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: DesignTokens.spacingSm),
               child: ChoiceChip(
                 label: Text(_metricLabel(m)),
                 selected: m == selected,
@@ -201,7 +202,7 @@ class _EvolutionContent extends StatelessWidget {
       return const _EmptyState();
     }
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingSm),
       children: [
         if (selectedTrend != null) _TrendCard(trend: selectedTrend!),
         if (selectedBaseline != null) ...[
@@ -232,7 +233,7 @@ class _TrendCard extends StatelessWidget {
     return Card(
       elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -253,7 +254,7 @@ class _TrendCard extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: _directionColor(trend.direction, cs).withAlpha(25),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 ),
                 child: Text(
                   _formatChangePercent(trend),
@@ -312,7 +313,7 @@ class _TrendCard extends StatelessWidget {
       };
 
   static Color _directionColor(TrendDirection d, ColorScheme cs) => switch (d) {
-        TrendDirection.improving => Colors.green,
+        TrendDirection.improving => DesignTokens.success,
         TrendDirection.stable => cs.primary,
         TrendDirection.declining => cs.error,
         TrendDirection.insufficient => cs.outline,
@@ -333,7 +334,7 @@ class _BaselineCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -447,7 +448,7 @@ class _MiniTrendChip extends StatelessWidget {
       ),
       backgroundColor: color.withAlpha(20),
       side: BorderSide.none,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingXs),
     );
   }
 

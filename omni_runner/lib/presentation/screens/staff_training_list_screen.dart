@@ -12,6 +12,7 @@ import 'package:omni_runner/presentation/blocs/training_list/training_list_state
 import 'package:omni_runner/presentation/screens/staff_training_create_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_training_detail_screen.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// List of training sessions for the current group (upcoming and past).
 /// Requires [groupId] and wraps with [TrainingListBloc] at navigation.
@@ -88,7 +89,7 @@ class _StaffTrainingListView extends StatelessWidget {
               const ShimmerListLoader(),
             TrainingListError(:final message) => Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(DesignTokens.spacingLg),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -128,7 +129,7 @@ class _StaffTrainingListView extends StatelessWidget {
                           .add(const RefreshTrainingSessions());
                     },
                     child: ListView.builder(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(DesignTokens.spacingMd),
                       itemCount: sessions.length,
                       itemBuilder: (context, index) {
                         final session = sessions[index];
@@ -154,7 +155,7 @@ class _StaffTrainingListView extends StatelessWidget {
   Widget _buildEmpty(ThemeData theme) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -202,9 +203,9 @@ class _TrainingSessionCard extends StatelessWidget {
     final cs = theme.colorScheme;
 
     final statusColor = switch (session.status) {
-      TrainingSessionStatus.scheduled => Colors.blue,
-      TrainingSessionStatus.done => Colors.green,
-      TrainingSessionStatus.cancelled => Colors.red,
+      TrainingSessionStatus.scheduled => DesignTokens.primary,
+      TrainingSessionStatus.done => DesignTokens.success,
+      TrainingSessionStatus.cancelled => DesignTokens.error,
     };
 
     final statusLabel = switch (session.status) {
@@ -217,9 +218,9 @@ class _TrainingSessionCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -236,16 +237,16 @@ class _TrainingSessionCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
-                      vertical: 4,
+                      vertical: DesignTokens.spacingXs,
                     ),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                     ),
                     child: Text(
                       statusLabel,
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: statusColor.shade700,
+                        color: statusColor,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

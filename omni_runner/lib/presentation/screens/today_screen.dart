@@ -86,6 +86,7 @@ import 'package:omni_runner/presentation/widgets/run_share_card.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class TodayScreen extends StatefulWidget {
   final bool isVisible;
@@ -390,7 +391,7 @@ class _TodayScreenState extends State<TodayScreen> {
       ),
       body: _loading
           ? Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 12, DesignTokens.spacingMd, DesignTokens.spacingLg),
               child: ShimmerLoading(
                 child: Column(
                   children: [
@@ -398,31 +399,31 @@ class _TodayScreenState extends State<TodayScreen> {
                     Container(
                       height: 80,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(16),
+                        color: DesignTokens.textMuted,
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                       ),
                     ),
                     const SizedBox(height: 14),
                     Container(
                       height: 120,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(16),
+                        color: DesignTokens.textMuted,
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                       ),
                     ),
                     const SizedBox(height: 14),
                     Container(
                       height: 160,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(16),
+                        color: DesignTokens.textMuted,
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                       ),
                     ),
                     const SizedBox(height: 14),
                     Container(
                       height: 80,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
+                        color: DesignTokens.textMuted,
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
@@ -433,7 +434,7 @@ class _TodayScreenState extends State<TodayScreen> {
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 12, DesignTokens.spacingMd, DesignTokens.spacingLg),
                 children: [
                   const TipBanner(
                     tipKey: TipKey.stravaConnect,
@@ -550,11 +551,7 @@ class _TodayScreenState extends State<TodayScreen> {
       context: context,
       isScrollControlled: true,
       builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          24,
-          24,
-          24,
-          MediaQuery.of(ctx).viewInsets.bottom + 24,
+        padding: EdgeInsets.fromLTRB(DesignTokens.spacingLg, DesignTokens.spacingLg, DesignTokens.spacingLg, MediaQuery.of(ctx).viewInsets.bottom + 24,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -618,7 +615,7 @@ class _TodayScreenState extends State<TodayScreen> {
     const moods = ['😴', '😐', '😊', '💪', '🔥'];
     return moods
         .map((m) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingXs),
               child: GestureDetector(
                 onTap: () {},
                 child: Text(m, style: const TextStyle(fontSize: 24)),
@@ -645,27 +642,27 @@ class _StreakBanner extends StatelessWidget {
 
     final isActive = streak > 0;
     final streakColor =
-        isActive ? Colors.orange.shade700 : Colors.grey.shade500;
+        isActive ? DesignTokens.warning : DesignTokens.textMuted;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(DesignTokens.spacingMd),
       decoration: BoxDecoration(
         gradient: isActive
             ? LinearGradient(
                 colors: [
-                  Colors.orange.shade100,
-                  Colors.red.shade50,
+                  DesignTokens.warning,
+                  DesignTokens.error,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
             : null,
-        color: isActive ? null : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(16),
+        color: isActive ? null : DesignTokens.surfaceElevated,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         border: Border.all(
           color: isActive
-              ? Colors.orange.shade300
-              : Colors.grey.shade300,
+              ? DesignTokens.warning
+              : DesignTokens.textMuted,
           width: isActive ? 1.5 : 1,
         ),
       ),
@@ -706,7 +703,7 @@ class _StreakBanner extends StatelessWidget {
                       Tooltip(
                         message: 'Freeze disponível: protege 1 dia sem correr',
                         child: Icon(Icons.ac_unit,
-                            size: 16, color: Colors.blue.shade400),
+                            size: 16, color: DesignTokens.primary),
                       ),
                     ],
                   ],
@@ -756,9 +753,9 @@ class _StreakMilestones extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: progress,
                   minHeight: 6,
-                  backgroundColor: Colors.orange.shade100,
+                  backgroundColor: DesignTokens.warning,
                   valueColor:
-                      AlwaysStoppedAnimation(Colors.orange.shade600),
+                      AlwaysStoppedAnimation(DesignTokens.warning),
                 ),
               ),
             ),
@@ -768,7 +765,7 @@ class _StreakMilestones extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: Colors.orange.shade700,
+                color: DesignTokens.warning,
               ),
             ),
           ],
@@ -776,7 +773,7 @@ class _StreakMilestones extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           'Próximo marco: $next dias → +${_xpForMilestone(next)} XP',
-          style: TextStyle(fontSize: 10, color: Colors.orange.shade600),
+          style: TextStyle(fontSize: 10, color: DesignTokens.warning),
         ),
       ],
     );
@@ -817,30 +814,30 @@ class _BoraCorrerCard extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(DesignTokens.spacingMd),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: ranToday
-              ? [Colors.green.shade100, Colors.teal.shade50]
+              ? [DesignTokens.success, DesignTokens.success]
               : [cs.primaryContainer, cs.tertiaryContainer],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
       ),
       child: Column(
         children: [
           Icon(
             ranToday ? Icons.check_circle_rounded : Icons.directions_run,
             size: 40,
-            color: ranToday ? Colors.green.shade700 : cs.primary,
+            color: ranToday ? DesignTokens.success : cs.primary,
           ),
           const SizedBox(height: 8),
           Text(
             ranToday ? 'Boa! Você já correu hoje!' : 'Bora correr?',
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              color: ranToday ? Colors.green.shade800 : null,
+              color: ranToday ? DesignTokens.success : null,
             ),
           ),
           const SizedBox(height: 4),
@@ -861,10 +858,10 @@ class _BoraCorrerCard extends StatelessWidget {
 
   Widget _buildStravaPrompt(BuildContext context, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(DesignTokens.spacingMd),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF3E0),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         border: Border.all(color: const Color(0xFFFFCC80)),
       ),
       child: Column(
@@ -873,7 +870,7 @@ class _BoraCorrerCard extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: const Color(0xFFFC4C02),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
             ),
             child: const Icon(Icons.watch, color: Colors.white, size: 28),
           ),
@@ -903,7 +900,7 @@ class _BoraCorrerCard extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFFC4C02),
               padding: const EdgeInsets.symmetric(
-                  horizontal: 24, vertical: 12),
+                  horizontal: DesignTokens.spacingLg, vertical: 12),
             ),
           ),
         ],
@@ -946,13 +943,13 @@ class _RunRecapCard extends StatelessWidget {
 
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 14, DesignTokens.spacingMd, 10),
             decoration: BoxDecoration(
               color: cs.primaryContainer.withValues(alpha: 0.4),
               borderRadius: const BorderRadius.vertical(
@@ -988,7 +985,7 @@ class _RunRecapCard extends StatelessWidget {
 
           // Metrics
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 12, DesignTokens.spacingMd, DesignTokens.spacingXs),
             child: Row(
               children: [
                 _MetricTile(
@@ -1012,10 +1009,10 @@ class _RunRecapCard extends StatelessWidget {
 
           if (run.avgBpm != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+              padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 0, DesignTokens.spacingMd, DesignTokens.spacingXs),
               child: Row(
                 children: [
-                  Icon(Icons.favorite, size: 14, color: Colors.red.shade400),
+                  Icon(Icons.favorite, size: 14, color: DesignTokens.error),
                   const SizedBox(width: 4),
                   Text(
                     'FC média: ${run.avgBpm} bpm',
@@ -1041,7 +1038,7 @@ class _RunRecapCard extends StatelessWidget {
 
           // Action buttons
           Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+            padding: const EdgeInsets.fromLTRB(DesignTokens.spacingSm, DesignTokens.spacingXs, DesignTokens.spacingSm, DesignTokens.spacingSm),
             child: Row(
               children: [
                 TextButton.icon(
@@ -1155,10 +1152,10 @@ class _ComparisonRow extends StatelessWidget {
     }
 
     final color = paceImproved
-        ? Colors.green.shade700
+        ? DesignTokens.success
         : paceWorsened
-            ? Colors.orange.shade700
-            : Colors.blue.shade700;
+            ? DesignTokens.warning
+            : DesignTokens.primary;
     final icon = paceImproved
         ? Icons.trending_up
         : paceWorsened
@@ -1166,9 +1163,9 @@ class _ComparisonRow extends StatelessWidget {
             : Icons.trending_flat;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingXs, DesignTokens.spacingMd, DesignTokens.spacingXs),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: DesignTokens.spacingSm),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(10),
@@ -1280,10 +1277,10 @@ class _StatChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 6),
         decoration: BoxDecoration(
           color: color.shade50,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1325,7 +1322,7 @@ class _ParkCheckinCard extends StatelessWidget {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      color: Colors.green.shade50,
+      color: DesignTokens.success,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
@@ -1336,10 +1333,10 @@ class _ParkCheckinCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade200,
-                  borderRadius: BorderRadius.circular(12),
+                  color: DesignTokens.success,
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 ),
-                child: Icon(Icons.park, color: Colors.green.shade800, size: 24),
+                child: Icon(Icons.park, color: DesignTokens.success, size: 24),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -1350,19 +1347,19 @@ class _ParkCheckinCard extends StatelessWidget {
                       'Check-in: ${park.name}',
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.green.shade800,
+                        color: DesignTokens.success,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'Toque para ver o ranking e quem mais corre aqui',
                       style: TextStyle(
-                          fontSize: 12, color: Colors.green.shade700),
+                          fontSize: 12, color: DesignTokens.success),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: Colors.green.shade700),
+              Icon(Icons.chevron_right, color: DesignTokens.success),
             ],
           ),
         ),
@@ -1391,7 +1388,7 @@ class _ActiveChallengesCard extends StatelessWidget {
 
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
       color: cs.primaryContainer.withValues(alpha: 0.35),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -1421,7 +1418,7 @@ class _ActiveChallengesCard extends StatelessWidget {
                 )),
             if (challenges.length > 3)
               Padding(
-                padding: const EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.only(top: DesignTokens.spacingXs),
                 child: Text(
                   '+${challenges.length - 3} mais',
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -1458,8 +1455,8 @@ class _ActiveChallengeRow extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        margin: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: DesignTokens.spacingSm),
+        margin: const EdgeInsets.only(bottom: DesignTokens.spacingXs),
         decoration: BoxDecoration(
           color: cs.surface.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(10),
@@ -1499,7 +1496,7 @@ class _ActiveChallengeRow extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.amber.shade50,
+                  color: DesignTokens.warning,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -1507,7 +1504,7 @@ class _ActiveChallengeRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: Colors.amber.shade800,
+                    color: DesignTokens.warning,
                   ),
                 ),
               ),
@@ -1561,11 +1558,11 @@ class _ActiveChampionshipsCard extends StatelessWidget {
 
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: Colors.orange.shade50,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
+      color: DesignTokens.warning,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
@@ -1573,11 +1570,11 @@ class _ActiveChampionshipsCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade200,
-                  borderRadius: BorderRadius.circular(12),
+                  color: DesignTokens.warning,
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 ),
                 child: Icon(Icons.emoji_events_rounded,
-                    color: Colors.orange.shade800, size: 24),
+                    color: DesignTokens.warning, size: 24),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -1590,7 +1587,7 @@ class _ActiveChampionshipsCard extends StatelessWidget {
                           : '${championships.length} campeonatos ativos',
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.orange.shade800,
+                        color: DesignTokens.warning,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1600,14 +1597,14 @@ class _ActiveChampionshipsCard extends StatelessWidget {
                           .map((c) => c['name'] as String? ?? 'Campeonato')
                           .join(', '),
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.orange.shade700,
+                        color: DesignTokens.warning,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: Colors.orange.shade700),
+              Icon(Icons.chevron_right, color: DesignTokens.warning),
             ],
           ),
         ),

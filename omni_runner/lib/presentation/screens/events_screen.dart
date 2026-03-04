@@ -6,6 +6,7 @@ import 'package:omni_runner/presentation/blocs/events/events_bloc.dart';
 import 'package:omni_runner/presentation/blocs/events/events_event.dart';
 import 'package:omni_runner/presentation/blocs/events/events_state.dart';
 import 'package:omni_runner/l10n/l10n.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class EventsScreen extends StatelessWidget {
   const EventsScreen({super.key});
@@ -33,7 +34,7 @@ class EventsScreen extends StatelessWidget {
           EventsLoaded() => _body(context, state),
           EventsError(:final message) => Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(DesignTokens.spacingLg),
                 child: Text(message,
                     textAlign: TextAlign.center,
                     style:
@@ -59,7 +60,7 @@ class EventsScreen extends StatelessWidget {
               title: 'Em andamento',
               count: state.activeEvents.length,
               icon: Icons.directions_run,
-              color: Colors.green),
+              color: DesignTokens.success),
           ...state.activeEvents.map((e) =>
               _EventCard(event: e, participation: state.participations[e.id])),
         ],
@@ -68,7 +69,7 @@ class EventsScreen extends StatelessWidget {
               title: 'Em breve',
               count: state.upcomingEvents.length,
               icon: Icons.schedule,
-              color: Colors.blue),
+              color: DesignTokens.primary),
           ...state.upcomingEvents.map((e) =>
               _EventCard(event: e, participation: state.participations[e.id])),
         ],
@@ -77,7 +78,7 @@ class EventsScreen extends StatelessWidget {
               title: 'Encerrados',
               count: state.completedEvents.length,
               icon: Icons.check_circle,
-              color: Colors.grey),
+              color: DesignTokens.textMuted),
           ...state.completedEvents.map((e) =>
               _EventCard(event: e, participation: state.participations[e.id])),
         ],
@@ -126,7 +127,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingSm),
       child: Row(
         children: [
           Icon(icon, size: 20, color: color),
@@ -136,7 +137,7 @@ class _SectionHeader extends StatelessWidget {
                   ?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(width: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 2),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
@@ -162,19 +163,19 @@ class _EventCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isJoined = participation != null;
     final statusColor = switch (event.status) {
-      EventStatus.active => Colors.green,
-      EventStatus.upcoming => Colors.blue,
-      EventStatus.completed => Colors.grey,
-      EventStatus.cancelled => Colors.red,
+      EventStatus.active => DesignTokens.success,
+      EventStatus.upcoming => DesignTokens.primary,
+      EventStatus.completed => DesignTokens.textMuted,
+      EventStatus.cancelled => DesignTokens.error,
     };
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         onTap: () {},
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -185,7 +186,7 @@ class _EventCard extends StatelessWidget {
                     height: 44,
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                     ),
                     child: Icon(
                       event.createdBySystem ? Icons.star : Icons.event,
@@ -215,14 +216,14 @@ class _EventCard extends StatelessWidget {
                   if (isJoined)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                          horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
                       decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        color: DesignTokens.success.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                       ),
                       child: Text('Inscrito',
                           style: theme.textTheme.labelSmall?.copyWith(
-                              color: Colors.green,
+                              color: DesignTokens.success,
                               fontWeight: FontWeight.bold)),
                     ),
                 ],
@@ -278,7 +279,7 @@ class _ProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = completed ? Colors.teal : theme.colorScheme.primary;
+    final color = completed ? DesignTokens.success : theme.colorScheme.primary;
     return Column(
       children: [
         ClipRRect(
@@ -313,10 +314,10 @@ class _InfoChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

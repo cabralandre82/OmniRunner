@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/repositories/i_training_attendance_repo.dart';
 import 'package:omni_runner/presentation/blocs/checkin/checkin_bloc.dart';
 import 'package:omni_runner/presentation/blocs/checkin/checkin_event.dart';
@@ -81,7 +82,7 @@ class _AthleteCheckinQrScreenState extends State<AthleteCheckinQrScreen> {
     final theme = Theme.of(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(DesignTokens.spacingLg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -136,7 +137,7 @@ class _AthleteCheckinQrScreenState extends State<AthleteCheckinQrScreen> {
     final seconds = displaySeconds % 60;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(DesignTokens.spacingLg),
       child: Column(
         children: [
           Text(
@@ -150,8 +151,8 @@ class _AthleteCheckinQrScreenState extends State<AthleteCheckinQrScreen> {
             decoration: BoxDecoration(
               color: expired
                   ? theme.colorScheme.errorContainer
-                  : Colors.green.shade50,
-              borderRadius: BorderRadius.circular(8),
+                  : DesignTokens.success.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -159,7 +160,7 @@ class _AthleteCheckinQrScreenState extends State<AthleteCheckinQrScreen> {
                 Icon(
                   expired ? Icons.timer_off : Icons.timer,
                   size: 18,
-                  color: expired ? theme.colorScheme.error : Colors.green.shade700,
+                  color: expired ? theme.colorScheme.error : DesignTokens.success,
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -168,7 +169,7 @@ class _AthleteCheckinQrScreenState extends State<AthleteCheckinQrScreen> {
                       : 'Expira em ${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: expired ? theme.colorScheme.error : Colors.green.shade700,
+                    color: expired ? theme.colorScheme.error : DesignTokens.success,
                   ),
                 ),
               ],
@@ -181,7 +182,7 @@ class _AthleteCheckinQrScreenState extends State<AthleteCheckinQrScreen> {
               height: 200,
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
               ),
               child: Center(
                 child: Column(
@@ -207,10 +208,10 @@ class _AthleteCheckinQrScreenState extends State<AthleteCheckinQrScreen> {
             )
           else
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(DesignTokens.spacingMd),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 boxShadow: [
                   BoxShadow(
                     color: theme.colorScheme.shadow.withValues(alpha: 0.1),
@@ -252,7 +253,7 @@ class _AthleteCheckinQrScreenState extends State<AthleteCheckinQrScreen> {
     final theme = Theme.of(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(DesignTokens.spacingLg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

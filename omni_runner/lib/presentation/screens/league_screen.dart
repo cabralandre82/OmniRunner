@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/l10n/l10n.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 const _tag = 'LeagueScreen';
 
@@ -115,7 +116,7 @@ class _LeagueScreenState extends State<LeagueScreen> {
     if (_error != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(DesignTokens.spacingXl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -137,11 +138,11 @@ class _LeagueScreenState extends State<LeagueScreen> {
     if (_season == null) {
       return const Center(
         child: Padding(
-          padding: EdgeInsets.all(32),
+          padding: EdgeInsets.all(DesignTokens.spacingXl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.emoji_events_rounded, size: 64, color: Colors.grey),
+              Icon(Icons.emoji_events_rounded, size: 64, color: DesignTokens.textMuted),
               SizedBox(height: 16),
               Text(
                 'Nenhuma temporada ativa',
@@ -151,7 +152,7 @@ class _LeagueScreenState extends State<LeagueScreen> {
               Text(
                 'A próxima temporada da liga será anunciada em breve.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: DesignTokens.textMuted),
               ),
             ],
           ),
@@ -162,11 +163,11 @@ class _LeagueScreenState extends State<LeagueScreen> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
-        padding: const EdgeInsets.only(bottom: 32),
+        padding: const EdgeInsets.only(bottom: DesignTokens.spacingXl),
         children: [
           _SeasonHeader(season: _season!),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
             child: Row(
               children: [
                 _ScopeChip(
@@ -194,13 +195,13 @@ class _LeagueScreenState extends State<LeagueScreen> {
           const _HowItWorksCard(),
           if (_ranking.isEmpty)
             Padding(
-              padding: const EdgeInsets.all(32),
+              padding: const EdgeInsets.all(DesignTokens.spacingXl),
               child: Text(
                 _scope == 'state'
                     ? 'Nenhuma assessoria do seu estado participou ainda.'
                     : 'O ranking será atualizado semanalmente.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.grey),
+                style: const TextStyle(color: DesignTokens.textMuted),
               ),
             )
           else
@@ -230,13 +231,13 @@ class _SeasonHeader extends StatelessWidget {
     final remainingDays = ((endMs - now) / 86400000).ceil();
 
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(DesignTokens.spacingMd),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF1A237E), Color(0xFF4A148C)],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,7 +245,7 @@ class _SeasonHeader extends StatelessWidget {
           Row(
             children: [
               const Icon(Icons.emoji_events_rounded,
-                  color: Colors.amberAccent, size: 28),
+                  color: DesignTokens.warning, size: 28),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -300,10 +301,10 @@ class _MyContributionCard extends StatelessWidget {
     final groupName = myEntry?['group_name'] as String? ?? 'Sua assessoria';
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       color: cs.primaryContainer,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -368,7 +369,7 @@ class _ContribStat extends StatelessWidget {
           value,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label, style: const TextStyle(fontSize: 12, color: DesignTokens.textMuted)),
       ],
     );
   }
@@ -385,7 +386,7 @@ class _HowItWorksCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       color: cs.secondaryContainer.withValues(alpha: 0.3),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -493,34 +494,34 @@ class _RankingTile extends StatelessWidget {
         rankDelta = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.arrow_upward_rounded, size: 12, color: Colors.green),
-            Text('$diff', style: const TextStyle(fontSize: 11, color: Colors.green)),
+            const Icon(Icons.arrow_upward_rounded, size: 12, color: DesignTokens.success),
+            Text('$diff', style: const TextStyle(fontSize: 11, color: DesignTokens.success)),
           ],
         );
       } else {
         rankDelta = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.arrow_downward_rounded, size: 12, color: Colors.red),
-            Text('${diff.abs()}', style: const TextStyle(fontSize: 11, color: Colors.red)),
+            const Icon(Icons.arrow_downward_rounded, size: 12, color: DesignTokens.error),
+            Text('${diff.abs()}', style: const TextStyle(fontSize: 11, color: DesignTokens.error)),
           ],
         );
       }
     }
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: 3),
       decoration: BoxDecoration(
         color: isMyGroup
             ? cs.primaryContainer.withValues(alpha: 0.5)
             : cs.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         border: isMyGroup
             ? Border.all(color: cs.primary, width: 2)
             : null,
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: DesignTokens.spacingXs),
         leading: rankWidget,
         title: Row(
           children: [
@@ -564,7 +565,7 @@ class _RankingTile extends StatelessWidget {
                 color: cs.primary,
               ),
             ),
-            const Text('pts', style: TextStyle(fontSize: 10, color: Colors.grey)),
+            const Text('pts', style: TextStyle(fontSize: 10, color: DesignTokens.textMuted)),
           ],
         ),
       ),

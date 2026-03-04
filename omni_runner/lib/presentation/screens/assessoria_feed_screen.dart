@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/feed_item_entity.dart';
 import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_bloc.dart';
 import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_event.dart';
@@ -75,13 +76,13 @@ class _FeedList extends StatelessWidget {
           return false;
         },
         child: ListView.separated(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
           itemCount: items.length + (loadingMore ? 1 : 0),
           separatorBuilder: (_, __) => const Divider(height: 1, indent: 72),
           itemBuilder: (context, index) {
             if (index == items.length) {
               return const Padding(
-                padding: EdgeInsets.all(16),
+                padding: EdgeInsets.all(DesignTokens.spacingMd),
                 child: Center(
                   child: SizedBox(
                     width: 20,
@@ -138,7 +139,7 @@ class _FeedTile extends StatelessWidget {
           ),
         ),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
     );
   }
 
@@ -150,37 +151,37 @@ class _FeedTile extends StatelessWidget {
     return switch (item.eventType) {
       FeedEventType.sessionCompleted => (
           Icons.directions_run,
-          Colors.blue,
+          DesignTokens.primary,
           _sessionText(name, p),
         ),
       FeedEventType.challengeWon => (
           Icons.emoji_events,
-          Colors.amber.shade700,
+          DesignTokens.warning,
           '$name venceu um desafio!',
         ),
       FeedEventType.badgeUnlocked => (
           Icons.military_tech,
-          Colors.purple,
+          DesignTokens.info,
           '$name desbloqueou "${p['badge_name'] ?? 'uma conquista'}"',
         ),
       FeedEventType.championshipStarted => (
           Icons.flag,
-          Colors.teal,
+          DesignTokens.success,
           'Campeonato "${p['championship_name'] ?? ''}" começou!',
         ),
       FeedEventType.streakMilestone => (
           Icons.local_fire_department,
-          Colors.orange,
+          DesignTokens.warning,
           '$name atingiu ${p['streak_days'] ?? '?'} dias de sequência!',
         ),
       FeedEventType.levelUp => (
           Icons.trending_up,
-          Colors.green,
+          DesignTokens.success,
           '$name subiu para o nível ${p['level'] ?? '?'}!',
         ),
       FeedEventType.memberJoined => (
           Icons.person_add,
-          Colors.indigo,
+          DesignTokens.primary,
           '$name entrou na assessoria!',
         ),
     };
@@ -225,7 +226,7 @@ class _EmptyState extends StatelessWidget {
     final theme = Theme.of(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -262,7 +263,7 @@ class _ErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

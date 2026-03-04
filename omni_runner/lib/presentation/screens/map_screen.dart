@@ -5,6 +5,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/presentation/map/map_style.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Base map screen displaying a MapLibre GL map.
 ///
@@ -69,7 +70,7 @@ class _MapScreenState extends State<MapScreen> {
               message: 'Sem chave API — usando tiles de demonstração',
               child: Padding(
                 padding: EdgeInsets.only(right: 12),
-                child: Icon(Icons.warning_amber, color: Colors.orange),
+                child: Icon(Icons.warning_amber, color: DesignTokens.warning),
               ),
             ),
         ],
@@ -93,11 +94,11 @@ class _MapScreenState extends State<MapScreen> {
           if (_mapTimedOut)
             Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(DesignTokens.spacingLg),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.map_outlined, size: 64, color: Colors.grey.shade400),
+                    Icon(Icons.map_outlined, size: 64, color: DesignTokens.textMuted),
                     const SizedBox(height: 16),
                     Text(
                       'Mapa indisponível',
@@ -108,7 +109,7 @@ class _MapScreenState extends State<MapScreen> {
                       'Verifique sua conexão com a internet '
                       'ou a configuração da chave MapTiler.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                      style: TextStyle(color: DesignTokens.textSecondary, fontSize: 13),
                     ),
                   ],
                 ),

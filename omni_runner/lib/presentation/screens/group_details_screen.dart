@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:omni_runner/domain/entities/group_entity.dart';
 import 'package:omni_runner/domain/entities/group_member_entity.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class GroupDetailsScreen extends StatelessWidget {
   final GroupEntity group;
@@ -24,7 +25,7 @@ class GroupDetailsScreen extends StatelessWidget {
           _HeaderCard(group: group),
           if (goals.isNotEmpty) ...[
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingSm),
               child: Text('Metas ativas',
                   style: theme.textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.bold)),
@@ -32,14 +33,14 @@ class GroupDetailsScreen extends StatelessWidget {
             ...goals.map((g) => _GoalTile(goal: g)),
           ],
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingSm),
             child: Text('Membros (${members.length})',
                 style: theme.textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.bold)),
           ),
           if (members.isEmpty)
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(DesignTokens.spacingMd),
               child: Text('Nenhum membro carregado.',
                   style: theme.textTheme.bodyMedium
                       ?.copyWith(color: theme.colorScheme.outline)),
@@ -61,7 +62,7 @@ class _HeaderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(DesignTokens.spacingMd),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -124,16 +125,16 @@ class _GoalTile extends StatelessWidget {
     final isDone = goal.isCompleted;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingXs),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Icon(isDone ? Icons.check_circle : Icons.flag,
-                    color: isDone ? Colors.teal : theme.colorScheme.primary,
+                    color: isDone ? DesignTokens.info : theme.colorScheme.primary,
                     size: 20),
                 const SizedBox(width: 8),
                 Expanded(
@@ -145,7 +146,7 @@ class _GoalTile extends StatelessWidget {
                     style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: isDone
-                            ? Colors.teal
+                            ? DesignTokens.info
                             : theme.colorScheme.primary)),
               ],
             ),
@@ -157,7 +158,7 @@ class _GoalTile extends StatelessWidget {
                 minHeight: 8,
                 backgroundColor: theme.colorScheme.surfaceContainerHighest,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                    isDone ? Colors.teal : theme.colorScheme.primary),
+                    isDone ? DesignTokens.info : theme.colorScheme.primary),
               ),
             ),
             const SizedBox(height: 4),
@@ -200,8 +201,8 @@ class _MemberTile extends StatelessWidget {
       GroupRole.member => 'Membro',
     };
     final roleColor = switch (member.role) {
-      GroupRole.admin => Colors.amber,
-      GroupRole.moderator => Colors.blue,
+      GroupRole.admin => DesignTokens.warning,
+      GroupRole.moderator => DesignTokens.primary,
       GroupRole.member => theme.colorScheme.outline,
     };
 
@@ -214,10 +215,10 @@ class _MemberTile extends StatelessWidget {
           style:
               theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500)),
       trailing: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 2),
         decoration: BoxDecoration(
           color: roleColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
         ),
         child: Text(roleLabel,
             style: theme.textTheme.labelSmall

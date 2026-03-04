@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Dedicated "Como Funciona" reference page accessible from Settings.
 /// Covers Challenges, OmniCoins, Verification, and Integrity in a
@@ -11,7 +12,7 @@ class HowItWorksScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Como Funciona')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingSm, DesignTokens.spacingMd, DesignTokens.spacingXl),
         children: const [
           _Section(
             icon: Icons.emoji_events_rounded,
@@ -56,7 +57,7 @@ class HowItWorksScreen extends StatelessWidget {
           SizedBox(height: 24),
           _Section(
             icon: Icons.monetization_on_rounded,
-            color: Color(0xFFFFA000),
+            color: DesignTokens.warning,
             title: 'OmniCoins',
             children: [
               _InfoCard(
@@ -208,13 +209,13 @@ class _InfoCard extends StatelessWidget {
       child: Card(
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
           side: BorderSide(
             color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

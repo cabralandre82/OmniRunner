@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Staff retention dashboard — engagement and growth metrics.
 ///
@@ -207,7 +208,7 @@ class _StaffRetentionDashboardScreenState
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(DesignTokens.spacingMd),
                     children: [
                       _SectionHeader(widget.groupName),
                       const SizedBox(height: 16),
@@ -309,7 +310,7 @@ class _EngagementCards extends StatelessWidget {
             label: 'Ativos hoje',
             value: '$dau',
             sublabel: 'DAU',
-            color: Colors.blue,
+            color: DesignTokens.primary,
           ),
         ),
         const SizedBox(width: 12),
@@ -319,7 +320,7 @@ class _EngagementCards extends StatelessWidget {
             label: 'Ativos na semana',
             value: '$wau',
             sublabel: '$wauRate% do total',
-            color: Colors.green,
+            color: DesignTokens.success,
           ),
         ),
         const SizedBox(width: 12),
@@ -329,7 +330,7 @@ class _EngagementCards extends StatelessWidget {
             label: 'Total de atletas',
             value: '$totalAthletes',
             sublabel: 'cadastrados',
-            color: Colors.deepPurple,
+            color: DesignTokens.info,
           ),
         ),
       ],
@@ -414,7 +415,7 @@ class _RetentionChart extends StatelessWidget {
 
     if (weeks.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24),
+        padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingLg),
         child: Center(
           child: Text(
             'Sem dados de retenção',
@@ -544,7 +545,7 @@ class _RetentionTable extends StatelessWidget {
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
             border: Border.all(
               color: theme.colorScheme.outlineVariant,
             ),
@@ -650,7 +651,7 @@ class _TableRow extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: theme.colorScheme.primary
                           .withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(DesignTokens.spacingXs),
                     ),
                     child: Text(
                       'atual',
@@ -694,8 +695,8 @@ class _TableRow extends StatelessWidget {
   }
 
   Color _rateColor(double rate, ThemeData theme) {
-    if (rate >= 60) return Colors.green.shade700;
-    if (rate >= 30) return Colors.orange.shade700;
+    if (rate >= 60) return DesignTokens.success;
+    if (rate >= 30) return DesignTokens.warning;
     return theme.colorScheme.error;
   }
 }
@@ -719,7 +720,7 @@ class _InsightCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: insight.color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         border: Border.all(color: insight.color.withValues(alpha: 0.2)),
       ),
       child: Row(
@@ -757,7 +758,7 @@ class _InsightCard extends StatelessWidget {
     if (weeks.length < 2 || totalAthletes == 0) {
       return const _Insight(
         icon: Icons.info_outline_rounded,
-        color: Colors.grey,
+        color: DesignTokens.textMuted,
         title: 'Dados insuficientes',
         message: 'São necessárias pelo menos 2 semanas de dados.',
       );
@@ -773,7 +774,7 @@ class _InsightCard extends StatelessWidget {
     if (diff > 10) {
       return _Insight(
         icon: Icons.trending_up_rounded,
-        color: Colors.green.shade700,
+        color: DesignTokens.success,
         title: 'Engajamento crescendo',
         message:
             'A taxa de participação subiu ${diff.toStringAsFixed(0)} pontos '
@@ -782,7 +783,7 @@ class _InsightCard extends StatelessWidget {
     } else if (diff < -10) {
       return _Insight(
         icon: Icons.trending_down_rounded,
-        color: Colors.orange.shade700,
+        color: DesignTokens.warning,
         title: 'Atenção ao engajamento',
         message:
             'A participação caiu ${diff.abs().toStringAsFixed(0)} pontos '
@@ -791,7 +792,7 @@ class _InsightCard extends StatelessWidget {
     } else {
       return _Insight(
         icon: Icons.trending_flat_rounded,
-        color: Colors.blue.shade700,
+        color: DesignTokens.primary,
         title: 'Engajamento estável',
         message:
             '${current.activeCount} atletas ativos de $totalAthletes '

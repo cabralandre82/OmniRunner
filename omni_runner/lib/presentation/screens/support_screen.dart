@@ -6,6 +6,7 @@ import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/presentation/screens/support_ticket_screen.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/l10n/l10n.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class SupportScreen extends StatefulWidget {
   final String groupId;
@@ -138,7 +139,7 @@ class _SupportScreenState extends State<SupportScreen> {
                       ],
                     )
                   : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+                      padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 12, DesignTokens.spacingMd, 80),
                       itemCount: _tickets.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 8),
                       itemBuilder: (ctx, i) {
@@ -184,20 +185,20 @@ class _TicketCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final (Color bg, Color fg, String label, IconData icon) = switch (status) {
       'open' => (
-        isDark ? Colors.orange.shade900.withValues(alpha: 0.4) : Colors.orange.shade100,
-        isDark ? Colors.orange.shade300 : Colors.orange.shade800,
+        isDark ? DesignTokens.warning.withValues(alpha: 0.4) : DesignTokens.warning,
+        isDark ? DesignTokens.warning : DesignTokens.warning,
         'Aberto', Icons.schedule),
       'answered' => (
-        isDark ? Colors.blue.shade900.withValues(alpha: 0.4) : Colors.blue.shade100,
-        isDark ? Colors.blue.shade300 : Colors.blue.shade800,
+        isDark ? DesignTokens.primary.withValues(alpha: 0.4) : DesignTokens.primary,
+        isDark ? DesignTokens.primary : DesignTokens.primary,
         'Respondido', Icons.reply),
       'closed' => (
-        isDark ? Colors.grey.shade800 : Colors.grey.shade200,
-        isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+        isDark ? DesignTokens.textPrimary : DesignTokens.surface,
+        isDark ? DesignTokens.textMuted : DesignTokens.textSecondary,
         'Fechado', Icons.check_circle_outline),
       _ => (
-        isDark ? Colors.grey.shade800 : Colors.grey.shade100,
-        isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+        isDark ? DesignTokens.textPrimary : DesignTokens.surfaceElevated,
+        isDark ? DesignTokens.textMuted : DesignTokens.textSecondary,
         status, Icons.help_outline),
     };
 
@@ -215,7 +216,7 @@ class _TicketCard extends StatelessWidget {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: bg,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 ),
                 child: Icon(icon, color: fg, size: 22),
               ),
@@ -236,10 +237,10 @@ class _TicketCard extends StatelessWidget {
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                              horizontal: DesignTokens.spacingSm, vertical: 2),
                           decoration: BoxDecoration(
                             color: bg,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                           ),
                           child: Text(label,
                               style: TextStyle(

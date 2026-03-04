@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Screen for staff of an assessoria to view and respond to
 /// incoming team challenge invitations from other assessorias.
@@ -214,7 +215,7 @@ class _StaffChallengeInvitesScreenState
                   : RefreshIndicator(
                       onRefresh: _loadInvites,
                       child: ListView.separated(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(DesignTokens.spacingMd),
                         itemCount: _invites.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 12),
                         itemBuilder: (_, i) =>
@@ -267,9 +268,9 @@ class _InviteCard extends StatelessWidget {
     };
 
     final statusColor = switch (invite.status) {
-      'accepted' => Colors.green,
-      'declined' => Colors.red,
-      _ => Colors.orange,
+      'accepted' => DesignTokens.success,
+      'declined' => DesignTokens.error,
+      _ => DesignTokens.warning,
     };
     final statusLabel = switch (invite.status) {
       'accepted' => 'Aceito',
@@ -280,11 +281,11 @@ class _InviteCard extends StatelessWidget {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         side: BorderSide(color: cs.outlineVariant),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -292,10 +293,10 @@ class _InviteCard extends StatelessWidget {
               children: [
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: DesignTokens.spacingXs),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                   ),
                   child: Text(
                     statusLabel,

@@ -7,6 +7,7 @@ import 'package:omni_runner/core/push/notification_rules_service.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/presentation/screens/staff_championship_manage_screen.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Staff screen for managing recurring championship templates.
 ///
@@ -224,7 +225,7 @@ class _StaffChampionshipTemplatesScreenState
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+        padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingMd, 80),
         itemCount: _championships.length,
         itemBuilder: (_, i) {
           final c = _championships[i];
@@ -266,7 +267,7 @@ class _StaffChampionshipTemplatesScreenState
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+        padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingMd, DesignTokens.spacingMd, 80),
         itemCount: _templates.length,
         itemBuilder: (_, i) => _TemplateTile(
           template: _templates[i],
@@ -341,7 +342,7 @@ class _ChampListTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
           child: Row(
             children: [
               CircleAvatar(
@@ -409,12 +410,12 @@ class _ChampListTile extends StatelessWidget {
       };
 
   static Color _statusColor(String s) => switch (s) {
-        'draft' => Colors.grey,
-        'open' => Colors.green,
-        'active' => Colors.blue,
-        'completed' => Colors.teal,
-        'cancelled' => Colors.red,
-        _ => Colors.grey,
+        'draft' => DesignTokens.textMuted,
+        'open' => DesignTokens.success,
+        'active' => DesignTokens.primary,
+        'completed' => DesignTokens.success,
+        'cancelled' => DesignTokens.error,
+        _ => DesignTokens.textMuted,
       };
 
   static String _metricLabel(String m) => switch (m) {
@@ -447,14 +448,14 @@ class _TemplateTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Icon(Icons.emoji_events_rounded,
-                    size: 22, color: Colors.amber.shade800),
+                    size: 22, color: DesignTokens.warning),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(template.name,
@@ -531,10 +532,10 @@ class _InfoChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -955,7 +956,7 @@ class _CreateTemplateScreenState extends State<_CreateTemplateScreen> {
             : _TemplateTile._durationLabel(_durationDays);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(DesignTokens.spacingMd),
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(14),

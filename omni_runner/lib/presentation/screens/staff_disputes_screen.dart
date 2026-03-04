@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Clearing case from the database.
 class _ClearingCase {
@@ -200,7 +201,7 @@ class _StaffDisputesScreenState extends State<StaffDisputesScreen> {
                   : RefreshIndicator(
                       onRefresh: _loadCases,
                       child: ListView.separated(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(DesignTokens.spacingMd),
                         itemCount: _cases.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 10),
                         itemBuilder: (_, i) => _CaseTile(
@@ -272,10 +273,10 @@ class _CaseTile extends StatelessWidget {
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 3),
+                      horizontal: DesignTokens.spacingSm, vertical: 3),
                   decoration: BoxDecoration(
                     color: config.iconColor.withAlpha(20),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
                   ),
                   child: Text(
                     '${cc.tokensTotal} OmniCoins',
@@ -294,7 +295,7 @@ class _CaseTile extends StatelessWidget {
                 Icon(
                   isFrom ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
                   size: 14,
-                  color: isFrom ? Colors.red.shade400 : Colors.green.shade400,
+                  color: isFrom ? DesignTokens.error : DesignTokens.success,
                 ),
                 const SizedBox(width: 4),
                 Expanded(
@@ -313,7 +314,7 @@ class _CaseTile extends StatelessWidget {
                 Icon(
                   isExpired ? Icons.timer_off_rounded : Icons.timer_outlined,
                   size: 14,
-                  color: isExpired ? Colors.red.shade600 : Colors.grey.shade500,
+                  color: isExpired ? DesignTokens.error : DesignTokens.textMuted,
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -322,7 +323,7 @@ class _CaseTile extends StatelessWidget {
                       : 'Prazo: ${_formatRemaining(remaining)}',
                   style: TextStyle(
                     fontSize: 11,
-                    color: isExpired ? Colors.red.shade600 : Colors.grey.shade600,
+                    color: isExpired ? DesignTokens.error : DesignTokens.textSecondary,
                   ),
                 ),
               ],
@@ -343,13 +344,13 @@ class _CaseTile extends StatelessWidget {
             _ActionBtn(
               label: 'Confirmar envio',
               icon: Icons.send_rounded,
-              color: Colors.blue,
+              color: DesignTokens.primary,
               onTap: () => onConfirmSent(cc.id),
             ),
             _ActionBtn(
               label: 'Abrir revisão',
               icon: Icons.rate_review_outlined,
-              color: Colors.orange,
+              color: DesignTokens.warning,
               onTap: () => onDispute(cc.id),
             ),
           ]);
@@ -358,7 +359,7 @@ class _CaseTile extends StatelessWidget {
             _ActionBtn(
               label: 'Abrir revisão',
               icon: Icons.rate_review_outlined,
-              color: Colors.orange,
+              color: DesignTokens.warning,
               onTap: () => onDispute(cc.id),
             ),
           ]);
@@ -369,20 +370,20 @@ class _CaseTile extends StatelessWidget {
             _ActionBtn(
               label: 'Confirmar recebimento',
               icon: Icons.check_circle_outline,
-              color: Colors.green,
+              color: DesignTokens.success,
               onTap: () => onConfirmReceived(cc.id),
             ),
             _ActionBtn(
               label: 'Abrir revisão',
               icon: Icons.rate_review_outlined,
-              color: Colors.orange,
+              color: DesignTokens.warning,
               onTap: () => onDispute(cc.id),
             ),
           ]);
         } else {
           return Text(
             'Aguardando a outra assessoria confirmar o recebimento.',
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade600,
+            style: TextStyle(fontSize: 11, color: DesignTokens.textSecondary,
                 fontStyle: FontStyle.italic),
           );
         }
@@ -392,7 +393,7 @@ class _CaseTile extends StatelessWidget {
           children: [
             Text(
               'Em revisão entre as assessorias.',
-              style: TextStyle(fontSize: 11, color: Colors.red.shade700,
+              style: TextStyle(fontSize: 11, color: DesignTokens.error,
                   fontStyle: FontStyle.italic),
             ),
             const SizedBox(height: 4),
@@ -400,14 +401,14 @@ class _CaseTile extends StatelessWidget {
               'Combine com a outra assessoria por telefone ou '
               'mensagem para alinhar os valores. Quando resolvido, '
               'ambas as partes devem confirmar normalmente.',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+              style: TextStyle(fontSize: 11, color: DesignTokens.textSecondary),
             ),
           ],
         );
       case 'PAID_CONFIRMED':
         return Text(
           'Concluído. OmniCoins liberados para os atletas.',
-          style: TextStyle(fontSize: 11, color: Colors.green.shade700,
+          style: TextStyle(fontSize: 11, color: DesignTokens.success,
               fontStyle: FontStyle.italic),
         );
       case 'EXPIRED':
@@ -416,7 +417,7 @@ class _CaseTile extends StatelessWidget {
           children: [
             Text(
               'O prazo de confirmação expirou.',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade600,
+              style: TextStyle(fontSize: 11, color: DesignTokens.textSecondary,
                   fontStyle: FontStyle.italic),
             ),
             const SizedBox(height: 4),
@@ -424,7 +425,7 @@ class _CaseTile extends StatelessWidget {
               'Entre em contato com a outra assessoria para resolver '
               'a situação. Os OmniCoins dos atletas permanecem '
               'reservados até a resolução manual.',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+              style: TextStyle(fontSize: 11, color: DesignTokens.textSecondary),
             ),
           ],
         );
@@ -460,7 +461,7 @@ class _ActionBtn extends StatelessWidget {
       label: Text(label, style: const TextStyle(fontSize: 12)),
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: DesignTokens.spacingSm),
         side: BorderSide(color: color.withAlpha(100)),
         foregroundColor: color,
         visualDensity: VisualDensity.compact,
@@ -492,44 +493,44 @@ class _StatusConfig {
 _StatusConfig _statusConfig(String status) => switch (status) {
       'OPEN' => _StatusConfig(
           icon: Icons.hourglass_top_rounded,
-          iconColor: Colors.orange.shade800,
-          bgColor: Colors.orange.shade50,
-          borderColor: Colors.orange.shade200,
+          iconColor: DesignTokens.warning,
+          bgColor: DesignTokens.warning.withValues(alpha: 0.08),
+          borderColor: DesignTokens.warning.withValues(alpha: 0.25),
           label: 'Aguardando confirmação',
         ),
       'SENT_CONFIRMED' => _StatusConfig(
           icon: Icons.send_rounded,
-          iconColor: Colors.blue.shade800,
-          bgColor: Colors.blue.shade50,
-          borderColor: Colors.blue.shade200,
+          iconColor: DesignTokens.primary,
+          bgColor: DesignTokens.primary.withValues(alpha: 0.08),
+          borderColor: DesignTokens.primary.withValues(alpha: 0.25),
           label: 'Envio confirmado',
         ),
       'DISPUTED' => _StatusConfig(
           icon: Icons.rate_review_rounded,
-          iconColor: Colors.orange.shade700,
-          bgColor: Colors.orange.shade50,
-          borderColor: Colors.orange.shade200,
+          iconColor: DesignTokens.warning,
+          bgColor: DesignTokens.warning.withValues(alpha: 0.08),
+          borderColor: DesignTokens.warning.withValues(alpha: 0.25),
           label: 'Em revisão',
         ),
       'PAID_CONFIRMED' => _StatusConfig(
           icon: Icons.check_circle_rounded,
-          iconColor: Colors.green.shade700,
-          bgColor: Colors.green.shade50,
-          borderColor: Colors.green.shade200,
+          iconColor: DesignTokens.success,
+          bgColor: DesignTokens.success.withValues(alpha: 0.08),
+          borderColor: DesignTokens.success.withValues(alpha: 0.25),
           label: 'Concluído',
         ),
       'EXPIRED' => _StatusConfig(
           icon: Icons.schedule_rounded,
-          iconColor: Colors.grey.shade700,
-          bgColor: Colors.grey.shade100,
-          borderColor: Colors.grey.shade300,
+          iconColor: DesignTokens.textSecondary,
+          bgColor: DesignTokens.surfaceElevated,
+          borderColor: DesignTokens.textMuted,
           label: 'Prazo expirado',
         ),
       _ => _StatusConfig(
           icon: Icons.help_outline,
-          iconColor: Colors.grey.shade700,
-          bgColor: Colors.grey.shade100,
-          borderColor: Colors.grey.shade300,
+          iconColor: DesignTokens.textSecondary,
+          bgColor: DesignTokens.surfaceElevated,
+          borderColor: DesignTokens.textMuted,
           label: status,
         ),
     };
@@ -545,19 +546,19 @@ class _EmptyBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.handshake_outlined, size: 48,
-                color: Colors.grey.shade400),
+                color: DesignTokens.textMuted),
             const SizedBox(height: 12),
             Text(
               'Nenhuma confirmação pendente',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey.shade600,
+                color: DesignTokens.textSecondary,
               ),
             ),
             const SizedBox(height: 6),
@@ -565,7 +566,7 @@ class _EmptyBody extends StatelessWidget {
               'Quando houver desafios entre assessorias diferentes, '
               'as confirmações aparecerão aqui.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+              style: TextStyle(fontSize: 13, color: DesignTokens.textMuted),
             ),
           ],
         ),
@@ -584,16 +585,16 @@ class _ErrorBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(DesignTokens.spacingXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.error_outline_rounded, size: 48,
-                color: Colors.red.shade300),
+                color: DesignTokens.error),
             const SizedBox(height: 12),
             Text(message,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey.shade600)),
+                style: TextStyle(color: DesignTokens.textSecondary)),
             const SizedBox(height: 12),
             FilledButton.icon(
               icon: const Icon(Icons.refresh, size: 18),

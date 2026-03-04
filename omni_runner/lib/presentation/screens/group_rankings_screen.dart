@@ -6,6 +6,7 @@ import 'package:omni_runner/domain/entities/coaching_ranking_metric.dart';
 import 'package:omni_runner/presentation/blocs/coaching_rankings/coaching_rankings_bloc.dart';
 import 'package:omni_runner/presentation/blocs/coaching_rankings/coaching_rankings_event.dart';
 import 'package:omni_runner/presentation/blocs/coaching_rankings/coaching_rankings_state.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class GroupRankingsScreen extends StatelessWidget {
   final String groupName;
@@ -59,7 +60,7 @@ class GroupRankingsScreen extends StatelessWidget {
             ),
           CoachingRankingsError(:final message) => Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(DesignTokens.spacingLg),
                 child: Text(
                   message,
                   textAlign: TextAlign.center,
@@ -108,12 +109,12 @@ class _PeriodFilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 12, DesignTokens.spacingMd, 0),
       child: Row(
         children: CoachingRankingPeriod.values
             .where((p) => p != CoachingRankingPeriod.custom)
             .map((p) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.only(right: DesignTokens.spacingSm),
                   child: ChoiceChip(
                     label: Text(_periodLabel(p)),
                     selected: p == selected,
@@ -166,13 +167,13 @@ class _MetricFilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingSm, DesignTokens.spacingMd, DesignTokens.spacingSm),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: CoachingRankingMetric.values
               .map((m) => Padding(
-                    padding: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.only(right: DesignTokens.spacingSm),
                     child: ChoiceChip(
                       label: Text(_metricLabel(m)),
                       selected: m == selected,
@@ -234,7 +235,7 @@ class _RankingList extends StatelessWidget {
   Widget build(BuildContext context) {
     final entries = ranking.entries;
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingXs),
       itemCount: entries.length,
       itemBuilder: (context, index) =>
           _RankingEntryTile(entry: entries[index], metric: ranking.metric),
@@ -256,9 +257,9 @@ class _RankingEntryTile extends StatelessWidget {
     final isTop3 = entry.rank <= 3;
 
     final rankColor = switch (entry.rank) {
-      1 => Colors.amber,
-      2 => Colors.grey.shade400,
-      3 => Colors.brown.shade300,
+      1 => DesignTokens.warning,
+      2 => DesignTokens.textMuted,
+      3 => DesignTokens.warning,
       _ => theme.colorScheme.outline,
     };
 
