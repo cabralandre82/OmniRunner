@@ -42,9 +42,9 @@ npx lefthook install
 # App Flutter
 cd omni_runner
 flutter pub get
-cp ../.env.example ../.env.dev
+cp .env.example .env.dev
 # Preencher variáveis em .env.dev
-flutter run --dart-define-from-file=../.env.dev
+flutter run --flavor dev --dart-define-from-file=.env.dev
 
 # Portal Next.js
 cd portal

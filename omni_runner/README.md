@@ -22,21 +22,21 @@ Plataforma de corrida com gamificação e coaching. App mobile multiplataforma (
 flutter pub get
 
 # 2. Configurar variáveis de ambiente
-cp ../.env.example ../.env.dev
+cp .env.example .env.dev
 # Preencher SUPABASE_URL, SUPABASE_ANON_KEY, MAPTILER_API_KEY, etc.
 
 # 3. Rodar em modo debug
-flutter run --dart-define-from-file=../.env.dev
+flutter run --flavor dev --dart-define-from-file=.env.dev
 ```
 
 ## Build
 
 ```bash
 # APK de release
-flutter build apk --release --dart-define-from-file=../.env.prod
+flutter build apk --flavor prod --release --dart-define-from-file=.env.prod
 
 # App Bundle (Google Play)
-flutter build appbundle --release --dart-define-from-file=../.env.prod
+flutter build appbundle --flavor prod --release --dart-define-from-file=.env.prod
 ```
 
 ## Testes

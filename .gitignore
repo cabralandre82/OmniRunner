@@ -9,6 +9,7 @@
 
 # Large binary archives
 *.tar
+*.zip
 *.apk
 
 # Firebase credentials (contains API keys)
