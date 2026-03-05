@@ -193,7 +193,7 @@ class _StaffCrmListViewState extends State<_StaffCrmListView> {
                         ),
                       ),
                     ),
-                  CrmListLoaded(:final athletes, :final hasMore, :final loadingMore) =>
+                  CrmListLoaded(:final athletes, hasMore: _, :final loadingMore) =>
                       athletes.isEmpty
                           ? Center(
                               child: Column(

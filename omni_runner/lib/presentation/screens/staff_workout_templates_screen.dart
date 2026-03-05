@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/workout_template_entity.dart';
