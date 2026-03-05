@@ -149,4 +149,51 @@ void main() {
 
     expect(result.endsAt, dt);
   });
+
+  test('creates session with workout params', () async {
+    final result = await usecase.call(
+      id: 'sess-8',
+      groupId: 'group-1',
+      createdBy: 'coach-1',
+      title: 'Treino de 5km',
+      startsAt: DateTime(2026, 4, 1, 8, 0),
+      distanceTargetM: 5000,
+      paceMinSecKm: 270,
+      paceMaxSecKm: 360,
+    );
+
+    expect(result.distanceTargetM, 5000);
+    expect(result.paceMinSecKm, 270);
+    expect(result.paceMaxSecKm, 360);
+    expect(repo.saved!.distanceTargetM, 5000);
+  });
+
+  test('creates session without workout params', () async {
+    final result = await usecase.call(
+      id: 'sess-9',
+      groupId: 'group-1',
+      createdBy: 'coach-1',
+      title: 'Treino livre',
+      startsAt: DateTime(2026, 4, 1, 8, 0),
+    );
+
+    expect(result.distanceTargetM, isNull);
+    expect(result.paceMinSecKm, isNull);
+    expect(result.paceMaxSecKm, isNull);
+  });
+
+  test('creates session with distance but no pace', () async {
+    final result = await usecase.call(
+      id: 'sess-10',
+      groupId: 'group-1',
+      createdBy: 'coach-1',
+      title: 'Corrida leve',
+      startsAt: DateTime(2026, 4, 1, 8, 0),
+      distanceTargetM: 10000,
+    );
+
+    expect(result.distanceTargetM, 10000);
+    expect(result.paceMinSecKm, isNull);
+    expect(result.paceMaxSecKm, isNull);
+  });
 }
