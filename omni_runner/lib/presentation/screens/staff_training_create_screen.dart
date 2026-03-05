@@ -31,6 +31,9 @@ class _StaffTrainingCreateScreenState extends State<StaffTrainingCreateScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _locationController = TextEditingController();
+  final _distanceController = TextEditingController();
+  final _paceMinController = TextEditingController();
+  final _paceMaxController = TextEditingController();
 
   DateTime? _startsAt;
   DateTime? _endsAt;
@@ -49,9 +52,35 @@ class _StaffTrainingCreateScreenState extends State<StaffTrainingCreateScreen> {
       _locationController.text = e.locationName ?? '';
       _startsAt = e.startsAt;
       _endsAt = e.endsAt;
+      if (e.distanceTargetM != null) {
+        _distanceController.text = (e.distanceTargetM! / 1000).toStringAsFixed(1);
+      }
+      if (e.paceMinSecKm != null) {
+        _paceMinController.text = _formatPace(e.paceMinSecKm!);
+      }
+      if (e.paceMaxSecKm != null) {
+        _paceMaxController.text = _formatPace(e.paceMaxSecKm!);
+      }
     } else {
       _startsAt = DateTime.now();
     }
+  }
+
+  static String _formatPace(double secPerKm) {
+    final min = secPerKm ~/ 60;
+    final sec = (secPerKm % 60).round();
+    return '$min:${sec.toString().padLeft(2, '0')}';
+  }
+
+  static double? _parsePace(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return null;
+    final parts = trimmed.split(':');
+    if (parts.length != 2) return null;
+    final min = int.tryParse(parts[0]);
+    final sec = int.tryParse(parts[1]);
+    if (min == null || sec == null || min < 0 || sec < 0 || sec >= 60) return null;
+    return min * 60.0 + sec;
   }
 
   @override
@@ -59,6 +88,9 @@ class _StaffTrainingCreateScreenState extends State<StaffTrainingCreateScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     _locationController.dispose();
+    _distanceController.dispose();
+    _paceMinController.dispose();
+    _paceMaxController.dispose();
     super.dispose();
   }
 
@@ -116,6 +148,16 @@ class _StaffTrainingCreateScreenState extends State<StaffTrainingCreateScreen> {
       return;
     }
 
+    final distKm = double.tryParse(_distanceController.text.trim().replaceAll(',', '.'));
+    final distM = distKm != null && distKm > 0 ? distKm * 1000 : null;
+    final paceMin = _parsePace(_paceMinController.text);
+    final paceMax = _parsePace(_paceMaxController.text);
+
+    if (paceMin != null && paceMax != null && paceMin > paceMax) {
+      setState(() => _error = 'O pace mínimo deve ser menor que o máximo');
+      return;
+    }
+
     setState(() => _saving = true);
 
     try {
@@ -131,6 +173,9 @@ class _StaffTrainingCreateScreenState extends State<StaffTrainingCreateScreen> {
               ? null
               : _locationController.text.trim(),
           updatedAt: DateTime.now(),
+          distanceTargetM: distM,
+          paceMinSecKm: paceMin,
+          paceMaxSecKm: paceMax,
         );
         await sl<ITrainingSessionRepo>().update(updated);
         if (!mounted) return;
@@ -152,6 +197,9 @@ class _StaffTrainingCreateScreenState extends State<StaffTrainingCreateScreen> {
           locationName: _locationController.text.trim().isEmpty
               ? null
               : _locationController.text.trim(),
+          distanceTargetM: distM,
+          paceMinSecKm: paceMin,
+          paceMaxSecKm: paceMax,
         );
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -242,6 +290,72 @@ class _StaffTrainingCreateScreenState extends State<StaffTrainingCreateScreen> {
                 border: OutlineInputBorder(),
               ),
               textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Parâmetros do treino',
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'A presença será avaliada automaticamente com base nas corridas do atleta.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.outline,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _distanceController,
+              decoration: const InputDecoration(
+                labelText: 'Distância alvo (km)',
+                hintText: 'Ex: 5.0',
+                border: OutlineInputBorder(),
+                suffixText: 'km',
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _paceMinController,
+                    decoration: const InputDecoration(
+                      labelText: 'Pace mín.',
+                      hintText: '4:30',
+                      border: OutlineInputBorder(),
+                      suffixText: '/km',
+                    ),
+                    keyboardType: TextInputType.datetime,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return null;
+                      if (_parsePace(v) == null) return 'Formato: m:ss';
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _paceMaxController,
+                    decoration: const InputDecoration(
+                      labelText: 'Pace máx.',
+                      hintText: '6:00',
+                      border: OutlineInputBorder(),
+                      suffixText: '/km',
+                    ),
+                    keyboardType: TextInputType.datetime,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return null;
+                      if (_parsePace(v) == null) return 'Formato: m:ss';
+                      return null;
+                    },
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
             Text(

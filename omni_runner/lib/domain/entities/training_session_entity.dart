@@ -30,6 +30,11 @@ final class TrainingSessionEntity extends Equatable {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// Workout parameters for auto-attendance evaluation
+  final double? distanceTargetM;
+  final double? paceMinSecKm;
+  final double? paceMaxSecKm;
+
   const TrainingSessionEntity({
     required this.id,
     required this.groupId,
@@ -44,6 +49,9 @@ final class TrainingSessionEntity extends Equatable {
     this.status = TrainingSessionStatus.scheduled,
     required this.createdAt,
     required this.updatedAt,
+    this.distanceTargetM,
+    this.paceMinSecKm,
+    this.paceMaxSecKm,
   });
 
   bool get isScheduled => status == TrainingSessionStatus.scheduled;
@@ -62,6 +70,9 @@ final class TrainingSessionEntity extends Equatable {
     double? locationLng,
     TrainingSessionStatus? status,
     DateTime? updatedAt,
+    double? distanceTargetM,
+    double? paceMinSecKm,
+    double? paceMaxSecKm,
   }) =>
       TrainingSessionEntity(
         id: id,
@@ -77,6 +88,9 @@ final class TrainingSessionEntity extends Equatable {
         status: status ?? this.status,
         createdAt: createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
+        distanceTargetM: distanceTargetM ?? this.distanceTargetM,
+        paceMinSecKm: paceMinSecKm ?? this.paceMinSecKm,
+        paceMaxSecKm: paceMaxSecKm ?? this.paceMaxSecKm,
       );
 
   @override
@@ -84,5 +98,6 @@ final class TrainingSessionEntity extends Equatable {
         id, groupId, createdBy, title, description,
         startsAt, endsAt, locationName, locationLat, locationLng,
         status, createdAt, updatedAt,
+        distanceTargetM, paceMinSecKm, paceMaxSecKm,
       ];
 }

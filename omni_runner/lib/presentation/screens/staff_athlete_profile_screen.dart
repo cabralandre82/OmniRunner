@@ -912,6 +912,14 @@ class _AttendanceCard extends StatelessWidget {
           label: 'Ausente',
           color: theme.colorScheme.error,
         ),
+      AttendanceStatus.completed => (
+          label: 'Concluído',
+          color: DesignTokens.success,
+        ),
+      AttendanceStatus.partial => (
+          label: 'Parcial',
+          color: DesignTokens.warning,
+        ),
     };
   }
 }

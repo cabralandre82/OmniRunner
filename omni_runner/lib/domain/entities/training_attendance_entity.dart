@@ -1,12 +1,14 @@
 import 'package:equatable/equatable.dart';
 
-enum AttendanceStatus { present, late_, excused, absent }
+enum AttendanceStatus { present, late_, excused, absent, completed, partial }
 
 AttendanceStatus attendanceStatusFromString(String value) => switch (value) {
       'present' => AttendanceStatus.present,
       'late' => AttendanceStatus.late_,
       'excused' => AttendanceStatus.excused,
       'absent' => AttendanceStatus.absent,
+      'completed' => AttendanceStatus.completed,
+      'partial' => AttendanceStatus.partial,
       _ => AttendanceStatus.present,
     };
 
@@ -15,27 +17,34 @@ String attendanceStatusToString(AttendanceStatus s) => switch (s) {
       AttendanceStatus.late_ => 'late',
       AttendanceStatus.excused => 'excused',
       AttendanceStatus.absent => 'absent',
+      AttendanceStatus.completed => 'completed',
+      AttendanceStatus.partial => 'partial',
     };
 
-enum CheckinMethod { qr, manual }
+String attendanceStatusLabel(AttendanceStatus s) => switch (s) {
+      AttendanceStatus.present => 'Presente',
+      AttendanceStatus.late_ => 'Atrasado',
+      AttendanceStatus.excused => 'Justificado',
+      AttendanceStatus.absent => 'Ausente',
+      AttendanceStatus.completed => 'Concluído',
+      AttendanceStatus.partial => 'Parcial',
+    };
+
+enum CheckinMethod { qr, manual, auto }
 
 final class TrainingAttendanceEntity extends Equatable {
   final String id;
   final String groupId;
   final String sessionId;
   final String athleteUserId;
-  final String checkedBy;
+  final String? checkedBy;
   final DateTime checkedAt;
   final AttendanceStatus status;
   final CheckinMethod method;
+  final String? matchedRunId;
 
-  /// Display name, populated from joins (not stored in attendance table).
   final String? athleteDisplayName;
-
-  /// Session title, populated from joins when listing by athlete.
   final String? sessionTitle;
-
-  /// Session start time, populated from joins when listing by athlete.
   final DateTime? sessionStartsAt;
 
   const TrainingAttendanceEntity({
@@ -43,10 +52,11 @@ final class TrainingAttendanceEntity extends Equatable {
     required this.groupId,
     required this.sessionId,
     required this.athleteUserId,
-    required this.checkedBy,
+    this.checkedBy,
     required this.checkedAt,
     this.status = AttendanceStatus.present,
     this.method = CheckinMethod.qr,
+    this.matchedRunId,
     this.athleteDisplayName,
     this.sessionTitle,
     this.sessionStartsAt,
@@ -55,6 +65,6 @@ final class TrainingAttendanceEntity extends Equatable {
   @override
   List<Object?> get props => [
         id, groupId, sessionId, athleteUserId,
-        checkedBy, checkedAt, status, method,
+        checkedBy, checkedAt, status, method, matchedRunId,
       ];
 }

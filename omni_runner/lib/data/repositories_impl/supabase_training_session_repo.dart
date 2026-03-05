@@ -23,6 +23,9 @@ final class SupabaseTrainingSessionRepo implements ITrainingSessionRepo {
         'location_name': session.locationName,
         'location_lat': session.locationLat,
         'location_lng': session.locationLng,
+        'distance_target_m': session.distanceTargetM,
+        'pace_min_sec_km': session.paceMinSecKm,
+        'pace_max_sec_km': session.paceMaxSecKm,
       }).select().single();
       return _fromRow(row);
     } catch (e, st) {
@@ -46,6 +49,9 @@ final class SupabaseTrainingSessionRepo implements ITrainingSessionRepo {
             'location_lng': session.locationLng,
             'status': trainingStatusToString(session.status),
             'updated_at': DateTime.now().toUtc().toIso8601String(),
+            'distance_target_m': session.distanceTargetM,
+            'pace_min_sec_km': session.paceMinSecKm,
+            'pace_max_sec_km': session.paceMaxSecKm,
           })
           .eq('id', session.id)
           .select()
@@ -140,5 +146,8 @@ final class SupabaseTrainingSessionRepo implements ITrainingSessionRepo {
         status: trainingStatusFromString(r['status'] as String),
         createdAt: DateTime.parse(r['created_at'] as String),
         updatedAt: DateTime.parse(r['updated_at'] as String),
+        distanceTargetM: (r['distance_target_m'] as num?)?.toDouble(),
+        paceMinSecKm: (r['pace_min_sec_km'] as num?)?.toDouble(),
+        paceMaxSecKm: (r['pace_max_sec_km'] as num?)?.toDouble(),
       );
 }

@@ -17,6 +17,9 @@ final class CreateTrainingSession {
     String? locationName,
     double? locationLat,
     double? locationLng,
+    double? distanceTargetM,
+    double? paceMinSecKm,
+    double? paceMaxSecKm,
   }) async {
     if (title.trim().length < 2) {
       throw ArgumentError('Title must be at least 2 characters');
@@ -37,6 +40,9 @@ final class CreateTrainingSession {
       locationName: locationName?.trim(),
       locationLat: locationLat,
       locationLng: locationLng,
+      distanceTargetM: distanceTargetM,
+      paceMinSecKm: paceMinSecKm,
+      paceMaxSecKm: paceMaxSecKm,
       createdAt: now,
       updatedAt: now,
     );

@@ -133,17 +133,22 @@ final class SupabaseTrainingAttendanceRepo implements ITrainingAttendanceRepo {
       final s = sessionData['starts_at'];
       if (s != null) sessionStartsAt = DateTime.parse(s as String);
     }
+    final methodStr = r['method'] as String? ?? 'auto';
+    final method = switch (methodStr) {
+      'manual' => CheckinMethod.manual,
+      'qr' => CheckinMethod.qr,
+      _ => CheckinMethod.auto,
+    };
     return TrainingAttendanceEntity(
       id: r['id'] as String,
       groupId: r['group_id'] as String,
       sessionId: r['session_id'] as String,
       athleteUserId: r['athlete_user_id'] as String,
-      checkedBy: r['checked_by'] as String,
+      checkedBy: r['checked_by'] as String?,
       checkedAt: DateTime.parse(r['checked_at'] as String),
       status: attendanceStatusFromString(r['status'] as String),
-      method: (r['method'] as String) == 'manual'
-          ? CheckinMethod.manual
-          : CheckinMethod.qr,
+      method: method,
+      matchedRunId: r['matched_run_id'] as String?,
       athleteDisplayName: profile?['display_name'] as String?,
       sessionTitle: sessionTitle,
       sessionStartsAt: sessionStartsAt,

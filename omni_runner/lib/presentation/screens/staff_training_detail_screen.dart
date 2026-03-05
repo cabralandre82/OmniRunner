@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/training_attendance_entity.dart';
@@ -8,8 +9,8 @@ import 'package:omni_runner/domain/entities/training_session_entity.dart';
 import 'package:omni_runner/presentation/blocs/training_detail/training_detail_bloc.dart';
 import 'package:omni_runner/presentation/blocs/training_detail/training_detail_event.dart';
 import 'package:omni_runner/presentation/blocs/training_detail/training_detail_state.dart';
-import 'package:omni_runner/presentation/screens/staff_training_scan_screen.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 
 /// Detail screen for a training session with attendance list and scan button.
 /// Requires [sessionId]. Wraps with [TrainingDetailBloc] at navigation.
@@ -36,16 +37,70 @@ class _StaffTrainingDetailView extends StatelessWidget {
 
   const _StaffTrainingDetailView({required this.sessionId});
 
-  Future<void> _openScan(BuildContext context) async {
-    final refreshed = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => StaffTrainingScanScreen(sessionId: sessionId),
+  Future<void> _overrideStatus(
+    BuildContext context,
+    TrainingAttendanceEntity att,
+  ) async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Alterar status',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+            for (final s in ['completed', 'partial', 'absent', 'present', 'excused'])
+              ListTile(
+                leading: Icon(_statusIcon(attendanceStatusFromString(s)),
+                    color: _statusColor(attendanceStatusFromString(s))),
+                title: Text(attendanceStatusLabel(attendanceStatusFromString(s))),
+                onTap: () => Navigator.of(ctx).pop(s),
+              ),
+          ],
+        ),
       ),
     );
-    if (refreshed == true && context.mounted) {
-      context.read<TrainingDetailBloc>().add(const RefreshTrainingDetail());
+    if (selected == null || !context.mounted) return;
+    try {
+      await Supabase.instance.client
+          .from('coaching_training_attendance')
+          .update({'status': selected, 'method': 'manual'})
+          .eq('id', att.id);
+      if (context.mounted) {
+        context.read<TrainingDetailBloc>().add(const RefreshTrainingDetail());
+      }
+    } catch (e) {
+      AppLogger.error('Override attendance failed', error: e);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao alterar: $e')),
+        );
+      }
     }
   }
+
+  static IconData _statusIcon(AttendanceStatus s) => switch (s) {
+        AttendanceStatus.completed => Icons.check_circle,
+        AttendanceStatus.partial => Icons.timelapse,
+        AttendanceStatus.absent => Icons.cancel,
+        AttendanceStatus.present => Icons.check,
+        AttendanceStatus.late_ => Icons.schedule,
+        AttendanceStatus.excused => Icons.info_outline,
+      };
+
+  static Color _statusColor(AttendanceStatus s) => switch (s) {
+        AttendanceStatus.completed => DesignTokens.success,
+        AttendanceStatus.partial => DesignTokens.warning,
+        AttendanceStatus.absent => DesignTokens.error,
+        AttendanceStatus.present => DesignTokens.success,
+        AttendanceStatus.late_ => DesignTokens.warning,
+        AttendanceStatus.excused => DesignTokens.primary,
+      };
 
   void _showCancelDialog(BuildContext context, TrainingDetailBloc bloc) {
     showDialog<bool>(
@@ -204,22 +259,11 @@ class _StaffTrainingDetailView extends StatelessWidget {
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingLg, DesignTokens.spacingMd, DesignTokens.spacingSm),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Presença ($attendanceCount)',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            if (session.isScheduled)
-                              FilledButton.icon(
-                                onPressed: () => _openScan(context),
-                                icon: const Icon(Icons.qr_code_scanner),
-                                label: const Text('Escanear QR'),
-                              ),
-                          ],
+                        child: Text(
+                          'Presença ($attendanceCount)',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
@@ -245,6 +289,7 @@ class _StaffTrainingDetailView extends StatelessWidget {
                           delegate: SliverChildBuilderDelegate(
                             (context, index) => _AttendanceTile(
                               attendance: attendance[index],
+                              onOverride: (att) => _overrideStatus(context, att),
                             ),
                             childCount: attendance.length,
                           ),
@@ -259,20 +304,7 @@ class _StaffTrainingDetailView extends StatelessWidget {
           };
         },
       ),
-      floatingActionButton: BlocBuilder<TrainingDetailBloc, TrainingDetailState>(
-        builder: (context, state) {
-          return switch (state) {
-            TrainingDetailLoaded(:final session) => session.isScheduled
-                ? FloatingActionButton.extended(
-                    onPressed: () => _openScan(context),
-                    icon: const Icon(Icons.qr_code_scanner),
-                    label: const Text('Escanear QR'),
-                  )
-                : const SizedBox.shrink(),
-            _ => const SizedBox.shrink(),
-          };
-        },
-      ),
+      floatingActionButton: const SizedBox.shrink(),
     );
   }
 }
@@ -376,6 +408,36 @@ class _SessionInfoCard extends StatelessWidget {
                 ],
               ),
             ],
+            if (session.distanceTargetM != null) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.straighten, size: 18, color: cs.onSurfaceVariant),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Distância: ${(session.distanceTargetM! / 1000).toStringAsFixed(1)} km',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (session.paceMinSecKm != null && session.paceMaxSecKm != null) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(Icons.speed, size: 18, color: cs.onSurfaceVariant),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Pace: ${_fmtPace(session.paceMinSecKm!)} ~ ${_fmtPace(session.paceMaxSecKm!)} /km',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: DesignTokens.spacingXs),
@@ -396,30 +458,47 @@ class _SessionInfoCard extends StatelessWidget {
       ),
     );
   }
+
+  static String _fmtPace(double secPerKm) {
+    final min = secPerKm ~/ 60;
+    final sec = (secPerKm % 60).round();
+    return '$min:${sec.toString().padLeft(2, '0')}';
+  }
 }
 
 class _AttendanceTile extends StatelessWidget {
   final TrainingAttendanceEntity attendance;
+  final void Function(TrainingAttendanceEntity) onOverride;
 
-  const _AttendanceTile({required this.attendance});
+  const _AttendanceTile({
+    required this.attendance,
+    required this.onOverride,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final timeFormat = DateFormat('HH:mm');
 
+    final statusColor = _StaffTrainingDetailView._statusColor(attendance.status);
+    final statusLabel = attendanceStatusLabel(attendance.status);
     final methodLabel = switch (attendance.method) {
       CheckinMethod.qr => 'QR',
       CheckinMethod.manual => 'Manual',
+      CheckinMethod.auto => 'Auto',
     };
 
     return Card(
       margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
       child: ListTile(
+        onTap: () => onOverride(attendance),
         leading: CircleAvatar(
-          backgroundColor: cs.primaryContainer,
-          child: Icon(Icons.person, color: cs.onPrimaryContainer),
+          backgroundColor: statusColor.withValues(alpha: 0.15),
+          child: Icon(
+            _StaffTrainingDetailView._statusIcon(attendance.status),
+            color: statusColor,
+            size: 20,
+          ),
         ),
         title: Text(
           attendance.athleteDisplayName ?? attendance.athleteUserId,
@@ -428,24 +507,15 @@ class _AttendanceTile extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          timeFormat.format(attendance.checkedAt.toLocal()),
+          '$statusLabel • $methodLabel',
           style: theme.textTheme.bodySmall?.copyWith(
             color: cs.onSurfaceVariant,
           ),
         ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: DesignTokens.spacingXs),
-          decoration: BoxDecoration(
-            color: cs.secondaryContainer,
-            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-          ),
-          child: Text(
-            methodLabel,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: cs.onSecondaryContainer,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+        trailing: Icon(
+          Icons.edit_outlined,
+          size: 18,
+          color: cs.outline,
         ),
       ),
     );
