@@ -3778,3 +3778,114 @@ Para o login Instagram funcionar de fato:
 **Arquivos:** 60+ arquivos atualizados (app, portal, edge functions, docs, migrations)
 
 ---
+
+## DECISAO 130 — Global SafeArea Fix
+
+**Data:** 2026-03-04
+**Contexto:** Em dispositivos Android com barra de navegação por gestos, botões e conteúdo na parte inferior ficavam cobertos pela barra do sistema. O problema afetava todas as telas.
+
+**Decisão:** Aplicar fix global via `MaterialApp.builder` com `MediaQuery.removePadding(removeBottom: true)` + `Padding` compensatório, em vez de ajustar cada tela individualmente.
+
+**Arquivo:** `lib/main.dart`
+
+---
+
+## DECISAO 131 — Assessoria/Athlete Link Fix + Role Backfill
+
+**Data:** 2026-03-04
+**Contexto:** Staff e atleta na mesma assessoria não se enxergavam. O app filtrava por `role = 'athlete'`, mas o banco tinha `atleta`. O portal tinha o mesmo problema.
+
+**Decisão:** Migration SQL para padronizar roles + atualizar `profiles.active_coaching_group_id`. App e portal passaram a usar `inFilter('role', ['athlete', 'atleta'])` como defesa extra.
+
+**Arquivos:** Migration `20260304100000`, `athlete_dashboard_screen.dart`, 16+ arquivos do portal
+
+---
+
+## DECISAO 132 — Dark Mode Readability Sweep
+
+**Data:** 2026-03-04
+**Contexto:** Múltiplos elementos com cores hardcoded (marrons, hex específicos) ficavam ilegíveis no dark mode — banners Strava, cards de badges, matchmaking, AppBars.
+
+**Decisão:** (1) Substituir cores hardcoded por `Theme.of(context).colorScheme` ou `DesignTokens` com alpha. (2) Remover todos os `backgroundColor: cs.inversePrimary` dos AppBars (24+ telas) para usar o tema global.
+
+**Arquivos:** 24+ screens (AppBar), `challenges_list_screen.dart`, `today_screen.dart`, `matchmaking_screen.dart`
+
+---
+
+## DECISAO 133 — Comprehensive Audit + Migration Sync
+
+**Data:** 2026-03-04
+**Contexto:** 16 migrations foram salvas em `omni_runner/supabase/migrations/` em vez de `supabase/migrations/`, nunca aplicadas ao Supabase. Auditoria completa revelou 5 funções DB quebradas, 3 queries Flutter incorretas, 32 queries do portal referenciando tabelas inexistentes, 13 issues em edge functions.
+
+**Decisão:** Copiar todas as migrations para o diretório correto, marcar como `applied` via `supabase migration repair`. Criar migrations corretivas (`20260312000000` a `20260312200000`) para funções quebradas, backfill de roles e `fn_search_users`.
+
+**Arquivos:** 16 migrations movidas, 3 novas migrations, 6 edge functions corrigidas, 16+ arquivos do portal
+
+---
+
+## DECISAO 134 — QR Check-in → Auto-Attendance
+
+**Data:** 2026-03-04
+**Contexto:** O fluxo de presença por QR code era "péssimo" (feedback do usuário). Professores não definem horário nem local para treinos. O atleta corre quando quer e onde quer.
+
+**Decisão:** Substituir completamente o sistema QR por avaliação automática:
+- Staff prescreve treino com `distance_target_m` e pace opcional
+- Sistema avalia as 2 próximas corridas do atleta após a criação do treino
+- Distância ±15% + pace na faixa → `completed`; correu mas não bateu → `partial`; não correu antes do próximo treino → `absent`
+- Staff pode fazer override manual via bottom sheet
+
+**Implementação:**
+- Migration `20260313000000_auto_attendance.sql`: novas colunas, CHECK constraints, `fn_evaluate_athlete_training`, triggers `trg_session_auto_attendance` e `trg_training_close_prev`
+- Flutter: campos de distância/pace na criação, badges coloridos no detalhe, status no list do atleta
+- Portal: relatórios, analytics e CSV export atualizados
+- Testes: 38 testes cobrindo entidades, enums e use cases
+
+**Arquivos:** Migration, 9 arquivos Flutter, 6 arquivos portal, 2 arquivos de teste
+
+---
+
+## DECISAO 135 — Labels "Presença" → "Treinos Prescritos"
+
+**Data:** 2026-03-04
+**Contexto:** O atleta pode ir à assessoria todos os dias e correr. O sistema de presença rastreia cumprimento de treinos prescritos, não presença física na assessoria.
+
+**Decisão:** Renomear todos os labels: "Presença" → "Treinos Prescritos" / "Cumprimento dos Treinos". Aplicado em sidebar do portal, relatórios, analytics, CRM, telas do app (staff e atleta).
+
+**Arquivos:** 12 arquivos (5 Flutter + 7 portal)
+
+---
+
+## DECISAO 136 — Structured Workout + .FIT Export
+
+**Data:** 2026-03-05
+**Contexto:** Coaches usam TrainingPeaks e Treinus para passar treinos estruturados aos atletas, mas APIs dessas plataformas são problemáticas (aprovação complexa / sem API pública). Atletas precisam dos treinos no relógio.
+
+**Decisão:** (1) Estender `coaching_workout_blocks` com pace range, HR range, repeat blocks, rest type. (2) Gerar .FIT binário via Edge Function `generate-fit-workout` (protocol 2.0, CRC-16). (3) Atleta compartilha .FIT via share sheet nativa para Garmin Connect / COROS. (4) Bridge: trigger `trg_assignment_to_training` cria `coaching_training_sessions` automaticamente para auto-attendance. (5) Validação com `fit-file-parser` npm.
+
+**Implementação:**
+- Migration `20260314000000`: novos campos + CHECK constraints + backfill legacy pace
+- Migration `20260314100000`: bridge assignment → training_session
+- Edge Function TypeScript: encoder FIT binário (File ID + Workout + Workout Steps + CRC)
+- Flutter: botão "Enviar para relógio" com `share_plus`, condicional por watch_type
+- Portal: página de detalhe do template com blocos visuais
+
+**Arquivos:** 2 migrations, 1 Edge Function, 3 entidades Dart, 4 telas Flutter, 3 páginas portal
+
+---
+
+## DECISAO 137 — Watch Type + Athlete-Centric Assignment Page
+
+**Data:** 2026-03-05
+**Contexto:** Coaches precisam saber qual relógio cada atleta usa para decidir como enviar o treino (.FIT vs manual). Apple Watch não suporta .FIT.
+
+**Decisão:** (1) Campo `watch_type` em `coaching_members` como override manual do coach. (2) View `v_athlete_watch_type` resolve: manual > device link > null. (3) Página portal `/workouts/assign` orientada por atleta com badge visual, atribuição em lote, filtros por compatibilidade. (4) App condiciona "Enviar para relógio" — Garmin/COROS/Suunto = .FIT, Apple Watch/outros = orientação textual.
+
+**Implementação:**
+- Migration `20260315000000`: coluna, view, RPC `fn_set_athlete_watch_type`
+- Portal: página assign + API routes (assign bulk, watch-type update)
+- Flutter: `_checkFitCompatibility()` consulta watch_type e device_links
+- 46 testes cobrindo entidades, enum, mapper, watch_type, compatibilidade
+
+**Arquivos:** 1 migration, 2 API routes, 2 páginas portal, 1 tela Flutter, 3 arquivos de teste
+
+---

@@ -320,6 +320,75 @@ In-memory rate limiter per user ID per endpoint. Resets on deploy.
 
 All POST routes use Zod schemas defined in `src/lib/schemas.ts`. Invalid input returns 400 with the first validation error message.
 
+## Attendance / Treinos Prescritos
+
+### `GET /api/export/attendance`
+
+Exporta CSV com registros de cumprimento dos treinos prescritos.
+
+| Param | Type | Source | Description |
+|-------|------|--------|-------------|
+| `from` | string (ISO) | query | Data inicial (opcional) |
+| `to` | string (ISO) | query | Data final (opcional) |
+| `session_id` | uuid | query | Filtrar por treino específico (opcional) |
+
+**Response:** CSV file download
+
+**Colunas CSV:**
+```
+Título Sessão,Data,Atleta,Check-in,Método,Status
+```
+
+**Valores de status:** Presente, Concluído, Parcial, Ausente, Atrasado, Justificado  
+**Valores de método:** QR, Manual, Automático
+
+**Acesso:** admin_master, coach, assistant (membros do grupo)
+
+---
+
+## Workouts / Treinos
+
+### `POST /api/workouts/assign`
+
+Atribuição em lote de treinos a múltiplos atletas.
+
+**Body (JSON):**
+| Campo | Tipo | Obrigatório |
+|-------|------|-------------|
+| `template_id` | uuid | Sim |
+| `athlete_user_ids` | uuid[] | Sim |
+| `scheduled_date` | date (YYYY-MM-DD) | Sim |
+
+**Response:**
+```json
+{
+  "ok": true,
+  "total": 3,
+  "success": 3,
+  "results": [
+    { "userId": "...", "ok": true, "message": "ASSIGNED" }
+  ]
+}
+```
+
+Chama `fn_assign_workout` para cada atleta. Resultados parciais são possíveis (alguns ok, outros com erro).
+
+### `POST /api/workouts/watch-type`
+
+Define o tipo de relógio de um atleta (coach override).
+
+**Body (JSON):**
+| Campo | Tipo | Obrigatório |
+|-------|------|-------------|
+| `member_id` | uuid | Sim |
+| `watch_type` | string \| null | Sim |
+
+Valores: `garmin`, `coros`, `suunto`, `apple_watch`, `polar`, `other`, `""` (reset to auto-detect).
+
+Chama `fn_set_athlete_watch_type` (SECURITY DEFINER, coach-only).
+
+---
+
 ## Audit Logging
 
 Mutating operations log to `audit_log` table via `src/lib/audit.ts`:

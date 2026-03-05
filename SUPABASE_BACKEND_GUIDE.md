@@ -1,6 +1,6 @@
 # SUPABASE_BACKEND_GUIDE.md — Omni Runner Backend
 
-> **Atualizado:** 2026-02-26 (Phase 35.99.0 — 129 decisões documentadas)
+> **Atualizado:** 2026-03-05 (Phase 36.0.0 — 137 decisões documentadas)
 > **Projeto:** Omni Runner (app de corrida com gamificação B2B)
 > **Stack Backend:** Supabase (Postgres + Auth + Storage + Edge Functions + pg_cron)
 > **Stack Mobile:** Flutter (Dart) — offline-first com Isar local
@@ -221,14 +221,19 @@ DESAFIOS (4)
 ├── challenge_results      — Resultados finalizados
 └── challenge_run_bindings — Auditoria sessão↔desafio
 
-COACHING — Assessoria (12)
+COACHING — Assessoria (16)
 ├── coaching_groups        — Grupos de assessoria (invite_code, invite_enabled, approval_status)
-├── coaching_members       — Membros (admin_master/professor/assistente/atleta)
+├── coaching_members       — Membros (admin_master/coach/assistant/athlete) — DECISAO 019
 ├── coaching_invites       — Convites para grupos de coaching
 ├── coaching_token_inventory — Estoque de tokens por grupo (never negative)
 ├── token_intents          — Intents QR (OPEN/CONSUMED/EXPIRED/CANCELED)
 ├── coaching_rankings      — Rankings de coaching
 ├── coaching_ranking_entries — Entradas dos rankings
+├── coaching_training_sessions — Treinos prescritos (distance_target_m, pace_min/max_sec_km) — DECISAO 134
+├── coaching_training_attendance — Cumprimento dos treinos (completed/partial/absent, method auto/manual/qr) — DECISAO 134
+├── coaching_tags          — Tags de CRM por grupo — DECISAO OS-02
+├── coaching_athlete_tags  — Tags associadas a atletas — DECISAO OS-02
+├── coaching_athlete_notes — Notas do staff sobre atletas — DECISAO OS-02
 ├── race_events            — Eventos presenciais do coaching
 ├── race_participations    — Participação em corridas
 ├── race_results           — Resultados de corridas
@@ -417,6 +422,17 @@ parks (id)
 | `supabase/migrations/20260226300000_parks_tables.sql` | parks (47 parques seed) + park_activities + park_leaderboard + park_segments + fn_refresh_park_leaderboard + trigger. DECISAO 084 |
 | `supabase/migrations/20260226310000_strava_activity_history.sql` | strava_activity_history (upsert por strava_activity_id) + RLS own read/insert. DECISAO 084 |
 | `supabase/migrations/20260227100000_coaching_groups_state.sql` | coaching_groups.state (UF) + fn_create_assessoria com p_state. DECISAO 086 |
+| `supabase/migrations/20260303300000_fix_coaching_roles.sql` | Canonical role rename: professor→coach, assistente→assistant, atleta→athlete. Backfill + constraint + 15 RLS policies + 6 functions. DECISAO 019 |
+| `supabase/migrations/20260303400000_training_sessions_attendance.sql` | coaching_training_sessions + coaching_training_attendance + fn_mark_attendance + fn_issue_checkin_token + RLS. OS-01 base |
+| `supabase/migrations/20260303500000_crm_tags_notes_status.sql` | coaching_tags + coaching_athlete_tags + coaching_athlete_notes + coaching_member_status + fn_upsert_member_status + RLS. OS-02 |
+| `supabase/migrations/20260304100000_fix_assessoria_link.sql` | Fix profiles.active_coaching_group_id backfill + role consistency. DECISAO 131 |
+| `supabase/migrations/20260312000000_fix_db_functions.sql` | Fix fn_delete_user_data, fn_compute_kpis_batch, fn_compute_skill_bracket, fn_increment_wallets_batch, fn_sum_coin_ledger_by_group. DECISAO 133 |
+| `supabase/migrations/20260312100000_backfill_roles.sql` | Backfill coaching_members roles + profiles.active_coaching_group_id. DECISAO 133 |
+| `supabase/migrations/20260312200000_search_users.sql` | fn_search_users RPC. DECISAO 133 |
+| `supabase/migrations/20260313000000_auto_attendance.sql` | Auto-attendance: distance_target_m, pace columns, fn_evaluate_athlete_training, triggers trg_session_auto_attendance + trg_training_close_prev, updated CHECK constraints. DECISAO 134 |
+| `supabase/migrations/20260314000000_workout_blocks_v2.sql` | Workout blocks v2: pace range (min/max), HR range (bpm), repeat_count, block types rest/repeat, backfill legacy pace, athlete RLS. DECISAO 136 |
+| `supabase/migrations/20260314100000_assignment_to_training_bridge.sql` | Bridge: trg_assignment_to_training auto-creates coaching_training_sessions from workout assignments for auto-attendance. DECISAO 136 |
+| `supabase/migrations/20260315000000_member_watch_type.sql` | coaching_members.watch_type + v_athlete_watch_type view + fn_set_athlete_watch_type RPC. DECISAO 137 |
 
 ---
 
@@ -841,6 +857,10 @@ Já documentado em `contracts/analytics_api.md`. Processa baselines (4 semanas),
 | `trg_participant_limits` | `challenge_participants` INSERT/UPDATE | 5 accepted + 10 pending | RAISE EXCEPTION |
 | `trg_challenges_verified_stake_gate` | `challenges` INSERT/UPDATE(entry_fee_coins) | entry_fee_coins>0 requires VERIFIED | RAISE EXCEPTION ATHLETE_NOT_VERIFIED |
 | `trg_participants_verified_join_gate` | `challenge_participants` INSERT | challenge.entry_fee_coins>0 requires VERIFIED | RAISE EXCEPTION ATHLETE_NOT_VERIFIED |
+| `trg_session_auto_attendance` | `sessions` AFTER INSERT/UPDATE | `NEW.status = 3` (run completed) | Avalia treinos pendentes do atleta via `fn_evaluate_athlete_training`. DECISAO 134 |
+| `trg_training_close_prev` | `coaching_training_sessions` AFTER INSERT | `NEW.distance_target_m IS NOT NULL` | Fecha treino anterior: avalia atletas ou marca absent. DECISAO 134 |
+| `trg_workout_assignment_to_training` | `coaching_workout_assignments` AFTER INSERT | — | Calcula distância/pace dos blocos e cria `coaching_training_sessions` para auto-attendance. DECISAO 136 |
+| `trg_support_message_touch` | `support_messages` AFTER INSERT | — | Atualiza `support_tickets.updated_at`. DECISAO 076 |
 
 ---
 
@@ -1350,6 +1370,10 @@ cd portal/ && npm run build && vercel --prod
 | `check_daily_token_usage(group_id, type)` | Remaining capacity today |
 | `fn_search_users(query)` | Busca por nome para adicionar amigos (SECURITY DEFINER) |
 | `fn_refresh_park_leaderboard(p_park_id)` | Recalcula rankings de um parque (chamado via trigger) |
+| `fn_mark_attendance(session_id, athlete_id, nonce)` | Marca presença (idempotente, ON CONFLICT DO NOTHING). OS-01 |
+| `fn_issue_checkin_token(session_id, ttl_seconds)` | Gera nonce + expires_at para QR (legacy). OS-01 |
+| `fn_evaluate_athlete_training(training_id, athlete_id, deadline_ms)` | Avalia 2 próximas corridas vs treino prescrito → completed/partial. DECISAO 134 |
+| `fn_upsert_member_status(member_id, status, notes)` | Atualiza status de membro (idempotente). OS-02 |
 
 ### Tarefas típicas:
 
@@ -1362,4 +1386,4 @@ cd portal/ && npm run build && vercel --prod
 
 ---
 
-*Gerado em 2026-02-18, atualizado em 2026-02-26 (Sprint 25.0.0 + Parks E2E + Backend Audit + Liga Admin + Liga Estadual + Auditoria Final) — 70 tabelas, 55 Edge Functions, 63 migrations, DECISAO 102*
+*Gerado em 2026-02-18, atualizado em 2026-03-04 (Sprint 25.0.0 + Parks E2E + Backend Audit + Auto-Attendance + Role Rename + CRM) — 74 tabelas, 55 Edge Functions, 72 migrations, DECISAO 135*

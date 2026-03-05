@@ -1,7 +1,7 @@
 # ARCHITECTURE.md — Arquitetura Técnica do Omni Runner
 
-> **Atualizado:** 26/02/2026
-> **Status:** Ativo — Pré-lançamento (QA em device real)
+> **Atualizado:** 04/03/2026
+> **Status:** Ativo — Produção
 > **Código:** 458 arquivos Dart (lib/) · 55 arquivos de teste · ~116k linhas
 
 ---
@@ -283,7 +283,7 @@ ParkDetectionService
 | Domínio | Tabelas |
 |---------|---------|
 | Auth/Profile | `profiles` (+ `platform_role`), `auth.users` |
-| Coaching | `coaching_groups` (+ `approval_status`), `coaching_members`, `coaching_invites`, `coaching_join_requests` |
+| Coaching | `coaching_groups` (+ `approval_status`), `coaching_members`, `coaching_invites`, `coaching_join_requests`, `coaching_training_sessions`, `coaching_training_attendance`, `coaching_tags`, `coaching_athlete_tags`, `coaching_athlete_notes` |
 | Tracking | `sessions`, `session_points` |
 | Challenges | `challenges`, `challenge_participants`, `challenge_results` |
 | Championships | `championships`, `championship_templates`, `championship_participants`, `championship_invitations` |
@@ -314,7 +314,8 @@ ParkDetectionService
 | `fn_platform_approve_assessoria` | Platform admin aprova assessoria |
 | `fn_platform_reject_assessoria` | Platform admin rejeita assessoria |
 | `fn_platform_suspend_assessoria` | Platform admin suspende assessoria |
-| `fn_join_as_professor` | Staff entra como professor |
+| `fn_join_as_professor` | Staff entra como coach (legacy, dropado na migration de roles) |
+| `fn_evaluate_athlete_training` | Avalia 2 próximas corridas vs treino prescrito |
 | `fn_fulfill_purchase` | Processa compra (atomic credit allocation) |
 | `release_pending_to_balance` | Clearing: libera pendentes → disponível |
 | `check_daily_token_usage` | Rate limit de tokens |
@@ -426,6 +427,12 @@ Retry: 3x exponential backoff em chamadas críticas (auth, create assessoria)
 | F27 — Push Notifications | core/push + EFs + FCM | 8 tipos de push, in-app banner, deep linking | ✅ |
 | F28 — Guided Onboarding | presentation/screens | Tour de 9 slides para novos atletas + tela "Como Funciona" | ✅ |
 | F29 — Polish / UX | presentation/widgets | Shimmer, confetti, empty/error states, haptics | ✅ |
+| F33 — Auto-Attendance | domain + data + DB triggers | Treinos prescritos, avaliação automática, badges de status | ✅ |
+| F34 — CRM Tags & Notes | portal + data | Tags, notas, status de membros para staff | ✅ |
+| F35 — Dark Mode Premium | presentation + portal | Design tokens dark mode em 88+ telas app + portal | ✅ |
+| F36 — Announcements | portal + data | Mural de avisos para assessorias | ✅ |
+| F37 — Structured Workout + .FIT | domain + Edge Function + portal | Blocos estruturados (pace range, HR, repeat), .FIT binary export, send to watch | ✅ |
+| F38 — Watch Type + Assign Page | portal + data + DB | Watch type tracking, athlete-centric bulk assignment, FIT compatibility | ✅ |
 
 ---
 
@@ -435,7 +442,7 @@ Retry: 3x exponential backoff em chamadas críticas (auth, create assessoria)
 Captura GPS em tempo real, anti-cheat, métricas, ghost runner, auto-pause, foreground service.
 
 ### 12.2 Coaching Context (Assessoria)
-Assessorias, membros (admin_master/coach/assistant/athlete), join requests com aprovação, remoção de membros, convites, QR operations, tokens/OmniCoins.
+Assessorias, membros (admin_master/coach/assistant/athlete), join requests com aprovação, remoção de membros, convites, tokens/OmniCoins, **treinos prescritos com auto-attendance** (DECISAO 134).
 
 ### 12.3 Challenge Context
 Desafios 1v1, grupo e team vs team. Sempre entre atletas. Assessorias não participam de desafios — apenas distribuem tokens.
