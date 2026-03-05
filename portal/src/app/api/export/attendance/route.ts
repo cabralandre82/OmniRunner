@@ -74,7 +74,7 @@ export async function GET(request: Request) {
 
   const { data: attendance } = await db
     .from("coaching_training_attendance")
-    .select("session_id, athlete_user_id, checked_at, method, status")
+    .select("session_id, athlete_user_id, checked_at, method, status, matched_run_id")
     .in("session_id", sessionIds)
     .eq("group_id", groupId)
     .order("checked_at", { ascending: true });
@@ -102,8 +102,13 @@ export async function GET(request: Request) {
     const sessionTitle = (s?.title ?? "").replace(/,/g, " ");
     const date = s ? new Date(s.starts_at).toLocaleDateString("pt-BR") : "";
     const checkedAt = new Date(a.checked_at).toLocaleString("pt-BR");
-    const method = a.method === "qr" ? "QR" : "Manual";
-    const status = a.status;
+    const methodLabels: Record<string, string> = { qr: "QR", manual: "Manual", auto: "Automático" };
+    const statusLabels: Record<string, string> = {
+      present: "Presente", completed: "Concluído", partial: "Parcial",
+      absent: "Ausente", late: "Atrasado", excused: "Justificado",
+    };
+    const method = methodLabels[a.method] ?? a.method;
+    const status = statusLabels[a.status] ?? a.status;
     rows.push(`${sessionTitle},${date},${athleteName},${checkedAt},${method},${status}`);
   }
 

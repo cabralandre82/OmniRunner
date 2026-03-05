@@ -68,7 +68,7 @@ async function getAttendanceAnalytics(
           .select("session_id, athlete_user_id")
           .eq("group_id", groupId)
           .in("session_id", sessionIds)
-          .eq("status", "present")
+          .in("status", ["present", "completed"])
       : { data: [] };
   const attendance = attendanceRes.data ?? [];
 
@@ -190,14 +190,14 @@ export default async function AttendanceAnalyticsPage({
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
-          label="Taxa média de presença"
+          label="Taxa média de conclusão"
           value={formatPercent(avgRate)}
           color="text-brand"
         />
         <KpiCard label="Total de treinos no período" value={sessions.length} />
-        <KpiCard label="Total de check-ins" value={totalCheckIns} color="text-success" />
+        <KpiCard label="Total concluídos" value={totalCheckIns} color="text-success" />
         <KpiCard
-          label="Treinos com presença < 50%"
+          label="Treinos com conclusão < 50%"
           value={lowCount}
           color={lowCount > 0 ? "text-amber-700" : "text-content-primary"}
         />

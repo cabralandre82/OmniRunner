@@ -11,11 +11,23 @@ const STATUS_LABELS: Record<string, string> = {
   late: "Atrasado",
   excused: "Justificado",
   absent: "Ausente",
+  completed: "Concluído",
+  partial: "Parcial",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  present: "bg-success-soft text-success",
+  completed: "bg-success-soft text-success",
+  late: "bg-warning-soft text-warning",
+  partial: "bg-warning-soft text-warning",
+  excused: "bg-info-soft text-info",
+  absent: "bg-error-soft text-error",
 };
 
 const METHOD_LABELS: Record<string, string> = {
   qr: "QR",
   manual: "Manual",
+  auto: "Automático",
 };
 
 export default async function AttendanceDetailPage({
@@ -32,7 +44,7 @@ export default async function AttendanceDetailPage({
 
   const { data: session } = await supabase
     .from("coaching_training_sessions")
-    .select("id, title, starts_at, ends_at, location_name, status")
+    .select("id, title, starts_at, ends_at, location_name, status, distance_target_m, pace_min_sec_km, pace_max_sec_km")
     .eq("id", sessionId)
     .eq("group_id", groupId)
     .single();
@@ -77,7 +89,11 @@ export default async function AttendanceDetailPage({
     .eq("group_id", groupId)
     .in("role", ["athlete", "atleta"]);
 
-  const presentes = (attendance ?? []).filter((a) => a.status === "present").length;
+  const presentes = (attendance ?? []).filter(
+    (a) => a.status === "present" || a.status === "completed",
+  ).length;
+  const parciais = (attendance ?? []).filter((a) => a.status === "partial").length;
+  const ausentes = (attendance ?? []).filter((a) => a.status === "absent").length;
   const total = athleteCount ?? 0;
   const pct = total > 0 ? (presentes / total) * 100 : 0;
 
@@ -98,7 +114,7 @@ export default async function AttendanceDetailPage({
 
       <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
         <h2 className="text-sm font-semibold text-content-primary">Informações do treino</h2>
-        <dl className="mt-3 grid gap-2 sm:grid-cols-2">
+        <dl className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <dt className="text-xs text-content-secondary">Data</dt>
             <dd className="text-sm font-medium text-content-primary">{formatDateISO(session.starts_at)}</dd>
@@ -123,17 +139,35 @@ export default async function AttendanceDetailPage({
               </span>
             </dd>
           </div>
+          {session.distance_target_m && (
+            <div>
+              <dt className="text-xs text-content-secondary">Distância alvo</dt>
+              <dd className="text-sm font-medium text-content-primary">
+                {(session.distance_target_m / 1000).toFixed(1)} km
+              </dd>
+            </div>
+          )}
+          {session.pace_min_sec_km && session.pace_max_sec_km && (
+            <div>
+              <dt className="text-xs text-content-secondary">Faixa de pace</dt>
+              <dd className="text-sm font-medium text-content-primary">
+                {fmtPace(session.pace_min_sec_km)} ~ {fmtPace(session.pace_max_sec_km)} /km
+              </dd>
+            </div>
+          )}
         </dl>
       </div>
 
       <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-content-primary">Presença</h2>
-          {/* Manual attendance button hidden until feature is implemented */}
-        </div>
+        <h2 className="text-sm font-semibold text-content-primary">Presença</h2>
         <p className="mt-2 text-2xl font-bold text-content-primary">
           {presentes} / {total} atletas = {pct.toFixed(1)}%
         </p>
+        <div className="mt-2 flex gap-4 text-xs text-content-secondary">
+          <span className="text-success">{presentes} concluídos</span>
+          <span className="text-warning">{parciais} parciais</span>
+          <span className="text-error">{ausentes} ausentes</span>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
@@ -162,13 +196,7 @@ export default async function AttendanceDetailPage({
                   <td className="whitespace-nowrap px-4 py-3">
                     <span
                       className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        a.status === "present"
-                          ? "bg-success-soft text-success"
-                          : a.status === "late"
-                            ? "bg-warning-soft text-warning"
-                            : a.status === "excused"
-                              ? "bg-info-soft text-info"
-                              : "bg-surface-elevated text-content-secondary"
+                        STATUS_COLORS[a.status] ?? "bg-surface-elevated text-content-secondary"
                       }`}
                     >
                       {STATUS_LABELS[a.status] ?? a.status}
@@ -184,10 +212,16 @@ export default async function AttendanceDetailPage({
       {(attendance ?? []).length === 0 && (
         <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
           <p className="text-sm text-content-secondary">
-            Nenhum check-in registrado neste treino.
+            Nenhuma avaliação registrada neste treino.
           </p>
         </div>
       )}
     </div>
   );
+}
+
+function fmtPace(secPerKm: number): string {
+  const min = Math.floor(secPerKm / 60);
+  const sec = Math.round(secPerKm % 60);
+  return `${min}:${sec.toString().padStart(2, "0")}`;
 }

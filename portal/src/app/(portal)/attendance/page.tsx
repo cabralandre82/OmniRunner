@@ -19,7 +19,7 @@ async function getAttendanceData(groupId: string, from?: string, to?: string, se
 
   let sessionsQuery = supabase
     .from("coaching_training_sessions")
-    .select("id, title, starts_at, location_name, status")
+    .select("id, title, starts_at, location_name, status, distance_target_m")
     .eq("group_id", groupId)
     .gte("starts_at", fromDate.toISOString())
     .lte("starts_at", toDate.toISOString())
@@ -44,10 +44,10 @@ async function getAttendanceData(groupId: string, from?: string, to?: string, se
 
   const { data: attendance } = await supabase
     .from("coaching_training_attendance")
-    .select("session_id")
+    .select("session_id, status")
     .in("session_id", sessionIds)
     .eq("group_id", groupId)
-    .eq("status", "present");
+    .in("status", ["present", "completed"]);
 
   const attendanceBySession = new Map<string, number>();
   let totalCheckIns = 0;
@@ -148,8 +148,8 @@ export default async function AttendancePage({
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard label="Treinos (período)" value={totalSessions} />
-        <KpiCard label="Presença média" value={formatPercent(avgAttendancePct)} color="text-brand" />
-        <KpiCard label="Total check-ins" value={totalCheckIns} color="text-success" />
+        <KpiCard label="Taxa de conclusão" value={formatPercent(avgAttendancePct)} color="text-brand" />
+        <KpiCard label="Concluídos" value={totalCheckIns} color="text-success" />
         <KpiCard label="Atletas no grupo" value={athleteCount} />
       </div>
 
@@ -169,8 +169,9 @@ export default async function AttendancePage({
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-content-secondary">Treino</th>
                 <th className="px-4 py-3 text-left font-medium text-content-secondary">Data</th>
-                <th className="px-4 py-3 text-center font-medium text-content-secondary">Presentes</th>
-                <th className="px-4 py-3 text-center font-medium text-content-secondary">Total Atletas</th>
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">Distância</th>
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">Concluídos</th>
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">Total</th>
                 <th className="px-4 py-3 text-center font-medium text-content-secondary">%</th>
               </tr>
             </thead>
@@ -179,6 +180,9 @@ export default async function AttendancePage({
                 const presentes = attendanceBySession.get(session.id) ?? 0;
                 const total = athleteCount || 1;
                 const pct = (presentes / total) * 100;
+                const distKm = session.distance_target_m
+                  ? (session.distance_target_m / 1000).toFixed(1) + " km"
+                  : "—";
                 return (
                   <tr key={session.id}>
                     <td className="whitespace-nowrap px-4 py-3">
@@ -191,6 +195,9 @@ export default async function AttendancePage({
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                       {formatDateISO(session.starts_at)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-center text-content-secondary">
+                      {distKm}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-center font-medium text-content-primary">
                       {presentes}
