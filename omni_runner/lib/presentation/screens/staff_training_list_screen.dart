@@ -298,7 +298,7 @@ class _TrainingSessionCard extends StatelessWidget {
                           size: 16, color: cs.primary),
                       const SizedBox(width: 4),
                       Text(
-                        '$count presença${count != 1 ? 's' : ''}',
+                        '$count atleta${count != 1 ? 's' : ''} concluí${count != 1 ? 'ram' : 'u'}',
                         style: theme.textTheme.labelMedium?.copyWith(
                           color: cs.primary,
                           fontWeight: FontWeight.w500,

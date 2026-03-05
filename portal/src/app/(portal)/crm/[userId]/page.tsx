@@ -240,7 +240,7 @@ export default async function AthleteDetailPage({
         </div>
 
         <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
-          <h2 className="font-semibold text-content-primary">Presença (últimos 30 dias)</h2>
+          <h2 className="font-semibold text-content-primary">Treinos Prescritos (últimos 30 dias)</h2>
           <div className="mt-4 flex items-end gap-0.5 h-24">
             {athlete.attendanceByDay.map((d) => (
               <div
@@ -259,7 +259,7 @@ export default async function AthleteDetailPage({
             ))}
           </div>
           <p className="mt-2 text-xs text-content-secondary">
-            Total: {athlete.attendanceByDay.reduce((s, d) => s + d.count, 0)} presenças
+            Total: {athlete.attendanceByDay.reduce((s, d) => s + d.count, 0)} treinos concluídos
           </p>
         </div>
       </div>

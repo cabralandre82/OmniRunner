@@ -53,7 +53,7 @@ export default async function AttendanceDetailPage({
     return (
       <div className="space-y-6">
         <Link href="/attendance" className="text-sm text-brand hover:underline">
-          ← Voltar ao relatório
+          ← Voltar aos treinos
         </Link>
         <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
           <p className="text-sm text-content-secondary">Treino não encontrado.</p>
@@ -102,13 +102,13 @@ export default async function AttendanceDetailPage({
   return (
     <div className="space-y-6">
       <Link href="/attendance" className="text-sm text-brand hover:underline">
-        ← Voltar ao relatório
+        ← Voltar aos treinos
       </Link>
 
       <div>
         <h1 className="text-2xl font-bold text-content-primary">{session.title}</h1>
         <p className="mt-1 text-sm text-content-secondary">
-          Detalhes da presença no treino
+          Resultado dos atletas neste treino
         </p>
       </div>
 
@@ -159,7 +159,7 @@ export default async function AttendanceDetailPage({
       </div>
 
       <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-content-primary">Presença</h2>
+        <h2 className="text-sm font-semibold text-content-primary">Resultado do Treino</h2>
         <p className="mt-2 text-2xl font-bold text-content-primary">
           {presentes} / {total} atletas = {pct.toFixed(1)}%
         </p>
@@ -176,7 +176,7 @@ export default async function AttendanceDetailPage({
             <thead className="bg-bg-secondary">
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-content-secondary">Nome</th>
-                <th className="px-4 py-3 text-left font-medium text-content-secondary">Check-in</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Avaliado em</th>
                 <th className="px-4 py-3 text-left font-medium text-content-secondary">Método</th>
                 <th className="px-4 py-3 text-left font-medium text-content-secondary">Status</th>
               </tr>
@@ -212,7 +212,7 @@ export default async function AttendanceDetailPage({
       {(attendance ?? []).length === 0 && (
         <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
           <p className="text-sm text-content-secondary">
-            Nenhuma avaliação registrada neste treino.
+            Nenhum resultado registrado para este treino.
           </p>
         </div>
       )}

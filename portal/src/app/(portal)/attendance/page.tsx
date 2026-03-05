@@ -130,9 +130,9 @@ export default async function AttendancePage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-content-primary">Relatório de Presença</h1>
+        <h1 className="text-2xl font-bold text-content-primary">Cumprimento dos Treinos</h1>
         <p className="mt-1 text-sm text-content-secondary">
-          Treinos e check-ins dos últimos 30 dias
+          Avaliação automática dos treinos prescritos nos últimos 30 dias
         </p>
       </div>
 

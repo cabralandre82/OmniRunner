@@ -260,7 +260,7 @@ class _StaffTrainingDetailView extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, DesignTokens.spacingLg, DesignTokens.spacingMd, DesignTokens.spacingSm),
                         child: Text(
-                          'Presença ($attendanceCount)',
+                          'Cumprimento do Treino ($attendanceCount)',
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -273,7 +273,7 @@ class _StaffTrainingDetailView extends StatelessWidget {
                           padding: EdgeInsets.all(DesignTokens.spacingXl),
                           child: Center(
                             child: Text(
-                              'Nenhuma presença registrada',
+                              'Nenhum resultado registrado para este treino',
                               style: TextStyle(
                                 color: DesignTokens.textMuted,
                                 fontStyle: FontStyle.italic,

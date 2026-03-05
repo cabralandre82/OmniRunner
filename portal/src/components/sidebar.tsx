@@ -56,8 +56,8 @@ const NAV_GROUPS: NavGroup[] = [
     ),
     items: [
       { href: "/engagement", label: "Engajamento", roles: ["admin_master", "coach", "assistant"] },
-      { href: "/attendance", label: "Presença", roles: ["admin_master", "coach", "assistant"] },
-      { href: "/attendance-analytics", label: "Análise Presença", roles: ["admin_master", "coach", "assistant"] },
+      { href: "/attendance", label: "Treinos Prescritos", roles: ["admin_master", "coach", "assistant"] },
+      { href: "/attendance-analytics", label: "Análise de Treinos", roles: ["admin_master", "coach", "assistant"] },
       { href: "/announcements", label: "Mural", roles: ["admin_master", "coach", "assistant"] },
       { href: "/communications", label: "Comunicação", roles: ["admin_master", "coach"] },
     ],

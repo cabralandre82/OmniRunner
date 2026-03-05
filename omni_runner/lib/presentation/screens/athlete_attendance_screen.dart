@@ -51,7 +51,7 @@ class _AthleteAttendanceScreenState extends State<AthleteAttendanceScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = 'Erro ao carregar presença: $e';
+        _error = 'Erro ao carregar treinos: $e';
         _loading = false;
       });
     }
@@ -61,7 +61,7 @@ class _AthleteAttendanceScreenState extends State<AthleteAttendanceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Minha Presença'),
+        title: const Text('Meus Treinos Prescritos'),
         actions: [
           IconButton(
             tooltip: 'Atualizar',
@@ -125,12 +125,12 @@ class _AthleteAttendanceScreenState extends State<AthleteAttendanceScreen> {
           Icon(Icons.event_available, size: 64, color: theme.colorScheme.outline),
           const SizedBox(height: 16),
           Text(
-            'Nenhuma presença registrada',
+            'Nenhum treino prescrito encontrado',
             style: theme.textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
           Text(
-            'Sua presença nos treinos aparecerá aqui.',
+            'Seus resultados nos treinos prescritos aparecerão aqui.',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.outline,

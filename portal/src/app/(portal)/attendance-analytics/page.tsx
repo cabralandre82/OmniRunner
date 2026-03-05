@@ -177,10 +177,10 @@ export default async function AttendanceAnalyticsPage({
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-content-primary">
-          Análise de Presença
+          Análise de Treinos Prescritos
         </h1>
         <p className="mt-1 text-sm text-content-secondary">
-          Métricas e tendências de presença nos treinos
+          Métricas e tendências de cumprimento dos treinos
         </p>
       </div>
 
@@ -206,10 +206,10 @@ export default async function AttendanceAnalyticsPage({
       <div className="rounded-xl border border-border bg-surface shadow-sm">
         <div className="border-b border-border px-4 py-3">
           <h2 className="text-sm font-semibold text-content-primary">
-            Treinos com Baixa Presença
+            Treinos com Baixo Cumprimento
           </h2>
           <p className="mt-0.5 text-xs text-content-secondary">
-            Sessões com taxa de presença inferior a 50%
+            Treinos com taxa de conclusão inferior a 50%
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -263,7 +263,7 @@ export default async function AttendanceAnalyticsPage({
         </div>
         {lowAttendance.length === 0 && (
           <div className="px-4 py-8 text-center text-sm text-content-secondary">
-            Nenhum treino com presença inferior a 50% no período.
+            Nenhum treino com taxa de conclusão inferior a 50% no período.
           </div>
         )}
       </div>
@@ -271,7 +271,7 @@ export default async function AttendanceAnalyticsPage({
       <div className="rounded-xl border border-border bg-surface shadow-sm">
         <div className="border-b border-border px-4 py-3">
           <h2 className="text-sm font-semibold text-content-primary">
-            Presença por Atleta
+            Cumprimento por Atleta
           </h2>
           <p className="mt-0.5 text-xs text-content-secondary">
             Número de treinos presentes e taxa por atleta
@@ -285,7 +285,7 @@ export default async function AttendanceAnalyticsPage({
                   Atleta
                 </th>
                 <th className="px-4 py-3 text-center font-medium text-content-secondary">
-                  Check-ins
+                  Concluídos
                 </th>
                 <th className="px-4 py-3 text-center font-medium text-content-secondary">
                   Taxa (%)

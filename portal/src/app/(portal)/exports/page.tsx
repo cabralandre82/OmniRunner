@@ -103,8 +103,8 @@ export default function ExportsPage() {
           exportHref="/api/export/engagement"
         />
         <ExportCard
-          title="Presença"
-          description="Treinos, datas, atletas, horário check-in, método"
+          title="Treinos Prescritos"
+          description="Treinos, datas, atletas, status de cumprimento, método"
           from={attendanceFrom}
           to={attendanceTo}
           onFromChange={setAttendanceFrom}

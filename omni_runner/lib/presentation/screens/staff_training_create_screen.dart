@@ -300,7 +300,7 @@ class _StaffTrainingCreateScreenState extends State<StaffTrainingCreateScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'A presença será avaliada automaticamente com base nas corridas do atleta.',
+              'O cumprimento do treino será avaliado automaticamente com base nas corridas do atleta.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: cs.outline,
                 fontStyle: FontStyle.italic,

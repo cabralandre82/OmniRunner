@@ -67,7 +67,7 @@ class _StaffAthleteProfileScreenState extends State<StaffAthleteProfileScreen>
               Tab(text: 'Visão geral'),
               Tab(text: 'Notas'),
               Tab(text: 'Tags'),
-              Tab(text: 'Presença'),
+              Tab(text: 'Treinos'),
               Tab(text: 'Alertas'),
             ],
           ),
@@ -321,7 +321,7 @@ class _QuickStatsRow extends StatelessWidget {
         Expanded(
           child: _StatChip(
             icon: Icons.event_available,
-            label: '$attendanceCount presença${attendanceCount != 1 ? 's' : ''}',
+            label: '$attendanceCount treino${attendanceCount != 1 ? 's' : ''} avaliado${attendanceCount != 1 ? 's' : ''}',
           ),
         ),
         const SizedBox(width: 12),
@@ -812,7 +812,7 @@ class _PresencaTab extends StatelessWidget {
         if (list.isEmpty) {
           return Center(
             child: Text(
-              'Nenhuma presença registrada',
+              'Nenhum treino avaliado',
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.outline,
               ),

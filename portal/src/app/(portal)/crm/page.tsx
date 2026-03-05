@@ -216,7 +216,7 @@ export default async function CrmPage({
         <div>
           <h1 className="text-2xl font-bold text-content-primary">CRM de Atletas</h1>
           <p className="mt-1 text-sm text-content-secondary">
-            Status, tags, presenças e alertas dos atletas
+            Status, tags, treinos e alertas dos atletas
           </p>
         </div>
         <Link
@@ -275,7 +275,7 @@ export default async function CrmPage({
                   Tags
                 </th>
                 <th className="px-4 py-3 text-center font-medium text-content-secondary">
-                  Presenças
+                  Treinos
                 </th>
                 <th className="px-4 py-3 text-center font-medium text-content-secondary">
                   Alertas
