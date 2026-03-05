@@ -72,7 +72,8 @@ const NAV_GROUPS: NavGroup[] = [
       </svg>
     ),
     items: [
-      { href: "/workouts", label: "Treinos", roles: ["admin_master", "coach"] },
+      { href: "/workouts", label: "Templates", roles: ["admin_master", "coach"] },
+      { href: "/workouts/assign", label: "Atribuir Treinos", roles: ["admin_master", "coach"] },
       { href: "/workouts/analytics", label: "Análise Treinos", roles: ["admin_master", "coach"] },
       { href: "/delivery", label: "Entrega Treinos", roles: ["admin_master", "coach"] },
       { href: "/executions", label: "Execuções", roles: ["admin_master", "coach", "assistant"] },

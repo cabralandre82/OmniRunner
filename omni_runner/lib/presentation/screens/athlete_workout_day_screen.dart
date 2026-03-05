@@ -43,12 +43,50 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
   bool _completing = false;
   bool _sendingToWatch = false;
   int _pendingDeliveries = 0;
+  bool _fitCompatible = false;
+
+  static const _fitProviders = {'garmin', 'coros', 'suunto'};
 
   @override
   void initState() {
     super.initState();
     _loadToday();
     _loadPendingDeliveryCount();
+    _checkFitCompatibility();
+  }
+
+  Future<void> _checkFitCompatibility() async {
+    try {
+      final uid = sl<UserIdentityProvider>().userId;
+      final db = Supabase.instance.client;
+
+      final memberRow = await db
+          .from('coaching_members')
+          .select('watch_type')
+          .eq('group_id', widget.groupId)
+          .eq('user_id', uid)
+          .maybeSingle();
+
+      final manualType = memberRow?['watch_type'] as String?;
+      if (manualType != null) {
+        if (mounted) setState(() => _fitCompatible = _fitProviders.contains(manualType));
+        return;
+      }
+
+      final linkRow = await db
+          .from('coaching_device_links')
+          .select('provider')
+          .eq('group_id', widget.groupId)
+          .eq('athlete_user_id', uid)
+          .order('linked_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      final provider = linkRow?['provider'] as String?;
+      if (mounted) setState(() => _fitCompatible = _fitProviders.contains(provider));
+    } catch (_) {
+      // Default to false
+    }
   }
 
   Future<void> _loadPendingDeliveryCount() async {
@@ -363,7 +401,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
           }),
         ],
         const SizedBox(height: 16),
-        if (template != null && template.blocks.isNotEmpty)
+        if (template != null && template.blocks.isNotEmpty && _fitCompatible)
           OutlinedButton.icon(
             onPressed: _sendingToWatch ? null : () => _sendToWatch(assignment.id),
             icon: _sendingToWatch
@@ -377,6 +415,17 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
                 _sendingToWatch ? 'Gerando...' : 'Enviar para relógio'),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
+            ),
+          ),
+        if (template != null && template.blocks.isNotEmpty && !_fitCompatible)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Siga os detalhes do treino acima e registre sua corrida normalmente.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
         const SizedBox(height: 12),
