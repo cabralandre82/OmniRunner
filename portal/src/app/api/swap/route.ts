@@ -98,6 +98,10 @@ export async function POST(req: NextRequest) {
     if (data.action === "create") {
       const order = await createSwapOffer(auth.groupId, data.amount_usd);
 
+      if (!order) {
+        return NextResponse.json({ error: "Swap feature not available" }, { status: 503 });
+      }
+
       await auditLog({
         actorId: auth.user.id,
         groupId: auth.groupId,

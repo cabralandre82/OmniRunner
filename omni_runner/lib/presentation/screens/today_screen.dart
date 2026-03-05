@@ -1060,7 +1060,7 @@ class _BoraCorrerCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: ranToday
-              ? [DesignTokens.success, DesignTokens.success]
+              ? [DesignTokens.success, DesignTokens.success.withValues(alpha: 0.85)]
               : [cs.primaryContainer, cs.tertiaryContainer],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -1072,14 +1072,14 @@ class _BoraCorrerCard extends StatelessWidget {
           Icon(
             ranToday ? Icons.check_circle_rounded : Icons.directions_run,
             size: 40,
-            color: ranToday ? DesignTokens.success : cs.primary,
+            color: ranToday ? Colors.white : cs.primary,
           ),
           const SizedBox(height: 8),
           Text(
             ranToday ? 'Boa! Você já correu hoje!' : 'Bora correr?',
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              color: ranToday ? DesignTokens.success : null,
+              color: ranToday ? Colors.white : null,
             ),
           ),
           const SizedBox(height: 4),
@@ -1090,7 +1090,7 @@ class _BoraCorrerCard extends StatelessWidget {
                     'será importada automaticamente.',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: cs.onSurfaceVariant,
+              color: ranToday ? Colors.white70 : cs.onSurfaceVariant,
             ),
           ),
         ],
@@ -2075,7 +2075,7 @@ class _ActiveRunnersChipState extends State<_ActiveRunnersChip> {
           const SizedBox(width: DesignTokens.spacingSm),
           Expanded(
             child: Text(
-              '$_count corredore${_count == 1 ? '' : 's'} ativo${_count == 1 ? '' : 's'} esta semana',
+              '$_count corredor${_count == 1 ? '' : 'es'} ativo${_count == 1 ? '' : 's'} esta semana',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: cs.onSurfaceVariant,
                 fontWeight: FontWeight.w500,

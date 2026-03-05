@@ -98,7 +98,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
             .from('coaching_members')
             .select('group_id')
             .eq('user_id', uid)
-            .eq('role', 'athlete')
+            .inFilter('role', ['athlete', 'atleta'])
             .maybeSingle();
         groupId = row?['group_id'] as String?;
       } catch (e) {
@@ -116,7 +116,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
           .from('coaching_members')
           .select('user_id, profiles(display_name)')
           .eq('group_id', groupId)
-          .eq('role', 'athlete')
+          .inFilter('role', ['athlete', 'atleta'])
           .neq('user_id', uid)
           .limit(10);
 

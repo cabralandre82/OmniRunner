@@ -75,7 +75,7 @@ export default async function AttendanceDetailPage({
     .from("coaching_members")
     .select("id", { count: "exact", head: true })
     .eq("group_id", groupId)
-    .eq("role", "athlete");
+    .in("role", ["athlete", "atleta"]);
 
   const presentes = (attendance ?? []).filter((a) => a.status === "present").length;
   const total = athleteCount ?? 0;

@@ -49,7 +49,7 @@ export default async function VerificationPage() {
     .from("coaching_members")
     .select("user_id, display_name")
     .eq("group_id", groupId)
-    .eq("role", "athlete");
+    .in("role", ["athlete", "atleta"]);
 
   const athleteIds = (members ?? []).map(
     (m: { user_id: string }) => m.user_id,

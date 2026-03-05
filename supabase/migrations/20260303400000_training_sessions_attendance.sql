@@ -65,6 +65,7 @@ ALTER TABLE public.coaching_training_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_training_attendance ENABLE ROW LEVEL SECURITY;
 
 -- 3.1 Training sessions: any group member can read
+DROP POLICY IF EXISTS "training_sessions_member_read" ON public.coaching_training_sessions;
 CREATE POLICY "training_sessions_member_read"
   ON public.coaching_training_sessions FOR SELECT USING (
     EXISTS (
@@ -75,6 +76,7 @@ CREATE POLICY "training_sessions_member_read"
   );
 
 -- 3.2 Training sessions: admin_master and coach can insert
+DROP POLICY IF EXISTS "training_sessions_staff_insert" ON public.coaching_training_sessions;
 CREATE POLICY "training_sessions_staff_insert"
   ON public.coaching_training_sessions FOR INSERT WITH CHECK (
     EXISTS (
@@ -86,6 +88,7 @@ CREATE POLICY "training_sessions_staff_insert"
   );
 
 -- 3.3 Training sessions: admin_master and coach can update (edit/cancel)
+DROP POLICY IF EXISTS "training_sessions_staff_update" ON public.coaching_training_sessions;
 CREATE POLICY "training_sessions_staff_update"
   ON public.coaching_training_sessions FOR UPDATE USING (
     EXISTS (
@@ -97,6 +100,7 @@ CREATE POLICY "training_sessions_staff_update"
   );
 
 -- 3.4 Attendance: staff can read all attendance for their group
+DROP POLICY IF EXISTS "attendance_staff_read" ON public.coaching_training_attendance;
 CREATE POLICY "attendance_staff_read"
   ON public.coaching_training_attendance FOR SELECT USING (
     EXISTS (
@@ -108,12 +112,14 @@ CREATE POLICY "attendance_staff_read"
   );
 
 -- 3.5 Attendance: athlete can read only their own records
+DROP POLICY IF EXISTS "attendance_own_read" ON public.coaching_training_attendance;
 CREATE POLICY "attendance_own_read"
   ON public.coaching_training_attendance FOR SELECT USING (
     athlete_user_id = auth.uid()
   );
 
 -- 3.6 Attendance: staff can insert (mark attendance)
+DROP POLICY IF EXISTS "attendance_staff_insert" ON public.coaching_training_attendance;
 CREATE POLICY "attendance_staff_insert"
   ON public.coaching_training_attendance FOR INSERT WITH CHECK (
     EXISTS (
@@ -125,6 +131,7 @@ CREATE POLICY "attendance_staff_insert"
   );
 
 -- 3.7 Platform admin read-all for both tables
+DROP POLICY IF EXISTS "training_sessions_platform_admin_read" ON public.coaching_training_sessions;
 CREATE POLICY "training_sessions_platform_admin_read"
   ON public.coaching_training_sessions FOR SELECT USING (
     EXISTS (
@@ -132,6 +139,7 @@ CREATE POLICY "training_sessions_platform_admin_read"
     )
   );
 
+DROP POLICY IF EXISTS "attendance_platform_admin_read" ON public.coaching_training_attendance;
 CREATE POLICY "attendance_platform_admin_read"
   ON public.coaching_training_attendance FOR SELECT USING (
     EXISTS (

@@ -5,7 +5,8 @@ class ErrorMessages {
     final msg = error.toString().toLowerCase();
     if (msg.contains('network') ||
         msg.contains('socket') ||
-        msg.contains('connection')) {
+        msg.contains('connection refused') ||
+        msg.contains('clientexception')) {
       return 'Sem conexão com a internet. Tente novamente.';
     }
     if (msg.contains('timeout')) {
@@ -16,11 +17,17 @@ class ErrorMessages {
         msg.contains('403')) {
       return 'Você não tem permissão para esta ação.';
     }
+    if (msg.contains('401') || msg.contains('unauthorized')) {
+      return 'Sua sessão expirou. Faça login novamente.';
+    }
     if (msg.contains('not found') || msg.contains('404')) {
-      return 'Recurso não encontrado.';
+      return 'Funcionalidade temporariamente indisponível. Tente novamente mais tarde.';
     }
     if (msg.contains('duplicate') || msg.contains('already exists')) {
       return 'Este item já existe.';
+    }
+    if (msg.contains('500') || msg.contains('internal server')) {
+      return 'Erro no servidor. Tente novamente em alguns minutos.';
     }
     return 'Algo deu errado. Tente novamente.';
   }

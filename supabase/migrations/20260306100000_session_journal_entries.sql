@@ -18,15 +18,19 @@ CREATE INDEX IF NOT EXISTS idx_session_journal_user
 
 ALTER TABLE public.session_journal_entries ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "session_journal_own_read" ON public.session_journal_entries;
 CREATE POLICY "session_journal_own_read" ON public.session_journal_entries
   FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "session_journal_own_insert" ON public.session_journal_entries;
 CREATE POLICY "session_journal_own_insert" ON public.session_journal_entries
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "session_journal_own_update" ON public.session_journal_entries;
 CREATE POLICY "session_journal_own_update" ON public.session_journal_entries
   FOR UPDATE USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "session_journal_own_delete" ON public.session_journal_entries;
 CREATE POLICY "session_journal_own_delete" ON public.session_journal_entries
   FOR DELETE USING (auth.uid() = user_id);

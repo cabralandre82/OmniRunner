@@ -40,11 +40,13 @@ CREATE INDEX IF NOT EXISTS idx_tp_sync_athlete
 -- 4. RLS for coaching_tp_sync
 ALTER TABLE public.coaching_tp_sync ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "athlete_tp_sync_select" ON public.coaching_tp_sync;
 CREATE POLICY "athlete_tp_sync_select"
   ON public.coaching_tp_sync FOR SELECT USING (
     athlete_user_id = auth.uid()
   );
 
+DROP POLICY IF EXISTS "staff_tp_sync_all" ON public.coaching_tp_sync;
 CREATE POLICY "staff_tp_sync_all"
   ON public.coaching_tp_sync FOR ALL USING (
     EXISTS (

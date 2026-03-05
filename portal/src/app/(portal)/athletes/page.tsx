@@ -41,7 +41,7 @@ export default async function AthletesPage() {
       .from("coaching_members")
       .select("user_id, display_name, joined_at_ms")
       .eq("group_id", groupId)
-      .eq("role", "athlete")
+      .in("role", ["athlete", "atleta"])
       .order("joined_at_ms", { ascending: false });
 
     const allMembers = members ?? [];

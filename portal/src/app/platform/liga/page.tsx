@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { LeagueAdmin } from "./league-admin";
 
 export default async function LigaPage() {
+  try {
   const supabase = createClient();
 
   const { data: seasons } = await supabase
@@ -86,4 +87,16 @@ export default async function LigaPage() {
       />
     </div>
   );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/PGRST|does not exist|league_enrollments/.test(msg)) {
+      return (
+        <div className="rounded-xl border border-border bg-surface p-8 text-center">
+          <p className="text-lg font-medium text-content-primary">Funcionalidade em desenvolvimento</p>
+          <p className="mt-2 text-sm text-content-muted">Este recurso estará disponível em breve.</p>
+        </div>
+      );
+    }
+    throw err;
+  }
 }

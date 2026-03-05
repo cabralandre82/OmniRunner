@@ -110,11 +110,20 @@ export async function POST(req: NextRequest) {
   await getOrCreateCustodyAccount(auth.groupId);
 
   try {
-    const { deposit } = await createCustodyDeposit(
+    const result = await createCustodyDeposit(
       auth.groupId,
       parsed.data.amount_usd,
       parsed.data.gateway,
     );
+
+    if (!result) {
+      return NextResponse.json(
+        { error: "Funcionalidade de custódia não disponível ainda" },
+        { status: 503 },
+      );
+    }
+
+    const { deposit } = result;
 
     await auditLog({
       actorId: auth.user.id,

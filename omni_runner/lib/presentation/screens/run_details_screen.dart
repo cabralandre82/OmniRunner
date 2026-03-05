@@ -71,13 +71,55 @@ class _RunDetailsScreenState extends State<RunDetailsScreen> {
     }
 
     if (!mounted) return;
+
+    List<LatLng> coords;
+    if (points.isNotEmpty) {
+      coords = PolylineBuilder.fromPoints(points, simplifyThresholdMeters: 2.0);
+    } else {
+      coords = await _loadStravaPolylineFallback();
+    }
+
     final filt = const FilterLocationPoints()(points);
     setState(() {
       _points = points;
-      _coords = PolylineBuilder.fromPoints(points, simplifyThresholdMeters: 2.0);
+      _coords = coords;
       _movingMs = calculateMovingMs(filt); _loading = false;
     });
     if (_mapReady) await _drawRoute();
+  }
+
+  Future<List<LatLng>> _loadStravaPolylineFallback() async {
+    if (!AppConfig.isSupabaseReady) return const [];
+    if (widget.session.source != 'strava') return const [];
+    try {
+      final uid = widget.session.userId ??
+          Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) return const [];
+
+      final startMs = widget.session.startTimeMs;
+      final startDate = DateTime.fromMillisecondsSinceEpoch(startMs, isUtc: true);
+      final dayStart = DateTime.utc(startDate.year, startDate.month, startDate.day);
+      final dayEnd = dayStart.add(const Duration(days: 1));
+
+      final rows = await Supabase.instance.client
+          .from('strava_activity_history')
+          .select('summary_polyline')
+          .eq('user_id', uid)
+          .gte('start_date', dayStart.toIso8601String())
+          .lt('start_date', dayEnd.toIso8601String())
+          .limit(1);
+
+      final list = (rows as List).cast<Map<String, dynamic>>();
+      if (list.isEmpty) return const [];
+
+      final polyline = list.first['summary_polyline'] as String?;
+      if (polyline == null || polyline.isEmpty) return const [];
+
+      return PolylineBuilder.decodeGooglePolyline(polyline);
+    } catch (e) {
+      AppLogger.debug('Strava polyline fallback failed: $e', tag: 'RunDetails');
+      return const [];
+    }
   }
 
   Future<List<LocationPointEntity>> _downloadPointsFromStorage(
@@ -217,6 +259,12 @@ class _RunDetailsScreenState extends State<RunDetailsScreen> {
               Icon(Icons.map_outlined, size: 48, color: DesignTokens.textMuted),
               const SizedBox(height: 8),
               Text('Mapa indisponível offline', style: TextStyle(color: DesignTokens.textSecondary, fontSize: 14)),
+            ]))
+          else if (_coords.isEmpty)
+            Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.route_outlined, size: 48, color: DesignTokens.textMuted),
+              const SizedBox(height: 8),
+              Text('Percurso não disponível', style: TextStyle(color: DesignTokens.textSecondary, fontSize: 14)),
             ])),
           Positioned(
             top: 0, left: 0, right: 0,

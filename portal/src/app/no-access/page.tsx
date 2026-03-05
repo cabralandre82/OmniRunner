@@ -34,7 +34,7 @@ export default async function NoAccessPage() {
       .limit(1)
       .maybeSingle();
 
-    if (membership?.role === "athlete") {
+    if (membership?.role === "athlete" || membership?.role === "atleta") {
       reason =
         "Sua conta está vinculada como atleta. " +
         "O portal é exclusivo para administradores, professores e assistentes. " +

@@ -59,6 +59,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await confirmDepositByReference(paymentReference);
+    if (!result) {
+      return NextResponse.json({ error: "Custody feature not available" }, { status: 503 });
+    }
     metrics.increment("custody.webhook.confirmed", { gateway });
 
     if (!result.alreadyConfirmed) {

@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  try {
   const body = await req.json();
   const { action } = body as { action: string };
 
@@ -165,4 +166,11 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/PGRST|does not exist|league_enrollments/.test(msg)) {
+      return NextResponse.json({ error: "Feature not available yet" }, { status: 503 });
+    }
+    throw err;
+  }
 }

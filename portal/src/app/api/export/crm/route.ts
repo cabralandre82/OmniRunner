@@ -45,7 +45,7 @@ export async function GET(request: Request) {
     .from("coaching_members")
     .select("user_id")
     .eq("group_id", groupId)
-    .eq("role", "athlete");
+    .in("role", ["athlete", "atleta"]);
 
   if (!members || members.length === 0) {
     const BOM = "\uFEFF";

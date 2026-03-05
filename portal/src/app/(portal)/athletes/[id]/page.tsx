@@ -35,7 +35,7 @@ export default async function AthleteProfilePage({
     .select("user_id, display_name")
     .eq("group_id", groupId)
     .eq("user_id", athleteId)
-    .eq("role", "athlete")
+    .in("role", ["athlete", "atleta"])
     .maybeSingle();
 
   if (!member) {

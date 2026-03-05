@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     .select("user_id")
     .eq("group_id", groupId)
     .eq("user_id", userId)
-    .eq("role", "athlete")
+    .in("role", ["athlete", "atleta"])
     .maybeSingle();
 
   if (!member) {

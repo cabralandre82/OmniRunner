@@ -50,7 +50,7 @@ export default async function PlatformDashboard() {
     supabase
       .from("coaching_members")
       .select("id", { count: "exact", head: true })
-      .eq("role", "athlete"),
+      .in("role", ["athlete", "atleta"]),
     supabase
       .from("athlete_verification")
       .select("user_id", { count: "exact", head: true })

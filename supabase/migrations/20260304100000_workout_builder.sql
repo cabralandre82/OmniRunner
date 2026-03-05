@@ -76,6 +76,7 @@ ALTER TABLE public.coaching_workout_blocks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_workout_assignments ENABLE ROW LEVEL SECURITY;
 
 -- 3.1 Templates: staff can read
+DROP POLICY IF EXISTS "staff_templates_select" ON public.coaching_workout_templates;
 CREATE POLICY "staff_templates_select"
   ON public.coaching_workout_templates FOR SELECT USING (
     EXISTS (
@@ -87,6 +88,7 @@ CREATE POLICY "staff_templates_select"
   );
 
 -- 3.2 Templates: staff can insert
+DROP POLICY IF EXISTS "staff_templates_insert" ON public.coaching_workout_templates;
 CREATE POLICY "staff_templates_insert"
   ON public.coaching_workout_templates FOR INSERT WITH CHECK (
     EXISTS (
@@ -98,6 +100,7 @@ CREATE POLICY "staff_templates_insert"
   );
 
 -- 3.3 Templates: staff can update
+DROP POLICY IF EXISTS "staff_templates_update" ON public.coaching_workout_templates;
 CREATE POLICY "staff_templates_update"
   ON public.coaching_workout_templates FOR UPDATE USING (
     EXISTS (
@@ -109,6 +112,7 @@ CREATE POLICY "staff_templates_update"
   );
 
 -- 3.4 Templates: staff can delete
+DROP POLICY IF EXISTS "staff_templates_delete" ON public.coaching_workout_templates;
 CREATE POLICY "staff_templates_delete"
   ON public.coaching_workout_templates FOR DELETE USING (
     EXISTS (
@@ -120,6 +124,7 @@ CREATE POLICY "staff_templates_delete"
   );
 
 -- 3.5 Blocks: staff full access via template ownership
+DROP POLICY IF EXISTS "staff_blocks_all" ON public.coaching_workout_blocks;
 CREATE POLICY "staff_blocks_all"
   ON public.coaching_workout_blocks FOR ALL USING (
     EXISTS (
@@ -132,6 +137,7 @@ CREATE POLICY "staff_blocks_all"
   );
 
 -- 3.6 Assignments: staff full access
+DROP POLICY IF EXISTS "staff_assignments_all" ON public.coaching_workout_assignments;
 CREATE POLICY "staff_assignments_all"
   ON public.coaching_workout_assignments FOR ALL USING (
     EXISTS (
@@ -143,6 +149,7 @@ CREATE POLICY "staff_assignments_all"
   );
 
 -- 3.7 Assignments: athlete can read own assignments
+DROP POLICY IF EXISTS "athlete_assignments_select" ON public.coaching_workout_assignments;
 CREATE POLICY "athlete_assignments_select"
   ON public.coaching_workout_assignments FOR SELECT USING (
     athlete_user_id = auth.uid()

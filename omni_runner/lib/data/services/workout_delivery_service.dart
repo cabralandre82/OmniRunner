@@ -9,27 +9,37 @@ class WorkoutDeliveryService {
 
   /// Fetches published delivery items for the athlete.
   Future<List<Map<String, dynamic>>> listPublishedItems(String athleteUserId) async {
-    final rows = await _client
-        .from('workout_delivery_items')
-        .select()
-        .eq('athlete_user_id', athleteUserId)
-        .inFilter('status', ['published'])
-        .order('created_at', ascending: false)
-        .limit(500);
-    return List<Map<String, dynamic>>.from(
-      (rows as List).map((r) => Map<String, dynamic>.from(r as Map)),
-    );
+    try {
+      final rows = await _client
+          .from('workout_delivery_items')
+          .select()
+          .eq('athlete_user_id', athleteUserId)
+          .inFilter('status', ['published'])
+          .order('created_at', ascending: false)
+          .limit(500);
+      return List<Map<String, dynamic>>.from(
+        (rows as List).map((r) => Map<String, dynamic>.from(r as Map)),
+      );
+    } catch (e) {
+      if (e.toString().contains('PGRST205')) return [];
+      rethrow;
+    }
   }
 
   /// Returns the count of published delivery items for the athlete.
   Future<int> countPublishedItems(String athleteUserId) async {
-    final res = await _client
-        .from('workout_delivery_items')
-        .select()
-        .eq('athlete_user_id', athleteUserId)
-        .inFilter('status', ['published'])
-        .count(CountOption.exact);
-    return res.count;
+    try {
+      final res = await _client
+          .from('workout_delivery_items')
+          .select()
+          .eq('athlete_user_id', athleteUserId)
+          .inFilter('status', ['published'])
+          .count(CountOption.exact);
+      return res.count;
+    } catch (e) {
+      if (e.toString().contains('PGRST205')) return 0;
+      rethrow;
+    }
   }
 
   /// Confirms or marks an item as failed.

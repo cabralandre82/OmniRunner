@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS public.coaching_badge_inventory (
 
 ALTER TABLE public.coaching_badge_inventory ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "badge_inventory_staff_read" ON public.coaching_badge_inventory;
 CREATE POLICY "badge_inventory_staff_read" ON public.coaching_badge_inventory
   FOR SELECT USING (
     EXISTS (

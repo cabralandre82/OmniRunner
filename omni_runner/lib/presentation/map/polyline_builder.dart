@@ -8,6 +8,38 @@ import 'package:omni_runner/domain/entities/location_point_entity.dart';
 /// Optionally applies distance-based simplification to reduce the number
 /// of points rendered on the map for performance.
 abstract final class PolylineBuilder {
+  /// Decodes a Google Encoded Polyline string into [LatLng] coordinates.
+  /// See: https://developers.google.com/maps/documentation/utilities/polylinealgorithm
+  static List<LatLng> decodeGooglePolyline(String encoded) {
+    final coords = <LatLng>[];
+    var index = 0;
+    var lat = 0;
+    var lng = 0;
+
+    while (index < encoded.length) {
+      int shift = 0, result = 0;
+      int b;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1F) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      lat += (result & 1) != 0 ? ~(result >> 1) : (result >> 1);
+
+      shift = 0;
+      result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1F) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      lng += (result & 1) != 0 ? ~(result >> 1) : (result >> 1);
+
+      coords.add(LatLng(lat / 1e5, lng / 1e5));
+    }
+    return coords;
+  }
+
   /// Convert [LocationPointEntity] list to MapLibre [LatLng] list.
   ///
   /// If [simplifyThresholdMeters] > 0, points closer than this distance

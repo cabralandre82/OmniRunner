@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  try {
   const db = createServiceClient();
   const start = Date.now();
 
@@ -92,4 +93,11 @@ export async function POST(req: NextRequest) {
     checked_at: new Date().toISOString(),
     latency_ms: latencyMs,
   });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/PGRST|does not exist|custody_accounts/.test(msg)) {
+      return NextResponse.json({ error: "Feature not available yet" }, { status: 503 });
+    }
+    throw err;
+  }
 }

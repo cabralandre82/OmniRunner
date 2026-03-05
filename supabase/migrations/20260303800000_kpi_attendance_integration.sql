@@ -6,13 +6,17 @@
 BEGIN;
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 1. ADD COLUMNS to coaching_kpis_daily
+-- 1. ADD COLUMNS to coaching_kpis_daily (may already exist from base migration)
 -- ═══════════════════════════════════════════════════════════════════════════
 
-ALTER TABLE public.coaching_kpis_daily
-  ADD COLUMN IF NOT EXISTS attendance_sessions_7d integer NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS attendance_checkins_7d integer NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS attendance_rate_7d numeric(5,2);
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='coaching_kpis_daily') THEN
+    ALTER TABLE public.coaching_kpis_daily
+      ADD COLUMN IF NOT EXISTS attendance_sessions_7d integer NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS attendance_checkins_7d integer NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS attendance_rate_7d numeric(5,2);
+  END IF;
+END $$;
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 2. REWRITE compute_coaching_kpis_daily — add attendance metrics

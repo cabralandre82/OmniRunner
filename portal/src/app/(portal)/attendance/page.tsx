@@ -61,7 +61,7 @@ async function getAttendanceData(groupId: string, from?: string, to?: string, se
     .from("coaching_members")
     .select("id", { count: "exact", head: true })
     .eq("group_id", groupId)
-    .eq("role", "athlete");
+    .in("role", ["athlete", "atleta"]);
 
   return {
     sessions,

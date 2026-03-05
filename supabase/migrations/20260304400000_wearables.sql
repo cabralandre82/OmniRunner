@@ -65,12 +65,14 @@ ALTER TABLE public.coaching_device_links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_workout_executions ENABLE ROW LEVEL SECURITY;
 
 -- 3.1 Device links: athlete can manage own links
+DROP POLICY IF EXISTS "athlete_self_all" ON public.coaching_device_links;
 CREATE POLICY "athlete_self_all"
   ON public.coaching_device_links FOR ALL USING (
     athlete_user_id = auth.uid()
   );
 
 -- 3.2 Device links: staff can read links for their group
+DROP POLICY IF EXISTS "staff_device_links_select" ON public.coaching_device_links;
 CREATE POLICY "staff_device_links_select"
   ON public.coaching_device_links FOR SELECT USING (
     EXISTS (
@@ -82,18 +84,21 @@ CREATE POLICY "staff_device_links_select"
   );
 
 -- 3.3 Executions: athlete can insert own executions
+DROP POLICY IF EXISTS "athlete_insert_self" ON public.coaching_workout_executions;
 CREATE POLICY "athlete_insert_self"
   ON public.coaching_workout_executions FOR INSERT WITH CHECK (
     athlete_user_id = auth.uid()
   );
 
 -- 3.4 Executions: athlete can read own executions
+DROP POLICY IF EXISTS "athlete_select_self" ON public.coaching_workout_executions;
 CREATE POLICY "athlete_select_self"
   ON public.coaching_workout_executions FOR SELECT USING (
     athlete_user_id = auth.uid()
   );
 
 -- 3.5 Executions: staff can read executions for their group
+DROP POLICY IF EXISTS "staff_executions_select" ON public.coaching_workout_executions;
 CREATE POLICY "staff_executions_select"
   ON public.coaching_workout_executions FOR SELECT USING (
     EXISTS (

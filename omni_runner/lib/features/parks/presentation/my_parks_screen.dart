@@ -196,7 +196,7 @@ class _MyParksScreenState extends State<MyParksScreen> {
                   ),
                   title: Text(p.park.name),
                   subtitle: Text(
-                      '${p.park.city} \u00b7 ${p.runnerCount} corredore${p.runnerCount == 1 ? '' : 's'}'),
+                      '${p.park.city} \u00b7 ${p.runnerCount} corredor${p.runnerCount == 1 ? '' : 'es'}'),
                   trailing: Icon(Icons.chevron_right,
                       color: cs.onSurfaceVariant),
                   onTap: () => _openPark(p.park),

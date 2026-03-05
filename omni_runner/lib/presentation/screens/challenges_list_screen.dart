@@ -6,7 +6,6 @@ import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
-import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_event.dart';
@@ -60,9 +59,9 @@ class _ChallengesListScreenState extends State<ChallengesListScreen> {
 
   Future<void> _checkStrava() async {
     try {
-      final state = await sl<StravaConnectController>().getState();
+      final connected = await sl<StravaConnectController>().isConnected;
       if (mounted) {
-        setState(() => _stravaConnected = state is StravaConnected);
+        setState(() => _stravaConnected = connected);
       }
     } on Exception catch (e) {
       AppLogger.warn('Unexpected error', tag: 'ChallengesListScreen', error: e);

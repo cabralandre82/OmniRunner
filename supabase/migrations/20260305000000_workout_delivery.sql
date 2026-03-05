@@ -7,9 +7,13 @@ BEGIN;
 -- ────────────────────────────────────────────────────────────────
 -- 1. Feature flag: trainingpeaks_enabled (OFF / 0%)
 -- ────────────────────────────────────────────────────────────────
-INSERT INTO public.feature_flags (key, enabled, rollout_pct)
-VALUES ('trainingpeaks_enabled', false, 0)
-ON CONFLICT (key) DO UPDATE SET enabled = false, rollout_pct = 0;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='feature_flags') THEN
+    INSERT INTO public.feature_flags (key, enabled, rollout_pct)
+    VALUES ('trainingpeaks_enabled', false, 0)
+    ON CONFLICT (key) DO UPDATE SET enabled = false, rollout_pct = 0;
+  END IF;
+END $$;
 
 -- ────────────────────────────────────────────────────────────────
 -- 2. Tables

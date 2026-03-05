@@ -47,19 +47,23 @@ class _InviteQrScreenState extends State<InviteQrScreen> {
       final db = Supabase.instance.client;
       final row = await db
           .from('coaching_groups')
-          .select('invite_enabled')
+          .select('id, invite_enabled')
           .eq('invite_code', inviteCode)
           .maybeSingle();
 
-      final countRes = await db
-          .from('coaching_members')
-          .select('id')
-          .eq('joined_via', 'invite_code');
+      int? memberCount;
+      if (row != null) {
+        final members = await db
+            .from('coaching_members')
+            .select('id')
+            .eq('group_id', row['id'] as String);
+        memberCount = (members as List).length;
+      }
 
       if (!mounted) return;
       setState(() {
         _inviteEnabled = (row?['invite_enabled'] as bool?) ?? true;
-        _memberCount = (countRes as List?)?.length;
+        _memberCount = memberCount;
       });
     } catch (e) {
       AppLogger.warn('Unexpected error', tag: 'InviteQrScreen', error: e);

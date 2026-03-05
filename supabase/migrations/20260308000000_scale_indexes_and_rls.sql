@@ -41,8 +41,8 @@ CREATE INDEX IF NOT EXISTS idx_sessions_strava_activity
 -- P1 INDEXES (required before 5K groups)
 -- ─────────────────────────────────────────────────────────────────────────────
 
-CREATE INDEX IF NOT EXISTS idx_athlete_kpis_user_group_day
-  ON public.coaching_athlete_kpis_daily (user_id, group_id, day DESC);
+DO $$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='coaching_athlete_kpis_daily') THEN EXECUTE 'CREATE INDEX IF NOT EXISTS idx_athlete_kpis_user_group_day
+  ON public.coaching_athlete_kpis_daily (user_id, group_id, day DESC)'; END IF; END $$;
 
 CREATE INDEX IF NOT EXISTS idx_challenge_participants_challenge_status
   ON public.challenge_participants (challenge_id, status);
@@ -70,7 +70,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_park_activities_session_park
 -- that Postgres caches for the duration of the transaction.
 -- ─────────────────────────────────────────────────────────────────────────────
 
-CREATE OR REPLACE FUNCTION auth.user_group_roles()
+CREATE OR REPLACE FUNCTION public.user_group_roles()
 RETURNS TABLE(group_id uuid, role text)
 LANGUAGE sql
 STABLE
@@ -82,8 +82,8 @@ AS $$
   WHERE cm.user_id = auth.uid();
 $$;
 
-REVOKE ALL ON FUNCTION auth.user_group_roles() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION auth.user_group_roles() TO authenticated;
+REVOKE ALL ON FUNCTION public.user_group_roles() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.user_group_roles() TO authenticated;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- SPRINT 4 — Batch wallet operations
@@ -141,50 +141,55 @@ GRANT EXECUTE ON FUNCTION public.fn_increment_wallets_batch(jsonb) TO service_ro
 -- SPRINT 2 — League snapshot: single SQL aggregation replaces N+1
 -- ─────────────────────────────────────────────────────────────────────────────
 
-CREATE OR REPLACE FUNCTION public.fn_compute_league_snapshots(
-  p_season_id uuid,
-  p_window_start_ms bigint,
-  p_window_end_ms bigint
-)
-RETURNS TABLE(
-  group_id uuid,
-  total_distance_m numeric,
-  total_duration_s numeric,
-  total_sessions bigint,
-  active_members bigint,
-  challenge_wins bigint
-)
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public, pg_temp
-AS $$
-  SELECT
-    le.group_id,
-    COALESCE(SUM(s.total_distance_m), 0) AS total_distance_m,
-    COALESCE(SUM(s.duration_seconds), 0) AS total_duration_s,
-    COUNT(DISTINCT s.id) AS total_sessions,
-    COUNT(DISTINCT s.user_id) AS active_members,
-    COALESCE(cw.wins, 0) AS challenge_wins
-  FROM league_enrollments le
-  JOIN coaching_members cm ON cm.group_id = le.group_id AND cm.role = 'athlete'
-  LEFT JOIN sessions s ON s.user_id = cm.user_id
-    AND s.status >= 3 AND s.is_verified = true
-    AND s.start_time_ms >= p_window_start_ms
-    AND s.start_time_ms < p_window_end_ms
-  LEFT JOIN LATERAL (
-    SELECT COUNT(*) AS wins
-    FROM challenge_results cr
-    JOIN challenge_participants cp ON cp.id = cr.participant_id
-    WHERE cp.user_id = cm.user_id AND cr.rank = 1
-      AND cr.created_at >= to_timestamp(p_window_start_ms / 1000.0)
-  ) cw ON true
-  WHERE le.season_id = p_season_id
-  GROUP BY le.group_id, cw.wins;
-$$;
-
-REVOKE ALL ON FUNCTION public.fn_compute_league_snapshots(uuid, bigint, bigint) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.fn_compute_league_snapshots(uuid, bigint, bigint) TO service_role;
+DO $$ BEGIN
+IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='league_enrollments') THEN
+  EXECUTE $fn$
+    CREATE OR REPLACE FUNCTION public.fn_compute_league_snapshots(
+      p_season_id uuid,
+      p_window_start_ms bigint,
+      p_window_end_ms bigint
+    )
+    RETURNS TABLE(
+      group_id uuid,
+      total_distance_m numeric,
+      total_duration_s numeric,
+      total_sessions bigint,
+      active_members bigint,
+      challenge_wins bigint
+    )
+    LANGUAGE sql
+    STABLE
+    SECURITY DEFINER
+    SET search_path = public, pg_temp
+    AS $f$
+      SELECT
+        le.group_id,
+        COALESCE(SUM(s.total_distance_m), 0) AS total_distance_m,
+        COALESCE(SUM(s.duration_seconds), 0) AS total_duration_s,
+        COUNT(DISTINCT s.id) AS total_sessions,
+        COUNT(DISTINCT s.user_id) AS active_members,
+        COALESCE(cw.wins, 0) AS challenge_wins
+      FROM league_enrollments le
+      JOIN coaching_members cm ON cm.group_id = le.group_id AND cm.role = 'athlete'
+      LEFT JOIN sessions s ON s.user_id = cm.user_id
+        AND s.status >= 3 AND s.is_verified = true
+        AND s.start_time_ms >= p_window_start_ms
+        AND s.start_time_ms < p_window_end_ms
+      LEFT JOIN LATERAL (
+        SELECT COUNT(*) AS wins
+        FROM challenge_results cr
+        JOIN challenge_participants cp ON cp.id = cr.participant_id
+        WHERE cp.user_id = cm.user_id AND cr.rank = 1
+          AND cr.created_at >= to_timestamp(p_window_start_ms / 1000.0)
+      ) cw ON true
+      WHERE le.season_id = p_season_id
+      GROUP BY le.group_id, cw.wins;
+    $f$
+  $fn$;
+  REVOKE ALL ON FUNCTION public.fn_compute_league_snapshots(uuid, bigint, bigint) FROM PUBLIC;
+  GRANT EXECUTE ON FUNCTION public.fn_compute_league_snapshots(uuid, bigint, bigint) TO service_role;
+END IF;
+END $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- SPRINT 2 — KPI batching: process groups in chunks
@@ -375,56 +380,55 @@ END $$;
 -- SPRINT 5 — Custody aggregate RPC (replaces loading 10K+ rows client-side)
 -- ─────────────────────────────────────────────────────────────────────────────
 
-CREATE OR REPLACE FUNCTION public.fn_sum_coin_ledger_by_group(
-  p_group_id uuid
-)
-RETURNS bigint
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public, pg_temp
-AS $$
-  SELECT COALESCE(SUM(delta_coins), 0)::bigint
-  FROM coin_ledger
-  WHERE issuer_group_id = p_group_id;
-$$;
-
-REVOKE ALL ON FUNCTION public.fn_sum_coin_ledger_by_group(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.fn_sum_coin_ledger_by_group(uuid) TO authenticated;
+DO $$ BEGIN
+IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='coin_ledger' AND column_name='issuer_group_id') THEN
+  EXECUTE $fn$
+    CREATE OR REPLACE FUNCTION public.fn_sum_coin_ledger_by_group(p_group_id uuid)
+    RETURNS bigint LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp
+    AS $f$ SELECT COALESCE(SUM(delta_coins), 0)::bigint FROM coin_ledger WHERE issuer_group_id = p_group_id; $f$
+  $fn$;
+  REVOKE ALL ON FUNCTION public.fn_sum_coin_ledger_by_group(uuid) FROM PUBLIC;
+  GRANT EXECUTE ON FUNCTION public.fn_sum_coin_ledger_by_group(uuid) TO authenticated;
+END IF;
+END $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- SPRINT 5 — Athletes aggregate RPC (replaces unbounded session load)
 -- ─────────────────────────────────────────────────────────────────────────────
 
-CREATE OR REPLACE FUNCTION public.fn_athlete_session_stats(
-  p_user_ids uuid[]
-)
-RETURNS TABLE(
-  user_id uuid,
-  session_count bigint,
-  total_distance_m numeric,
-  total_duration_s numeric,
-  last_session_at timestamptz
-)
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public, pg_temp
-AS $$
-  SELECT
-    s.user_id,
-    COUNT(*) AS session_count,
-    COALESCE(SUM(s.total_distance_m), 0) AS total_distance_m,
-    COALESCE(SUM(s.duration_seconds), 0) AS total_duration_s,
-    MAX(to_timestamp(s.start_time_ms / 1000.0)) AS last_session_at
-  FROM sessions s
-  WHERE s.user_id = ANY(p_user_ids)
-    AND s.status >= 3
-  GROUP BY s.user_id;
-$$;
-
-REVOKE ALL ON FUNCTION public.fn_athlete_session_stats(uuid[]) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.fn_athlete_session_stats(uuid[]) TO authenticated;
+DO $$ BEGIN
+IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='sessions' AND column_name='duration_seconds') THEN
+  EXECUTE $fn$
+    CREATE OR REPLACE FUNCTION public.fn_athlete_session_stats(p_user_ids uuid[])
+    RETURNS TABLE(user_id uuid, session_count bigint, total_distance_m numeric, total_duration_s numeric, last_session_at timestamptz)
+    LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp
+    AS $f$
+      SELECT s.user_id, COUNT(*) AS session_count,
+        COALESCE(SUM(s.total_distance_m), 0) AS total_distance_m,
+        COALESCE(SUM(s.duration_seconds), 0) AS total_duration_s,
+        MAX(to_timestamp(s.start_time_ms / 1000.0)) AS last_session_at
+      FROM sessions s WHERE s.user_id = ANY(p_user_ids) AND s.status >= 3 GROUP BY s.user_id;
+    $f$
+  $fn$;
+  REVOKE ALL ON FUNCTION public.fn_athlete_session_stats(uuid[]) FROM PUBLIC;
+  GRANT EXECUTE ON FUNCTION public.fn_athlete_session_stats(uuid[]) TO authenticated;
+ELSE
+  EXECUTE $fn$
+    CREATE OR REPLACE FUNCTION public.fn_athlete_session_stats(p_user_ids uuid[])
+    RETURNS TABLE(user_id uuid, session_count bigint, total_distance_m numeric, total_duration_s numeric, last_session_at timestamptz)
+    LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp
+    AS $f$
+      SELECT s.user_id, COUNT(*) AS session_count,
+        COALESCE(SUM(s.total_distance_m), 0) AS total_distance_m,
+        0::numeric AS total_duration_s,
+        MAX(to_timestamp(s.start_time_ms / 1000.0)) AS last_session_at
+      FROM sessions s WHERE s.user_id = ANY(p_user_ids) AND s.status >= 3 GROUP BY s.user_id;
+    $f$
+  $fn$;
+  REVOKE ALL ON FUNCTION public.fn_athlete_session_stats(uuid[]) FROM PUBLIC;
+  GRANT EXECUTE ON FUNCTION public.fn_athlete_session_stats(uuid[]) TO authenticated;
+END IF;
+END $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Notification log cleanup helper

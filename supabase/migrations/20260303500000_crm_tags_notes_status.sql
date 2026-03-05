@@ -79,6 +79,7 @@ ALTER TABLE public.coaching_member_status ENABLE ROW LEVEL SECURITY;
 
 -- ── coaching_tags ──
 
+DROP POLICY IF EXISTS "tags_staff_read" ON public.coaching_tags;
 CREATE POLICY "tags_staff_read" ON public.coaching_tags
   FOR SELECT USING (
     EXISTS (
@@ -89,6 +90,7 @@ CREATE POLICY "tags_staff_read" ON public.coaching_tags
     )
   );
 
+DROP POLICY IF EXISTS "tags_staff_insert" ON public.coaching_tags;
 CREATE POLICY "tags_staff_insert" ON public.coaching_tags
   FOR INSERT WITH CHECK (
     EXISTS (
@@ -99,6 +101,7 @@ CREATE POLICY "tags_staff_insert" ON public.coaching_tags
     )
   );
 
+DROP POLICY IF EXISTS "tags_staff_update" ON public.coaching_tags;
 CREATE POLICY "tags_staff_update" ON public.coaching_tags
   FOR UPDATE USING (
     EXISTS (
@@ -109,6 +112,7 @@ CREATE POLICY "tags_staff_update" ON public.coaching_tags
     )
   );
 
+DROP POLICY IF EXISTS "tags_staff_delete" ON public.coaching_tags;
 CREATE POLICY "tags_staff_delete" ON public.coaching_tags
   FOR DELETE USING (
     EXISTS (
@@ -121,6 +125,7 @@ CREATE POLICY "tags_staff_delete" ON public.coaching_tags
 
 -- ── coaching_athlete_tags ──
 
+DROP POLICY IF EXISTS "athlete_tags_staff_read" ON public.coaching_athlete_tags;
 CREATE POLICY "athlete_tags_staff_read" ON public.coaching_athlete_tags
   FOR SELECT USING (
     EXISTS (
@@ -131,6 +136,7 @@ CREATE POLICY "athlete_tags_staff_read" ON public.coaching_athlete_tags
     )
   );
 
+DROP POLICY IF EXISTS "athlete_tags_staff_insert" ON public.coaching_athlete_tags;
 CREATE POLICY "athlete_tags_staff_insert" ON public.coaching_athlete_tags
   FOR INSERT WITH CHECK (
     EXISTS (
@@ -141,6 +147,7 @@ CREATE POLICY "athlete_tags_staff_insert" ON public.coaching_athlete_tags
     )
   );
 
+DROP POLICY IF EXISTS "athlete_tags_staff_delete" ON public.coaching_athlete_tags;
 CREATE POLICY "athlete_tags_staff_delete" ON public.coaching_athlete_tags
   FOR DELETE USING (
     EXISTS (
@@ -153,6 +160,7 @@ CREATE POLICY "athlete_tags_staff_delete" ON public.coaching_athlete_tags
 
 -- ── coaching_athlete_notes (staff-only, athlete CANNOT see) ──
 
+DROP POLICY IF EXISTS "notes_staff_read" ON public.coaching_athlete_notes;
 CREATE POLICY "notes_staff_read" ON public.coaching_athlete_notes
   FOR SELECT USING (
     EXISTS (
@@ -163,6 +171,7 @@ CREATE POLICY "notes_staff_read" ON public.coaching_athlete_notes
     )
   );
 
+DROP POLICY IF EXISTS "notes_staff_insert" ON public.coaching_athlete_notes;
 CREATE POLICY "notes_staff_insert" ON public.coaching_athlete_notes
   FOR INSERT WITH CHECK (
     EXISTS (
@@ -173,6 +182,7 @@ CREATE POLICY "notes_staff_insert" ON public.coaching_athlete_notes
     )
   );
 
+DROP POLICY IF EXISTS "notes_staff_delete" ON public.coaching_athlete_notes;
 CREATE POLICY "notes_staff_delete" ON public.coaching_athlete_notes
   FOR DELETE USING (
     EXISTS (
@@ -185,6 +195,7 @@ CREATE POLICY "notes_staff_delete" ON public.coaching_athlete_notes
 
 -- ── coaching_member_status ──
 
+DROP POLICY IF EXISTS "status_staff_read" ON public.coaching_member_status;
 CREATE POLICY "status_staff_read" ON public.coaching_member_status
   FOR SELECT USING (
     EXISTS (
@@ -195,11 +206,13 @@ CREATE POLICY "status_staff_read" ON public.coaching_member_status
     )
   );
 
+DROP POLICY IF EXISTS "status_self_read" ON public.coaching_member_status;
 CREATE POLICY "status_self_read" ON public.coaching_member_status
   FOR SELECT USING (
     user_id = auth.uid()
   );
 
+DROP POLICY IF EXISTS "status_staff_upsert" ON public.coaching_member_status;
 CREATE POLICY "status_staff_upsert" ON public.coaching_member_status
   FOR INSERT WITH CHECK (
     EXISTS (
@@ -210,6 +223,7 @@ CREATE POLICY "status_staff_upsert" ON public.coaching_member_status
     )
   );
 
+DROP POLICY IF EXISTS "status_staff_update" ON public.coaching_member_status;
 CREATE POLICY "status_staff_update" ON public.coaching_member_status
   FOR UPDATE USING (
     EXISTS (
@@ -222,21 +236,25 @@ CREATE POLICY "status_staff_update" ON public.coaching_member_status
 
 -- ── Platform admin read-all ──
 
+DROP POLICY IF EXISTS "tags_platform_admin_read" ON public.coaching_tags;
 CREATE POLICY "tags_platform_admin_read" ON public.coaching_tags
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND platform_role = 'admin')
   );
 
+DROP POLICY IF EXISTS "athlete_tags_platform_admin_read" ON public.coaching_athlete_tags;
 CREATE POLICY "athlete_tags_platform_admin_read" ON public.coaching_athlete_tags
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND platform_role = 'admin')
   );
 
+DROP POLICY IF EXISTS "notes_platform_admin_read" ON public.coaching_athlete_notes;
 CREATE POLICY "notes_platform_admin_read" ON public.coaching_athlete_notes
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND platform_role = 'admin')
   );
 
+DROP POLICY IF EXISTS "status_platform_admin_read" ON public.coaching_member_status;
 CREATE POLICY "status_platform_admin_read" ON public.coaching_member_status
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND platform_role = 'admin')

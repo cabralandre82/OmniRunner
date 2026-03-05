@@ -470,7 +470,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
                             launchUrl(
-                              Uri.parse('https://omnirunner.com.br/privacidade'),
+                              Uri.parse('https://omnirunner.app/privacidade'),
                               mode: LaunchMode.externalApplication,
                             );
                           },

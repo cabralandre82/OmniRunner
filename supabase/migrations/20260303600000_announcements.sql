@@ -48,6 +48,7 @@ ALTER TABLE public.coaching_announcements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_announcement_reads ENABLE ROW LEVEL SECURITY;
 
 -- All group members can read announcements
+DROP POLICY IF EXISTS "announcements_member_read" ON public.coaching_announcements;
 CREATE POLICY "announcements_member_read"
   ON public.coaching_announcements FOR SELECT USING (
     EXISTS (
@@ -58,6 +59,7 @@ CREATE POLICY "announcements_member_read"
   );
 
 -- Staff can create announcements
+DROP POLICY IF EXISTS "announcements_staff_insert" ON public.coaching_announcements;
 CREATE POLICY "announcements_staff_insert"
   ON public.coaching_announcements FOR INSERT WITH CHECK (
     EXISTS (
@@ -69,6 +71,7 @@ CREATE POLICY "announcements_staff_insert"
   );
 
 -- Staff can update (edit/pin) announcements
+DROP POLICY IF EXISTS "announcements_staff_update" ON public.coaching_announcements;
 CREATE POLICY "announcements_staff_update"
   ON public.coaching_announcements FOR UPDATE USING (
     EXISTS (
@@ -80,6 +83,7 @@ CREATE POLICY "announcements_staff_update"
   );
 
 -- Staff can delete announcements
+DROP POLICY IF EXISTS "announcements_staff_delete" ON public.coaching_announcements;
 CREATE POLICY "announcements_staff_delete"
   ON public.coaching_announcements FOR DELETE USING (
     EXISTS (
@@ -91,6 +95,7 @@ CREATE POLICY "announcements_staff_delete"
   );
 
 -- User can mark their own read
+DROP POLICY IF EXISTS "reads_self_insert" ON public.coaching_announcement_reads;
 CREATE POLICY "reads_self_insert"
   ON public.coaching_announcement_reads FOR INSERT WITH CHECK (
     user_id = auth.uid()
@@ -102,12 +107,14 @@ CREATE POLICY "reads_self_insert"
   );
 
 -- User can see their own reads
+DROP POLICY IF EXISTS "reads_self_select" ON public.coaching_announcement_reads;
 CREATE POLICY "reads_self_select"
   ON public.coaching_announcement_reads FOR SELECT USING (
     user_id = auth.uid()
   );
 
 -- Staff can see all reads for announcements in their group (aggregates)
+DROP POLICY IF EXISTS "reads_staff_select" ON public.coaching_announcement_reads;
 CREATE POLICY "reads_staff_select"
   ON public.coaching_announcement_reads FOR SELECT USING (
     EXISTS (
@@ -120,11 +127,13 @@ CREATE POLICY "reads_staff_select"
   );
 
 -- Platform admin
+DROP POLICY IF EXISTS "announcements_platform_admin_read" ON public.coaching_announcements;
 CREATE POLICY "announcements_platform_admin_read"
   ON public.coaching_announcements FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND platform_role = 'admin')
   );
 
+DROP POLICY IF EXISTS "reads_platform_admin_read" ON public.coaching_announcement_reads;
 CREATE POLICY "reads_platform_admin_read"
   ON public.coaching_announcement_reads FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND platform_role = 'admin')

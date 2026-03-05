@@ -97,6 +97,10 @@ export async function POST(req: NextRequest) {
       providerFeeUsd: parsed.data.provider_fee_usd,
     });
 
+    if (!withdrawal) {
+      return NextResponse.json({ error: "Custody feature not available" }, { status: 503 });
+    }
+
     await executeWithdrawal(withdrawal.id);
 
     await auditLog({

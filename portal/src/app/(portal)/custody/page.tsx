@@ -14,6 +14,7 @@ export default async function CustodyPage() {
   const groupId = cookies().get("portal_group_id")?.value;
   if (!groupId) return <NoGroupSelected />;
 
+  try {
   const db = createClient();
 
   const [accountRes, depositsRes, withdrawalsRes, coinsRes, settlementsInRes, settlementsOutRes] =
@@ -154,4 +155,16 @@ export default async function CustodyPage() {
       />
     </div>
   );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/PGRST|does not exist|custody_accounts|custody_deposits|custody_withdrawals/.test(msg)) {
+      return (
+        <div className="rounded-xl border border-border bg-surface p-8 text-center">
+          <p className="text-lg font-medium text-content-primary">Funcionalidade em desenvolvimento</p>
+          <p className="mt-2 text-sm text-content-muted">Este recurso estará disponível em breve.</p>
+        </div>
+      );
+    }
+    throw err;
+  }
 }

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { signOut } from "@/lib/actions";
 import { PlatformSidebar } from "./platform-sidebar";
 
 export const dynamic = "force-dynamic";
@@ -45,6 +46,19 @@ export default async function PlatformLayout({
             <h3 className="text-sm font-semibold text-content-primary">
               Administração da Plataforma
             </h3>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline text-xs text-content-muted truncate max-w-[200px]">
+              {user.email}
+            </span>
+            <form action={signOut}>
+              <button
+                type="submit"
+                className="rounded-lg px-3 py-1.5 text-xs font-medium text-content-secondary hover:bg-bg-secondary transition-colors"
+              >
+                Sair
+              </button>
+            </form>
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>

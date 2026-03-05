@@ -53,7 +53,7 @@ async function getAttendanceAnalytics(
       .from("coaching_members")
       .select("user_id")
       .eq("group_id", groupId)
-      .eq("role", "athlete"),
+      .in("role", ["athlete", "atleta"]),
   ]);
 
   const sessions = (sessionsRes.data ?? []).filter(

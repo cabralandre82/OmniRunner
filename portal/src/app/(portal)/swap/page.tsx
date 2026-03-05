@@ -13,6 +13,7 @@ export default async function SwapPage() {
   const groupId = cookies().get("portal_group_id")?.value;
   if (!groupId) return <NoGroupSelected />;
 
+  try {
   const db = createClient();
 
   const [openRes, myRes, feeRes, accountRes] = await Promise.all([
@@ -136,4 +137,16 @@ export default async function SwapPage() {
       <SwapHistory orders={myOrders} groupMap={groupMap} groupId={groupId} />
     </div>
   );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/PGRST|does not exist|custody_accounts|swap_orders/.test(msg)) {
+      return (
+        <div className="rounded-xl border border-border bg-surface p-8 text-center">
+          <p className="text-lg font-medium text-content-primary">Funcionalidade em desenvolvimento</p>
+          <p className="mt-2 text-sm text-content-muted">Este recurso estará disponível em breve.</p>
+        </div>
+      );
+    }
+    throw err;
+  }
 }

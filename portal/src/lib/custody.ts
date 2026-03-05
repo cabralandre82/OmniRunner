@@ -23,75 +23,100 @@ export interface CustodyDeposit {
   confirmed_at: string | null;
 }
 
-export async function getCustodyAccount(groupId: string): Promise<CustodyAccount | null> {
-  const db = createServiceClient();
-  const { data } = await db
-    .from("custody_accounts")
-    .select("*")
-    .eq("group_id", groupId)
-    .maybeSingle();
-
-  if (!data) return null;
-
-  return {
-    ...data,
-    available: data.total_deposited_usd - data.total_committed,
-  };
+function isTableMissing(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /PGRST|does not exist|custody_accounts|custody_deposits|custody_withdrawals/.test(msg);
 }
 
-export async function getOrCreateCustodyAccount(groupId: string): Promise<CustodyAccount> {
-  const existing = await getCustodyAccount(groupId);
-  if (existing) return existing;
+export async function getCustodyAccount(groupId: string): Promise<CustodyAccount | null> {
+  try {
+    const db = createServiceClient();
+    const { data } = await db
+      .from("custody_accounts")
+      .select("*")
+      .eq("group_id", groupId)
+      .maybeSingle();
 
-  const db = createServiceClient();
-  const { data } = await db
-    .from("custody_accounts")
-    .insert({ group_id: groupId })
-    .select("*")
-    .single();
+    if (!data) return null;
 
-  return {
-    ...data!,
-    available: 0,
-  };
+    return {
+      ...data,
+      available: data.total_deposited_usd - data.total_committed,
+    };
+  } catch (err) {
+    if (isTableMissing(err)) return null;
+    throw err;
+  }
+}
+
+export async function getOrCreateCustodyAccount(groupId: string): Promise<CustodyAccount | null> {
+  try {
+    const existing = await getCustodyAccount(groupId);
+    if (existing) return existing;
+
+    const db = createServiceClient();
+    const { data } = await db
+      .from("custody_accounts")
+      .insert({ group_id: groupId })
+      .select("*")
+      .single();
+
+    return {
+      ...data!,
+      available: 0,
+    };
+  } catch (err) {
+    if (isTableMissing(err)) return null;
+    throw err;
+  }
 }
 
 export async function getCustodyDeposits(groupId: string): Promise<CustodyDeposit[]> {
-  const db = createServiceClient();
-  const { data } = await db
-    .from("custody_deposits")
-    .select("*")
-    .eq("group_id", groupId)
-    .order("created_at", { ascending: false });
+  try {
+    const db = createServiceClient();
+    const { data } = await db
+      .from("custody_deposits")
+      .select("*")
+      .eq("group_id", groupId)
+      .order("created_at", { ascending: false });
 
-  return data ?? [];
+    return data ?? [];
+  } catch (err) {
+    if (isTableMissing(err)) return [];
+    throw err;
+  }
 }
 
 export async function createCustodyDeposit(
   groupId: string,
   amountUsd: number,
   gateway: "stripe" | "mercadopago",
-): Promise<{ deposit: CustodyDeposit; checkoutUrl?: string }> {
-  const db = createServiceClient();
-  const coinsEquivalent = Math.floor(amountUsd);
+): Promise<{ deposit: CustodyDeposit; checkoutUrl?: string } | null> {
+  try {
+    const db = createServiceClient();
+    const coinsEquivalent = Math.floor(amountUsd);
 
-  const { data: deposit, error } = await db
-    .from("custody_deposits")
-    .insert({
-      group_id: groupId,
-      amount_usd: amountUsd,
-      coins_equivalent: coinsEquivalent,
-      payment_gateway: gateway,
-      status: "pending",
-    })
-    .select("*")
-    .single();
+    const { data: deposit, error } = await db
+      .from("custody_deposits")
+      .insert({
+        group_id: groupId,
+        amount_usd: amountUsd,
+        coins_equivalent: coinsEquivalent,
+        payment_gateway: gateway,
+        status: "pending",
+      })
+      .select("*")
+      .single();
 
-  if (error || !deposit) {
-    throw new Error(error?.message ?? "Failed to create deposit");
+    if (error || !deposit) {
+      throw new Error(error?.message ?? "Failed to create deposit");
+    }
+
+    return { deposit };
+  } catch (err) {
+    if (isTableMissing(err)) return null;
+    throw err;
   }
-
-  return { deposit };
 }
 
 export async function confirmDeposit(depositId: string): Promise<void> {
@@ -153,14 +178,19 @@ export interface InvariantViolation {
  * Returns empty array if system is healthy.
  */
 export async function checkInvariants(): Promise<InvariantViolation[]> {
-  const db = createServiceClient();
-  const { data, error } = await db.rpc("check_custody_invariants");
+  try {
+    const db = createServiceClient();
+    const { data, error } = await db.rpc("check_custody_invariants");
 
-  if (error) {
-    throw new Error(error.message);
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data ?? [];
+  } catch (err) {
+    if (isTableMissing(err)) return [];
+    throw err;
   }
-
-  return data ?? [];
 }
 
 // --- FX Spread ---
@@ -219,48 +249,58 @@ export async function createCustodyDepositWithFx(
   amountUsd: number,
   gateway: "stripe" | "mercadopago",
   fx?: { originalCurrency: string; originalAmount: number; fxRate: number; spreadPct: number },
-): Promise<{ deposit: CustodyDeposit }> {
-  const db = createServiceClient();
-  const coinsEquivalent = Math.floor(amountUsd);
+): Promise<{ deposit: CustodyDeposit } | null> {
+  try {
+    const db = createServiceClient();
+    const coinsEquivalent = Math.floor(amountUsd);
 
-  const { data: deposit, error } = await db
-    .from("custody_deposits")
-    .insert({
-      group_id: groupId,
-      amount_usd: amountUsd,
-      coins_equivalent: coinsEquivalent,
-      payment_gateway: gateway,
-      status: "pending",
-      original_currency: fx?.originalCurrency ?? "USD",
-      original_amount: fx?.originalAmount ?? amountUsd,
-      fx_rate: fx?.fxRate ?? 1.0,
-      fx_spread_pct: fx?.spreadPct ?? 0,
-    })
-    .select("*")
-    .single();
+    const { data: deposit, error } = await db
+      .from("custody_deposits")
+      .insert({
+        group_id: groupId,
+        amount_usd: amountUsd,
+        coins_equivalent: coinsEquivalent,
+        payment_gateway: gateway,
+        status: "pending",
+        original_currency: fx?.originalCurrency ?? "USD",
+        original_amount: fx?.originalAmount ?? amountUsd,
+        fx_rate: fx?.fxRate ?? 1.0,
+        fx_spread_pct: fx?.spreadPct ?? 0,
+      })
+      .select("*")
+      .single();
 
-  if (error || !deposit) throw new Error(error?.message ?? "Failed to create deposit");
-  return { deposit };
+    if (error || !deposit) throw new Error(error?.message ?? "Failed to create deposit");
+    return { deposit };
+  } catch (err) {
+    if (isTableMissing(err)) return null;
+    throw err;
+  }
 }
 
 /**
  * Confirm deposit by payment_reference (idempotent — webhook-safe).
  */
-export async function confirmDepositByReference(paymentReference: string): Promise<{ depositId: string; alreadyConfirmed: boolean }> {
-  const db = createServiceClient();
+export async function confirmDepositByReference(paymentReference: string): Promise<{ depositId: string; alreadyConfirmed: boolean } | null> {
+  try {
+    const db = createServiceClient();
 
-  const { data: existing } = await db
-    .from("custody_deposits")
-    .select("id, status")
-    .eq("payment_reference", paymentReference)
-    .maybeSingle();
+    const { data: existing } = await db
+      .from("custody_deposits")
+      .select("id, status")
+      .eq("payment_reference", paymentReference)
+      .maybeSingle();
 
-  if (!existing) throw new Error(`No deposit found for reference: ${paymentReference}`);
-  if (existing.status === "confirmed") return { depositId: existing.id, alreadyConfirmed: true };
-  if (existing.status !== "pending") throw new Error(`Deposit status is ${existing.status}`);
+    if (!existing) throw new Error(`No deposit found for reference: ${paymentReference}`);
+    if (existing.status === "confirmed") return { depositId: existing.id, alreadyConfirmed: true };
+    if (existing.status !== "pending") throw new Error(`Deposit status is ${existing.status}`);
 
-  await confirmDeposit(existing.id);
-  return { depositId: existing.id, alreadyConfirmed: false };
+    await confirmDeposit(existing.id);
+    return { depositId: existing.id, alreadyConfirmed: false };
+  } catch (err) {
+    if (isTableMissing(err)) return null;
+    throw err;
+  }
 }
 
 // --- Withdrawals ---
@@ -288,40 +328,45 @@ export async function createWithdrawal(params: {
   fxRate: number;
   spreadPct: number;
   providerFeeUsd?: number;
-}): Promise<CustodyWithdrawal> {
-  const account = await getCustodyAccount(params.groupId);
-  if (!account) throw new Error("No custody account");
-  if (account.is_blocked) throw new Error("Account is blocked");
-  if (account.available < params.amountUsd) {
-    throw new Error(`Insufficient available: ${account.available} < ${params.amountUsd}`);
+}): Promise<CustodyWithdrawal | null> {
+  try {
+    const account = await getCustodyAccount(params.groupId);
+    if (!account) throw new Error("No custody account");
+    if (account.is_blocked) throw new Error("Account is blocked");
+    if (account.available < params.amountUsd) {
+      throw new Error(`Insufficient available: ${account.available} < ${params.amountUsd}`);
+    }
+
+    const providerFee = params.providerFeeUsd ?? 0;
+    const { localAmount, spreadUsd } = convertFromUsdWithSpread(
+      params.amountUsd - providerFee,
+      params.fxRate,
+      params.spreadPct,
+    );
+
+    const db = createServiceClient();
+    const { data, error } = await db
+      .from("custody_withdrawals")
+      .insert({
+        group_id: params.groupId,
+        amount_usd: params.amountUsd,
+        target_currency: params.targetCurrency,
+        fx_rate: params.fxRate,
+        fx_spread_pct: params.spreadPct,
+        fx_spread_usd: spreadUsd,
+        provider_fee_usd: providerFee,
+        net_local_amount: localAmount,
+        status: "pending",
+      })
+      .select("*")
+      .single();
+
+    if (error || !data) throw new Error(error?.message ?? "Failed to create withdrawal");
+    return data;
+  } catch (err) {
+    if (isTableMissing(err)) return null;
+    throw err;
   }
-
-  const providerFee = params.providerFeeUsd ?? 0;
-  const { localAmount, spreadUsd } = convertFromUsdWithSpread(
-    params.amountUsd - providerFee,
-    params.fxRate,
-    params.spreadPct,
-  );
-
-  const db = createServiceClient();
-  const { data, error } = await db
-    .from("custody_withdrawals")
-    .insert({
-      group_id: params.groupId,
-      amount_usd: params.amountUsd,
-      target_currency: params.targetCurrency,
-      fx_rate: params.fxRate,
-      fx_spread_pct: params.spreadPct,
-      fx_spread_usd: spreadUsd,
-      provider_fee_usd: providerFee,
-      net_local_amount: localAmount,
-      status: "pending",
-    })
-    .select("*")
-    .single();
-
-  if (error || !data) throw new Error(error?.message ?? "Failed to create withdrawal");
-  return data;
 }
 
 export async function executeWithdrawal(withdrawalId: string): Promise<void> {
@@ -331,13 +376,18 @@ export async function executeWithdrawal(withdrawalId: string): Promise<void> {
 }
 
 export async function getWithdrawals(groupId: string): Promise<CustodyWithdrawal[]> {
-  const db = createServiceClient();
-  const { data } = await db
-    .from("custody_withdrawals")
-    .select("*")
-    .eq("group_id", groupId)
-    .order("created_at", { ascending: false });
-  return data ?? [];
+  try {
+    const db = createServiceClient();
+    const { data } = await db
+      .from("custody_withdrawals")
+      .select("*")
+      .eq("group_id", groupId)
+      .order("created_at", { ascending: false });
+    return data ?? [];
+  } catch (err) {
+    if (isTableMissing(err)) return [];
+    throw err;
+  }
 }
 
 /**

@@ -83,6 +83,7 @@ ALTER TABLE public.coaching_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_financial_ledger ENABLE ROW LEVEL SECURITY;
 
 -- 3.1 Plans: staff can read
+DROP POLICY IF EXISTS "staff_plans_select" ON public.coaching_plans;
 CREATE POLICY "staff_plans_select"
   ON public.coaching_plans FOR SELECT USING (
     EXISTS (
@@ -94,6 +95,7 @@ CREATE POLICY "staff_plans_select"
   );
 
 -- 3.2 Plans: staff can insert
+DROP POLICY IF EXISTS "staff_plans_insert" ON public.coaching_plans;
 CREATE POLICY "staff_plans_insert"
   ON public.coaching_plans FOR INSERT WITH CHECK (
     EXISTS (
@@ -105,6 +107,7 @@ CREATE POLICY "staff_plans_insert"
   );
 
 -- 3.3 Plans: staff can update
+DROP POLICY IF EXISTS "staff_plans_update" ON public.coaching_plans;
 CREATE POLICY "staff_plans_update"
   ON public.coaching_plans FOR UPDATE USING (
     EXISTS (
@@ -116,6 +119,7 @@ CREATE POLICY "staff_plans_update"
   );
 
 -- 3.4 Plans: staff can delete
+DROP POLICY IF EXISTS "staff_plans_delete" ON public.coaching_plans;
 CREATE POLICY "staff_plans_delete"
   ON public.coaching_plans FOR DELETE USING (
     EXISTS (
@@ -127,6 +131,7 @@ CREATE POLICY "staff_plans_delete"
   );
 
 -- 3.5 Plans: athlete can see available plans for their group
+DROP POLICY IF EXISTS "athlete_plans_select" ON public.coaching_plans;
 CREATE POLICY "athlete_plans_select"
   ON public.coaching_plans FOR SELECT USING (
     EXISTS (
@@ -137,6 +142,7 @@ CREATE POLICY "athlete_plans_select"
   );
 
 -- 3.6 Subscriptions: staff full access
+DROP POLICY IF EXISTS "staff_subscriptions_all" ON public.coaching_subscriptions;
 CREATE POLICY "staff_subscriptions_all"
   ON public.coaching_subscriptions FOR ALL USING (
     EXISTS (
@@ -148,6 +154,7 @@ CREATE POLICY "staff_subscriptions_all"
   );
 
 -- 3.7 Subscriptions: athlete can read own subscription
+DROP POLICY IF EXISTS "athlete_subscription_select" ON public.coaching_subscriptions;
 CREATE POLICY "athlete_subscription_select"
   ON public.coaching_subscriptions FOR SELECT USING (
     athlete_user_id = auth.uid()
@@ -159,6 +166,7 @@ CREATE POLICY "athlete_subscription_select"
   );
 
 -- 3.8 Ledger: staff full access (no athlete access)
+DROP POLICY IF EXISTS "staff_ledger_all" ON public.coaching_financial_ledger;
 CREATE POLICY "staff_ledger_all"
   ON public.coaching_financial_ledger FOR ALL USING (
     EXISTS (

@@ -240,7 +240,7 @@ final class SupabaseCrmRepo implements ICrmRepo {
           .from('coaching_members')
           .select('user_id, profiles!user_id(display_name, avatar_url)')
           .eq('group_id', groupId)
-          .eq('role', 'athlete');
+          .inFilter('role', ['athlete', 'atleta']);
 
       final members = await memberQuery
           .order('user_id')

@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:omni_runner/l10n/app_localizations.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -90,11 +91,24 @@ Future<void> main() async {
 }
 
 Future<void> _bootstrap() async {
-  // Initialize Supabase only when both env vars are present and non-empty.
-  // NOTE (M11): supabase_flutter v2 does not expose an httpClient parameter on
-  // Supabase.initialize, so there is no way to inject a global HTTP timeout.
-  // Individual RPC/REST calls should use `.timeout()` on the Future instead.
-  // This is a known SDK limitation — track: https://github.com/supabase/supabase-flutter/issues
+  RecoveredSession? recovery;
+
+  try {
+    await _initServices();
+    recovery = await sl<RecoverActiveSession>()();
+  } catch (e, stack) {
+    AppLogger.error(
+      'Bootstrap failed — launching with fallback UI',
+      tag: 'Main',
+      error: e,
+      stack: stack,
+    );
+  }
+
+  runApp(OmniRunnerApp(recovery: recovery));
+}
+
+Future<void> _initServices() async {
   if (AppConfig.isSupabaseConfigured) {
     try {
       await Supabase.initialize(
@@ -119,12 +133,10 @@ Future<void> _bootstrap() async {
     );
   }
 
-  // Set logger minimum level for production builds.
   if (AppConfig.isProd) {
     AppLogger.minLevel = LogLevel.info;
   }
 
-  // Connect AppLogger.error → Sentry for crash reporting.
   if (AppConfig.isSentryConfigured) {
     AppLogger.onError = (message, error, stack) {
       Sentry.captureException(error ?? message, stackTrace: stack);
@@ -132,7 +144,6 @@ Future<void> _bootstrap() async {
     AppLogger.info('Sentry initialized', tag: 'Main');
   }
 
-  // Initialize Firebase for push notifications (FCM/APNS).
   try {
     await Firebase.initializeApp();
     AppLogger.info('Firebase initialized', tag: 'Main');
@@ -141,39 +152,55 @@ Future<void> _bootstrap() async {
   }
 
   await setupServiceLocator();
-  await sl<DeepLinkHandler>().init();
-  ForegroundTaskConfig.init();
-  initWatchBridge();
 
-  // Initialize push notifications (requires Firebase + Supabase).
-  if (AppConfig.isSupabaseReady) {
-    final pushService = sl<PushNotificationService>();
-    final pushNav = PushNavigationHandler(navigatorKey: _navigatorKey);
-
-    pushService.onForegroundMessage = pushNav.showForegroundBanner;
-    await pushService.init();
-    await pushNav.init();
+  try {
+    await sl<DeepLinkHandler>().init();
+  } catch (e) {
+    AppLogger.warn('DeepLinkHandler init failed: $e', tag: 'Main');
   }
 
-  // Auto-sync pending sessions on startup and when connectivity restores.
-  final autoSync = AutoSyncManager(syncRepo: sl<ISyncRepo>());
-  await autoSync.init();
+  try {
+    ForegroundTaskConfig.init();
+  } catch (e) {
+    AppLogger.warn('ForegroundTaskConfig init failed: $e', tag: 'Main');
+  }
 
-  // Offline queue: replay failed RPC calls when connectivity restores.
+  try {
+    initWatchBridge();
+  } catch (e) {
+    AppLogger.warn('WatchBridge init failed: $e', tag: 'Main');
+  }
+
   if (AppConfig.isSupabaseReady) {
     try {
-      sl<ConnectivityMonitor>().start();
-    } catch (_) {
-      // OfflineQueue/ConnectivityMonitor may not be registered if setup failed
+      final pushService = sl<PushNotificationService>();
+      final pushNav = PushNavigationHandler(navigatorKey: _navigatorKey);
+      pushService.onForegroundMessage = pushNav.showForegroundBanner;
+      await pushService.init();
+      await pushNav.init();
+    } catch (e) {
+      AppLogger.warn('Push init failed: $e', tag: 'Main');
     }
   }
 
-  await themeNotifier.load();
+  try {
+    final autoSync = AutoSyncManager(syncRepo: sl<ISyncRepo>());
+    await autoSync.init();
+  } catch (e) {
+    AppLogger.warn('AutoSync init failed: $e', tag: 'Main');
+  }
 
-  // Check for an active session to recover.
-  final recovery = await sl<RecoverActiveSession>()();
+  if (AppConfig.isSupabaseReady) {
+    try {
+      sl<ConnectivityMonitor>().start();
+    } catch (_) {}
+  }
 
-  runApp(OmniRunnerApp(recovery: recovery));
+  try {
+    await themeNotifier.load();
+  } catch (e) {
+    AppLogger.warn('Theme load failed: $e', tag: 'Main');
+  }
 }
 
 class OmniRunnerApp extends StatelessWidget {
@@ -198,6 +225,23 @@ class OmniRunnerApp extends StatelessWidget {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+            systemNavigationBarColor: isDark ? Colors.black : Colors.white,
+            systemNavigationBarIconBrightness:
+                isDark ? Brightness.light : Brightness.dark,
+          ));
+          return MediaQuery(
+            data: MediaQuery.of(context).removePadding(removeBottom: true),
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).padding.bottom,
+              ),
+              child: child!,
+            ),
+          );
+        },
         home: recovery != null
             ? _RecoveryWrapper(recovery: recovery!)
             : const AuthGate(),

@@ -129,7 +129,7 @@ serve(async (req: Request) => {
     if (!customer) {
       const { data: profile } = await db
         .from("profiles")
-        .select("display_name, email")
+        .select("display_name")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -139,7 +139,7 @@ serve(async (req: Request) => {
         .eq("id", group_id)
         .maybeSingle();
 
-      const email = profile?.email ?? (user as { email?: string }).email ?? "admin@omnirunner.app";
+      const email = (user as { email?: string }).email ?? "admin@omnirunner.app";
       const legalName = group?.name ?? profile?.display_name ?? "Assessoria";
 
       const { data: newCustomer, error: insertErr } = await db

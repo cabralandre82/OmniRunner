@@ -52,7 +52,7 @@ export default async function EngagementPage({
       .from("coaching_members")
       .select("user_id")
       .eq("group_id", groupId)
-      .eq("role", "athlete");
+      .in("role", ["athlete", "atleta"]);
 
     athleteIds = (members ?? []).map((m: { user_id: string }) => m.user_id);
     totalAthletes = athleteIds.length;

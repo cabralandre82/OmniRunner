@@ -179,7 +179,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
             .from('coaching_members')
             .select('group_id, coaching_groups(name)')
             .eq('user_id', uid)
-            .eq('role', 'athlete')
+            .inFilter('role', ['athlete', 'atleta'])
             .maybeSingle();
         if (row != null) {
           groupId = row['group_id'] as String?;
@@ -463,7 +463,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
                 ),
                 const SizedBox(height: DesignTokens.spacingSm),
               ],
-              if (!_loading && !_hasFirstRun)
+              if (!_loading && !_hasFirstRun && _allFirstStepsComplete)
                 _RunnerQuizCard(
                   onStravaConnect: () {
                     Navigator.of(context)
@@ -697,13 +697,7 @@ class _DashCard extends StatelessWidget {
               ),
               if (isEmpty) ...[
                 const SizedBox(height: DesignTokens.spacingSm),
-                Text(
-                  'Toque para encontrar',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: cs.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Icon(Icons.add_circle_outline, size: 16, color: cs.primary),
               ],
             ],
           ),
@@ -717,7 +711,7 @@ class _DashCard extends StatelessWidget {
 // First-steps interactive checklist (#18 + #36)
 // ---------------------------------------------------------------------------
 
-class _FirstStepsCard extends StatelessWidget {
+class _FirstStepsCard extends StatefulWidget {
   final bool stravaConnected;
   final bool hasAssessoria;
   final bool hasFirstRun;
@@ -739,15 +733,22 @@ class _FirstStepsCard extends StatelessWidget {
   });
 
   @override
+  State<_FirstStepsCard> createState() => _FirstStepsCardState();
+}
+
+class _FirstStepsCardState extends State<_FirstStepsCard> {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
     final steps = [
-      (done: stravaConnected, label: 'Conectar Strava', xp: '+50 XP', onTap: onConnectStrava),
-      (done: hasAssessoria, label: 'Entrar em assessoria', xp: '+100 XP', onTap: onJoinAssessoria),
-      (done: hasFirstRun, label: 'Completar primeira corrida', xp: '+75 XP', onTap: onFirstRun),
-      (done: hasChallenge, label: 'Criar ou aceitar um desafio', xp: '+50 XP', onTap: onCreateChallenge),
+      (done: widget.stravaConnected, label: 'Conectar Strava', xp: '+50 XP', onTap: widget.onConnectStrava),
+      (done: widget.hasAssessoria, label: 'Entrar em assessoria', xp: '+100 XP', onTap: widget.onJoinAssessoria),
+      (done: widget.hasFirstRun, label: 'Completar primeira corrida', xp: '+75 XP', onTap: widget.onFirstRun),
+      (done: widget.hasChallenge, label: 'Criar ou aceitar um desafio', xp: '+50 XP', onTap: widget.onCreateChallenge),
     ];
     final completed = steps.where((s) => s.done).length;
 
@@ -756,61 +757,74 @@ class _FirstStepsCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(DesignTokens.spacingMd),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                SizedBox(
-                  width: 36,
-                  height: 36,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      CircularProgressIndicator(
-                        value: completed / steps.length,
-                        strokeWidth: 3,
-                        backgroundColor: cs.outlineVariant.withValues(alpha: 0.3),
-                        color: DesignTokens.success,
-                      ),
-                      Text(
-                        '$completed/${steps.length}',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: cs.onSurface,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        onTap: () => setState(() => _expanded = !_expanded),
+        child: Padding(
+          padding: const EdgeInsets.all(DesignTokens.spacingMd),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          value: completed / steps.length,
+                          strokeWidth: 3,
+                          backgroundColor: cs.outlineVariant.withValues(alpha: 0.3),
+                          color: DesignTokens.success,
                         ),
-                      ),
-                    ],
+                        Text(
+                          '$completed/${steps.length}',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: cs.onSurface,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: DesignTokens.spacingSm),
-                Expanded(
-                  child: Text(
-                    'Primeiros passos',
-                    style: theme.textTheme.titleSmall?.copyWith(
+                  const SizedBox(width: DesignTokens.spacingSm),
+                  Expanded(
+                    child: Text(
+                      'Primeiros passos',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '+275 XP',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: DesignTokens.warning,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
-                Text(
-                  '+275 XP total',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: DesignTokens.warning,
-                    fontWeight: FontWeight.w600,
+                  const SizedBox(width: 4),
+                  Icon(
+                    _expanded ? Icons.expand_less : Icons.expand_more,
+                    size: 20,
+                    color: cs.onSurfaceVariant,
                   ),
-                ),
+                ],
+              ),
+              if (_expanded) ...[
+                const SizedBox(height: DesignTokens.spacingSm),
+                ...steps.map((s) => _StepRow(
+                      done: s.done,
+                      label: s.label,
+                      xp: s.xp,
+                      onTap: s.done ? null : s.onTap,
+                    )),
               ],
-            ),
-            const SizedBox(height: DesignTokens.spacingSm),
-            ...steps.map((s) => _StepRow(
-                  done: s.done,
-                  label: s.label,
-                  xp: s.xp,
-                  onTap: s.done ? null : s.onTap,
-                )),
-          ],
+            ],
+          ),
         ),
       ),
     );

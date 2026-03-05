@@ -59,12 +59,17 @@ BEGIN
 END $$;
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 1. BACKFILL coaching_members.role
+-- 1. DROP OLD CHECK CONSTRAINT FIRST (allows backfill to succeed)
 -- ═══════════════════════════════════════════════════════════════════════════
 
--- 1a. Legacy 'coach' → 'admin_master' ONLY for verified group owners
---     Proof: baseline CHECK was ('coach','assistant','athlete'); coaching_groups.coach_user_id
---     is the owner FK; fn_create_assessoria originally inserted role='coach' for the creator.
+ALTER TABLE public.coaching_members
+  DROP CONSTRAINT IF EXISTS coaching_members_role_check;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 2. BACKFILL coaching_members.role
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- 2a. Legacy 'coach' → 'admin_master' ONLY for verified group owners
 UPDATE public.coaching_members cm
 SET role = 'admin_master'
 WHERE cm.role = 'coach'
@@ -73,25 +78,18 @@ WHERE cm.role = 'coach'
     WHERE cg.id = cm.group_id AND cg.coach_user_id = cm.user_id
   );
 
--- 1a-safe. Any remaining 'coach' rows that are NOT the group owner stay as 'coach'
---          (they become the new "coach/trainer" role — no privilege escalation)
--- No UPDATE needed: they already have role='coach' which is the canonical trainer value.
-
--- 1b. 'professor' → 'coach'
+-- 2b. 'professor' → 'coach'
 UPDATE public.coaching_members SET role = 'coach' WHERE role = 'professor';
 
--- 1c. 'assistente' → 'assistant' (also handles legacy 'assistant' — no-op)
+-- 2c. 'assistente' → 'assistant'
 UPDATE public.coaching_members SET role = 'assistant' WHERE role = 'assistente';
 
--- 1d. 'atleta' → 'athlete' (also handles legacy 'athlete' — no-op)
+-- 2d. 'atleta' → 'athlete'
 UPDATE public.coaching_members SET role = 'athlete' WHERE role = 'atleta';
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 2. UPDATE CHECK CONSTRAINT
+-- 3. ADD NEW CHECK CONSTRAINT
 -- ═══════════════════════════════════════════════════════════════════════════
-
-ALTER TABLE public.coaching_members
-  DROP CONSTRAINT IF EXISTS coaching_members_role_check;
 
 ALTER TABLE public.coaching_members
   ADD CONSTRAINT coaching_members_role_check
@@ -101,14 +99,14 @@ ALTER TABLE public.coaching_members
   ALTER COLUMN role SET DEFAULT 'athlete';
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 3. BACKFILL coaching_join_requests.requested_role
+-- 4. BACKFILL coaching_join_requests.requested_role
 -- ═══════════════════════════════════════════════════════════════════════════
-
-UPDATE public.coaching_join_requests SET requested_role = 'athlete' WHERE requested_role = 'atleta';
-UPDATE public.coaching_join_requests SET requested_role = 'coach'   WHERE requested_role = 'professor';
 
 ALTER TABLE public.coaching_join_requests
   DROP CONSTRAINT IF EXISTS coaching_join_requests_requested_role_check;
+
+UPDATE public.coaching_join_requests SET requested_role = 'athlete' WHERE requested_role = 'atleta';
+UPDATE public.coaching_join_requests SET requested_role = 'coach'   WHERE requested_role = 'professor';
 
 ALTER TABLE public.coaching_join_requests
   ADD CONSTRAINT coaching_join_requests_requested_role_check
@@ -186,63 +184,36 @@ CREATE POLICY "trends_read" ON public.athlete_trends FOR SELECT USING (
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 5. UPDATE RLS POLICIES — custody/clearing/swap (were 'admin_master','professor')
+-- 5. UPDATE RLS POLICIES — custody/clearing/swap (skip if tables don't exist yet)
 -- ═══════════════════════════════════════════════════════════════════════════
 
-DROP POLICY IF EXISTS "custody_own_group_read" ON public.custody_accounts;
-CREATE POLICY "custody_own_group_read" ON public.custody_accounts FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM public.coaching_members cm
-    WHERE cm.group_id = custody_accounts.group_id
-      AND cm.user_id = auth.uid()
-      AND cm.role IN ('admin_master', 'coach')
-  )
-);
-
-DROP POLICY IF EXISTS "custody_deposits_own_read" ON public.custody_deposits;
-CREATE POLICY "custody_deposits_own_read" ON public.custody_deposits FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM public.coaching_members cm
-    WHERE cm.group_id = custody_deposits.group_id
-      AND cm.user_id = auth.uid()
-      AND cm.role IN ('admin_master', 'coach')
-  )
-);
-
-DROP POLICY IF EXISTS "clearing_events_group_read" ON public.clearing_events;
-CREATE POLICY "clearing_events_group_read" ON public.clearing_events FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM public.coaching_members cm
-    WHERE cm.group_id IN (
-      SELECT DISTINCT (elem->>'issuer_group_id')::uuid
-      FROM jsonb_array_elements(clearing_events.breakdown) elem
-    )
-      AND cm.user_id = auth.uid()
-      AND cm.role IN ('admin_master', 'coach')
-  )
-);
-
-DROP POLICY IF EXISTS "settlements_group_read" ON public.clearing_settlements;
-CREATE POLICY "settlements_group_read" ON public.clearing_settlements FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM public.coaching_members cm
-    WHERE (cm.group_id = clearing_settlements.creditor_group_id
-           OR cm.group_id = clearing_settlements.debtor_group_id)
-      AND cm.user_id = auth.uid()
-      AND cm.role IN ('admin_master', 'coach')
-  )
-);
-
-DROP POLICY IF EXISTS "swap_orders_group_read" ON public.swap_orders;
-CREATE POLICY "swap_orders_group_read" ON public.swap_orders FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM public.coaching_members cm
-    WHERE (cm.group_id = swap_orders.seller_group_id
-           OR cm.group_id = swap_orders.buyer_group_id)
-      AND cm.user_id = auth.uid()
-      AND cm.role IN ('admin_master', 'coach')
-  )
-);
+DO $$ BEGIN
+IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'custody_accounts') THEN
+  EXECUTE 'DROP POLICY IF EXISTS "custody_own_group_read" ON public.custody_accounts';
+  EXECUTE $p$CREATE POLICY "custody_own_group_read" ON public.custody_accounts FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.coaching_members cm WHERE cm.group_id = custody_accounts.group_id AND cm.user_id = auth.uid() AND cm.role IN ('admin_master','coach')))$p$;
+END IF;
+IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'custody_deposits') THEN
+  EXECUTE 'DROP POLICY IF EXISTS "custody_deposits_own_read" ON public.custody_deposits';
+  EXECUTE $p$CREATE POLICY "custody_deposits_own_read" ON public.custody_deposits FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.coaching_members cm WHERE cm.group_id = custody_deposits.group_id AND cm.user_id = auth.uid() AND cm.role IN ('admin_master','coach')))$p$;
+END IF;
+IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'clearing_events') THEN
+  EXECUTE 'DROP POLICY IF EXISTS "clearing_events_group_read" ON public.clearing_events';
+  EXECUTE $p$CREATE POLICY "clearing_events_group_read" ON public.clearing_events FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.coaching_members cm WHERE cm.group_id IN (SELECT DISTINCT (elem->>'issuer_group_id')::uuid FROM jsonb_array_elements(clearing_events.breakdown) elem) AND cm.user_id = auth.uid() AND cm.role IN ('admin_master','coach')))$p$;
+END IF;
+IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'clearing_settlements') THEN
+  EXECUTE 'DROP POLICY IF EXISTS "settlements_group_read" ON public.clearing_settlements';
+  EXECUTE $p$CREATE POLICY "settlements_group_read" ON public.clearing_settlements FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.coaching_members cm WHERE (cm.group_id = clearing_settlements.creditor_group_id OR cm.group_id = clearing_settlements.debtor_group_id) AND cm.user_id = auth.uid() AND cm.role IN ('admin_master','coach')))$p$;
+END IF;
+IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'swap_orders') THEN
+  EXECUTE 'DROP POLICY IF EXISTS "swap_orders_group_read" ON public.swap_orders';
+  EXECUTE $p$CREATE POLICY "swap_orders_group_read" ON public.swap_orders FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.coaching_members cm WHERE (cm.group_id = swap_orders.seller_group_id OR cm.group_id = swap_orders.buyer_group_id) AND cm.user_id = auth.uid() AND cm.role IN ('admin_master','coach')))$p$;
+END IF;
+END $$;
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 6. UPDATE RLS POLICIES — join requests (were 'admin_master','professor','assistente')

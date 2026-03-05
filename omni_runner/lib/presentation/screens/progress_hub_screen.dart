@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/presentation/blocs/badges/badges_bloc.dart';
@@ -15,9 +13,6 @@ import 'package:omni_runner/presentation/blocs/progression/progression_bloc.dart
 import 'package:omni_runner/presentation/blocs/progression/progression_event.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_bloc.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_event.dart';
-import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_bloc.dart';
-import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_event.dart';
-import 'package:omni_runner/presentation/screens/assessoria_feed_screen.dart';
 import 'package:omni_runner/presentation/screens/athlete_championships_screen.dart';
 import 'package:omni_runner/presentation/screens/badges_screen.dart';
 import 'package:omni_runner/presentation/screens/challenges_list_screen.dart';
@@ -131,14 +126,6 @@ class ProgressHubScreen extends StatelessWidget {
             subtitle: 'Créditos e movimentações',
             target: _Target.wallet,
           ),
-
-          const _SectionHeader(title: 'Comunidade'),
-          const _Tile(
-            icon: Icons.forum_rounded,
-            title: 'Feed da Assessoria',
-            subtitle: 'Atividades recentes do seu grupo',
-            target: _Target.feed,
-          ),
         ],
       ),
     );
@@ -169,7 +156,7 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-enum _Target { progression, wrapped, dna, evolution, streaks, badges, missions, challenges, championships, league, wallet, leaderboards, feed }
+enum _Target { progression, wrapped, dna, evolution, streaks, badges, missions, challenges, championships, league, wallet, leaderboards }
 
 class _Tile extends StatelessWidget {
   final IconData icon;
@@ -196,11 +183,6 @@ class _Tile extends StatelessWidget {
   }
 
   void _navigate(BuildContext context) {
-    if (target == _Target.feed) {
-      _navigateToFeed(context);
-      return;
-    }
-
     if (target == _Target.wrapped) {
       _navigateToWrapped(context);
       return;
@@ -238,7 +220,6 @@ class _Tile extends StatelessWidget {
           child: const LeaderboardsScreen(),
         ),
       _Target.wrapped => const SizedBox.shrink(),
-      _Target.feed => const SizedBox.shrink(),
     };
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
   }
@@ -334,37 +315,4 @@ class _Tile extends StatelessWidget {
         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
       ][m];
 
-  Future<void> _navigateToFeed(BuildContext context) async {
-    final nav = Navigator.of(context);
-    final scaffold = ScaffoldMessenger.of(context);
-    final uid = sl<UserIdentityProvider>().userId;
-
-    try {
-      final row = await Supabase.instance.client
-          .from('profiles')
-          .select('active_coaching_group_id')
-          .eq('id', uid)
-          .maybeSingle();
-
-      final groupId =
-          row?['active_coaching_group_id'] as String?;
-
-      if (groupId == null || groupId.isEmpty) {
-        scaffold.showSnackBar(const SnackBar(
-          content: Text('Você não está em nenhuma assessoria'),
-        ));
-        return;
-      }
-
-      final page = BlocProvider<AssessoriaFeedBloc>(
-        create: (_) => sl<AssessoriaFeedBloc>()..add(LoadFeed(groupId)),
-        child: const AssessoriaFeedScreen(),
-      );
-      nav.push(MaterialPageRoute<void>(builder: (_) => page));
-    } on Exception {
-      scaffold.showSnackBar(const SnackBar(
-        content: Text('Erro ao carregar assessoria'),
-      ));
-    }
-  }
 }

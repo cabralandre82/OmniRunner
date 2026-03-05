@@ -64,7 +64,7 @@ class HowItWorksScreen extends StatelessWidget {
                 title: 'De onde vêm?',
                 body: 'Sua assessoria distribui OmniCoins como forma de '
                     'engajar os atletas. Você recebe pelo portal da sua '
-                    'assessoria — elas não são compráveis.',
+                    'assessoria.',
               ),
               _InfoCard(
                 title: 'Para que servem?',

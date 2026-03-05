@@ -9,8 +9,6 @@ import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/l10n/l10n.dart';
-import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_bloc.dart';
-import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_event.dart';
 import 'package:omni_runner/presentation/screens/auth_gate.dart';
 import 'package:omni_runner/presentation/widgets/login_required_sheet.dart';
 
@@ -18,7 +16,6 @@ import 'package:omni_runner/presentation/blocs/friends/friends_bloc.dart';
 import 'package:omni_runner/presentation/blocs/friends/friends_event.dart';
 import 'package:omni_runner/presentation/screens/friends_screen.dart';
 import 'package:omni_runner/presentation/screens/invite_friends_screen.dart';
-import 'package:omni_runner/presentation/screens/my_assessoria_screen.dart';
 import 'package:omni_runner/presentation/screens/profile_screen.dart';
 import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/screens/workout_delivery_screen.dart';
@@ -30,7 +27,6 @@ import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_bloc.dart';
 import 'package:omni_runner/domain/repositories/i_token_intent_repo.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/presentation/screens/faq_screen.dart';
-import 'package:omni_runner/presentation/screens/diagnostics_screen.dart';
 import 'package:omni_runner/presentation/screens/support_screen.dart';
 
 
@@ -65,23 +61,7 @@ class _MoreScreenState extends State<MoreScreen> {
           horizontal: DesignTokens.spacingMd,
         ),
         children: [
-          if (!_isStaff) _sectionCard(context, 'Minha Assessoria (grupo de corrida com treinador)', [
-            _ActionTile(
-              icon: Icons.groups,
-              title: 'Minha Assessoria',
-              subtitle: 'Ver grupo, feed e trocar de assessoria',
-              onTap: (ctx) {
-                if (LoginRequiredSheet.guard(ctx, feature: 'Assessoria')) return;
-                final uid = sl<UserIdentityProvider>().userId;
-                Navigator.of(ctx).push(MaterialPageRoute<void>(
-                  builder: (_) => BlocProvider<MyAssessoriaBloc>(
-                    create: (_) => sl<MyAssessoriaBloc>()
-                      ..add(LoadMyAssessoria(uid)),
-                    child: const MyAssessoriaScreen(),
-                  ),
-                ));
-              },
-            ),
+          if (!_isStaff) _sectionCard(context, 'Treinos', [
             _ActionTile(
               icon: Icons.qr_code_scanner,
               title: 'Escanear QR',
@@ -189,29 +169,23 @@ class _MoreScreenState extends State<MoreScreen> {
               subtitle: _isStaff ? 'Aparência' : 'Strava, tema e unidades',
               pushScreen: SettingsScreen(isStaff: _isStaff),
             ),
-            _ActionTile(
-              icon: Icons.bug_report_outlined,
-              title: context.l10n.diagnostics,
-              subtitle: 'Informações técnicas e depuração',
-              pushScreen: const DiagnosticsScreen(),
-            ),
           ]),
 
           _sectionCard(context, 'Ajuda', [
-            _ActionTile(
+            if (_isStaff) _ActionTile(
               icon: Icons.support_agent,
               title: context.l10n.support,
-              subtitle: 'Tickets de suporte da assessoria',
+              subtitle: 'Suporte da plataforma Omni Runner',
               onTap: (ctx) {
                 if (LoginRequiredSheet.guard(ctx, feature: 'Suporte')) return;
                 _openSupport(ctx);
               },
             ),
-            const _ActionTile(
+            _ActionTile(
               icon: Icons.help_outline,
               title: 'Perguntas Frequentes',
               subtitle: 'Dúvidas comuns sobre o app',
-              pushScreen: FaqScreen(),
+              pushScreen: FaqScreen(isStaff: _isStaff),
             ),
             _ActionTile(
               icon: Icons.info_outline,

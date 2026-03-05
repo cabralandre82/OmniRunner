@@ -289,7 +289,6 @@ serve(async (req: Request) => {
         delta_coins: badge.coins_reward,
         reason: "badge_reward",
         ref_id: badge.id,
-        issuer_group_id: userGroupId,
         created_at_ms: nowMs,
       });
       totalCoinsAwarded += badge.coins_reward;

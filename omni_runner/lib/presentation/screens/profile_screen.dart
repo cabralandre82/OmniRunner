@@ -113,7 +113,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final db = Supabase.instance.client;
       final badgesFuture = db.from('badges_earned').select('id').eq('user_id', uid);
       final progFuture = db.from('user_progressions').select('level, xp, current_streak_days').eq('user_id', uid).maybeSingle();
-      final sessionsFuture = db.from('sessions').select('distance_meters').eq('user_id', uid);
+      final sessionsFuture = db.from('sessions').select('total_distance_m').eq('user_id', uid);
 
       final badges = await badgesFuture;
       final prog = await progFuture;
@@ -121,7 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       double km = 0;
       for (final s in sessions) {
-        km += (s['distance_meters'] as num?)?.toDouble() ?? 0;
+        km += (s['total_distance_m'] as num?)?.toDouble() ?? 0;
       }
       if (mounted) {
         setState(() {
@@ -327,7 +327,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         SnackBar(
           content: Text(
             'Não foi possível excluir a conta. '
-            'Entre em contato: suporte@omnirunner.com.br\n'
+            'Entre em contato: suporte@omnirunner.app\n'
             'Erro: ${_friendlyError(e)}',
           ),
           duration: const Duration(seconds: 5),
@@ -462,22 +462,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // ── Edit display_name ──
-                Text('Alterar nome',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: cs.primary)),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Nome de exibição',
-                    border: OutlineInputBorder(),
+                // ── Edit display_name (athletes only) ──
+                if (_profile?.userRole != 'ASSESSORIA_STAFF') ...[
+                  Text('Alterar nome',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: cs.primary)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _nameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Nome de exibição',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLength: 50,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _saveAll(),
                   ),
-                  maxLength: 50,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _saveAll(),
-                ),
-                const SizedBox(height: 12),
+                  const SizedBox(height: 12),
+                ],
 
                 if (_socialColumnsAvailable) ...[
                   const SizedBox(height: 28),
@@ -535,7 +537,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 if (_error != null) ...[
                   const SizedBox(height: 16),
                   Card(
-                    color: DesignTokens.error,
+                    color: DesignTokens.error.withValues(alpha: 0.1),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                      side: BorderSide(color: DesignTokens.error.withValues(alpha: 0.3)),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Row(

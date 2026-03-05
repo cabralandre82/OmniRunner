@@ -40,10 +40,10 @@ serve(async (req: Request) => {
 
     const { data: profile } = await db
       .from("profiles")
-      .select("role")
+      .select("user_role")
       .eq("id", uid)
       .maybeSingle();
-    if (profile?.role === "admin_master") {
+    if (profile?.user_role === "admin_master") {
       status = 403;
       return jsonErr(403, "FORBIDDEN", "admin_master accounts cannot be self-deleted", requestId);
     }

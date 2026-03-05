@@ -44,7 +44,7 @@ async function getAthleteDetail(
     .select("user_id")
     .eq("group_id", groupId)
     .eq("user_id", userId)
-    .eq("role", "athlete")
+    .in("role", ["athlete", "atleta"])
     .maybeSingle();
 
   if (!membership) return null;

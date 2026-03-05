@@ -35,7 +35,7 @@ class SupabaseWalletRemoteSource implements IWalletRemoteSource {
     try {
       final rows = await Supabase.instance.client
           .from('coin_ledger')
-          .select('id, user_id, delta_coins, reason, ref_id, issuer_group_id, created_at_ms')
+          .select('id, user_id, delta_coins, reason, ref_id, created_at_ms')
           .eq('user_id', userId)
           .order('created_at_ms', ascending: false)
           .limit(200);
@@ -51,7 +51,7 @@ class SupabaseWalletRemoteSource implements IWalletRemoteSource {
           deltaCoins: (r['delta_coins'] as num).toInt(),
           reason: reason,
           refId: r['ref_id'] as String? ?? '',
-          issuerGroupId: r['issuer_group_id'] as String?,
+          issuerGroupId: null,
           createdAtMs: (r['created_at_ms'] as num).toInt(),
         ));
       }

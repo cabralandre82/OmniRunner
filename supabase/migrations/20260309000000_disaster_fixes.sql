@@ -38,6 +38,7 @@ CREATE TRIGGER protect_platform_role
 
 DO $$
 BEGIN
+  ALTER TABLE workout_delivery_events DROP CONSTRAINT IF EXISTS "chk_delivery_event_meta_size";
   ALTER TABLE workout_delivery_events
     ADD CONSTRAINT chk_delivery_event_meta_size
     CHECK (meta IS NULL OR octet_length(meta::text) < 65536);
@@ -134,6 +135,7 @@ $$;
 
 DO $$
 BEGIN
+  ALTER TABLE sessions DROP CONSTRAINT IF EXISTS "chk_sessions_status";
   ALTER TABLE sessions
     ADD CONSTRAINT chk_sessions_status
     CHECK (status BETWEEN 0 AND 10);
@@ -192,6 +194,7 @@ BEGIN
       OR user_id = auth.uid()
     );
 EXCEPTION WHEN undefined_table THEN NULL;
+  WHEN undefined_column THEN NULL;
 END $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -200,6 +203,7 @@ END $$;
 
 DO $$
 BEGIN
+  ALTER TABLE workout_delivery_batches DROP CONSTRAINT IF EXISTS "chk_delivery_batch_period";
   ALTER TABLE workout_delivery_batches
     ADD CONSTRAINT chk_delivery_batch_period
     CHECK (period_start IS NULL OR period_end IS NULL OR period_start <= period_end);
@@ -212,6 +216,7 @@ END $$;
 
 DO $$
 BEGIN
+  ALTER TABLE workout_delivery_events DROP CONSTRAINT IF EXISTS "chk_delivery_event_type";
   ALTER TABLE workout_delivery_events
     ADD CONSTRAINT chk_delivery_event_type
     CHECK (type IN (
@@ -227,6 +232,7 @@ END $$;
 
 DO $$
 BEGIN
+  ALTER TABLE coin_ledger DROP CONSTRAINT IF EXISTS "fk_coin_ledger_issuer_group";
   ALTER TABLE coin_ledger
     ADD CONSTRAINT fk_coin_ledger_issuer_group
     FOREIGN KEY (issuer_group_id)
@@ -235,6 +241,7 @@ BEGIN
 EXCEPTION
   WHEN duplicate_object THEN NULL;
   WHEN undefined_table THEN NULL;
+  WHEN undefined_column THEN NULL;
 END $$;
 
 COMMIT;

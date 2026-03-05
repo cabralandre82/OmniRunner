@@ -255,7 +255,6 @@ serve(async (req: Request) => {
             ledgerEntries.push({
               user_id: p.user_id, delta_coins: refundPerUser,
               reason: "challenge_entry_refund", ref_id: ch.id,
-              issuer_group_id: p.group_id,
               created_at_ms: nowMs,
             });
           }
@@ -324,7 +323,7 @@ serve(async (req: Request) => {
             ledgerEntries.push({
               user_id: p.user_id, delta_coins: coins,
               reason: outcome === "won" ? "challenge_team_won" : "challenge_group_completed",
-              ref_id: ch.id, issuer_group_id: p.group_id,
+              ref_id: ch.id,
               created_at_ms: nowMs,
             });
           }
@@ -351,7 +350,6 @@ serve(async (req: Request) => {
             ledgerEntries.push({
               user_id: p.user_id, delta_coins: refundPerUser,
               reason: "challenge_entry_refund", ref_id: ch.id,
-              issuer_group_id: p.group_id,
               created_at_ms: nowMs,
             });
           }
@@ -375,7 +373,6 @@ serve(async (req: Request) => {
             ledgerEntries.push({
               user_id: p.user_id, delta_coins: coins,
               reason: "challenge_group_completed", ref_id: ch.id,
-              issuer_group_id: p.group_id,
               created_at_ms: nowMs,
             });
           }
@@ -400,7 +397,6 @@ serve(async (req: Request) => {
             ledgerEntries.push({
               user_id: p.user_id, delta_coins: refundPerUser,
               reason: "challenge_entry_refund", ref_id: ch.id,
-              issuer_group_id: p.group_id,
               created_at_ms: nowMs,
             });
           }
@@ -505,7 +501,7 @@ serve(async (req: Request) => {
 
           ledgerEntries.push({
             user_id: p.user_id, delta_coins: coins,
-            reason, ref_id: ch.id, issuer_group_id: p.group_id,
+            reason, ref_id: ch.id,
             created_at_ms: nowMs,
           });
         }

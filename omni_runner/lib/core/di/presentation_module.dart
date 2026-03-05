@@ -7,7 +7,7 @@ import 'package:omni_runner/data/repositories_impl/supabase_progression_remote_s
 import 'package:omni_runner/data/repositories_impl/supabase_badges_remote_source.dart';
 import 'package:omni_runner/data/repositories_impl/supabase_missions_remote_source.dart';
 import 'package:omni_runner/data/repositories_impl/supabase_my_assessoria_remote_source.dart';
-import 'package:omni_runner/data/repositories_impl/supabase_verification_remote_source.dart';
+
 import 'package:omni_runner/domain/repositories/i_challenges_remote_source.dart';
 import 'package:omni_runner/domain/repositories/i_wallet_remote_source.dart';
 import 'package:omni_runner/domain/repositories/i_progression_remote_source.dart';
@@ -57,7 +57,7 @@ import 'package:omni_runner/domain/repositories/i_profile_progress_repo.dart';
 import 'package:omni_runner/domain/repositories/i_xp_transaction_repo.dart';
 import 'package:omni_runner/domain/repositories/i_badge_award_repo.dart';
 import 'package:omni_runner/domain/repositories/i_mission_progress_repo.dart';
-import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
+
 import 'package:omni_runner/presentation/blocs/announcement_feed/announcement_feed_bloc.dart';
 import 'package:omni_runner/presentation/blocs/announcement_detail/announcement_detail_bloc.dart';
 import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_bloc.dart';
@@ -252,11 +252,6 @@ void registerPresentationModule(GetIt sl) {
     () => AssessoriaFeedBloc(remote: sl<IFeedRemoteSource>()),
   );
 
-  sl.registerLazySingleton<IVerificationRemoteSource>(
-    () => SupabaseVerificationRemoteSource(
-      stravaFactory: () => sl<StravaConnectController>(),
-    ),
-  );
   sl.registerFactory<VerificationBloc>(
     () => VerificationBloc(remote: sl<IVerificationRemoteSource>()),
   );

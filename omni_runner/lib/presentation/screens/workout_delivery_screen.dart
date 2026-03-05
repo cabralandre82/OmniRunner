@@ -62,6 +62,12 @@ class _WorkoutDeliveryScreenState extends State<WorkoutDeliveryScreen> {
         });
       }
     } catch (e, stack) {
+      final msg = e.toString();
+      if (msg.contains('PGRST205') || msg.contains('workout_delivery_items')) {
+        AppLogger.debug('workout_delivery_items table not available yet', tag: 'WorkoutDelivery');
+        if (mounted) setState(() { _items = []; _loading = false; });
+        return;
+      }
       AppLogger.error(
         'Erro ao carregar entregas',
         tag: 'WorkoutDelivery',

@@ -53,8 +53,13 @@ final class StravaAuthRepositoryImpl implements IStravaAuthRepository {
     final athleteId = await _store.athleteId;
     final athleteName = await _store.athleteName;
 
-    if (expiresAt == null || athleteId == null) {
-      _cachedState = const StravaDisconnected();
+    if (expiresAt == null) {
+      _cachedState = const StravaReauthRequired(reason: 'Missing expiry');
+      return _cachedState!;
+    }
+
+    if (athleteId == null) {
+      _cachedState = const StravaReauthRequired(reason: 'Missing athlete ID');
       return _cachedState!;
     }
 
@@ -170,8 +175,9 @@ final class StravaAuthRepositoryImpl implements IStravaAuthRepository {
       _cachedState = const StravaReauthRequired(reason: 'Refresh failed');
       rethrow;
     } on Exception catch (e) {
+      AppLogger.warn('Token refresh transient error: $e', tag: _tag);
       _cachedState = StravaReauthRequired(reason: e.toString());
-      throw const TokenExpired();
+      throw AuthFailed('Refresh failed: $e');
     }
   }
 

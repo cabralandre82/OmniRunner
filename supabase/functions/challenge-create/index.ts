@@ -312,7 +312,6 @@ serve(async (req: Request) => {
         delta_coins: -entry_fee_coins,
         reason: "challenge_entry_fee",
         ref_id: challengeId,
-        issuer_group_id: memberRow?.group_id ?? null,
         created_at_ms: created_at_ms,
       });
     }

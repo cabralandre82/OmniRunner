@@ -154,7 +154,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     trailing: const Icon(Icons.open_in_new, size: 18),
                     onTap: () => launchUrl(
-                      Uri.parse('https://omnirunner.com.br/privacidade'),
+                      Uri.parse('https://omnirunner.app/privacidade'),
                       mode: LaunchMode.externalApplication,
                     ),
                   ),

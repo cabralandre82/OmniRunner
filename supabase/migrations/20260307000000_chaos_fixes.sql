@@ -213,8 +213,11 @@ $$;
 -- M26: Missing indexes for coin_ledger and billing_purchases
 -- ═══════════════════════════════════════════════════════════════════════════
 
-CREATE INDEX IF NOT EXISTS idx_coin_ledger_issuer_group_id
-  ON coin_ledger (issuer_group_id);
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='coin_ledger' AND column_name='issuer_group_id') THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_coin_ledger_issuer_group_id ON coin_ledger (issuer_group_id)';
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_billing_purchases_payment_reference
   ON billing_purchases (payment_reference);

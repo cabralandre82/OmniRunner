@@ -26,6 +26,7 @@ const violationLabels: Record<string, string> = {
 };
 
 export default async function InvariantsPage() {
+  try {
   const db = createServiceClient();
 
   const { data: violations } = await db.rpc("check_custody_invariants");
@@ -234,6 +235,18 @@ export default async function InvariantsPage() {
       </div>
     </div>
   );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/PGRST|does not exist|custody_accounts/.test(msg)) {
+      return (
+        <div className="rounded-xl border border-border bg-surface p-8 text-center">
+          <p className="text-lg font-medium text-content-primary">Funcionalidade em desenvolvimento</p>
+          <p className="mt-2 text-sm text-content-muted">Este recurso estará disponível em breve.</p>
+        </div>
+      );
+    }
+    throw err;
+  }
 }
 
 function KPI({ label, value }: { label: string; value: number }) {

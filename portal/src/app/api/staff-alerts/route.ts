@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
       .from("coaching_members")
       .select("user_id")
       .eq("group_id", groupId)
-      .eq("role", "athlete");
+      .in("role", ["athlete", "atleta"]);
 
     const athleteIds = (athleteMembers ?? []).map((m: { user_id: string }) => m.user_id);
 
@@ -89,21 +89,25 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const clearingCutoffMs = Date.now() - PENDING_CLEARING_DAYS * 86_400_000;
-    const { count: pendingClearings } = await db
-      .from("settlements")
-      .select("id", { count: "exact", head: true })
-      .eq("creditor_group_id", groupId)
-      .eq("status", "pending")
-      .lte("created_at_ms", clearingCutoffMs);
+    try {
+      const clearingCutoff = new Date(Date.now() - PENDING_CLEARING_DAYS * 86_400_000).toISOString();
+      const { count: pendingClearings } = await db
+        .from("clearing_cases")
+        .select("id", { count: "exact", head: true })
+        .eq("to_group_id", groupId)
+        .eq("status", "OPEN")
+        .lte("created_at", clearingCutoff);
 
-    if (pendingClearings && pendingClearings > 0) {
-      alerts.push({
-        key: "pending_clearings",
-        label: `${pendingClearings} compensaç${pendingClearings > 1 ? "ões" : "ão"} pendente${pendingClearings > 1 ? "s" : ""}`,
-        count: pendingClearings,
-        severity: "warning",
-      });
+      if (pendingClearings && pendingClearings > 0) {
+        alerts.push({
+          key: "pending_clearings",
+          label: `${pendingClearings} compensaç${pendingClearings > 1 ? "ões" : "ão"} pendente${pendingClearings > 1 ? "s" : ""}`,
+          count: pendingClearings,
+          severity: "warning",
+        });
+      }
+    } catch {
+      // clearing_cases table may not exist yet
     }
 
     const { data: inventory } = await supabase

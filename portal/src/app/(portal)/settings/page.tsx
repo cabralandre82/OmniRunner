@@ -107,12 +107,13 @@ export default async function SettingsPage() {
   }
 
   const db2 = createServiceClient();
-  const [feesRes, accountRes] = await Promise.all([
-    db2.from("platform_fee_config").select("fee_type, rate_pct, is_active").order("fee_type"),
-    db2.from("custody_accounts").select("total_deposited_usd, total_committed, is_blocked, blocked_reason").eq("group_id", groupId).maybeSingle(),
-  ]);
+  const feesRes = await db2.from("platform_fee_config").select("fee_type, rate_pct, is_active").order("fee_type");
   const fees = (feesRes.data ?? []) as { fee_type: string; rate_pct: number; is_active: boolean }[];
-  const custodyAcct = accountRes.data;
+  let custodyAcct = null;
+  try {
+    const accountRes = await db2.from("custody_accounts").select("total_deposited_usd, total_committed, is_blocked, blocked_reason").eq("group_id", groupId).maybeSingle();
+    custodyAcct = accountRes.data;
+  } catch {}
 
   return (
     <div className="space-y-10">

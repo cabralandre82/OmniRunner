@@ -111,6 +111,14 @@ export default async function LeaguePage() {
   }
 
   if (error) {
+    if (/PGRST|does not exist|league_enrollments/.test(error)) {
+      return (
+        <div className="rounded-xl border border-border bg-surface p-8 text-center">
+          <p className="text-lg font-medium text-content-primary">Funcionalidade em desenvolvimento</p>
+          <p className="mt-2 text-sm text-content-muted">Este recurso estará disponível em breve.</p>
+        </div>
+      );
+    }
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-content-primary">Liga</h1>

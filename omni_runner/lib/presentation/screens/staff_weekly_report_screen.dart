@@ -98,7 +98,7 @@ class _StaffWeeklyReportScreenState extends State<StaffWeeklyReportScreen> {
           .from('coaching_members')
           .select('user_id, display_name')
           .eq('group_id', widget.groupId)
-          .eq('role', 'athlete');
+          .inFilter('role', ['athlete', 'atleta']);
 
       final athletes = (membersRes as List).cast<Map<String, dynamic>>();
       _totalAthletes = athletes.length;

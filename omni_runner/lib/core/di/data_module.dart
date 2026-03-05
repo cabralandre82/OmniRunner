@@ -18,6 +18,7 @@ import 'package:omni_runner/data/datasources/isar_database_provider.dart';
 import 'package:omni_runner/data/datasources/location_permission_service.dart';
 import 'package:omni_runner/data/datasources/sync_service.dart';
 import 'package:omni_runner/data/datasources/analytics_sync_service.dart';
+import 'package:omni_runner/data/services/profile_data_service.dart';
 import 'package:omni_runner/features/wearables_ble/ble_heart_rate_source.dart';
 import 'package:omni_runner/features/wearables_ble/i_heart_rate_source.dart';
 import 'package:omni_runner/data/repositories_impl/audio_coach_repo.dart';
@@ -629,6 +630,10 @@ Future<void> registerDataModule(GetIt sl) async {
     () => SupabaseVerificationRemoteSource(
       stravaFactory: () => sl<StravaConnectController>(),
     ),
+  );
+
+  sl.registerLazySingleton<ProfileDataService>(
+    () => ProfileDataService(Supabase.instance.client),
   );
 
   sl.registerLazySingleton<IWorkoutRepo>(

@@ -252,7 +252,6 @@ serve(async (req: Request) => {
         delta_coins: intent.amount,
         reason: "institution_token_issue",
         ref_id: intent.id,
-        issuer_group_id: intent.group_id,
         created_at_ms: nowMs,
       });
       if (ledgerErr) {
