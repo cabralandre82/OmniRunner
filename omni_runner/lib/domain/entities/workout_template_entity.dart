@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-enum WorkoutBlockType { warmup, interval, recovery, cooldown, steady }
+enum WorkoutBlockType { warmup, interval, recovery, cooldown, steady, rest, repeat }
 
 String workoutBlockTypeToString(WorkoutBlockType t) => switch (t) {
       WorkoutBlockType.warmup => 'warmup',
@@ -8,6 +8,8 @@ String workoutBlockTypeToString(WorkoutBlockType t) => switch (t) {
       WorkoutBlockType.recovery => 'recovery',
       WorkoutBlockType.cooldown => 'cooldown',
       WorkoutBlockType.steady => 'steady',
+      WorkoutBlockType.rest => 'rest',
+      WorkoutBlockType.repeat => 'repeat',
     };
 
 WorkoutBlockType workoutBlockTypeFromString(String s) => switch (s) {
@@ -15,7 +17,19 @@ WorkoutBlockType workoutBlockTypeFromString(String s) => switch (s) {
       'interval' => WorkoutBlockType.interval,
       'recovery' => WorkoutBlockType.recovery,
       'cooldown' => WorkoutBlockType.cooldown,
+      'rest' => WorkoutBlockType.rest,
+      'repeat' => WorkoutBlockType.repeat,
       _ => WorkoutBlockType.steady,
+    };
+
+String workoutBlockTypeLabel(WorkoutBlockType t) => switch (t) {
+      WorkoutBlockType.warmup => 'Aquecimento',
+      WorkoutBlockType.interval => 'Intervalo',
+      WorkoutBlockType.recovery => 'Recuperação',
+      WorkoutBlockType.cooldown => 'Desaquecimento',
+      WorkoutBlockType.steady => 'Contínuo',
+      WorkoutBlockType.rest => 'Descanso',
+      WorkoutBlockType.repeat => 'Repetir',
     };
 
 final class WorkoutBlockEntity extends Equatable {
@@ -25,9 +39,13 @@ final class WorkoutBlockEntity extends Equatable {
   final WorkoutBlockType blockType;
   final int? durationSeconds;
   final int? distanceMeters;
-  final int? targetPaceSecondsPerKm;
+  final int? targetPaceMinSecPerKm;
+  final int? targetPaceMaxSecPerKm;
   final int? targetHrZone;
+  final int? targetHrMin;
+  final int? targetHrMax;
   final int? rpeTarget;
+  final int? repeatCount;
   final String? notes;
 
   const WorkoutBlockEntity({
@@ -37,14 +55,34 @@ final class WorkoutBlockEntity extends Equatable {
     required this.blockType,
     this.durationSeconds,
     this.distanceMeters,
-    this.targetPaceSecondsPerKm,
+    this.targetPaceMinSecPerKm,
+    this.targetPaceMaxSecPerKm,
     this.targetHrZone,
+    this.targetHrMin,
+    this.targetHrMax,
     this.rpeTarget,
+    this.repeatCount,
     this.notes,
   });
 
+  bool get isOpen => durationSeconds == null && distanceMeters == null;
+
+  bool get hasPaceRange =>
+      targetPaceMinSecPerKm != null && targetPaceMaxSecPerKm != null;
+
+  bool get hasHrRange => targetHrMin != null && targetHrMax != null;
+
+  int get totalDistanceMeters {
+    if (blockType == WorkoutBlockType.repeat) return 0;
+    return distanceMeters ?? 0;
+  }
+
   @override
-  List<Object?> get props => [id, templateId, orderIndex, blockType];
+  List<Object?> get props => [
+        id, templateId, orderIndex, blockType, durationSeconds, distanceMeters,
+        targetPaceMinSecPerKm, targetPaceMaxSecPerKm, targetHrZone,
+        targetHrMin, targetHrMax, rpeTarget, repeatCount,
+      ];
 }
 
 final class WorkoutTemplateEntity extends Equatable {

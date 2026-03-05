@@ -313,31 +313,34 @@ class _BlockTile extends StatelessWidget {
     required this.onRemove,
   });
 
-  static const _typeLabels = {
-    WorkoutBlockType.warmup: 'Aquecimento',
-    WorkoutBlockType.interval: 'Intervalo',
-    WorkoutBlockType.recovery: 'Recuperação',
-    WorkoutBlockType.cooldown: 'Desaquecimento',
-    WorkoutBlockType.steady: 'Contínuo',
-  };
-
   static const _typeColors = {
     WorkoutBlockType.warmup: DesignTokens.warning,
     WorkoutBlockType.interval: DesignTokens.error,
     WorkoutBlockType.recovery: DesignTokens.success,
     WorkoutBlockType.cooldown: DesignTokens.primary,
     WorkoutBlockType.steady: DesignTokens.success,
+    WorkoutBlockType.rest: Colors.grey,
+    WorkoutBlockType.repeat: Colors.deepPurple,
   };
+
+  static String _fmtPace(int secPerKm) {
+    final m = secPerKm ~/ 60;
+    final s = secPerKm % 60;
+    return '${m}:${s.toString().padLeft(2, '0')}';
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = _typeColors[block.blockType] ?? theme.colorScheme.outline;
-    final label = _typeLabels[block.blockType] ?? 'Bloco';
+    final label = workoutBlockTypeLabel(block.blockType);
     final isDark = theme.brightness == Brightness.dark;
     final chipTextColor = isDark ? color.withValues(alpha: 0.9) : color;
 
     final details = <String>[];
+    if (block.blockType == WorkoutBlockType.repeat && block.repeatCount != null) {
+      details.add('${block.repeatCount}x');
+    }
     if (block.durationSeconds != null) {
       final min = block.durationSeconds! ~/ 60;
       final sec = block.durationSeconds! % 60;
@@ -350,12 +353,16 @@ class _BlockTile extends StatelessWidget {
         details.add('${block.distanceMeters}m');
       }
     }
+    if (block.isOpen && block.blockType != WorkoutBlockType.repeat) {
+      details.add('livre');
+    }
     if (block.targetHrZone != null) details.add('Z${block.targetHrZone}');
+    if (block.hasHrRange) details.add('${block.targetHrMin}-${block.targetHrMax} bpm');
     if (block.rpeTarget != null) details.add('RPE ${block.rpeTarget}');
-    if (block.targetPaceSecondsPerKm != null) {
-      final m = block.targetPaceSecondsPerKm! ~/ 60;
-      final s = block.targetPaceSecondsPerKm! % 60;
-      details.add('${m}:${s.toString().padLeft(2, '0')}/km');
+    if (block.hasPaceRange) {
+      final min = _fmtPace(block.targetPaceMinSecPerKm!);
+      final max = _fmtPace(block.targetPaceMaxSecPerKm!);
+      details.add(min == max ? '$min/km' : '$min-$max/km');
     }
 
     return Card(
@@ -419,37 +426,54 @@ class _AddBlockSheetState extends State<_AddBlockSheet> {
   WorkoutBlockType _blockType = WorkoutBlockType.steady;
   final _durationController = TextEditingController();
   final _distanceController = TextEditingController();
-  final _paceMinController = TextEditingController();
-  final _paceSecController = TextEditingController();
+  final _paceMinMinController = TextEditingController();
+  final _paceMinSecController = TextEditingController();
+  final _paceMaxMinController = TextEditingController();
+  final _paceMaxSecController = TextEditingController();
+  final _hrMinController = TextEditingController();
+  final _hrMaxController = TextEditingController();
+  final _repeatController = TextEditingController();
+  final _notesController = TextEditingController();
   int? _hrZone;
   int? _rpe;
-
-  static const _typeLabels = {
-    WorkoutBlockType.warmup: 'Aquecimento',
-    WorkoutBlockType.interval: 'Intervalo',
-    WorkoutBlockType.recovery: 'Recuperação',
-    WorkoutBlockType.cooldown: 'Desaquecimento',
-    WorkoutBlockType.steady: 'Contínuo',
-  };
 
   @override
   void dispose() {
     _durationController.dispose();
     _distanceController.dispose();
-    _paceMinController.dispose();
-    _paceSecController.dispose();
+    _paceMinMinController.dispose();
+    _paceMinSecController.dispose();
+    _paceMaxMinController.dispose();
+    _paceMaxSecController.dispose();
+    _hrMinController.dispose();
+    _hrMaxController.dispose();
+    _repeatController.dispose();
+    _notesController.dispose();
     super.dispose();
+  }
+
+  int? _parsePace(TextEditingController minCtrl, TextEditingController secCtrl) {
+    final m = int.tryParse(minCtrl.text);
+    if (m == null) return null;
+    final s = int.tryParse(secCtrl.text) ?? 0;
+    return m * 60 + s;
   }
 
   void _confirm() {
     final durMin = int.tryParse(_durationController.text);
     final distM = int.tryParse(_distanceController.text);
-    final paceMin = int.tryParse(_paceMinController.text);
-    final paceSec = int.tryParse(_paceSecController.text);
+    final paceMin = _parsePace(_paceMinMinController, _paceMinSecController);
+    final paceMax = _parsePace(_paceMaxMinController, _paceMaxSecController);
+    final hrMin = int.tryParse(_hrMinController.text);
+    final hrMax = int.tryParse(_hrMaxController.text);
+    final repeatCount = int.tryParse(_repeatController.text);
+    final notes = _notesController.text.trim().isEmpty ? null : _notesController.text.trim();
 
-    int? paceSecondsPerKm;
-    if (paceMin != null) {
-      paceSecondsPerKm = paceMin * 60 + (paceSec ?? 0);
+    if (_blockType == WorkoutBlockType.repeat && (repeatCount == null || repeatCount < 1)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Informe quantas repetições')),
+      );
+      return;
     }
 
     final block = WorkoutBlockEntity(
@@ -459,13 +483,21 @@ class _AddBlockSheetState extends State<_AddBlockSheet> {
       blockType: _blockType,
       durationSeconds: durMin != null ? durMin * 60 : null,
       distanceMeters: distM,
-      targetPaceSecondsPerKm: paceSecondsPerKm,
+      targetPaceMinSecPerKm: paceMin,
+      targetPaceMaxSecPerKm: paceMax ?? paceMin,
       targetHrZone: _hrZone,
+      targetHrMin: hrMin,
+      targetHrMax: hrMax,
       rpeTarget: _rpe,
+      repeatCount: _blockType == WorkoutBlockType.repeat ? repeatCount : null,
+      notes: notes,
     );
 
     Navigator.of(context).pop(block);
   }
+
+  bool get _isRepeat => _blockType == WorkoutBlockType.repeat;
+  bool get _isRest => _blockType == WorkoutBlockType.rest;
 
   @override
   Widget build(BuildContext context) {
@@ -474,7 +506,7 @@ class _AddBlockSheetState extends State<_AddBlockSheet> {
     return ConstrainedBox(
       constraints: BoxConstraints(
         maxWidth: 600,
-        maxHeight: MediaQuery.of(context).size.height * 0.7,
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
       child: Padding(
         padding: EdgeInsets.only(
@@ -488,8 +520,7 @@ class _AddBlockSheetState extends State<_AddBlockSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Adicionar Bloco',
-                style: theme.textTheme.titleLarge),
+            Text('Adicionar Bloco', style: theme.textTheme.titleLarge),
             const SizedBox(height: 20),
             DropdownButtonFormField<WorkoutBlockType>(
               value: _blockType,
@@ -500,106 +531,195 @@ class _AddBlockSheetState extends State<_AddBlockSheet> {
               items: WorkoutBlockType.values
                   .map((t) => DropdownMenuItem(
                         value: t,
-                        child: Text(_typeLabels[t]!),
+                        child: Text(workoutBlockTypeLabel(t)),
                       ))
                   .toList(),
               onChanged: (v) {
                 if (v != null) setState(() => _blockType = v);
               },
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _durationController,
-                    decoration: const InputDecoration(
-                      labelText: 'Duração (min)',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
+            if (_isRepeat) ...[
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _repeatController,
+                decoration: const InputDecoration(
+                  labelText: 'Repetições',
+                  hintText: 'Ex: 5',
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _distanceController,
-                    decoration: const InputDecoration(
-                      labelText: 'Distância (m)',
-                      border: OutlineInputBorder(),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Os próximos blocos adicionados serão repetidos este número de vezes.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            if (!_isRepeat) ...[
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _durationController,
+                      decoration: const InputDecoration(
+                        labelText: 'Duração (min)',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
                     ),
-                    keyboardType: TextInputType.number,
                   ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _distanceController,
+                      decoration: const InputDecoration(
+                        labelText: 'Distância (m)',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
+              ),
+              if (!_isRest) ...[
+                const SizedBox(height: 16),
+                Text('Pace alvo (/km)', style: theme.textTheme.titleSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                )),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _paceMinMinController,
+                        decoration: const InputDecoration(
+                          labelText: 'Mín. min',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 2),
+                      child: Text(':'),
+                    ),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _paceMinSecController,
+                        decoration: const InputDecoration(
+                          labelText: 'seg',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text('a'),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _paceMaxMinController,
+                        decoration: const InputDecoration(
+                          labelText: 'Máx. min',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 2),
+                      child: Text(':'),
+                    ),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _paceMaxSecController,
+                        decoration: const InputDecoration(
+                          labelText: 'seg',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<int?>(
+                        value: _hrZone,
+                        decoration: const InputDecoration(
+                          labelText: 'Zona FC',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: [
+                          const DropdownMenuItem(value: null, child: Text('—')),
+                          for (int z = 1; z <= 5; z++)
+                            DropdownMenuItem(value: z, child: Text('Z$z')),
+                        ],
+                        onChanged: (v) => setState(() => _hrZone = v),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<int?>(
+                        value: _rpe,
+                        decoration: const InputDecoration(
+                          labelText: 'RPE',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: [
+                          const DropdownMenuItem(value: null, child: Text('—')),
+                          for (int r = 1; r <= 10; r++)
+                            DropdownMenuItem(value: r, child: Text('$r')),
+                        ],
+                        onChanged: (v) => setState(() => _rpe = v),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _hrMinController,
+                        decoration: const InputDecoration(
+                          labelText: 'FC mín. (bpm)',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _hrMaxController,
+                        decoration: const InputDecoration(
+                          labelText: 'FC máx. (bpm)',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _paceMinController,
-                    decoration: const InputDecoration(
-                      labelText: 'Pace min',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _notesController,
+                decoration: const InputDecoration(
+                  labelText: 'Observações',
+                  hintText: 'Opcional',
+                  border: OutlineInputBorder(),
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: DesignTokens.spacingXs),
-                  child: Text(':'),
-                ),
-                Expanded(
-                  child: TextFormField(
-                    controller: _paceSecController,
-                    decoration: const InputDecoration(
-                      labelText: 'Pace seg',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                const Text('/km'),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<int?>(
-                    value: _hrZone,
-                    decoration: const InputDecoration(
-                      labelText: 'Zona FC',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('—')),
-                      for (int z = 1; z <= 5; z++)
-                        DropdownMenuItem(value: z, child: Text('Z$z')),
-                    ],
-                    onChanged: (v) => setState(() => _hrZone = v),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: DropdownButtonFormField<int?>(
-                    value: _rpe,
-                    decoration: const InputDecoration(
-                      labelText: 'RPE',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('—')),
-                      for (int r = 1; r <= 10; r++)
-                        DropdownMenuItem(value: r, child: Text('$r')),
-                    ],
-                    onChanged: (v) => setState(() => _rpe = v),
-                  ),
-                ),
-              ],
-            ),
+                maxLines: 2,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+            ],
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: _confirm,

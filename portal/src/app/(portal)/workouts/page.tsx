@@ -1,9 +1,17 @@
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { NoGroupSelected } from "@/components/no-group-selected";
 import { formatDateISO } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
+
+interface WorkoutBlock {
+  template_id: string;
+  block_type: string;
+  distance_meters: number | null;
+  repeat_count: number | null;
+}
 
 interface WorkoutTemplate {
   id: string;
@@ -11,6 +19,28 @@ interface WorkoutTemplate {
   description: string | null;
   created_at: string;
   block_count: number;
+  total_distance_m: number;
+}
+
+function calcTotalDistance(blocks: WorkoutBlock[]): number {
+  let total = 0;
+  let repeatMult = 1;
+  let inRepeat = false;
+  for (const b of blocks) {
+    if (b.block_type === "repeat") {
+      repeatMult = b.repeat_count ?? 1;
+      inRepeat = true;
+      continue;
+    }
+    if (b.block_type !== "rest" && b.distance_meters) {
+      total += b.distance_meters * (inRepeat ? repeatMult : 1);
+    }
+    if (!["interval", "recovery"].includes(b.block_type)) {
+      inRepeat = false;
+      repeatMult = 1;
+    }
+  }
+  return total;
 }
 
 async function getTemplates(groupId: string): Promise<WorkoutTemplate[]> {
@@ -29,13 +59,17 @@ async function getTemplates(groupId: string): Promise<WorkoutTemplate[]> {
 
   const { data: blocks } = await supabase
     .from("coaching_workout_blocks")
-    .select("template_id")
-    .in("template_id", templateIds);
+    .select("template_id, block_type, distance_meters, repeat_count")
+    .in("template_id", templateIds)
+    .order("order_index");
 
+  const blocksByTemplate = new Map<string, WorkoutBlock[]>();
   const blockCountMap = new Map<string, number>();
-  for (const b of blocks ?? []) {
-    const tid = (b as { template_id: string }).template_id;
+  for (const b of (blocks ?? []) as WorkoutBlock[]) {
+    const tid = b.template_id;
     blockCountMap.set(tid, (blockCountMap.get(tid) ?? 0) + 1);
+    if (!blocksByTemplate.has(tid)) blocksByTemplate.set(tid, []);
+    blocksByTemplate.get(tid)!.push(b);
   }
 
   return templates.map((t) => ({
@@ -44,6 +78,7 @@ async function getTemplates(groupId: string): Promise<WorkoutTemplate[]> {
     description: t.description,
     created_at: t.created_at,
     block_count: blockCountMap.get(t.id) ?? 0,
+    total_distance_m: calcTotalDistance(blocksByTemplate.get(t.id) ?? []),
   }));
 }
 
@@ -83,6 +118,7 @@ export default async function WorkoutsPage() {
                 <th className="px-4 py-3 text-left font-medium text-content-secondary">Nome</th>
                 <th className="px-4 py-3 text-left font-medium text-content-secondary">Descrição</th>
                 <th className="px-4 py-3 text-center font-medium text-content-secondary">Blocos</th>
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">Distância</th>
                 <th className="px-4 py-3 text-left font-medium text-content-secondary">Criado em</th>
               </tr>
             </thead>
@@ -90,13 +126,20 @@ export default async function WorkoutsPage() {
               {templates.map((t) => (
                 <tr key={t.id} className="hover:bg-surface-elevated">
                   <td className="whitespace-nowrap px-4 py-3 font-medium text-content-primary">
-                    {t.name}
+                    <Link href={`/workouts/${t.id}`} className="text-primary hover:underline">
+                      {t.name}
+                    </Link>
                   </td>
                   <td className="max-w-[300px] truncate px-4 py-3 text-content-secondary">
                     {t.description ?? "—"}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-center text-content-secondary">
                     {t.block_count}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-center text-content-secondary">
+                    {t.total_distance_m > 0
+                      ? `${(t.total_distance_m / 1000).toFixed(1)} km`
+                      : "—"}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-content-secondary">
                     {formatDateISO(t.created_at)}

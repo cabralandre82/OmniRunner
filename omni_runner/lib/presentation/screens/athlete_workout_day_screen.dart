@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/data/services/workout_delivery_service.dart';
 import 'package:omni_runner/core/logging/logger.dart';
@@ -37,6 +41,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
   WorkoutAssignmentEntity? _assignment;
   WorkoutTemplateEntity? _template;
   bool _completing = false;
+  bool _sendingToWatch = false;
   int _pendingDeliveries = 0;
 
   @override
@@ -104,6 +109,48 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
           _loading = false;
         });
       }
+    }
+  }
+
+  Future<void> _sendToWatch(String assignmentId) async {
+    setState(() => _sendingToWatch = true);
+    try {
+      final client = Supabase.instance.client;
+      final response = await client.functions.invoke(
+        'generate-fit-workout',
+        body: {'assignment_id': assignmentId},
+      );
+      if (response.status != 200) {
+        throw Exception('Erro ao gerar arquivo .FIT');
+      }
+      final bytes = response.data as List<int>;
+      final dir = await getTemporaryDirectory();
+      final safeFileName = (_template?.name ?? 'treino')
+          .replaceAll(RegExp(r'[^a-zA-Z0-9_\- ]'), '')
+          .replaceAll(RegExp(r'\s+'), '_');
+      final file = File('${dir.path}/$safeFileName.fit');
+      await file.writeAsBytes(bytes);
+      if (!mounted) return;
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          text: 'Treino: ${_template?.name ?? ""}',
+        ),
+      );
+    } catch (e, stack) {
+      AppLogger.error(
+        'Erro ao enviar treino para relógio',
+        tag: 'WorkoutDayScreen',
+        error: e,
+        stack: stack,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ErrorMessages.humanize(e))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sendingToWatch = false);
     }
   }
 
@@ -315,7 +362,24 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
             return _WorkoutBlockCard(block: block, index: i);
           }),
         ],
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
+        if (template != null && template.blocks.isNotEmpty)
+          OutlinedButton.icon(
+            onPressed: _sendingToWatch ? null : () => _sendToWatch(assignment.id),
+            icon: _sendingToWatch
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.watch_outlined),
+            label: Text(
+                _sendingToWatch ? 'Gerando...' : 'Enviar para relógio'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingMd),
+            ),
+          ),
+        const SizedBox(height: 12),
         if (!isCompleted)
           FilledButton.icon(
             onPressed: _completing ? null : _markCompleted,
@@ -380,13 +444,22 @@ class _WorkoutBlockCard extends StatelessWidget {
         details.add('${block.distanceMeters}m');
       }
     }
-    if (block.targetPaceSecondsPerKm != null) {
-      final m = block.targetPaceSecondsPerKm! ~/ 60;
-      final s = block.targetPaceSecondsPerKm! % 60;
-      details.add('Pace ${m}:${s.toString().padLeft(2, '0')}/km');
+    if (block.hasPaceRange) {
+      String fmtPace(int v) {
+        final m = v ~/ 60;
+        final s = v % 60;
+        return '${m}:${s.toString().padLeft(2, '0')}';
+      }
+      final min = fmtPace(block.targetPaceMinSecPerKm!);
+      final max = fmtPace(block.targetPaceMaxSecPerKm!);
+      details.add(min == max ? 'Pace $min/km' : 'Pace $min-$max/km');
     }
     if (block.targetHrZone != null) details.add('Zona FC ${block.targetHrZone}');
+    if (block.hasHrRange) details.add('FC ${block.targetHrMin}-${block.targetHrMax} bpm');
     if (block.rpeTarget != null) details.add('RPE ${block.rpeTarget}');
+    if (block.blockType == WorkoutBlockType.repeat && block.repeatCount != null) {
+      details.insert(0, '${block.repeatCount}x');
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),

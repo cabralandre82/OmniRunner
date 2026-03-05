@@ -98,7 +98,7 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
 
       final blockRows = await _db
           .from('coaching_workout_blocks')
-          .select('id, template_id, order_index, block_type, duration_seconds, distance_meters, target_pace_seconds_per_km, target_hr_zone, rpe_target, notes')
+          .select('id, template_id, order_index, block_type, duration_seconds, distance_meters, target_pace_seconds_per_km, target_pace_min_sec_per_km, target_pace_max_sec_per_km, target_hr_zone, target_hr_min, target_hr_max, rpe_target, repeat_count, notes')
           .eq('template_id', templateId)
           .order('order_index');
       final blocks = blockRows.map(_fromBlockRow).toList();
@@ -131,9 +131,13 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
                         'block_type': workoutBlockTypeToString(b.blockType),
                         'duration_seconds': b.durationSeconds,
                         'distance_meters': b.distanceMeters,
-                        'target_pace_seconds_per_km': b.targetPaceSecondsPerKm,
+                        'target_pace_min_sec_per_km': b.targetPaceMinSecPerKm,
+                        'target_pace_max_sec_per_km': b.targetPaceMaxSecPerKm,
                         'target_hr_zone': b.targetHrZone,
+                        'target_hr_min': b.targetHrMin,
+                        'target_hr_max': b.targetHrMax,
                         'rpe_target': b.rpeTarget,
+                        'repeat_count': b.repeatCount,
                         'notes': b.notes,
                       })
                   .toList(),
@@ -291,19 +295,27 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
         blocks: blocks,
       );
 
-  static WorkoutBlockEntity _fromBlockRow(Map<String, dynamic> r) =>
-      WorkoutBlockEntity(
-        id: r['id'] as String,
-        templateId: r['template_id'] as String,
-        orderIndex: r['order_index'] as int,
-        blockType: workoutBlockTypeFromString(r['block_type'] as String),
-        durationSeconds: r['duration_seconds'] as int?,
-        distanceMeters: r['distance_meters'] as int?,
-        targetPaceSecondsPerKm: r['target_pace_seconds_per_km'] as int?,
-        targetHrZone: r['target_hr_zone'] as int?,
-        rpeTarget: r['rpe_target'] as int?,
-        notes: r['notes'] as String?,
-      );
+  static WorkoutBlockEntity _fromBlockRow(Map<String, dynamic> r) {
+    final legacyPace = r['target_pace_seconds_per_km'] as int?;
+    return WorkoutBlockEntity(
+      id: r['id'] as String,
+      templateId: r['template_id'] as String,
+      orderIndex: r['order_index'] as int,
+      blockType: workoutBlockTypeFromString(r['block_type'] as String),
+      durationSeconds: r['duration_seconds'] as int?,
+      distanceMeters: r['distance_meters'] as int?,
+      targetPaceMinSecPerKm:
+          r['target_pace_min_sec_per_km'] as int? ?? legacyPace,
+      targetPaceMaxSecPerKm:
+          r['target_pace_max_sec_per_km'] as int? ?? legacyPace,
+      targetHrZone: r['target_hr_zone'] as int?,
+      targetHrMin: r['target_hr_min'] as int?,
+      targetHrMax: r['target_hr_max'] as int?,
+      rpeTarget: r['rpe_target'] as int?,
+      repeatCount: r['repeat_count'] as int?,
+      notes: r['notes'] as String?,
+    );
+  }
 
   static WorkoutAssignmentEntity _fromAssignmentRow(
           Map<String, dynamic> r) =>

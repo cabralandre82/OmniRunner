@@ -128,9 +128,13 @@ class WorkoutBuilderBloc
           blockType: e.value.blockType,
           durationSeconds: e.value.durationSeconds,
           distanceMeters: e.value.distanceMeters,
-          targetPaceSecondsPerKm: e.value.targetPaceSecondsPerKm,
+          targetPaceMinSecPerKm: e.value.targetPaceMinSecPerKm,
+          targetPaceMaxSecPerKm: e.value.targetPaceMaxSecPerKm,
           targetHrZone: e.value.targetHrZone,
+          targetHrMin: e.value.targetHrMin,
+          targetHrMax: e.value.targetHrMax,
           rpeTarget: e.value.rpeTarget,
+          repeatCount: e.value.repeatCount,
           notes: e.value.notes,
         );
       }).toList();
