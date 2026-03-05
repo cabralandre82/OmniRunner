@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/training_session_entity.dart';
+import 'package:omni_runner/domain/entities/training_attendance_entity.dart';
 import 'package:omni_runner/presentation/blocs/training_list/training_list_bloc.dart';
 import 'package:omni_runner/presentation/blocs/training_list/training_list_event.dart';
 import 'package:omni_runner/presentation/blocs/training_list/training_list_state.dart';
-import 'package:omni_runner/presentation/screens/athlete_checkin_qr_screen.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 
 /// Lista de treinos do grupo do atleta (próximos e anteriores).
@@ -121,14 +122,7 @@ class AthleteTrainingListScreen extends StatelessWidget {
             _SectionHeader(title: 'Próximos'),
             ...upcoming.map((s) => _TrainingCard(
                   session: s,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => AthleteCheckinQrScreen(
-                        sessionId: s.id,
-                        sessionTitle: s.title,
-                      ),
-                    ),
-                  ),
+                  onTap: () => _showSessionInfo(context, s),
                 )),
             const SizedBox(height: 24),
           ],
@@ -136,9 +130,7 @@ class AthleteTrainingListScreen extends StatelessWidget {
             _SectionHeader(title: 'Anteriores'),
             ...past.map((s) => _TrainingCard(
                   session: s,
-                  onTap: () {
-                    _showSessionInfo(context, s);
-                  },
+                  onTap: () => _showSessionInfo(context, s),
                 )),
           ],
         ],
@@ -148,24 +140,20 @@ class AthleteTrainingListScreen extends StatelessWidget {
 
   void _showSessionInfo(BuildContext context, TrainingSessionEntity session) {
     final theme = Theme.of(context);
+    final uid = Supabase.instance.client.auth.currentUser?.id;
     showModalBottomSheet<void>(
       context: context,
-      builder: (context) => Padding(
+      builder: (ctx) => Padding(
         padding: const EdgeInsets.all(DesignTokens.spacingLg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              session.title,
-              style: theme.textTheme.titleLarge,
-            ),
+            Text(session.title, style: theme.textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(
               DateFormat('d MMM yyyy, HH:mm', 'pt_BR').format(session.startsAt),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.outline,
-              ),
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.outline),
             ),
             if (session.locationName != null && session.locationName!.isNotEmpty)
               Padding(
@@ -175,23 +163,120 @@ class AthleteTrainingListScreen extends StatelessWidget {
                     Icon(Icons.location_on, size: 16, color: theme.colorScheme.outline),
                     const SizedBox(width: 4),
                     Expanded(
-                      child: Text(
-                        session.locationName!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.outline,
-                        ),
-                      ),
+                      child: Text(session.locationName!,
+                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline)),
                     ),
                   ],
                 ),
               ),
+            if (session.distanceTargetM != null) ...[
+              const SizedBox(height: 12),
+              Row(children: [
+                Icon(Icons.straighten, size: 16, color: theme.colorScheme.outline),
+                const SizedBox(width: 6),
+                Text('Distância: ${(session.distanceTargetM! / 1000).toStringAsFixed(1)} km',
+                    style: theme.textTheme.bodyMedium),
+              ]),
+            ],
+            if (session.paceMinSecKm != null && session.paceMaxSecKm != null) ...[
+              const SizedBox(height: 4),
+              Row(children: [
+                Icon(Icons.speed, size: 16, color: theme.colorScheme.outline),
+                const SizedBox(width: 6),
+                Text(
+                  'Pace: ${_fmtPace(session.paceMinSecKm!)} ~ ${_fmtPace(session.paceMaxSecKm!)} /km',
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ]),
+            ],
             if (session.description != null && session.description!.isNotEmpty) ...[
               const SizedBox(height: 12),
               Text(session.description!),
             ],
+            if (uid != null) ...[
+              const SizedBox(height: 16),
+              _AthleteStatusBadge(sessionId: session.id, athleteId: uid),
+            ],
+            const SizedBox(height: 8),
           ],
         ),
       ),
+    );
+  }
+
+  static String _fmtPace(double secPerKm) {
+    final min = secPerKm ~/ 60;
+    final sec = (secPerKm % 60).round();
+    return '$min:${sec.toString().padLeft(2, '0')}';
+  }
+}
+
+class _AthleteStatusBadge extends StatelessWidget {
+  final String sessionId;
+  final String athleteId;
+
+  const _AthleteStatusBadge({required this.sessionId, required this.athleteId});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: Supabase.instance.client
+          .from('coaching_training_attendance')
+          .select('status, method')
+          .eq('session_id', sessionId)
+          .eq('athlete_user_id', athleteId)
+          .maybeSingle(),
+      builder: (ctx, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const SizedBox(height: 24, child: Center(child: LinearProgressIndicator()));
+        }
+        final data = snap.data;
+        if (data == null) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+            ),
+            child: Row(children: [
+              Icon(Icons.hourglass_empty, size: 18, color: theme.colorScheme.outline),
+              const SizedBox(width: 8),
+              Text('Aguardando avaliação', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.outline)),
+            ]),
+          );
+        }
+        final status = attendanceStatusFromString(data['status'] as String? ?? 'present');
+        final label = attendanceStatusLabel(status);
+        final color = switch (status) {
+          AttendanceStatus.completed || AttendanceStatus.present => DesignTokens.success,
+          AttendanceStatus.partial || AttendanceStatus.late_ => DesignTokens.warning,
+          AttendanceStatus.absent => DesignTokens.error,
+          AttendanceStatus.excused => DesignTokens.primary,
+        };
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+            border: Border.all(color: color.withValues(alpha: 0.4)),
+          ),
+          child: Row(children: [
+            Icon(
+              switch (status) {
+                AttendanceStatus.completed || AttendanceStatus.present => Icons.check_circle,
+                AttendanceStatus.partial || AttendanceStatus.late_ => Icons.timelapse,
+                AttendanceStatus.absent => Icons.cancel,
+                AttendanceStatus.excused => Icons.info_outline,
+              },
+              size: 18,
+              color: color,
+            ),
+            const SizedBox(width: 8),
+            Text(label, style: theme.textTheme.bodyMedium?.copyWith(color: color, fontWeight: FontWeight.w600)),
+          ]),
+        );
+      },
     );
   }
 }
@@ -306,6 +391,21 @@ class _TrainingCard extends StatelessWidget {
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              if (session.distanceTargetM != null) ...[
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.straighten, size: 14, color: theme.colorScheme.outline),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${(session.distanceTargetM! / 1000).toStringAsFixed(1)} km',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.outline,
                       ),
                     ),
                   ],
