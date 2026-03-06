@@ -107,8 +107,10 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  // Log the event (idempotent via uq_asaas_event)
-  const eventId = `${event}_${asaasPaymentId ?? crypto.randomUUID()}`;
+  // Deterministic event ID — never use random UUID, otherwise retries
+  // bypass idempotency. Fallback chain: paymentId > subscriptionId > hash of payload
+  const eventKey = asaasPaymentId ?? asaasSubId ?? JSON.stringify(payload).slice(0, 64);
+  const eventId = `${event}_${eventKey}`;
 
   const { error: insertErr } = await db
     .from("payment_webhook_events")
@@ -122,9 +124,20 @@ Deno.serve(async (req: Request) => {
       processed: false,
     });
 
-  // If duplicate event, skip processing
+  // If duplicate event, check if it was fully processed — if not, reprocess
   if (insertErr?.code === "23505") {
-    return new Response(JSON.stringify({ ok: true, skipped: true }), { status: 200 });
+    const { data: existing } = await db
+      .from("payment_webhook_events")
+      .select("processed")
+      .eq("asaas_event_id", eventId)
+      .maybeSingle();
+
+    if (existing?.processed) {
+      return new Response(JSON.stringify({ ok: true, skipped: true }), { status: 200 });
+    }
+    // Fall through to reprocess if not yet processed
+  } else if (insertErr) {
+    return new Response(JSON.stringify({ error: `DB insert failed: ${insertErr.message}` }), { status: 500 });
   }
 
   // Process payment events → update subscription status

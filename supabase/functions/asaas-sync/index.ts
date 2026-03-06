@@ -122,16 +122,17 @@ Deno.serve(async (req: Request) => {
           return jsonErr(400, "BAD_REQUEST", "athlete_user_id, name, cpf required", rid, undefined, undefined, req);
         }
 
-        // Check if already mapped
-        const { data: existing } = await db
+        // Atomic upsert — prevents race condition between concurrent requests
+        // Try INSERT first; if conflict, return existing record
+        const { data: upserted, error: upsertErr } = await db
           .from("asaas_customer_map")
           .select("asaas_customer_id")
           .eq("group_id", groupId)
           .eq("athlete_user_id", athleteUserId)
           .maybeSingle();
 
-        if (existing) {
-          return jsonOk({ asaas_customer_id: existing.asaas_customer_id, already_exists: true }, rid, req);
+        if (upserted) {
+          return jsonOk({ asaas_customer_id: upserted.asaas_customer_id, already_exists: true }, rid, req);
         }
 
         // Resolve email from auth if not provided
@@ -155,19 +156,34 @@ Deno.serve(async (req: Request) => {
 
         const asaasCustomerId = custRes.data.id as string;
 
-        await db.from("asaas_customer_map").insert({
-          group_id: groupId,
-          athlete_user_id: athleteUserId,
-          asaas_customer_id: asaasCustomerId,
-        });
+        // Upsert to handle concurrent requests — if another request already
+        // inserted between our SELECT and here, we just keep the existing row
+        const { error: insertErr } = await db
+          .from("asaas_customer_map")
+          .upsert(
+            {
+              group_id: groupId,
+              athlete_user_id: athleteUserId,
+              asaas_customer_id: asaasCustomerId,
+            },
+            { onConflict: "group_id,athlete_user_id", ignoreDuplicates: true },
+          );
 
-        // Save CPF to coaching_members if not already there
-        await db
+        if (insertErr) {
+          return jsonErr(500, "DB_ERROR", `Failed to persist customer mapping: ${insertErr.message}`, rid, undefined, undefined, req);
+        }
+
+        // Save CPF to coaching_members
+        const { error: cpfErr } = await db
           .from("coaching_members")
           .update({ cpf: cpf.replace(/\D/g, "") })
           .eq("group_id", groupId)
           .eq("user_id", athleteUserId)
           .is("cpf", null);
+
+        if (cpfErr) {
+          console.error(`[asaas-sync] CPF save failed for ${athleteUserId}: ${cpfErr.message}`);
+        }
 
         return jsonOk({ asaas_customer_id: asaasCustomerId }, rid, req);
       }
@@ -185,7 +201,7 @@ Deno.serve(async (req: Request) => {
           return jsonErr(400, "BAD_REQUEST", "subscription_id, asaas_customer_id, value, next_due_date required", rid, undefined, undefined, req);
         }
 
-        // Check if already mapped
+        // Idempotent check — return existing if already mapped
         const { data: existingSub } = await db
           .from("asaas_subscription_map")
           .select("asaas_subscription_id")
@@ -217,11 +233,21 @@ Deno.serve(async (req: Request) => {
 
         const asaasSubId = subRes.data.id as string;
 
-        await db.from("asaas_subscription_map").insert({
-          subscription_id: subscriptionId,
-          asaas_subscription_id: asaasSubId,
-          asaas_status: subRes.data.status as string ?? "ACTIVE",
-        });
+        // Upsert to handle concurrent requests
+        const { error: mapErr } = await db
+          .from("asaas_subscription_map")
+          .upsert(
+            {
+              subscription_id: subscriptionId,
+              asaas_subscription_id: asaasSubId,
+              asaas_status: (subRes.data.status as string) ?? "ACTIVE",
+            },
+            { onConflict: "subscription_id", ignoreDuplicates: true },
+          );
+
+        if (mapErr) {
+          return jsonErr(500, "DB_ERROR", `Failed to persist subscription mapping: ${mapErr.message}`, rid, undefined, undefined, req);
+        }
 
         return jsonOk({ asaas_subscription_id: asaasSubId }, rid, req);
       }
@@ -244,10 +270,14 @@ Deno.serve(async (req: Request) => {
 
         const delRes = await asaasFetch(base, apiKey, `/subscriptions/${subMap.asaas_subscription_id}`, "DELETE");
 
-        await db
+        const { error: cancelErr } = await db
           .from("asaas_subscription_map")
           .update({ asaas_status: "INACTIVE", last_synced_at: new Date().toISOString() })
           .eq("subscription_id", subscriptionId);
+
+        if (cancelErr) {
+          return jsonErr(500, "DB_ERROR", `Asaas cancelled but DB update failed: ${cancelErr.message}`, rid, undefined, undefined, req);
+        }
 
         return jsonOk({ cancelled: true, asaas_response: delRes.data }, rid, req);
       }
@@ -281,7 +311,7 @@ Deno.serve(async (req: Request) => {
           return jsonErr(502, "ASAAS_ERROR", "Failed to create webhook", rid, whRes.data, undefined, req);
         }
 
-        await db
+        const { error: whDbErr } = await db
           .from("payment_provider_config")
           .update({
             webhook_id: whRes.data.id as string,
@@ -292,6 +322,10 @@ Deno.serve(async (req: Request) => {
           })
           .eq("group_id", groupId)
           .eq("provider", "asaas");
+
+        if (whDbErr) {
+          return jsonErr(500, "DB_ERROR", `Webhook created but DB update failed: ${whDbErr.message}`, rid, undefined, undefined, req);
+        }
 
         return jsonOk({ webhook_id: whRes.data.id, webhook_configured: true }, rid, req);
       }

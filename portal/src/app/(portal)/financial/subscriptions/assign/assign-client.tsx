@@ -161,7 +161,7 @@ export function AssignSubscriptionClient({
             // 3. Create Asaas subscription with split
             setBillingProgress(`Ativando cobrança: ${athlete.display_name}...`);
             const cycle = selectedPlan.billing_cycle === "quarterly" ? "QUARTERLY" : "MONTHLY";
-            await fetch("/api/billing/asaas", {
+            const subRes = await fetch("/api/billing/asaas", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -174,7 +174,7 @@ export function AssignSubscriptionClient({
                 description: `${selectedPlan.name} — ${athlete.display_name}`,
               }),
             });
-            billingOk++;
+            if (subRes.ok) billingOk++;
           } catch {
             // continue with next athlete
           }
