@@ -182,3 +182,16 @@ The following services have been created to reduce direct Supabase usage in scre
 - `ProfileDataService` – Used by `profile_screen.dart`
 
 These services are registered in `service_locator.dart` and can serve as examples for further migration.
+
+## Reference: Full Clean Architecture (Training/Attendance)
+
+The training sessions & attendance feature (OS-01 / DECISAO 134) follows the full Clean Architecture pattern end-to-end:
+
+- **Entities:** `TrainingSessionEntity`, `TrainingAttendanceEntity`
+- **Repo Interfaces:** `ITrainingSessionRepo`, `ITrainingAttendanceRepo`
+- **Repo Implementations:** `SupabaseTrainingSessionRepo`, `SupabaseTrainingAttendanceRepo`
+- **Use Cases:** `CreateTrainingSession`, `ListTrainingSessions`, `CancelTrainingSession`, `MarkAttendance`, `ListAttendance`, `IssueCheckinToken`
+- **BLoCs:** `TrainingListBloc`, `TrainingDetailBloc`, `CheckinBloc`
+- **Screens:** `staff_training_list_screen.dart`, `staff_training_create_screen.dart`, `staff_training_detail_screen.dart`, `athlete_training_list_screen.dart`, `athlete_attendance_screen.dart`
+
+This serves as the reference implementation for all new features.

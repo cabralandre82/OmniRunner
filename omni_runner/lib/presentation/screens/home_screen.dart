@@ -42,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
             if (!AppConfig.demoMode && AppConfig.backendMode == 'mock') _MockModeBanner(),
             Expanded(
               child: IndexedStack(index: _tab, children: [
-                const AthleteDashboardScreen(),
+                AthleteDashboardScreen(isVisible: _tab == 0),
                 TodayScreen(isVisible: _tab == 1),
                 HistoryScreen(isVisible: _tab == 2),
                 const MoreScreen(userRole: 'ATLETA'),

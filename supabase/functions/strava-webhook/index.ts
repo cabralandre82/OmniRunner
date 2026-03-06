@@ -338,14 +338,16 @@ export async function processStravaEvent(
   const sessionId = crypto.randomUUID();
 
   if (latlng && time && latlng.length > 0) {
-    const points = latlng.map((ll, i) => ({
-      lat: ll[0], lng: ll[1],
-      ts: startTimeMs + (time[i] * 1000),
-      alt: streams.altitude?.data?.[i] ?? null,
-      hr: streams.heartrate?.data?.[i] ?? null,
-      spd: velocity?.[i] ?? null,
-    }));
-    pointsPath = `session-points/${conn.user_id}/${sessionId}.json`;
+    const points = latlng.map((ll, i) => {
+      const m: Record<string, number> = {
+        lat: ll[0], lng: ll[1],
+        timestampMs: startTimeMs + (time[i] * 1000),
+      };
+      if (streams.altitude?.data?.[i] != null) m.alt = streams.altitude.data[i];
+      if (velocity?.[i] != null) m.speed = velocity[i];
+      return m;
+    });
+    pointsPath = `${conn.user_id}/${sessionId}.json`;
     const { error: storageErr } = await db.storage
       .from("session-points")
       .upload(pointsPath, JSON.stringify(points), { contentType: "application/json", upsert: true });
@@ -379,6 +381,27 @@ export async function processStravaEvent(
     }
     throw new Error(`INSERT_FAILED: ${msg}`);
   }
+
+  // Upsert strava_activity_history so polyline fallback works
+  const startLatlng = activity.start_latlng as number[] | undefined;
+  await db.from("strava_activity_history").upsert({
+    user_id: conn.user_id,
+    strava_activity_id: stravaActivityId,
+    name: activity.name ?? null,
+    distance_m: activity.distance ?? 0,
+    moving_time_s: activity.moving_time ?? 0,
+    elapsed_time_s: activity.elapsed_time ?? 0,
+    average_speed: activity.average_speed ?? null,
+    max_speed: activity.max_speed ?? null,
+    average_heartrate: activity.average_heartrate ?? null,
+    max_heartrate: activity.max_heartrate ?? null,
+    start_date: activity.start_date ?? null,
+    summary_polyline: activity.map?.summary_polyline ?? null,
+    activity_type: activity.type ?? null,
+    start_lat: startLatlng?.[0] ?? null,
+    start_lng: startLatlng?.[1] ?? null,
+    imported_at: new Date().toISOString(),
+  }, { onConflict: "user_id,strava_activity_id" }).then(() => {}, () => {});
 
   if (!hasCritical && latlng && latlng.length > 0) {
     try { await linkSessionToChallenges(db, conn.user_id, sessionId, activity); } catch { /* best-effort */ }

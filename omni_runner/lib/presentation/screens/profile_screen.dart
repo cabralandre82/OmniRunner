@@ -393,7 +393,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.profile),
-        backgroundColor: cs.inversePrimary,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())

@@ -483,7 +483,6 @@ class _TodayScreenState extends State<TodayScreen> {
       child: Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.today),
-        backgroundColor: cs.inversePrimary,
       ),
       body: _errorMessage != null && _profile == null
           ? Center(
@@ -1102,9 +1101,9 @@ class _BoraCorrerCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(DesignTokens.spacingMd),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3E0),
+        color: const Color(0xFFFC4C02).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-        border: Border.all(color: const Color(0xFFFFCC80)),
+        border: Border.all(color: const Color(0xFFFC4C02).withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -1121,18 +1120,18 @@ class _BoraCorrerCard extends StatelessWidget {
             'Conecte o Strava para começar',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: const Color(0xFFBF360C),
+              color: const Color(0xFFFC4C02),
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'O Omni Runner importa suas corridas direto do Strava. '
             'Funciona com qualquer relógio: Garmin, Coros, Apple Watch, '
             'Polar, Suunto, ou até correndo só com o celular.\n\n'
             'Ao conectar, suas últimas corridas são importadas '
             'automaticamente para calibrar seu nível.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: Color(0xFF5D4037)),
+            style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 14),
           connectingStrava
@@ -1810,7 +1809,7 @@ class _RecentBadgeUnlockCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
       ),
-      color: const Color(0xFFFFF8E1),
+      color: DesignTokens.warning.withValues(alpha: 0.1),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
@@ -1848,7 +1847,7 @@ class _RecentBadgeUnlockCard extends StatelessWidget {
                           : '$badgeCount novos badges desbloqueados!',
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF795548),
+                        color: DesignTokens.warning,
                       ),
                     ),
                     const SizedBox(height: 4),

@@ -76,7 +76,7 @@ class _RunDetailsScreenState extends State<RunDetailsScreen> {
     if (points.isNotEmpty) {
       coords = PolylineBuilder.fromPoints(points, simplifyThresholdMeters: 2.0);
     } else {
-      coords = await _loadStravaPolylineFallback();
+      coords = await _loadPolylineFallback();
     }
 
     final filt = const FilterLocationPoints()(points);
@@ -88,25 +88,49 @@ class _RunDetailsScreenState extends State<RunDetailsScreen> {
     if (_mapReady) await _drawRoute();
   }
 
-  Future<List<LatLng>> _loadStravaPolylineFallback() async {
+  Future<List<LatLng>> _loadPolylineFallback() async {
     if (!AppConfig.isSupabaseReady) return const [];
-    if (widget.session.source != 'strava') return const [];
     try {
       final uid = widget.session.userId ??
           Supabase.instance.client.auth.currentUser?.id;
       if (uid == null) return const [];
+      final db = Supabase.instance.client;
 
+      // 1) Try direct lookup via strava_activity_id on the session row
+      try {
+        final sessionRow = await db
+            .from('sessions')
+            .select('strava_activity_id')
+            .eq('id', widget.session.id)
+            .maybeSingle();
+        final stravaId = sessionRow?['strava_activity_id'];
+        if (stravaId != null) {
+          final hist = await db
+              .from('strava_activity_history')
+              .select('summary_polyline')
+              .eq('user_id', uid)
+              .eq('strava_activity_id', stravaId)
+              .maybeSingle();
+          final poly = hist?['summary_polyline'] as String?;
+          if (poly != null && poly.isNotEmpty) {
+            return PolylineBuilder.decodeGooglePolyline(poly);
+          }
+        }
+      } catch (_) {}
+
+      // 2) Fallback: match by date window (±2 hours around session start)
       final startMs = widget.session.startTimeMs;
-      final startDate = DateTime.fromMillisecondsSinceEpoch(startMs, isUtc: true);
-      final dayStart = DateTime.utc(startDate.year, startDate.month, startDate.day);
-      final dayEnd = dayStart.add(const Duration(days: 1));
+      final windowStart = DateTime.fromMillisecondsSinceEpoch(
+          startMs - 7200000, isUtc: true);
+      final windowEnd = DateTime.fromMillisecondsSinceEpoch(
+          startMs + 7200000, isUtc: true);
 
-      final rows = await Supabase.instance.client
+      final rows = await db
           .from('strava_activity_history')
           .select('summary_polyline')
           .eq('user_id', uid)
-          .gte('start_date', dayStart.toIso8601String())
-          .lt('start_date', dayEnd.toIso8601String())
+          .gte('start_date', windowStart.toIso8601String())
+          .lt('start_date', windowEnd.toIso8601String())
           .limit(1);
 
       final list = (rows as List).cast<Map<String, dynamic>>();
@@ -117,7 +141,7 @@ class _RunDetailsScreenState extends State<RunDetailsScreen> {
 
       return PolylineBuilder.decodeGooglePolyline(polyline);
     } catch (e) {
-      AppLogger.debug('Strava polyline fallback failed: $e', tag: 'RunDetails');
+      AppLogger.debug('Polyline fallback failed: $e', tag: 'RunDetails');
       return const [];
     }
   }
@@ -130,38 +154,43 @@ class _RunDetailsScreenState extends State<RunDetailsScreen> {
         Supabase.instance.client.auth.currentUser?.id;
     if (uid == null) return const [];
 
-    try {
-      final path = '$uid/${widget.session.id}.json';
-      final bytes = await Supabase.instance.client.storage
-          .from('session-points')
-          .download(path);
-      final jsonStr = utf8.decode(bytes);
-      final list = (jsonDecode(jsonStr) as List).cast<Map<String, dynamic>>();
+    final storage = Supabase.instance.client.storage.from('session-points');
+    final primaryPath = '$uid/${widget.session.id}.json';
+    // Legacy path: strava-webhook used to prefix the bucket name in the path
+    final legacyPath = 'session-points/$uid/${widget.session.id}.json';
 
-      final points = list.map((m) => LocationPointEntity(
-        lat: (m['lat'] as num).toDouble(),
-        lng: (m['lng'] as num).toDouble(),
-        alt: (m['alt'] as num?)?.toDouble(),
-        accuracy: (m['accuracy'] as num?)?.toDouble(),
-        speed: (m['speed'] as num?)?.toDouble(),
-        bearing: (m['bearing'] as num?)?.toDouble(),
-        timestampMs: (m['timestampMs'] as num).toInt(),
-      )).toList();
+    for (final path in [primaryPath, legacyPath]) {
+      try {
+        final bytes = await storage.download(path);
+        final jsonStr = utf8.decode(bytes);
+        final list = (jsonDecode(jsonStr) as List).cast<Map<String, dynamic>>();
 
-      if (points.isNotEmpty) {
-        await pointsRepo.savePoints(widget.session.id, points);
+        final points = list.map((m) => LocationPointEntity(
+          lat: (m['lat'] as num).toDouble(),
+          lng: (m['lng'] as num).toDouble(),
+          alt: (m['alt'] as num?)?.toDouble(),
+          accuracy: (m['accuracy'] as num?)?.toDouble(),
+          speed: (m['speed'] as num? ?? m['spd'] as num?)?.toDouble(),
+          bearing: (m['bearing'] as num?)?.toDouble(),
+          timestampMs: (m['timestampMs'] as num? ?? m['ts'] as num?)?.toInt() ?? 0,
+        )).toList();
+
+        if (points.isNotEmpty) {
+          await pointsRepo.savePoints(widget.session.id, points);
+          AppLogger.info(
+            'Downloaded ${points.length} points from Storage ($path)',
+            tag: 'RunDetails',
+          );
+          return points;
+        }
+      } on Exception catch (_) {
+        continue;
       }
-
-      AppLogger.info(
-        'Downloaded ${points.length} points from Storage for ${widget.session.id}',
-        tag: 'RunDetails',
-      );
-      return points;
-    } on Exception catch (e) {
-      AppLogger.warn('Failed to download points from Storage: $e',
-          tag: 'RunDetails');
-      return const [];
     }
+
+    AppLogger.warn('No points found in Storage for ${widget.session.id}',
+        tag: 'RunDetails');
+    return const [];
   }
 
   Future<void> _onStyleLoaded() async {

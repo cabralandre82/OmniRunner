@@ -31,6 +31,8 @@ import 'package:omni_runner/presentation/widgets/login_required_sheet.dart';
 import 'package:flutter/services.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/domain/entities/workout_status.dart';
+import 'package:omni_runner/domain/repositories/i_session_repo.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/presentation/widgets/ds/fade_in.dart';
 
@@ -44,7 +46,8 @@ import 'package:omni_runner/presentation/widgets/ds/fade_in.dart';
 ///   5. Campeonatos       → [AthleteChampionshipsScreen]
 ///   6. Convidar amigos   → [InviteFriendsScreen]
 class AthleteDashboardScreen extends StatefulWidget {
-  const AthleteDashboardScreen({super.key});
+  final bool isVisible;
+  const AthleteDashboardScreen({super.key, this.isVisible = true});
 
   @override
   State<AthleteDashboardScreen> createState() =>
@@ -83,6 +86,16 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
       _loadDisplayName();
       _checkFirstRunAndChallenges();
       sl<UserIdentityProvider>().profileNameNotifier.addListener(_onProfileNameChanged);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant AthleteDashboardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isVisible && !oldWidget.isVisible && !AppConfig.demoMode) {
+      _checkStrava();
+      _checkFirstRunAndChallenges();
+      _loadAssessoriaStatus();
     }
   }
 
@@ -142,6 +155,15 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
   }
 
   Future<void> _checkFirstRunAndChallenges() async {
+    // Check local Isar first (works offline)
+    try {
+      final localSessions = await sl<ISessionRepo>().getByStatus(WorkoutStatus.completed);
+      if (localSessions.isNotEmpty && mounted) {
+        setState(() => _hasFirstRun = true);
+      }
+    } catch (_) {}
+
+    // Then verify against Supabase (authoritative)
     try {
       final uid = sl<UserIdentityProvider>().userId;
       final db = Supabase.instance.client;
@@ -157,7 +179,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
           .limit(1);
       if (mounted) {
         setState(() {
-          _hasFirstRun = (sessionRows as List).isNotEmpty;
+          _hasFirstRun = _hasFirstRun || (sessionRows as List).isNotEmpty;
           _hasChallenge = (challengeRows as List).isNotEmpty;
         });
       }
@@ -347,7 +369,6 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Omni Runner'),
-        backgroundColor: cs.inversePrimary,
       ),
       body: FadeIn(
         child: Padding(

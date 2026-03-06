@@ -156,6 +156,6 @@ Coverage reports são salvos como artifacts no CI.
 | Role | Acesso |
 |------|--------|
 | `admin_master` | Acesso total (billing, team, settings, custódia, distribuição) |
-| `professor` | Atletas, distribuições, verificação, engajamento |
-| `assistente` | Atletas, verificação, engajamento (somente leitura) |
+| `coach` | Atletas, distribuições, verificação, engajamento, treinos prescritos |
+| `assistant` | Atletas, verificação, engajamento, treinos (somente leitura) |
 | `platform_admin` | Admin da plataforma (assessorias, fees, invariantes, suporte) |

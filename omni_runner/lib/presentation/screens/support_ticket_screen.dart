@@ -125,7 +125,6 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.subject, maxLines: 1, overflow: TextOverflow.ellipsis),
-        backgroundColor: cs.inversePrimary,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),

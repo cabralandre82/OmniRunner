@@ -584,7 +584,7 @@ class _StravaConnectBanner extends StatelessWidget {
                   'Conecte o Strava para participar',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFFBF360C),
+                    color: const Color(0xFFFC4C02),
                   ),
                 ),
               ),
@@ -598,7 +598,7 @@ class _StravaConnectBanner extends StatelessWidget {
             'cardíaca são verificados pelo anti-cheat para garantir '
             'competições justas.',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: const Color(0xFF5D4037),
+              color: theme.colorScheme.onSurfaceVariant,
               height: 1.4,
             ),
           ),
@@ -610,7 +610,7 @@ class _StravaConnectBanner extends StatelessWidget {
                   'Ao conectar, importamos suas últimas corridas '
                   'para calibrar seu nível automaticamente.',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF8D6E63),
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                     fontStyle: FontStyle.italic,
                     fontSize: 11,
                   ),

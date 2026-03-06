@@ -87,7 +87,6 @@ class _FriendsActivityFeedScreenState extends State<FriendsActivityFeedScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Atividade dos Amigos'),
-        backgroundColor: cs.inversePrimary,
       ),
       body: _loading && _items.isEmpty
           ? const Center(child: CircularProgressIndicator())

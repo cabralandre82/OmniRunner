@@ -53,7 +53,6 @@ class _MoreScreenState extends State<MoreScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.more),
-        backgroundColor: cs.inversePrimary,
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(

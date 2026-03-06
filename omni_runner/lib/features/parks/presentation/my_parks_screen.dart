@@ -117,7 +117,6 @@ class _MyParksScreenState extends State<MyParksScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Parques'),
-        backgroundColor: cs.inversePrimary,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())

@@ -452,20 +452,20 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: DesignTokens.warning,
+                color: DesignTokens.warning.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                border: Border.all(color: DesignTokens.warning),
+                border: Border.all(color: DesignTokens.warning.withValues(alpha: 0.4)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.warning_amber_rounded,
+                  const Icon(Icons.warning_amber_rounded,
                       size: 20, color: DesignTokens.warning),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Strava não conectado',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
@@ -479,7 +479,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
                           'para contar no desafio. Conecte nas Configurações.',
                           style: TextStyle(
                             fontSize: 12,
-                            color: DesignTokens.warning,
+                            color: cs.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -549,19 +549,19 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: DesignTokens.spacingSm),
                 decoration: BoxDecoration(
-                  color: DesignTokens.success,
+                  color: DesignTokens.success.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: DesignTokens.success),
+                  border: Border.all(color: DesignTokens.success.withValues(alpha: 0.4)),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.park,
+                    const Icon(Icons.park,
                         size: 16, color: DesignTokens.success),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Prioridade: oponentes do $_preferredParkName',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 12,
                           color: DesignTokens.success,
                           fontWeight: FontWeight.w500,

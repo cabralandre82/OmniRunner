@@ -53,7 +53,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.settings),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())

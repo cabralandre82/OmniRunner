@@ -126,7 +126,6 @@ class _SupportScreenState extends State<SupportScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.support),
-        backgroundColor: cs.inversePrimary,
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _newTicket,

@@ -168,7 +168,6 @@ class _StaffChallengeInvitesScreenState
     return Scaffold(
       appBar: AppBar(
         title: const Text('Desafios Recebidos'),
-        backgroundColor: cs.inversePrimary,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())

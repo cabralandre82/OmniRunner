@@ -150,7 +150,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.pickGhostMode ? 'Escolher fantasma' : context.l10n.history),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: widget.pickGhostMode ? null : [
           if (pending > 0)
             Padding(

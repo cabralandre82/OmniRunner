@@ -8,7 +8,7 @@ Plataforma de corrida com gamificação e coaching. Inclui app mobile (Flutter),
 |-----------|------------|-----------|
 | `omni_runner/` | Flutter 3.22+ | App mobile (Android/iOS) |
 | `portal/` | Next.js 14 | Portal de gestão para assessorias |
-| `omni_runner/supabase/` | Supabase | Migrations, Edge Functions, RLS policies |
+| `supabase/` | Supabase | Migrations, Edge Functions, RLS policies |
 
 ## Funcionalidades
 
@@ -17,8 +17,10 @@ Plataforma de corrida com gamificação e coaching. Inclui app mobile (Flutter),
 - Coaching por áudio (TTS)
 - Gamificação: XP, níveis, badges, missões, desafios
 - Mapas offline com MapLibre
-- Integração Strava
+- Integração Strava (fonte única de dados)
 - Modo offline com sync automático
+- Treinos prescritos com avaliação automática de cumprimento
+- Dark mode premium
 
 **Portal (Assessoria)**
 - Dashboard com KPIs e tendências
@@ -26,7 +28,9 @@ Plataforma de corrida com gamificação e coaching. Inclui app mobile (Flutter),
 - Sistema de créditos/coins
 - Ranking por assessoria
 - Branding customizável
-- Relatórios CSV
+- Relatórios CSV + exportações
+- Treinos prescritos: relatórios de cumprimento e analytics
+- CRM: tags, notas, status de membros
 
 ## Quick Start
 
@@ -155,7 +159,7 @@ Infraestrutura de liquidação de stakes esportivas com custódia prévia e comp
 | Rota | Descrição | Acesso |
 |------|-----------|--------|
 | `/custody` | Dashboard de custódia, depósitos, saldos | admin_master |
-| `/clearing` | Compensações interclub (recebíveis/obrigações) | admin_master, professor |
+| `/clearing` | Compensações interclub (recebíveis/obrigações) | admin_master, coach |
 | `/swap` | Mercado B2B de swap de lastro | admin_master |
 | `/platform/fees` | Configuração de taxas (admin plataforma) | platform_admin |
 

@@ -38,11 +38,9 @@ class ProgressHubScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.progression),
-        backgroundColor: cs.inversePrimary,
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
@@ -73,32 +71,6 @@ class ProgressHubScreen extends StatelessWidget {
             target: _Target.wrapped,
           ),
 
-          const _SectionHeader(title: 'Competição'),
-          const _Tile(
-            icon: Icons.sports_kabaddi,
-            title: 'Desafios',
-            subtitle: 'Desafios 1v1 e em grupo',
-            target: _Target.challenges,
-          ),
-          const _Tile(
-            icon: Icons.emoji_events_rounded,
-            title: 'Campeonatos',
-            subtitle: 'Competições entre assessorias',
-            target: _Target.championships,
-          ),
-          const _Tile(
-            icon: Icons.shield_rounded,
-            title: 'Liga de Assessorias',
-            subtitle: 'Ranking entre assessorias da plataforma',
-            target: _Target.league,
-          ),
-          const _Tile(
-            icon: Icons.leaderboard,
-            title: 'Rankings',
-            subtitle: 'Rankings semanais e mensais',
-            target: _Target.leaderboards,
-          ),
-
           const _SectionHeader(title: 'Conquistas'),
           const _Tile(
             icon: Icons.military_tech,
@@ -118,13 +90,11 @@ class ProgressHubScreen extends StatelessWidget {
             subtitle: 'Ranking de dias consecutivos correndo',
             target: _Target.streaks,
           ),
-
-          const _SectionHeader(title: 'OmniCoins'),
           const _Tile(
-            icon: Icons.toll_rounded,
-            title: 'OmniCoins',
-            subtitle: 'Créditos e movimentações',
-            target: _Target.wallet,
+            icon: Icons.leaderboard,
+            title: 'Rankings',
+            subtitle: 'Rankings semanais e mensais',
+            target: _Target.leaderboards,
           ),
         ],
       ),

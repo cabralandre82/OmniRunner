@@ -90,7 +90,6 @@ class _RunningDnaScreenState extends State<RunningDnaScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.myRunnerDna),
-        backgroundColor: cs.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

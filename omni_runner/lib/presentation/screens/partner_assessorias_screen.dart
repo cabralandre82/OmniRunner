@@ -34,7 +34,6 @@ class _PartnerAssessoriasScreenState extends State<PartnerAssessoriasScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Assessorias Parceiras'),
-        backgroundColor: cs.inversePrimary,
         bottom: TabBar(
           controller: _tabCtrl,
           tabs: const [

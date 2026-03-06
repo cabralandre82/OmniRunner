@@ -97,7 +97,6 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(name),
-        backgroundColor: cs.inversePrimary,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())

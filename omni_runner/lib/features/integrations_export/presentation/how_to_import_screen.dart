@@ -14,7 +14,6 @@ class HowToImportScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Como importar'),
-        backgroundColor: theme.colorScheme.inversePrimary,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

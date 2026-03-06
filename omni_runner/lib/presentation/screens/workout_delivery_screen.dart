@@ -166,7 +166,6 @@ class _WorkoutDeliveryScreenState extends State<WorkoutDeliveryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Meus Treinos Entregues'),
-        backgroundColor: cs.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

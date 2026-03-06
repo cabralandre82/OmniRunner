@@ -361,7 +361,6 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Omni Runner'),
-        backgroundColor: cs.inversePrimary,
       ),
       body: _loading
           ? const ShimmerListLoader()

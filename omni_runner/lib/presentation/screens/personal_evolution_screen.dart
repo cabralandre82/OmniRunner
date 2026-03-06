@@ -153,7 +153,6 @@ class _PersonalEvolutionScreenState extends State<PersonalEvolutionScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.myEvolution),
-        backgroundColor: cs.inversePrimary,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())

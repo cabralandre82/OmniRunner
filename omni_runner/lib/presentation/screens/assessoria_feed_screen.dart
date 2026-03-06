@@ -22,7 +22,6 @@ class AssessoriaFeedScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.assessoriaFeed),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: BlocBuilder<AssessoriaFeedBloc, AssessoriaFeedState>(
         builder: (context, state) => switch (state) {

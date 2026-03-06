@@ -195,7 +195,6 @@ class _ExportScreenState extends State<ExportScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Exportar Corrida'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline),

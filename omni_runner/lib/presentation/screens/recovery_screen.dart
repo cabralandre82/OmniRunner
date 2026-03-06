@@ -33,7 +33,6 @@ class RecoveryScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.recoverSession),
-        backgroundColor: theme.colorScheme.inversePrimary,
       ),
       body: Padding(
         padding: const EdgeInsets.all(DesignTokens.spacingLg),

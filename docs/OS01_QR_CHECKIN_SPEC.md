@@ -1,67 +1,94 @@
-# OS-01 — QR Check-in Specification
+# OS-01: Auto-Attendance — Especificação Técnica
 
----
+> **Atualizado:** 2026-03-04 — DECISAO 134  
+> **Substituiu:** QR Check-in Spec (fluxo QR removido em favor de avaliação automática)
 
-## Flow Diagram
+## Visão Geral
+
+O sistema de presença nos treinos prescritos é **100% automático**. O staff (coach) prescreve um treino com parâmetros (distância, pace), e o sistema avalia automaticamente as corridas do atleta para determinar se o treino foi cumprido.
+
+**Não existe presença na assessoria** — o sistema rastreia exclusivamente o cumprimento de treinos prescritos.
+
+## Fluxo
 
 ```
-1. Athlete opens "Meus Treinos", selects session
-2. App calls fn_issue_checkin_token(session_id, 120) → gets nonce + expires_at
-3. App builds JSON payload: {sid, uid, gid, non, exp} → base64url encode → QrImageView
-4. Staff scans QR with MobileScanner
-5. App decodes base64url → validates expiry locally
-6. App calls fn_mark_attendance(session_id, athlete_user_id, nonce)
-7. RPC validates: staff role, session exists, not cancelled, athlete in group
-8. INSERT with ON CONFLICT DO NOTHING → returns inserted/already_present
+Staff prescreve treino       Atleta corre (Strava sync)     Sistema avalia
+─────────────────────── ──→ ──────────────────────────── ──→ ─────────────────
+distance_target_m: 5000      sessions.total_distance_m       ±15% distância
+pace_min_sec_km: 270          sessions.moving_ms              pace na faixa
+pace_max_sec_km: 360          status = 3 (completed)          → completed/partial
+                                                              
+Staff cria próximo treino ──→ Fecha treino anterior ──→ Atletas sem corrida → absent
 ```
 
----
+## Parâmetros do Treino
 
-## Payload Format
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|-------------|-----------|
+| `distance_target_m` | `double precision` | Não | Distância alvo em metros |
+| `pace_min_sec_km` | `double precision` | Não | Pace mínimo (mais rápido) em segundos/km |
+| `pace_max_sec_km` | `double precision` | Não | Pace máximo (mais lento) em segundos/km |
 
-```json
-{"sid":"uuid","uid":"uuid","gid":"uuid","non":"hex48","exp":1709503200000}
+> Se `distance_target_m` for `NULL`, o treino não é avaliado automaticamente.
+
+## Lógica de Avaliação
+
+A função `fn_evaluate_athlete_training(p_training_id, p_athlete_user_id, p_deadline_ms)` avalia as **2 próximas corridas completadas** do atleta após a criação do treino:
+
+### Match de Distância (±15%)
+```
+total_distance_m >= distance_target_m * 0.85
+AND total_distance_m <= distance_target_m * 1.15
 ```
 
-| Field | Type   | Description                                   |
-|-------|--------|-----------------------------------------------|
-| sid   | uuid   | Session ID                                    |
-| uid   | uuid   | Athlete user ID                               |
-| gid   | uuid   | Group ID                                      |
-| non   | hex48  | Nonce (24 random bytes hex-encoded)           |
-| exp   | int64  | Expiry timestamp (ms since epoch)             |
+### Match de Pace (se especificado)
+```
+pace = (moving_ms / 1000) / (total_distance_m / 1000)  -- seg/km
+pace >= pace_min_sec_km AND pace <= pace_max_sec_km
+```
 
-Encoded as JSON → UTF-8 → base64url for display in the QR code.
+### Resultado
 
----
+| Condição | Status | Descrição |
+|----------|--------|-----------|
+| Distância ✓ + Pace ✓ (ou sem pace) | `completed` | Treino cumprido |
+| Correu, mas sem match | `partial` | Correu mas fora dos parâmetros |
+| Sem corrida antes do próximo treino | `absent` | Não correu |
 
-## Security Measures
+## Triggers
 
-- **TTL 120s default:** `fn_issue_checkin_token(p_session_id, 120)` limits QR validity.
-- **Nonce (MVP: TTL-only):** Random value per token for traceability; stored in payload. In MVP, the nonce is NOT validated server-side — anti-replay relies on TTL (120s) + DB idempotency (`ON CONFLICT DO NOTHING`). Full nonce validation (single-use via lookup table or HMAC signature) is deferred to v2.
-- **Server-side validation:** `fn_mark_attendance` checks:
-  - Authenticated user
-  - Staff role (admin_master, coach, assistant) in the group
-  - Session exists and is not cancelled
-  - Athlete is a member of the group
+### 1. `trg_session_auto_attendance` (AFTER INSERT OR UPDATE ON sessions)
+- Dispara quando `status = 3` (corrida completada)
+- Busca treinos pendentes dos grupos do atleta
+- Chama `fn_evaluate_athlete_training` para cada treino pendente
+- Não sobrescreve avaliações manuais ou já concluídas
 
----
+### 2. `trg_training_close_prev` (AFTER INSERT ON coaching_training_sessions)
+- Dispara quando novo treino com `distance_target_m IS NOT NULL` é criado
+- Busca o treino anterior no mesmo grupo
+- Para cada atleta sem avaliação: tenta avaliar, se não tiver corridas → `absent`
 
-## Error Codes
+## Override Manual
 
-| Code                 | Meaning                                      |
-|----------------------|----------------------------------------------|
-| NOT_AUTHENTICATED    | Caller not logged in                         |
-| SESSION_NOT_FOUND    | Session ID invalid                            |
-| SESSION_CANCELLED    | Session status is cancelled                   |
-| NOT_STAFF            | Caller not staff of the group                |
-| ATHLETE_NOT_IN_GROUP | Athlete not a member of the group            |
-| NOT_IN_GROUP         | Caller (athlete) not in group (token issue)  |
+Staff pode alterar o status de qualquer atleta via bottom sheet no app:
+- Atualiza `status` e seta `method = 'manual'`
+- Avaliações automáticas **nunca sobrescrevem** overrides manuais (`WHERE method = 'auto'`)
 
----
+## Status e Métodos
 
-## Idempotency
+### `coaching_training_attendance.status`
+`present` | `late` | `excused` | `absent` | `completed` | `partial`
 
-- **UNIQUE(session_id, athlete_user_id)** on `coaching_training_attendance`.
-- **ON CONFLICT DO NOTHING** on insert.
-- Re-scanning the same QR returns `already_present` without error.
+### `coaching_training_attendance.method`
+`qr` | `manual` | `auto`
+
+## Segurança
+
+- `fn_evaluate_athlete_training` roda como `SECURITY DEFINER`
+- RLS policies permitem insert/update para sistema (via trigger)
+- Atleta só vê seus próprios registros
+- Staff vê todos os registros do grupo
+
+## Migration
+
+`20260313000000_auto_attendance.sql`

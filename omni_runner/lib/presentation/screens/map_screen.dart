@@ -63,7 +63,6 @@ class _MapScreenState extends State<MapScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mapa'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           if (AppConfig.mapTilerApiKey.isEmpty)
             const Tooltip(

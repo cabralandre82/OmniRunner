@@ -94,7 +94,6 @@ class _LeagueScreenState extends State<LeagueScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.assessoriaLeague),
-        backgroundColor: cs.inversePrimary,
         actions: [
           IconButton(
             tooltip: context.l10n.retry,
