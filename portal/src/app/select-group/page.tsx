@@ -33,7 +33,9 @@ export default async function SelectGroupPage() {
   }
   if (memberships.length === 1) {
     const m = memberships[0];
-    await setPortalGroup(m.group_id as string, m.role as string);
+    redirect(
+      `/api/set-group?groupId=${encodeURIComponent(m.group_id as string)}&role=${encodeURIComponent(m.role as string)}`,
+    );
   }
 
   return (
