@@ -77,7 +77,7 @@ export default async function AthleteProfilePage({
     const [progressRes, badgeRes, sessionsRes] = await Promise.all([
       db
         .from("profile_progress")
-        .select("level, xp, current_streak")
+        .select("level, total_xp, daily_streak_count")
         .eq("user_id", athleteId)
         .maybeSingle(),
       db
@@ -94,8 +94,8 @@ export default async function AthleteProfilePage({
 
     const progress = progressRes.data as {
       level: number;
-      xp: number;
-      current_streak: number;
+      total_xp: number;
+      daily_streak_count: number;
     } | null;
 
     const sessions = (sessionsRes.data ?? []) as { total_distance_m: number }[];
@@ -103,8 +103,8 @@ export default async function AthleteProfilePage({
     profile = {
       ...profile,
       level: progress?.level ?? 0,
-      xp: progress?.xp ?? 0,
-      currentStreak: progress?.current_streak ?? 0,
+      xp: progress?.total_xp ?? 0,
+      currentStreak: progress?.daily_streak_count ?? 0,
       badgeCount: badgeRes.count ?? 0,
       recentSessions: sessions.length,
       totalDistance: sessions.reduce((sum, s) => sum + (s.total_distance_m ?? 0), 0),
