@@ -14,7 +14,7 @@ const FEE_LABELS: Record<string, { label: string; description: string }> = {
   },
   maintenance: {
     label: "Manutenção",
-    description: "Taxa mensal por assessoria ativa (opcional)",
+    description: "Valor mensal em USD por atleta ativo na assessoria. Cobrada automaticamente no dia 1.",
   },
 };
 
@@ -22,6 +22,7 @@ interface Fee {
   id: string;
   fee_type: string;
   rate_pct: number;
+  rate_usd: number | null;
   is_active: boolean;
   updated_at: string;
 }
@@ -30,7 +31,7 @@ export default async function FeesPage() {
   const supabase = createAdminClient();
   const { data: fees, error } = await supabase
     .from("platform_fee_config")
-    .select("id, fee_type, rate_pct, is_active, updated_at")
+    .select("id, fee_type, rate_pct, rate_usd, is_active, updated_at")
     .order("fee_type");
 
   const hasFees = fees && fees.length > 0;

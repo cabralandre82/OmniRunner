@@ -171,6 +171,40 @@ Deno.serve(async (req: Request) => {
       errors.push(`subscription_update: ${subErr.message}`);
     }
 
+    // Record maintenance fee in platform_revenue on confirmed payments
+    if ((event === "PAYMENT_CONFIRMED" || event === "PAYMENT_RECEIVED") && groupId && asaasPaymentId) {
+      try {
+        const { data: maintCfg } = await db
+          .from("platform_fee_config")
+          .select("rate_usd, is_active")
+          .eq("fee_type", "maintenance")
+          .maybeSingle();
+
+        const rateUsd = maintCfg?.is_active && maintCfg?.rate_usd ? Number(maintCfg.rate_usd) : 0;
+
+        if (rateUsd > 0) {
+          const { error: revErr } = await db
+            .from("platform_revenue")
+            .upsert(
+              {
+                fee_type: "maintenance",
+                amount_usd: rateUsd,
+                source_ref_id: asaasPaymentId,
+                group_id: groupId,
+                description: `Manutenção: $${rateUsd}/atleta — pagamento ${asaasPaymentId}`,
+              },
+              { onConflict: "fee_type,source_ref_id" },
+            );
+
+          if (revErr) {
+            errors.push(`maintenance_revenue: ${revErr.message}`);
+          }
+        }
+      } catch (e) {
+        errors.push(`maintenance_revenue: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+
     // Mark event as processed
     await db
       .from("payment_webhook_events")

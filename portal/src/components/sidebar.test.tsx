@@ -49,26 +49,28 @@ describe("Sidebar", () => {
   });
 
   it("shows all nav items for admin_master", () => {
+    currentPathname = "/financial";
     render(<Sidebar role="admin_master" groupName="Test" />);
     expect(screen.getAllByText("Dashboard")).toHaveLength(2); // desktop + mobile
-    expect(screen.getAllByText("Custódia")).toHaveLength(2);
-    expect(screen.getAllByText("Compensações")).toHaveLength(2);
-    expect(screen.getAllByText("Swap de Lastro")).toHaveLength(2);
+    expect(screen.getAllByText("Saldo OmniCoins")).toHaveLength(2);
+    expect(screen.getAllByText("Transferências OmniCoins")).toHaveLength(2);
   });
 
   it("hides custody/swap for coach", () => {
+    currentPathname = "/clearing";
     render(<Sidebar role="coach" groupName="Test" />);
-    expect(screen.queryByText("Custódia")).not.toBeInTheDocument();
+    expect(screen.queryByText("Saldo OmniCoins")).not.toBeInTheDocument();
     expect(screen.queryByText("Swap de Lastro")).not.toBeInTheDocument();
     expect(screen.getAllByText("Dashboard")).toHaveLength(2);
-    expect(screen.getAllByText("Compensações")).toHaveLength(2);
+    expect(screen.getAllByText("Transferências OmniCoins")).toHaveLength(2);
   });
 
   it("hides custody, swap and distributions for assistant", () => {
+    currentPathname = "/dashboard";
     render(<Sidebar role="assistant" groupName="Test" />);
-    expect(screen.queryByText("Custódia")).not.toBeInTheDocument();
+    expect(screen.queryByText("Saldo OmniCoins")).not.toBeInTheDocument();
     expect(screen.queryByText("Swap de Lastro")).not.toBeInTheDocument();
-    expect(screen.queryByText("Distribuições")).not.toBeInTheDocument();
+    expect(screen.queryByText("Distribuir OmniCoins")).not.toBeInTheDocument();
     expect(screen.getAllByText("Dashboard")).toHaveLength(2);
   });
 
@@ -90,7 +92,7 @@ describe("Sidebar", () => {
 
   it("displays role at the bottom", () => {
     render(<Sidebar role="coach" groupName="Test" />);
-    expect(screen.getAllByText("coach")).toHaveLength(2);
+    expect(screen.getAllByText("Treinador")).toHaveLength(2);
   });
 });
 

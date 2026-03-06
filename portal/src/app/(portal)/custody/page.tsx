@@ -7,7 +7,7 @@ import { CustodyTabs } from "./custody-tabs";
 import { formatUsd } from "@/lib/format";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Custodia" };
+export const metadata: Metadata = { title: "Saldo OmniCoins" };
 export const dynamic = "force-dynamic";
 
 export default async function CustodyPage() {
@@ -66,7 +66,7 @@ export default async function CustodyPage() {
   for (const s of (settlementsInRes.data ?? [])) {
     if (s.status === "settled") {
       ledger.push({
-        date: s.settled_at ?? s.created_at, type: "Clearing Recebido",
+        date: s.settled_at ?? s.created_at, type: "Transferência Recebida",
         amount: s.net_amount_usd, ref_id: s.id, ref_type: "settlement", status: s.status,
       });
     }
@@ -74,7 +74,7 @@ export default async function CustodyPage() {
   for (const s of (settlementsOutRes.data ?? [])) {
     if (s.status === "settled") {
       ledger.push({
-        date: s.created_at, type: "Clearing Pago",
+        date: s.created_at, type: "Transferência Enviada",
         amount: -(s.gross_amount_usd ?? 0), ref_id: s.id, ref_type: "settlement", status: s.status,
       });
     }
@@ -85,9 +85,9 @@ export default async function CustodyPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-content-primary">Custodia</h1>
+          <h1 className="text-2xl font-bold text-content-primary">Saldo OmniCoins</h1>
           <p className="mt-1 text-sm text-content-secondary">
-            Lastro obrigatorio &mdash; 1 coin = US$ 1.00
+            Cada OmniCoin &eacute; garantida por US$ 1.00 em cust&oacute;dia. Aqui voc&ecirc; acompanha o saldo da sua assessoria.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -101,7 +101,7 @@ export default async function CustodyPage() {
       {isBlocked && (
         <div className="rounded-lg border border-error/30 bg-error-soft p-4">
           <p className="font-medium text-error">
-            Emissao bloqueada &mdash; {account?.blocked_reason ?? "saldo insuficiente"}
+            Emiss&atilde;o de OmniCoins bloqueada &mdash; {account?.blocked_reason ?? "saldo insuficiente para novas emiss\u00f5es"}
           </p>
         </div>
       )}
@@ -113,21 +113,21 @@ export default async function CustodyPage() {
           <p className="mt-1 text-2xl font-bold text-content-primary">{formatUsd(deposited)}</p>
         </div>
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
-          <p className="text-sm font-medium text-content-secondary">Reservado (Lastro)</p>
+          <p className="text-sm font-medium text-content-secondary">Em Uso (OmniCoins emitidas)</p>
           <p className="mt-1 text-2xl font-bold text-brand">{formatUsd(committed)}</p>
         </div>
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
-          <p className="text-sm font-medium text-content-secondary">Disponivel</p>
+          <p className="text-sm font-medium text-content-secondary">Dispon&iacute;vel para Emiss&atilde;o</p>
           <p className={`mt-1 text-2xl font-bold ${available > 0 ? "text-success" : "text-error"}`}>
             {formatUsd(available)}
           </p>
         </div>
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
-          <p className="text-sm font-medium text-content-secondary">Coins Vivas</p>
+          <p className="text-sm font-medium text-content-secondary">OmniCoins em Circula&ccedil;&atilde;o</p>
           <p className="mt-1 text-2xl font-bold text-purple-600">{coinsAlive.toLocaleString()}</p>
         </div>
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
-          <p className="text-sm font-medium text-content-secondary">Total Liquidado</p>
+          <p className="text-sm font-medium text-content-secondary">J&aacute; Resgatado</p>
           <p className="mt-1 text-2xl font-bold text-content-secondary">{formatUsd(settled)}</p>
         </div>
       </div>
@@ -135,10 +135,10 @@ export default async function CustodyPage() {
       {/* Invariant Badges */}
       <div className="flex flex-wrap gap-3">
         <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${invTotalOk ? "bg-success-soft text-success" : "bg-error-soft text-error"}`}>
-          {invTotalOk ? "\u2713" : "\u26A0"} Total = Reservado + Disponivel
+          {invTotalOk ? "\u2713" : "\u26A0"} Saldo consistente
         </span>
         <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${invReservedOk ? "bg-success-soft text-success" : "bg-error-soft text-error"}`}>
-          {invReservedOk ? "\u2713" : "\u26A0"} Reservado = Coins Vivas ({coinsAlive})
+          {invReservedOk ? "\u2713" : "\u26A0"} OmniCoins conferem ({coinsAlive} em circula&ccedil;&atilde;o)
         </span>
         {(!invTotalOk || !invReservedOk) && (
           <Link href="/audit" className="text-xs font-medium text-error underline">

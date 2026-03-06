@@ -12,60 +12,7 @@ class PartnerAssessoriasScreen extends StatefulWidget {
       _PartnerAssessoriasScreenState();
 }
 
-class _PartnerAssessoriasScreenState extends State<PartnerAssessoriasScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Assessorias Parceiras'),
-        bottom: TabBar(
-          controller: _tabCtrl,
-          tabs: const [
-            Tab(icon: Icon(Icons.handshake), text: 'Parceiras'),
-            Tab(icon: Icon(Icons.emoji_events), text: 'Campeonatos'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabCtrl,
-        children: [
-          _PartnersTab(groupId: widget.groupId),
-          _ChampionshipsTab(groupId: widget.groupId),
-        ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Tab 1: Lista de parceiras + convidar
-// ═══════════════════════════════════════════════════════════════════════════════
-
-class _PartnersTab extends StatefulWidget {
-  final String groupId;
-  const _PartnersTab({required this.groupId});
-
-  @override
-  State<_PartnersTab> createState() => _PartnersTabState();
-}
-
-class _PartnersTabState extends State<_PartnersTab> {
+class _PartnerAssessoriasScreenState extends State<PartnerAssessoriasScreen> {
   List<_PartnerItem> _partners = [];
   bool _loading = true;
   String? _error;
@@ -87,7 +34,7 @@ class _PartnersTabState extends State<_PartnersTab> {
           .toList();
       if (!mounted) return;
       setState(() { _partners = items; _loading = false; });
-    } catch (e) {
+    } on Exception catch (e) {
       if (!mounted) return;
       setState(() { _loading = false; _error = '$e'; });
     }
@@ -100,10 +47,55 @@ class _PartnersTabState extends State<_PartnersTab> {
         'p_accept': accept,
       });
       _load();
-    } catch (e) {
+    } on Exception catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro: $e')),
+      );
+    }
+  }
+
+  Future<void> _removePartner(_PartnerItem p) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remover parceira?'),
+        content: Text(
+          'Tem certeza que deseja remover "${p.partnerName}" da sua lista de parceiras?\n\n'
+          'Essa assessoria não poderá mais participar dos seus campeonatos '
+          'e vocês não aparecerão mais como parceiras.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: DesignTokens.error),
+            child: const Text('Remover'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await Supabase.instance.client
+          .from('assessoria_partnerships')
+          .delete()
+          .eq('id', p.partnershipId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${p.partnerName} removida da lista.')),
+        );
+      }
+      _load();
+    } on Exception catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao remover: $e')),
       );
     }
   }
@@ -113,127 +105,126 @@ class _PartnersTabState extends State<_PartnersTab> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    if (_loading) return const Center(child: CircularProgressIndicator());
-    if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: cs.error),
-            const SizedBox(height: 12),
-            Text(_error!, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            FilledButton(onPressed: _load, child: const Text('Tentar novamente')),
-          ],
-        ),
-      );
-    }
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: FilledButton.icon(
-            onPressed: () => _showSearchDialog(context),
-            icon: const Icon(Icons.person_add),
-            label: const Text('Convidar Assessoria'),
-          ),
-        ),
-        Expanded(
-          child: _partners.isEmpty
-              ? _emptyState(theme)
+    return Scaffold(
+      appBar: AppBar(title: const Text('Assessorias Parceiras')),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showSearchDialog(context),
+        icon: const Icon(Icons.person_add_rounded),
+        label: const Text('Convidar'),
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.error_outline, size: 48, color: cs.error),
+                      const SizedBox(height: 12),
+                      Text(_error!, textAlign: TextAlign.center),
+                      const SizedBox(height: 16),
+                      FilledButton(onPressed: _load, child: const Text('Tentar novamente')),
+                    ],
+                  ),
+                )
               : RefreshIndicator(
                   onRefresh: _load,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingXs),
-                    itemCount: _partners.length,
-                    itemBuilder: (_, i) => _partnerTile(_partners[i], theme),
-                  ),
+                  child: _partners.isEmpty
+                      ? _buildEmptyState(theme)
+                      : _buildList(theme),
                 ),
+    );
+  }
+
+  Widget _buildEmptyState(ThemeData theme) {
+    final cs = theme.colorScheme;
+    return ListView(
+      padding: const EdgeInsets.all(DesignTokens.spacingXl),
+      children: [
+        const SizedBox(height: 60),
+        Icon(Icons.handshake_outlined, size: 80, color: cs.outline),
+        const SizedBox(height: 24),
+        Text(
+          'Nenhuma assessoria parceira',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        _TutorialCard(
+          icon: Icons.lightbulb_outline_rounded,
+          title: 'O que são assessorias parceiras?',
+          body: 'São assessorias amigas da sua — assessorias da mesma cidade, '
+              'que compartilham valores, que treinam juntas ou que simplesmente '
+              'querem fazer eventos juntas.',
+        ),
+        const SizedBox(height: 12),
+        _TutorialCard(
+          icon: Icons.emoji_events_outlined,
+          title: 'Por que ter parceiras?',
+          body: 'Apenas assessorias parceiras podem ser convidadas para '
+              'participar dos seus campeonatos. Ao criar um campeonato, '
+              'você poderá convidar apenas assessorias da sua lista de parceiras.',
+        ),
+        const SizedBox(height: 12),
+        _TutorialCard(
+          icon: Icons.send_rounded,
+          title: 'Como funciona?',
+          body: 'Toque no botão "Convidar" abaixo para buscar uma assessoria '
+              'pelo nome. Ao enviar o convite, a outra assessoria pode aceitar '
+              'ou recusar. Se aceitar, ela entra na sua lista de parceiras.\n\n'
+              'Vocês podem se remover da lista a qualquer momento.',
         ),
       ],
     );
   }
 
-  Widget _emptyState(ThemeData theme) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(DesignTokens.spacingXl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.handshake_outlined, size: 64, color: theme.colorScheme.outline),
-            const SizedBox(height: 16),
-            Text('Nenhuma assessoria parceira',
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(
-              'Convide assessorias para criar uma rede de parceiros.\nVocês poderão se inscrever em campeonatos umas das outras.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildList(ThemeData theme) {
+    final accepted = _partners.where((p) => p.status == 'accepted').toList();
+    final pendingIncoming = _partners.where((p) => p.status == 'pending' && !p.isRequester).toList();
+    final pendingSent = _partners.where((p) => p.status == 'pending' && p.isRequester).toList();
 
-  Widget _partnerTile(_PartnerItem p, ThemeData theme) {
-    final cs = theme.colorScheme;
-    final isPending = p.status == 'pending';
-    final isIncoming = isPending && !p.isRequester;
-
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: DesignTokens.spacingXs),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 22,
-              backgroundColor: isPending ? DesignTokens.warning : cs.primaryContainer,
-              child: Text(
-                p.partnerName.isNotEmpty ? p.partnerName[0].toUpperCase() : '?',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: isPending ? DesignTokens.warning : cs.onPrimaryContainer,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(p.partnerName,
-                      style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
-                  Text('${p.athleteCount} atletas',
-                      style: theme.textTheme.bodySmall?.copyWith(color: cs.outline)),
-                  if (isPending && p.isRequester)
-                    Text('Convite enviado — aguardando resposta',
-                        style: theme.textTheme.bodySmall?.copyWith(color: DesignTokens.warning)),
-                ],
-              ),
-            ),
-            if (isIncoming) ...[
-              IconButton(
-                onPressed: () => _respond(p.partnershipId, true),
-                icon: const Icon(Icons.check_circle),
-                color: DesignTokens.success,
-                tooltip: 'Aceitar',
-              ),
-              IconButton(
-                onPressed: () => _respond(p.partnershipId, false),
-                icon: const Icon(Icons.cancel),
-                color: cs.error,
-                tooltip: 'Recusar',
-              ),
-            ] else if (!isPending) ...[
-              Icon(Icons.check_circle, color: DesignTokens.success, size: 20),
-            ],
-          ],
-        ),
+    final items = <Widget>[
+      _InfoBanner(
+        text: 'Assessorias parceiras podem participar dos seus campeonatos. '
+            'Convide assessorias amigas para criar eventos juntos!',
       ),
+    ];
+
+    if (pendingIncoming.isNotEmpty) {
+      items.add(const SizedBox(height: DesignTokens.spacingMd));
+      items.add(_SectionHeader(title: 'Convites recebidos', count: pendingIncoming.length, color: DesignTokens.warning));
+      for (final p in pendingIncoming) {
+        items.add(_PendingIncomingTile(
+          partner: p,
+          onAccept: () => _respond(p.partnershipId, true),
+          onDecline: () => _respond(p.partnershipId, false),
+        ));
+      }
+    }
+
+    if (pendingSent.isNotEmpty) {
+      items.add(const SizedBox(height: DesignTokens.spacingMd));
+      items.add(_SectionHeader(title: 'Convites enviados', count: pendingSent.length, color: DesignTokens.info));
+      for (final p in pendingSent) {
+        items.add(_SentTile(partner: p));
+      }
+    }
+
+    if (accepted.isNotEmpty) {
+      items.add(const SizedBox(height: DesignTokens.spacingMd));
+      items.add(_SectionHeader(title: 'Parceiras ativas', count: accepted.length, color: DesignTokens.success));
+      for (final p in accepted) {
+        items.add(_AcceptedTile(partner: p, onRemove: () => _removePartner(p)));
+      }
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(
+        DesignTokens.spacingMd, DesignTokens.spacingSm,
+        DesignTokens.spacingMd, 80,
+      ),
+      itemCount: items.length,
+      itemBuilder: (_, i) => items[i],
     );
   }
 
@@ -247,227 +238,230 @@ class _PartnersTabState extends State<_PartnersTab> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Tab 2: Campeonatos das parceiras
+// UI Components
 // ═══════════════════════════════════════════════════════════════════════════════
 
-class _ChampionshipsTab extends StatefulWidget {
-  final String groupId;
-  const _ChampionshipsTab({required this.groupId});
+class _TutorialCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String body;
+  const _TutorialCard({required this.icon, required this.title, required this.body});
 
   @override
-  State<_ChampionshipsTab> createState() => _ChampionshipsTabState();
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Card(
+      elevation: 0,
+      color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusMd)),
+      child: Padding(
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 22, color: DesignTokens.info),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Text(body, style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant, height: 1.4,
+                  )),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _ChampionshipsTabState extends State<_ChampionshipsTab> {
-  List<_ChampItem> _champs = [];
-  bool _loading = true;
-  String? _error;
+class _InfoBanner extends StatelessWidget {
+  final String text;
+  const _InfoBanner({required this.text});
 
   @override
-  void initState() {
-    super.initState();
-    _load();
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: DesignTokens.info.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        border: Border.all(color: DesignTokens.info.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline_rounded, size: 18, color: DesignTokens.info),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(text, style: TextStyle(fontSize: 12, color: cs.onSurface, height: 1.4)),
+          ),
+        ],
+      ),
+    );
   }
+}
 
-  Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
-    try {
-      final rows = await Supabase.instance.client
-          .rpc('fn_partner_championships', params: {'p_group_id': widget.groupId});
-      final items = (rows as List)
-          .cast<Map<String, dynamic>>()
-          .map(_ChampItem.fromJson)
-          .toList();
-      if (!mounted) return;
-      setState(() { _champs = items; _loading = false; });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() { _loading = false; _error = '$e'; });
-    }
-  }
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final int count;
+  final Color color;
+  const _SectionHeader({required this.title, required this.count, required this.color});
 
-  Future<void> _requestJoin(_ChampItem champ) async {
-    try {
-      final result = await Supabase.instance.client.rpc('fn_request_champ_join', params: {
-        'p_championship_id': champ.championshipId,
-        'p_group_id': widget.groupId,
-      });
-      if (!mounted) return;
-      final msg = switch (result as String) {
-        'requested' => 'Solicitação enviada!',
-        'already_pending' => 'Solicitação já pendente.',
-        'already_accepted' => 'Já inscrito neste campeonato.',
-        _ => 'Resultado: $result',
-      };
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-      _load();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro: $e')),
-      );
-    }
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
+      child: Row(
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
+            child: Text('$count', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+          ),
+        ],
+      ),
+    );
   }
+}
+
+class _PendingIncomingTile extends StatelessWidget {
+  final _PartnerItem partner;
+  final VoidCallback onAccept;
+  final VoidCallback onDecline;
+  const _PendingIncomingTile({required this.partner, required this.onAccept, required this.onDecline});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-
-    if (_loading) return const Center(child: CircularProgressIndicator());
-    if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: cs.error),
-            const SizedBox(height: 12),
-            Text(_error!, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            FilledButton(onPressed: _load, child: const Text('Tentar novamente')),
-          ],
-        ),
-      );
-    }
-
-    if (_champs.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(DesignTokens.spacingXl),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.emoji_events_outlined, size: 64, color: cs.outline),
-              const SizedBox(height: 16),
-              Text('Nenhum campeonato disponível',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text(
-                'Quando suas assessorias parceiras criarem campeonatos abertos, eles aparecerão aqui.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
-        itemCount: _champs.length,
-        itemBuilder: (_, i) => _champTile(_champs[i], theme),
-      ),
-    );
-  }
-
-  Widget _champTile(_ChampItem c, ThemeData theme) {
-    final cs = theme.colorScheme;
-    final metricLabel = {
-      'distance': 'Distância',
-      'time': 'Tempo',
-      'pace': 'Pace',
-      'sessions': 'Sessões',
-      'elevation': 'Elevação',
-    }[c.metric] ?? c.metric;
-
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: DesignTokens.spacingXs),
+      margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        side: BorderSide(color: DesignTokens.warning.withValues(alpha: 0.4)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(Icons.emoji_events, color: DesignTokens.warning, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(c.name,
-                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingSm, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: c.status == 'open' ? DesignTokens.success : DesignTokens.primary,
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                  ),
-                  child: Text(
-                    c.status == 'open' ? 'Aberto' : 'Ativo',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: c.status == 'open' ? DesignTokens.success : DesignTokens.primary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text('Organizado por: ${c.hostGroupName}',
-                style: theme.textTheme.bodySmall?.copyWith(color: cs.outline)),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                _InfoChip(Icons.straighten, metricLabel),
-                const SizedBox(width: 8),
-                _InfoChip(Icons.people, '${c.participantCount} inscritos'),
-                const SizedBox(width: 8),
-                _InfoChip(Icons.calendar_today, _formatDate(c.startAt)),
-              ],
-            ),
-            const SizedBox(height: 10),
-            if (c.alreadyInvited)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
-                decoration: BoxDecoration(
-                  color: DesignTokens.success,
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                ),
-                child: const Text(
-                  'Já inscrito / solicitação enviada',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: DesignTokens.success, fontWeight: FontWeight.w600),
-                ),
-              )
-            else
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => _requestJoin(c),
-                  icon: const Icon(Icons.add_circle_outline, size: 18),
-                  label: const Text('Solicitar Participação'),
+            Row(children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: DesignTokens.warning.withValues(alpha: 0.15),
+                child: Text(
+                  partner.partnerName.isNotEmpty ? partner.partnerName[0].toUpperCase() : '?',
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: DesignTokens.warning),
                 ),
               ),
+              const SizedBox(width: 12),
+              Expanded(child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(partner.partnerName, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+                  Text('${partner.athleteCount} atletas', style: theme.textTheme.bodySmall?.copyWith(color: cs.outline)),
+                ],
+              )),
+            ]),
+            const SizedBox(height: 10),
+            Text(
+              'Esta assessoria quer ser sua parceira. Aceitar significa que vocês '
+              'poderão participar dos campeonatos uma da outra.',
+              style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.3),
+            ),
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(child: FilledButton.icon(
+                icon: const Icon(Icons.check_rounded, size: 18),
+                label: const Text('Aceitar'),
+                onPressed: onAccept,
+              )),
+              const SizedBox(width: 10),
+              Expanded(child: OutlinedButton.icon(
+                icon: const Icon(Icons.close_rounded, size: 18),
+                label: const Text('Recusar'),
+                style: OutlinedButton.styleFrom(foregroundColor: cs.error),
+                onPressed: onDecline,
+              )),
+            ]),
           ],
         ),
       ),
     );
   }
-
-  static String _formatDate(DateTime? dt) {
-    if (dt == null) return '—';
-    return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}';
-  }
 }
 
-class _InfoChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  const _InfoChip(this.icon, this.label);
+class _SentTile extends StatelessWidget {
+  final _PartnerItem partner;
+  const _SentTile({required this.partner});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: Theme.of(context).colorScheme.outline),
-        const SizedBox(width: 3),
-        Text(label, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.outline)),
-      ],
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Card(
+      margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
+      child: ListTile(
+        leading: CircleAvatar(
+          radius: 20,
+          backgroundColor: DesignTokens.info.withValues(alpha: 0.15),
+          child: Text(
+            partner.partnerName.isNotEmpty ? partner.partnerName[0].toUpperCase() : '?',
+            style: const TextStyle(fontWeight: FontWeight.bold, color: DesignTokens.info),
+          ),
+        ),
+        title: Text(partner.partnerName, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+        subtitle: Text('Aguardando resposta...', style: theme.textTheme.bodySmall?.copyWith(color: DesignTokens.info)),
+        trailing: Icon(Icons.hourglass_top_rounded, size: 18, color: cs.outline),
+      ),
+    );
+  }
+}
+
+class _AcceptedTile extends StatelessWidget {
+  final _PartnerItem partner;
+  final VoidCallback onRemove;
+  const _AcceptedTile({required this.partner, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Card(
+      margin: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
+      child: ListTile(
+        leading: CircleAvatar(
+          radius: 20,
+          backgroundColor: DesignTokens.success.withValues(alpha: 0.15),
+          child: Text(
+            partner.partnerName.isNotEmpty ? partner.partnerName[0].toUpperCase() : '?',
+            style: const TextStyle(fontWeight: FontWeight.bold, color: DesignTokens.success),
+          ),
+        ),
+        title: Text(partner.partnerName, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+        subtitle: Text('${partner.athleteCount} atletas', style: theme.textTheme.bodySmall?.copyWith(color: cs.outline)),
+        trailing: PopupMenuButton<String>(
+          onSelected: (v) { if (v == 'remove') onRemove(); },
+          itemBuilder: (_) => [
+            const PopupMenuItem(
+              value: 'remove',
+              child: Row(children: [
+                Icon(Icons.person_remove_rounded, size: 18, color: DesignTokens.error),
+                SizedBox(width: 8),
+                Text('Remover parceira', style: TextStyle(color: DesignTokens.error)),
+              ]),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -510,14 +504,14 @@ class _SearchAssessoriaDialogState extends State<_SearchAssessoriaDialog> {
             .toList();
         _searching = false;
       });
-    } catch (e) {
-      AppLogger.warn('Caught error', tag: 'PartnerAssessoriasScreen', error: e);
+    } on Exception catch (e) {
+      AppLogger.warn('Search failed', tag: 'PartnerAssessoriasScreen', error: e);
       if (!mounted) return;
       setState(() => _searching = false);
     }
   }
 
-  Future<void> _invite(String targetGroupId) async {
+  Future<void> _invite(String targetGroupId, String name) async {
     try {
       final result = await Supabase.instance.client.rpc('fn_request_partnership', params: {
         'p_my_group_id': widget.myGroupId,
@@ -525,30 +519,39 @@ class _SearchAssessoriaDialogState extends State<_SearchAssessoriaDialog> {
       });
       if (!mounted) return;
       final msg = switch (result as String) {
-        'requested' => 'Convite enviado!',
-        'already_partners' => 'Já são parceiras.',
-        'already_pending' => 'Convite já pendente.',
+        'requested' => 'Convite de parceria enviado para "$name"!',
+        'already_partners' => 'Vocês já são parceiras.',
+        'already_pending' => 'Convite já enviado. Aguardando resposta.',
         _ => 'Resultado: $result',
       };
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       if (result == 'requested') {
         Navigator.of(context).pop(true);
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
     }
   }
 
   @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return AlertDialog(
-      title: const Text('Buscar Assessoria'),
+      title: const Text('Buscar assessoria'),
       content: SizedBox(
         width: double.maxFinite,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Text(
+              'Busque pelo nome da assessoria que deseja convidar para ser sua parceira.',
+              style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(height: 12),
             TextField(
               controller: _ctrl,
               decoration: InputDecoration(
@@ -580,7 +583,7 @@ class _SearchAssessoriaDialogState extends State<_SearchAssessoriaDialog> {
                       title: Text(r.groupName),
                       subtitle: Text('${r.athleteCount} atletas'),
                       trailing: FilledButton(
-                        onPressed: () => _invite(r.groupId),
+                        onPressed: () => _invite(r.groupId, r.groupName),
                         child: const Text('Convidar'),
                       ),
                     );
@@ -588,9 +591,15 @@ class _SearchAssessoriaDialogState extends State<_SearchAssessoriaDialog> {
                 ),
               ),
             if (!_searching && _results.isEmpty && _ctrl.text.length >= 2)
-              const Padding(
-                padding: EdgeInsets.all(DesignTokens.spacingMd),
-                child: Text('Nenhuma assessoria encontrada.'),
+              Padding(
+                padding: const EdgeInsets.all(DesignTokens.spacingMd),
+                child: Column(
+                  children: [
+                    Icon(Icons.search_off_rounded, size: 32, color: cs.outline),
+                    const SizedBox(height: 8),
+                    const Text('Nenhuma assessoria encontrada.'),
+                  ],
+                ),
               ),
           ],
         ),
@@ -633,48 +642,6 @@ class _PartnerItem {
         athleteCount: (j['partner_athlete_count'] as num?)?.toInt() ?? 0,
         status: j['status'] as String,
         isRequester: (j['is_requester'] as bool?) ?? false,
-      );
-}
-
-class _ChampItem {
-  final String championshipId;
-  final String name;
-  final String hostGroupId;
-  final String hostGroupName;
-  final String metric;
-  final DateTime? startAt;
-  final DateTime? endAt;
-  final String status;
-  final int? maxParticipants;
-  final int participantCount;
-  final bool alreadyInvited;
-
-  const _ChampItem({
-    required this.championshipId,
-    required this.name,
-    required this.hostGroupId,
-    required this.hostGroupName,
-    required this.metric,
-    this.startAt,
-    this.endAt,
-    required this.status,
-    this.maxParticipants,
-    required this.participantCount,
-    required this.alreadyInvited,
-  });
-
-  factory _ChampItem.fromJson(Map<String, dynamic> j) => _ChampItem(
-        championshipId: j['championship_id'] as String,
-        name: (j['championship_name'] as String?) ?? '',
-        hostGroupId: j['host_group_id'] as String,
-        hostGroupName: (j['host_group_name'] as String?) ?? 'Assessoria',
-        metric: j['metric'] as String,
-        startAt: j['start_at'] != null ? DateTime.tryParse(j['start_at'] as String) : null,
-        endAt: j['end_at'] != null ? DateTime.tryParse(j['end_at'] as String) : null,
-        status: j['status'] as String,
-        maxParticipants: (j['max_participants'] as num?)?.toInt(),
-        participantCount: (j['participant_count'] as num?)?.toInt() ?? 0,
-        alreadyInvited: (j['already_invited'] as bool?) ?? false,
       );
 }
 

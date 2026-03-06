@@ -1,23 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import type { Product } from "./page";
-
-async function apiCall(body: Record<string, unknown>) {
-  const res = await fetch("/api/platform/products", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const data = await res.json();
-    toast.error(data.error ?? "Erro");
-    return false;
-  }
-  return true;
-}
+import {
+  toggleProduct,
+  deleteProduct,
+  updateProduct,
+  createProduct,
+} from "./mutations";
 
 function fmt(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", {
@@ -27,30 +18,33 @@ function fmt(cents: number) {
 }
 
 export function ProductCard({ product: p }: { product: Product }) {
-  const router = useRouter();
   const [editing, setEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [pending, startTransition] = useTransition();
 
-  async function handleToggle() {
-    setLoading(true);
-    await apiCall({
-      action: "toggle_active",
-      product_id: p.id,
-      is_active: !p.is_active,
+  function handleToggle() {
+    startTransition(async () => {
+      const res = await toggleProduct(p.id, !p.is_active);
+      if (res.ok) {
+        toast.success(p.is_active ? "Produto suspenso" : "Produto ativado");
+      } else {
+        toast.error(res.error ?? "Erro ao alterar produto");
+      }
     });
-    router.refresh();
-    setLoading(false);
   }
 
-  async function handleDelete() {
+  function handleDelete() {
     const ok = confirm(
-      `Remover "${p.name}" permanentemente? Se houver compras vinculadas, a remoção pode falhar.`,
+      `Remover "${p.name}" permanentemente?`,
     );
     if (!ok) return;
-    setLoading(true);
-    await apiCall({ action: "delete", product_id: p.id });
-    router.refresh();
-    setLoading(false);
+    startTransition(async () => {
+      const res = await deleteProduct(p.id);
+      if (res.ok) {
+        toast.success("Produto removido");
+      } else {
+        toast.error(res.error ?? "Erro ao remover produto");
+      }
+    });
   }
 
   if (editing) {
@@ -119,21 +113,21 @@ export function ProductCard({ product: p }: { product: Product }) {
         </button>
         <button
           onClick={handleToggle}
-          disabled={loading}
+          disabled={pending}
           className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
             p.is_active
               ? "bg-orange-50 text-orange-600 hover:bg-orange-100"
               : "bg-success-soft text-green-600 hover:bg-success-soft"
           }`}
         >
-          {loading ? "..." : p.is_active ? "Suspender" : "Ativar"}
+          {pending ? "..." : p.is_active ? "Suspender" : "Ativar"}
         </button>
         <button
           onClick={handleDelete}
-          disabled={loading}
+          disabled={pending}
           className="rounded-lg bg-error-soft px-3 py-1.5 text-xs font-medium text-error hover:bg-error-soft"
         >
-          {loading ? "..." : "Remover"}
+          {pending ? "..." : "Remover"}
         </button>
       </div>
     </div>
@@ -147,10 +141,9 @@ function EditForm({
   product: Product;
   onClose: () => void;
 }) {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [pending, startTransition] = useTransition();
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const name = form.get("name") as string;
@@ -165,21 +158,22 @@ function EditForm({
       return;
     }
 
-    setLoading(true);
-    const ok = await apiCall({
-      action: "update",
-      product_id: p.id,
-      name,
-      description,
-      credits_amount,
-      price_cents,
-      sort_order,
+    startTransition(async () => {
+      const res = await updateProduct({
+        product_id: p.id,
+        name,
+        description,
+        credits_amount,
+        price_cents,
+        sort_order,
+      });
+      if (res.ok) {
+        toast.success("Produto atualizado");
+        onClose();
+      } else {
+        toast.error(res.error ?? "Erro ao atualizar");
+      }
     });
-    if (ok) {
-      onClose();
-      router.refresh();
-    }
-    setLoading(false);
   }
 
   return (
@@ -218,10 +212,10 @@ function EditForm({
         <div className="flex gap-2">
           <button
             type="submit"
-            disabled={loading}
+            disabled={pending}
             className="rounded-lg bg-brand px-4 py-1.5 text-xs font-medium text-white hover:brightness-110 disabled:opacity-50"
           >
-            {loading ? "Salvando..." : "Salvar"}
+            {pending ? "Salvando..." : "Salvar"}
           </button>
           <button
             type="button"
@@ -266,10 +260,9 @@ function Input({
 }
 
 export function ProductForm() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [pending, startTransition] = useTransition();
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const name = form.get("name") as string;
@@ -286,22 +279,24 @@ export function ProductForm() {
     }
 
     const product_type = (form.get("product_type") as string) || "coins";
+    const formEl = e.currentTarget;
 
-    setLoading(true);
-    const ok = await apiCall({
-      action: "create",
-      name,
-      description: description || "",
-      credits_amount,
-      price_cents: Math.round(price_reais * 100),
-      sort_order,
-      product_type,
+    startTransition(async () => {
+      const res = await createProduct({
+        name,
+        description: description || "",
+        credits_amount,
+        price_cents: Math.round(price_reais * 100),
+        sort_order,
+        product_type,
+      });
+      if (res.ok) {
+        toast.success("Produto criado");
+        formEl.reset();
+      } else {
+        toast.error(res.error ?? "Erro ao criar produto");
+      }
     });
-    if (ok) {
-      (e.target as HTMLFormElement).reset();
-    }
-    router.refresh();
-    setLoading(false);
   }
 
   return (
@@ -381,10 +376,10 @@ export function ProductForm() {
       <div className="flex items-end">
         <button
           type="submit"
-          disabled={loading}
+          disabled={pending}
           className="w-full rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
         >
-          {loading ? "Criando..." : "Criar pacote"}
+          {pending ? "Criando..." : "Criar pacote"}
         </button>
       </div>
     </form>

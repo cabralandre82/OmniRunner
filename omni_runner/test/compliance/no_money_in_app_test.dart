@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 ///   - "Valor" as a metric label (pace, distance) → not money
 ///   - Variable names like `entryFeeCoins`, `_feeCtrl` → internal, not shown as "$"
 ///   - "feed" (activity feed, assessoria feed) → not financial
+///   - "corredor(es) ativo(s)" → active runners, not financial assets
 ///
 /// Prohibited patterns checked:
 ///   R$, €, US$, USD, BRL, dinheiro, preço/preco, pagamento, pagar,
@@ -44,6 +45,9 @@ void main() {
         if (line.trimLeft().startsWith('//')) continue;
 
         if (prohibited.hasMatch(line)) {
+          // Exclude false positive: "corredor(es) ativo(s)" = active runners, not financial assets
+          final lower = line.toLowerCase();
+          if (lower.contains('corredor') && lower.contains('ativo')) continue;
           violations.add('${file.path}:${i + 1}: ${line.trim()}');
         }
       }

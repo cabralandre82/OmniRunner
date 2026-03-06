@@ -54,8 +54,8 @@ describe("Clearing API", () => {
   });
 
   it("returns 401 when not authenticated", async () => {
-    authClient.auth.getSession.mockResolvedValueOnce({
-      data: { session: null },
+    authClient.auth.getUser.mockResolvedValueOnce({
+      data: { user: null },
     });
     const res = await GET(getReq());
     expect(res.status).toBe(401);

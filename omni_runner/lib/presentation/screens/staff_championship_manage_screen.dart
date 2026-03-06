@@ -271,44 +271,95 @@ class _StaffChampionshipManageScreenState
 
   Future<void> _inviteGroup() async {
     if (_busy) return;
-    // Fetch available groups (excluding host + already invited)
     List<Map<String, String>> availableGroups = [];
     try {
-      final res = await _db
-          .from('coaching_groups')
-          .select('id, name')
-          .neq('id', widget.hostGroupId)
-          .order('name')
-          .limit(100);
-
+      final rows = await _db
+          .rpc('fn_list_partnerships', params: {'p_group_id': widget.hostGroupId});
       final invitedIds = _invites.map((i) => i.toGroupId).toSet();
-      for (final g in (res as List)) {
-        final gid = g['id'] as String;
+      for (final r in (rows as List).cast<Map<String, dynamic>>()) {
+        if (r['status'] != 'accepted') continue;
+        final gid = r['partner_group_id'] as String;
         if (!invitedIds.contains(gid)) {
-          availableGroups.add({'id': gid, 'name': (g['name'] as String?) ?? gid});
+          availableGroups.add({
+            'id': gid,
+            'name': (r['partner_name'] as String?) ?? gid,
+          });
         }
       }
-    } catch (e) {
-      AppLogger.warn('Unexpected error', tag: 'StaffChampionshipManage', error: e);
+    } on Exception catch (e) {
+      AppLogger.warn('Partner fetch failed', tag: 'StaffChampionshipManage', error: e);
     }
 
     if (!mounted) return;
 
     if (availableGroups.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nenhuma assessoria disponível para convidar.')),
+        const SnackBar(
+          content: Text(
+            'Nenhuma assessoria parceira disponível. '
+            'Adicione parceiras em Painel → Parceiras.',
+          ),
+          duration: Duration(seconds: 4),
+        ),
       );
       return;
     }
 
     final selected = await showDialog<String>(
       context: context,
-      builder: (ctx) => SimpleDialog(
-        title: const Text('Convidar assessoria'),
-        children: availableGroups.map((g) => SimpleDialogOption(
-          onPressed: () => Navigator.pop(ctx, g['id']),
-          child: Text(g['name']?.toString() ?? ''),
-        )).toList(),
+      builder: (ctx) => AlertDialog(
+        title: const Text('Convidar assessoria parceira'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Theme.of(ctx).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(children: [
+                  Icon(Icons.info_outline_rounded, size: 16, color: Theme.of(ctx).colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(
+                    'Apenas assessorias da sua lista de parceiras podem ser convidadas.',
+                    style: TextStyle(fontSize: 12, color: Theme.of(ctx).colorScheme.onSurfaceVariant),
+                  )),
+                ]),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: availableGroups.length > 5 ? 250 : null,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: availableGroups.length,
+                  itemBuilder: (_, i) {
+                    final g = availableGroups[i];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        radius: 18,
+                        child: Text(
+                          g['name']!.isNotEmpty ? g['name']![0].toUpperCase() : '?',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      title: Text(g['name'] ?? ''),
+                      onTap: () => Navigator.pop(ctx, g['id']),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+        ],
       ),
     );
 

@@ -34,8 +34,8 @@ describe("KpiCard", () => {
   it("applies alert styling when alert is true", () => {
     const { container } = render(<KpiCard label="Low Credits" value={5} alert />);
     const card = container.firstElementChild!;
-    expect(card.className).toContain("border-red-200");
-    expect(card.className).toContain("bg-red-50");
+    expect(card.className).toContain("border-error/30");
+    expect(card.className).toContain("bg-error-soft");
   });
 
   it("renders icon when provided", () => {

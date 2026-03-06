@@ -158,5 +158,45 @@ describe("Platform Fees API", () => {
       );
       expect(res.status).toBe(500);
     });
+
+    it("updates maintenance fee with rate_usd", async () => {
+      mockPlatformAdmin();
+      mockAdminFrom.mockReturnValueOnce(
+        adminQueryChain({ error: null }),
+      );
+
+      const res = await POST(
+        req({ fee_type: "maintenance", rate_usd: 3.5, is_active: true }),
+      );
+      expect(res.status).toBe(200);
+    });
+
+    it("accepts rate_usd = 0 for maintenance", async () => {
+      mockPlatformAdmin();
+      mockAdminFrom.mockReturnValueOnce(
+        adminQueryChain({ error: null }),
+      );
+
+      const res = await POST(
+        req({ fee_type: "maintenance", rate_usd: 0 }),
+      );
+      expect(res.status).toBe(200);
+    });
+
+    it("rejects rate_usd > 10", async () => {
+      mockPlatformAdmin();
+      const res = await POST(
+        req({ fee_type: "maintenance", rate_usd: 15 }),
+      );
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects negative rate_usd", async () => {
+      mockPlatformAdmin();
+      const res = await POST(
+        req({ fee_type: "maintenance", rate_usd: -1 }),
+      );
+      expect(res.status).toBe(400);
+    });
   });
 });

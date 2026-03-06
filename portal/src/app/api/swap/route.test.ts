@@ -132,7 +132,7 @@ describe("Swap API", () => {
       );
       expect(res.status).toBe(422);
       const body = await res.json();
-      expect(body.error).toContain("Insufficient");
+      expect(body.error).toBe("Operação falhou. Tente novamente.");
     });
   });
 

@@ -137,7 +137,7 @@ void main() {
         expect(states[1], isA<WalletError>());
         expect(
           (states[1] as WalletError).message,
-          contains('Erro'),
+          contains('Algo deu errado'),
         );
         await bloc.close();
       });

@@ -148,7 +148,7 @@ export default async function FinancialDashboardPage() {
           href="/api/export/financial"
           className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary shadow-sm hover:bg-surface-elevated"
         >
-          Exportar Ledger CSV
+          Exportar Relatório CSV
         </a>
       </div>
     </div>

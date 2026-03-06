@@ -19,10 +19,10 @@ describe("Skeleton", () => {
     expect(el.className).toContain("w-32");
   });
 
-  it("has animate-pulse class", () => {
+  it("has animate-shimmer class", () => {
     const { container } = render(<Skeleton />);
     const el = container.firstChild as HTMLElement;
-    expect(el.className).toContain("animate-pulse");
+    expect(el.className).toContain("animate-shimmer");
   });
 });
 

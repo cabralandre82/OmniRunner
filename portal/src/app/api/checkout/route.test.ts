@@ -38,8 +38,8 @@ describe("POST /api/checkout", () => {
   });
 
   it("returns 401 when not authenticated", async () => {
-    authClient.auth.getSession.mockResolvedValueOnce({
-      data: { session: null },
+    authClient.auth.getUser.mockResolvedValueOnce({
+      data: { user: null },
     });
     const res = await POST(req({ product_id: "prod-1" }));
     expect(res.status).toBe(401);

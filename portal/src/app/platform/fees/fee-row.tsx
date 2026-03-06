@@ -7,6 +7,7 @@ interface Fee {
   id: string;
   fee_type: string;
   rate_pct: number;
+  rate_usd: number | null;
   is_active: boolean;
 }
 
@@ -19,29 +20,42 @@ export function FeeRow({
   label: string;
   description: string;
 }) {
-  const [rate, setRate] = useState(fee.rate_pct);
+  const isMaintenance = fee.fee_type === "maintenance";
+
+  const [ratePct, setRatePct] = useState(fee.rate_pct);
+  const [rateUsd, setRateUsd] = useState(fee.rate_usd ?? 1.0);
   const [active, setActive] = useState(fee.is_active);
   const [saving, setSaving] = useState(false);
 
-  const dirty = rate !== fee.rate_pct || active !== fee.is_active;
+  const dirty = isMaintenance
+    ? rateUsd !== (fee.rate_usd ?? 1.0) || active !== fee.is_active
+    : ratePct !== fee.rate_pct || active !== fee.is_active;
 
   async function handleSave() {
     setSaving(true);
     try {
+      const payload: Record<string, unknown> = {
+        fee_type: fee.fee_type,
+        is_active: active,
+      };
+
+      if (isMaintenance) {
+        payload.rate_usd = rateUsd;
+      } else {
+        payload.rate_pct = ratePct;
+      }
+
       const res = await fetch("/api/platform/fees", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fee_type: fee.fee_type,
-          rate_pct: rate,
-          is_active: active,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
         const data = await res.json();
         toast.error(data.error ?? "Erro ao salvar");
       } else {
+        toast.success("Taxa atualizada");
         window.location.reload();
       }
     } finally {
@@ -56,20 +70,37 @@ export function FeeRow({
         <div className="text-xs text-content-secondary">{description}</div>
       </td>
       <td className="px-6 py-4">
-        <div className="flex items-center gap-2">
-          <input
-            type="range"
-            min={0}
-            max={20}
-            step={0.5}
-            value={rate}
-            onChange={(e) => setRate(Number(e.target.value))}
-            className="w-24"
-          />
-          <span className="text-sm font-mono font-medium text-content-primary w-12">
-            {rate}%
-          </span>
-        </div>
+        {isMaintenance ? (
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min={0}
+              max={10}
+              step={0.5}
+              value={rateUsd}
+              onChange={(e) => setRateUsd(Number(e.target.value))}
+              className="w-24"
+            />
+            <span className="text-sm font-mono font-medium text-content-primary w-20">
+              ${rateUsd.toFixed(2)}/atleta
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min={0}
+              max={20}
+              step={0.5}
+              value={ratePct}
+              onChange={(e) => setRatePct(Number(e.target.value))}
+              className="w-24"
+            />
+            <span className="text-sm font-mono font-medium text-content-primary w-12">
+              {ratePct}%
+            </span>
+          </div>
+        )}
       </td>
       <td className="px-6 py-4 text-center">
         <button

@@ -128,6 +128,6 @@ describe("ConfirmDialog", () => {
     );
 
     const confirmBtn = screen.getByText("Confirmar");
-    expect(confirmBtn.className).toContain("bg-red-600");
+    expect(confirmBtn.className).toContain("bg-error");
   });
 });

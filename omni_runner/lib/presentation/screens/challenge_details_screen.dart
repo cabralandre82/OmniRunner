@@ -19,7 +19,7 @@ import 'package:omni_runner/presentation/blocs/challenges/challenges_state.dart'
 import 'package:omni_runner/presentation/blocs/verification/verification_bloc.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_event.dart';
 import 'package:omni_runner/presentation/screens/challenge_result_screen.dart';
-import 'package:omni_runner/presentation/widgets/dispute_status_card.dart';
+
 import 'package:omni_runner/presentation/widgets/verification_gate.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
@@ -318,11 +318,6 @@ class _BodyState extends State<_Body> {
           ),
           const SizedBox(height: 12),
         ],
-
-        // ── Dispute / Clearing status ────────────────────────────────
-        if (challenge.status == ChallengeStatus.completed ||
-            challenge.status == ChallengeStatus.completing)
-          _ClearingInfo(challengeId: challenge.id),
 
         // ── Cancel action ────────────────────────────────────────────
         if (isPending && isCreator)
@@ -1446,90 +1441,3 @@ class _GroupLiveProgressCard extends StatelessWidget {
   }
 }
 
-class _ClearingInfo extends StatefulWidget {
-  final String challengeId;
-  const _ClearingInfo({required this.challengeId});
-
-  @override
-  State<_ClearingInfo> createState() => _ClearingInfoState();
-}
-
-class _ClearingInfoState extends State<_ClearingInfo> {
-  DisputePhase? _phase;
-  int? _amount;
-  DateTime? _deadline;
-  bool _loaded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    try {
-      final db = Supabase.instance.client;
-      final items = await db
-          .from('clearing_case_items')
-          .select('case_id, amount')
-          .eq('challenge_id', widget.challengeId)
-          .limit(1);
-
-      if ((items as List).isEmpty) {
-        if (mounted) setState(() => _loaded = true);
-        return;
-      }
-
-      final caseId = items[0]['case_id'] as String;
-      final amount = items[0]['amount'] as int;
-
-      final caseData = await db
-          .from('clearing_cases')
-          .select('status, deadline_at')
-          .eq('id', caseId)
-          .maybeSingle();
-
-      if (caseData == null) {
-        if (mounted) setState(() => _loaded = true);
-        return;
-      }
-
-      final status = caseData['status'] as String;
-      final deadline = DateTime.tryParse(caseData['deadline_at'] as String? ?? '') ?? DateTime.now();
-
-      final phase = switch (status) {
-        'OPEN' => DisputePhase.pendingClearing,
-        'SENT_CONFIRMED' => DisputePhase.sentConfirmed,
-        'DISPUTED' => DisputePhase.disputed,
-        'PAID_CONFIRMED' => DisputePhase.cleared,
-        'EXPIRED' => DisputePhase.expired,
-        _ => DisputePhase.pendingClearing,
-      };
-
-      if (mounted) {
-        setState(() {
-          _phase = phase;
-          _amount = amount;
-          _deadline = deadline;
-          _loaded = true;
-        });
-      }
-    } catch (e) {
-      AppLogger.warn('Caught error', tag: 'ChallengeDetailsScreen', error: e);
-      if (mounted) setState(() => _loaded = true);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_loaded || _phase == null) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: DisputeStatusCard(
-        phase: _phase!,
-        coinsAmount: _amount,
-        deadlineAt: _deadline,
-      ),
-    );
-  }
-}

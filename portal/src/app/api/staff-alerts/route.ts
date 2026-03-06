@@ -6,7 +6,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 const INACTIVE_DAYS = 14;
-const PENDING_CLEARING_DAYS = 3;
+
 const LOW_CREDIT_THRESHOLD = 50;
 
 export interface StaffAlert {
@@ -87,27 +87,6 @@ export async function GET(req: NextRequest) {
           severity: "warning",
         });
       }
-    }
-
-    try {
-      const clearingCutoff = new Date(Date.now() - PENDING_CLEARING_DAYS * 86_400_000).toISOString();
-      const { count: pendingClearings } = await db
-        .from("clearing_cases")
-        .select("id", { count: "exact", head: true })
-        .eq("to_group_id", groupId)
-        .eq("status", "OPEN")
-        .lte("created_at", clearingCutoff);
-
-      if (pendingClearings && pendingClearings > 0) {
-        alerts.push({
-          key: "pending_clearings",
-          label: `${pendingClearings} compensaç${pendingClearings > 1 ? "ões" : "ão"} pendente${pendingClearings > 1 ? "s" : ""}`,
-          count: pendingClearings,
-          severity: "warning",
-        });
-      }
-    } catch {
-      // clearing_cases table may not exist yet
     }
 
     const { data: inventory } = await supabase

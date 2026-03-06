@@ -57,10 +57,11 @@ describe("POST /api/distribute-coins", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     authClient.auth.getSession.mockResolvedValue({ data: { session: TEST_SESSION } });
+    authClient.auth.getUser.mockResolvedValue({ data: { user: TEST_SESSION.user } });
   });
 
   it("returns 401 when not authenticated", async () => {
-    authClient.auth.getSession.mockResolvedValueOnce({ data: { session: null } });
+    authClient.auth.getUser.mockResolvedValueOnce({ data: { user: null } });
     const res = await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 10 }));
     expect(res.status).toBe(401);
   });
@@ -114,7 +115,7 @@ describe("POST /api/distribute-coins", () => {
     expect((await res.json()).error).toContain("Lastro insuficiente");
   });
 
-  it("returns 500 and rolls back when wallet credit fails", async () => {
+  it("returns 500 when wallet credit fails", async () => {
     mockAdminCheck();
     mockAthleteFound(true);
     // custody_commit_coins succeeds
@@ -123,9 +124,6 @@ describe("POST /api/distribute-coins", () => {
     serviceClient.rpc.mockReturnValueOnce(
       queryChain({ data: null, error: { message: "wallet error" } }),
     );
-    // rollback: select custody + update custody
-    serviceClient.from.mockReturnValueOnce(queryChain({ data: { total_committed: 50 } }));
-    serviceClient.from.mockReturnValueOnce(queryChain({ data: null }));
 
     const res = await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 50 }));
     expect(res.status).toBe(500);

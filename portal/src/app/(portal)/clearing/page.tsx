@@ -5,7 +5,7 @@ import { NoGroupSelected } from "@/components/no-group-selected";
 import { formatUsd } from "@/lib/format";
 import { ClearingFilters } from "./clearing-filters";
 
-export const metadata: Metadata = { title: "Compensacoes" };
+export const metadata: Metadata = { title: "Transferências OmniCoins" };
 export const dynamic = "force-dynamic";
 
 interface Settlement {
@@ -81,8 +81,10 @@ export default async function ClearingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-content-primary">Compensacoes (Clearing)</h1>
-        <p className="mt-1 text-sm text-content-secondary">Contas a pagar / contas a receber interclub</p>
+        <h1 className="text-2xl font-bold text-content-primary">Transferências OmniCoins</h1>
+        <p className="mt-1 text-sm text-content-secondary">
+          Movimentações de OmniCoins entre assessorias (campeonatos, desafios e trocas)
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
@@ -107,9 +109,9 @@ export default async function ClearingPage() {
           <p className="mt-1 text-2xl font-bold text-orange-600">{formatUsd(totalFeesPaid)}</p>
         </div>
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
-          <p className="text-sm font-medium text-content-secondary">SLA Medio</p>
+          <p className="text-sm font-medium text-content-secondary">Tempo Médio</p>
           <p className="mt-1 text-2xl font-bold text-content-secondary">{avgSettleSec}s</p>
-          <p className="text-xs text-content-muted">{interclubBurns} burns interclub</p>
+          <p className="text-xs text-content-muted">{interclubBurns} transferências entre assessorias</p>
         </div>
       </div>
 

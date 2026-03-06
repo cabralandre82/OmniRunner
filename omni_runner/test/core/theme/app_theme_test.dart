@@ -22,7 +22,7 @@ void main() {
     });
 
     test('brand colors are defined correctly', () {
-      expect(AppTheme.brandBlue, const Color(0xFF2563EB));
+      expect(AppTheme.brandBlue, const Color(0xFF3B82F6));
       expect(AppTheme.brandGreen, const Color(0xFF10B981));
       expect(AppTheme.brandOrange, const Color(0xFFF59E0B));
       expect(AppTheme.brandRed, const Color(0xFFEF4444));

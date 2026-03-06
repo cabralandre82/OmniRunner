@@ -16,7 +16,7 @@ import 'package:omni_runner/presentation/screens/coaching_group_details_screen.d
 import 'package:omni_runner/presentation/screens/staff_championship_templates_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_championship_invites_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_credits_screen.dart';
-import 'package:omni_runner/presentation/screens/staff_disputes_screen.dart';
+import 'package:omni_runner/presentation/screens/partner_assessorias_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_join_requests_screen.dart';
 import 'package:omni_runner/presentation/screens/staff_performance_screen.dart';
 import 'package:omni_runner/presentation/screens/support_screen.dart';
@@ -31,7 +31,7 @@ import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 ///
 /// Cards:
 ///   1. Atletas          → [CoachingGroupDetailsScreen]
-///   2. Confirmações     → [StaffDisputesScreen]
+///   2. Parceiras        → [PartnerAssessoriasScreen]
 ///   3. Performance      → [StaffPerformanceScreen]
 ///   4. Campeonatos      → [StaffChampionshipTemplatesScreen]
 ///   5. Créditos         → [StaffCreditsScreen] (inventory + acquisition info)
@@ -50,7 +50,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
   bool _loading = true;
   String? _errorMessage;
   bool _hasPendingPrizes = false;
-  int _openDisputesCount = 0;
+  int _pendingPartnershipsCount = 0;
   int _memberCount = 0;
   int _pendingJoinRequests = 0;
   String? _inviteCode;
@@ -129,11 +129,10 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
             .select('id, user_id, group_id, display_name, role, joined_at_ms')
             .eq('group_id', gid);
         final walletFuture = sl<IWalletRepo>().getByUserId(uid);
-        final disputesFuture = db
-            .from('clearing_cases')
-            .select('id')
-            .or('from_group_id.eq.$gid,to_group_id.eq.$gid')
-            .inFilter('status', ['OPEN', 'SENT_CONFIRMED', 'DISPUTED']);
+        final partnershipsFuture = db
+            .rpc('fn_count_pending_partnerships', params: {'p_group_id': gid})
+            .then<int>((v) => (v as int?) ?? 0)
+            .catchError((Object e) { AppLogger.debug('Partnerships count failed', tag: 'StaffDash', error: e); return 0; });
         final joinReqFuture = db
             .from('coaching_join_requests')
             .select('id')
@@ -143,13 +142,13 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
         final results = await Future.wait<dynamic>([
           membersFuture.catchError((Object e) { AppLogger.debug('Members fetch failed', tag: 'StaffDash', error: e); return <Map<String, dynamic>>[]; }),
           walletFuture.then<dynamic>((v) => v).catchError((Object e) { AppLogger.debug('Wallet load failed', tag: 'StaffDash', error: e); return null; }),
-          disputesFuture.catchError((Object e) { AppLogger.debug('Clearing cases load failed', tag: 'StaffDash', error: e); return <Map<String, dynamic>>[]; }),
+          partnershipsFuture,
           joinReqFuture.catchError((Object e) { AppLogger.debug('Join requests count failed', tag: 'StaffDash', error: e); return <Map<String, dynamic>>[]; }),
         ]);
 
         final allMembers = (results[0] as List).cast<Map<String, dynamic>>();
         final wallet = results[1];
-        final disputes = results[2] as List;
+        final pendingPartnerCount = results[2] as int;
         final joinReqs = results[3] as List;
 
         // Batch Isar sync
@@ -172,7 +171,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
         if (wallet != null) {
           _hasPendingPrizes = wallet.hasPending;
         }
-        _openDisputesCount = disputes.length;
+        _pendingPartnershipsCount = pendingPartnerCount;
         _memberCount = allMembers.length;
         _pendingJoinRequests = joinReqs.length;
 
@@ -249,13 +248,10 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
     )).then((_) => _loadStatus());
   }
 
-  void _openConfirmacoes() {
+  void _openParceiras() {
     if (_groupId.isEmpty) return;
     Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => StaffDisputesScreen(
-        groupId: _groupId,
-        groupName: _groupName,
-      ),
+      builder: (_) => PartnerAssessoriasScreen(groupId: _groupId),
     ));
   }
 
@@ -691,14 +687,14 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                   ),
                   _StaffCard(
                     icon: Icons.handshake_rounded,
-                    title: 'Confirmações',
-                    subtitle: 'Entre assessorias',
+                    title: 'Parceiras',
+                    subtitle: 'Assessorias amigas',
                     bgColor: DesignTokens.info.withValues(alpha: 0.1),
                     iconColor: DesignTokens.info,
-                    alert: _openDisputesCount > 0
-                        ? '$_openDisputesCount ${_openDisputesCount == 1 ? "caso pendente" : "casos pendentes"}'
+                    alert: _pendingPartnershipsCount > 0
+                        ? '$_pendingPartnershipsCount ${_pendingPartnershipsCount == 1 ? "convite pendente" : "convites pendentes"}'
                         : null,
-                    onTap: _openConfirmacoes,
+                    onTap: _openParceiras,
                   ),
                   _StaffCard(
                     icon: Icons.bar_chart_rounded,

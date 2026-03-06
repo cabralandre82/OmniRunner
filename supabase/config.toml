@@ -463,17 +463,7 @@ verify_jwt = false
 [functions.champ-update-progress]
 verify_jwt = true
 
-[functions.clearing-confirm-received]
-verify_jwt = true
 
-[functions.clearing-confirm-sent]
-verify_jwt = true
-
-[functions.clearing-open-dispute]
-verify_jwt = true
-
-[functions.clearing-cron]
-verify_jwt = false
 
 [functions.challenge-create]
 verify_jwt = true

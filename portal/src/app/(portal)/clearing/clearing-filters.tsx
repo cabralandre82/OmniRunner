@@ -92,7 +92,7 @@ export function ClearingFilters({ receivables, payables, groupMap, eventMap }: P
         </select>
         <input
           type="text"
-          placeholder="Buscar por Burn ID, clube, settlement..."
+          placeholder="Buscar por assessoria, referência..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="flex-1 rounded-lg border border-border px-3 py-1.5 text-sm"
@@ -117,19 +117,19 @@ export function ClearingFilters({ receivables, payables, groupMap, eventMap }: P
       {/* Settlements Table */}
       <div className="rounded-xl border border-border bg-surface shadow-sm">
         {filtered.length === 0 ? (
-          <div className="px-6 py-12 text-center text-content-secondary">Nenhuma compensacao encontrada.</div>
+          <div className="px-6 py-12 text-center text-content-secondary">Nenhuma transferência de OmniCoins encontrada.</div>
         ) : (
           <table className="min-w-full divide-y divide-border">
             <thead className="bg-bg-secondary">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase text-content-secondary">Data</th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase text-content-secondary">Dir</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-content-secondary">Burn ID</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-content-secondary">Contraparte</th>
-                <th className="px-4 py-3 text-right text-xs font-medium uppercase text-content-secondary">Coins</th>
-                <th className="px-4 py-3 text-right text-xs font-medium uppercase text-content-secondary">Bruto</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-content-secondary">Referência</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-content-secondary">Assessoria</th>
+                <th className="px-4 py-3 text-right text-xs font-medium uppercase text-content-secondary">OmniCoins</th>
+                <th className="px-4 py-3 text-right text-xs font-medium uppercase text-content-secondary">Valor Bruto</th>
                 <th className="px-4 py-3 text-right text-xs font-medium uppercase text-content-secondary">Taxa</th>
-                <th className="px-4 py-3 text-right text-xs font-medium uppercase text-content-secondary">Liquido</th>
+                <th className="px-4 py-3 text-right text-xs font-medium uppercase text-content-secondary">Valor Líquido</th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase text-content-secondary">Status</th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase text-content-secondary">Liquidado</th>
                 <th className="px-4 py-3 text-xs font-medium uppercase text-content-secondary"></th>
@@ -185,39 +185,39 @@ export function ClearingFilters({ receivables, payables, groupMap, eventMap }: P
                         <td colSpan={11} className="bg-bg-secondary px-6 py-4">
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                              <p className="font-medium text-content-secondary">Settlement ID</p>
+                              <p className="font-medium text-content-secondary">ID da Transferência</p>
                               <p className="font-mono text-xs text-content-secondary">{s.id}</p>
                             </div>
                             <div>
-                              <p className="font-medium text-content-secondary">Clearing Event ID</p>
+                              <p className="font-medium text-content-secondary">Evento de Origem</p>
                               <p className="font-mono text-xs text-content-secondary">{s.clearing_event_id}</p>
                             </div>
                             <div>
-                              <p className="font-medium text-content-secondary">Debtor (Emissor)</p>
+                              <p className="font-medium text-content-secondary">Quem enviou as OmniCoins</p>
                               <p className="text-content-secondary">{groupMap[s.debtor_group_id] ?? s.debtor_group_id}</p>
                             </div>
                             <div>
-                              <p className="font-medium text-content-secondary">Creditor (Resgatante)</p>
+                              <p className="font-medium text-content-secondary">Quem recebeu as OmniCoins</p>
                               <p className="text-content-secondary">{groupMap[s.creditor_group_id] ?? s.creditor_group_id}</p>
                             </div>
                             <div>
-                              <p className="font-medium text-content-secondary">Movimentacao Contabil</p>
+                              <p className="font-medium text-content-secondary">Resumo da Movimentação</p>
                               <p className="text-content-secondary">
-                                {groupMap[s.debtor_group_id] ?? "Emissor"}: D -= {formatUsd(s.gross_amount_usd)}, R -= {s.coin_amount}
+                                {groupMap[s.debtor_group_id] ?? "Emissor"}: -{formatUsd(s.gross_amount_usd)} ({s.coin_amount} OmniCoins)
                               </p>
                               <p className="text-content-secondary">
-                                {groupMap[s.creditor_group_id] ?? "Resgatante"}: D += {formatUsd(s.net_amount_usd)}
+                                {groupMap[s.creditor_group_id] ?? "Resgatante"}: +{formatUsd(s.net_amount_usd)}
                               </p>
                               <p className="text-content-secondary">
-                                Plataforma: +{formatUsd(s.fee_amount_usd)} (taxa)
+                                Taxa da plataforma: {formatUsd(s.fee_amount_usd)}
                               </p>
                             </div>
                             <div>
-                              <p className="font-medium text-content-secondary">Burn</p>
+                              <p className="font-medium text-content-secondary">Detalhes</p>
                               {event && (
                                 <>
                                   <p className="text-content-secondary">Ref: {event.burn_ref_id}</p>
-                                  <p className="text-content-secondary">{event.total_coins} coins total</p>
+                                  <p className="text-content-secondary">{event.total_coins} OmniCoins transferidas</p>
                                   <Link href="/audit" className="text-xs text-brand hover:underline">
                                     Ver na Auditoria
                                   </Link>

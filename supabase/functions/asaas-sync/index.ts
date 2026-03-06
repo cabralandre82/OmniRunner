@@ -86,15 +86,17 @@ Deno.serve(async (req: Request) => {
   const apiKey = config?.api_key as string;
   const base = asaasBase(config?.environment as string ?? "sandbox");
 
-  // Get platform split percentage
-  const { data: feeRow } = await db
+  // Get platform fee config: billing_split (%) + maintenance (fixed USD/athlete)
+  const { data: feeRows } = await db
     .from("platform_fee_config")
-    .select("rate_pct")
-    .eq("fee_type", "billing_split")
-    .eq("is_active", true)
-    .maybeSingle();
+    .select("fee_type, rate_pct, rate_usd, is_active")
+    .in("fee_type", ["billing_split", "maintenance"]);
 
-  const splitPct = feeRow?.rate_pct ? Number(feeRow.rate_pct) : 2.5;
+  const splitRow = feeRows?.find((r: Record<string, unknown>) => r.fee_type === "billing_split");
+  const maintRow = feeRows?.find((r: Record<string, unknown>) => r.fee_type === "maintenance");
+
+  const splitPct = splitRow?.is_active && splitRow?.rate_pct ? Number(splitRow.rate_pct) : 2.5;
+  const maintenanceUsd = maintRow?.is_active && maintRow?.rate_usd ? Number(maintRow.rate_usd) : 0;
 
   // Get Omni Runner wallet ID from env
   const omniWalletId = Deno.env.get("ASAAS_OMNI_WALLET_ID") ?? "";
@@ -212,9 +214,16 @@ Deno.serve(async (req: Request) => {
           return jsonOk({ asaas_subscription_id: existingSub.asaas_subscription_id, already_exists: true }, rid, req);
         }
 
-        const splitConfig = omniWalletId
-          ? [{ walletId: omniWalletId, percentualValue: splitPct }]
-          : undefined;
+        const splitEntries: Array<Record<string, unknown>> = [];
+        if (omniWalletId) {
+          if (splitPct > 0) {
+            splitEntries.push({ walletId: omniWalletId, percentualValue: splitPct });
+          }
+          if (maintenanceUsd > 0) {
+            splitEntries.push({ walletId: omniWalletId, fixedValue: maintenanceUsd });
+          }
+        }
+        const splitConfig = splitEntries.length > 0 ? splitEntries : undefined;
 
         const subRes = await asaasFetch(base, apiKey, "/subscriptions", "POST", {
           customer: asaasCustomerId,

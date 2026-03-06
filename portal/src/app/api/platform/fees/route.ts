@@ -6,8 +6,9 @@ import { rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const updateSchema = z.object({
-  fee_type: z.enum(["clearing", "swap", "maintenance"]),
-  rate_pct: z.number().min(0).max(100),
+  fee_type: z.enum(["clearing", "swap", "maintenance", "billing_split"]),
+  rate_pct: z.number().min(0).max(100).optional(),
+  rate_usd: z.number().min(0).max(10).optional(),
   is_active: z.boolean().optional(),
 });
 
@@ -69,17 +70,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { fee_type, rate_pct, is_active } = parsed.data;
+  const { fee_type, rate_pct, rate_usd, is_active } = parsed.data;
   const admin = createAdminClient();
 
   const updatePayload: Record<string, unknown> = {
-    rate_pct,
     updated_at: new Date().toISOString(),
     updated_by: auth.user.id,
   };
-  if (is_active !== undefined) {
-    updatePayload.is_active = is_active;
-  }
+  if (rate_pct !== undefined) updatePayload.rate_pct = rate_pct;
+  if (rate_usd !== undefined) updatePayload.rate_usd = rate_usd;
+  if (is_active !== undefined) updatePayload.is_active = is_active;
 
   const { error } = await admin
     .from("platform_fee_config")
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
   await auditLog({
     action: "platform.fee.update",
     actorId: auth.user.id,
-    metadata: { fee_type, rate_pct, is_active },
+    metadata: { fee_type, rate_pct, rate_usd, is_active },
   });
 
   return NextResponse.json({ ok: true });

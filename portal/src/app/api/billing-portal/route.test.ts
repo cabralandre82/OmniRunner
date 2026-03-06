@@ -27,8 +27,8 @@ describe("POST /api/billing-portal", () => {
   });
 
   it("returns 401 when not authenticated", async () => {
-    authClient.auth.getSession.mockResolvedValueOnce({
-      data: { session: null },
+    authClient.auth.getUser.mockResolvedValueOnce({
+      data: { user: null },
     });
     const res = await POST();
     expect(res.status).toBe(401);

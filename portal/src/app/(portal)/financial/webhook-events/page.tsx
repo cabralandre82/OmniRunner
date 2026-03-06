@@ -5,13 +5,13 @@ import { NoGroupSelected } from "@/components/no-group-selected";
 export const dynamic = "force-dynamic";
 
 const EVENT_BADGE: Record<string, { label: string; cls: string }> = {
-  PAYMENT_CONFIRMED: { label: "Confirmado", cls: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
+  PAYMENT_CONFIRMED: { label: "Pago", cls: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
   PAYMENT_RECEIVED: { label: "Recebido", cls: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
-  PAYMENT_OVERDUE: { label: "Vencido", cls: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
+  PAYMENT_OVERDUE: { label: "Atrasado", cls: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
   PAYMENT_REFUNDED: { label: "Reembolsado", cls: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300" },
-  PAYMENT_DELETED: { label: "Deletado", cls: "bg-gray-100 text-gray-600 dark:bg-gray-700/30 dark:text-gray-400" },
-  SUBSCRIPTION_INACTIVATED: { label: "Sub Inativada", cls: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300" },
-  SUBSCRIPTION_DELETED: { label: "Sub Deletada", cls: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
+  PAYMENT_DELETED: { label: "Cancelado", cls: "bg-gray-100 text-gray-600 dark:bg-gray-700/30 dark:text-gray-400" },
+  SUBSCRIPTION_INACTIVATED: { label: "Assinatura Pausada", cls: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300" },
+  SUBSCRIPTION_DELETED: { label: "Assinatura Cancelada", cls: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
 };
 
 export default async function WebhookEventsPage() {
@@ -55,9 +55,19 @@ export default async function WebhookEventsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-content-primary">Eventos de Webhook</h1>
+        <h1 className="text-2xl font-bold text-content-primary">Histórico de Cobranças</h1>
         <p className="mt-1 text-sm text-content-secondary">
-          Log de eventos recebidos do Asaas — últimos 100
+          Registro de todas as cobranças e pagamentos dos seus atletas
+        </p>
+      </div>
+
+      {/* Tutorial banner */}
+      <div className="rounded-lg border border-brand/20 bg-brand-soft px-4 py-3">
+        <p className="text-sm text-content-secondary">
+          <span className="font-medium text-content-primary">Como funciona?</span>{" "}
+          Quando um atleta paga a mensalidade, o sistema de cobranças (Asaas) envia uma
+          notificação automática para o portal. Aqui você acompanha se cada pagamento
+          foi processado corretamente.
         </p>
       </div>
 
@@ -74,7 +84,7 @@ export default async function WebhookEventsPage() {
         {pending > 0 && (
           <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-2 text-sm dark:border-yellow-800 dark:bg-yellow-900/20">
             <span className="font-semibold text-yellow-800 dark:text-yellow-300">{pending}</span>{" "}
-            <span className="text-yellow-700 dark:text-yellow-400">pendentes</span>
+            <span className="text-yellow-700 dark:text-yellow-400">aguardando</span>
           </div>
         )}
         {failed > 0 && (
@@ -91,12 +101,12 @@ export default async function WebhookEventsPage() {
           <table className="min-w-full divide-y divide-border text-sm">
             <thead className="bg-bg-secondary">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-content-secondary">Evento</th>
-                <th className="px-4 py-3 text-left font-medium text-content-secondary">Payment ID</th>
-                <th className="px-4 py-3 text-center font-medium text-content-secondary">Status</th>
-                <th className="px-4 py-3 text-left font-medium text-content-secondary">Recebido</th>
-                <th className="px-4 py-3 text-left font-medium text-content-secondary">Processado</th>
-                <th className="px-4 py-3 text-left font-medium text-content-secondary">Erro</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">O que aconteceu</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Código</th>
+                <th className="px-4 py-3 text-center font-medium text-content-secondary">Situação</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Data</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Processado em</th>
+                <th className="px-4 py-3 text-left font-medium text-content-secondary">Observação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
@@ -118,12 +128,12 @@ export default async function WebhookEventsPage() {
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-center">
                       {ev.processed ? (
-                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
-                          ✓
+                        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                          OK
                         </span>
                       ) : (
-                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400">
-                          ○
+                        <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                          Aguardando
                         </span>
                       )}
                     </td>
@@ -144,8 +154,11 @@ export default async function WebhookEventsPage() {
         </div>
 
         {(events ?? []).length === 0 && (
-          <div className="p-6 text-center text-sm text-content-secondary">
-            Nenhum evento de webhook recebido ainda.
+          <div className="p-8 text-center">
+            <p className="text-sm font-medium text-content-primary">Nenhuma cobrança registrada ainda</p>
+            <p className="mt-1 text-xs text-content-muted">
+              Quando seus atletas realizarem pagamentos, o histórico aparecerá aqui automaticamente.
+            </p>
           </div>
         )}
       </div>
