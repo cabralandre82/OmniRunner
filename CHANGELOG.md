@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-03-05
+
+### Added
+- **Portal template CRUD**: full create/edit/delete flow for workout templates directly from the portal
+  - `/workouts/new` page with structured block builder (type, duration, distance, pace range, HR zone/range, RPE, repeat count, notes)
+  - `/workouts/[id]/edit` page to edit existing templates and their blocks
+  - Edit/Delete buttons on template detail page (`/workouts/[id]`)
+  - "+ Novo Template" button on templates listing page (`/workouts`)
+  - Reusable `TemplateBuilder` client component with block reordering (move up/down) and inline removal
+  - Delete confirmation UI with two-step flow
+  - API route `POST /api/workouts/templates` (create + update with blocks)
+  - API route `DELETE /api/workouts/templates` (delete template + blocks)
+
 ## [1.2.0] - 2026-03-05
 
 ### Added

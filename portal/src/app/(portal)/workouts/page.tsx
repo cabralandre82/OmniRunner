@@ -97,11 +97,19 @@ export default async function WorkoutsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-content-primary">Templates de Treino</h1>
-        <p className="mt-1 text-sm text-content-secondary">
-          Gerencie os templates de treino do grupo
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-content-primary">Templates de Treino</h1>
+          <p className="mt-1 text-sm text-content-secondary">
+            Gerencie os templates de treino do grupo
+          </p>
+        </div>
+        <Link
+          href="/workouts/new"
+          className="rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-white hover:bg-brand/90"
+        >
+          + Novo Template
+        </Link>
       </div>
 
       {fetchError && (

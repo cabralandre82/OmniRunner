@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { NoGroupSelected } from "@/components/no-group-selected";
+import { DeleteTemplateButton } from "./delete-button";
 
 export const dynamic = "force-dynamic";
 
@@ -111,17 +112,30 @@ export default async function WorkoutDetailPage({
       </div>
 
       <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-content-primary">
-          {template.name}
-        </h1>
-        {template.description && (
-          <p className="mt-2 text-sm text-content-secondary">
-            {template.description}
-          </p>
-        )}
-        <div className="mt-4 flex gap-6 text-sm text-content-secondary">
-          <span>{blockList.length} blocos</span>
-          <span>{assignmentCount ?? 0} atribuições</span>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-content-primary">
+              {template.name}
+            </h1>
+            {template.description && (
+              <p className="mt-2 text-sm text-content-secondary">
+                {template.description}
+              </p>
+            )}
+            <div className="mt-4 flex gap-6 text-sm text-content-secondary">
+              <span>{blockList.length} blocos</span>
+              <span>{assignmentCount ?? 0} atribuições</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/workouts/${params.id}/edit`}
+              className="rounded-lg border border-brand bg-transparent px-4 py-2 text-sm font-medium text-brand hover:bg-brand/5"
+            >
+              Editar
+            </Link>
+            <DeleteTemplateButton templateId={params.id} />
+          </div>
         </div>
       </div>
 

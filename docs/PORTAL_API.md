@@ -348,6 +348,51 @@ Título Sessão,Data,Atleta,Check-in,Método,Status
 
 ## Workouts / Treinos
 
+### `POST /api/workouts/templates`
+
+Cria ou atualiza um template de treino com seus blocos.
+
+**Auth:** `admin_master` ou `coach` (via RLS).
+
+**Body (JSON):**
+| Campo | Tipo | Obrigatório |
+|-------|------|-------------|
+| `id` | uuid | Não (se omitido, cria novo) |
+| `name` | string | Sim (min 2 chars) |
+| `description` | string | Não |
+| `blocks` | Block[] | Sim (pode ser vazio) |
+
+**Block:**
+| Campo | Tipo |
+|-------|------|
+| `id` | uuid |
+| `block_type` | `warmup` \| `interval` \| `recovery` \| `cooldown` \| `steady` \| `rest` \| `repeat` |
+| `duration_seconds` | int \| null |
+| `distance_meters` | int \| null |
+| `target_pace_min_sec_per_km` | int \| null |
+| `target_pace_max_sec_per_km` | int \| null |
+| `target_hr_zone` | int (1-5) \| null |
+| `target_hr_min` | int \| null |
+| `target_hr_max` | int \| null |
+| `rpe_target` | int (1-10) \| null |
+| `repeat_count` | int \| null |
+| `notes` | string \| null |
+
+**Response:** `{ "ok": true, "id": "template-uuid" }`
+
+### `DELETE /api/workouts/templates`
+
+Exclui um template e todos os seus blocos.
+
+**Auth:** `admin_master` ou `coach` (via RLS, mesmo grupo).
+
+**Body (JSON):**
+| Campo | Tipo | Obrigatório |
+|-------|------|-------------|
+| `id` | uuid | Sim |
+
+**Response:** `{ "ok": true }`
+
 ### `POST /api/workouts/assign`
 
 Atribuição em lote de treinos a múltiplos atletas.
