@@ -126,60 +126,50 @@ export function AssignSubscriptionClient({
       setResult({ ok: data.ok, success: data.success, total: data.total });
 
       if (data.ok && autoBilling && asaasActive && selectedPlan) {
-        setBillingProgress("Criando cobranças automáticas...");
+        setBillingProgress("Criando cobranças automáticas (server-side)...");
         const selectedAthletes = athletes.filter((a) => selectedIds.has(a.user_id));
-        let billingOk = 0;
+        const subsMap = data.subscription_ids as Record<string, string> | undefined;
 
-        for (const athlete of selectedAthletes) {
-          const cpf = athlete.cpf || cpfInputs[athlete.user_id];
-          if (!cpf) continue;
+        const batchAthletes = selectedAthletes
+          .filter((a) => {
+            const cpf = a.cpf || cpfInputs[a.user_id];
+            const subId = subsMap?.[a.user_id];
+            return cpf && subId;
+          })
+          .map((a) => ({
+            user_id: a.user_id,
+            subscription_id: subsMap![a.user_id],
+            name: a.display_name,
+            cpf: a.cpf || cpfInputs[a.user_id],
+            email: a.email ?? undefined,
+          }));
 
+        if (batchAthletes.length > 0) {
           try {
-            // 1. Create Asaas customer
-            setBillingProgress(`Criando cliente: ${athlete.display_name}...`);
-            const custRes = await fetch("/api/billing/asaas", {
+            const batchRes = await fetch("/api/billing/batch", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                action: "create_customer",
-                athlete_user_id: athlete.user_id,
-                name: athlete.display_name,
-                cpf,
-                email: athlete.email ?? "",
-              }),
-            });
-            const custData = await custRes.json();
-            if (!custRes.ok) continue;
-
-            const asaasCustomerId = custData.asaas_customer_id;
-
-            // 2. Find the subscription ID just created
-            const subsForAthletes = data.subscription_ids as Record<string, string> | undefined;
-            const subscriptionId = subsForAthletes?.[athlete.user_id];
-            if (!subscriptionId) continue;
-
-            // 3. Create Asaas subscription with split
-            setBillingProgress(`Ativando cobrança: ${athlete.display_name}...`);
-            const cycle = selectedPlan.billing_cycle === "quarterly" ? "QUARTERLY" : "MONTHLY";
-            const subRes = await fetch("/api/billing/asaas", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                action: "create_subscription",
-                subscription_id: subscriptionId,
-                asaas_customer_id: asaasCustomerId,
-                value: selectedPlan.monthly_price,
-                cycle,
+                athletes: batchAthletes,
+                plan_id: planId,
+                plan_value: selectedPlan.monthly_price,
+                plan_name: selectedPlan.name,
+                billing_cycle: selectedPlan.billing_cycle === "quarterly" ? "QUARTERLY" : "MONTHLY",
                 next_due_date: dueDate,
-                description: `${selectedPlan.name} — ${athlete.display_name}`,
               }),
             });
-            if (subRes.ok) billingOk++;
+            const batchData = await batchRes.json();
+            const ok = batchData.succeeded ?? 0;
+            const fail = batchData.failed ?? 0;
+            setBillingProgress(
+              `Cobrança ativada para ${ok}/${ok + fail} atletas.${fail > 0 ? ` ${fail} falharam.` : ""}`,
+            );
           } catch {
-            // continue with next athlete
+            setBillingProgress("Erro ao processar cobranças em lote.");
           }
+        } else {
+          setBillingProgress("Nenhum atleta com CPF e assinatura para ativar cobrança.");
         }
-        setBillingProgress(`Cobrança ativada para ${billingOk}/${selectedAthletes.length} atletas.`);
       }
 
       if (data.ok) {

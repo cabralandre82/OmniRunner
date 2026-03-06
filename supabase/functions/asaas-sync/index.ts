@@ -241,6 +241,7 @@ Deno.serve(async (req: Request) => {
               subscription_id: subscriptionId,
               asaas_subscription_id: asaasSubId,
               asaas_status: (subRes.data.status as string) ?? "ACTIVE",
+              group_id: groupId,
             },
             { onConflict: "subscription_id", ignoreDuplicates: true },
           );
