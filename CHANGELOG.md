@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-03-06
+
+### Added
+- **Asaas billing integration**: automated payment processing for assessorias via Asaas API
+- Payment configuration page at `/settings/payments` for Asaas API key setup
+- Auto-billing toggle in plan assignment wizard (Step 3)
+- CPF collection for athletes (Asaas requirement)
+- Platform billing split (2.5%) configurable by admin
+- Webhook-based subscription status sync (payment confirmed → active, overdue → late, etc.)
+- Edge Functions: `asaas-sync` (API proxy), `asaas-webhook` (event receiver)
+- New tables: payment_provider_config, asaas_customer_map, asaas_subscription_map, payment_webhook_events
+
 ## [1.3.0] - 2026-03-05
 
 ### Added

@@ -434,6 +434,27 @@ Chama `fn_set_athlete_watch_type` (SECURITY DEFINER, coach-only).
 
 ---
 
+## Billing / Cobrança
+
+### `POST /api/billing/asaas`
+
+Proxy para Edge Function asaas-sync e operações locais.
+
+**Actions:**
+- `test_connection` — testa conexão com API Asaas
+- `save_config` — salva/atualiza configuração Asaas (api_key, environment)
+- `setup_webhook` — configura webhook no Asaas automaticamente
+- `create_customer` — cria customer no Asaas e mapeia ao atleta
+- `create_subscription` — cria subscription no Asaas com split automático
+- `cancel_subscription` — cancela subscription no Asaas
+- `disconnect` — desativa integração Asaas
+
+**Body:** `{ action: string, ...params }`
+
+**Auth:** admin_master required (coach for read-only operations)
+
+---
+
 ## Financial / Planos e Assinaturas
 
 ### `POST /api/financial/plans`

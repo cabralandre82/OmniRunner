@@ -7,6 +7,8 @@ interface Athlete {
   member_id: string;
   user_id: string;
   display_name: string;
+  email: string | null;
+  cpf: string | null;
   current_plan: string | null;
   current_status: string | null;
   next_due_date: string | null;
@@ -29,9 +31,11 @@ const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
 export function AssignSubscriptionClient({
   athletes,
   plans,
+  asaasActive = false,
 }: {
   athletes: Athlete[];
   plans: Plan[];
+  asaasActive?: boolean;
 }) {
   const router = useRouter();
 
@@ -50,6 +54,9 @@ export function AssignSubscriptionClient({
   });
 
   const [loading, setLoading] = useState(false);
+  const [autoBilling, setAutoBilling] = useState(false);
+  const [cpfInputs, setCpfInputs] = useState<Record<string, string>>({});
+  const [billingProgress, setBillingProgress] = useState("");
   const [result, setResult] = useState<{
     ok: boolean;
     success: number;
@@ -102,6 +109,7 @@ export function AssignSubscriptionClient({
     if (!planId || selectedCount === 0) return;
     setLoading(true);
     setResult(null);
+    setBillingProgress("");
 
     try {
       const res = await fetch("/api/financial/subscriptions", {
@@ -116,9 +124,68 @@ export function AssignSubscriptionClient({
       });
       const data = await res.json();
       setResult({ ok: data.ok, success: data.success, total: data.total });
+
+      if (data.ok && autoBilling && asaasActive && selectedPlan) {
+        setBillingProgress("Criando cobranças automáticas...");
+        const selectedAthletes = athletes.filter((a) => selectedIds.has(a.user_id));
+        let billingOk = 0;
+
+        for (const athlete of selectedAthletes) {
+          const cpf = athlete.cpf || cpfInputs[athlete.user_id];
+          if (!cpf) continue;
+
+          try {
+            // 1. Create Asaas customer
+            setBillingProgress(`Criando cliente: ${athlete.display_name}...`);
+            const custRes = await fetch("/api/billing/asaas", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "create_customer",
+                athlete_user_id: athlete.user_id,
+                name: athlete.display_name,
+                cpf,
+                email: athlete.email ?? "",
+              }),
+            });
+            const custData = await custRes.json();
+            if (!custRes.ok) continue;
+
+            const asaasCustomerId = custData.asaas_customer_id;
+
+            // 2. Find the subscription ID just created
+            const subsForAthletes = data.subscription_ids as Record<string, string> | undefined;
+            const subscriptionId = subsForAthletes?.[athlete.user_id];
+            if (!subscriptionId) continue;
+
+            // 3. Create Asaas subscription with split
+            setBillingProgress(`Ativando cobrança: ${athlete.display_name}...`);
+            const cycle = selectedPlan.billing_cycle === "quarterly" ? "QUARTERLY" : "MONTHLY";
+            await fetch("/api/billing/asaas", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "create_subscription",
+                subscription_id: subscriptionId,
+                asaas_customer_id: asaasCustomerId,
+                value: selectedPlan.monthly_price,
+                cycle,
+                next_due_date: dueDate,
+                description: `${selectedPlan.name} — ${athlete.display_name}`,
+              }),
+            });
+            billingOk++;
+          } catch {
+            // continue with next athlete
+          }
+        }
+        setBillingProgress(`Cobrança ativada para ${billingOk}/${selectedAthletes.length} atletas.`);
+      }
+
       if (data.ok) {
         setSelectedIds(new Set());
         setPlanId("");
+        setCpfInputs({});
         router.refresh();
       }
     } finally {
@@ -382,6 +449,57 @@ export function AssignSubscriptionClient({
             </div>
           </div>
 
+          {/* Auto-billing toggle */}
+          {asaasActive && (
+            <div className="mt-4 rounded-lg border border-brand/30 bg-brand/5 p-4">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoBilling}
+                  onChange={(e) => setAutoBilling(e.target.checked)}
+                  className="rounded border-border text-brand focus:ring-brand h-5 w-5"
+                />
+                <div>
+                  <span className="text-sm font-semibold text-content-primary">
+                    Ativar cobrança automática via Asaas
+                  </span>
+                  <p className="text-xs text-content-secondary">
+                    O atleta receberá um email com link de pagamento (PIX, boleto ou cartão)
+                  </p>
+                </div>
+              </label>
+
+              {autoBilling && (() => {
+                const selected = athletes.filter((a) => selectedIds.has(a.user_id));
+                const noCpf = selected.filter((a) => !a.cpf && !cpfInputs[a.user_id]);
+                return noCpf.length > 0 ? (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-xs font-medium text-content-secondary">
+                      CPF necessário para {noCpf.length} atleta{noCpf.length !== 1 ? "s" : ""}:
+                    </p>
+                    {noCpf.map((a) => (
+                      <div key={a.user_id} className="flex items-center gap-2">
+                        <span className="text-sm text-content-primary w-40 truncate">{a.display_name}</span>
+                        <input
+                          type="text"
+                          placeholder="000.000.000-00"
+                          value={cpfInputs[a.user_id] ?? ""}
+                          onChange={(e) => setCpfInputs((prev) => ({ ...prev, [a.user_id]: e.target.value }))}
+                          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm w-44"
+                          maxLength={14}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs text-success">
+                    Todos os atletas selecionados possuem CPF cadastrado.
+                  </p>
+                );
+              })()}
+            </div>
+          )}
+
           <div className="mt-4 flex flex-wrap items-end gap-4">
             <div>
               <label className="mb-1 block text-xs font-medium text-content-secondary">
@@ -415,6 +533,12 @@ export function AssignSubscriptionClient({
                 : `Atribuir plano a ${selectedCount} atleta${selectedCount !== 1 ? "s" : ""}`}
             </button>
           </div>
+
+          {billingProgress && (
+            <div className="mt-3 rounded-lg border border-brand/20 bg-brand/5 px-4 py-2 text-sm text-brand">
+              {billingProgress}
+            </div>
+          )}
 
           {result && (
             <div

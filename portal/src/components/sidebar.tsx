@@ -113,6 +113,7 @@ const NAV_GROUPS: NavGroup[] = [
     ),
     items: [
       { href: "/settings", label: "Configurações", roles: ["admin_master", "coach", "assistant"] },
+      { href: "/settings/payments", label: "Pagamentos", roles: ["admin_master"] },
       { href: "/exports", label: "Exports", roles: ["admin_master", "coach"] },
       { href: "/badges", label: "Badges", roles: ["admin_master", "coach"] },
     ],

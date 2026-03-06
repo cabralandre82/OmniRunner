@@ -433,6 +433,15 @@ parks (id)
 | `supabase/migrations/20260314000000_workout_blocks_v2.sql` | Workout blocks v2: pace range (min/max), HR range (bpm), repeat_count, block types rest/repeat, backfill legacy pace, athlete RLS. DECISAO 136 |
 | `supabase/migrations/20260314100000_assignment_to_training_bridge.sql` | Bridge: trg_assignment_to_training auto-creates coaching_training_sessions from workout assignments for auto-attendance. DECISAO 136 |
 | `supabase/migrations/20260315000000_member_watch_type.sql` | coaching_members.watch_type + v_athlete_watch_type view + fn_set_athlete_watch_type RPC. DECISAO 137 |
+| `supabase/migrations/20260316000000_asaas_billing_integration.sql` | payment_provider_config, asaas_customer_map, asaas_subscription_map, payment_webhook_events, coaching_members.cpf, platform_fee_config fee_type billing_split |
+
+### 20260316000000_asaas_billing_integration
+- `payment_provider_config` — config Asaas por assessoria (api_key, environment, webhook)
+- `asaas_customer_map` — mapeamento atleta ↔ customer Asaas
+- `asaas_subscription_map` — mapeamento subscription interna ↔ subscription Asaas
+- `payment_webhook_events` — log de eventos webhook para idempotência e auditoria
+- `coaching_members.cpf` — CPF do atleta (obrigatório para Asaas)
+- `platform_fee_config` — novo fee_type 'billing_split' (2.5%)
 
 ---
 
@@ -567,6 +576,14 @@ parks (id)
 | 29 | `eval-verification-cron` | Service role | - | Cron diário (03:00 UTC): reavalia candidatos (CALIBRATING/MONITORED/DOWNGRADED, flags recentes, não avaliados 24h); batch max 100; usa eval_athlete_verification RPC |
 | 30 | `delete-account` | JWT | - | Soft-delete: remove de coaching groups, cancela desafios pendentes, anonimiza perfil, deleta strava connection, deleta auth user via admin API |
 | 31 | `validate-social-login` | No JWT | - | Gera auth_url para TikTok OAuth (quando TIKTOK_CLIENT_KEY configurado); retorna erro gracioso se não configurado |
+| 32 | `asaas-sync` | JWT (admin_master) | - | Proxy autenticado para API Asaas. Actions: test_connection, create_customer, create_subscription, cancel_subscription, setup_webhook |
+| 33 | `asaas-webhook` | Asaas signature | - | Receptor de webhooks Asaas. Processa eventos PAYMENT_CONFIRMED/RECEIVED/OVERDUE/REFUNDED/DELETED e SUBSCRIPTION_INACTIVATED/DELETED. Atualiza status de coaching_subscriptions automaticamente |
+
+### asaas-sync
+Proxy autenticado para API Asaas. Actions: test_connection, create_customer, create_subscription, cancel_subscription, setup_webhook.
+
+### asaas-webhook
+Receptor de webhooks Asaas. Processa eventos PAYMENT_CONFIRMED/RECEIVED/OVERDUE/REFUNDED/DELETED e SUBSCRIPTION_INACTIVATED/DELETED. Atualiza status de coaching_subscriptions automaticamente.
 
 ### 5.8 Clearing — Detalhes
 

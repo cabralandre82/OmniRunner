@@ -3889,3 +3889,21 @@ Para o login Instagram funcionar de fato:
 **Arquivos:** 1 migration, 2 API routes, 2 páginas portal, 1 tela Flutter, 3 arquivos de teste
 
 ---
+
+## DECISAO 138 — Asaas Automated Billing Integration
+
+**Data:** 2026-03-06
+**Contexto:** Assessorias precisam cobrar atletas automaticamente sem processar pagamentos dentro do app (exigência legal e UX). Asaas é uma plataforma brasileira regulada que atua como intermediário de pagamentos.
+
+**Decisão:** (1) Integrar Asaas como motor de cobrança automática. (2) Portal conecta Asaas via API key — webhook configurado automaticamente. (3) Ao atribuir plano com cobrança ativa, sistema cria customer + subscription no Asaas com split de 2.5% para Omni Runner. (4) Asaas envia email com link de pagamento (PIX/boleto/cartão). (5) Webhooks atualizam status da assinatura automaticamente. (6) CPF coletado para compliance (obrigatório Asaas). (7) Split configurável pelo admin plataforma via `platform_fee_config`.
+
+**Implementação:**
+- Migration `20260316000000`: tabelas payment_provider_config, asaas_customer_map, asaas_subscription_map, payment_webhook_events, coluna cpf em coaching_members, fee_type billing_split
+- Edge Function `asaas-sync`: proxy autenticado para API Asaas (customer, subscription, webhook setup)
+- Edge Function `asaas-webhook`: receptor de webhooks Asaas, atualiza status de assinaturas
+- Portal: página /settings/payments (configuração), API route /api/billing/asaas, toggle de cobrança automática no assign de planos
+- RLS: admin_master configura, staff lê, service_role escreve dados Asaas
+
+**Arquivos:** 1 migration, 2 Edge Functions, 3 páginas/componentes portal, 2 API routes
+
+---

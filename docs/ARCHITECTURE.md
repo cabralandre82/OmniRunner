@@ -433,6 +433,7 @@ Retry: 3x exponential backoff em chamadas críticas (auth, create assessoria)
 | F36 — Announcements | portal + data | Mural de avisos para assessorias | ✅ |
 | F37 — Structured Workout + .FIT | domain + Edge Function + portal | Blocos estruturados (pace range, HR, repeat), .FIT binary export, send to watch | ✅ |
 | F38 — Watch Type + Assign Page | portal + data + DB | Watch type tracking, athlete-centric bulk assignment, FIT compatibility | ✅ |
+| F39 — Automated Billing (Asaas) | Portal settings + Edge Functions + webhooks | payment_provider_config, asaas_customer_map, asaas_subscription_map, payment_webhook_events | Cobrança automática via Asaas com split 2.5% |
 
 ---
 

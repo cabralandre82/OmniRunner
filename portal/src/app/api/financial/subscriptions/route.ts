@@ -24,8 +24,10 @@ export async function POST(req: Request) {
     const supabase = createClient();
     const results: { userId: string; ok: boolean; message?: string }[] = [];
 
+    const subscriptionIds: Record<string, string> = {};
+
     for (const userId of athlete_user_ids) {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("coaching_subscriptions")
         .upsert(
           {
@@ -38,12 +40,15 @@ export async function POST(req: Request) {
             updated_at: new Date().toISOString(),
           },
           { onConflict: "athlete_user_id,group_id" },
-        );
+        )
+        .select("id")
+        .single();
 
       if (error) {
         results.push({ userId, ok: false, message: error.message });
       } else {
         results.push({ userId, ok: true });
+        if (data?.id) subscriptionIds[userId] = data.id;
       }
     }
 
@@ -52,6 +57,7 @@ export async function POST(req: Request) {
       ok: successCount > 0,
       total: athlete_user_ids.length,
       success: successCount,
+      subscription_ids: subscriptionIds,
       results,
     });
   } catch (e) {

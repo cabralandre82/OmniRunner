@@ -9,6 +9,8 @@ interface Athlete {
   member_id: string;
   user_id: string;
   display_name: string;
+  email: string | null;
+  cpf: string | null;
   current_plan: string | null;
   current_status: string | null;
   next_due_date: string | null;
@@ -26,7 +28,7 @@ async function getData(groupId: string) {
 
   const { data: members } = await supabase
     .from("coaching_members")
-    .select("id, user_id, display_name")
+    .select("id, user_id, display_name, cpf")
     .eq("group_id", groupId)
     .in("role", ["athlete", "atleta"])
     .order("display_name");
@@ -62,6 +64,8 @@ async function getData(groupId: string) {
       member_id: m.id,
       user_id: m.user_id,
       display_name: m.display_name,
+      email: null,
+      cpf: m.cpf ?? null,
       current_plan: sub?.plan_name ?? null,
       current_status: sub?.status ?? null,
       next_due_date: sub?.next_due_date ?? null,
@@ -75,9 +79,18 @@ async function getData(groupId: string) {
     .eq("status", "active")
     .order("name");
 
+  // Check if Asaas is active for this group
+  const { data: asaasConfig } = await supabase
+    .from("payment_provider_config")
+    .select("is_active")
+    .eq("group_id", groupId)
+    .eq("provider", "asaas")
+    .maybeSingle();
+
   return {
     athletes,
     plans: (plans ?? []) as Plan[],
+    asaasActive: asaasConfig?.is_active ?? false,
   };
 }
 
@@ -85,7 +98,7 @@ export default async function AssignSubscriptionPage() {
   const groupId = cookies().get("portal_group_id")?.value;
   if (!groupId) return <NoGroupSelected />;
 
-  const { athletes, plans } = await getData(groupId);
+  const { athletes, plans, asaasActive } = await getData(groupId);
 
   return (
     <div className="space-y-6">
@@ -98,7 +111,11 @@ export default async function AssignSubscriptionPage() {
         </p>
       </div>
 
-      <AssignSubscriptionClient athletes={athletes} plans={plans} />
+      <AssignSubscriptionClient
+        athletes={athletes}
+        plans={plans}
+        asaasActive={asaasActive}
+      />
     </div>
   );
 }
