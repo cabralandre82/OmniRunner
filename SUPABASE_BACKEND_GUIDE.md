@@ -1391,6 +1391,13 @@ cd portal/ && npm run build && vercel --prod
 | `fn_issue_checkin_token(session_id, ttl_seconds)` | Gera nonce + expires_at para QR (legacy). OS-01 |
 | `fn_evaluate_athlete_training(training_id, athlete_id, deadline_ms)` | Avalia 2 próximas corridas vs treino prescrito → completed/partial. DECISAO 134 |
 | `fn_upsert_member_status(member_id, status, notes)` | Atualiza status de membro (idempotente). OS-02 |
+| `fn_request_partnership(p_requester_group_id, p_target_group_id)` | Envia convite de parceria entre assessorias. Idempotente (unique_violation → 'already_pending'). DECISAO 139 |
+| `fn_respond_partnership(p_partnership_id, p_accept)` | Aceita ou rejeita convite de parceria. DECISAO 139 |
+| `fn_list_partnerships(p_group_id, p_limit, p_offset)` | Lista parcerias com contagem de atletas (LEFT JOIN LATERAL). DECISAO 139 |
+| `fn_count_pending_partnerships(p_group_id)` | Conta convites pendentes recebidos (badge no dashboard). DECISAO 139 |
+| `fn_search_assessorias(p_query, p_exclude_group_id)` | Busca assessorias por nome (pg_trgm gin index). DECISAO 139 |
+| `fn_request_champ_join(p_championship_id, p_group_id)` | Solicita participação de parceira em campeonato. DECISAO 139 |
+| `fn_partner_championships(p_group_id)` | Lista campeonatos de parceiras. DECISAO 139 |
 
 ### Tarefas típicas:
 
@@ -1403,4 +1410,19 @@ cd portal/ && npm run build && vercel --prod
 
 ---
 
-*Gerado em 2026-02-18, atualizado em 2026-03-04 (Sprint 25.0.0 + Parks E2E + Backend Audit + Auto-Attendance + Role Rename + CRM) — 74 tabelas, 55 Edge Functions, 72 migrations, DECISAO 135*
+### Tabelas recentes:
+
+| Tabela | Migration | Descrição |
+|--------|-----------|-----------|
+| `assessoria_partnerships` | `20260318000000` | Parcerias entre assessorias (requester, target, status) |
+| `platform_revenue` | `20260319000000` | Receita da plataforma (taxas de clearing, swap, manutenção, billing_split) |
+
+### Migrations recentes:
+
+| Migration | Descrição |
+|-----------|-----------|
+| `20260317000000` | Fix backfill Strava + webhook points path + Storage RLS legacy |
+| `20260318000000` | Partnerships: tabela, RLS, 7 RPCs, pg_trgm index, authorization hardening |
+| `20260319000000` | Maintenance fee: rate_usd column, platform_revenue table, idempotency index |
+
+*Gerado em 2026-02-18, atualizado em 2026-03-19 (Partnerships DECISAO 139, Maintenance Fee DECISAO 140, Portal UX DECISAO 141) — 76 tabelas, 51 Edge Functions, 75 migrations*

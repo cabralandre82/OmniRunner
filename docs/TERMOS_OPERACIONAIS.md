@@ -103,12 +103,33 @@ O clube tera acesso no portal a:
 
 ## 12. Taxas Resumo
 
-| Tipo | Taxa | Configuravel |
-|------|------|-------------|
-| Clearing interclub | 3,00% | Sim |
-| Swap de lastro | 1,00% | Sim |
-| Spread cambial (entrada) | 0,75% - 1,00% | Sim |
-| Spread cambial (saida) | 0,75% - 1,00% | Sim |
+| Tipo | Taxa | Base | Configuravel |
+|------|------|------|-------------|
+| Clearing interclub | 3,00% | Valor bruto da compensação | Sim |
+| Swap de lastro | 1,00% | Valor do swap | Sim |
+| Spread cambial (entrada) | 0,75% - 1,00% | Conversão FX | Sim |
+| Spread cambial (saida) | 0,75% - 1,00% | Conversão FX | Sim |
+| Billing split | 2,50% | Pagamento da mensalidade do atleta (via Asaas) | Sim |
+| Manutenção | $0 - $10 USD/atleta | Valor fixo por atleta, deduzido do pagamento da mensalidade | Sim |
+
+## 13. Assessorias Parceiras
+
+Assessorias podem estabelecer parcerias formais entre si:
+
+- Uma assessoria envia convite de parceria a outra.
+- A assessoria convidada aceita ou rejeita.
+- Parcerias aceitas permitem convidar a assessoria para campeonatos.
+- Parcerias podem ser removidas a qualquer momento.
+- Apenas administradores (admin_master) gerenciam parcerias.
+
+## 14. Manutenção por Atleta
+
+Taxa fixa em dólares cobrada por atleta ativo, deduzida automaticamente quando o atleta paga a mensalidade:
+
+- Configurável de $0.00 a $10.00 USD (com decimais).
+- Aplicada via Asaas Split API (`fixedValue`) no momento da criação da assinatura.
+- Registrada em `platform_revenue` quando o pagamento é confirmado (webhook).
+- Se a taxa for $0.00 ou estiver desativada, nada é cobrado.
 
 ---
-Versao: 2026-02-28
+Versao: 2026-03-19

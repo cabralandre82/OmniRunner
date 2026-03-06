@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-03-19
+
+### Added
+- **Assessoria partnerships**: assessorias can send/accept/reject partner invitations; partners can be invited to championships; tutorial cards on empty states explain the flow
+- **Maintenance fee per athlete**: platform charges $0–10 USD per athlete, deducted automatically from subscription payments via Asaas Split (fixedValue); recorded in `platform_revenue` when webhook confirms payment; configurable by platform admin
+- New tables/RPCs: `assessoria_partnerships`, `fn_request_partnership`, `fn_respond_partnership`, `fn_list_partnerships`, `fn_count_pending_partnerships`, `fn_search_assessorias`, `fn_request_champ_join`, `fn_partner_championships`
+- `rate_usd` column on `platform_fee_config` for fixed-amount fees
+- Idempotency index on `platform_revenue` for maintenance fee (one record per payment)
+- RLS penetration tests (`tools/test_partner_assessorias_rls.sql`), E2E integration tests (`tools/test_partnerships_e2e.sql`), 31 Vitest partnership tests, 12 Flutter widget tests
+- `platform_revenue` table with RLS, indexes, and grants
+- Server Actions for platform product management (`mutations.ts`) with `revalidatePath`
+
+### Changed
+- **Portal labels renamed for clarity** (assessoria portal is now "para dummies"):
+  - Eventos Webhook → **Histórico de Cobranças** (with tutorial banner)
+  - Custódia → **Saldo OmniCoins**
+  - Compensações → **Transferências OmniCoins**
+  - Distribuições → **Distribuir OmniCoins**
+  - All clearing/custody page headers, KPIs, columns, and detail sections rewritten with human-friendly OmniCoins terminology
+- Platform admin product mutations migrated from client-side `fetch` to **Server Actions** with `revalidatePath` (fixes products reappearing after suspend/remove)
+- Asaas subscription creation now includes maintenance fee as `fixedValue` split alongside billing_split percentage
+- `asaas-webhook` records maintenance revenue in `platform_revenue` on `PAYMENT_CONFIRMED`/`PAYMENT_RECEIVED`
+
+### Fixed
+- Platform admin products reappearing after suspend/remove (Router Cache not invalidated)
+- 17 pre-existing Vitest failures (auth mocks, design token CSS classes, sidebar labels, swap error message)
+- 3 pre-existing Flutter failures (wallet error message, brand color value, compliance false positive)
+- Map route not tracing athlete's path (GPS point format + storage path issues)
+- "Primeiros Passos" not detecting first run/challenges (Isar local check added)
+- `backfill_strava_sessions` SQL function typo (`activity_date` → `start_date`)
+
+### Removed
+- **Dead code cleanup**: `staff_disputes_screen.dart`, `dispute_status_card.dart` (+ test), Edge Functions `clearing-confirm-sent`, `clearing-confirm-received`, `clearing-open-dispute`, `clearing-cron` and their `config.toml` entries
+- Old clearing cases query from `staff-alerts` API route
+- `fn_charge_maintenance_fees()` cron-based function (replaced by webhook-driven approach)
+
 ## [1.4.0] - 2026-03-06
 
 ### Added

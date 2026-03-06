@@ -3907,3 +3907,57 @@ Para o login Instagram funcionar de fato:
 **Arquivos:** 1 migration, 2 Edge Functions, 3 páginas/componentes portal, 2 API routes
 
 ---
+
+## DECISAO 139 — Assessoria Partnerships (Parcerias)
+
+**Data:** 2026-03-18
+**Contexto:** Assessorias precisam de um mecanismo formal para estabelecer parcerias, pré-requisito para convidar outras assessorias em campeonatos. O antigo "Confirmações entre assessorias" (clearing manual) tornou-se obsoleto com o sistema de custódia automática.
+
+**Decisão:** (1) Criar `assessoria_partnerships` (requester_group_id, target_group_id, status pending/accepted/rejected). (2) RPCs SECURITY DEFINER para request, respond, list, search, count. (3) Apenas `admin_master` pode gerenciar parcerias. (4) Campeonatos só podem convidar assessorias parceiras aceitas. (5) Busca por assessoria via `pg_trgm` (gin index) para `ILIKE '%query%'` eficiente. (6) Idempotência via `EXCEPTION WHEN unique_violation` em `fn_request_partnership`. (7) Pagination em `fn_list_partnerships` com `LEFT JOIN LATERAL` para contagem de atletas.
+
+**Implementação:**
+- Migration `20260318000000`: tabela, RLS, 7 RPCs, índice trigram, authorization checks
+- Flutter: `PartnerAssessoriasScreen` com tutorial cards, `StaffDashboardScreen` card "Parceiras"
+- Flutter: `StaffChampionshipManageScreen` convida apenas parceiras aceitas
+- Testes: RLS penetration (15 SQL), E2E (21 SQL), Vitest (31), Flutter widget (12)
+
+**Arquivos:** 1 migration, 3 telas Flutter, 2 SQL test scripts, 2 test files
+
+---
+
+## DECISAO 140 — Maintenance Fee per Athlete via Asaas Split
+
+**Data:** 2026-03-19
+**Contexto:** A plataforma precisa cobrar uma taxa de manutenção por atleta ativo. A taxa deve ser deduzida automaticamente quando o atleta paga a mensalidade, não via cron mensal.
+
+**Decisão:** (1) `platform_fee_config.rate_usd` armazena o valor fixo ($0–10 USD, decimais). (2) Ao criar assinatura no Asaas (`asaas-sync` → `create_subscription`), incluir `fixedValue` no Split API além do `percentualValue` do billing_split. (3) Quando o webhook `PAYMENT_CONFIRMED`/`PAYMENT_RECEIVED` dispara, registrar receita em `platform_revenue` com `source_ref_id = asaas_payment_id`. (4) Índice UNIQUE parcial `(fee_type, source_ref_id) WHERE fee_type = 'maintenance'` garante idempotência. (5) Sem cron — piggybacks no fluxo de pagamento existente.
+
+**Implementação:**
+- Migration `20260319000000`: coluna `rate_usd`, tabela `platform_revenue`, índice idempotente, remoção do cron
+- Edge Function `asaas-sync`: busca billing_split + maintenance, monta split entries
+- Edge Function `asaas-webhook`: upsert em platform_revenue no payment confirmed
+- Portal: fee-row.tsx com slider $0–$10/atleta, API route aceita `rate_usd`
+- Testes: 4 novos testes Vitest para rate_usd (válido, zero, >10, negativo)
+
+**Arquivos:** 1 migration, 2 Edge Functions modificadas, 3 componentes portal, 1 test file
+
+---
+
+## DECISAO 141 — Portal UX "Para Dummies" + Dead Code Cleanup
+
+**Data:** 2026-03-19
+**Contexto:** Usuários das assessorias não são técnicos. Termos como "Webhook", "Custódia", "Compensações", "Clearing", "Burn ID" são incompreensíveis. O código ainda continha Edge Functions e telas do antigo sistema de clearing manual.
+
+**Decisão:** (1) Renomear labels do portal: Eventos Webhook → Histórico de Cobranças, Custódia → Saldo OmniCoins, Compensações → Transferências OmniCoins, Distribuições → Distribuir OmniCoins. (2) Adicionar banners tutoriais em páginas-chave. (3) Reescrever colunas de tabelas e detalhes com terminologia humana. (4) Remover dead code: Edge Functions `clearing-confirm-sent`, `clearing-confirm-received`, `clearing-open-dispute`, `clearing-cron`, telas `staff_disputes_screen.dart`, `dispute_status_card.dart`. (5) Migrar mutações de produtos do admin para Server Actions com `revalidatePath`.
+
+**Implementação:**
+- Sidebar: 4 labels renomeados
+- 5 páginas reescritas (webhook-events, custody, clearing, clearing-filters, financial)
+- 4 Edge Functions deletadas + config.toml atualizado
+- 2 telas Flutter + 1 widget + 1 teste deletados
+- Server Actions: `mutations.ts` com `revalidatePath` + `useTransition`
+- 20 testes pré-existentes corrigidos (17 Vitest + 3 Flutter)
+
+**Arquivos:** 10 páginas portal, 4 Edge Functions removidas, 4 arquivos Flutter removidos, 20 testes corrigidos
+
+---

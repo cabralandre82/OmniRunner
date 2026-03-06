@@ -513,6 +513,46 @@ Atribuição em lote de plano a múltiplos atletas (upsert por athlete+group).
 
 ---
 
+---
+
+## Platform Fees — `GET/POST /api/platform/fees`
+
+**Auth:** Platform admin.
+
+### GET
+Returns all fee configurations from `platform_fee_config`.
+
+**Response:** `{ "fees": [{ "id", "fee_type", "rate_pct", "rate_usd", "is_active", "updated_at" }] }`
+
+### POST
+Updates a fee configuration. Supports both percentage-based fees (`rate_pct`) and fixed-amount fees (`rate_usd`).
+
+**Body (JSON):**
+| Campo | Tipo | Obrigatório |
+|-------|------|-------------|
+| `fee_type` | `clearing` \| `swap` \| `maintenance` \| `billing_split` | Sim |
+| `rate_pct` | number (0–100) | Não (para clearing, swap, billing_split) |
+| `rate_usd` | number (0–10) | Não (para maintenance — USD por atleta) |
+| `is_active` | boolean | Não |
+
+**Response:** `{ "ok": true }`
+
+---
+
+## Platform Products — Server Actions
+
+Product mutations use **Server Actions** (`src/app/platform/produtos/mutations.ts`) instead of API routes.
+Each action includes `requirePlatformAdmin()`, `rateLimit`, and `revalidatePath("/platform/produtos", "page")`.
+
+| Action | Descrição |
+|--------|-----------|
+| `toggleProduct(id)` | Ativa/suspende um produto |
+| `deleteProduct(id)` | Remove produto (falha com FK constraint → mensagem amigável) |
+| `updateProduct(id, data)` | Atualiza campos do produto |
+| `createProduct(data)` | Cria novo produto |
+
+---
+
 ## Audit Logging
 
 Mutating operations log to `audit_log` table via `src/lib/audit.ts`:

@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2026-03-19
+
+### Added
+- **Assessoria partnerships screen** (`PartnerAssessoriasScreen`): send/receive/manage partnership invitations between assessorias, with tutorial cards explaining the flow
+- Staff dashboard "Parceiras" card with pending invitation badge (replaces old "Confirmações" card)
+- Championship management: invite only partner assessorias, with tutorial message explaining the requirement
+- `fn_count_pending_partnerships` RPC for lightweight dashboard badge counts
+- 8 widget tests for `PartnerAssessoriasScreen` + 4 tests for staff dashboard partnerships card
+
+### Changed
+- Staff dashboard: "Confirmações" card → "Parceiras" card (navigates to `PartnerAssessoriasScreen`)
+- Championship invite dialog: fetches only accepted partners via `fn_list_partnerships`, with `ListView.builder` for virtualized lists
+- Partner lists organized into sections: "Convites recebidos", "Convites enviados", "Parceiras ativas"
+
+### Fixed
+- Map route not tracing athlete's path (GPS field names `ts`/`spd` → `timestampMs`/`speed`, legacy storage path fallback)
+- "Primeiros Passos" not detecting first run/challenges (checks local Isar before Supabase)
+- Wallet bloc test: updated error message expectation to match current generic error
+- App theme test: updated primary brand color to `#3B82F6`
+- Compliance test: excluded "corredor ativo" from monetary term false positives
+
+### Removed
+- `staff_disputes_screen.dart` (dead code — old clearing confirmation flow)
+- `dispute_status_card.dart` and its test (dead code)
+
 ## [0.12.0] - 2026-03-05
 
 ### Added

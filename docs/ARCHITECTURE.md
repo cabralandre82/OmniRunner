@@ -434,6 +434,9 @@ Retry: 3x exponential backoff em chamadas críticas (auth, create assessoria)
 | F37 — Structured Workout + .FIT | domain + Edge Function + portal | Blocos estruturados (pace range, HR, repeat), .FIT binary export, send to watch | ✅ |
 | F38 — Watch Type + Assign Page | portal + data + DB | Watch type tracking, athlete-centric bulk assignment, FIT compatibility | ✅ |
 | F39 — Automated Billing (Asaas) | Portal settings + Edge Functions + webhooks | payment_provider_config, asaas_customer_map, asaas_subscription_map, payment_webhook_events | Cobrança automática via Asaas com split 2.5% |
+| F40 — Assessoria Partnerships | App + DB + RPCs | assessoria_partnerships, fn_request/respond/list/search_partnership | Parcerias entre assessorias para campeonatos conjuntos |
+| F41 — Maintenance Fee per Athlete | Asaas Split + webhook + portal admin | platform_fee_config.rate_usd, platform_revenue | $0–10 USD/atleta deduzido automaticamente do pagamento |
+| F42 — Portal UX "Para Dummies" | Portal sidebar + pages | Labels OmniCoins, tutorial banners, human-friendly terminology | Saldo OmniCoins, Transferências, Histórico de Cobranças |
 
 ---
 
@@ -547,7 +550,17 @@ SECURITY DEFINER + validações server-side.
 | `/athletes` | Lista completa de atletas com status, trust score, corridas, distância, distribuição de OmniCoins, exportação CSV |
 | `/verification` | Status de verificação dos atletas, reavaliação manual |
 | `/engagement` | DAU/WAU/MAU, retenção 30d, corridas/km por período, gráfico de atividade, alerta de inativos |
-| `/settings` | Gateway de pagamento, Stripe portal, auto top-up, branding (logo, cores, temas), gestão de equipe (invite/remove) |
+| `/financial` | Dashboard Financeiro: receita mensal, assinantes ativos, inadimplentes, crescimento |
+| `/financial/plans` | CRUD de planos (nome, preço, ciclo, limite de treinos, status) |
+| `/financial/subscriptions` | Listagem de assinaturas com status de pagamento |
+| `/financial/subscriptions/assign` | Wizard atleta-first para atribuir plano (com toggle auto-billing Asaas) |
+| `/financial/webhook-events` | **Histórico de Cobranças**: log de pagamentos Asaas com tutorial explicativo |
+| `/custody` | **Saldo OmniCoins**: total depositado, em uso, disponível, OmniCoins em circulação, extrato |
+| `/clearing` | **Transferências OmniCoins**: movimentações interclub com filtros e detalhes |
+| `/distributions` | **Distribuir OmniCoins**: histórico de distribuições para atletas |
+| `/audit` | Auditoria: trilha de operações com referências cruzadas |
+| `/settings` | Branding (logo, cores, temas), gestão de equipe (invite/remove) |
+| `/settings/payments` | Configuração Asaas: API key, webhook, teste de conexão |
 
 ### Portal Admin — Páginas
 
@@ -557,7 +570,8 @@ SECURITY DEFINER + validações server-side.
 | `/platform/assessorias` | Gestão de assessorias (aprovar, rejeitar, suspender) — batch queries |
 | `/platform/financeiro` | Todas as compras com filtros por status e período |
 | `/platform/reembolsos` | Pedidos de reembolso — aprovar, rejeitar, processar |
-| `/platform/produtos` | CRUD de pacotes de créditos (billing_products) — whitelist de campos |
+| `/platform/produtos` | CRUD de pacotes de créditos (billing_products) — Server Actions com `revalidatePath` |
+| `/platform/fees` | Taxas da plataforma: clearing (%), swap (%), billing_split (%), manutenção ($USD/atleta) |
 | `/platform/support` | Chamados de suporte das assessorias |
 
 ### Portal — APIs
@@ -592,4 +606,4 @@ SECURITY DEFINER + validações server-side.
 | Branding | CSS custom properties por assessoria (logo, 4 cores) |
 | Deploy | Vercel (Root Directory: `portal`) |
 
-*Documento atualizado em 26/02/2026 — Sprint 25.0.0 + Portal Audit (DECISÃO 099-102)*
+*Documento atualizado em 04/03/2026 — Partnerships (F40), Maintenance Fee (F41), Portal UX (F42), Asaas billing (F39)*

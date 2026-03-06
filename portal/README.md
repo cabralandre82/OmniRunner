@@ -113,11 +113,11 @@ Clube deposita USD → Emite coins (limitado ao lastro) → Atleta recebe coins
 | `/api/clearing` | GET | Listar compensações (creditor/debtor) |
 | `/api/swap` | GET/POST | Ofertas de swap de lastro B2B |
 | `/api/distribute-coins` | POST | Distribuir coins para atletas |
-| `/api/platform/fees` | GET/POST | Gerenciar taxas (clearing, swap, manutenção) |
+| `/api/platform/fees` | GET/POST | Gerenciar taxas (clearing %, swap %, billing_split %, manutenção $USD/atleta) |
 | `/api/platform/invariants` | GET | Verificar invariantes do sistema |
 | `/api/platform/feature-flags` | GET/POST | Feature flags da plataforma |
 | `/api/platform/assessorias` | GET | Listar assessorias |
-| `/api/platform/products` | GET/POST | Gerenciar produtos |
+| `/api/platform/products` | GET/POST | Gerenciar produtos (mutações via Server Actions com `revalidatePath`) |
 | `/api/platform/refunds` | GET/POST | Gerenciar reembolsos |
 | `/api/platform/liga` | GET/POST | Administração de ligas |
 | `/api/platform/support` | GET/POST | Tickets de suporte |
@@ -155,7 +155,7 @@ Coverage reports são salvos como artifacts no CI.
 
 | Role | Acesso |
 |------|--------|
-| `admin_master` | Acesso total (billing, team, settings, custódia, distribuição) |
-| `coach` | Atletas, distribuições, verificação, engajamento, treinos prescritos |
+| `admin_master` | Acesso total (billing, team, settings, Saldo OmniCoins, Distribuir OmniCoins, Histórico de Cobranças) |
+| `coach` | Atletas, Distribuir OmniCoins, Transferências OmniCoins, verificação, engajamento, treinos |
 | `assistant` | Atletas, verificação, engajamento, treinos (somente leitura) |
-| `platform_admin` | Admin da plataforma (assessorias, fees, invariantes, suporte) |
+| `platform_admin` | Admin da plataforma (assessorias, fees com rate_usd, invariantes, produtos, suporte) |
