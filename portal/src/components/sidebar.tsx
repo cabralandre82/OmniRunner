@@ -92,11 +92,12 @@ const NAV_GROUPS: NavGroup[] = [
       </svg>
     ),
     items: [
+      { href: "/financial", label: "Dashboard", roles: ["admin_master", "coach"] },
+      { href: "/financial/plans", label: "Planos", roles: ["admin_master", "coach"] },
+      { href: "/financial/subscriptions/assign", label: "Atribuir Plano", roles: ["admin_master", "coach"] },
+      { href: "/financial/subscriptions", label: "Assinaturas", roles: ["admin_master", "coach"] },
       { href: "/custody", label: "Custódia", roles: ["admin_master"] },
       { href: "/clearing", label: "Compensações", roles: ["admin_master", "coach"] },
-      { href: "/swap", label: "Swap de Lastro", roles: ["admin_master"] },
-      { href: "/fx", label: "Conversão Cambial", roles: ["admin_master"] },
-      { href: "/financial", label: "Financeiro", roles: ["admin_master", "coach"] },
       { href: "/distributions", label: "Distribuições", roles: ["admin_master", "coach"] },
       { href: "/audit", label: "Auditoria", roles: ["admin_master", "coach"] },
     ],

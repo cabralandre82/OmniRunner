@@ -7,18 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.2.1] - 2026-03-05
+## [1.3.0] - 2026-03-05
 
 ### Added
-- **Portal template CRUD**: full create/edit/delete flow for workout templates directly from the portal
-  - `/workouts/new` page with structured block builder (type, duration, distance, pace range, HR zone/range, RPE, repeat count, notes)
-  - `/workouts/[id]/edit` page to edit existing templates and their blocks
-  - Edit/Delete buttons on template detail page (`/workouts/[id]`)
-  - "+ Novo Template" button on templates listing page (`/workouts`)
-  - Reusable `TemplateBuilder` client component with block reordering (move up/down) and inline removal
-  - Delete confirmation UI with two-step flow
-  - API route `POST /api/workouts/templates` (create + update with blocks)
-  - API route `DELETE /api/workouts/templates` (delete template + blocks)
+- **Athlete-first wizard for workouts**: step-by-step flow (1: select athletes → 2: choose/create workout → 3: confirm date & assign)
+  - Inline template preview with all block details when selecting an existing template
+  - Inline "criar treino novo" builder to create templates without leaving the page
+  - Clear step indicators with numbered circles and checkmarks
+  - Template block preview API (`GET /api/workouts/templates/blocks`)
+- **Athlete-first wizard for subscriptions**: same step-by-step pattern for financial plans
+  - `/financial/subscriptions/assign` page: select athletes → choose plan card → set start/due dates → assign
+  - KPI badges showing active, late, and no-plan athlete counts
+  - Plan cards with price display for easy visual selection
+  - API route `POST /api/financial/subscriptions` (bulk upsert with conflict handling)
+- **Plan CRUD**: full create/edit/delete for financial plans on `/financial/plans`
+  - Inline form for creating and editing plans (name, description, price, billing cycle, workout limit, status)
+  - Delete protection: cannot delete plans with active subscribers (409 error)
+  - API route `POST /api/financial/plans` (create + update)
+  - API route `DELETE /api/financial/plans` (with active subscriber check)
+- **Portal template CRUD**: full create/edit/delete flow for workout templates
+  - `/workouts/new`, `/workouts/[id]/edit` pages with `TemplateBuilder` component
+  - API routes `POST/DELETE /api/workouts/templates`
+
+### Changed
+- Sidebar: reorganized financial section (Dashboard, Planos, Atribuir Plano, Assinaturas, Custódia, Compensações, Distribuições, Auditoria)
+- Removed Swap de Lastro and Conversão Cambial from sidebar (low-priority features)
 
 ## [1.2.0] - 2026-03-05
 

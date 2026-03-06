@@ -2,12 +2,14 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { NoGroupSelected } from "@/components/no-group-selected";
 import Link from "next/link";
+import { PlansClient } from "./plans-client";
 
 export const dynamic = "force-dynamic";
 
 interface Plan {
   id: string;
   name: string;
+  description: string | null;
   monthly_price: number;
   billing_cycle: string;
   max_workouts_per_week: number | null;
@@ -20,7 +22,9 @@ async function getPlans(groupId: string): Promise<Plan[]> {
 
   const { data: plans } = await supabase
     .from("coaching_plans")
-    .select("id, name, monthly_price, billing_cycle, max_workouts_per_week, status")
+    .select(
+      "id, name, description, monthly_price, billing_cycle, max_workouts_per_week, status",
+    )
     .eq("group_id", groupId)
     .order("name");
 
@@ -43,6 +47,7 @@ async function getPlans(groupId: string): Promise<Plan[]> {
   return plans.map((p) => ({
     id: p.id,
     name: p.name,
+    description: p.description,
     monthly_price: p.monthly_price,
     billing_cycle: p.billing_cycle,
     max_workouts_per_week: p.max_workouts_per_week,
@@ -50,11 +55,6 @@ async function getPlans(groupId: string): Promise<Plan[]> {
     subscriber_count: countMap.get(p.id) ?? 0,
   }));
 }
-
-const CYCLE_LABEL: Record<string, string> = {
-  monthly: "Mensal",
-  quarterly: "Trimestral",
-};
 
 export default async function PlansPage() {
   const groupId = cookies().get("portal_group_id")?.value;
@@ -80,72 +80,19 @@ export default async function PlansPage() {
         </div>
         <Link
           href="/financial"
-          className="text-sm text-brand hover:text-brand hover:underline"
+          className="text-sm text-content-secondary hover:text-primary"
         >
-          ← Dashboard
+          ← Dashboard Financeiro
         </Link>
       </div>
 
       {fetchError && (
         <div className="rounded-lg border border-error/30 bg-error-soft p-6 text-center">
-          <p className="text-error">Erro ao carregar dados. Tente recarregar a página.</p>
+          <p className="text-error">Erro ao carregar dados.</p>
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border text-sm">
-            <thead className="bg-bg-secondary">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium text-content-secondary">Nome</th>
-                <th className="px-4 py-3 text-right font-medium text-content-secondary">Preço Mensal</th>
-                <th className="px-4 py-3 text-center font-medium text-content-secondary">Ciclo</th>
-                <th className="px-4 py-3 text-center font-medium text-content-secondary">Limite Treinos/Sem</th>
-                <th className="px-4 py-3 text-center font-medium text-content-secondary">Status</th>
-                <th className="px-4 py-3 text-center font-medium text-content-secondary">Assinantes</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-subtle">
-              {plans.map((plan) => (
-                <tr key={plan.id} className="hover:bg-surface-elevated">
-                  <td className="whitespace-nowrap px-4 py-3 font-medium text-content-primary">
-                    {plan.name}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-content-secondary">
-                    R$ {plan.monthly_price.toFixed(2)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-center text-content-secondary">
-                    {CYCLE_LABEL[plan.billing_cycle] ?? plan.billing_cycle}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-center text-content-secondary">
-                    {plan.max_workouts_per_week ?? "Ilimitado"}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-center">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        plan.status === "active"
-                          ? "bg-success-soft text-success"
-                          : "bg-surface-elevated text-content-secondary"
-                      }`}
-                    >
-                      {plan.status === "active" ? "Ativo" : "Inativo"}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-center font-medium text-content-primary">
-                    {plan.subscriber_count}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {plans.length === 0 && !fetchError && (
-        <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
-          <p className="text-sm text-content-secondary">Nenhum plano criado.</p>
-        </div>
-      )}
+      <PlansClient plans={plans} />
     </div>
   );
 }

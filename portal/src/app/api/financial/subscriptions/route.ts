@@ -1,0 +1,60 @@
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
+
+export async function POST(req: Request) {
+  try {
+    const groupId = cookies().get("portal_group_id")?.value;
+    if (!groupId) {
+      return NextResponse.json({ error: "No group" }, { status: 400 });
+    }
+
+    const body = await req.json();
+    const { plan_id, athlete_user_ids, started_at, next_due_date } = body as {
+      plan_id: string;
+      athlete_user_ids: string[];
+      started_at: string;
+      next_due_date: string;
+    };
+
+    if (!plan_id || !athlete_user_ids?.length || !started_at || !next_due_date) {
+      return NextResponse.json({ error: "Campos obrigatórios faltando" }, { status: 400 });
+    }
+
+    const supabase = createClient();
+    const results: { userId: string; ok: boolean; message?: string }[] = [];
+
+    for (const userId of athlete_user_ids) {
+      const { error } = await supabase
+        .from("coaching_subscriptions")
+        .upsert(
+          {
+            group_id: groupId,
+            athlete_user_id: userId,
+            plan_id,
+            status: "active",
+            started_at,
+            next_due_date,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "athlete_user_id,group_id" },
+        );
+
+      if (error) {
+        results.push({ userId, ok: false, message: error.message });
+      } else {
+        results.push({ userId, ok: true });
+      }
+    }
+
+    const successCount = results.filter((r) => r.ok).length;
+    return NextResponse.json({
+      ok: successCount > 0,
+      total: athlete_user_ids.length,
+      success: successCount,
+      results,
+    });
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
+}

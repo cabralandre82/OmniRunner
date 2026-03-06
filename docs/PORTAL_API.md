@@ -434,6 +434,64 @@ Chama `fn_set_athlete_watch_type` (SECURITY DEFINER, coach-only).
 
 ---
 
+## Financial / Planos e Assinaturas
+
+### `POST /api/financial/plans`
+
+Cria ou atualiza um plano financeiro.
+
+**Auth:** `admin_master` ou `coach` (via RLS).
+
+**Body (JSON):**
+| Campo | Tipo | Obrigatório |
+|-------|------|-------------|
+| `id` | uuid | Não (se omitido, cria novo) |
+| `name` | string | Sim (min 2 chars) |
+| `description` | string | Não |
+| `monthly_price` | number | Sim (>= 0) |
+| `billing_cycle` | `monthly` \| `quarterly` | Não (default: monthly) |
+| `max_workouts_per_week` | int \| null | Não |
+| `status` | `active` \| `inactive` | Não (default: active) |
+
+**Response:** `{ "ok": true, "id": "plan-uuid" }`
+
+### `DELETE /api/financial/plans`
+
+Exclui um plano. Falha se houver assinaturas ativas vinculadas (409).
+
+**Body (JSON):**
+| Campo | Tipo | Obrigatório |
+|-------|------|-------------|
+| `id` | uuid | Sim |
+
+**Response:** `{ "ok": true }` ou `{ "error": "Não é possível excluir: N assinatura(s) ativa(s)" }`
+
+### `POST /api/financial/subscriptions`
+
+Atribuição em lote de plano a múltiplos atletas (upsert por athlete+group).
+
+**Body (JSON):**
+| Campo | Tipo | Obrigatório |
+|-------|------|-------------|
+| `plan_id` | uuid | Sim |
+| `athlete_user_ids` | uuid[] | Sim |
+| `started_at` | date (YYYY-MM-DD) | Sim |
+| `next_due_date` | date (YYYY-MM-DD) | Sim |
+
+**Response:**
+```json
+{
+  "ok": true,
+  "total": 3,
+  "success": 3,
+  "results": [
+    { "userId": "...", "ok": true }
+  ]
+}
+```
+
+---
+
 ## Audit Logging
 
 Mutating operations log to `audit_log` table via `src/lib/audit.ts`:
