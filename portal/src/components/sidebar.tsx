@@ -96,6 +96,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/financial/plans", label: "Planos", roles: ["admin_master", "coach"] },
       { href: "/financial/subscriptions/assign", label: "Atribuir Plano", roles: ["admin_master", "coach"] },
       { href: "/financial/subscriptions", label: "Assinaturas", roles: ["admin_master", "coach"] },
+      { href: "/financial/webhook-events", label: "Eventos Webhook", roles: ["admin_master"] },
       { href: "/custody", label: "Custódia", roles: ["admin_master"] },
       { href: "/clearing", label: "Compensações", roles: ["admin_master", "coach"] },
       { href: "/distributions", label: "Distribuições", roles: ["admin_master", "coach"] },

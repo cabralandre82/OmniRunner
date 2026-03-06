@@ -142,6 +142,7 @@ Deno.serve(async (req: Request) => {
 
   // Process payment events → update subscription status
   const newStatus = STATUS_MAP[event];
+  const errors: string[] = [];
 
   if (newStatus && subscriptionId) {
     const updateData: Record<string, unknown> = {
@@ -161,39 +162,67 @@ Deno.serve(async (req: Request) => {
       updateData.cancelled_at = new Date().toISOString();
     }
 
-    await db
+    const { error: subErr } = await db
       .from("coaching_subscriptions")
       .update(updateData)
       .eq("id", subscriptionId);
 
+    if (subErr) {
+      errors.push(`subscription_update: ${subErr.message}`);
+    }
+
     // Mark event as processed
     await db
       .from("payment_webhook_events")
-      .update({ processed: true, processed_at: new Date().toISOString() })
+      .update({
+        processed: !subErr,
+        processed_at: new Date().toISOString(),
+        error_message: subErr ? subErr.message : null,
+      })
       .eq("asaas_event_id", eventId);
   }
 
   // Handle subscription lifecycle events
   if (event === "SUBSCRIPTION_INACTIVATED" || event === "SUBSCRIPTION_DELETED") {
     if (asaasSubId) {
-      await db
+      const { error: mapErr } = await db
         .from("asaas_subscription_map")
         .update({ asaas_status: "INACTIVE", last_synced_at: new Date().toISOString() })
         .eq("asaas_subscription_id", asaasSubId);
+
+      if (mapErr) errors.push(`map_update: ${mapErr.message}`);
     }
 
     if (subscriptionId) {
-      await db
+      const { error: subErr } = await db
         .from("coaching_subscriptions")
         .update({ status: "cancelled", cancelled_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq("id", subscriptionId);
+
+      if (subErr) errors.push(`subscription_cancel: ${subErr.message}`);
     }
 
     await db
       .from("payment_webhook_events")
-      .update({ processed: true, processed_at: new Date().toISOString() })
+      .update({
+        processed: errors.length === 0,
+        processed_at: new Date().toISOString(),
+        error_message: errors.length > 0 ? errors.join("; ") : null,
+      })
       .eq("asaas_event_id", eventId);
   }
 
-  return new Response(JSON.stringify({ ok: true }), { status: 200 });
+  // Events that don't match any handler — mark as processed (no-op)
+  if (!newStatus && !["SUBSCRIPTION_INACTIVATED", "SUBSCRIPTION_DELETED"].includes(event)) {
+    await db
+      .from("payment_webhook_events")
+      .update({
+        processed: true,
+        processed_at: new Date().toISOString(),
+        error_message: subscriptionId ? null : "no_subscription_match",
+      })
+      .eq("asaas_event_id", eventId);
+  }
+
+  return new Response(JSON.stringify({ ok: true, errors: errors.length > 0 ? errors : undefined }), { status: 200 });
 });

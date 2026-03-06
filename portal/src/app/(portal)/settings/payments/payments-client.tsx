@@ -319,9 +319,10 @@ export function PaymentsClient({ config }: PaymentsClientProps) {
             </button>
           ) : (
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <p className="text-sm text-content-secondary">
-                Tem certeza que deseja desconectar? As cobranças automáticas
-                serão interrompidas.
+              <p className="text-sm text-error font-medium">
+                Atenção: desconectar NÃO cancela cobranças já criadas no Asaas.
+                Atletas continuarão recebendo cobranças até que sejam canceladas
+                manualmente no painel do Asaas.
               </p>
               <button
                 type="button"
