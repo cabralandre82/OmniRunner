@@ -1,5 +1,36 @@
 # CHANGELOG — OS Assessoria (PASSO 05 + BLOCO 0–6)
 
+## [0.92.0] — 2026-03-20
+
+### Added
+- InfoTooltip component for contextual explanations on all financial pages
+- Glossary page (/glossary) with 17 proprietary term definitions
+- Lightweight /api/liveness health check endpoint
+- Table archival system: sessions_archive + coin_ledger_archive with weekly pg_cron jobs
+- Feature flag gating for park segments and league screens
+- Help Center expanded with 8 new articles (23 total) in 2 new categories
+- Onboarding expanded from 6 to 10 steps (custody, clearing, distributions, help)
+- PRODUCTION_READINESS.md deployment/rollback/monitoring guide
+- CDN caching headers for static assets (immutable) and images (stale-while-revalidate)
+- Framer Motion micro-animations: PageTransition, StaggerList, FadeIn, SlideUp, ScaleIn
+- Circuit breaker pattern for Strava API calls in strava-webhook Edge Function
+- Portal deploy automation (Vercel) in CI pipeline
+- ARIA attributes across 8 core portal components
+- i18n locale switching (PT-BR/EN) with Accept-Language detection and cookie persistence
+- Locale switcher component in sidebar
+
+### Fixed
+- Migration 20260320000000: corrected column names (start_time_ms instead of started_at)
+- Drift database: fixed clientDefault type mismatch (List<String> vs String)
+- League screen: removed const from widget tree containing runtime method calls
+- Athlete championships screen: fixed extra closing parenthesis syntax error
+- Staff championship manage screen: added missing StaffGenerateQrScreen import
+
+### Changed
+- Isar → Drift migration: added ignore directives for legacy Isar schemas pending full removal
+
+---
+
 ## PASSO 05 — Hardening & Schema Fix (Base)
 
 ### Added

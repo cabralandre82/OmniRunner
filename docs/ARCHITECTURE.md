@@ -13,7 +13,7 @@
 | UI / Framework | Flutter | 3.22+ |
 | State Management | BLoC | 8.x |
 | DI / Service Locator | get_it | latest |
-| Persistência Local | Isar | 3.x |
+| Persistência Local | Drift (SQLite) | 2.19+ *(Isar legacy, migration in progress)* |
 | Mapas | MapLibre + MapTiler | 0.19+ |
 | Backend | Supabase (PostgreSQL + Auth + Edge Functions + Storage) | 2.x |
 | GPS | Geolocator + flutter_foreground_task | 11.x |
@@ -23,7 +23,12 @@
 | Crash Reporting | Sentry | latest |
 | Auth | Google Sign-In + Supabase Auth | latest |
 | Equality | Equatable | 2.x |
-| Payments (Portal only) | Stripe (Next.js portal, never in app) | latest |
+| Routing | go_router | 14.x |
+| Caching | Upstash Redis | latest |
+| Animations | Framer Motion (Portal) | latest |
+| Payments (Portal only) | Asaas + Stripe (Next.js portal, never in app) | latest |
+| i18n | next-intl (Portal) | latest |
+| Theme | next-themes (Portal) | latest |
 
 ---
 
@@ -36,7 +41,7 @@
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐ │
 │  │   Presentation   │  │     Domain       │  │      Data        │ │
 │  │                  │  │                  │  │                  │ │
-│  │  66 Screens      │  │  54 Entities     │  │  27 Repos (Isar) │ │
+│  │  66 Screens      │  │  54 Entities     │  │  27 Repos (Drift/Isar) │ │
 │  │  21 BLoCs        │  │  60 Use Cases    │  │  Datasources     │ │
 │  │  Widgets         │  │  Failures        │  │  Mappers         │ │
 │  └────────┬─────────┘  └────────▲─────────┘  └────────┬─────────┘ │
@@ -52,8 +57,8 @@
 │   Supabase Backend   │              │    Portal B2B        │
 │                      │              │    (Next.js)         │
 │  PostgreSQL (RLS)    │              │                      │
-│  55 Edge Functions   │              │  Branding / CSV      │              │  20+ páginas         │
-│  60 SQL Migrations   │              │  Stripe checkout     │
+│  52 Edge Functions   │              │  Branding / CSV      │              │  20+ páginas         │
+│  68 SQL Migrations   │              │  Stripe checkout     │
 │  RPCs (SECURITY DEF) │              │  RBAC middleware     │
 │  pg_cron schedules   │              │  SSR auth            │
 └──────────────────────┘              └──────────────────────┘

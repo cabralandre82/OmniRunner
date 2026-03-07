@@ -3961,3 +3961,21 @@ Para o login Instagram funcionar de fato:
 **Arquivos:** 10 páginas portal, 4 Edge Functions removidas, 4 arquivos Flutter removidos, 20 testes corrigidos
 
 ---
+
+## DECISAO 142 — Score 91/100: UX, Escalabilidade, Clareza, Maturidade MVP
+
+**Data:** 2026-03-20
+**Contexto:** Avaliação profissional identificou 6 dimensões abaixo de 90/100 (UX 87, Escalabilidade 86, Clareza do Produto 83, Maturidade MVP 86). Implementadas 20 melhorias em 4 fases para elevar todas as dimensões acima de 90.
+
+**Decisão:** (1) Adicionar InfoTooltip em todas as páginas financeiras com explicações contextuais. (2) Criar página Glossário com 17 termos proprietários. (3) Expandir Help Center (+8 artigos, 23 total). (4) Expandir onboarding de 6 para 10 passos. (5) Implementar table archival (sessions_archive + coin_ledger_archive) com cron jobs semanais. (6) CDN caching headers para assets estáticos. (7) Circuit breaker para APIs externas (Strava). (8) Framer Motion micro-animações no portal. (9) i18n ativado com detecção Accept-Language + cookie + switcher PT/EN. (10) ARIA attributes em 8 componentes core. (11) Feature flags para park segments e league. (12) Endpoint /api/liveness. (13) PRODUCTION_READINESS.md. (14) Deploy automatizado Vercel no CI.
+
+**Implementação:**
+- Migration `20260320000000`: indexes temporais + archive tables + cron jobs
+- 6 novos componentes portal (InfoTooltip, PageTransition, LocaleSwitcher, Glossary, etc.)
+- Circuit breaker em 3 chamadas Strava no strava-webhook Edge Function
+- Onboarding expandido: custody, clearing, distributions, help steps
+- PRODUCTION_READINESS.md com checklists de deploy, rollback, monitoring, scaling
+
+**Arquivos:** 1 migration, ~20 componentes/páginas portal, 2 Edge Functions, 4 novos docs, CI atualizado
+
+---
