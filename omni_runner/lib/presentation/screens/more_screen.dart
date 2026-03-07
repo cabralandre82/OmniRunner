@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/auth_repository.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
@@ -216,6 +217,7 @@ class _MoreScreenState extends State<MoreScreen> {
                         width: double.infinity,
                         child: FilledButton.icon(
                           onPressed: () {
+                            AppConfig.demoMode = false;
                             context.go(AppRoutes.root);
                           },
                           icon: const Icon(Icons.login_rounded, size: 18),

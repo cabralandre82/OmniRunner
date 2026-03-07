@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/presentation/screens/athlete_dashboard_screen.dart';
 import 'package:omni_runner/presentation/screens/history_screen.dart';
@@ -33,8 +35,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return _buildAthleteShell();
   }
 
+  void _exitDemoMode() {
+    AppConfig.demoMode = false;
+    context.go(AppRoutes.root);
+  }
+
   Widget _buildAthleteShell() {
-    return Scaffold(
+    final scaffold = Scaffold(
       body: NoConnectionBanner(
         child: Column(
           children: [
@@ -83,6 +90,17 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+
+    if (AppConfig.demoMode) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _exitDemoMode();
+        },
+        child: scaffold,
+      );
+    }
+    return scaffold;
   }
 
   Widget _buildStaffShell() {
@@ -131,33 +149,41 @@ class _DemoModeBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 4,
-          bottom: 6,
-          left: DesignTokens.spacingMd,
-          right: DesignTokens.spacingMd,
-        ),
-        color: DesignTokens.info,
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.explore_outlined, size: 16, color: Colors.white),
-            SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                'Modo exploração — Crie uma conta para salvar seus dados',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+    return GestureDetector(
+      onTap: () {
+        AppConfig.demoMode = false;
+        context.go(AppRoutes.root);
+      },
+      child: Material(
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top + 4,
+            bottom: 6,
+            left: DesignTokens.spacingMd,
+            right: DesignTokens.spacingMd,
+          ),
+          color: DesignTokens.info,
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.explore_outlined, size: 16, color: Colors.white),
+              SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'Modo exploração — Toque para criar conta',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+              SizedBox(width: 8),
+              Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white70),
+            ],
+          ),
         ),
       ),
     );
