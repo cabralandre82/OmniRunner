@@ -33,7 +33,11 @@ Future<void> registerAuthModule(GetIt sl) async {
   sl.registerSingleton<AuthRepository>(authRepo);
 
   final userIdentity = UserIdentityProvider(authRepo: authRepo);
-  await userIdentity.init();
+  try {
+    await userIdentity.init();
+  } catch (e) {
+    AppLogger.error('UserIdentityProvider.init failed — continuing with anonymous identity', error: e);
+  }
   sl.registerSingleton<UserIdentityProvider>(userIdentity);
 
   final featureFlags = FeatureFlagService(userId: userIdentity.userId);
