@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
-import 'package:omni_runner/domain/entities/training_session_entity.dart';
 import 'package:omni_runner/presentation/blocs/training_list/training_list_bloc.dart';
 import 'package:omni_runner/presentation/blocs/training_list/training_list_event.dart';
 import 'package:omni_runner/presentation/blocs/training_list/training_list_state.dart';
@@ -22,29 +21,6 @@ class _FakeTrainingListBloc extends Cubit<TrainingListState>
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
-
-final _session1 = TrainingSessionEntity(
-  id: 's1',
-  groupId: 'g1',
-  createdBy: 'u1',
-  title: 'Treino de velocidade',
-  startsAt: DateTime(2026, 3, 10, 6, 30),
-  status: TrainingSessionStatus.scheduled,
-  createdAt: DateTime(2026, 3, 1),
-  updatedAt: DateTime(2026, 3, 1),
-);
-
-final _session2 = TrainingSessionEntity(
-  id: 's2',
-  groupId: 'g1',
-  createdBy: 'u1',
-  title: 'Treino de longa distância',
-  startsAt: DateTime(2026, 3, 12, 7, 0),
-  status: TrainingSessionStatus.done,
-  locationName: 'Parque Ibirapuera',
-  createdAt: DateTime(2026, 3, 1),
-  updatedAt: DateTime(2026, 3, 1),
-);
 
 void main() {
   group('StaffTrainingListScreen', () {

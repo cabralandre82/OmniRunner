@@ -3,11 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:omni_runner/presentation/screens/diagnostics_screen.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/test_di.dart';
 
 void main() {
   group('DiagnosticsScreen', () {
     final origOnError = FlutterError.onError;
     setUp(() {
+      ensureSupabaseClientRegistered();
       FlutterError.onError = (details) {
         final msg = details.exceptionAsString();
         if (msg.contains('overflowed')) return;

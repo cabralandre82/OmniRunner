@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:omni_runner/data/models/isar/workout_session_record.dart';
 import 'package:omni_runner/domain/entities/location_point_entity.dart';
 
 /// Serialises workout data for backend upload.
@@ -22,35 +21,8 @@ abstract final class WorkoutProtoMapper {
   }
 
   /// Serialise a list of GPS points to a JSON string.
-  ///
-  /// Useful for debugging and tests.
   static String pointsToJson(List<LocationPointEntity> points) {
     return jsonEncode(points.map(_pointToMap).toList());
-  }
-
-  /// Build the Postgres upsert payload from a local Isar record.
-  ///
-  /// Matches the `sessions` table schema in `contracts/sync_payload.md`.
-  static Map<String, Object?> sessionToPayload({
-    required WorkoutSessionRecord record,
-    required String userId,
-    required String pointsPath,
-  }) {
-    return {
-      'id': record.sessionUuid,
-      'user_id': userId,
-      'status': record.status,
-      'start_time_ms': record.startTimeMs,
-      'end_time_ms': record.endTimeMs,
-      'total_distance_m': record.totalDistanceM,
-      'moving_ms': record.movingMs,
-      'is_verified': record.isVerified,
-      'integrity_flags': record.integrityFlags,
-      'ghost_session_id': record.ghostSessionId,
-      'points_path': pointsPath,
-      'source': record.source,
-      if (record.deviceName != null) 'device_name': record.deviceName,
-    };
   }
 
   static Map<String, Object> _pointToMap(LocationPointEntity p) {

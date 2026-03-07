@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 
 /// Fetches an opponent's running progress during an active challenge.
@@ -34,7 +35,7 @@ class ChallengeGhostProvider {
 
   Future<void> _poll() async {
     try {
-      final sb = Supabase.instance.client;
+      final sb = sl<SupabaseClient>();
 
       final row = await sb
           .from('challenge_participants')

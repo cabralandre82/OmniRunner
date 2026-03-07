@@ -45,13 +45,13 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
 
   Future<void> _load() async {
     try {
-      final ticketRes = await Supabase.instance.client
+      final ticketRes = await sl<SupabaseClient>()
           .from('support_tickets')
           .select('status')
           .eq('id', widget.ticketId)
           .single();
 
-      final msgs = await Supabase.instance.client
+      final msgs = await sl<SupabaseClient>()
           .from('support_messages')
           .select('ticket_id, sender_id, sender_role, body, created_at')
           .eq('ticket_id', widget.ticketId)
@@ -89,7 +89,7 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
 
     setState(() => _sending = true);
     try {
-      await Supabase.instance.client.from('support_messages').insert({
+      await sl<SupabaseClient>().from('support_messages').insert({
         'ticket_id': widget.ticketId,
         'sender_id': _uid,
         'sender_role': 'staff',
@@ -97,7 +97,7 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
       });
 
       if (_status == 'answered') {
-        await Supabase.instance.client
+        await sl<SupabaseClient>()
             .from('support_tickets')
             .update({'status': 'open'})
             .eq('id', widget.ticketId);

@@ -5,6 +5,7 @@ import 'package:omni_runner/domain/entities/location_point_entity.dart';
 import 'package:omni_runner/presentation/screens/run_summary_screen.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/test_di.dart';
 
 final _points = [
   LocationPointEntity(lat: -23.55, lng: -46.63, timestampMs: 1000),
@@ -16,6 +17,7 @@ void main() {
   group('RunSummaryScreen', () {
     final origOnError = FlutterError.onError;
     setUp(() {
+      ensureSupabaseClientRegistered();
       FlutterError.onError = (details) {
         final msg = details.exceptionAsString();
         if (msg.contains('overflowed')) return;

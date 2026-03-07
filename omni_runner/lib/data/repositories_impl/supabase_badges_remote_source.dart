@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/domain/entities/badge_award_entity.dart';
 import 'package:omni_runner/domain/entities/badge_entity.dart';
@@ -11,7 +12,7 @@ class SupabaseBadgesRemoteSource implements IBadgesRemoteSource {
   Future<void> evaluateRetroactive(String userId) async {
     if (!AppConfig.isSupabaseReady || userId.isEmpty) return;
     try {
-      await Supabase.instance.client
+      await sl<SupabaseClient>()
           .rpc('evaluate_badges_retroactive', params: {'p_user_id': userId});
     } on Exception catch (e) {
       AppLogger.debug('Retroactive badge evaluation failed',
@@ -23,7 +24,7 @@ class SupabaseBadgesRemoteSource implements IBadgesRemoteSource {
   Future<List<BadgeEntity>> fetchCatalog() async {
     if (!AppConfig.isSupabaseReady) return const [];
     try {
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .from('badges')
           .select(
               'id, category, tier, name, description, xp_reward, coins_reward, criteria_type, criteria_json, is_secret')
@@ -59,7 +60,7 @@ class SupabaseBadgesRemoteSource implements IBadgesRemoteSource {
   Future<List<BadgeAwardEntity>> fetchAwards(String userId) async {
     if (!AppConfig.isSupabaseReady || userId.isEmpty) return const [];
     try {
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .from('badge_awards')
           .select(
               'id, user_id, badge_id, trigger_session_id, unlocked_at_ms, xp_awarded, coins_awarded')

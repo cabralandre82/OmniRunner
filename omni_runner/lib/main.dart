@@ -20,14 +20,10 @@ import 'package:omni_runner/core/sync/auto_sync_manager.dart';
 import 'package:omni_runner/data/datasources/foreground_task_config.dart';
 import 'package:omni_runner/domain/repositories/i_sync_repo.dart';
 import 'package:omni_runner/features/watch_bridge/watch_bridge_init.dart';
-import 'package:omni_runner/domain/usecases/discard_session.dart';
-import 'package:omni_runner/domain/usecases/finish_session.dart';
 import 'package:omni_runner/domain/usecases/recover_active_session.dart';
 import 'package:omni_runner/core/theme/app_theme.dart';
 import 'package:omni_runner/core/theme/theme_notifier.dart';
-import 'package:go_router/go_router.dart';
 import 'package:omni_runner/core/router/app_router.dart';
-import 'package:omni_runner/presentation/screens/recovery_screen.dart';
 
 final themeNotifier = ThemeNotifier();
 
@@ -246,34 +242,5 @@ class OmniRunnerApp extends StatelessWidget {
         },
       ),
     );
-  }
-}
-
-/// Stateful wrapper to handle resume/discard navigation.
-class _RecoveryWrapper extends StatelessWidget {
-  final RecoveredSession recovery;
-  const _RecoveryWrapper({required this.recovery});
-
-  @override
-  Widget build(BuildContext context) {
-    return RecoveryScreen(
-      recovery: recovery,
-      onResume: () { _finishAndNavigate(context); },
-      onDiscard: () => _discardAndNavigate(context),
-    );
-  }
-
-  Future<void> _finishAndNavigate(BuildContext context) async {
-    await sl<FinishSession>()(sessionId: recovery.session.id);
-    if (!context.mounted) return;
-    context.go(AppRoutes.root);
-  }
-
-  Future<void> _discardAndNavigate(BuildContext context) async {
-    await sl<DiscardSession>()(recovery.session.id);
-
-    if (context.mounted) {
-      context.go(AppRoutes.root);
-    }
   }
 }

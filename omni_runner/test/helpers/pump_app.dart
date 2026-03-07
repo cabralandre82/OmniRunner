@@ -4,7 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:omni_runner/l10n/app_localizations.dart';
 
 extension PumpApp on WidgetTester {
-  Future<void> pumpApp(Widget widget, {ThemeData? theme, bool wrapScaffold = true}) async {
+  Future<void> pumpApp(
+    Widget widget, {
+    ThemeData? theme,
+    bool wrapScaffold = true,
+    bool skipInitialPump = false,
+  }) async {
     await pumpWidget(
       MaterialApp(
         theme: theme ?? ThemeData.light(useMaterial3: true),
@@ -19,6 +24,8 @@ extension PumpApp on WidgetTester {
         home: wrapScaffold ? Scaffold(body: widget) : widget,
       ),
     );
-    await pump();
+    if (!skipInitialPump) {
+      await pump();
+    }
   }
 }

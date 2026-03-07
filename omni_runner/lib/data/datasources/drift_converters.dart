@@ -10,7 +10,7 @@ class StringListConverter extends TypeConverter<List<String>, String> {
   List<String> fromSql(String fromDb) {
     if (fromDb.isEmpty) return [];
     final decoded = jsonDecode(fromDb);
-    if (decoded is List) return decoded.cast<String>();
+    if (decoded is List) return decoded.map((e) => e.toString()).toList();
     return [];
   }
 

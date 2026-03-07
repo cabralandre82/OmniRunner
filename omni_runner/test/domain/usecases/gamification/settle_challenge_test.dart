@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omni_runner/core/errors/gamification_failures.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
-import 'package:omni_runner/domain/entities/challenge_participant_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_result_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
 import 'package:omni_runner/domain/entities/ledger_entry_entity.dart';

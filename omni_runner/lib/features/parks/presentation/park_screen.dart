@@ -86,7 +86,7 @@ class _ParkScreenState extends State<ParkScreen>
 
   Future<void> _loadRankings() async {
     try {
-      final res = await Supabase.instance.client
+      final res = await sl<SupabaseClient>()
           .from('park_leaderboard')
           .select()
           .eq('park_id', widget.park.id)
@@ -115,7 +115,7 @@ class _ParkScreenState extends State<ParkScreen>
 
   Future<void> _loadCommunity() async {
     try {
-      final res = await Supabase.instance.client
+      final res = await sl<SupabaseClient>()
           .from('park_activities')
           .select('user_id, display_name, start_time, distance_m')
           .eq('park_id', widget.park.id)
@@ -144,7 +144,7 @@ class _ParkScreenState extends State<ParkScreen>
 
   Future<void> _loadSegments() async {
     try {
-      final res = await Supabase.instance.client
+      final res = await sl<SupabaseClient>()
           .from('park_segments')
           .select()
           .eq('park_id', widget.park.id);
@@ -175,13 +175,13 @@ class _ParkScreenState extends State<ParkScreen>
           .subtract(Duration(days: now.weekday - 1))
           .toIso8601String();
 
-      final todayCount = await Supabase.instance.client
+      final todayCount = await sl<SupabaseClient>()
           .from('park_activities')
           .select('id')
           .eq('park_id', widget.park.id)
           .gte('start_time', todayStart);
 
-      final weekCount = await Supabase.instance.client
+      final weekCount = await sl<SupabaseClient>()
           .from('park_activities')
           .select('id')
           .eq('park_id', widget.park.id)
@@ -204,13 +204,13 @@ class _ParkScreenState extends State<ParkScreen>
       final connected = await controller.isConnected;
       if (!connected) return;
 
-      final uid = Supabase.instance.client.auth.currentUser?.id;
+      final uid = sl<SupabaseClient>().auth.currentUser?.id;
       if (uid == null) return;
 
       await controller.importStravaHistory(count: 30);
-      await Supabase.instance.client
+      await sl<SupabaseClient>()
           .rpc('backfill_strava_sessions', params: {'p_user_id': uid});
-      await Supabase.instance.client
+      await sl<SupabaseClient>()
           .rpc('backfill_park_activities', params: {'p_user_id': uid});
     } catch (e) {
       AppLogger.warn('Park backfill skipped: $e', tag: 'ParkScreen');

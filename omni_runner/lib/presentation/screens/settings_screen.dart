@@ -541,7 +541,7 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
   }
 
   Future<void> _pingVerifySession() async {
-    final token = Supabase.instance.client.auth.currentSession?.accessToken;
+    final token = sl<SupabaseClient>().auth.currentSession?.accessToken;
     if (token == null || token.isEmpty) {
       setState(() => _pingResult = 'Erro: nenhuma sessao ativa — JWT indisponivel');
       return;
@@ -593,7 +593,7 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
   }
 
   Future<void> _pingComputeLeaderboard() async {
-    final token = Supabase.instance.client.auth.currentSession?.accessToken;
+    final token = sl<SupabaseClient>().auth.currentSession?.accessToken;
     if (token == null || token.isEmpty) {
       setState(() => _pingLeaderboardResult = 'Erro: nenhuma sessao ativa — JWT indisponivel');
       return;
@@ -645,7 +645,7 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
   }
 
   Future<void> _pingSubmitAnalytics() async {
-    final token = Supabase.instance.client.auth.currentSession?.accessToken;
+    final token = sl<SupabaseClient>().auth.currentSession?.accessToken;
     if (token == null || token.isEmpty) {
       setState(() => _pingAnalyticsResult = 'Erro: nenhuma sessao ativa — JWT indisponivel');
       return;

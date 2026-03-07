@@ -59,7 +59,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
   Future<void> _checkFitCompatibility() async {
     try {
       final uid = sl<UserIdentityProvider>().userId;
-      final db = Supabase.instance.client;
+      final db = sl<SupabaseClient>();
 
       final memberRow = await db
           .from('coaching_members')
@@ -154,7 +154,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
   Future<void> _sendToWatch(String assignmentId) async {
     setState(() => _sendingToWatch = true);
     try {
-      final client = Supabase.instance.client;
+      final client = sl<SupabaseClient>();
       final response = await client.functions.invoke(
         'generate-fit-workout',
         body: {'assignment_id': assignmentId},

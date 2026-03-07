@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/domain/entities/athlete_verification_entity.dart';
 import 'package:omni_runner/domain/repositories/i_verification_remote_source.dart';
@@ -18,7 +19,7 @@ class SupabaseVerificationRemoteSource implements IVerificationRemoteSource {
     required StravaConnectController Function() stravaFactory,
   }) : _stravaFactory = stravaFactory;
 
-  SupabaseClient get _client => Supabase.instance.client;
+  SupabaseClient get _client => sl<SupabaseClient>();
 
   @override
   bool get isBackendReady => AppConfig.isSupabaseReady;

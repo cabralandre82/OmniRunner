@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/test_di.dart';
 import 'package:omni_runner/core/errors/health_export_failures.dart';
 import 'package:omni_runner/domain/entities/health_hr_sample.dart';
 import 'package:omni_runner/domain/entities/workout_export_result.dart';
@@ -53,6 +54,10 @@ class _FakeHealthExportService implements IHealthExportService {
 // =============================================================================
 
 void main() {
+  setUpAll(() {
+    ensureSupabaseClientRegistered();
+  });
+
   // --------------------------------------------------------------------------
   // HealthExportFailure hierarchy
   // --------------------------------------------------------------------------

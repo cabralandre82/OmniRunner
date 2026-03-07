@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:omni_runner/domain/entities/coaching_group_entity.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_bloc.dart';
-import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_event.dart';
 import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_state.dart';
 
 import '../../helpers/pump_app.dart';

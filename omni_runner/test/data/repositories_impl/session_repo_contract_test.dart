@@ -147,6 +147,34 @@ final class InMemorySessionRepo implements ISessionRepo {
     );
     return true;
   }
+
+  @override
+  Future<List<WorkoutSessionEntity>> getUnsyncedCompleted() async {
+    return _store.values
+        .where((s) => s.status == WorkoutStatus.completed && !s.isSynced)
+        .toList();
+  }
+
+  @override
+  Future<void> markSynced(String id) async {
+    final s = _store[id];
+    if (s == null) return;
+    _store[id] = WorkoutSessionEntity(
+      id: s.id,
+      userId: s.userId,
+      status: s.status,
+      startTimeMs: s.startTimeMs,
+      endTimeMs: s.endTimeMs,
+      totalDistanceM: s.totalDistanceM,
+      route: s.route,
+      ghostSessionId: s.ghostSessionId,
+      isVerified: s.isVerified,
+      integrityFlags: s.integrityFlags,
+      isSynced: true,
+      avgBpm: s.avgBpm,
+      maxBpm: s.maxBpm,
+    );
+  }
 }
 
 WorkoutSessionEntity _session({

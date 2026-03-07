@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:omni_runner/core/service_locator.dart';
+
 /// In-memory cache for the current user's coaching_members data.
 ///
 /// Registered as a singleton via GetIt. Avoids repeated Supabase queries
@@ -24,7 +26,7 @@ class MembershipCache {
       return _cachedMemberships!;
     }
 
-    final rows = await Supabase.instance.client
+    final rows = await sl<SupabaseClient>()
         .from('coaching_members')
         .select('id, user_id, group_id, display_name, role, joined_at_ms')
         .eq('user_id', userId);

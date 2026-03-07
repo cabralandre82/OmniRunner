@@ -30,11 +30,10 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
   _ChallengeData? _challenge;
   List<_ParticipantData> _participants = [];
   String _callerUserId = '';
-  String? _callerGroupId;
   bool _alreadyJoined = false;
   String? _selectedTeam;
 
-  SupabaseClient get _db => Supabase.instance.client;
+  SupabaseClient get _db => sl<SupabaseClient>();
 
   @override
   void initState() {
@@ -68,7 +67,6 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
 
       final cData = data['challenge'] as Map<String, dynamic>;
       _callerUserId = (data['caller_user_id'] as String?) ?? '';
-      _callerGroupId = data['caller_group_id'] as String?;
 
       _challenge = _ChallengeData(
         id: cData['id'] as String,

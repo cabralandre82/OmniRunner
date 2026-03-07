@@ -47,7 +47,7 @@ class _StreaksLeaderboardScreenState extends State<StreaksLeaderboardScreen> {
     });
 
     try {
-      final db = Supabase.instance.client;
+      final db = sl<SupabaseClient>();
       final uid = sl<UserIdentityProvider>().userId;
       _currentUserId = uid;
 

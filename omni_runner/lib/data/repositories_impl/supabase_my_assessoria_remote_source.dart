@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/coaching_group_entity.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/domain/repositories/i_my_assessoria_remote_source.dart';
@@ -7,7 +8,7 @@ import 'package:omni_runner/domain/repositories/i_my_assessoria_remote_source.da
 class SupabaseMyAssessoriaRemoteSource implements IMyAssessoriaRemoteSource {
   @override
   Future<List<CoachingMemberEntity>> fetchMemberships(String userId) async {
-    final rows = await Supabase.instance.client
+    final rows = await sl<SupabaseClient>()
         .from('coaching_members')
         .select('id, user_id, group_id, display_name, role, joined_at_ms')
         .eq('user_id', userId);
@@ -27,7 +28,7 @@ class SupabaseMyAssessoriaRemoteSource implements IMyAssessoriaRemoteSource {
 
   @override
   Future<CoachingGroupEntity?> fetchGroup(String groupId) async {
-    final row = await Supabase.instance.client
+    final row = await sl<SupabaseClient>()
         .from('coaching_groups')
         .select()
         .eq('id', groupId)

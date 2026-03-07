@@ -67,7 +67,7 @@ class _StaffTrainingDetailView extends StatelessWidget {
     );
     if (selected == null || !context.mounted) return;
     try {
-      await Supabase.instance.client
+      await sl<SupabaseClient>()
           .from('coaching_training_attendance')
           .update({'status': selected, 'method': 'manual'})
           .eq('id', att.id);

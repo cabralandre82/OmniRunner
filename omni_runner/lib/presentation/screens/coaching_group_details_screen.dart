@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:omni_runner/core/router/app_router.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/coaching_group_entity.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -44,7 +45,7 @@ class _CoachingGroupDetailsScreenState
     });
 
     try {
-      final db = Supabase.instance.client;
+      final db = sl<SupabaseClient>();
 
       final groupRow = await db
           .from('coaching_groups')
@@ -155,7 +156,7 @@ class _CoachingGroupDetailsScreenState
     if (confirmed != true || !mounted) return;
 
     try {
-      final res = await Supabase.instance.client.rpc(
+      final res = await sl<SupabaseClient>().rpc(
         'fn_remove_member',
         params: {
           'p_target_user_id': member.userId,

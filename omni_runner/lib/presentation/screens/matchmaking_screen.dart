@@ -54,11 +54,9 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
   int _windowMin = 180;
   _MatchState _state = _MatchState.setup;
   String? _errorMsg;
-  String? _queueId;
   String? _matchedChallengeId;
   String? _opponentName;
   String? _skillBracket;
-  Map<String, dynamic>? _matchSummary;
   int? _queuePosition;
   Timer? _pollTimer;
   late AnimationController _pulseCtrl;
@@ -95,7 +93,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
       // Get membership from Supabase first, fallback to Isar
       String? groupId;
       try {
-        final row = await Supabase.instance.client
+        final row = await sl<SupabaseClient>()
             .from('coaching_members')
             .select('group_id')
             .eq('user_id', uid)
@@ -113,7 +111,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
       }
       if (groupId == null) return;
 
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .from('coaching_members')
           .select('user_id, profiles(display_name)')
           .eq('group_id', groupId)
@@ -225,7 +223,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
     });
 
     try {
-      final res = await Supabase.instance.client.functions.invoke(
+      final res = await sl<SupabaseClient>().functions.invoke(
         'matchmake',
         body: {
           'action': 'queue',
@@ -250,7 +248,6 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
         _onMatchFound(innerData);
       } else if (st == 'queued') {
         setState(() {
-          _queueId = innerData['queue_id'] as String?;
           _skillBracket = innerData['skill_bracket'] as String?;
         });
         _startPolling();
@@ -272,7 +269,6 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
       _matchedChallengeId = data['challenge_id'] as String?;
       _opponentName = opp?['display_name'] as String? ?? 'Oponente';
       _skillBracket = data['skill_bracket'] as String?;
-      _matchSummary = data;
     });
   }
 
@@ -284,7 +280,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
         return;
       }
       try {
-        final res = await Supabase.instance.client.functions.invoke(
+        final res = await sl<SupabaseClient>().functions.invoke(
           'matchmake',
           method: HttpMethod.get,
         );
@@ -308,7 +304,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
             String oppName = 'Oponente';
             if (oppId != null) {
               try {
-                final prof = await Supabase.instance.client
+                final prof = await sl<SupabaseClient>()
                     .from('profiles')
                     .select('display_name')
                     .eq('id', oppId)
@@ -323,10 +319,6 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
               _state = _MatchState.pendingConfirm;
               _matchedChallengeId = challengeId;
               _opponentName = oppName;
-              _matchSummary = {
-                'challenge_id': challengeId,
-                'opponent': {'display_name': oppName},
-              };
             });
           }
         } else if (entry['status'] == 'expired') {
@@ -344,7 +336,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
   Future<void> _cancelSearch() async {
     _pollTimer?.cancel();
     try {
-      await Supabase.instance.client.functions.invoke(
+      await sl<SupabaseClient>().functions.invoke(
         'matchmake',
         body: {'action': 'cancel'},
       );
@@ -1020,12 +1012,12 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
     }
 
     try {
-      await Supabase.instance.client
+      await sl<SupabaseClient>()
           .from('challenge_participants')
           .update({'status': 'declined'})
           .eq('challenge_id', _matchedChallengeId!)
           .eq('user_id',
-              Supabase.instance.client.auth.currentUser?.id ?? '');
+              sl<SupabaseClient>().auth.currentUser?.id ?? '');
     } on Exception catch (e) {
       AppLogger.warn('Decline match failed: $e', tag: _tag);
     }
@@ -1035,7 +1027,6 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
       _state = _MatchState.setup;
       _matchedChallengeId = null;
       _opponentName = null;
-      _matchSummary = null;
     });
   }
 

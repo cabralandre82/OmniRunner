@@ -52,6 +52,10 @@ final class _FakeSR implements ISessionRepo {
       _store.values.where((e) => e.status == s).toList();
   @override
   Future<void> deleteById(String id) async => _store.remove(id);
+  @override
+  Future<List<WorkoutSessionEntity>> getUnsyncedCompleted() async => [];
+  @override
+  Future<void> markSynced(String id) async {}
 }
 
 final class _FakePR implements IPointsRepo {

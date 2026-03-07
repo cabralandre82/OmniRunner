@@ -115,7 +115,7 @@ class _AuthGateState extends State<AuthGate> {
     _pendingInviteCode = null;
     sl<DeepLinkHandler>().consumePendingInvite();
 
-    final client = Supabase.instance.client;
+    final client = sl<SupabaseClient>();
 
     try {
       final res = await client.rpc(
@@ -329,9 +329,9 @@ class _AuthGateState extends State<AuthGate> {
 
   Future<void> _setAtletaReady() async {
     try {
-      final uid = Supabase.instance.client.auth.currentUser?.id;
+      final uid = sl<SupabaseClient>().auth.currentUser?.id;
       if (uid == null) return;
-      await Supabase.instance.client.from('profiles').update({
+      await sl<SupabaseClient>().from('profiles').update({
         'onboarding_state': 'READY',
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       }).eq('id', uid);

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/feed_item_entity.dart';
 import 'package:omni_runner/domain/repositories/i_feed_remote_source.dart';
 
@@ -18,7 +19,7 @@ class SupabaseFeedRemoteSource implements IFeedRemoteSource {
       params['p_before_ms'] = beforeMs;
     }
 
-    final rows = await Supabase.instance.client
+    final rows = await sl<SupabaseClient>()
         .rpc('fn_get_assessoria_feed', params: params) as List<dynamic>;
 
     return rows.map((dynamic row) {

@@ -41,9 +41,8 @@ class _FakeCrmRepo implements ICrmRepo {
 
 class _FakeAttendanceRepo implements ITrainingAttendanceRepo {
   final List<TrainingAttendanceEntity> result;
-  final Object? error;
 
-  _FakeAttendanceRepo({this.result = const [], this.error});
+  _FakeAttendanceRepo({this.result = const []});
 
   @override
   Future<List<TrainingAttendanceEntity>> listByAthlete({
@@ -52,7 +51,6 @@ class _FakeAttendanceRepo implements ITrainingAttendanceRepo {
     int limit = 50,
     int offset = 0,
   }) async {
-    if (error != null) throw error!;
     return result;
   }
 

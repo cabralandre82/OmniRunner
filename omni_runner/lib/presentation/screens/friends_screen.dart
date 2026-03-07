@@ -110,7 +110,7 @@ class _BodyState extends State<_Body> {
 
     setState(() => _loadingNames = true);
     try {
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .from('profiles')
           .select('id, display_name, avatar_url, instagram_handle, tiktok_handle')
           .inFilter('id', allIds.toList());
@@ -498,7 +498,7 @@ class _FriendSearchScreenState extends State<_FriendSearchScreen> {
     setState(() => _loading = true);
     try {
       final uid = sl<UserIdentityProvider>().userId;
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .rpc('fn_search_users', params: {
         'p_query': query.trim(),
         'p_caller_id': uid,

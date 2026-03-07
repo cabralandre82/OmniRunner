@@ -105,7 +105,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
   bool _joining = false;
   String? _error;
 
-  SupabaseClient get _client => Supabase.instance.client;
+  SupabaseClient get _client => sl<SupabaseClient>();
 
   @override
   void initState() {
@@ -330,7 +330,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
       });
 
       // Push notification to staff (fire-and-forget)
-      final displayName = Supabase.instance.client.auth.currentUser
+      final displayName = sl<SupabaseClient>().auth.currentUser
               ?.userMetadata?['display_name'] as String? ??
           'Um atleta';
       sl<NotificationRulesService>().notifyJoinRequestReceived(

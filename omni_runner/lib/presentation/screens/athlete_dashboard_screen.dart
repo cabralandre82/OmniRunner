@@ -100,9 +100,9 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
 
   Future<void> _loadDisplayName() async {
     try {
-      final uid = Supabase.instance.client.auth.currentUser?.id;
+      final uid = sl<SupabaseClient>().auth.currentUser?.id;
       if (uid == null) return;
-      final row = await Supabase.instance.client
+      final row = await sl<SupabaseClient>()
           .from('profiles')
           .select('display_name')
           .eq('id', uid)
@@ -149,7 +149,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
     // Then verify against Supabase (authoritative)
     try {
       final uid = sl<UserIdentityProvider>().userId;
-      final db = Supabase.instance.client;
+      final db = sl<SupabaseClient>();
       final sessionRows = await db
           .from('sessions')
           .select('id')
@@ -179,7 +179,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
       String? groupId;
       String? groupName;
       try {
-        final db = Supabase.instance.client;
+        final db = sl<SupabaseClient>();
         final row = await db
             .from('coaching_members')
             .select('group_id, coaching_groups(name)')
@@ -232,7 +232,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
 
   Future<void> _checkPendingRequest(String uid) async {
     try {
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .from('coaching_join_requests')
           .select('group_id')
           .eq('user_id', uid)
@@ -240,7 +240,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
           .limit(1);
       if ((rows as List).isNotEmpty) {
         final groupId = rows.first['group_id'] as String;
-        final groupRows = await Supabase.instance.client
+        final groupRows = await sl<SupabaseClient>()
             .from('coaching_groups')
             .select('name')
             .eq('id', groupId)

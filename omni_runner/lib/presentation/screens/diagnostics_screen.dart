@@ -46,7 +46,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
 
     if (AppConfig.isSupabaseReady) {
       try {
-        final user = Supabase.instance.client.auth.currentUser;
+        final user = sl<SupabaseClient>().auth.currentUser;
         items.add(_DiagItem(
           'Auth',
           user != null ? 'autenticado (${user.email ?? user.id.substring(0, 8)})' : 'não autenticado',

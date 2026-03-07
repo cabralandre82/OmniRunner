@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/presentation/widgets/state_widgets.dart';
@@ -44,7 +45,7 @@ class _StaffChallengeInvitesScreenState
     }
 
     try {
-      final db = Supabase.instance.client;
+      final db = sl<SupabaseClient>();
 
       final res = await db
           .from('challenge_team_invites')
@@ -136,7 +137,7 @@ class _StaffChallengeInvitesScreenState
       _loading = true;
     });
     try {
-      await Supabase.instance.client.functions.invoke(
+      await sl<SupabaseClient>().functions.invoke(
         'challenge-accept-group-invite',
         body: {'invite_id': inviteId, 'accept': accept},
       );
@@ -162,9 +163,6 @@ class _StaffChallengeInvitesScreenState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Desafios Recebidos'),

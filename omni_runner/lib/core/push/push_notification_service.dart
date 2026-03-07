@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 
 /// Handles FCM/APNS push notification lifecycle:
@@ -77,7 +78,7 @@ class PushNotificationService {
   Future<void> _registerToken(String token) async {
     if (!AppConfig.isSupabaseReady) return;
 
-    final uid = Supabase.instance.client.auth.currentUser?.id;
+    final uid = sl<SupabaseClient>().auth.currentUser?.id;
     if (uid == null) return;
 
     final platform = Platform.isAndroid
@@ -87,7 +88,7 @@ class PushNotificationService {
             : 'web';
 
     try {
-      await Supabase.instance.client.from(_table).upsert(
+      await sl<SupabaseClient>().from(_table).upsert(
         {
           'user_id': uid,
           'token': token,
@@ -117,11 +118,11 @@ class PushNotificationService {
   Future<void> clearTokens() async {
     if (!AppConfig.isSupabaseReady) return;
 
-    final uid = Supabase.instance.client.auth.currentUser?.id;
+    final uid = sl<SupabaseClient>().auth.currentUser?.id;
     if (uid == null) return;
 
     try {
-      await Supabase.instance.client
+      await sl<SupabaseClient>()
           .from(_table)
           .delete()
           .eq('user_id', uid);

@@ -8,6 +8,7 @@ import 'package:omni_runner/presentation/blocs/training_list/training_list_state
 import 'package:omni_runner/presentation/screens/athlete_training_list_screen.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/test_di.dart';
 
 class _FakeTrainingListBloc extends Cubit<TrainingListState>
     implements TrainingListBloc {
@@ -44,6 +45,7 @@ void main() {
   group('AthleteTrainingListScreen', () {
     final origOnError = FlutterError.onError;
     setUp(() {
+      ensureSupabaseClientRegistered();
       FlutterError.onError = (details) {
         final msg = details.exceptionAsString();
         if (msg.contains('overflowed')) return;

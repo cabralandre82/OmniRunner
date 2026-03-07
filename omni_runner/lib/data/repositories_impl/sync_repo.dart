@@ -1,18 +1,13 @@
-// ignore_for_file: uri_has_not_been_generated, undefined_identifier, undefined_getter
 import 'dart:typed_data';
-
-import 'package:isar/isar.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/data/datasources/sync_service.dart';
-import 'package:omni_runner/data/models/isar/workout_session_record.dart';
-import 'package:omni_runner/data/models/proto/workout_proto_mapper.dart';
 import 'package:omni_runner/domain/entities/location_point_entity.dart';
 import 'package:omni_runner/domain/entities/workout_session_entity.dart';
-import 'package:omni_runner/domain/entities/workout_status.dart';
 import 'package:omni_runner/domain/failures/sync_failure.dart';
 import 'package:omni_runner/domain/repositories/i_points_repo.dart';
+import 'package:omni_runner/domain/repositories/i_session_repo.dart';
 import 'package:omni_runner/domain/repositories/i_sync_repo.dart';
 import 'package:omni_runner/features/integrations_export/data/fit/fit_encoder.dart';
 import 'package:omni_runner/features/strava/domain/i_strava_auth_repository.dart';
@@ -21,36 +16,24 @@ import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
 import 'package:omni_runner/features/strava/domain/strava_upload_request.dart';
 import 'package:omni_runner/features/integrations_export/domain/export_format.dart';
 
-/// Implements [ISyncRepo] using Supabase (via [SyncService]) and Isar.
-///
-/// Offline-first: sessions are synced only when connectivity is available.
-/// Upload order: points (Storage) -> metadata (Postgres) -> mark synced.
 class SyncRepo implements ISyncRepo {
   static const _tag = 'SyncRepo';
   final SyncService _svc;
-  final Isar _isar;
+  final ISessionRepo _sessionRepo;
   final IPointsRepo _pointsRepo;
 
   const SyncRepo({
     required SyncService service,
-    required Isar isar,
+    required ISessionRepo sessionRepo,
     required IPointsRepo pointsRepo,
   })  : _svc = service,
-        _isar = isar,
+        _sessionRepo = sessionRepo,
         _pointsRepo = pointsRepo;
-
-  /// Status int for completed sessions (matches [WorkoutStatus.completed]).
-  static const _completedStatus = 3;
 
   @override
   Future<void> enqueue(String sessionId) async {
-    // Sessions already default to isSynced = false.
-    // This is a no-op verification; future: could set a dedicated flag.
-    final record = await _isar.workoutSessionRecords
-        .where()
-        .sessionUuidEqualTo(sessionId)
-        .findFirst();
-    if (record == null || record.status != _completedStatus) return;
+    final session = await _sessionRepo.getById(sessionId);
+    if (session == null) return;
   }
 
   @override
@@ -60,19 +43,14 @@ class SyncRepo implements ISyncRepo {
     final userId = _svc.userId;
     if (userId == null || userId.isEmpty) return const SyncNotAuthenticated();
 
-    final pending = await _isar.workoutSessionRecords
-        .where()
-        .isSyncedEqualTo(false)
-        .filter()
-        .statusEqualTo(_completedStatus)
-        .findAll();
+    final pending = await _sessionRepo.getUnsyncedCompleted();
 
     AppLogger.info('Syncing ${pending.length} pending session(s)', tag: _tag);
     SyncFailure? firstFailure;
-    for (final record in pending) {
-      final failure = await _syncOne(record, userId);
+    for (final session in pending) {
+      final failure = await _syncOne(session, userId);
       if (failure != null) {
-        AppLogger.warn('Sync failed for ${record.sessionUuid}: $failure', tag: _tag);
+        AppLogger.warn('Sync failed for ${session.id}: $failure', tag: _tag);
         firstFailure ??= failure;
       }
     }
@@ -84,54 +62,34 @@ class SyncRepo implements ISyncRepo {
 
   @override
   Future<void> markSynced(String sessionId) async {
-    await _isar.writeTxn(() async {
-      final record = await _isar.workoutSessionRecords
-          .where()
-          .sessionUuidEqualTo(sessionId)
-          .findFirst();
-      if (record == null) return;
-      record.isSynced = true;
-      await _isar.workoutSessionRecords.put(record);
-    });
+    await _sessionRepo.markSynced(sessionId);
   }
 
-  // ── Private ──
-
   Future<SyncFailure?> _syncOne(
-    WorkoutSessionRecord record,
+    WorkoutSessionEntity session,
     String userId,
   ) async {
     try {
-      final points = await _pointsRepo.getBySessionId(record.sessionUuid);
+      final points = await _pointsRepo.getBySessionId(session.id);
       if (points.isEmpty) {
-        await markSynced(record.sessionUuid);
+        await markSynced(session.id);
         return null;
       }
 
-      // 1. Upload points to Storage
       final storagePath = await _svc.uploadPoints(
         userId: userId,
-        sessionId: record.sessionUuid,
+        sessionId: session.id,
         points: points,
       );
 
-      // 2. Upsert metadata to Postgres
       await _svc.upsertSession(
-        WorkoutProtoMapper.sessionToPayload(
-          record: record,
-          userId: userId,
-          pointsPath: storagePath,
-        ),
+        _sessionToPayload(session, userId, storagePath),
       );
 
-      // 3. Mark synced locally
-      await markSynced(record.sessionUuid);
+      await markSynced(session.id);
 
-      // 4. Server-side verification (fire-and-forget)
-      _triggerVerification(record, userId, points);
-
-      // 5. Auto-upload to Strava (fire-and-forget)
-      _autoUploadStrava(record, points);
+      _triggerVerification(session, userId, points);
+      _autoUploadStrava(session, points);
 
       return null;
     } on Exception catch (e, st) {
@@ -144,8 +102,30 @@ class SyncRepo implements ISyncRepo {
     }
   }
 
+  Map<String, Object?> _sessionToPayload(
+    WorkoutSessionEntity session,
+    String userId,
+    String pointsPath,
+  ) {
+    return {
+      'session_uuid': session.id,
+      'user_id': userId,
+      'status': 3,
+      'start_time_ms': session.startTimeMs,
+      'end_time_ms': session.endTimeMs,
+      'total_distance_m': session.totalDistanceM,
+      'points_path': pointsPath,
+      'is_verified': session.isVerified,
+      'avg_bpm': session.avgBpm,
+      'max_bpm': session.maxBpm,
+      'avg_cadence_spm': session.avgCadenceSpm,
+      'source': session.source,
+      'device_name': session.deviceName,
+    };
+  }
+
   void _autoUploadStrava(
-    WorkoutSessionRecord record,
+    WorkoutSessionEntity session,
     List<LocationPointEntity> points,
   ) {
     Future<void>(() async {
@@ -154,35 +134,19 @@ class SyncRepo implements ISyncRepo {
         final state = await authRepo.getAuthState();
         if (state is! StravaConnected) return;
 
-        final session = WorkoutSessionEntity(
-          id: record.sessionUuid,
-          userId: record.userId,
-          startTimeMs: record.startTimeMs,
-          endTimeMs: record.endTimeMs ?? record.startTimeMs,
-          totalDistanceM: record.totalDistanceM,
-          status: WorkoutStatus.completed,
-          route: points,
-          isSynced: true,
-        );
-
         final fitBytes = const FitEncoder().encode(
           session: session,
           route: points,
         );
 
         final uploadRepo = sl<IStravaUploadRepository>();
-        final status = await uploadRepo.uploadAndWait(
+        await uploadRepo.uploadAndWait(
           StravaUploadRequest(
-            sessionId: record.sessionUuid,
+            sessionId: session.id,
             fileBytes: Uint8List.fromList(fitBytes),
             format: ExportFormat.fit,
             activityName: 'Corrida — Omni Runner',
           ),
-        );
-
-        AppLogger.info(
-          'Strava auto-upload: ${status.runtimeType}',
-          tag: _tag,
         );
       } catch (e) {
         AppLogger.warn('Strava auto-upload failed (non-blocking): $e', tag: _tag);
@@ -191,7 +155,7 @@ class SyncRepo implements ISyncRepo {
   }
 
   void _triggerVerification(
-    WorkoutSessionRecord record,
+    WorkoutSessionEntity session,
     String userId,
     List<LocationPointEntity> points,
   ) {
@@ -207,13 +171,13 @@ class SyncRepo implements ISyncRepo {
         .toList();
 
     _svc.verifySession(
-      sessionId: record.sessionUuid,
+      sessionId: session.id,
       userId: userId,
       route: route,
-      totalDistanceM: record.totalDistanceM,
-      startTimeMs: record.startTimeMs,
-      endTimeMs: record.endTimeMs ?? record.startTimeMs,
-      avgCadenceSpm: record.avgCadenceSpm,
+      totalDistanceM: session.totalDistanceM ?? 0,
+      startTimeMs: session.startTimeMs,
+      endTimeMs: session.endTimeMs ?? session.startTimeMs,
+      avgCadenceSpm: session.avgCadenceSpm,
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
@@ -26,7 +27,7 @@ class _PartnerAssessoriasScreenState extends State<PartnerAssessoriasScreen> {
   Future<void> _load() async {
     setState(() { _loading = true; _error = null; });
     try {
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .rpc('fn_list_partnerships', params: {'p_group_id': widget.groupId});
       final items = (rows as List)
           .cast<Map<String, dynamic>>()
@@ -42,7 +43,7 @@ class _PartnerAssessoriasScreenState extends State<PartnerAssessoriasScreen> {
 
   Future<void> _respond(String partnershipId, bool accept) async {
     try {
-      await Supabase.instance.client.rpc('fn_respond_partnership', params: {
+      await sl<SupabaseClient>().rpc('fn_respond_partnership', params: {
         'p_partnership_id': partnershipId,
         'p_accept': accept,
       });
@@ -82,7 +83,7 @@ class _PartnerAssessoriasScreenState extends State<PartnerAssessoriasScreen> {
     if (confirmed != true || !mounted) return;
 
     try {
-      await Supabase.instance.client
+      await sl<SupabaseClient>()
           .from('assessoria_partnerships')
           .delete()
           .eq('id', p.partnershipId);
@@ -488,7 +489,7 @@ class _SearchAssessoriaDialogState extends State<_SearchAssessoriaDialog> {
     if (q.length < 2) return;
     setState(() => _searching = true);
     try {
-      final rows = await Supabase.instance.client.rpc('fn_search_assessorias', params: {
+      final rows = await sl<SupabaseClient>().rpc('fn_search_assessorias', params: {
         'p_query': q,
         'p_exclude_group_id': widget.myGroupId,
       });
@@ -513,7 +514,7 @@ class _SearchAssessoriaDialogState extends State<_SearchAssessoriaDialog> {
 
   Future<void> _invite(String targetGroupId, String name) async {
     try {
-      final result = await Supabase.instance.client.rpc('fn_request_partnership', params: {
+      final result = await sl<SupabaseClient>().rpc('fn_request_partnership', params: {
         'p_my_group_id': widget.myGroupId,
         'p_target_group_id': targetGroupId,
       });

@@ -512,13 +512,13 @@ class _NoAssessoriaBodyState extends State<_NoAssessoriaBody> {
 
   Future<void> _checkPendingRequest() async {
     try {
-      final uid = Supabase.instance.client.auth.currentUser?.id;
+      final uid = sl<SupabaseClient>().auth.currentUser?.id;
       if (uid == null) {
         if (mounted) setState(() => _loading = false);
         return;
       }
 
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .from('coaching_join_requests')
           .select('group_id, status')
           .eq('user_id', uid)
@@ -529,7 +529,7 @@ class _NoAssessoriaBodyState extends State<_NoAssessoriaBody> {
         final status = rows.first['status'] as String?;
         final groupId = rows.first['group_id'] as String;
 
-        final groupRows = await Supabase.instance.client
+        final groupRows = await sl<SupabaseClient>()
             .from('coaching_groups')
             .select('name')
             .eq('id', groupId)

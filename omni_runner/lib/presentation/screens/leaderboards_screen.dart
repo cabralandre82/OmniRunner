@@ -43,7 +43,7 @@ class _LeaderboardsScreenState extends State<LeaderboardsScreen>
 
   Future<void> _loadUserContext() async {
     final uid = sl<UserIdentityProvider>().userId;
-    final sb = Supabase.instance.client;
+    final sb = sl<SupabaseClient>();
 
     try {
       final profileFuture = sb

@@ -4,11 +4,13 @@ import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/presentation/screens/athlete_dashboard_screen.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/test_di.dart';
 
 void main() {
   group('AthleteDashboardScreen', () {
     final origOnError = FlutterError.onError;
     setUp(() {
+      ensureSupabaseClientRegistered();
       AppConfig.demoMode = true;
       FlutterError.onError = (details) {
         final msg = details.exceptionAsString();

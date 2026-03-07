@@ -61,8 +61,6 @@
 
 import 'dart:async';
 
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -2013,7 +2011,7 @@ class _ActiveRunnersChipState extends State<_ActiveRunnersChip> {
           .subtract(const Duration(days: 7))
           .millisecondsSinceEpoch;
 
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .from('sessions')
           .select('user_id')
           .gte('start_time_ms', sevenDaysAgo);

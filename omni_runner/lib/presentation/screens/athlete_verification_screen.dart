@@ -79,7 +79,7 @@ class _BodyState extends State<_Body> {
       // Remote sessions >= 1km (includes Strava imports)
       List<WorkoutSessionEntity> remoteFiltered = const [];
       try {
-        final db = Supabase.instance.client;
+        final db = sl<SupabaseClient>();
         final rows = await db
             .from('sessions')
             .select('id, user_id, start_time_ms, end_time_ms, total_distance_m, is_verified, integrity_flags, avg_bpm, max_bpm, source')

@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omni_runner/domain/entities/announcement_entity.dart';
 import 'package:omni_runner/presentation/blocs/announcement_detail/announcement_detail_bloc.dart';
-import 'package:omni_runner/presentation/blocs/announcement_detail/announcement_detail_event.dart';
 import 'package:omni_runner/presentation/blocs/announcement_detail/announcement_detail_state.dart';
 
 import '../../helpers/pump_app.dart';

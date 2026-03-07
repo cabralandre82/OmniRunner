@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/errors/coaching_failures.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart' show AppLogger;
 import 'package:omni_runner/domain/repositories/i_switch_assessoria_repo.dart';
 
@@ -11,7 +12,7 @@ import 'package:omni_runner/domain/repositories/i_switch_assessoria_repo.dart';
 final class RemoteSwitchAssessoriaRepo implements ISwitchAssessoriaRepo {
   static const _tag = 'RemoteSwitchAssessoria';
 
-  SupabaseClient get _client => Supabase.instance.client;
+  SupabaseClient get _client => sl<SupabaseClient>();
 
   const RemoteSwitchAssessoriaRepo();
 

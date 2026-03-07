@@ -93,9 +93,9 @@ class _RunDetailsScreenState extends State<RunDetailsScreen> {
     if (!AppConfig.isSupabaseReady) return const [];
     try {
       final uid = widget.session.userId ??
-          Supabase.instance.client.auth.currentUser?.id;
+          sl<SupabaseClient>().auth.currentUser?.id;
       if (uid == null) return const [];
-      final db = Supabase.instance.client;
+      final db = sl<SupabaseClient>();
 
       // 1) Try direct lookup via strava_activity_id on the session row
       try {
@@ -152,10 +152,10 @@ class _RunDetailsScreenState extends State<RunDetailsScreen> {
   ) async {
     if (!AppConfig.isSupabaseReady) return const [];
     final uid = widget.session.userId ??
-        Supabase.instance.client.auth.currentUser?.id;
+        sl<SupabaseClient>().auth.currentUser?.id;
     if (uid == null) return const [];
 
-    final storage = Supabase.instance.client.storage.from('session-points');
+    final storage = sl<SupabaseClient>().storage.from('session-points');
     final primaryPath = '$uid/${widget.session.id}.json';
     // Legacy path: strava-webhook used to prefix the bucket name in the path
     final legacyPath = 'session-points/$uid/${widget.session.id}.json';

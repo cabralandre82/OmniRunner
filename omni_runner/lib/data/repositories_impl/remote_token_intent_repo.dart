@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/errors/coaching_failures.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/utils/generate_uuid_v4.dart';
 import 'package:omni_runner/domain/entities/token_intent_entity.dart';
@@ -11,7 +12,7 @@ final class RemoteTokenIntentRepo implements ITokenIntentRepo {
   static const _tag = 'RemoteTokenIntent';
   static const _ttl = Duration(minutes: 5);
 
-  SupabaseClient get _client => Supabase.instance.client;
+  SupabaseClient get _client => sl<SupabaseClient>();
 
   const RemoteTokenIntentRepo();
 

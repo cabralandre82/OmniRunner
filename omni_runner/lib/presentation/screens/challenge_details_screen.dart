@@ -70,7 +70,6 @@ class _Body extends StatefulWidget {
 
 class _BodyState extends State<_Body> {
   bool _settlementTriggered = false;
-  DateTime? _settlementStartedAt;
   bool _settlementTimedOut = false;
   Timer? _settlementTimer;
 
@@ -99,7 +98,6 @@ class _BodyState extends State<_Body> {
     if (now <= challenge.endsAtMs!) return;
 
     _settlementTriggered = true;
-    _settlementStartedAt = DateTime.now();
     _settlementTimer = Timer(const Duration(seconds: 30), () {
       if (mounted) setState(() => _settlementTimedOut = true);
     });
@@ -107,7 +105,7 @@ class _BodyState extends State<_Body> {
       'Challenge ${challenge.id} window expired, triggering settlement',
       tag: 'ChallengeDetails',
     );
-    Supabase.instance.client.functions
+    sl<SupabaseClient>().functions
         .invoke('settle-challenge', body: {'challenge_id': challenge.id})
         .then((_) {
       _settlementTimer?.cancel();

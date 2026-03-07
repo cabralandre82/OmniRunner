@@ -15,6 +15,8 @@ class _FakeAttendanceRepo implements ITrainingAttendanceRepo {
   Future<List<TrainingAttendanceEntity>> listByAthlete({
     required String groupId,
     required String athleteUserId,
+    int limit = 50,
+    int offset = 0,
   }) async =>
       [];
 

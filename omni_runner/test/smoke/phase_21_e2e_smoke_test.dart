@@ -802,16 +802,6 @@ void main() {
     });
 
     test('XP level formula matches N^1.5 curve', () {
-      int levelFromXp(int xp) {
-        if (xp <= 0) return 0;
-        final raw = (xp / 100.0);
-        return (raw * raw).toDouble() >= 1.0
-            ? (raw * raw).toDouble().toInt()
-            : 0;
-      }
-
-      // This replicates the simplified level formula:
-      // level = floor((xp / 100) ^ (2/3))
       int levelFromXpActual(int xp) {
         if (xp <= 0) return 0;
         return (xp / 100.0).toDouble().pow23().floor();
@@ -839,12 +829,6 @@ extension on double {
   }
 
   static double _powImpl(double base, double exp) {
-    // Using repeated multiplication for integer-like exponents
-    // For fractional, use the Dart runtime
-    double result = 1.0;
-    // Approximate using the dart runtime double operations
-    // Actually let's just compute it directly:
-    // x^(2/3) = (x^2)^(1/3) = cbrt(x^2)
     final squared = base * base;
     return _cbrt(squared);
   }

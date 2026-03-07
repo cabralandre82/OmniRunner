@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/domain/entities/athlete_baseline_entity.dart';
 import 'package:omni_runner/domain/entities/athlete_trend_entity.dart';
@@ -97,13 +98,13 @@ class AnalyticsSyncService {
     if (!AppConfig.isSupabaseReady) {
       throw const AnalyticsNotConfigured();
     }
-    return Supabase.instance.client;
+    return sl<SupabaseClient>();
   }
 
   String? get _userId {
     if (!AppConfig.isSupabaseReady) return null;
     try {
-      return Supabase.instance.client.auth.currentUser?.id;
+      return sl<SupabaseClient>().auth.currentUser?.id;
     } on Exception {
       return null;
     }

@@ -5,7 +5,6 @@ import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_participant_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
-import 'package:omni_runner/presentation/blocs/challenges/challenges_event.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_state.dart';
 import 'package:omni_runner/presentation/screens/challenge_invite_screen.dart';
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/domain/repositories/i_trainingpeaks_repo.dart';
 
 import 'package:omni_runner/core/config/feature_flags.dart';
 import 'package:omni_runner/core/logging/logger.dart';
@@ -181,7 +181,7 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
     if (shouldSync != true || !mounted) return;
 
     try {
-      final result = await PushToTrainingPeaks(sl<SupabaseClient>())
+      final result = await PushToTrainingPeaks(sl<ITrainingPeaksRepo>())
           .call(assignmentId);
       if (!mounted) return;
       final msg = result['ok'] == true

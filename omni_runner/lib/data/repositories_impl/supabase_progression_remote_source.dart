@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/domain/entities/profile_progress_entity.dart';
 import 'package:omni_runner/domain/entities/weekly_goal_entity.dart';
@@ -13,7 +14,7 @@ class SupabaseProgressionRemoteSource implements IProgressionRemoteSource {
   Future<void> recalculateAndEvaluate(String userId) async {
     if (!AppConfig.isSupabaseReady || userId.isEmpty) return;
     try {
-      final db = Supabase.instance.client;
+      final db = sl<SupabaseClient>();
       await db.rpc('recalculate_profile_progress',
           params: {'p_user_id': userId});
       await db.rpc('evaluate_badges_retroactive',
@@ -27,7 +28,7 @@ class SupabaseProgressionRemoteSource implements IProgressionRemoteSource {
   Future<ProfileProgressEntity?> fetchProfileProgress(String userId) async {
     if (!AppConfig.isSupabaseReady || userId.isEmpty) return null;
     try {
-      final row = await Supabase.instance.client
+      final row = await sl<SupabaseClient>()
           .from('profile_progress')
           .select()
           .eq('user_id', userId)
@@ -61,7 +62,7 @@ class SupabaseProgressionRemoteSource implements IProgressionRemoteSource {
   Future<List<XpTransactionEntity>> fetchXpTransactions(String userId) async {
     if (!AppConfig.isSupabaseReady || userId.isEmpty) return const [];
     try {
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .from('xp_transactions')
           .select('id, user_id, xp, source, ref_id, created_at_ms')
           .eq('user_id', userId)
@@ -94,7 +95,7 @@ class SupabaseProgressionRemoteSource implements IProgressionRemoteSource {
   Future<WeeklyGoalEntity?> fetchWeeklyGoal(String userId) async {
     if (!AppConfig.isSupabaseReady || userId.isEmpty) return null;
     try {
-      final db = Supabase.instance.client;
+      final db = sl<SupabaseClient>();
       final now = DateTime.now().toUtc();
       final weekStart = now.subtract(Duration(days: now.weekday - 1));
       final weekStartDate =
@@ -152,7 +153,7 @@ class SupabaseProgressionRemoteSource implements IProgressionRemoteSource {
       return (catalog: const <Map<String, dynamic>>[], earnedIds: const <String>{});
     }
     try {
-      final db = Supabase.instance.client;
+      final db = sl<SupabaseClient>();
       final catalogRows = await db
           .from('badges')
           .select(

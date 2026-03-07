@@ -1,12 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:omni_runner/domain/entities/badge_award_entity.dart';
 import 'package:omni_runner/domain/entities/badge_entity.dart';
 import 'package:omni_runner/presentation/blocs/badges/badges_bloc.dart';
-import 'package:omni_runner/presentation/blocs/badges/badges_event.dart';
 import 'package:omni_runner/presentation/blocs/badges/badges_state.dart';
 import 'package:omni_runner/presentation/screens/badges_screen.dart';
 
@@ -37,13 +33,6 @@ final _badge2 = BadgeEntity(
   description: 'Complete 10 corridas',
   xpReward: 100,
   criteria: const SessionCount(10),
-);
-
-final _award1 = BadgeAwardEntity(
-  id: 'a1',
-  userId: 'u1',
-  badgeId: 'b1',
-  unlockedAtMs: DateTime(2026, 1, 15).millisecondsSinceEpoch,
 );
 
 void main() {

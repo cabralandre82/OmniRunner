@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/domain/entities/mission_entity.dart';
 import 'package:omni_runner/domain/entities/mission_progress_entity.dart';
@@ -11,7 +12,7 @@ class SupabaseMissionsRemoteSource implements IMissionsRemoteSource {
   Future<List<MissionEntity>> fetchMissionDefs() async {
     if (!AppConfig.isSupabaseReady) return const [];
     try {
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .from('missions')
           .select(
               'id, title, description, difficulty, slot, xp_reward, coins_reward, criteria_type, criteria_json, expires_at_ms, season_id, max_completions, cooldown_ms')
@@ -58,7 +59,7 @@ class SupabaseMissionsRemoteSource implements IMissionsRemoteSource {
   Future<List<MissionProgressEntity>> fetchProgress(String userId) async {
     if (!AppConfig.isSupabaseReady || userId.isEmpty) return const [];
     try {
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .from('mission_progress')
           .select(
               'id, user_id, mission_id, status, current_value, target_value, assigned_at_ms, completed_at_ms, completion_count, contributing_session_ids')

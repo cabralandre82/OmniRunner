@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:omni_runner/data/models/isar/workout_session_record.dart';
 import 'package:omni_runner/data/models/proto/workout_proto_mapper.dart';
 import 'package:omni_runner/domain/entities/location_point_entity.dart';
 
@@ -105,73 +104,4 @@ void main() {
     });
   });
 
-  group('WorkoutProtoMapper — sessionToPayload', () {
-    late WorkoutSessionRecord record;
-
-    setUp(() {
-      record = WorkoutSessionRecord()
-        ..sessionUuid = 'abc-123'
-        ..userId = 'user-1'
-        ..status = 3
-        ..startTimeMs = 1000
-        ..endTimeMs = 2000
-        ..totalDistanceM = 5230.5
-        ..movingMs = 1800000
-        ..isVerified = true
-        ..isSynced = false
-        ..ghostSessionId = 'ghost-1'
-        ..integrityFlags = [];
-    });
-
-    test('contains all required fields', () {
-      final payload = WorkoutProtoMapper.sessionToPayload(
-        record: record,
-        userId: 'uid-42',
-        pointsPath: 'uid-42/abc-123.json',
-      );
-      expect(payload['id'], 'abc-123');
-      expect(payload['user_id'], 'uid-42');
-      expect(payload['status'], 3);
-      expect(payload['start_time_ms'], 1000);
-      expect(payload['end_time_ms'], 2000);
-      expect(payload['total_distance_m'], 5230.5);
-      expect(payload['moving_ms'], 1800000);
-      expect(payload['is_verified'], true);
-      expect(payload['integrity_flags'], isEmpty);
-      expect(payload['ghost_session_id'], 'ghost-1');
-      expect(payload['points_path'], 'uid-42/abc-123.json');
-    });
-
-    test('nullable endTimeMs is passed through', () {
-      record.endTimeMs = null;
-      final payload = WorkoutProtoMapper.sessionToPayload(
-        record: record,
-        userId: 'u',
-        pointsPath: 'p',
-      );
-      expect(payload['end_time_ms'], isNull);
-    });
-
-    test('integrity flags are included', () {
-      record.isVerified = false;
-      record.integrityFlags = ['HIGH_SPEED', 'TELEPORT'];
-      final payload = WorkoutProtoMapper.sessionToPayload(
-        record: record,
-        userId: 'u',
-        pointsPath: 'p',
-      );
-      expect(payload['is_verified'], false);
-      expect(payload['integrity_flags'], ['HIGH_SPEED', 'TELEPORT']);
-    });
-
-    test('does not contain isSynced (local-only field)', () {
-      final payload = WorkoutProtoMapper.sessionToPayload(
-        record: record,
-        userId: 'u',
-        pointsPath: 'p',
-      );
-      expect(payload.containsKey('isSynced'), isFalse);
-      expect(payload.containsKey('is_synced'), isFalse);
-    });
-  });
 }

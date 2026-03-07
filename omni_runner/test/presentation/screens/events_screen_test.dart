@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:omni_runner/domain/entities/event_entity.dart';
 import 'package:omni_runner/domain/entities/group_entity.dart';
 import 'package:omni_runner/presentation/blocs/events/events_bloc.dart';
-import 'package:omni_runner/presentation/blocs/events/events_event.dart';
 import 'package:omni_runner/presentation/blocs/events/events_state.dart';
 import 'package:omni_runner/presentation/screens/events_screen.dart';
 

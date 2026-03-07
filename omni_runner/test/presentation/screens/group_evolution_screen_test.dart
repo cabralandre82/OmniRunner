@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:omni_runner/domain/entities/athlete_trend_entity.dart';
 import 'package:omni_runner/domain/entities/evolution_metric_entity.dart';
 import 'package:omni_runner/presentation/blocs/group_evolution/group_evolution_bloc.dart';
-import 'package:omni_runner/presentation/blocs/group_evolution/group_evolution_event.dart';
 import 'package:omni_runner/presentation/blocs/group_evolution/group_evolution_state.dart';
 import 'package:omni_runner/presentation/screens/group_evolution_screen.dart';
 

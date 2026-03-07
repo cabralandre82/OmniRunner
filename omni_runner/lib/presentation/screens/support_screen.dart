@@ -36,7 +36,7 @@ class _SupportScreenState extends State<SupportScreen> {
       _error = null;
     });
     try {
-      final res = await Supabase.instance.client
+      final res = await sl<SupabaseClient>()
           .from('support_tickets')
           .select('id, group_id, subject, status, created_at, updated_at')
           .eq('group_id', widget.groupId)
@@ -74,7 +74,7 @@ class _SupportScreenState extends State<SupportScreen> {
     try {
       final uid = sl<UserIdentityProvider>().userId;
 
-      final ticketRes = await Supabase.instance.client
+      final ticketRes = await sl<SupabaseClient>()
           .from('support_tickets')
           .insert({
             'group_id': widget.groupId,
@@ -85,7 +85,7 @@ class _SupportScreenState extends State<SupportScreen> {
 
       final ticketId = ticketRes['id'] as String;
 
-      await Supabase.instance.client.from('support_messages').insert({
+      await sl<SupabaseClient>().from('support_messages').insert({
         'ticket_id': ticketId,
         'sender_id': uid,
         'sender_role': 'staff',

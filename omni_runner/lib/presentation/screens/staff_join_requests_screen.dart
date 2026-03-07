@@ -35,7 +35,7 @@ class _StaffJoinRequestsScreenState extends State<StaffJoinRequestsScreen> {
     });
 
     try {
-      final db = Supabase.instance.client;
+      final db = sl<SupabaseClient>();
       final rows = await db
           .from('coaching_join_requests')
           .select('id, user_id, display_name, status, requested_at, requested_role')
@@ -96,7 +96,7 @@ class _StaffJoinRequestsScreenState extends State<StaffJoinRequestsScreen> {
     if (confirmed != true || !mounted) return;
 
     try {
-      await Supabase.instance.client.rpc(
+      await sl<SupabaseClient>().rpc(
         'fn_approve_join_request',
         params: {'p_request_id': req.id},
       );
@@ -152,7 +152,7 @@ class _StaffJoinRequestsScreenState extends State<StaffJoinRequestsScreen> {
     if (confirmed != true || !mounted) return;
 
     try {
-      await Supabase.instance.client.rpc(
+      await sl<SupabaseClient>().rpc(
         'fn_reject_join_request',
         params: {'p_request_id': req.id},
       );

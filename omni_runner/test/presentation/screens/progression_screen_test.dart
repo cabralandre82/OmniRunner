@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omni_runner/presentation/blocs/progression/progression_bloc.dart';
-import 'package:omni_runner/presentation/blocs/progression/progression_event.dart';
 import 'package:omni_runner/presentation/blocs/progression/progression_state.dart';
 import 'package:omni_runner/presentation/screens/progression_screen.dart';
 

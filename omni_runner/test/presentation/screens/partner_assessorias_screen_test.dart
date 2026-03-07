@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/test_di.dart';
 
 /// Minimal stub that simulates [PartnerAssessoriasScreen] states without
 /// a real Supabase connection. We verify the UI tree for each visual state.
@@ -11,8 +12,6 @@ import '../../helpers/pump_app.dart';
 /// widgets and verify rendering.
 
 // ─── Reusable data ──────────────────────────────────────────────────────────
-
-const _kGroupId = 'test-group-id';
 
 // ─── Lightweight fakes ──────────────────────────────────────────────────────
 
@@ -88,6 +87,7 @@ enum _ScreenState { loading, error, empty, withData }
 void main() {
   final origOnError = FlutterError.onError;
   setUp(() {
+    ensureSupabaseClientRegistered();
     FlutterError.onError = (details) {
       final msg = details.exceptionAsString();
       if (msg.contains('overflowed')) return;

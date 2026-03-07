@@ -63,4 +63,10 @@ abstract interface class ISessionRepo {
     required int avgBpm,
     required int maxBpm,
   });
+
+  /// Retrieve completed sessions that haven't been synced yet.
+  Future<List<WorkoutSessionEntity>> getUnsyncedCompleted();
+
+  /// Mark a session as synced.
+  Future<void> markSynced(String id);
 }

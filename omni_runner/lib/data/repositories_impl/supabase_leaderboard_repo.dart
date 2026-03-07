@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/leaderboard_entity.dart';
 import 'package:omni_runner/domain/repositories/i_leaderboard_repo.dart';
 
@@ -12,7 +13,7 @@ class SupabaseLeaderboardRepo implements ILeaderboardRepo {
     String? groupId,
     String? championshipId,
   }) async {
-    final sb = Supabase.instance.client;
+    final sb = sl<SupabaseClient>();
 
     final scopeStr = switch (scope) {
       LeaderboardScope.assessoria => 'assessoria',

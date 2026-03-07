@@ -14,6 +14,7 @@ import 'package:omni_runner/presentation/widgets/run_share_card.dart';
 import 'package:omni_runner/presentation/widgets/summary_metrics_panel.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
 const _srcId = 'summary-route-src';
@@ -193,7 +194,7 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
     final now = DateTime.fromMillisecondsSinceEpoch(
         widget.points.isNotEmpty ? widget.points.first.timestampMs : DateTime.now().millisecondsSinceEpoch);
     final dateStr = '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
-    final userName = Supabase.instance.client.auth.currentUser
+    final userName = sl<SupabaseClient>().auth.currentUser
             ?.userMetadata?['display_name'] as String?;
 
     shareRunCard(

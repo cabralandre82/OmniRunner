@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/offline/offline_queue.dart';
 
 /// Listens for connectivity changes and replays the offline queue when
@@ -73,7 +74,7 @@ class ConnectivityMonitor {
 
   Future<void> _pingSupabase() async {
     try {
-      await Supabase.instance.client
+      await sl<SupabaseClient>()
           .from('profiles')
           .select('id')
           .limit(1)

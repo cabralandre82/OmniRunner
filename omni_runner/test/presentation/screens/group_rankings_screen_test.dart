@@ -5,7 +5,6 @@ import 'package:omni_runner/domain/entities/coaching_group_ranking_entity.dart';
 import 'package:omni_runner/domain/entities/coaching_ranking_entry_entity.dart';
 import 'package:omni_runner/domain/entities/coaching_ranking_metric.dart';
 import 'package:omni_runner/presentation/blocs/coaching_rankings/coaching_rankings_bloc.dart';
-import 'package:omni_runner/presentation/blocs/coaching_rankings/coaching_rankings_event.dart';
 import 'package:omni_runner/presentation/blocs/coaching_rankings/coaching_rankings_state.dart';
 import 'package:omni_runner/presentation/screens/group_rankings_screen.dart';
 

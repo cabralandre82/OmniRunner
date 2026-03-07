@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Lightweight feature flag service backed by the `feature_flags` table.
@@ -25,7 +26,7 @@ class FeatureFlagService {
   /// Loads flags from Supabase. Safe to call multiple times.
   Future<void> load() async {
     try {
-      final client = Supabase.instance.client;
+      final client = sl<SupabaseClient>();
       final rows = await client
           .from('feature_flags')
           .select('key, enabled, rollout_pct')

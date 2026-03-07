@@ -3,10 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/token_intent_entity.dart';
-import 'package:omni_runner/presentation/screens/staff_generate_qr_screen.dart';
 import 'package:omni_runner/presentation/widgets/error_state.dart';
 
 /// Staff screen for managing a single championship: open it, invite groups,
@@ -40,7 +40,7 @@ class _StaffChampionshipManageScreenState
   List<_InviteData> _invites = [];
   List<_ParticipantData> _participants = [];
 
-  SupabaseClient get _db => Supabase.instance.client;
+  SupabaseClient get _db => sl<SupabaseClient>();
 
   @override
   void initState() {
@@ -698,26 +698,4 @@ class _ParticipantData {
   final double progressValue;
   final int? finalRank;
   const _ParticipantData({required this.userId, required this.displayName, required this.groupId, required this.status, required this.progressValue, this.finalRank});
-}
-
-/// Wraps StaffGenerateQrScreen with championship context for badge generation.
-class _BadgeQrScreen extends StatelessWidget {
-  final String groupId;
-  final String championshipId;
-  final String championshipName;
-
-  const _BadgeQrScreen({
-    required this.groupId,
-    required this.championshipId,
-    required this.championshipName,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return StaffGenerateQrScreen(
-      type: TokenIntentType.champBadgeActivate,
-      groupId: groupId,
-      championshipId: championshipId,
-    );
-  }
 }

@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omni_runner/domain/entities/race_event_entity.dart';
 import 'package:omni_runner/presentation/blocs/race_event_details/race_event_details_bloc.dart';
-import 'package:omni_runner/presentation/blocs/race_event_details/race_event_details_event.dart';
 import 'package:omni_runner/presentation/blocs/race_event_details/race_event_details_state.dart';
 import 'package:omni_runner/presentation/screens/race_event_details_screen.dart';
 

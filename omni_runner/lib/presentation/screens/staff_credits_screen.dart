@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/presentation/widgets/error_state.dart';
@@ -44,7 +45,7 @@ class _StaffCreditsScreenState extends State<StaffCreditsScreen> {
     });
 
     try {
-      final db = Supabase.instance.client;
+      final db = sl<SupabaseClient>();
 
       final inv = await db
           .from('coaching_token_inventory')

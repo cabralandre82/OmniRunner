@@ -6,70 +6,70 @@ describe("rateLimit", () => {
     vi.useFakeTimers();
   });
 
-  it("allows requests within the limit", () => {
-    const result = rateLimit("test-key-1", { maxRequests: 3, windowMs: 1000 });
+  it("allows requests within the limit", async () => {
+    const result = await rateLimit("test-key-1", { maxRequests: 3, windowMs: 1000 });
     expect(result.allowed).toBe(true);
     expect(result.remaining).toBe(2);
   });
 
-  it("tracks remaining requests accurately", () => {
+  it("tracks remaining requests accurately", async () => {
     const key = "test-key-2";
     const opts = { maxRequests: 3, windowMs: 60000 };
 
-    const r1 = rateLimit(key, opts);
+    const r1 = await rateLimit(key, opts);
     expect(r1.remaining).toBe(2);
 
-    const r2 = rateLimit(key, opts);
+    const r2 = await rateLimit(key, opts);
     expect(r2.remaining).toBe(1);
 
-    const r3 = rateLimit(key, opts);
+    const r3 = await rateLimit(key, opts);
     expect(r3.remaining).toBe(0);
   });
 
-  it("blocks requests exceeding the limit", () => {
+  it("blocks requests exceeding the limit", async () => {
     const key = "test-key-3";
     const opts = { maxRequests: 2, windowMs: 60000 };
 
-    rateLimit(key, opts);
-    rateLimit(key, opts);
-    const r3 = rateLimit(key, opts);
+    await rateLimit(key, opts);
+    await rateLimit(key, opts);
+    const r3 = await rateLimit(key, opts);
 
     expect(r3.allowed).toBe(false);
     expect(r3.remaining).toBe(0);
   });
 
-  it("resets after the window expires", () => {
+  it("resets after the window expires", async () => {
     const key = "test-key-4";
     const opts = { maxRequests: 1, windowMs: 1000 };
 
-    const r1 = rateLimit(key, opts);
+    const r1 = await rateLimit(key, opts);
     expect(r1.allowed).toBe(true);
 
-    const r2 = rateLimit(key, opts);
+    const r2 = await rateLimit(key, opts);
     expect(r2.allowed).toBe(false);
 
     vi.advanceTimersByTime(1001);
 
-    const r3 = rateLimit(key, opts);
+    const r3 = await rateLimit(key, opts);
     expect(r3.allowed).toBe(true);
   });
 
-  it("isolates different keys", () => {
+  it("isolates different keys", async () => {
     const opts = { maxRequests: 1, windowMs: 60000 };
 
-    const r1 = rateLimit("key-a", opts);
+    const r1 = await rateLimit("key-a", opts);
     expect(r1.allowed).toBe(true);
 
-    const r2 = rateLimit("key-b", opts);
+    const r2 = await rateLimit("key-b", opts);
     expect(r2.allowed).toBe(true);
 
-    const r3 = rateLimit("key-a", opts);
+    const r3 = await rateLimit("key-a", opts);
     expect(r3.allowed).toBe(false);
   });
 
-  it("returns correct resetAt timestamp", () => {
+  it("returns correct resetAt timestamp", async () => {
     const now = Date.now();
-    const result = rateLimit("test-key-5", { maxRequests: 10, windowMs: 5000 });
+    const result = await rateLimit("test-key-5", { maxRequests: 10, windowMs: 5000 });
     expect(result.resetAt).toBeGreaterThanOrEqual(now + 5000);
   });
 });

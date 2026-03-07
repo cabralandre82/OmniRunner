@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:omni_runner/domain/entities/mission_entity.dart';
-import 'package:omni_runner/domain/entities/mission_progress_entity.dart';
 import 'package:omni_runner/presentation/blocs/missions/missions_bloc.dart';
-import 'package:omni_runner/presentation/blocs/missions/missions_event.dart';
 import 'package:omni_runner/presentation/blocs/missions/missions_state.dart';
 import 'package:omni_runner/presentation/screens/missions_screen.dart';
 

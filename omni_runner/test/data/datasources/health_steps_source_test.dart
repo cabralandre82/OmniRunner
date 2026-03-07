@@ -99,6 +99,10 @@ class FakeSessionRepo implements ISessionRepo {
   Future<bool> updateHrMetrics(String id,
           {required int avgBpm, required int maxBpm}) async =>
       true;
+  @override
+  Future<List<WorkoutSessionEntity>> getUnsyncedCompleted() async => [];
+  @override
+  Future<void> markSynced(String id) async {}
 }
 
 // ---------------------------------------------------------------------------

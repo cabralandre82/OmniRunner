@@ -47,7 +47,7 @@ class _WorkoutDeliveryScreenState extends State<WorkoutDeliveryScreen> {
     });
     try {
       final uid = sl<UserIdentityProvider>().userId;
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .from('workout_delivery_items')
           .select()
           .eq('athlete_user_id', uid)
@@ -88,7 +88,7 @@ class _WorkoutDeliveryScreenState extends State<WorkoutDeliveryScreen> {
     if (_confirmingIds.contains(itemId)) return;
     setState(() => _confirmingIds.add(itemId));
     try {
-      await Supabase.instance.client.rpc('fn_athlete_confirm_item', params: {
+      await sl<SupabaseClient>().rpc('fn_athlete_confirm_item', params: {
         'p_item_id': itemId,
         'p_result': result,
         'p_reason': reason,
@@ -161,8 +161,6 @@ class _WorkoutDeliveryScreenState extends State<WorkoutDeliveryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Meus Treinos Entregues'),

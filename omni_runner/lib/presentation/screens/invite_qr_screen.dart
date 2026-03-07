@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
@@ -44,7 +45,7 @@ class _InviteQrScreenState extends State<InviteQrScreen> {
 
   Future<void> _loadStats() async {
     try {
-      final db = Supabase.instance.client;
+      final db = sl<SupabaseClient>();
       final row = await db
           .from('coaching_groups')
           .select('id, invite_enabled')

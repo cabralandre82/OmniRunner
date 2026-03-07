@@ -1,8 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omni_runner/presentation/screens/athlete_championship_ranking_screen.dart';
 
+import '../../helpers/test_di.dart';
+
 void main() {
   group('AthleteChampionshipRankingScreen', () {
+    setUp(() {
+      ensureSupabaseClientRegistered();
+    });
+
     test('widget accepts required parameters', () {
       const screen = AthleteChampionshipRankingScreen(
         championshipId: 'c1',

@@ -47,7 +47,7 @@ class _RunningDnaScreenState extends State<RunningDnaScreen> {
       _error = null;
     });
     try {
-      final res = await Supabase.instance.client.functions.invoke(
+      final res = await sl<SupabaseClient>().functions.invoke(
         'generate-running-dna',
         body: {},
       ).timeout(const Duration(seconds: 15));

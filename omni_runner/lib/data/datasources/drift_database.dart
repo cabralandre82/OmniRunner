@@ -58,16 +58,16 @@ class Challenges extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get challengeUuid => text().unique()();
   TextColumn get creatorUserId => text()();
-  IntColumn get status => integer()();
-  IntColumn get type => integer()();
+  TextColumn get status => text()();
+  TextColumn get type => text()();
   TextColumn get title => text().nullable()();
-  IntColumn get metricOrdinal => integer()();
+  TextColumn get metricOrdinal => text()();
   RealColumn get target => real().nullable()();
   IntColumn get windowMs => integer()();
-  IntColumn get startModeOrdinal => integer()();
+  TextColumn get startModeOrdinal => text()();
   IntColumn get fixedStartMs => integer().nullable()();
   RealColumn get minSessionDistanceM => real()();
-  IntColumn get antiCheatPolicyOrdinal => integer()();
+  TextColumn get antiCheatPolicyOrdinal => text()();
   IntColumn get entryFeeCoins => integer()();
   IntColumn get createdAtMs => integer()();
   IntColumn get startsAtMs => integer().nullable()();
@@ -76,6 +76,7 @@ class Challenges extends Table {
   TextColumn get teamBGroupId => text().nullable()();
   TextColumn get teamAGroupName => text().nullable()();
   TextColumn get teamBGroupName => text().nullable()();
+  IntColumn get acceptDeadlineMs => integer().nullable()();
   TextColumn get participantsJson =>
       text().map(const StringListConverter()).withDefault(const Constant('[]'))();
 }
@@ -83,7 +84,7 @@ class Challenges extends Table {
 class ChallengeResults extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get challengeId => text().unique()();
-  IntColumn get metricOrdinal => integer()();
+  TextColumn get metricOrdinal => text()();
   IntColumn get totalCoinsDistributed => integer()();
   IntColumn get calculatedAtMs => integer()();
   TextColumn get resultsJson =>
@@ -114,7 +115,7 @@ class LedgerEntries extends Table {
   TextColumn get entryUuid => text().unique()();
   TextColumn get userId => text()();
   IntColumn get deltaCoins => integer()();
-  IntColumn get reasonOrdinal => integer()();
+  TextColumn get reasonOrdinal => text()();
   TextColumn get refId => text().nullable()();
   TextColumn get issuerGroupId => text().nullable()();
   IntColumn get createdAtMs => integer()();
@@ -150,7 +151,7 @@ class XpTransactions extends Table {
   TextColumn get txUuid => text().unique()();
   TextColumn get userId => text()();
   IntColumn get xp => integer()();
-  IntColumn get sourceOrdinal => integer()();
+  TextColumn get sourceOrdinal => text()();
   TextColumn get refId => text().nullable()();
   IntColumn get createdAtMs => integer()();
 }
@@ -181,7 +182,7 @@ class MissionProgresses extends Table {
   TextColumn get progressUuid => text().unique()();
   TextColumn get userId => text()();
   TextColumn get missionId => text()();
-  IntColumn get statusOrdinal => integer()();
+  TextColumn get statusOrdinal => text()();
   RealColumn get currentValue => real()();
   RealColumn get targetValue => real()();
   IntColumn get assignedAtMs => integer()();
@@ -199,7 +200,7 @@ class Seasons extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get seasonUuid => text().unique()();
   TextColumn get name => text()();
-  IntColumn get statusOrdinal => integer()();
+  TextColumn get statusOrdinal => text()();
   IntColumn get startsAtMs => integer()();
   IntColumn get endsAtMs => integer()();
   TextColumn get passXpMilestonesStr => text()();
@@ -243,7 +244,7 @@ class CoachingMembers extends Table {
   TextColumn get groupId => text()();
   TextColumn get userId => text()();
   TextColumn get displayName => text()();
-  IntColumn get roleOrdinal => integer()();
+  TextColumn get roleOrdinal => text()();
   IntColumn get joinedAtMs => integer()();
 
   @override
@@ -261,7 +262,7 @@ class CoachingInvites extends Table {
   TextColumn get groupId => text()();
   TextColumn get invitedUserId => text()();
   TextColumn get invitedByUserId => text()();
-  IntColumn get statusOrdinal => integer()();
+  TextColumn get statusOrdinal => text()();
   IntColumn get expiresAtMs => integer()();
   IntColumn get createdAtMs => integer()();
 }
@@ -272,8 +273,8 @@ class CoachingRankings extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get rankingUuid => text().unique()();
   TextColumn get groupId => text()();
-  IntColumn get metricOrdinal => integer()();
-  IntColumn get periodOrdinal => integer()();
+  TextColumn get metricOrdinal => text()();
+  TextColumn get periodOrdinal => text()();
   TextColumn get periodKey => text()();
   IntColumn get startsAtMs => integer()();
   IntColumn get endsAtMs => integer()();
@@ -304,7 +305,7 @@ class AthleteBaselines extends Table {
   TextColumn get baselineUuid => text().unique()();
   TextColumn get userId => text()();
   TextColumn get groupId => text()();
-  IntColumn get metricOrdinal => integer()();
+  TextColumn get metricOrdinal => text()();
   RealColumn get value => real()();
   IntColumn get sampleSize => integer()();
   IntColumn get windowStartMs => integer()();
@@ -320,9 +321,9 @@ class AthleteTrends extends Table {
   TextColumn get trendUuid => text().unique()();
   TextColumn get userId => text()();
   TextColumn get groupId => text()();
-  IntColumn get metricOrdinal => integer()();
-  IntColumn get periodOrdinal => integer()();
-  IntColumn get directionOrdinal => integer()();
+  TextColumn get metricOrdinal => text()();
+  TextColumn get periodOrdinal => text()();
+  TextColumn get directionOrdinal => text()();
   RealColumn get currentValue => real()();
   RealColumn get baselineValue => real()();
   RealColumn get changePercent => real()();
@@ -342,11 +343,11 @@ class CoachInsights extends Table {
   TextColumn get groupId => text()();
   TextColumn get targetUserId => text()();
   TextColumn get targetDisplayName => text()();
-  IntColumn get typeOrdinal => integer()();
-  IntColumn get priorityOrdinal => integer()();
+  TextColumn get typeOrdinal => text()();
+  TextColumn get priorityOrdinal => text()();
   TextColumn get title => text()();
   TextColumn get message => text()();
-  IntColumn get metricOrdinal => integer()();
+  TextColumn get metricOrdinal => text()();
   RealColumn get referenceValue => real()();
   RealColumn get changePercent => real()();
   TextColumn get relatedEntityId => text()();
@@ -366,7 +367,7 @@ class Friendships extends Table {
   TextColumn get friendshipUuid => text().unique()();
   TextColumn get userIdA => text()();
   TextColumn get userIdB => text()();
-  IntColumn get statusOrdinal => integer()();
+  TextColumn get statusOrdinal => text()();
   IntColumn get createdAtMs => integer()();
   IntColumn get acceptedAtMs => integer().nullable()();
 
@@ -389,7 +390,7 @@ class Groups extends Table {
   TextColumn get avatarUrl => text().nullable()();
   TextColumn get createdByUserId => text()();
   IntColumn get createdAtMs => integer()();
-  IntColumn get privacyOrdinal => integer()();
+  TextColumn get privacyOrdinal => text()();
   IntColumn get maxMembers => integer()();
   IntColumn get memberCount => integer()();
 }
@@ -403,8 +404,8 @@ class GroupMembers extends Table {
   TextColumn get groupId => text()();
   TextColumn get userId => text()();
   TextColumn get displayName => text()();
-  IntColumn get roleOrdinal => integer()();
-  IntColumn get statusOrdinal => integer()();
+  TextColumn get roleOrdinal => text()();
+  TextColumn get statusOrdinal => text()();
   IntColumn get joinedAtMs => integer()();
 }
 
@@ -418,11 +419,11 @@ class GroupGoals extends Table {
   TextColumn get description => text()();
   RealColumn get targetValue => real()();
   RealColumn get currentValue => real()();
-  IntColumn get metricOrdinal => integer()();
+  TextColumn get metricOrdinal => text()();
   IntColumn get startsAtMs => integer()();
   IntColumn get endsAtMs => integer()();
   TextColumn get createdByUserId => text()();
-  IntColumn get statusOrdinal => integer()();
+  TextColumn get statusOrdinal => text()();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -436,8 +437,8 @@ class Events extends Table {
   TextColumn get title => text()();
   TextColumn get description => text()();
   TextColumn get imageUrl => text().nullable()();
-  IntColumn get typeOrdinal => integer()();
-  IntColumn get metricOrdinal => integer()();
+  TextColumn get typeOrdinal => text()();
+  TextColumn get metricOrdinal => text()();
   RealColumn get targetValue => real().nullable()();
   IntColumn get startsAtMs => integer()();
   IntColumn get endsAtMs => integer()();
@@ -448,7 +449,7 @@ class Events extends Table {
   IntColumn get rewardCoinsCompletion => integer()();
   IntColumn get rewardXpParticipation => integer()();
   TextColumn get rewardBadgeId => text().nullable()();
-  IntColumn get statusOrdinal => integer()();
+  TextColumn get statusOrdinal => text()();
 }
 
 @TableIndex(name: 'idx_ep_user', columns: {#userId})
@@ -481,10 +482,10 @@ class EventParticipations extends Table {
 class LeaderboardSnapshots extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get snapshotUuid => text().unique()();
-  IntColumn get scopeOrdinal => integer()();
+  TextColumn get scopeOrdinal => text()();
   TextColumn get groupId => text().nullable()();
-  IntColumn get periodOrdinal => integer()();
-  IntColumn get metricOrdinal => integer()();
+  TextColumn get periodOrdinal => text()();
+  TextColumn get metricOrdinal => text()();
   TextColumn get periodKey => text()();
   IntColumn get computedAtMs => integer()();
   BoolColumn get isFinal => boolean()();
@@ -545,10 +546,60 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            // Tables whose schema changed (enum int→text or new columns).
+            // All are server-synced caches — safe to drop & recreate.
+            const changedTables = [
+              'challenges',
+              'challenge_results',
+              'ledger_entries',
+              'xp_transactions',
+              'mission_progresses',
+              'seasons',
+              'coaching_members',
+              'coaching_invites',
+              'coaching_rankings',
+              'athlete_baselines',
+              'athlete_trends',
+              'coach_insights',
+              'friendships',
+              'groups',
+              'group_members',
+              'group_goals',
+              'events',
+              'leaderboard_snapshots',
+            ];
+            for (final table in changedTables) {
+              await m.deleteTable(table);
+            }
+            // Recreate all tables — unchanged ones are skipped by Drift's
+            // CREATE TABLE IF NOT EXISTS semantics.
+            await m.createAll();
+          }
+        },
+      );
+
+  static String? _encryptionKey;
+
+  /// Must be called before [getDatabase] to enable SQLCipher encryption.
+  static void setEncryptionKey(String key) => _encryptionKey = key;
 
   static QueryExecutor _openConnection() {
-    return driftDatabase(name: 'omni_runner');
+    return driftDatabase(
+      name: 'omni_runner',
+      native: DriftNativeOptions(
+        setup: _encryptionKey != null
+            ? (db) {
+                db.execute("PRAGMA key = \"x'$_encryptionKey'\"");
+              }
+            : null,
+      ),
+    );
   }
 }
 

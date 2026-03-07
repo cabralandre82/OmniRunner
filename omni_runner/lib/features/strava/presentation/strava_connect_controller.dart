@@ -9,6 +9,8 @@ import 'package:omni_runner/features/strava/domain/strava_upload_request.dart';
 import 'package:omni_runner/features/strava/domain/strava_upload_status.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:omni_runner/core/service_locator.dart';
+
 /// Controller for Strava connect/disconnect and upload actions.
 ///
 /// Bridges between UI events and the domain repositories.
@@ -56,7 +58,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// **Future extensibility:** The architecture (domain interfaces, sealed
 /// states) allows adding new data sources later if needed. The anti-cheat
 /// engine works on normalized activity data, not Strava-specific formats.
-final class StravaConnectController {
+class StravaConnectController {
   final IStravaAuthRepository _authRepo;
   final IStravaUploadRepository _uploadRepo;
   final StravaSecureStore _store;
@@ -122,10 +124,10 @@ final class StravaConnectController {
   /// count for athlete verification.
   Future<void> _backfillStravaSessions() async {
     try {
-      final uid = Supabase.instance.client.auth.currentUser?.id;
+      final uid = sl<SupabaseClient>().auth.currentUser?.id;
       if (uid == null) return;
 
-      final result = await Supabase.instance.client
+      final result = await sl<SupabaseClient>()
           .rpc('backfill_strava_sessions', params: {'p_user_id': uid});
 
       final count = result as int? ?? 0;
@@ -148,10 +150,10 @@ final class StravaConnectController {
   /// and insert into park_activities for leaderboard/community data.
   Future<void> _backfillParkActivities() async {
     try {
-      final uid = Supabase.instance.client.auth.currentUser?.id;
+      final uid = sl<SupabaseClient>().auth.currentUser?.id;
       if (uid == null) return;
 
-      final result = await Supabase.instance.client
+      final result = await sl<SupabaseClient>()
           .rpc('backfill_park_activities', params: {'p_user_id': uid});
 
       final count = result as int? ?? 0;
@@ -169,10 +171,10 @@ final class StravaConnectController {
   /// the profile summary stays up-to-date.
   Future<void> _recalculateProfileProgress() async {
     try {
-      final uid = Supabase.instance.client.auth.currentUser?.id;
+      final uid = sl<SupabaseClient>().auth.currentUser?.id;
       if (uid == null) return;
 
-      await Supabase.instance.client
+      await sl<SupabaseClient>()
           .rpc('recalculate_profile_progress', params: {'p_user_id': uid});
 
       AppLogger.info('Profile progress recalculated', tag: _tag);
@@ -184,10 +186,10 @@ final class StravaConnectController {
   /// Retroactively evaluate badges based on current aggregate stats.
   Future<void> _evaluateBadges() async {
     try {
-      final uid = Supabase.instance.client.auth.currentUser?.id;
+      final uid = sl<SupabaseClient>().auth.currentUser?.id;
       if (uid == null) return;
 
-      await Supabase.instance.client
+      await sl<SupabaseClient>()
           .rpc('evaluate_badges_retroactive', params: {'p_user_id': uid});
 
       AppLogger.info('Badges evaluated retroactively', tag: _tag);
@@ -199,7 +201,7 @@ final class StravaConnectController {
   /// Trigger server-side verification evaluation after backfill.
   Future<void> _triggerVerificationEval() async {
     try {
-      await Supabase.instance.client.functions
+      await sl<SupabaseClient>().functions
           .invoke('eval-athlete-verification', body: {});
       AppLogger.info('Verification evaluation triggered', tag: _tag);
     } catch (e) {
@@ -226,14 +228,14 @@ final class StravaConnectController {
   /// Persist Strava tokens server-side for webhook-triggered imports.
   Future<void> _syncTokensToServer(StravaConnected state) async {
     try {
-      final uid = Supabase.instance.client.auth.currentUser?.id;
+      final uid = sl<SupabaseClient>().auth.currentUser?.id;
       if (uid == null) return;
 
       final accessToken = await _store.accessToken;
       final refreshToken = await _store.refreshToken;
       if (accessToken == null || refreshToken == null) return;
 
-      await Supabase.instance.client.from('strava_connections').upsert({
+      await sl<SupabaseClient>().from('strava_connections').upsert({
         'user_id': uid,
         'strava_athlete_id': state.athleteId,
         'access_token': accessToken,
@@ -257,9 +259,9 @@ final class StravaConnectController {
     await _authRepo.disconnect();
 
     try {
-      final uid = Supabase.instance.client.auth.currentUser?.id;
+      final uid = sl<SupabaseClient>().auth.currentUser?.id;
       if (uid != null) {
-        await Supabase.instance.client
+        await sl<SupabaseClient>()
             .from('strava_connections')
             .delete()
             .eq('user_id', uid);
@@ -340,7 +342,7 @@ final class StravaConnectController {
         return 0;
       }
 
-      final uid = Supabase.instance.client.auth.currentUser?.id;
+      final uid = sl<SupabaseClient>().auth.currentUser?.id;
       if (uid == null) return 0;
 
       final rows = runs.map((a) {
@@ -369,7 +371,7 @@ final class StravaConnectController {
         };
       }).toList();
 
-      await Supabase.instance.client
+      await sl<SupabaseClient>()
           .from('strava_activity_history')
           .upsert(rows, onConflict: 'user_id,strava_activity_id');
 

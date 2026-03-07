@@ -48,6 +48,10 @@ final class _FakeSR implements ISessionRepo {
   Future<bool> updateIntegrityFlags(String id, {required bool isVerified, required List<String> flags}) async => false;
   @override
   Future<bool> updateHrMetrics(String id, {required int avgBpm, required int maxBpm}) async => false;
+  @override
+  Future<List<WorkoutSessionEntity>> getUnsyncedCompleted() async => [];
+  @override
+  Future<void> markSynced(String id) async {}
 
   bool contains(String id) => _store.containsKey(id);
 }

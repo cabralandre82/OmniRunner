@@ -63,6 +63,12 @@ class _FakeSessionRepo implements ISessionRepo {
     required int maxBpm,
   }) async =>
       true;
+
+  @override
+  Future<List<WorkoutSessionEntity>> getUnsyncedCompleted() async => [];
+
+  @override
+  Future<void> markSynced(String id) async {}
 }
 
 class _FakePointsRepo implements IPointsRepo {

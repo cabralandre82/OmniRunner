@@ -3,11 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:omni_runner/presentation/screens/join_assessoria_screen.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/test_di.dart';
 
 void main() {
   group('JoinAssessoriaScreen', () {
     final origOnError = FlutterError.onError;
     setUp(() {
+      ensureSupabaseClientRegistered();
       FlutterError.onError = (details) {
         final msg = details.exceptionAsString();
         if (msg.contains('overflowed')) return;
@@ -49,7 +51,7 @@ void main() {
         wrapScaffold: false,
       );
 
-      expect(find.text('Continuar sem assessoria'), findsOneWidget);
+      expect(find.text('Pular — posso entrar depois'), findsOneWidget);
     });
   });
 }

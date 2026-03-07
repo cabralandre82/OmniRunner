@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/ledger_entry_entity.dart';
 import 'package:omni_runner/domain/entities/wallet_entity.dart';
 import 'package:omni_runner/domain/repositories/i_wallet_remote_source.dart';
@@ -10,7 +11,7 @@ class SupabaseWalletRemoteSource implements IWalletRemoteSource {
   Future<WalletEntity?> fetchWallet(String userId) async {
     if (!AppConfig.isSupabaseReady || userId.isEmpty) return null;
     try {
-      final row = await Supabase.instance.client
+      final row = await sl<SupabaseClient>()
           .from('wallets')
           .select('balance_coins, lifetime_earned_coins, lifetime_spent_coins')
           .eq('user_id', userId)
@@ -33,7 +34,7 @@ class SupabaseWalletRemoteSource implements IWalletRemoteSource {
   Future<List<LedgerEntryEntity>> fetchLedger(String userId) async {
     if (!AppConfig.isSupabaseReady || userId.isEmpty) return const [];
     try {
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .from('coin_ledger')
           .select('id, user_id, delta_coins, reason, ref_id, created_at_ms')
           .eq('user_id', userId)

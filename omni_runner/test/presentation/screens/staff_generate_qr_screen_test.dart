@@ -8,6 +8,7 @@ import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_state.dart';
 import 'package:omni_runner/presentation/screens/staff_generate_qr_screen.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/test_di.dart';
 
 class _FakeStaffQrBloc extends Cubit<StaffQrState> implements StaffQrBloc {
   _FakeStaffQrBloc(super.initial);
@@ -25,6 +26,7 @@ void main() {
     late _FakeStaffQrBloc fakeBloc;
 
     setUp(() {
+      ensureSupabaseClientRegistered();
       FlutterError.onError = (details) {
         final msg = details.exceptionAsString();
         if (msg.contains('overflowed')) return;
@@ -61,7 +63,13 @@ void main() {
         wrapScaffold: false,
       );
 
-      expect(find.text('Emitir OmniCoins'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.text('Emitir OmniCoins'),
+        ),
+        findsOneWidget,
+      );
       expect(find.byType(AppBar), findsOneWidget);
     });
 

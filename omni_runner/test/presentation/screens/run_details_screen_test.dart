@@ -9,6 +9,7 @@ import 'package:omni_runner/domain/repositories/i_points_repo.dart';
 import 'package:omni_runner/presentation/screens/run_details_screen.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/test_di.dart';
 
 class _FakePointsRepo implements IPointsRepo {
   @override
@@ -33,6 +34,7 @@ void main() {
   group('RunDetailsScreen', () {
     final origOnError = FlutterError.onError;
     setUp(() {
+      ensureSupabaseClientRegistered();
       FlutterError.onError = (details) {
         final msg = details.exceptionAsString();
         if (msg.contains('overflowed')) return;

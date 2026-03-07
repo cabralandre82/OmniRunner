@@ -2,6 +2,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/data/models/proto/workout_proto_mapper.dart';
 import 'package:omni_runner/domain/entities/location_point_entity.dart';
@@ -26,7 +27,7 @@ class SyncService {
   String? get userId {
     if (!isConfigured) return null;
     try {
-      return Supabase.instance.client.auth.currentUser?.id;
+      return sl<SupabaseClient>().auth.currentUser?.id;
     } on Exception {
       return null;
     }
@@ -60,7 +61,7 @@ class SyncService {
     final path = '$userId/$sessionId.json';
     final bytes = WorkoutProtoMapper.pointsToBytes(points);
     AppLogger.info('Uploading ${points.length} points (${bytes.length} B) to $path', tag: _tag);
-    final client = Supabase.instance.client;
+    final client = sl<SupabaseClient>();
     await client.storage.from(_bucket).uploadBinary(
           path,
           bytes,
@@ -80,7 +81,7 @@ class SyncService {
       throw StateError('SyncService: Supabase not initialised');
     }
     AppLogger.debug('Upsert session: ${payload['id']}', tag: _tag);
-    final client = Supabase.instance.client;
+    final client = sl<SupabaseClient>();
     await client.from(_table).upsert(payload);
     AppLogger.info('Upsert OK: ${payload['id']}', tag: _tag);
   }
@@ -100,7 +101,7 @@ class SyncService {
   }) async {
     if (!isConfigured) return;
     try {
-      await Supabase.instance.client.functions
+      await sl<SupabaseClient>().functions
           .invoke('verify-session', body: {
             'session_id': sessionId,
             'user_id': userId,

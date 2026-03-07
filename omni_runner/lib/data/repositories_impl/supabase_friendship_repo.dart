@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/friendship_entity.dart';
 import 'package:omni_runner/domain/repositories/i_friendship_repo.dart';
 
@@ -8,7 +9,7 @@ import 'package:omni_runner/domain/repositories/i_friendship_repo.dart';
 /// Uses the `friendships` table with RLS policies that allow
 /// read/write only for involved users.
 class SupabaseFriendshipRepo implements IFriendshipRepo {
-  SupabaseClient get _db => Supabase.instance.client;
+  SupabaseClient get _db => sl<SupabaseClient>();
 
   FriendshipEntity _fromRow(Map<String, dynamic> r) => FriendshipEntity(
         id: r['id'] as String,

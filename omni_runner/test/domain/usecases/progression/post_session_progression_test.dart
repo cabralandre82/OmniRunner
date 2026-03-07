@@ -1,8 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omni_runner/domain/entities/badge_award_entity.dart';
-import 'package:omni_runner/domain/entities/badge_entity.dart';
 import 'package:omni_runner/domain/entities/ledger_entry_entity.dart';
-import 'package:omni_runner/domain/entities/mission_entity.dart';
 import 'package:omni_runner/domain/entities/mission_progress_entity.dart';
 import 'package:omni_runner/domain/entities/profile_progress_entity.dart';
 import 'package:omni_runner/domain/entities/wallet_entity.dart';

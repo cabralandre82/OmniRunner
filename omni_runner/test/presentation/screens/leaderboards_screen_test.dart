@@ -6,13 +6,13 @@ import 'package:get_it/get_it.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/domain/entities/leaderboard_entity.dart';
 import 'package:omni_runner/presentation/blocs/leaderboards/leaderboards_bloc.dart';
-import 'package:omni_runner/presentation/blocs/leaderboards/leaderboards_event.dart';
 import 'package:omni_runner/presentation/blocs/leaderboards/leaderboards_state.dart';
 import 'package:omni_runner/presentation/screens/leaderboards_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/test_di.dart';
 
 class _FakeLeaderboardsBloc extends Cubit<LeaderboardsState>
     implements LeaderboardsBloc {
@@ -101,6 +101,7 @@ void main() {
     final origOnError = FlutterError.onError;
 
     setUp(() {
+      ensureSupabaseClientRegistered();
       FlutterError.onError = (details) {
         final msg = details.exceptionAsString();
         if (msg.contains('overflowed')) return;

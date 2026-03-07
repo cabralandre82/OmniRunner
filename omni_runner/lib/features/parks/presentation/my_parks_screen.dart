@@ -45,7 +45,7 @@ class _MyParksScreenState extends State<MyParksScreen> {
         // backfill park_activities so recent runs show up immediately.
         await _ensureParkBackfill(uid);
 
-        final res = await Supabase.instance.client
+        final res = await sl<SupabaseClient>()
             .from('park_activities')
             .select('park_id, distance_m')
             .eq('user_id', uid);
@@ -78,7 +78,7 @@ class _MyParksScreenState extends State<MyParksScreen> {
 
       // Load popular parks by runner count
       try {
-        final popRows = await Supabase.instance.client
+        final popRows = await sl<SupabaseClient>()
             .from('park_activities')
             .select('park_id, user_id');
 
@@ -254,9 +254,9 @@ class _MyParksScreenState extends State<MyParksScreen> {
       if (!connected) return;
 
       await controller.importStravaHistory(count: 30);
-      await Supabase.instance.client
+      await sl<SupabaseClient>()
           .rpc('backfill_strava_sessions', params: {'p_user_id': uid});
-      await Supabase.instance.client
+      await sl<SupabaseClient>()
           .rpc('backfill_park_activities', params: {'p_user_id': uid});
     } catch (e) {
       AppLogger.warn('Park backfill skipped: $e', tag: 'MyParksScreen');

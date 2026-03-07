@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 
 /// Lightweight, fire-and-forget product event tracker.
@@ -38,7 +39,7 @@ class ProductEventTracker {
     if (uid == null) return;
 
     try {
-      await Supabase.instance.client.from(_table).insert({
+      await sl<SupabaseClient>().from(_table).insert({
         'user_id': uid,
         'event_name': eventName,
         'properties': properties ?? {},
@@ -57,7 +58,7 @@ class ProductEventTracker {
     if (uid == null) return;
 
     try {
-      final existing = await Supabase.instance.client
+      final existing = await sl<SupabaseClient>()
           .from(_table)
           .select('id')
           .eq('user_id', uid)
@@ -70,7 +71,7 @@ class ProductEventTracker {
         return;
       }
 
-      await Supabase.instance.client.from(_table).insert({
+      await sl<SupabaseClient>().from(_table).insert({
         'user_id': uid,
         'event_name': eventName,
         'properties': properties ?? {},
@@ -84,7 +85,7 @@ class ProductEventTracker {
   String? get _userId {
     if (!AppConfig.isSupabaseReady) return null;
     try {
-      return Supabase.instance.client.auth.currentUser?.id;
+      return sl<SupabaseClient>().auth.currentUser?.id;
     } catch (e) {
       AppLogger.warn('Caught error', tag: 'ProductEventTracker', error: e);
       return null;

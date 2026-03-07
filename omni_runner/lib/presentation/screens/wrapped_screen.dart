@@ -66,7 +66,7 @@ class _WrappedScreenState extends State<WrappedScreen> {
       _error = null;
     });
     try {
-      final res = await Supabase.instance.client.functions.invoke(
+      final res = await sl<SupabaseClient>().functions.invoke(
         'generate-wrapped',
         body: {
           'period_type': widget.periodType,

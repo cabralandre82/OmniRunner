@@ -294,7 +294,7 @@ class _MoreScreenState extends State<MoreScreen> {
   Future<void> _openPartnerAssessorias(BuildContext context) async {
     final uid = sl<UserIdentityProvider>().userId;
     try {
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .from('coaching_members')
           .select('group_id, role')
           .eq('user_id', uid);
@@ -327,7 +327,7 @@ class _MoreScreenState extends State<MoreScreen> {
     final uid = sl<UserIdentityProvider>().userId;
 
     try {
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .from('coaching_members')
           .select('id, user_id, group_id, display_name, role, joined_at_ms')
           .eq('user_id', uid);
@@ -404,7 +404,7 @@ class _MoreScreenState extends State<MoreScreen> {
   Future<void> _openSupport(BuildContext context) async {
     final uid = sl<UserIdentityProvider>().userId;
     try {
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .from('coaching_members')
           .select('group_id')
           .eq('user_id', uid)
@@ -429,19 +429,17 @@ class _MoreScreenState extends State<MoreScreen> {
   }
 }
 
-/// Navigable tile that either pushes a screen or calls a custom [onTap].
+/// Navigable tile that calls a custom [onTap].
 class _ActionTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final Widget? pushScreen;
   final void Function(BuildContext)? onTap;
 
   const _ActionTile({
     required this.icon,
     required this.title,
     required this.subtitle,
-    this.pushScreen,
     this.onTap,
   });
 
@@ -454,13 +452,8 @@ class _ActionTile extends StatelessWidget {
       trailing: const Icon(Icons.chevron_right),
       onTap: () {
         final tap = onTap;
-        final screen = pushScreen;
         if (tap != null) {
           tap(context);
-        } else if (screen != null) {
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => screen),
-          );
         }
       },
     );

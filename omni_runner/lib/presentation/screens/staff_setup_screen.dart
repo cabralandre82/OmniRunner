@@ -83,7 +83,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
   List<_GroupInfo> _results = [];
   bool _searching = false;
 
-  SupabaseClient get _client => Supabase.instance.client;
+  SupabaseClient get _client => sl<SupabaseClient>();
 
   @override
   void dispose() {

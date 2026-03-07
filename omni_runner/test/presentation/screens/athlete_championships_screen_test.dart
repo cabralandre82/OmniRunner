@@ -3,11 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:omni_runner/presentation/screens/athlete_championships_screen.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/test_di.dart';
 
 void main() {
   group('AthleteChampionshipsScreen', () {
     final origOnError = FlutterError.onError;
     setUp(() {
+      ensureSupabaseClientRegistered();
       FlutterError.onError = (details) {
         final msg = details.exceptionAsString();
         if (msg.contains('overflowed')) return;
@@ -35,26 +37,30 @@ void main() {
       expect(find.byType(AppBar), findsOneWidget);
     });
 
-    testWidgets('shows error state when backend unavailable', (tester) async {
+    testWidgets('shows empty state when no championships', (tester) async {
       await tester.pumpApp(
         const AthleteChampionshipsScreen(),
         wrapScaffold: false,
       );
+      await tester.pumpAndSettle();
 
       expect(
-        find.text('Não foi possível carregar os campeonatos.'),
+        find.text('Nenhum campeonato disponível'),
         findsOneWidget,
       );
-      expect(find.text('Tentar novamente'), findsOneWidget);
     });
 
-    testWidgets('shows refresh button in error state', (tester) async {
+    testWidgets('shows empty state message when no championships', (tester) async {
       await tester.pumpApp(
         const AthleteChampionshipsScreen(),
         wrapScaffold: false,
       );
+      await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.refresh), findsOneWidget);
+      expect(
+        find.textContaining('Quando sua assessoria'),
+        findsOneWidget,
+      );
     });
   });
 }

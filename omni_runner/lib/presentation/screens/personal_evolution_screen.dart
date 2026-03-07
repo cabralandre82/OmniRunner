@@ -55,7 +55,7 @@ class _PersonalEvolutionScreenState extends State<PersonalEvolutionScreen> {
           DateTime.now().subtract(const Duration(days: _weeks * 7));
       final cutoffMs = cutoff.millisecondsSinceEpoch;
 
-      final rows = await Supabase.instance.client
+      final rows = await sl<SupabaseClient>()
           .from('sessions')
           .select('start_time_ms, end_time_ms, total_distance_m, is_verified')
           .eq('user_id', uid)

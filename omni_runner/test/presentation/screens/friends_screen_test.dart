@@ -6,6 +6,7 @@ import 'package:omni_runner/presentation/blocs/friends/friends_state.dart';
 import 'package:omni_runner/presentation/screens/friends_screen.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/test_di.dart';
 
 class _FakeFriendsBloc extends Cubit<FriendsState> implements FriendsBloc {
   _FakeFriendsBloc(super.initial);
@@ -18,6 +19,7 @@ void main() {
   group('FriendsScreen', () {
     final origOnError = FlutterError.onError;
     setUp(() {
+      ensureSupabaseClientRegistered();
       FlutterError.onError = (details) {
         final msg = details.exceptionAsString();
         if (msg.contains('overflowed')) return;

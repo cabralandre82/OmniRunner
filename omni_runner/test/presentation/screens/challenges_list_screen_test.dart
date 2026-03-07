@@ -13,7 +13,6 @@ import 'package:omni_runner/features/strava/domain/i_strava_upload_repository.da
 import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
-import 'package:omni_runner/presentation/blocs/challenges/challenges_event.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_state.dart';
 import 'package:omni_runner/presentation/screens/challenges_list_screen.dart';
 

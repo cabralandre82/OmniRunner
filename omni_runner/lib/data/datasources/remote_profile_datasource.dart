@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/profile_entity.dart';
 import 'package:omni_runner/domain/repositories/i_profile_repo.dart';
 
@@ -12,7 +13,7 @@ class RemoteProfileDataSource implements IProfileRepo {
   static const _tag = 'RemoteProfile';
   static const _table = 'profiles';
 
-  SupabaseClient get _client => Supabase.instance.client;
+  SupabaseClient get _client => sl<SupabaseClient>();
 
   String get _uid {
     final id = _client.auth.currentUser?.id;

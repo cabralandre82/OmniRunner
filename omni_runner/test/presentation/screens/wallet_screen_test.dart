@@ -6,7 +6,6 @@ import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/domain/entities/ledger_entry_entity.dart';
 import 'package:omni_runner/domain/entities/wallet_entity.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_bloc.dart';
-import 'package:omni_runner/presentation/blocs/wallet/wallet_event.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_state.dart';
 import 'package:omni_runner/presentation/screens/wallet_screen.dart';
 

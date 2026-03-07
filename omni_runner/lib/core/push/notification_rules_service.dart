@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 
 /// Client-side convenience for triggering smart push notification rules.
@@ -172,7 +173,7 @@ class NotificationRulesService {
       if (rule != null) body['rule'] = rule;
       if (context != null) body['context'] = context;
 
-      await Supabase.instance.client.functions.invoke(_fn, body: body);
+      await sl<SupabaseClient>().functions.invoke(_fn, body: body);
       AppLogger.debug('Notify rule dispatched: ${rule ?? "all"}', tag: _tag);
     } catch (e) {
       AppLogger.warn('Notify rule failed: $e', tag: _tag);

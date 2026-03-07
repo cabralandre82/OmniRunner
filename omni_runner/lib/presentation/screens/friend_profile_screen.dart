@@ -43,7 +43,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    final db = Supabase.instance.client;
+    final db = sl<SupabaseClient>();
     try {
       final profileFuture = db
           .from('profiles')
@@ -91,7 +91,6 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final name = _profile?['display_name'] as String? ?? 'Corredor';
 
     return Scaffold(

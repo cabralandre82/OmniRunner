@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/service_locator.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/domain/entities/profile_entity.dart';
@@ -46,7 +47,7 @@ class _OnboardingRoleScreenState extends State<OnboardingRoleScreen> {
       Map<String, dynamic>? lastData;
       for (var attempt = 1; attempt <= 3; attempt++) {
         try {
-          final res = await Supabase.instance.client.functions.invoke(
+          final res = await sl<SupabaseClient>().functions.invoke(
             'set-user-role',
             body: {'role': _selectedRole},
           );

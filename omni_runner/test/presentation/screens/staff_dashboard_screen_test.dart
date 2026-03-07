@@ -6,6 +6,7 @@ import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/presentation/screens/staff_dashboard_screen.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/test_di.dart';
 
 final _sl = GetIt.instance;
 
@@ -18,7 +19,6 @@ class _FakeUserIdentity implements UserIdentityProvider {
 }
 
 class _FakeFirstUseTips implements FirstUseTips {
-  @override
   bool shouldShow(String key) => false;
 
   @override
@@ -35,6 +35,7 @@ void main() {
         if (msg.contains('overflowed')) return;
         origOnError?.call(details);
       };
+      ensureSupabaseClientRegistered();
       _sl.registerFactory<UserIdentityProvider>(() => _FakeUserIdentity());
       _sl.registerFactory<FirstUseTips>(() => _FakeFirstUseTips());
     });

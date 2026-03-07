@@ -5,6 +5,7 @@ import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/presentation/screens/support_ticket_screen.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/test_di.dart';
 
 final _sl = GetIt.instance;
 
@@ -26,6 +27,7 @@ void main() {
         if (msg.contains('overflowed')) return;
         origOnError?.call(details);
       };
+      ensureSupabaseClientRegistered();
       _sl.registerFactory<UserIdentityProvider>(() => _FakeUserIdentity());
     });
     tearDown(() {

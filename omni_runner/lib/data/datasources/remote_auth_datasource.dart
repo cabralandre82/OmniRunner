@@ -9,6 +9,8 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart' as launcher;
 
+import 'package:omni_runner/core/service_locator.dart';
+
 import 'package:omni_runner/core/auth/auth_user.dart' as app;
 import 'package:omni_runner/core/auth/i_auth_datasource.dart';
 import 'package:omni_runner/core/config/app_config.dart';
@@ -22,7 +24,7 @@ import 'package:omni_runner/domain/failures/auth_failure.dart';
 class RemoteAuthDataSource implements IAuthDataSource {
   static const _tag = 'RemoteAuth';
 
-  GoTrueClient get _auth => Supabase.instance.client.auth;
+  GoTrueClient get _auth => sl<SupabaseClient>().auth;
 
   // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -78,7 +80,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
   Future<void> _completeSocialProfile() async {
     for (var attempt = 1; attempt <= 3; attempt++) {
       try {
-        final response = await Supabase.instance.client.functions.invoke(
+        final response = await sl<SupabaseClient>().functions.invoke(
           'complete-social-profile',
           body: {},
         );
@@ -332,7 +334,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
   @override
   Future<app.AuthUser> signInWithTikTok() async {
     try {
-      final initResponse = await Supabase.instance.client.functions.invoke(
+      final initResponse = await sl<SupabaseClient>().functions.invoke(
         'validate-social-login',
         body: {'provider': 'tiktok', 'action': 'init'},
       );

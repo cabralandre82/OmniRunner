@@ -58,9 +58,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     // Pull completed sessions from Supabase and merge into Isar
     try {
-      final uid = Supabase.instance.client.auth.currentUser?.id;
+      final uid = sl<SupabaseClient>().auth.currentUser?.id;
       if (uid != null) {
-        final rows = await Supabase.instance.client
+        final rows = await sl<SupabaseClient>()
             .from('sessions')
             .select('id, user_id, status, start_time_ms, end_time_ms, '
                 'total_distance_m, moving_ms, is_verified, integrity_flags, '

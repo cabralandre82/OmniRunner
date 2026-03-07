@@ -5,10 +5,8 @@ import 'package:get_it/get_it.dart';
 import 'package:omni_runner/core/analytics/product_event_tracker.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
-import 'package:omni_runner/presentation/blocs/challenges/challenges_event.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_state.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_bloc.dart';
-import 'package:omni_runner/presentation/blocs/verification/verification_event.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_state.dart';
 import 'package:omni_runner/presentation/screens/challenge_create_screen.dart';
 

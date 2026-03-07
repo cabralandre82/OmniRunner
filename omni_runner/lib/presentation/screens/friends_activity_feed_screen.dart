@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Displays a chronological feed of verified workout sessions from the
@@ -44,7 +45,7 @@ class _FriendsActivityFeedScreenState extends State<FriendsActivityFeedScreen> {
     for (var attempt = 0; attempt < _maxRetries; attempt++) {
       try {
         final offset = loadMore ? _items.length : 0;
-        final rows = await Supabase.instance.client.rpc(
+        final rows = await sl<SupabaseClient>().rpc(
           'fn_friends_activity_feed',
           params: {'p_limit': _pageSize, 'p_offset': offset},
         );
@@ -82,7 +83,6 @@ class _FriendsActivityFeedScreenState extends State<FriendsActivityFeedScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(

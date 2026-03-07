@@ -1,5 +1,6 @@
 // ignore_for_file: invalid_override, invalid_use_of_type_outside_library, extends_non_class, super_formal_parameter_without_associated_positional
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:omni_runner/presentation/blocs/checkin/checkin_bloc.dart';
@@ -8,6 +9,7 @@ import 'package:omni_runner/presentation/blocs/checkin/checkin_state.dart';
 import 'package:omni_runner/presentation/screens/staff_training_scan_screen.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/test_di.dart';
 
 final _sl = GetIt.instance;
 
@@ -27,6 +29,7 @@ void main() {
     late _FakeCheckinBloc fakeBloc;
 
     setUp(() {
+      ensureSupabaseClientRegistered();
       FlutterError.onError = (details) {
         final msg = details.exceptionAsString();
         if (msg.contains('overflowed') || msg.contains('MobileScanner')) {
@@ -68,7 +71,7 @@ void main() {
         wrapScaffold: false,
       );
 
-      expect(find.text('Registrando presença...'), findsOneWidget);
+      expect(find.text('Processando...'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
   });

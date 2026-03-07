@@ -56,7 +56,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
   }
 
   Future<void> _loadStatus() async {
-    final db = Supabase.instance.client;
+    final db = sl<SupabaseClient>();
     try {
       final uid = sl<UserIdentityProvider>().userId;
 
@@ -758,7 +758,6 @@ class _StaffCard extends StatelessWidget {
   final String subtitle;
   final Color bgColor;
   final Color iconColor;
-  final bool dimmed;
   final String? alert;
   final VoidCallback? onTap;
 
@@ -768,7 +767,6 @@ class _StaffCard extends StatelessWidget {
     required this.subtitle,
     required this.bgColor,
     required this.iconColor,
-    this.dimmed = false,
     this.alert,
     this.onTap,
   });
@@ -779,12 +777,8 @@ class _StaffCard extends StatelessWidget {
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final cardBg = isDark ? DesignTokens.surface : bgColor;
-    final titleColor = dimmed
-        ? cs.onSurface.withValues(alpha: 0.6)
-        : cs.onSurface;
-    final subtitleColor = dimmed
-        ? cs.onSurface.withValues(alpha: 0.6)
-        : cs.onSurfaceVariant;
+    final titleColor = cs.onSurface;
+    final subtitleColor = cs.onSurfaceVariant;
 
     return Card(
       elevation: 0,

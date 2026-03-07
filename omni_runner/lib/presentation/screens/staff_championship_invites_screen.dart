@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/service_locator.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
@@ -26,7 +27,7 @@ class _StaffChampionshipInvitesScreenState
   String? _error;
   List<_InviteItem> _invites = [];
 
-  SupabaseClient get _db => Supabase.instance.client;
+  SupabaseClient get _db => sl<SupabaseClient>();
 
   @override
   void initState() {

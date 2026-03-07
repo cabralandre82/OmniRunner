@@ -50,7 +50,7 @@ class _LeagueScreenState extends State<LeagueScreen> {
           ? '?scope=state${_stateFilter != null ? '&state=$_stateFilter' : ''}'
           : '?scope=global';
 
-      final res = await Supabase.instance.client.functions.invoke(
+      final res = await sl<SupabaseClient>().functions.invoke(
         'league-list$queryParams',
         method: HttpMethod.get,
       );

@@ -65,7 +65,7 @@ class _StaffChampionshipTemplatesScreenState
     });
 
     try {
-      final db = Supabase.instance.client;
+      final db = sl<SupabaseClient>();
 
       final templateRes = await db
           .from('championship_templates')
@@ -603,7 +603,7 @@ class _CreateTemplateScreenState extends State<_CreateTemplateScreen> {
     setState(() => _saving = true);
 
     try {
-      final db = Supabase.instance.client;
+      final db = sl<SupabaseClient>();
       final uid = sl<UserIdentityProvider>().userId;
 
       final desc = StringBuffer();
@@ -1192,7 +1192,7 @@ class _LaunchFromTemplateDialogState
       }
       final endAt = startAt.add(Duration(days: t.durationDays));
 
-      final db = Supabase.instance.client;
+      final db = sl<SupabaseClient>();
       final res = await db.functions.invoke('champ-create', body: {
         'host_group_id': widget.groupId,
         'name': t.name,

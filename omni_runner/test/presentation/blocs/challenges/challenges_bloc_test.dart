@@ -397,7 +397,7 @@ void main() {
           challengeId: 'ch-1',
           userId: _otherUserId,
         ));
-        final states = await future;
+        await future;
 
         verify(() => repo.update(any(
           that: isA<ChallengeEntity>().having(

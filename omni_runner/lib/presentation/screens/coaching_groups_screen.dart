@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/router/app_router.dart';
-import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_bloc.dart';
@@ -117,7 +115,6 @@ class _CoachingGroupCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         onTap: () {
-          final uid = sl<UserIdentityProvider>().userId;
           context.push(AppRoutes.coachingGroupDetailsPath(group.id));
         },
         child: Padding(

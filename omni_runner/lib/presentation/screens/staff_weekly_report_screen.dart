@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
@@ -91,7 +92,7 @@ class _StaffWeeklyReportScreenState extends State<StaffWeeklyReportScreen> {
     });
 
     try {
-      final db = Supabase.instance.client;
+      final db = sl<SupabaseClient>();
 
       // 1. Group athletes
       final membersRes = await db

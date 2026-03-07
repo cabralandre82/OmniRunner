@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
@@ -32,7 +33,7 @@ class _AthleteChampionshipRankingScreenState
   String? _error;
   List<_Participant> _participants = [];
 
-  SupabaseClient get _db => Supabase.instance.client;
+  SupabaseClient get _db => sl<SupabaseClient>();
 
   @override
   void initState() {

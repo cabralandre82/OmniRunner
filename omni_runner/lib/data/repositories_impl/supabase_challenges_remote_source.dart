@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_participant_entity.dart';
@@ -16,7 +17,7 @@ class SupabaseChallengesRemoteSource implements IChallengesRemoteSource {
   Future<List<ChallengeEntity>> fetchMyChallenges() async {
     if (!AppConfig.isSupabaseReady) return const [];
     try {
-      final res = await Supabase.instance.client.functions
+      final res = await sl<SupabaseClient>().functions
           .invoke('challenge-list-mine', body: {})
           .timeout(const Duration(seconds: 10));
 
@@ -44,7 +45,7 @@ class SupabaseChallengesRemoteSource implements IChallengesRemoteSource {
   Future<bool> settleChallenge(String challengeId) async {
     if (!AppConfig.isSupabaseReady) return false;
     try {
-      await Supabase.instance.client.functions
+      await sl<SupabaseClient>().functions
           .invoke('settle-challenge', body: {'challenge_id': challengeId})
           .timeout(const Duration(seconds: 15));
       AppLogger.info('Challenge $challengeId settled via backend', tag: _tag);
@@ -61,7 +62,7 @@ class SupabaseChallengesRemoteSource implements IChallengesRemoteSource {
     int maxAttempts = 3,
   }) async {
     try {
-      await Supabase.instance.client.functions
+      await sl<SupabaseClient>().functions
           .invoke('challenge-create', body: payload)
           .timeout(const Duration(seconds: 15));
       AppLogger.info(

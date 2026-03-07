@@ -1,7 +1,7 @@
 import 'package:omni_runner/domain/entities/device_link_entity.dart';
 import 'package:omni_runner/domain/repositories/i_wearable_repo.dart';
 
-final class LinkDevice {
+class LinkDevice {
   final IWearableRepo _repo;
 
   const LinkDevice({required IWearableRepo repo}) : _repo = repo;

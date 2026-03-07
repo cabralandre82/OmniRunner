@@ -1,7 +1,7 @@
 import 'package:omni_runner/domain/entities/workout_execution_entity.dart';
 import 'package:omni_runner/domain/repositories/i_wearable_repo.dart';
 
-final class ImportExecution {
+class ImportExecution {
   final IWearableRepo _repo;
 
   const ImportExecution({required IWearableRepo repo}) : _repo = repo;

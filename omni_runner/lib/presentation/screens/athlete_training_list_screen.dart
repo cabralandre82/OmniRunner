@@ -140,7 +140,7 @@ class AthleteTrainingListScreen extends StatelessWidget {
 
   void _showSessionInfo(BuildContext context, TrainingSessionEntity session) {
     final theme = Theme.of(context);
-    final uid = Supabase.instance.client.auth.currentUser?.id;
+    final uid = sl<SupabaseClient>().auth.currentUser?.id;
     showModalBottomSheet<void>(
       context: context,
       builder: (ctx) => Padding(
@@ -221,7 +221,7 @@ class _AthleteStatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return FutureBuilder<Map<String, dynamic>?>(
-      future: Supabase.instance.client
+      future: sl<SupabaseClient>()
           .from('coaching_training_attendance')
           .select('status, method')
           .eq('session_id', sessionId)

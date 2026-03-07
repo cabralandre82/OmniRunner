@@ -1,5 +1,4 @@
 import 'package:get_it/get_it.dart';
-import 'package:isar/isar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -9,12 +8,12 @@ import 'package:omni_runner/core/cache/membership_cache.dart';
 import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/offline/connectivity_monitor.dart';
 import 'package:omni_runner/core/offline/offline_queue.dart';
-import 'package:omni_runner/core/secure_storage/isar_secure_store.dart';
+import 'package:omni_runner/core/secure_storage/db_secure_store.dart';
 import 'package:omni_runner/data/datasources/audio_coach_service.dart';
 import 'package:omni_runner/data/datasources/ble_permission_service.dart';
+import 'package:omni_runner/data/datasources/drift_database.dart';
 import 'package:omni_runner/data/datasources/geolocator_location_stream.dart';
 import 'package:omni_runner/data/datasources/health_platform_service.dart';
-import 'package:omni_runner/data/datasources/isar_database_provider.dart';
 import 'package:omni_runner/data/datasources/location_permission_service.dart';
 import 'package:omni_runner/data/datasources/sync_service.dart';
 import 'package:omni_runner/data/datasources/analytics_sync_service.dart';
@@ -24,15 +23,23 @@ import 'package:omni_runner/features/wearables_ble/i_heart_rate_source.dart';
 import 'package:omni_runner/data/repositories_impl/audio_coach_repo.dart';
 import 'package:omni_runner/data/repositories_impl/ble_permission_repo.dart';
 import 'package:omni_runner/data/repositories_impl/coach_settings_repo.dart';
-import 'package:omni_runner/data/repositories_impl/isar_badge_award_repo.dart';
-import 'package:omni_runner/data/repositories_impl/isar_challenge_repo.dart';
-import 'package:omni_runner/data/repositories_impl/isar_ledger_repo.dart';
-import 'package:omni_runner/data/repositories_impl/isar_mission_progress_repo.dart';
-import 'package:omni_runner/data/repositories_impl/isar_profile_progress_repo.dart';
-import 'package:omni_runner/data/repositories_impl/isar_points_repo.dart';
-import 'package:omni_runner/data/repositories_impl/isar_session_repo.dart';
-import 'package:omni_runner/data/repositories_impl/isar_wallet_repo.dart';
-import 'package:omni_runner/data/repositories_impl/isar_xp_transaction_repo.dart';
+import 'package:omni_runner/data/repositories_impl/drift_badge_award_repo.dart';
+import 'package:omni_runner/data/repositories_impl/drift_challenge_repo.dart';
+import 'package:omni_runner/data/repositories_impl/drift_ledger_repo.dart';
+import 'package:omni_runner/data/repositories_impl/drift_mission_progress_repo.dart';
+import 'package:omni_runner/data/repositories_impl/drift_profile_progress_repo.dart';
+import 'package:omni_runner/data/repositories_impl/drift_points_repo.dart';
+import 'package:omni_runner/data/repositories_impl/drift_session_repo.dart';
+import 'package:omni_runner/data/repositories_impl/drift_wallet_repo.dart';
+import 'package:omni_runner/data/repositories_impl/drift_xp_transaction_repo.dart';
+import 'package:omni_runner/data/repositories_impl/drift_atomic_ledger_ops.dart';
+import 'package:omni_runner/data/repositories_impl/drift_coaching_group_repo.dart';
+import 'package:omni_runner/data/repositories_impl/drift_coaching_invite_repo.dart';
+import 'package:omni_runner/data/repositories_impl/drift_coaching_member_repo.dart';
+import 'package:omni_runner/data/repositories_impl/drift_athlete_baseline_repo.dart';
+import 'package:omni_runner/data/repositories_impl/drift_coach_insight_repo.dart';
+import 'package:omni_runner/data/repositories_impl/drift_athlete_trend_repo.dart';
+import 'package:omni_runner/data/repositories_impl/drift_coaching_ranking_repo.dart';
 import 'package:omni_runner/data/repositories_impl/location_permission_repo.dart';
 import 'package:omni_runner/data/repositories_impl/location_stream_repo.dart';
 import 'package:omni_runner/data/repositories_impl/sync_repo.dart';
@@ -67,7 +74,9 @@ import 'package:omni_runner/domain/usecases/integrity_detect_vehicle.dart';
 import 'package:omni_runner/domain/repositories/i_verification_remote_source.dart';
 import 'package:omni_runner/domain/repositories/i_workout_repo.dart';
 import 'package:omni_runner/domain/repositories/i_financial_repo.dart';
+import 'package:omni_runner/domain/repositories/i_trainingpeaks_repo.dart';
 import 'package:omni_runner/domain/repositories/i_wearable_repo.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_trainingpeaks_repo.dart';
 import 'package:omni_runner/data/repositories_impl/supabase_leaderboard_repo.dart';
 import 'package:omni_runner/data/repositories_impl/supabase_feed_remote_source.dart';
 import 'package:omni_runner/domain/repositories/i_feed_remote_source.dart';
@@ -75,14 +84,6 @@ import 'package:omni_runner/data/repositories_impl/supabase_friendship_repo.dart
 import 'package:omni_runner/domain/repositories/i_wallet_repo.dart';
 import 'package:omni_runner/domain/repositories/i_ledger_repo.dart';
 import 'package:omni_runner/domain/repositories/i_atomic_ledger_ops.dart';
-import 'package:omni_runner/data/repositories_impl/isar_atomic_ledger_ops.dart';
-import 'package:omni_runner/data/repositories_impl/isar_coaching_group_repo.dart';
-import 'package:omni_runner/data/repositories_impl/isar_coaching_invite_repo.dart';
-import 'package:omni_runner/data/repositories_impl/isar_coaching_member_repo.dart';
-import 'package:omni_runner/data/repositories_impl/isar_athlete_baseline_repo.dart';
-import 'package:omni_runner/data/repositories_impl/isar_coach_insight_repo.dart';
-import 'package:omni_runner/data/repositories_impl/isar_athlete_trend_repo.dart';
-import 'package:omni_runner/data/repositories_impl/isar_coaching_ranking_repo.dart';
 import 'package:omni_runner/data/repositories_impl/supabase_training_attendance_repo.dart';
 import 'package:omni_runner/data/repositories_impl/supabase_training_session_repo.dart';
 import 'package:omni_runner/data/repositories_impl/supabase_crm_repo.dart';
@@ -184,10 +185,13 @@ Future<void> registerDataModule(GetIt sl) async {
   sl.registerLazySingleton<MembershipCache>(MembershipCache.new);
 
   if (AppConfig.isSupabaseReady) {
+    sl.registerLazySingleton<SupabaseClient>(
+      () => Supabase.instance.client,
+    );
     sl.registerLazySingleton<OfflineQueue>(
       () => OfflineQueue(
         prefs: prefs,
-        client: Supabase.instance.client,
+        client: sl<SupabaseClient>(),
       ),
     );
     sl.registerLazySingleton<ConnectivityMonitor>(
@@ -195,13 +199,12 @@ Future<void> registerDataModule(GetIt sl) async {
     );
   }
 
-  sl.registerLazySingleton<IsarSecureStore>(IsarSecureStore.new);
-  sl.registerLazySingleton<IsarDatabaseProvider>(
-    () => IsarDatabaseProvider(sl<IsarSecureStore>()),
-  );
-  final isarProvider = sl<IsarDatabaseProvider>();
-  await isarProvider.open();
-  sl.registerLazySingleton<Isar>(() => isarProvider.instance);
+  sl.registerLazySingleton<DbSecureStore>(DbSecureStore.new);
+  final secureStore = sl<DbSecureStore>();
+  final keyBytes = await secureStore.getOrCreateKey();
+  final hexKey = keyBytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  AppDatabase.setEncryptionKey(hexKey);
+  sl.registerLazySingleton<AppDatabase>(() => getDatabase());
 
   sl.registerLazySingleton<LocationPermissionService>(
     LocationPermissionService.new,
@@ -229,8 +232,8 @@ Future<void> registerDataModule(GetIt sl) async {
   sl.registerLazySingleton<ILocationStream>(
     () => LocationStreamRepo(datasource: sl<GeolocatorLocationStream>()),
   );
-  sl.registerLazySingleton<IPointsRepo>(() => IsarPointsRepo(sl<Isar>()));
-  sl.registerLazySingleton<ISessionRepo>(() => IsarSessionRepo(sl<Isar>()));
+  sl.registerLazySingleton<IPointsRepo>(() => DriftPointsRepo(sl<AppDatabase>()));
+  sl.registerLazySingleton<ISessionRepo>(() => DriftSessionRepo(sl<AppDatabase>()));
   sl.registerLazySingleton<IAudioCoach>(
     () => AudioCoachRepo(service: sl<AudioCoachService>()),
   );
@@ -238,7 +241,7 @@ Future<void> registerDataModule(GetIt sl) async {
   sl.registerLazySingleton<ISyncRepo>(
     () => SyncRepo(
       service: sl<SyncService>(),
-      isar: sl<Isar>(),
+      sessionRepo: sl<ISessionRepo>(),
       pointsRepo: sl<IPointsRepo>(),
     ),
   );
@@ -247,40 +250,42 @@ Future<void> registerDataModule(GetIt sl) async {
   );
 
   sl.registerLazySingleton<IChallengeRepo>(
-    () => IsarChallengeRepo(sl<Isar>()),
+    () => DriftChallengeRepo(sl<AppDatabase>()),
   );
   sl.registerLazySingleton<IWalletRepo>(
-    () => IsarWalletRepo(sl<Isar>(), sl<CacheMetadataStore>()),
+    () => DriftWalletRepo(sl<AppDatabase>()),
   );
-  sl.registerLazySingleton<ILedgerRepo>(() => IsarLedgerRepo(sl<Isar>()));
+  sl.registerLazySingleton<ILedgerRepo>(
+    () => DriftLedgerRepo(sl<AppDatabase>()),
+  );
   sl.registerLazySingleton<IAtomicLedgerOps>(
-    () => IsarAtomicLedgerOps(sl<Isar>()),
+    () => DriftAtomicLedgerOps(sl<AppDatabase>()),
   );
 
   sl.registerLazySingleton<IProfileProgressRepo>(
-    () => IsarProfileProgressRepo(sl<Isar>(), sl<CacheMetadataStore>()),
+    () => DriftProfileProgressRepo(sl<AppDatabase>()),
   );
   sl.registerLazySingleton<IXpTransactionRepo>(
-    () => IsarXpTransactionRepo(sl<Isar>()),
+    () => DriftXpTransactionRepo(sl<AppDatabase>()),
   );
   sl.registerLazySingleton<IBadgeAwardRepo>(
-    () => IsarBadgeAwardRepo(sl<Isar>()),
+    () => DriftBadgeAwardRepo(sl<AppDatabase>()),
   );
   sl.registerLazySingleton<IMissionProgressRepo>(
-    () => IsarMissionProgressRepo(sl<Isar>()),
+    () => DriftMissionProgressRepo(sl<AppDatabase>()),
   );
 
   sl.registerLazySingleton<ICoachingGroupRepo>(
-    () => IsarCoachingGroupRepo(sl<Isar>()),
+    () => DriftCoachingGroupRepo(sl<AppDatabase>()),
   );
   sl.registerLazySingleton<ICoachingMemberRepo>(
-    () => IsarCoachingMemberRepo(sl<Isar>()),
+    () => DriftCoachingMemberRepo(sl<AppDatabase>()),
   );
   sl.registerLazySingleton<ICoachingInviteRepo>(
-    () => IsarCoachingInviteRepo(sl<Isar>()),
+    () => DriftCoachingInviteRepo(sl<AppDatabase>()),
   );
   sl.registerLazySingleton<ICoachingRankingRepo>(
-    () => IsarCoachingRankingRepo(sl<Isar>()),
+    () => DriftCoachingRankingRepo(sl<AppDatabase>()),
   );
 
   sl.registerLazySingleton<ISwitchAssessoriaRepo>(
@@ -308,13 +313,13 @@ Future<void> registerDataModule(GetIt sl) async {
   );
 
   sl.registerLazySingleton<IAthleteBaselineRepo>(
-    () => IsarAthleteBaselineRepo(sl<Isar>()),
+    () => DriftAthleteBaselineRepo(sl<AppDatabase>()),
   );
   sl.registerLazySingleton<IAthleteTrendRepo>(
-    () => IsarAthleteTrendRepo(sl<Isar>()),
+    () => DriftAthleteTrendRepo(sl<AppDatabase>()),
   );
   sl.registerLazySingleton<ICoachInsightRepo>(
-    () => IsarCoachInsightRepo(sl<Isar>()),
+    () => DriftCoachInsightRepo(sl<AppDatabase>()),
   );
 
   sl.registerFactory<EnsureLocationReady>(
@@ -560,11 +565,13 @@ Future<void> registerDataModule(GetIt sl) async {
     () => SwitchAssessoria(repo: sl<ISwitchAssessoriaRepo>()),
   );
 
+  // ── Supabase-dependent services (only available when backend is configured) ──
+  if (AppConfig.isSupabaseReady) {
   sl.registerLazySingleton<ITrainingSessionRepo>(
-    () => SupabaseTrainingSessionRepo(Supabase.instance.client),
+    () => SupabaseTrainingSessionRepo(sl<SupabaseClient>()),
   );
   sl.registerLazySingleton<ITrainingAttendanceRepo>(
-    () => SupabaseTrainingAttendanceRepo(Supabase.instance.client),
+    () => SupabaseTrainingAttendanceRepo(sl<SupabaseClient>()),
   );
   sl.registerFactory<ListTrainingSessions>(
     () => ListTrainingSessions(repo: sl<ITrainingSessionRepo>()),
@@ -586,7 +593,7 @@ Future<void> registerDataModule(GetIt sl) async {
   );
 
   sl.registerLazySingleton<ICrmRepo>(
-    () => SupabaseCrmRepo(Supabase.instance.client),
+    () => SupabaseCrmRepo(sl<SupabaseClient>()),
   );
   sl.registerFactory<ManageTags>(() => ManageTags(repo: sl<ICrmRepo>()));
   sl.registerFactory<ManageNotes>(() => ManageNotes(repo: sl<ICrmRepo>()));
@@ -598,7 +605,7 @@ Future<void> registerDataModule(GetIt sl) async {
   );
 
   sl.registerLazySingleton<IAnnouncementRepo>(
-    () => SupabaseAnnouncementRepo(Supabase.instance.client),
+    () => SupabaseAnnouncementRepo(sl<SupabaseClient>()),
   );
   sl.registerFactory<ListAnnouncements>(
     () => ListAnnouncements(repo: sl<IAnnouncementRepo>()),
@@ -633,20 +640,24 @@ Future<void> registerDataModule(GetIt sl) async {
   );
 
   sl.registerLazySingleton<ProfileDataService>(
-    () => ProfileDataService(Supabase.instance.client),
+    () => ProfileDataService(sl<SupabaseClient>()),
   );
 
   sl.registerLazySingleton<IWorkoutRepo>(
-    () => SupabaseWorkoutRepo(Supabase.instance.client),
+    () => SupabaseWorkoutRepo(sl<SupabaseClient>()),
   );
 
   sl.registerLazySingleton<IFinancialRepo>(
-    () => SupabaseFinancialRepo(Supabase.instance.client),
+    () => SupabaseFinancialRepo(sl<SupabaseClient>()),
+  );
+
+  sl.registerLazySingleton<ITrainingPeaksRepo>(
+    () => SupabaseTrainingPeaksRepo(sl<SupabaseClient>()),
   );
 
   sl.registerLazySingleton<IWearableRepo>(
     () => SupabaseWearableRepo(
-      Supabase.instance.client,
+      sl<SupabaseClient>(),
       offlineQueue: AppConfig.isSupabaseReady ? sl<OfflineQueue>() : null,
     ),
   );
@@ -659,4 +670,5 @@ Future<void> registerDataModule(GetIt sl) async {
   sl.registerFactory<ListExecutions>(
     () => ListExecutions(repo: sl<IWearableRepo>()),
   );
+  } // end if (AppConfig.isSupabaseReady)
 }
