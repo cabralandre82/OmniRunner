@@ -1,5 +1,39 @@
 # CHANGELOG — OS Assessoria (PASSO 05 + BLOCO 0–6)
 
+## [0.93.0] - 2026-03-04
+
+### Added
+- 17 Drift repository implementations replacing Isar repos
+- `safeByName()` utility for resilient enum parsing with fallback
+- `DbSecureStore` with legacy key migration support
+- `ITrainingPeaksRepo` domain interface for clean architecture compliance
+- `FakeSupabaseClient` test helper with full PostgREST chain stubbing
+- SQLCipher database encryption with raw hex key format
+- 12 post-refactor audit reports under `docs/`
+
+### Fixed
+- Incremental DB migration v1→v2 preserves unsynced workout data (10 tables kept intact)
+- StringListConverter no longer crashes on non-String list elements
+- 21 widget tests fixed (2051 passing, 0 failures)
+- Portal Vitest sidebar and rate-limit test failures resolved
+- Supabase-dependent services guarded behind `isSupabaseReady`
+- Hardcoded status strings replaced with `enum.name` in queries
+- 44 files cleaned of unused imports/variables
+
+### Removed
+- All 22 Isar model files
+- All 17 Isar repository implementations
+- `isar_database_provider.dart` and `isar_to_drift_migrator.dart`
+- `third_party/isar_flutter_libs` directory (native Isar binaries)
+- `IsarSecureStore` (replaced by `DbSecureStore`)
+
+### Changed
+- 70+ files: `Supabase.instance.client` → `sl<SupabaseClient>()` for testability
+- DB migration strategy: destructive → incremental (preserves user data)
+- PRAGMA key format: string → raw hex (`x'...'`) for SQLCipher compliance
+
+---
+
 ## [0.92.0] — 2026-03-20
 
 ### Added

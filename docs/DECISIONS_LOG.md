@@ -3979,3 +3979,21 @@ Para o login Instagram funcionar de fato:
 **Arquivos:** 1 migration, ~20 componentes/páginas portal, 2 Edge Functions, 4 novos docs, CI atualizado
 
 ---
+
+## DECISAO 143 — Completar migração Isar→Drift + Correções do relatório cético
+
+**Data:** 2026-03-04
+**Contexto:** Após a auditoria pós-refatoração de 10 fases e a revisão cética que identificou 3 Critical, 5 High e 6 Medium issues, todas as correções foram implementadas.
+
+**Decisões:**
+1. **Migration incremental (C-01):** Trocar migration destrutiva por incremental — preservar 10 tabelas cujo schema não mudou (workout_sessions, wallets, location_points, etc.), drop+recreate apenas 18 tabelas que são caches do servidor.
+2. **safeByName (C-02):** Criar utility `safeByName<T>()` com fallback e logging, substituindo todos os 20+ `Enum.values.byName()` inseguros nos 10 Drift repos.
+3. **SQLCipher raw key (C-03):** Usar formato `PRAGMA key = "x'hex'"` (raw key) ao invés de passphrase, conforme recomendação do SQLCipher.
+4. **Supabase DI guard (H-03):** Envolver todas as 9 registrações de serviços Supabase-dependent no guard `if (AppConfig.isSupabaseReady)` para evitar crash offline.
+5. **DbSecureStore (H-04):** Migrar key legada `isar_encryption_key` → `db_encryption_key`, e novo método `clearKeyAndDatabase()` que deleta o DB junto com a key.
+6. **Remoção total do Isar:** Deletar 22 models, 17 repos, database provider, migrator, e binários nativos (third_party/isar_flutter_libs).
+7. **Test infrastructure:** Criar `FakeSupabaseClient` com suporte completo à chain PostgREST (from→select→eq→single) para eliminar falhas de teste.
+
+**Resultado:** 2051 testes passando (0 falhas), 0 erros no `dart analyze`, build APK funcional, todas as migrations Supabase aplicadas.
+
+---

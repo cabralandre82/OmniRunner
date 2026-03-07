@@ -13,7 +13,7 @@
 | UI / Framework | Flutter | 3.22+ |
 | State Management | BLoC | 8.x |
 | DI / Service Locator | get_it | latest |
-| Persistência Local | Drift (SQLite) | 2.19+ *(Isar legacy, migration in progress)* |
+| Persistência Local | Drift + SQLCipher | 2.19+ |
 | Mapas | MapLibre + MapTiler | 0.19+ |
 | Backend | Supabase (PostgreSQL + Auth + Edge Functions + Storage) | 2.x |
 | GPS | Geolocator + flutter_foreground_task | 11.x |
@@ -41,7 +41,7 @@
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐ │
 │  │   Presentation   │  │     Domain       │  │      Data        │ │
 │  │                  │  │                  │  │                  │ │
-│  │  66 Screens      │  │  54 Entities     │  │  27 Repos (Drift/Isar) │ │
+│  │  66 Screens      │  │  54 Entities     │  │  27 Repos (Drift) │ │
 │  │  21 BLoCs        │  │  60 Use Cases    │  │  Datasources     │ │
 │  │  Widgets         │  │  Failures        │  │  Mappers         │ │
 │  └────────┬─────────┘  └────────▲─────────┘  └────────┬─────────┘ │
@@ -86,10 +86,9 @@ lib/
 │   ├── datasources/               # RemoteAuthDataSource, GPS, etc.
 │   ├── mappers/                   # PositionMapper, PermissionMapper
 │   ├── models/
-│   │   ├── isar/                  # Isar collection models (*.g.dart)
 │   │   └── proto/                 # Protobuf adapters
 │   └── repositories_impl/        # 27 implementações concretas
-│       ├── isar_*_repo.dart       # Persistência local (Isar)
+│       ├── drift_*_repo.dart      # Persistência local (Drift + SQLCipher; Isar removido)
 │       ├── remote_*_repo.dart     # Supabase direto
 │       ├── sync_repo.dart         # Sync offline-first
 │       └── location_stream_repo.dart
@@ -168,7 +167,7 @@ AuthGate
 ```
 StaffDashboardScreen
     │
-    ├─ Dados: query Supabase direto → sync coaching_groups + coaching_members → Isar
+    ├─ Dados: query Supabase direto → sync coaching_groups + coaching_members → Drift
     │
     ├─ Cards:
     │   ├─ Atletas e Staff → CoachingGroupDetailsScreen (Supabase direto)
@@ -401,7 +400,7 @@ Retry: 3x exponential backoff em chamadas críticas (auth, create assessoria)
 |---|---|---|---|
 | F1 — GPS Tracking | data (Geolocator) + domain (use cases) | Location stream + filter + accumulate | ✅ |
 | F2 — Métricas | domain (use cases puros) | Pace, distance, elevation, HR zones | ✅ |
-| F3 — Persistência offline | data (Isar) | Sessions, points, entities | ✅ |
+| F3 — Persistência offline | data (Drift) | Sessions, points, entities | ✅ |
 | F4 — Mapa ao vivo | presentation (MapLibre) | Camera follow + auto-bearing | ✅ |
 | F5 — Ghost Runner | domain + presentation | Interpolação + hysteresis + voz | ✅ |
 | F6 — Anti-cheat | domain (3 detectors) | Speed, teleport, vehicle (via steps) | ✅ |
@@ -518,14 +517,14 @@ O modelo de receita é **B2B SaaS** (plataforma → assessoria). O app **nunca p
 Staff dashboard, performance, atletas, solicitações → query Supabase direto.
 Sem BLoC intermediário. Pull-to-refresh.
 
-### Padrão 2: Supabase-first + Isar Cache (para atleta)
-MyAssessoriaBloc, HistoryScreen → query Supabase primeiro, merge no Isar.
+### Padrão 2: Supabase-first + Drift Cache (para atleta)
+MyAssessoriaBloc, HistoryScreen → query Supabase primeiro, merge no Drift.
 Garante dados frescos após aprovações server-side ou troca de conta.
-Fallback silencioso para Isar quando offline.
+Fallback silencioso para Drift quando offline.
 
-### Padrão 2b: Isar Cache + BLoC (tracking ativo)
-Tracking, wallet, challenges → Isar local como cache principal.
-BLoC lê do Isar. SyncRepo sincroniza com Supabase.
+### Padrão 2b: Drift Cache + BLoC (tracking ativo)
+Tracking, wallet, challenges → Drift local como cache principal.
+BLoC lê do Drift. SyncRepo sincroniza com Supabase.
 AutoSyncManager retenta ao restaurar conectividade.
 
 ### Padrão 3: Edge Function (operações transacionais)
