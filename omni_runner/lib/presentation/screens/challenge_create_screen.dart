@@ -193,7 +193,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
               challengeId: state.challenge.id,
             );
             showSuccessOverlay(context, message: 'Desafio criado!');
-            context.go(AppRoutes.challengeInvite, extra: state.challenge);
+            context.push(AppRoutes.challengeInvite, extra: state.challenge);
           } else if (state is ChallengesError) {
             setState(() => _busy = false);
             ScaffoldMessenger.of(context).showSnackBar(

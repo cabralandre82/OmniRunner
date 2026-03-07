@@ -777,15 +777,12 @@ GoRouter createAppRouter({RecoveredSession? recovery}) {
       GoRoute(
         path: AppRoutes.assessoriaFeed,
         builder: (context, state) {
-          final groupId = state.extra as String?;
-          if (groupId != null) {
-            return BlocProvider<AssessoriaFeedBloc>(
-              create: (_) =>
-                  sl<AssessoriaFeedBloc>()..add(LoadFeed(groupId)),
-              child: const AssessoriaFeedScreen(),
-            );
-          }
-          return const AssessoriaFeedScreen();
+          final groupId = state.extra as String? ?? '';
+          return BlocProvider<AssessoriaFeedBloc>(
+            create: (_) =>
+                sl<AssessoriaFeedBloc>()..add(LoadFeed(groupId)),
+            child: const AssessoriaFeedScreen(),
+          );
         },
       ),
       GoRoute(

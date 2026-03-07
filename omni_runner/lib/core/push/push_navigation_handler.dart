@@ -6,6 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
+import 'package:omni_runner/presentation/blocs/challenges/challenges_event.dart';
 import 'package:omni_runner/presentation/blocs/friends/friends_bloc.dart';
 import 'package:omni_runner/presentation/screens/challenge_details_screen.dart';
 import 'package:omni_runner/presentation/screens/challenge_join_screen.dart';
@@ -112,7 +114,11 @@ class PushNavigationHandler {
         final challengeId = data['challenge_id'] as String?;
         if (challengeId != null) {
           nav.push(MaterialPageRoute<void>(
-            builder: (_) => ChallengeDetailsScreen(challengeId: challengeId),
+            builder: (_) => BlocProvider(
+              create: (_) => sl<ChallengesBloc>()
+                ..add(ViewChallengeDetails(challengeId)),
+              child: ChallengeDetailsScreen(challengeId: challengeId),
+            ),
           ));
         }
 

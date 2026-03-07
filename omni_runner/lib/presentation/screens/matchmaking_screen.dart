@@ -14,6 +14,8 @@ import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
 import 'package:omni_runner/domain/repositories/i_session_repo.dart';
 import 'package:go_router/go_router.dart';
 import 'package:omni_runner/core/router/app_router.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
 import 'package:omni_runner/presentation/screens/challenge_create_screen.dart';
 import 'package:omni_runner/features/parks/data/park_detection_service.dart';
 import 'package:omni_runner/features/parks/data/parks_seed.dart';
@@ -708,11 +710,14 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
                     onPressed: () {
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute<void>(
-                          builder: (_) => ChallengeCreateScreen(
-                            initialType: ChallengeType.oneVsOne,
-                            initialGoal: _goal,
-                            initialWindowMin: _windowMin,
-                            initialFee: int.tryParse(_feeCtrl.text),
+                          builder: (_) => BlocProvider(
+                            create: (_) => sl<ChallengesBloc>(),
+                            child: ChallengeCreateScreen(
+                              initialType: ChallengeType.oneVsOne,
+                              initialGoal: _goal,
+                              initialWindowMin: _windowMin,
+                              initialFee: int.tryParse(_feeCtrl.text),
+                            ),
                           ),
                         ),
                       );

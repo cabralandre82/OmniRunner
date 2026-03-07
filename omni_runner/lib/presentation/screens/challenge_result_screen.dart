@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
 import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
@@ -782,12 +784,15 @@ class _CtaBar extends StatelessWidget {
                 final windowMin = challenge.rules.windowMs ~/ 60000;
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute<void>(
-                    builder: (_) => ChallengeCreateScreen(
-                      initialType: challenge.type,
-                      initialGoal: challenge.rules.goal,
-                      initialWindowMin: windowMin,
-                      initialFee: challenge.rules.entryFeeCoins,
-                      initialTarget: challenge.rules.target,
+                    builder: (_) => BlocProvider(
+                      create: (_) => sl<ChallengesBloc>(),
+                      child: ChallengeCreateScreen(
+                        initialType: challenge.type,
+                        initialGoal: challenge.rules.goal,
+                        initialWindowMin: windowMin,
+                        initialFee: challenge.rules.entryFeeCoins,
+                        initialTarget: challenge.rules.target,
+                      ),
                     ),
                   ),
                 );
