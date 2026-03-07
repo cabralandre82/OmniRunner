@@ -185,9 +185,6 @@ Future<void> registerDataModule(GetIt sl) async {
   sl.registerLazySingleton<MembershipCache>(MembershipCache.new);
 
   if (AppConfig.isSupabaseReady) {
-    sl.registerLazySingleton<SupabaseClient>(
-      () => Supabase.instance.client,
-    );
     sl.registerLazySingleton<OfflineQueue>(
       () => OfflineQueue(
         prefs: prefs,

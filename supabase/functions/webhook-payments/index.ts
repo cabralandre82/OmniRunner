@@ -326,8 +326,9 @@ async function handleDisputeCreated(
 // ─── Main Handler ────────────────────────────────────────────────────────────
 
 serve(async (req: Request) => {
-  if (req.method === 'GET' && new URL(req.url).pathname === '/health') {
-    return new Response(JSON.stringify({ status: 'ok', version: '1.0.0' }), {
+  const url = new URL(req.url);
+  if (url.pathname.endsWith("/health")) {
+    return new Response(JSON.stringify({ status: "ok", version: "2.0.0" }), {
       headers: { 'Content-Type': 'application/json' },
     });
   }
@@ -358,7 +359,7 @@ serve(async (req: Request) => {
       return jsonErr(500, "INTERNAL", "Server misconfiguration", requestId);
     }
 
-    // ── 2. Verify Stripe signature ──────────────────────────────────────
+    // ── 2. Auth: webhook signature validation ──────────────────────────────
     rawBody = await req.text();
     const sig = req.headers.get("stripe-signature");
 

@@ -1,4 +1,6 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { jsonErr } from "../_shared/http.ts";
 
 /**
  * Asaas Webhook Receiver
@@ -26,11 +28,19 @@ function getDb() {
   });
 }
 
-Deno.serve(async (req: Request) => {
+serve(async (req: Request) => {
+  const url = new URL(req.url);
+  if (url.pathname.endsWith("/health")) {
+    return new Response(JSON.stringify({ status: "ok", version: "2.0.0" }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405 });
   }
 
+  try {
   let payload: Record<string, unknown>;
   try {
     payload = await req.json();
@@ -90,7 +100,7 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  // Validate authToken against the group's webhook_token
+  // Auth: webhook signature validation — validate authToken against the group's webhook_token
   const incomingToken = req.headers.get("asaas-access-token") ??
     (payload as Record<string, unknown>).accessToken as string | undefined;
 
@@ -259,4 +269,7 @@ Deno.serve(async (req: Request) => {
   }
 
   return new Response(JSON.stringify({ ok: true, errors: errors.length > 0 ? errors : undefined }), { status: 200 });
+  } catch (error) {
+    return jsonErr(500, "INTERNAL", error instanceof Error ? error.message : String(error), undefined, undefined, undefined, req);
+  }
 });

@@ -1,3 +1,4 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireUser, AuthError } from "../_shared/auth.ts";
 import { handleCors } from "../_shared/cors.ts";
@@ -34,7 +35,13 @@ interface AthleteInput {
   email?: string;
 }
 
-Deno.serve(async (req: Request) => {
+serve(async (req: Request) => {
+  const url = new URL(req.url);
+  if (url.pathname.endsWith("/health")) {
+    return new Response(JSON.stringify({ status: "ok", version: "2.0.0" }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   const cors = handleCors(req);
   if (cors) return cors;
   const rid = crypto.randomUUID();

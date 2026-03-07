@@ -1,5 +1,7 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { handleCors } from "../_shared/cors.ts";
+import { jsonErr } from "../_shared/http.ts";
 
 // ─── FIT Protocol Constants ────────────────────────────────────────────────────
 
@@ -366,16 +368,14 @@ function blockToFitStep(block: WorkoutBlock): FitStep {
 // ─── Edge Function Handler ─────────────────────────────────────────────────────
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-      },
+  const url = new URL(req.url);
+  if (url.pathname.endsWith("/health")) {
+    return new Response(JSON.stringify({ status: "ok", version: "2.0.0" }), {
+      headers: { "Content-Type": "application/json" },
     });
   }
+
+  if (req.method === "OPTIONS") return handleCors(req);
 
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
@@ -471,9 +471,6 @@ serve(async (req) => {
     });
   } catch (err) {
     console.error("generate-fit-workout error:", err);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonErr(500, "INTERNAL", err instanceof Error ? err.message : String(err), undefined, undefined, undefined, req);
   }
 });

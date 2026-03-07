@@ -1,3 +1,4 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 /**
@@ -51,7 +52,14 @@ function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-Deno.serve(async (req: Request) => {
+serve(async (req: Request) => {
+  const url = new URL(req.url);
+  if (url.pathname.endsWith("/health")) {
+    return new Response(JSON.stringify({ status: "ok", version: "2.0.0" }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: { "Access-Control-Allow-Origin": "*" } });
   }
@@ -257,6 +265,7 @@ Deno.serve(async (req: Request) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     errors.push(`unexpected: ${msg}`);
+    // INTERNAL error — return partial results with error details
     return new Response(
       JSON.stringify({
         ok: false,
@@ -265,7 +274,7 @@ Deno.serve(async (req: Request) => {
         divergences,
         errors,
       }),
-      { status: 200, headers: { "Content-Type": "application/json" } },
+      { status: 500, headers: { "Content-Type": "application/json" } },
     );
   }
 });

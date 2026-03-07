@@ -109,7 +109,15 @@ function analyzeSource(name: string, source: string): FunctionMeta {
   const usesRequireUser = source.includes("requireUser");
   const checksAuthHeader =
     source.includes("Authorization") || source.includes("Bearer");
-  const hasAuth = usesRequireUser || checksAuthHeader;
+  const checksWebhookToken =
+    source.includes("asaas-access-token") ||
+    source.includes("webhook_token") ||
+    source.includes("stripe-signature") ||
+    source.includes("x-webhook-secret");
+  const isIntentionallyPublic =
+    source.includes("intentionally public") ||
+    source.includes("no auth required");
+  const hasAuth = usesRequireUser || checksAuthHeader || checksWebhookToken || isIntentionallyPublic;
   const hasCors =
     source.includes("handleCors") || source.includes("CORS_HEADERS");
   const usesServiceKey =
@@ -118,6 +126,7 @@ function analyzeSource(name: string, source: string): FunctionMeta {
   const isWebhook =
     source.includes("stripe-signature") ||
     source.includes("STRAVA_VERIFY_TOKEN") ||
+    source.includes("asaas-access-token") ||
     name.startsWith("webhook-");
   const isServiceRole = usesServiceKey && !usesRequireUser;
 

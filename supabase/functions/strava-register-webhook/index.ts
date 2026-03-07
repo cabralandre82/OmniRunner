@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { jsonOk, jsonErr } from "../_shared/http.ts";
 
 /**
@@ -14,14 +14,26 @@ import { jsonOk, jsonErr } from "../_shared/http.ts";
  */
 
 serve(async (req: Request) => {
-  if (req.method === 'GET' && new URL(req.url).pathname === '/health') {
-    return new Response(JSON.stringify({ status: 'ok', version: '1.0.0' }), {
-      headers: { 'Content-Type': 'application/json' },
+  const url = new URL(req.url);
+  if (url.pathname.endsWith("/health")) {
+    return new Response(JSON.stringify({ status: "ok", version: "2.0.0" }), {
+      headers: { "Content-Type": "application/json" },
     });
   }
 
   if (req.method !== "POST") {
     return jsonErr(405, "METHOD_NOT_ALLOWED", "Use POST");
+  }
+
+  // Auth: service_role key required (admin-only operation)
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SERVICE_ROLE_KEY");
+  if (!serviceKey) {
+    return jsonErr(500, "CONFIG", "Server misconfiguration");
+  }
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (token !== serviceKey) {
+    return jsonErr(401, "AUTH", "Service role key required");
   }
 
   const clientId = Deno.env.get("STRAVA_CLIENT_ID");

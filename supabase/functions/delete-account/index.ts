@@ -22,7 +22,7 @@ const FN = "delete-account";
 
 serve(async (req: Request) => {
   if (req.method === 'GET' && new URL(req.url).pathname === '/health') {
-    return new Response(JSON.stringify({ status: 'ok', version: '1.0.0' }), {
+    return new Response(JSON.stringify({ status: 'ok', version: '2.0.0' }), {
       headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
     });
   }

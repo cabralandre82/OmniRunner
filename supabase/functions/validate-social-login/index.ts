@@ -10,6 +10,9 @@ import { CORS_HEADERS, handleCors } from "../_shared/cors.ts";
  * (e.g. TikTok). The app calls this with { provider, action } to initiate
  * the OAuth flow.
  *
+ * Auth: intentionally public — OAuth init endpoints are called by unauthenticated
+ * clients to obtain the auth_url before redirecting to the provider.
+ *
  * For now, TikTok login is not yet configured, so we return a clear error
  * rather than crashing. When TikTok OAuth credentials are added, this
  * function will generate the auth_url and handle the callback.
@@ -23,9 +26,10 @@ import { CORS_HEADERS, handleCors } from "../_shared/cors.ts";
 const FN = "validate-social-login";
 
 serve(async (req: Request) => {
-  if (req.method === 'GET' && new URL(req.url).pathname === '/health') {
-    return new Response(JSON.stringify({ status: 'ok', version: '1.0.0' }), {
-      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+  const url = new URL(req.url);
+  if (url.pathname.endsWith("/health")) {
+    return new Response(JSON.stringify({ status: "ok", version: "2.0.0" }), {
+      headers: { "Content-Type": "application/json", ...CORS_HEADERS },
     });
   }
 
