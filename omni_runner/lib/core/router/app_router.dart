@@ -132,10 +132,19 @@ import 'package:omni_runner/domain/entities/token_intent_entity.dart';
 import 'package:omni_runner/features/parks/domain/park_entity.dart';
 import 'package:omni_runner/domain/usecases/recover_active_session.dart';
 
+import 'package:omni_runner/presentation/blocs/badges/badges_bloc.dart';
+import 'package:omni_runner/presentation/blocs/badges/badges_event.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_event.dart';
+import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_bloc.dart';
+import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_event.dart';
+import 'package:omni_runner/presentation/blocs/leaderboards/leaderboards_bloc.dart';
+import 'package:omni_runner/presentation/blocs/missions/missions_bloc.dart';
+import 'package:omni_runner/presentation/blocs/missions/missions_event.dart';
 import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_bloc.dart';
 import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_event.dart';
+import 'package:omni_runner/presentation/blocs/progression/progression_bloc.dart';
+import 'package:omni_runner/presentation/blocs/progression/progression_event.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_bloc.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_event.dart';
 import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_bloc.dart';
@@ -683,13 +692,20 @@ GoRouter createAppRouter({RecoveredSession? recovery}) {
       ),
       GoRoute(
         path: AppRoutes.challengeCreate,
-        builder: (context, state) => const ChallengeCreateScreen(),
+        builder: (context, state) => BlocProvider<ChallengesBloc>(
+          create: (_) => sl<ChallengesBloc>(),
+          child: const ChallengeCreateScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.challengeDetails,
         builder: (context, state) {
           final id = state.pathParameters['id']!;
-          return ChallengeDetailsScreen(challengeId: id);
+          return BlocProvider<ChallengesBloc>(
+            create: (_) => sl<ChallengesBloc>()
+              ..add(ViewChallengeDetails(id)),
+            child: ChallengeDetailsScreen(challengeId: id),
+          );
         },
       ),
       GoRoute(
@@ -703,7 +719,10 @@ GoRouter createAppRouter({RecoveredSession? recovery}) {
         path: AppRoutes.challengeInvite,
         builder: (context, state) {
           final challenge = state.extra as ChallengeEntity;
-          return ChallengeInviteScreen(challenge: challenge);
+          return BlocProvider<ChallengesBloc>(
+            create: (_) => sl<ChallengesBloc>(),
+            child: ChallengeInviteScreen(challenge: challenge),
+          );
         },
       ),
       GoRoute(
@@ -778,7 +797,11 @@ GoRouter createAppRouter({RecoveredSession? recovery}) {
       ),
       GoRoute(
         path: AppRoutes.coachingGroups,
-        builder: (context, state) => const CoachingGroupsScreen(),
+        builder: (context, state) => BlocProvider<CoachingGroupsBloc>(
+          create: (_) => sl<CoachingGroupsBloc>()
+            ..add(LoadCoachingGroups(sl<UserIdentityProvider>().userId)),
+          child: const CoachingGroupsScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.coachingGroupDetails,
@@ -925,15 +948,27 @@ GoRouter createAppRouter({RecoveredSession? recovery}) {
       ),
       GoRoute(
         path: AppRoutes.badges,
-        builder: (context, state) => const BadgesScreen(),
+        builder: (context, state) => BlocProvider<BadgesBloc>(
+          create: (_) => sl<BadgesBloc>()
+            ..add(LoadBadges(sl<UserIdentityProvider>().userId)),
+          child: const BadgesScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.missions,
-        builder: (context, state) => const MissionsScreen(),
+        builder: (context, state) => BlocProvider<MissionsBloc>(
+          create: (_) => sl<MissionsBloc>()
+            ..add(LoadMissions(sl<UserIdentityProvider>().userId)),
+          child: const MissionsScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.progression,
-        builder: (context, state) => const ProgressionScreen(),
+        builder: (context, state) => BlocProvider<ProgressionBloc>(
+          create: (_) => sl<ProgressionBloc>()
+            ..add(LoadProgression(sl<UserIdentityProvider>().userId)),
+          child: const ProgressionScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.personalEvolution,
@@ -945,7 +980,10 @@ GoRouter createAppRouter({RecoveredSession? recovery}) {
       ),
       GoRoute(
         path: AppRoutes.leaderboards,
-        builder: (context, state) => const LeaderboardsScreen(),
+        builder: (context, state) => BlocProvider<LeaderboardsBloc>(
+          create: (_) => sl<LeaderboardsBloc>(),
+          child: const LeaderboardsScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.league,
@@ -1173,10 +1211,13 @@ GoRouter createAppRouter({RecoveredSession? recovery}) {
         path: AppRoutes.staffGenerateQr,
         builder: (context, state) {
           final extra = state.extra as StaffGenerateQrExtra;
-          return StaffGenerateQrScreen(
-            type: extra.type,
-            groupId: extra.groupId,
-            championshipId: extra.championshipId,
+          return BlocProvider<StaffQrBloc>(
+            create: (_) => sl<StaffQrBloc>(),
+            child: StaffGenerateQrScreen(
+              type: extra.type,
+              groupId: extra.groupId,
+              championshipId: extra.championshipId,
+            ),
           );
         },
       ),
