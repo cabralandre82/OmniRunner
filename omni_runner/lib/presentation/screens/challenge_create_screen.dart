@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:omni_runner/core/analytics/product_event_tracker.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/push/notification_rules_service.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
@@ -12,8 +14,6 @@ import 'package:omni_runner/presentation/blocs/challenges/challenges_event.dart'
 import 'package:omni_runner/presentation/blocs/challenges/challenges_state.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_bloc.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_event.dart';
-import 'package:omni_runner/presentation/screens/challenge_invite_screen.dart';
-import 'package:omni_runner/presentation/screens/matchmaking_screen.dart';
 import 'package:omni_runner/presentation/widgets/success_overlay.dart';
 import 'package:omni_runner/presentation/widgets/contextual_tip_banner.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
@@ -143,7 +143,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
             ],
           ),
         );
-        if (shouldPop == true && context.mounted) Navigator.pop(context);
+        if (shouldPop == true && context.mounted) context.pop();
       },
       child: Scaffold(
       appBar: AppBar(
@@ -193,16 +193,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
               challengeId: state.challenge.id,
             );
             showSuccessOverlay(context, message: 'Desafio criado!');
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute<void>(
-                builder: (_) => BlocProvider.value(
-                  value: context.read<ChallengesBloc>(),
-                  child: ChallengeInviteScreen(
-                    challenge: state.challenge,
-                  ),
-                ),
-              ),
-            );
+            context.go(AppRoutes.challengeInvite, extra: state.challenge);
           } else if (state is ChallengesError) {
             setState(() => _busy = false);
             ScaffoldMessenger.of(context).showSnackBar(
@@ -220,11 +211,7 @@ class _ChallengeCreateScreenState extends State<ChallengeCreateScreen> {
               children: [
                 // ── Matchmaking CTA ──────────────────────────────────
                 _MatchmakingBanner(
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<String>(
-                      builder: (_) => const MatchmakingScreen(),
-                    ),
-                  ),
+                  onTap: () => context.push(AppRoutes.matchmaking),
                 ),
                 const SizedBox(height: 16),
 

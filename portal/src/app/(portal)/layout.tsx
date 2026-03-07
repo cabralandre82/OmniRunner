@@ -5,6 +5,8 @@ import { isFeatureEnabled } from "@/lib/feature-flags";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
+import { OnboardingOverlay } from "@/components/onboarding/onboarding-overlay";
+import { PageWrapper } from "@/components/page-wrapper";
 
 interface Branding {
   logo_url: string | null;
@@ -147,6 +149,7 @@ export default async function PortalLayout({
   return (
     <div className="flex h-screen overflow-hidden bg-bg-primary" style={cssVars}>
       <KeyboardShortcuts />
+      <OnboardingOverlay />
       <Sidebar
         role={roleFromDb}
         isPlatformAdmin={isPlatformAdmin}
@@ -163,7 +166,9 @@ export default async function PortalLayout({
           environment={environment}
           isBlocked={isBlocked}
         />
-        <main className="flex-1 overflow-y-auto bg-bg-primary p-4 sm:p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-bg-primary p-4 sm:p-6">
+          <PageWrapper>{children}</PageWrapper>
+        </main>
       </div>
     </div>
   );

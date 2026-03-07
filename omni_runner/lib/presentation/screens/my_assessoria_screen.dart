@@ -1,24 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/coaching_group_entity.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
-import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_bloc.dart';
-import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_event.dart';
-import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
-import 'package:omni_runner/presentation/blocs/challenges/challenges_event.dart';
 import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_bloc.dart';
 import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_event.dart';
 import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_state.dart';
-import 'package:omni_runner/presentation/screens/assessoria_feed_screen.dart';
-import 'package:omni_runner/presentation/screens/athlete_championships_screen.dart';
-import 'package:omni_runner/presentation/screens/challenges_list_screen.dart';
-import 'package:omni_runner/presentation/screens/join_assessoria_screen.dart';
-import 'package:omni_runner/presentation/screens/league_screen.dart';
 import 'package:omni_runner/presentation/widgets/error_state.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -46,7 +39,7 @@ class MyAssessoriaScreen extends StatelessWidget {
                 behavior: SnackBarBehavior.floating,
               ),
             );
-            Navigator.of(context).pop();
+            context.pop();
           }
           if (state is MyAssessoriaError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -237,7 +230,7 @@ class _LoadedBody extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
+            onPressed: () => ctx.pop(false),
             child: const Text('Cancelar'),
           ),
           FilledButton(
@@ -245,7 +238,7 @@ class _LoadedBody extends StatelessWidget {
               backgroundColor: DesignTokens.error,
             ),
             onPressed: () {
-              Navigator.of(ctx).pop(true);
+              ctx.pop(true);
               context.read<MyAssessoriaBloc>().add(
                     ConfirmSwitchAssessoria(target.id),
                   );
@@ -392,12 +385,7 @@ class _QuickAccessSection extends StatelessWidget {
           title: 'Feed da assessoria',
           subtitle: 'Atividades recentes do grupo',
           onTap: () {
-            Navigator.of(context).push(MaterialPageRoute<void>(
-              builder: (_) => BlocProvider<AssessoriaFeedBloc>(
-                create: (_) => sl<AssessoriaFeedBloc>()..add(LoadFeed(groupId)),
-                child: const AssessoriaFeedScreen(),
-              ),
-            ));
+            context.push(AppRoutes.assessoriaFeed, extra: groupId);
           },
         ),
         _QuickTile(
@@ -406,9 +394,7 @@ class _QuickAccessSection extends StatelessWidget {
           title: 'Campeonatos',
           subtitle: 'Competições abertas e em andamento',
           onTap: () {
-            Navigator.of(context).push(MaterialPageRoute<void>(
-              builder: (_) => const AthleteChampionshipsScreen(),
-            ));
+            context.push(AppRoutes.championships);
           },
         ),
         _QuickTile(
@@ -417,9 +403,7 @@ class _QuickAccessSection extends StatelessWidget {
           title: 'Liga de Assessorias',
           subtitle: 'Ranking entre assessorias da plataforma',
           onTap: () {
-            Navigator.of(context).push(MaterialPageRoute<void>(
-              builder: (_) => const LeagueScreen(),
-            ));
+            context.push(AppRoutes.league);
           },
         ),
         _QuickTile(
@@ -428,13 +412,7 @@ class _QuickAccessSection extends StatelessWidget {
           title: 'Desafios',
           subtitle: 'Desafios disponíveis e aceitos',
           onTap: () {
-            final uid = sl<UserIdentityProvider>().userId;
-            Navigator.of(context).push(MaterialPageRoute<void>(
-              builder: (_) => BlocProvider<ChallengesBloc>(
-                create: (_) => sl<ChallengesBloc>()..add(LoadChallenges(uid)),
-                child: const ChallengesListScreen(),
-              ),
-            ));
+            context.push(AppRoutes.challenges);
           },
         ),
       ],
@@ -653,11 +631,7 @@ class _NoAssessoriaBodyState extends State<_NoAssessoriaBody> {
               const SizedBox(height: DesignTokens.spacingLg),
               FilledButton.icon(
                 onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute<void>(
-                    builder: (_) => JoinAssessoriaScreen(
-                      onComplete: () => Navigator.of(context).pop(),
-                    ),
-                  ));
+                  context.push(AppRoutes.joinAssessoria);
                 },
                 icon: const Icon(Icons.search_rounded),
                 label: const Text('Buscar outra assessoria'),
@@ -681,11 +655,7 @@ class _NoAssessoriaBodyState extends State<_NoAssessoriaBody> {
               const SizedBox(height: DesignTokens.spacingLg),
               FilledButton.icon(
                 onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute<void>(
-                    builder: (_) => JoinAssessoriaScreen(
-                      onComplete: () => Navigator.of(context).pop(),
-                    ),
-                  ));
+                  context.push(AppRoutes.joinAssessoria);
                 },
                 icon: const Icon(Icons.search_rounded),
                 label: const Text('Entrar em uma assessoria'),

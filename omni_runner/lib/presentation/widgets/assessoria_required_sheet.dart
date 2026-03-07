@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-import 'package:omni_runner/presentation/screens/join_assessoria_screen.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 
 /// Bottom sheet shown when an athlete without an assessoria tries to access
 /// any challenge-related feature (create, join, matchmaking).
@@ -85,13 +86,7 @@ class AssessoriaRequiredSheet extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => JoinAssessoriaScreen(
-                        onComplete: () => Navigator.of(context).pop(),
-                      ),
-                    ),
-                  );
+                  context.push(AppRoutes.joinAssessoria);
                 },
                 icon: const Icon(Icons.group_add_rounded),
                 label: const Text('Entrar em assessoria'),

@@ -77,7 +77,31 @@ jobs:
           channel: 'stable'
           cache: true
       - run: flutter pub get
-      - run: flutter build apk --release
+      - name: Build APK
+        id: build-apk
+        run: |
+          start=$(date +%s)
+          flutter build apk --release
+          end=$(date +%s)
+          echo "build_duration_seconds=$((end - start))" >> $GITHUB_OUTPUT
+          echo "Build completed in $((end - start)) seconds"
+      - name: APK size check
+        id: apk-size-check
+        run: |
+          APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
+          SIZE_MB=$(echo "scale=2; $(stat -c%s "$APK_PATH") / 1048576" | bc)
+          echo "APK size: ${SIZE_MB} MB"
+          echo "apk_size_mb=$SIZE_MB" >> $GITHUB_OUTPUT
+          if (( $(echo "$SIZE_MB > 50" | bc -l) )); then
+            echo "ERROR: APK size (${SIZE_MB} MB) exceeds 50 MB limit"
+            exit 1
+          fi
+          echo "APK size check passed (limit: 50 MB)"
+      - name: Print build metrics
+        run: |
+          echo "## Build Metrics" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build duration:** ${{ steps.build-apk.outputs.build_duration_seconds }} seconds" >> $GITHUB_STEP_SUMMARY
+          echo "- **APK size:** ${{ steps.apk-size-check.outputs.apk_size_mb }} MB" >> $GITHUB_STEP_SUMMARY
       - uses: actions/upload-artifact@v4
         with:
           name: apk-release

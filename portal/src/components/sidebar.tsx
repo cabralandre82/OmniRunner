@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
+import { LocaleSwitcher } from "./locale-switcher";
+import { ThemeToggle } from "./theme-toggle";
 
 interface NavItem {
   href: string;
@@ -117,6 +119,9 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/settings/payments", label: "Pagamentos", roles: ["admin_master"] },
       { href: "/exports", label: "Exports", roles: ["admin_master", "coach"] },
       { href: "/badges", label: "Badges", roles: ["admin_master", "coach"] },
+      { href: "/help", label: "Central de Ajuda", roles: ["admin_master", "coach", "assistant"] },
+      { href: "/glossary", label: "Glossário", roles: ["admin_master", "coach", "assistant"] },
+      { href: "/beta", label: "Programa Beta", roles: ["admin_master", "coach"] },
     ],
   },
 ];
@@ -232,16 +237,19 @@ export function Sidebar({
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
+      <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-1" role="navigation" aria-label="Menu principal">
         {visibleGroups.length > 0 ? (
           visibleGroups.map((group) => {
             const isOpen = expanded[group.key] ?? false;
             const hasActive = group.items.some((item) => pathname.startsWith(item.href));
 
+            const onboardingKey = group.key === "overview" ? "dashboard" : group.key;
             return (
-              <div key={group.key}>
+              <div key={group.key} data-onboarding={onboardingKey}>
                 <button
                   onClick={() => toggle(group.key)}
+                  aria-expanded={isOpen}
+                  aria-controls={`nav-group-${group.key}`}
                   className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
                     hasActive
                       ? "text-brand"
@@ -262,13 +270,16 @@ export function Sidebar({
                 </button>
 
                 {isOpen && (
-                  <div className="ml-3 space-y-0.5 border-l border-border-subtle pl-3 pb-1">
+                  <div id={`nav-group-${group.key}`} className="ml-3 space-y-0.5 border-l border-border-subtle pl-3 pb-1">
                     {group.items.map((item) => {
                       const active = pathname.startsWith(item.href);
+                      const onboardingItemKey = item.href.replace(/^\//, "").replace(/\//g, "-");
                       return (
                         <Link
                           key={item.href}
                           href={item.href}
+                          data-onboarding={onboardingItemKey}
+                          aria-current={active ? "page" : undefined}
                           className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                             active
                               ? "bg-brand-soft text-brand"
@@ -297,6 +308,7 @@ export function Sidebar({
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={active ? "page" : undefined}
                 className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   active
                     ? "bg-error-soft text-error"
@@ -309,6 +321,11 @@ export function Sidebar({
           })}
         </div>
       )}
+
+      <div className="border-t border-border px-2 py-2 space-y-0.5">
+        <LocaleSwitcher />
+        <ThemeToggle />
+      </div>
 
       <div className="border-t border-border px-4 py-3">
         <p className="truncate text-xs text-content-muted">{ROLE_LABELS[role] ?? role}</p>
@@ -326,6 +343,7 @@ export function Sidebar({
         <div
           className="fixed inset-0 z-40 bg-overlay lg:hidden"
           onClick={() => setOpen(false)}
+          aria-hidden="true"
         />
       )}
 

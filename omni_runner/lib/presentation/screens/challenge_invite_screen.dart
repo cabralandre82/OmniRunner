@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_participant_entity.dart';
@@ -37,7 +38,7 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
 
   void _confirmClose(BuildContext context) {
     if (_shared || _challenge.acceptedCount > 1) {
-      Navigator.of(context).pop();
+      context.pop();
       return;
     }
     showDialog<bool>(
@@ -56,7 +57,7 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              Navigator.of(context).pop();
+              context.pop();
             },
             child: const Text('Sair mesmo assim'),
           ),
@@ -231,7 +232,7 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
 
             // Done button
             OutlinedButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => context.pop(),
               child: const Text('Concluir'),
             ),
             const SizedBox(height: 16),

@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:omni_runner/core/errors/integrations_failures.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/storage/preferences_keys.dart';
 import 'package:omni_runner/domain/entities/workout_session_entity.dart';
 import 'package:omni_runner/features/integrations_export/domain/export_format.dart';
 import 'package:omni_runner/features/integrations_export/presentation/export_sheet_controller.dart';
-import 'package:omni_runner/features/integrations_export/presentation/how_to_import_screen.dart';
 import 'package:omni_runner/features/integrations_export/presentation/share_export_file.dart';
-import 'package:omni_runner/presentation/screens/settings_screen.dart';
 
 
 /// Export screen — lets the user choose a format and share the file.
@@ -174,9 +174,7 @@ class _ExportScreenState extends State<ExportScreen> {
                     child: FilledButton(
                       onPressed: () {
                         Navigator.of(_contextOrFallback).pop();
-                        Navigator.of(context).push(MaterialPageRoute<void>(
-                          builder: (_) => const SettingsScreen(),
-                        ));
+                        context.push(AppRoutes.settings);
                       },
                       child: const Text('Conectar Strava'),
                     ),
@@ -199,11 +197,7 @@ class _ExportScreenState extends State<ExportScreen> {
           IconButton(
             icon: const Icon(Icons.help_outline),
             tooltip: 'Como importar',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const HowToImportScreen(),
-              ),
-            ),
+            onPressed: () => context.push(AppRoutes.howToImport),
           ),
         ],
       ),

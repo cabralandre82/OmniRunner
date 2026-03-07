@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { jsonOk, jsonErr } from "../_shared/http.ts";
 import { startTimer, logRequest, logError } from "../_shared/obs.ts";
+import { runAntiCheatPipeline, normalizeStravaActivity, haversine } from "../_shared/anti_cheat.ts";
+import { withCircuitBreaker } from "../_shared/circuit_breaker.ts";
 
 /**
  * strava-webhook — Supabase Edge Function
@@ -196,17 +198,19 @@ export async function processStravaEvent(
     const refreshTimer = setTimeout(() => refreshCtrl.abort(), 15_000);
     let refreshRes: Response;
     try {
-      refreshRes = await fetch("https://www.strava.com/oauth/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          grant_type: "refresh_token",
-          refresh_token: conn.refresh_token,
+      refreshRes = await withCircuitBreaker("strava-oauth", () =>
+        fetch("https://www.strava.com/oauth/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
+            grant_type: "refresh_token",
+            refresh_token: conn.refresh_token,
+          }),
+          signal: refreshCtrl.signal,
         }),
-        signal: refreshCtrl.signal,
-      });
+      );
     } finally {
       clearTimeout(refreshTimer);
     }
@@ -232,9 +236,11 @@ export async function processStravaEvent(
   const activityTimer = setTimeout(() => activityCtrl.abort(), 15_000);
   let activityRes: Response;
   try {
-    activityRes = await fetch(
-      `https://www.strava.com/api/v3/activities/${stravaActivityId}`,
-      { headers: { Authorization: `Bearer ${accessToken}` }, signal: activityCtrl.signal },
+    activityRes = await withCircuitBreaker("strava-api", () =>
+      fetch(
+        `https://www.strava.com/api/v3/activities/${stravaActivityId}`,
+        { headers: { Authorization: `Bearer ${accessToken}` }, signal: activityCtrl.signal },
+      ),
     );
   } finally {
     clearTimeout(activityTimer);
@@ -251,9 +257,11 @@ export async function processStravaEvent(
   const streamsTimer = setTimeout(() => streamsCtrl.abort(), 15_000);
   let streamsRes: Response;
   try {
-    streamsRes = await fetch(
-      `https://www.strava.com/api/v3/activities/${stravaActivityId}/streams?keys=latlng,time,heartrate,velocity_smooth,altitude,cadence&key_type=time`,
-      { headers: { Authorization: `Bearer ${accessToken}` }, signal: streamsCtrl.signal },
+    streamsRes = await withCircuitBreaker("strava-api", () =>
+      fetch(
+        `https://www.strava.com/api/v3/activities/${stravaActivityId}/streams?keys=latlng,time,heartrate,velocity_smooth,altitude,cadence&key_type=time`,
+        { headers: { Authorization: `Bearer ${accessToken}` }, signal: streamsCtrl.signal },
+      ),
     );
   } finally {
     clearTimeout(streamsTimer);
@@ -269,62 +277,21 @@ export async function processStravaEvent(
     }
   }
 
-  // 6. Anti-cheat
-  const integrityFlags: string[] = [];
+  // 6. Anti-cheat — unified pipeline from _shared/anti_cheat.ts
   const latlng = streams.latlng?.data as number[][] | undefined;
   const time = streams.time?.data as number[] | undefined;
   const velocity = streams.velocity_smooth?.data as number[] | undefined;
   const cadence = streams.cadence?.data as number[] | undefined;
 
-  if (activity.distance < 1000) integrityFlags.push("TOO_SHORT_DISTANCE");
-  if (activity.moving_time < 60) integrityFlags.push("TOO_SHORT_DURATION");
-  if (activity.distance > 0 && activity.moving_time > 0) {
-    const paceSecKm = activity.moving_time / (activity.distance / 1000);
-    if (paceSecKm < 150) integrityFlags.push("SPEED_IMPOSSIBLE");
-    if (paceSecKm < 180 || paceSecKm > 1200) integrityFlags.push("IMPLAUSIBLE_PACE");
-  }
-
-  if (latlng && latlng.length > 0 && time && time.length === latlng.length) {
-    if (latlng.length < 10) integrityFlags.push("TOO_FEW_POINTS");
-    for (let i = 1; i < latlng.length; i++) {
-      const dt = time[i] - time[i - 1];
-      if (dt <= 0) continue;
-      const dist = haversine(latlng[i - 1][0], latlng[i - 1][1], latlng[i][0], latlng[i][1]);
-      if (dist > 500 && dt < 30) { integrityFlags.push("GPS_JUMP"); break; }
-      if (dist > 2000 && dt < 60) { integrityFlags.push("TELEPORT"); break; }
-      const speed = dist / dt;
-      if (speed > 12 && dt > 10) { integrityFlags.push("SPEED_IMPOSSIBLE"); break; }
-    }
-    let gapCount = 0;
-    for (let i = 1; i < time.length; i++) {
-      if (time[i] - time[i - 1] > 60) gapCount++;
-    }
-    if (gapCount > 3) integrityFlags.push("BACKGROUND_GPS_GAP");
-    if (velocity && velocity.length > 20) {
-      const nonZero = velocity.filter((v) => v > 0.5);
-      if (nonZero.length > 10) {
-        const mean = nonZero.reduce((a, b) => a + b, 0) / nonZero.length;
-        const variance = nonZero.reduce((a, b) => a + (b - mean) ** 2, 0) / nonZero.length;
-        const cv = Math.sqrt(variance) / mean;
-        if (cv < 0.03) integrityFlags.push("NO_MOTION_PATTERN");
-      }
-    }
-    if (cadence && velocity) {
-      let zeroCadenceHighSpeed = 0;
-      for (let i = 0; i < Math.min(cadence.length, velocity.length); i++) {
-        if (cadence[i] === 0 && velocity[i] > 5) zeroCadenceHighSpeed++;
-      }
-      if (zeroCadenceHighSpeed > cadence.length * 0.5) integrityFlags.push("VEHICLE_SUSPECTED");
-    }
-  } else if (!latlng || latlng.length === 0) {
-    integrityFlags.push("TOO_FEW_POINTS");
-  }
-
-  const uniqueFlags = [...new Set(integrityFlags)];
-  const hasCritical = uniqueFlags.some((f) =>
-    ["SPEED_IMPOSSIBLE", "GPS_JUMP", "TELEPORT", "VEHICLE_SUSPECTED",
-     "NO_MOTION_PATTERN", "BACKGROUND_GPS_GAP", "TIME_SKEW"].includes(f)
-  );
+  const antiCheatInput = normalizeStravaActivity(activity, {
+    latlng: latlng ?? undefined,
+    time: time ?? undefined,
+    velocity: velocity ?? undefined,
+    cadence: cadence ?? undefined,
+  });
+  const antiCheatResult = runAntiCheatPipeline(antiCheatInput);
+  const uniqueFlags = antiCheatResult.flags;
+  const hasCritical = antiCheatResult.has_critical;
 
   // 7. Calculate metrics
   const startTimeMs = new Date(activity.start_date).getTime();
@@ -574,15 +541,4 @@ async function detectAndLinkPark(
   }
 }
 
-// ── Haversine distance (meters) ─────────────────────────────────────────────
-
-function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371000;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+// haversine() is imported from _shared/anti_cheat.ts

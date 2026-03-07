@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/utils/error_messages.dart';
@@ -77,7 +78,7 @@ class _AthleteLogExecutionScreenState extends State<AthleteLogExecutionScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Execução registrada com sucesso!')),
       );
-      Navigator.of(context).pop(true);
+      context.pop(true);
     } catch (e, st) {
       AppLogger.error('LogExecution submit failed', error: e, stack: st);
       if (!mounted) return;

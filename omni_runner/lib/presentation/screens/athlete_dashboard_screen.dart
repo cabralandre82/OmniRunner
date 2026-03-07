@@ -1,31 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_group_repo.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
-import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
-import 'package:omni_runner/presentation/blocs/challenges/challenges_event.dart';
-import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_bloc.dart';
-import 'package:omni_runner/presentation/blocs/my_assessoria/my_assessoria_event.dart';
-import 'package:omni_runner/presentation/blocs/wallet/wallet_bloc.dart';
-import 'package:omni_runner/presentation/blocs/wallet/wallet_event.dart';
-import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_bloc.dart';
-import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_event.dart';
-import 'package:omni_runner/presentation/screens/assessoria_feed_screen.dart';
-import 'package:omni_runner/features/parks/presentation/my_parks_screen.dart';
-import 'package:omni_runner/presentation/screens/athlete_championships_screen.dart';
-import 'package:omni_runner/presentation/screens/athlete_verification_screen.dart';
-import 'package:omni_runner/presentation/screens/challenges_list_screen.dart';
-import 'package:omni_runner/presentation/screens/join_assessoria_screen.dart';
-import 'package:omni_runner/presentation/screens/my_assessoria_screen.dart';
-import 'package:omni_runner/presentation/screens/progress_hub_screen.dart';
-import 'package:omni_runner/presentation/screens/settings_screen.dart';
-import 'package:omni_runner/presentation/screens/wallet_screen.dart';
 import 'package:omni_runner/presentation/widgets/assessoria_required_sheet.dart';
 import 'package:omni_runner/presentation/widgets/login_required_sheet.dart';
 import 'package:flutter/services.dart';
@@ -289,71 +272,41 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
   void _openChallenges() {
     if (_guardDemoMode(context)) return;
     if (LoginRequiredSheet.guard(context, feature: 'Desafios')) return;
-    final uid = sl<UserIdentityProvider>().userId;
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => BlocProvider<ChallengesBloc>(
-        create: (_) => sl<ChallengesBloc>()..add(LoadChallenges(uid)),
-        child: const ChallengesListScreen(),
-      ),
-    ));
+    context.push(AppRoutes.challenges);
   }
 
   void _openAssessoria() {
     if (_guardDemoMode(context)) return;
     if (LoginRequiredSheet.guard(context, feature: 'Assessoria')) return;
-    final uid = sl<UserIdentityProvider>().userId;
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => BlocProvider<MyAssessoriaBloc>(
-        create: (_) => sl<MyAssessoriaBloc>()..add(LoadMyAssessoria(uid)),
-        child: const MyAssessoriaScreen(),
-      ),
-    ));
+    context.push(AppRoutes.myAssessoria);
   }
 
   void _openProgress() {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => const ProgressHubScreen(),
-    ));
+    context.push(AppRoutes.progress);
   }
 
   void _openWallet() {
     if (_guardDemoMode(context)) return;
     if (LoginRequiredSheet.guard(context, feature: 'OmniCoins')) return;
-    final uid = sl<UserIdentityProvider>().userId;
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => BlocProvider<WalletBloc>(
-        create: (_) => sl<WalletBloc>()..add(LoadWallet(uid)),
-        child: const WalletScreen(),
-      ),
-    ));
+    context.push(AppRoutes.wallet);
   }
 
   void _openVerification() {
     if (_guardDemoMode(context)) return;
     if (LoginRequiredSheet.guard(context, feature: 'Verificação')) return;
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => const AthleteVerificationScreen(),
-    ));
+    context.push(AppRoutes.athleteVerification);
   }
 
   void _openJoinAssessoria() {
     if (_guardDemoMode(context)) return;
-    Navigator.of(context)
-        .push(MaterialPageRoute<void>(
-          builder: (_) => JoinAssessoriaScreen(
-            onComplete: () => Navigator.of(context).pop(),
-          ),
-        ))
-        .then((_) => _loadAssessoriaStatus());
+    context.push(AppRoutes.joinAssessoria).then((_) => _loadAssessoriaStatus());
   }
 
   void _openChampionships() {
     if (_guardDemoMode(context)) return;
     if (LoginRequiredSheet.guard(context, feature: 'Campeonatos')) return;
     if (AssessoriaRequiredSheet.guard(context, hasAssessoria: _assessoriaGroupId != null)) return;
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => const AthleteChampionshipsScreen(),
-    ));
+    context.push(AppRoutes.championships);
   }
 
   // Invite friends is accessible via More screen
@@ -402,11 +355,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
                   hasFirstRun: _hasFirstRun,
                   hasChallenge: _hasChallenge,
                   onConnectStrava: () {
-                    Navigator.of(context)
-                        .push(MaterialPageRoute<void>(
-                          builder: (_) => const SettingsScreen(),
-                        ))
-                        .then((_) => _checkStrava());
+                    context.push(AppRoutes.settings).then((_) => _checkStrava());
                   },
                   onJoinAssessoria: _openJoinAssessoria,
                   onFirstRun: _openProgress,
@@ -472,13 +421,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
                     ),
                     trailing: Icon(Icons.chevron_right, color: cs.primary),
                     onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute<void>(
-                        builder: (_) => BlocProvider<AssessoriaFeedBloc>(
-                          create: (_) => sl<AssessoriaFeedBloc>()
-                            ..add(LoadFeed(_assessoriaGroupId!)),
-                          child: const AssessoriaFeedScreen(),
-                        ),
-                      ));
+                      context.push(AppRoutes.assessoriaFeed, extra: _assessoriaGroupId!);
                     },
                   ),
                 ),
@@ -487,11 +430,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
               if (!_loading && !_hasFirstRun && _allFirstStepsComplete)
                 _RunnerQuizCard(
                   onStravaConnect: () {
-                    Navigator.of(context)
-                        .push(MaterialPageRoute<void>(
-                          builder: (_) => const SettingsScreen(),
-                        ))
-                        .then((_) => _checkStrava());
+                    context.push(AppRoutes.settings).then((_) => _checkStrava());
                   },
                 ),
               Expanded(
@@ -580,9 +519,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
                       bgColor: DesignTokens.success.withValues(alpha: 0.1),
                       iconColor: DesignTokens.success,
                       onTap: () {
-                        Navigator.of(context).push(MaterialPageRoute<void>(
-                          builder: (_) => const MyParksScreen(),
-                        ));
+                        context.push(AppRoutes.parks);
                       },
                     ),
                     _DashCard(
@@ -996,7 +933,7 @@ class _RunnerQuizCard extends StatelessWidget {
       isScrollControlled: true,
       builder: (ctx) => _RunnerQuizSheet(
         onStravaConnect: () {
-          Navigator.pop(ctx);
+          ctx.pop();
         },
       ),
     );
@@ -1156,7 +1093,7 @@ class _RunnerQuizSheetState extends State<_RunnerQuizSheet> {
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             icon: const Icon(Icons.arrow_forward, size: 18),
             label: const Text(
               'Conecte o Strava para descobrir seu DNA completo \u2192',
@@ -1165,7 +1102,7 @@ class _RunnerQuizSheetState extends State<_RunnerQuizSheet> {
         ),
         const SizedBox(height: DesignTokens.spacingSm),
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
           child: const Text('Fechar'),
         ),
       ],

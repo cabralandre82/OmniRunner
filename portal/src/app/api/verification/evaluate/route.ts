@@ -15,7 +15,7 @@ import { verificationEvaluateSchema } from "@/lib/schemas";
  * The athlete must belong to the caller's assessoria group.
  */
 export async function POST(request: Request) {
-  const rl = rateLimit(`verify-eval:${request.headers.get("x-forwarded-for") ?? "unknown"}`);
+  const rl = await rateLimit(`verify-eval:${request.headers.get("x-forwarded-for") ?? "unknown"}`);
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

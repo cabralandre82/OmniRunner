@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/friendship_entity.dart';
 import 'package:omni_runner/domain/repositories/i_friendship_repo.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/blocs/friends/friends_bloc.dart';
 import 'package:omni_runner/presentation/blocs/friends/friends_event.dart';
 import 'package:omni_runner/presentation/blocs/friends/friends_state.dart';
-import 'package:omni_runner/presentation/screens/friend_profile_screen.dart';
+import 'package:omni_runner/presentation/widgets/cached_avatar.dart';
 import 'package:omni_runner/presentation/widgets/empty_state.dart';
 import 'package:omni_runner/presentation/widgets/error_state.dart';
-import 'package:omni_runner/l10n/l10n.dart';
-import 'package:omni_runner/presentation/widgets/cached_avatar.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
-import 'package:omni_runner/core/theme/design_tokens.dart';
 
 class FriendsScreen extends StatelessWidget {
   const FriendsScreen({super.key});
@@ -243,11 +244,11 @@ class _AcceptedTile extends StatelessWidget {
         content: Text('Deseja remover $name da sua lista de amigos?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => ctx.pop(false),
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => ctx.pop(true),
             style: FilledButton.styleFrom(backgroundColor: DesignTokens.error),
             child: const Text('Remover'),
           ),
@@ -289,11 +290,7 @@ class _AcceptedTile extends StatelessWidget {
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
         subtitle: _socialSubtitle(info),
         trailing: const Icon(Icons.chevron_right),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => FriendProfileScreen(userId: otherId),
-          ),
-        ),
+        onTap: () => context.push(AppRoutes.friendProfilePath(otherId)),
         onLongPress: () => _confirmRemove(context),
       ),
     );

@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/announcement_entity.dart';
 import 'package:omni_runner/presentation/blocs/announcement_detail/announcement_detail_bloc.dart';
 import 'package:omni_runner/presentation/blocs/announcement_detail/announcement_detail_event.dart';
 import 'package:omni_runner/presentation/blocs/announcement_detail/announcement_detail_state.dart';
-import 'package:omni_runner/presentation/screens/announcement_create_screen.dart';
 
 /// Detail view of an announcement with auto-read and staff controls.
 class AnnouncementDetailScreen extends StatelessWidget {
@@ -34,7 +35,7 @@ class AnnouncementDetailScreen extends StatelessWidget {
           switch (state) {
             case AnnouncementDeleted():
               if (context.mounted) {
-                Navigator.of(context).pop();
+                context.pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Aviso excluído')),
                 );
@@ -65,13 +66,9 @@ class _AnnouncementDetailView extends StatelessWidget {
     BuildContext context,
     AnnouncementEntity announcement,
   ) async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => AnnouncementCreateScreen(
-          groupId: announcement.groupId,
-          existing: announcement,
-        ),
-      ),
+    final result = await context.push<bool>(
+      AppRoutes.announcementCreatePath(announcement.groupId),
+      extra: announcement,
     );
     if (result == true && context.mounted) {
       context

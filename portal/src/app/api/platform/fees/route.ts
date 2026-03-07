@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
+import { cached, invalidate, CacheTTL } from "@/lib/cache";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -37,18 +38,21 @@ export async function GET() {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
-  const admin = createAdminClient();
-  const { data: fees } = await admin
-    .from("platform_fee_config")
-    .select("*")
-    .order("fee_type");
+  const fees = await cached("platform:fees:config", CacheTTL.CONFIG, async () => {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("platform_fee_config")
+      .select("*")
+      .order("fee_type");
+    return data ?? [];
+  });
 
-  return NextResponse.json({ fees: fees ?? [] });
+  return NextResponse.json({ fees });
 }
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? "unknown";
-  const rl = rateLimit(`platform-fees:${ip}`, {
+  const rl = await rateLimit(`platform-fees:${ip}`, {
     maxRequests: 20,
     windowMs: 60_000,
   });
@@ -95,6 +99,8 @@ export async function POST(req: NextRequest) {
     actorId: auth.user.id,
     metadata: { fee_type, rate_pct, rate_usd, is_active },
   });
+
+  await invalidate("platform:fees:config");
 
   return NextResponse.json({ ok: true });
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/domain/entities/athlete_verification_entity.dart';
-import 'package:omni_runner/presentation/screens/athlete_verification_screen.dart';
 
 /// Shows a modal bottom sheet explaining that VERIFIED status is required
 /// for stake > 0 challenges, with a CTA to the verification screen.
@@ -132,9 +133,7 @@ class _VerificationGateSheet extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: () {
                 Navigator.of(context).pop();
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const AthleteVerificationScreen(),
-                ));
+                context.push(AppRoutes.athleteVerification);
               },
               icon: const Icon(Icons.arrow_forward),
               label: const Text('Ver minha verificação'),

@@ -10,6 +10,9 @@ class PreferencesKeys {
   /// Prefix for first-use tip keys (append TipKey.name).
   static const tipSeenPrefix = 'tip_seen_';
 
+  /// Prefix for onboarding tooltip keys (append tooltipId).
+  static const onboardingTooltipPrefix = 'onboarding_tooltip_';
+
   // Theme
   static const themeMode = 'theme_mode';
 

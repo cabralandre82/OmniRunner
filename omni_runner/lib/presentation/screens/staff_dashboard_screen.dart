@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/coaching_group_entity.dart';
@@ -12,17 +14,6 @@ import 'package:omni_runner/domain/repositories/i_coaching_group_repo.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
 import 'package:omni_runner/domain/repositories/i_wallet_repo.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
-import 'package:omni_runner/presentation/screens/coaching_group_details_screen.dart';
-import 'package:omni_runner/presentation/screens/staff_championship_templates_screen.dart';
-import 'package:omni_runner/presentation/screens/staff_championship_invites_screen.dart';
-import 'package:omni_runner/presentation/screens/staff_credits_screen.dart';
-import 'package:omni_runner/presentation/screens/partner_assessorias_screen.dart';
-import 'package:omni_runner/presentation/screens/staff_join_requests_screen.dart';
-import 'package:omni_runner/presentation/screens/staff_performance_screen.dart';
-import 'package:omni_runner/presentation/screens/support_screen.dart';
-import 'package:omni_runner/presentation/screens/staff_qr_hub_screen.dart';
-import 'package:omni_runner/presentation/screens/staff_workout_assign_screen.dart';
-import 'package:omni_runner/presentation/screens/league_screen.dart';
 import 'package:omni_runner/presentation/widgets/ds/fade_in.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
@@ -239,71 +230,51 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
 
   void _openAtletas() {
     if (_groupId.isEmpty) return;
-    final uid = sl<UserIdentityProvider>().userId;
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => CoachingGroupDetailsScreen(
-        groupId: _groupId,
-        callerUserId: uid,
-      ),
-    )).then((_) => _loadStatus());
+    context.push(AppRoutes.coachingGroupDetailsPath(_groupId)).then((_) => _loadStatus());
   }
 
   void _openParceiras() {
     if (_groupId.isEmpty) return;
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => PartnerAssessoriasScreen(groupId: _groupId),
-    ));
+    context.push(AppRoutes.partnerAssessoriasPath(_groupId));
   }
 
   void _openPerformance() {
     if (_groupId.isEmpty) return;
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => StaffPerformanceScreen(
-        groupId: _groupId,
-        groupName: _groupName,
-      ),
+    context.push(AppRoutes.staffPerformance, extra: StaffPerformanceExtra(
+      groupId: _groupId,
+      groupName: _groupName,
     ));
   }
 
   void _openCampeonatos() {
     if (_groupId.isEmpty) return;
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => StaffChampionshipTemplatesScreen(
-        groupId: _groupId,
-        groupName: _groupName,
-      ),
+    context.push(AppRoutes.staffChampionshipTemplates, extra: StaffChampionshipTemplatesExtra(
+      groupId: _groupId,
+      groupName: _groupName,
     ));
   }
 
   void _openConvites() {
     if (_groupId.isEmpty) return;
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => StaffChampionshipInvitesScreen(groupId: _groupId),
-    ));
+    context.push(AppRoutes.staffChampionshipInvitesPath(_groupId));
   }
 
   void _openSolicitacoes() {
     if (_groupId.isEmpty) return;
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => StaffJoinRequestsScreen(groupId: _groupId),
-    )).then((_) => _loadStatus());
+    context.push(AppRoutes.staffJoinRequestsPath(_groupId)).then((_) => _loadStatus());
   }
 
   void _openCreditos() {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => StaffCreditsScreen(
-        groupId: _groupId,
-        groupName: _groupName,
-      ),
+    context.push(AppRoutes.staffCredits, extra: StaffCreditsExtra(
+      groupId: _groupId,
+      groupName: _groupName,
     ));
   }
 
   void _openAdmin() {
     final m = _membership;
     if (m == null) return;
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => StaffQrHubScreen(membership: m),
-    ));
+    context.push(AppRoutes.staffQrHub, extra: m);
   }
 
   Future<void> _openPortal() async {
@@ -329,22 +300,16 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
 
   void _openWorkoutAssign() {
     if (_groupId.isEmpty) return;
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => StaffWorkoutAssignScreen(groupId: _groupId),
-    ));
+    context.push(AppRoutes.staffWorkoutAssignPath(_groupId));
   }
 
   void _openSupport() {
     if (_groupId.isEmpty) return;
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => SupportScreen(groupId: _groupId),
-    ));
+    context.push(AppRoutes.supportPath(_groupId));
   }
 
   void _openLiga() {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => const LeagueScreen(),
-    ));
+    context.push(AppRoutes.league);
   }
 
   // ── Build ────────────────────────────────────────────────────────────────

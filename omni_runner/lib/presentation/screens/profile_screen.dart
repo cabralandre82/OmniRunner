@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/auth/auth_repository.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/data/services/profile_data_service.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/logging/logger.dart';
@@ -12,7 +14,6 @@ import 'package:omni_runner/domain/entities/profile_entity.dart';
 import 'package:omni_runner/domain/repositories/i_profile_repo.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/widgets/cached_avatar.dart';
-import 'package:omni_runner/presentation/screens/auth_gate.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Screen showing the user's Supabase profile with editable display_name.
@@ -252,12 +253,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => ctx.pop(false),
             child: const Text('Cancelar'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: DesignTokens.error),
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => ctx.pop(true),
             child: const Text('Sair'),
           ),
         ],
@@ -275,10 +276,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (_) => const AuthGate()),
-        (_) => false,
-      );
+      context.go(AppRoutes.root);
     } finally {
       if (mounted) setState(() => _busyAuth = false);
     }
@@ -298,12 +296,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => ctx.pop(),
             child: const Text('Cancelar'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: DesignTokens.error),
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => ctx.pop(true),
             child: const Text('Excluir conta'),
           ),
         ],
@@ -317,10 +315,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       await sl<AuthRepository>().signOut();
       if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (_) => const AuthGate()),
-        (_) => false,
-      );
+      context.go(AppRoutes.root);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -376,17 +371,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             content: const Text('Suas alterações não salvas serão perdidas.'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
+                onPressed: () => ctx.pop(false),
                 child: const Text('Cancelar'),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
+                onPressed: () => ctx.pop(true),
                 child: const Text('Descartar'),
               ),
             ],
           ),
         );
-        if (shouldPop == true && context.mounted) Navigator.pop(context);
+        if (shouldPop == true && context.mounted) context.pop();
       },
       child: Semantics(
       label: 'Tela de Perfil',

@@ -1,0 +1,59 @@
+default_platform(:android)
+
+platform :android do
+  desc "Incrementa o version code no pubspec.yaml"
+  lane :bump_version do
+    pubspec = File.read("../pubspec.yaml")
+    current = pubspec.match(/^version:\s*(.+)$/)[1]
+    version_name, build_number = current.split("+")
+    new_build = build_number.to_i + 1
+    new_version = "#{version_name}+#{new_build}"
+
+    updated = pubspec.sub(/^version:\s*.+$/, "version: #{new_version}")
+    File.write("../pubspec.yaml", updated)
+
+    UI.success("Version bumped: #{current} → #{new_version}")
+    new_version
+  end
+
+  desc "Build release APK"
+  lane :build_apk do
+    sh("cd .. && flutter pub get")
+    sh("cd .. && flutter build apk --release")
+    UI.success("APK gerado em build/app/outputs/flutter-apk/app-release.apk")
+  end
+
+  desc "Build release AAB para Google Play"
+  lane :build_aab do
+    sh("cd .. && flutter pub get")
+    sh("cd .. && flutter build appbundle --release")
+    UI.success("AAB gerado em build/app/outputs/bundle/release/app-release.aab")
+  end
+
+  desc "Upload AAB para Google Play (internal track)"
+  lane :deploy_play_store do
+    build_aab
+
+    supply(
+      track: "internal",
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+    )
+    UI.success("AAB enviado para Google Play (internal track)")
+  end
+
+  desc "Upload APK para Firebase App Distribution (beta)"
+  lane :deploy_firebase_distribution do
+    build_apk
+
+    firebase_app_distribution(
+      app: ENV["FIREBASE_APP_ID"],
+      groups: "beta-testers",
+      release_notes: ENV["RELEASE_NOTES"] || "Nova build beta",
+      apk_path: "../build/app/outputs/flutter-apk/app-release.apk",
+    )
+    UI.success("APK enviado para Firebase App Distribution")
+  end
+end

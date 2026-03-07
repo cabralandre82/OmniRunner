@@ -5,6 +5,7 @@ import { NoGroupSelected } from "@/components/no-group-selected";
 import { DepositButton } from "./deposit-button";
 import { CustodyTabs } from "./custody-tabs";
 import { formatUsd } from "@/lib/format";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import Link from "next/link";
 
 export const metadata: Metadata = { title: "Saldo OmniCoins" };
@@ -85,7 +86,11 @@ export default async function CustodyPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-content-primary">Saldo OmniCoins</h1>
+          <h1 className="text-2xl font-bold text-content-primary">
+            <InfoTooltip text="OmniCoins são créditos internos da plataforma. Cada OmniCoin equivale a US$ 1.00 e é garantida por dinheiro real em custódia. Sua assessoria compra créditos, distribui para atletas, e eles gastam em treinos, desafios e funcionalidades premium.">
+              Saldo OmniCoins
+            </InfoTooltip>
+          </h1>
           <p className="mt-1 text-sm text-content-secondary">
             Cada OmniCoin &eacute; garantida por US$ 1.00 em cust&oacute;dia. Aqui voc&ecirc; acompanha o saldo da sua assessoria.
           </p>
@@ -109,21 +114,21 @@ export default async function CustodyPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
-          <p className="text-sm font-medium text-content-secondary">Total Depositado</p>
+          <p className="text-sm font-medium text-content-secondary"><InfoTooltip text="Valor total em dólares que você depositou na conta de custódia. Esse saldo garante suas OmniCoins.">Total Depositado</InfoTooltip></p>
           <p className="mt-1 text-2xl font-bold text-content-primary">{formatUsd(deposited)}</p>
         </div>
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
-          <p className="text-sm font-medium text-content-secondary">Em Uso (OmniCoins emitidas)</p>
+          <p className="text-sm font-medium text-content-secondary"><InfoTooltip text="OmniCoins que já foram distribuídas para atletas e estão em circulação. Esse valor está comprometido e não pode ser retirado.">Em Uso (OmniCoins emitidas)</InfoTooltip></p>
           <p className="mt-1 text-2xl font-bold text-brand">{formatUsd(committed)}</p>
         </div>
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
-          <p className="text-sm font-medium text-content-secondary">Dispon&iacute;vel para Emiss&atilde;o</p>
+          <p className="text-sm font-medium text-content-secondary"><InfoTooltip text="Valor que ainda pode ser convertido em novas OmniCoins para distribuir. É a diferença entre o total depositado e o que já está em uso.">Dispon&iacute;vel para Emiss&atilde;o</InfoTooltip></p>
           <p className={`mt-1 text-2xl font-bold ${available > 0 ? "text-success" : "text-error"}`}>
             {formatUsd(available)}
           </p>
         </div>
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
-          <p className="text-sm font-medium text-content-secondary">OmniCoins em Circula&ccedil;&atilde;o</p>
+          <p className="text-sm font-medium text-content-secondary"><InfoTooltip text="Quantidade total de OmniCoins que seus atletas possuem. Deve ser igual ao valor 'Em Uso'.">OmniCoins em Circula&ccedil;&atilde;o</InfoTooltip></p>
           <p className="mt-1 text-2xl font-bold text-purple-600">{coinsAlive.toLocaleString()}</p>
         </div>
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">

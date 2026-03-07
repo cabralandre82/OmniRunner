@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
-import 'package:omni_runner/presentation/screens/support_ticket_screen.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
@@ -96,12 +97,13 @@ class _SupportScreenState extends State<SupportScreen> {
       if (mounted) {
         await _load();
         if (mounted) {
-          Navigator.of(context).push(MaterialPageRoute<void>(
-            builder: (_) => SupportTicketScreen(
+          context.push(
+            AppRoutes.supportTicket,
+            extra: SupportTicketExtra(
               ticketId: ticketId,
               subject: result.subject,
             ),
-          ));
+          );
         }
       }
     } on Exception {
@@ -196,13 +198,13 @@ class _SupportScreenState extends State<SupportScreen> {
                         return _TicketCard(
                           ticket: t,
                           onTap: () async {
-                            await Navigator.of(context)
-                                .push(MaterialPageRoute<void>(
-                              builder: (_) => SupportTicketScreen(
+                            await context.push(
+                              AppRoutes.supportTicket,
+                              extra: SupportTicketExtra(
                                 ticketId: t['id'] as String,
                                 subject: t['subject'] as String,
                               ),
-                            ));
+                            );
                             _load();
                           },
                         );

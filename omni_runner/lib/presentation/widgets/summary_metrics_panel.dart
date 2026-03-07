@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/utils/format_pace.dart';
 import 'package:omni_runner/domain/entities/location_point_entity.dart';
 import 'package:omni_runner/l10n/l10n.dart';
-import 'package:omni_runner/presentation/screens/run_replay_screen.dart';
 
 /// Bottom panel showing final metrics on the RunSummaryScreen.
 class SummaryMetricsPanel extends StatelessWidget {
@@ -74,13 +75,14 @@ class SummaryMetricsPanel extends StatelessWidget {
               icon: const Icon(Icons.replay_rounded, size: 18),
               label: Text(context.l10n.replay),
               onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute<void>(
-                  builder: (_) => RunReplayScreen(
+                context.push(
+                  AppRoutes.runReplay,
+                  extra: RunReplayExtra(
                     points: replayPoints!,
                     totalDistanceM: totalDistanceM,
                     elapsedMs: elapsedMs,
                   ),
-                ));
+                );
               },
             ),
           ),
@@ -89,7 +91,7 @@ class SummaryMetricsPanel extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: FilledButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),

@@ -57,7 +57,7 @@ async function requireAdminMaster() {
 
 export async function GET(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? "unknown";
-  const rl = rateLimit(`swap:${ip}`, { maxRequests: 30, windowMs: 60_000 });
+  const rl = await rateLimit(`swap:${ip}`, { maxRequests: 30, windowMs: 60_000 });
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? "unknown";
-  const rl = rateLimit(`swap:${ip}`, { maxRequests: 10, windowMs: 60_000 });
+  const rl = await rateLimit(`swap:${ip}`, { maxRequests: 10, windowMs: 60_000 });
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

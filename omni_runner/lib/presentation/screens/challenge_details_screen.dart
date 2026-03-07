@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
@@ -18,7 +20,6 @@ import 'package:omni_runner/presentation/blocs/challenges/challenges_event.dart'
 import 'package:omni_runner/presentation/blocs/challenges/challenges_state.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_bloc.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_event.dart';
-import 'package:omni_runner/presentation/screens/challenge_result_screen.dart';
 
 import 'package:omni_runner/presentation/widgets/verification_gate.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
@@ -307,12 +308,13 @@ class _BodyState extends State<_Body> {
               icon: const Icon(Icons.emoji_events_rounded, size: 18),
               label: const Text('Ver resultado completo'),
               onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute<void>(
-                  builder: (_) => ChallengeResultScreen(
+                context.push(
+                  AppRoutes.challengeResult,
+                  extra: ChallengeResultExtra(
                     challenge: challenge,
                     result: result!,
                   ),
-                ));
+                );
               },
             ),
           ),
@@ -332,7 +334,7 @@ class _BodyState extends State<_Body> {
                       userId: uid,
                     ),
                   );
-              Navigator.of(context).pop();
+              context.pop();
             },
           ),
 
@@ -763,7 +765,7 @@ class _AcceptDeclineCardState extends State<_AcceptDeclineCard> {
                               userId: widget.userId,
                             ),
                           );
-                      Navigator.of(context).pop();
+                      context.pop();
                     },
                   ),
                 ),

@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/config/feature_flags.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/features/parks/domain/park_entity.dart';
@@ -408,7 +409,8 @@ class _ParkScreenState extends State<ParkScreen>
   // ── Segments Tab ───────────────────────────────────────────────────────────
 
   Widget _buildSegmentsTab(ThemeData theme, ColorScheme cs) {
-    if (_segments.isEmpty) {
+    final segmentsEnabled = sl<FeatureFlagService>().isEnabled('park_segments_enabled');
+    if (_segments.isEmpty || !segmentsEnabled) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -420,8 +422,8 @@ class _ParkScreenState extends State<ParkScreen>
                     theme.textTheme.bodyMedium?.copyWith(color: cs.outline)),
             const SizedBox(height: 4),
             Text(
-              'Segmentos populares como "Volta do Lago" serão\n'
-              'adicionados em breve!',
+              'Segmentos populares serão habilitados em breve.\n'
+              'Acompanhe as novidades no app!',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: cs.onSurfaceVariant),

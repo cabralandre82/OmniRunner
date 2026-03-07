@@ -88,16 +88,18 @@ export function DataTable<T>({
       )}
 
       <div className="overflow-x-auto rounded-xl border border-border">
-        <table className="min-w-full divide-y divide-border text-sm">
+        <table className="min-w-full divide-y divide-border text-sm" role="table">
           <thead className="bg-bg-secondary">
             <tr>
               {columns.map((col) => (
                 <th
                   key={col.key}
+                  scope="col"
                   className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-content-muted ${
                     col.sortable ? "cursor-pointer select-none hover:text-content-primary" : ""
                   } ${col.className ?? ""}`}
                   onClick={col.sortable ? () => handleSort(col.key) : undefined}
+                  aria-sort={col.sortable && sortKey === col.key ? (sortDir === "asc" ? "ascending" : "descending") : col.sortable ? "none" : undefined}
                 >
                   <span className="inline-flex items-center gap-1">
                     {col.header}
@@ -142,6 +144,7 @@ export function DataTable<T>({
             <button
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
+              aria-label="Página anterior"
               className="rounded-lg border border-border bg-surface px-3 py-1 text-content-secondary disabled:opacity-40 hover:bg-surface-elevated transition-colors"
             >
               Anterior
@@ -152,6 +155,7 @@ export function DataTable<T>({
             <button
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
+              aria-label="Próxima página"
               className="rounded-lg border border-border bg-surface px-3 py-1 text-content-secondary disabled:opacity-40 hover:bg-surface-elevated transition-colors"
             >
               Próximo

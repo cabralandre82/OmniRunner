@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const rl = rateLimit(`platform-refund:${auth.user.id}`, { maxRequests: 20, windowMs: 60_000 });
+  const rl = await rateLimit(`platform-refund:${auth.user.id}`, { maxRequests: 20, windowMs: 60_000 });
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

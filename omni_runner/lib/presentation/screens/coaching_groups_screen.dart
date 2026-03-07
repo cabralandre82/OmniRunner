@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
@@ -9,7 +11,6 @@ import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_e
 import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_state.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:omni_runner/l10n/l10n.dart';
-import 'package:omni_runner/presentation/screens/coaching_group_details_screen.dart';
 
 class CoachingGroupsScreen extends StatelessWidget {
   const CoachingGroupsScreen({super.key});
@@ -117,12 +118,7 @@ class _CoachingGroupCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         onTap: () {
           final uid = sl<UserIdentityProvider>().userId;
-          Navigator.of(context).push(MaterialPageRoute<void>(
-            builder: (_) => CoachingGroupDetailsScreen(
-              groupId: group.id,
-              callerUserId: uid,
-            ),
-          ));
+          context.push(AppRoutes.coachingGroupDetailsPath(group.id));
         },
         child: Padding(
           padding: const EdgeInsets.all(DesignTokens.spacingMd),

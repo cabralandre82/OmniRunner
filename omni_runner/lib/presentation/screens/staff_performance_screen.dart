@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
-import 'package:omni_runner/presentation/screens/staff_retention_dashboard_screen.dart';
-import 'package:omni_runner/presentation/screens/staff_weekly_report_screen.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Assessoria performance dashboard — 4 KPIs + drill-down.
@@ -316,13 +316,13 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
                           Expanded(
                             child: OutlinedButton.icon(
                               onPressed: () {
-                                Navigator.of(context)
-                                    .push(MaterialPageRoute<void>(
-                                  builder: (_) => StaffWeeklyReportScreen(
+                                context.push(
+                                  AppRoutes.staffWeeklyReport,
+                                  extra: StaffWeeklyReportExtra(
                                     groupId: widget.groupId,
                                     groupName: widget.groupName,
                                   ),
-                                ));
+                                );
                               },
                               icon: const Icon(
                                   Icons.summarize_rounded, size: 18),
@@ -334,14 +334,13 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
                           Expanded(
                             child: OutlinedButton.icon(
                               onPressed: () {
-                                Navigator.of(context)
-                                    .push(MaterialPageRoute<void>(
-                                  builder: (_) =>
-                                      StaffRetentionDashboardScreen(
+                                context.push(
+                                  AppRoutes.staffRetentionDashboard,
+                                  extra: StaffRetentionExtra(
                                     groupId: widget.groupId,
                                     groupName: widget.groupName,
                                   ),
-                                ));
+                                );
                               },
                               icon: const Icon(
                                   Icons.show_chart_rounded, size: 18),

@@ -20,7 +20,11 @@ export function KpiCard({
     : "border-border bg-surface";
 
   return (
-    <div className={`rounded-xl border p-5 shadow-sm transition-colors ${borderClass}`}>
+    <div
+      className={`rounded-xl border p-5 shadow-sm transition-colors ${borderClass}`}
+      role="status"
+      aria-label={`${label}: ${value}${trend != null ? `, variação ${trend > 0 ? "+" : ""}${trend}%` : ""}`}
+    >
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-content-muted">{label}</p>
         {icon && <span className="text-content-muted">{icon}</span>}

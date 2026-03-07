@@ -18,9 +18,9 @@ import 'package:omni_runner/domain/repositories/i_coach_settings_repo.dart';
 import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/main.dart' show themeNotifier;
-import 'package:omni_runner/presentation/screens/diagnostics_screen.dart';
-import 'package:omni_runner/presentation/screens/how_it_works_screen.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:go_router/go_router.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 
 class SettingsScreen extends StatefulWidget {
   final bool isStaff;
@@ -139,11 +139,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       'Desafios, OmniCoins, verificação e integridade',
                     ),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const HowItWorksScreen(),
-                      ),
-                    ),
+                    onTap: () => context.push(AppRoutes.howItWorks),
                   ),
                   ListTile(
                     leading: const Icon(Icons.privacy_tip_outlined),
@@ -168,11 +164,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: Text(context.l10n.diagnostics),
                     subtitle: const Text('Status do app, conexões e ambiente'),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const DiagnosticsScreen(),
-                      ),
-                    ),
+                    onTap: () => context.push(AppRoutes.diagnostics),
                   ),
                 ],
               ],

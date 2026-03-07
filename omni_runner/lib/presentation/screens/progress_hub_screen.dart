@@ -1,32 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:omni_runner/core/auth/user_identity_provider.dart';
-import 'package:omni_runner/core/service_locator.dart';
-import 'package:omni_runner/presentation/blocs/badges/badges_bloc.dart';
-import 'package:omni_runner/presentation/blocs/badges/badges_event.dart';
-import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
-import 'package:omni_runner/presentation/blocs/challenges/challenges_event.dart';
-import 'package:omni_runner/presentation/blocs/leaderboards/leaderboards_bloc.dart';
-import 'package:omni_runner/presentation/blocs/missions/missions_bloc.dart';
-import 'package:omni_runner/presentation/blocs/missions/missions_event.dart';
-import 'package:omni_runner/presentation/blocs/progression/progression_bloc.dart';
-import 'package:omni_runner/presentation/blocs/progression/progression_event.dart';
-import 'package:omni_runner/presentation/blocs/wallet/wallet_bloc.dart';
-import 'package:omni_runner/presentation/blocs/wallet/wallet_event.dart';
-import 'package:omni_runner/presentation/screens/athlete_championships_screen.dart';
-import 'package:omni_runner/presentation/screens/badges_screen.dart';
-import 'package:omni_runner/presentation/screens/challenges_list_screen.dart';
-import 'package:omni_runner/presentation/screens/leaderboards_screen.dart';
-import 'package:omni_runner/presentation/screens/missions_screen.dart';
-import 'package:omni_runner/presentation/screens/personal_evolution_screen.dart';
-import 'package:omni_runner/presentation/screens/progression_screen.dart';
-import 'package:omni_runner/presentation/screens/streaks_leaderboard_screen.dart';
-import 'package:omni_runner/presentation/screens/league_screen.dart';
-import 'package:omni_runner/presentation/screens/running_dna_screen.dart';
-import 'package:omni_runner/presentation/screens/wallet_screen.dart';
-import 'package:omni_runner/presentation/screens/wrapped_screen.dart';
-import 'package:omni_runner/l10n/l10n.dart';
+import 'package:go_router/go_router.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 
 /// Hub listing all gamification / progress features.
 ///
@@ -158,40 +134,21 @@ class _Tile extends StatelessWidget {
       return;
     }
 
-    final uid = sl<UserIdentityProvider>().userId;
-    final Widget page = switch (target) {
-      _Target.dna => const RunningDnaScreen(),
-      _Target.evolution => const PersonalEvolutionScreen(),
-      _Target.progression => BlocProvider<ProgressionBloc>(
-          create: (_) => sl<ProgressionBloc>()..add(LoadProgression(uid)),
-          child: const ProgressionScreen(),
-        ),
-      _Target.streaks => const StreaksLeaderboardScreen(),
-      _Target.badges => BlocProvider<BadgesBloc>(
-          create: (_) => sl<BadgesBloc>()..add(LoadBadges(uid)),
-          child: const BadgesScreen(),
-        ),
-      _Target.missions => BlocProvider<MissionsBloc>(
-          create: (_) => sl<MissionsBloc>()..add(LoadMissions(uid)),
-          child: const MissionsScreen(),
-        ),
-      _Target.challenges => BlocProvider<ChallengesBloc>(
-          create: (_) => sl<ChallengesBloc>()..add(LoadChallenges(uid)),
-          child: const ChallengesListScreen(),
-        ),
-      _Target.championships => const AthleteChampionshipsScreen(),
-      _Target.league => const LeagueScreen(),
-      _Target.wallet => BlocProvider<WalletBloc>(
-          create: (_) => sl<WalletBloc>()..add(LoadWallet(uid)),
-          child: const WalletScreen(),
-        ),
-      _Target.leaderboards => BlocProvider<LeaderboardsBloc>(
-          create: (_) => sl<LeaderboardsBloc>(),
-          child: const LeaderboardsScreen(),
-        ),
-      _Target.wrapped => const SizedBox.shrink(),
+    final route = switch (target) {
+      _Target.dna => AppRoutes.runningDna,
+      _Target.evolution => AppRoutes.personalEvolution,
+      _Target.progression => AppRoutes.progression,
+      _Target.streaks => AppRoutes.streaksLeaderboard,
+      _Target.badges => AppRoutes.badges,
+      _Target.missions => AppRoutes.missions,
+      _Target.challenges => AppRoutes.challenges,
+      _Target.championships => AppRoutes.championships,
+      _Target.league => AppRoutes.league,
+      _Target.wallet => AppRoutes.wallet,
+      _Target.leaderboards => AppRoutes.leaderboards,
+      _Target.wrapped => AppRoutes.wrapped,
     };
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
+    context.push(route);
   }
 
   Future<void> _navigateToWrapped(BuildContext context) async {
@@ -213,25 +170,25 @@ class _Tile extends StatelessWidget {
               leading: const Icon(Icons.calendar_month),
               title: const Text('Este mês'),
               subtitle: Text(_monthName(now.month)),
-              onTap: () => Navigator.pop(ctx, 'month'),
+              onTap: () => ctx.pop('month'),
             ),
             ListTile(
               leading: const Icon(Icons.calendar_month),
               title: const Text('Mês passado'),
               subtitle: Text(_monthName(now.month == 1 ? 12 : now.month - 1)),
-              onTap: () => Navigator.pop(ctx, 'last_month'),
+              onTap: () => ctx.pop('last_month'),
             ),
             ListTile(
               leading: const Icon(Icons.date_range),
               title: const Text('Este trimestre'),
               subtitle: Text('Q${((now.month - 1) ~/ 3) + 1} ${now.year}'),
-              onTap: () => Navigator.pop(ctx, 'quarter'),
+              onTap: () => ctx.pop('quarter'),
             ),
             ListTile(
               leading: const Icon(Icons.calendar_today),
               title: const Text('Este ano'),
               subtitle: Text('${now.year}'),
-              onTap: () => Navigator.pop(ctx, 'year'),
+              onTap: () => ctx.pop('year'),
             ),
             const SizedBox(height: 8),
           ],
@@ -269,15 +226,11 @@ class _Tile extends StatelessWidget {
         return;
     }
 
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => WrappedScreen(
-          periodType: pType,
-          periodKey: pKey,
-          periodLabel: pLabel,
-        ),
-      ),
-    );
+    context.push(AppRoutes.wrapped, extra: WrappedExtra(
+      periodType: pType,
+      periodKey: pKey,
+      periodLabel: pLabel,
+    ));
   }
 
   static String _monthName(int m) => const [

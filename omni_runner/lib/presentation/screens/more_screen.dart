@@ -1,33 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/auth_repository.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/l10n/l10n.dart';
-import 'package:omni_runner/presentation/screens/auth_gate.dart';
 import 'package:omni_runner/presentation/widgets/login_required_sheet.dart';
-
-import 'package:omni_runner/presentation/blocs/friends/friends_bloc.dart';
-import 'package:omni_runner/presentation/blocs/friends/friends_event.dart';
-import 'package:omni_runner/presentation/screens/friends_screen.dart';
-import 'package:omni_runner/presentation/screens/invite_friends_screen.dart';
-import 'package:omni_runner/presentation/screens/profile_screen.dart';
-import 'package:omni_runner/presentation/screens/settings_screen.dart';
-import 'package:omni_runner/presentation/screens/workout_delivery_screen.dart';
-import 'package:omni_runner/presentation/screens/staff_qr_hub_screen.dart';
-import 'package:omni_runner/presentation/screens/staff_scan_qr_screen.dart';
-import 'package:omni_runner/presentation/screens/friends_activity_feed_screen.dart';
-import 'package:omni_runner/presentation/screens/partner_assessorias_screen.dart';
-import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_bloc.dart';
-import 'package:omni_runner/domain/repositories/i_token_intent_repo.dart';
 import 'package:omni_runner/core/logging/logger.dart';
-import 'package:omni_runner/presentation/screens/faq_screen.dart';
-import 'package:omni_runner/presentation/screens/support_screen.dart';
 
 
 /// Hub screen for secondary features: coaching, social, integrations, settings.
@@ -76,9 +60,7 @@ class _MoreScreenState extends State<MoreScreen> {
               subtitle: 'Treinos enviados pela assessoria para seu relógio',
               onTap: (ctx) {
                 if (LoginRequiredSheet.guard(ctx, feature: 'Entregas')) return;
-                Navigator.of(ctx).push(MaterialPageRoute<void>(
-                  builder: (_) => const WorkoutDeliveryScreen(),
-                ));
+                ctx.push(AppRoutes.workoutDelivery);
               },
             ),
             _ActionTile(
@@ -87,9 +69,7 @@ class _MoreScreenState extends State<MoreScreen> {
               subtitle: 'Ver o treino agendado para hoje',
               onTap: (ctx) {
                 if (LoginRequiredSheet.guard(ctx, feature: 'Treino do Dia')) return;
-                Navigator.of(ctx).push(MaterialPageRoute<void>(
-                  builder: (_) => const WorkoutDeliveryScreen(),
-                ));
+                ctx.push(AppRoutes.workoutDelivery);
               },
             ),
           ]),
@@ -122,9 +102,7 @@ class _MoreScreenState extends State<MoreScreen> {
               subtitle: 'Compartilhe o app com outros corredores',
               onTap: (ctx) {
                 if (LoginRequiredSheet.guard(ctx, feature: 'Convites')) return;
-                Navigator.of(ctx).push(MaterialPageRoute<void>(
-                  builder: (_) => const InviteFriendsScreen(),
-                ));
+                ctx.push(AppRoutes.inviteFriends);
               },
             ),
             _ActionTile(
@@ -133,13 +111,7 @@ class _MoreScreenState extends State<MoreScreen> {
               subtitle: 'Amigos são corredores individuais, independente de assessoria',
               onTap: (ctx) {
                 if (LoginRequiredSheet.guard(ctx, feature: 'Amigos')) return;
-                Navigator.of(ctx).push(MaterialPageRoute<void>(
-                  builder: (_) => BlocProvider(
-                    create: (_) => sl<FriendsBloc>()
-                      ..add(LoadFriends(sl<UserIdentityProvider>().userId)),
-                    child: const FriendsScreen(),
-                  ),
-                ));
+                ctx.push(AppRoutes.friends);
               },
             ),
             _ActionTile(
@@ -148,25 +120,25 @@ class _MoreScreenState extends State<MoreScreen> {
               subtitle: 'Corridas recentes dos seus amigos',
               onTap: (ctx) {
                 if (LoginRequiredSheet.guard(ctx, feature: 'Atividade dos amigos')) return;
-                Navigator.of(ctx).push(MaterialPageRoute<void>(
-                  builder: (_) => const FriendsActivityFeedScreen(),
-                ));
+                ctx.push(AppRoutes.friendsActivity);
               },
             ),
           ]),
 
           _sectionCard(context, 'Conta', [
-            const _ActionTile(
+            _ActionTile(
               icon: Icons.person,
               title: 'Meu Perfil',
               subtitle: 'Ver e editar seu perfil',
-              pushScreen: ProfileScreen(),
+              onTap: (ctx) => ctx.push(AppRoutes.profile),
             ),
             _ActionTile(
               icon: Icons.tune,
               title: context.l10n.settings,
               subtitle: _isStaff ? 'Aparência' : 'Strava, tema e unidades',
-              pushScreen: SettingsScreen(isStaff: _isStaff),
+              onTap: (ctx) => ctx.push(
+                _isStaff ? '${AppRoutes.settings}?staff=true' : AppRoutes.settings,
+              ),
             ),
           ]),
 
@@ -184,7 +156,9 @@ class _MoreScreenState extends State<MoreScreen> {
               icon: Icons.help_outline,
               title: 'Perguntas Frequentes',
               subtitle: 'Dúvidas comuns sobre o app',
-              pushScreen: FaqScreen(isStaff: _isStaff),
+              onTap: (ctx) => ctx.push(
+                _isStaff ? '${AppRoutes.faq}?staff=true' : AppRoutes.faq,
+              ),
             ),
             _ActionTile(
               icon: Icons.info_outline,
@@ -242,12 +216,7 @@ class _MoreScreenState extends State<MoreScreen> {
                         width: double.infinity,
                         child: FilledButton.icon(
                           onPressed: () {
-                            Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute<void>(
-                                builder: (_) => const AuthGate(),
-                              ),
-                              (_) => false,
-                            );
+                            context.go(AppRoutes.root);
                           },
                           icon: const Icon(Icons.login_rounded, size: 18),
                           label: const Text('Criar conta / Entrar'),
@@ -300,12 +269,12 @@ class _MoreScreenState extends State<MoreScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => ctx.pop(),
             child: Text(context.l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: cs.error),
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => ctx.pop(true),
             child: Text(context.l10n.logout),
           ),
         ],
@@ -316,10 +285,7 @@ class _MoreScreenState extends State<MoreScreen> {
     try {
       await sl<AuthRepository>().signOut();
       if (!context.mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (_) => const AuthGate()),
-        (_) => false,
-      );
+      context.go(AppRoutes.root);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -343,9 +309,7 @@ class _MoreScreenState extends State<MoreScreen> {
         );
         return;
       }
-      Navigator.of(context).push(MaterialPageRoute<void>(
-        builder: (_) => PartnerAssessoriasScreen(groupId: staffRow['group_id'] as String),
-      ));
+      context.push(AppRoutes.partnerAssessoriasPath(staffRow['group_id'] as String));
     } catch (e) {
       AppLogger.warn('Caught error', tag: 'MoreScreen', error: e);
       if (!context.mounted) return;
@@ -356,12 +320,7 @@ class _MoreScreenState extends State<MoreScreen> {
   }
 
   void _openAthleteScan(BuildContext context) {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => BlocProvider<StaffQrBloc>(
-        create: (_) => StaffQrBloc(repo: sl<ITokenIntentRepo>()),
-        child: const StaffScanQrScreen(),
-      ),
-    ));
+    context.push(AppRoutes.staffScanQr);
   }
 
   Future<void> _openStaffQrHub(BuildContext context) async {
@@ -402,9 +361,7 @@ class _MoreScreenState extends State<MoreScreen> {
         joinedAtMs: (staffRow['joined_at_ms'] as num?)?.toInt() ?? 0,
       );
 
-      Navigator.of(context).push(MaterialPageRoute<void>(
-        builder: (_) => StaffQrHubScreen(membership: membership),
-      ));
+      context.push(AppRoutes.staffQrHub, extra: membership);
     } catch (e) {
       AppLogger.warn('Caught error', tag: 'MoreScreen', error: e);
       if (!context.mounted) return;
@@ -461,9 +418,7 @@ class _MoreScreenState extends State<MoreScreen> {
         return;
       }
       final groupId = list.first['group_id'] as String;
-      Navigator.of(context).push(MaterialPageRoute<void>(
-        builder: (_) => SupportScreen(groupId: groupId),
-      ));
+      context.push(AppRoutes.supportPath(groupId));
     } catch (e) {
       AppLogger.warn('Failed to open support', tag: 'MoreScreen', error: e);
       if (!context.mounted) return;
@@ -503,8 +458,9 @@ class _ActionTile extends StatelessWidget {
         if (tap != null) {
           tap(context);
         } else if (screen != null) {
-          Navigator.of(context)
-              .push(MaterialPageRoute<void>(builder: (_) => screen));
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => screen),
+          );
         }
       },
     );

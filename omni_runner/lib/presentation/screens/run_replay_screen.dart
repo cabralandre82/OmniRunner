@@ -8,6 +8,7 @@ import 'package:omni_runner/core/utils/format_pace.dart';
 import 'package:omni_runner/domain/entities/location_point_entity.dart';
 import 'package:omni_runner/domain/usecases/replay_analyzer.dart';
 import 'package:omni_runner/presentation/map/map_style.dart';
+import 'package:go_router/go_router.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
 const _routeSrcId = 'replay-route-src';
@@ -303,7 +304,7 @@ class _TopBar extends StatelessWidget {
             const Spacer(),
             IconButton(
               icon: const Icon(Icons.close, color: Colors.white),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => context.pop(),
             ),
           ],
         ),

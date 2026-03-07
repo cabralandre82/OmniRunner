@@ -10,6 +10,8 @@ interface FilterBarProps {
 export function FilterBar({ children, className = "" }: FilterBarProps) {
   return (
     <div
+      role="search"
+      aria-label="Filtros"
       className={`flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 ${className}`}
     >
       {children}
@@ -47,6 +49,7 @@ interface FilterSelectProps {
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
   className?: string;
+  ariaLabel?: string;
 }
 
 export function FilterSelect({
@@ -54,11 +57,13 @@ export function FilterSelect({
   onChange,
   options,
   className = "",
+  ariaLabel = "Filtrar por opção",
 }: FilterSelectProps) {
   return (
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      aria-label={ariaLabel}
       className={`rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm text-content-primary focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand transition-colors ${className}`}
     >
       {options.map((opt) => (

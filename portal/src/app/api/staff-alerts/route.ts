@@ -19,7 +19,7 @@ export interface StaffAlert {
 export async function GET(req: NextRequest) {
   try {
     const ip = req.headers.get("x-forwarded-for") ?? "unknown";
-    const rl = rateLimit(`staff-alerts:${ip}`, { maxRequests: 20, windowMs: 60_000 });
+    const rl = await rateLimit(`staff-alerts:${ip}`, { maxRequests: 20, windowMs: 60_000 });
     if (!rl.allowed) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }

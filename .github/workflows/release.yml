@@ -107,11 +107,15 @@ jobs:
           channel: stable
           cache: true
 
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+          working-directory: omni_runner
+
       - name: Build release APK
         working-directory: omni_runner
-        run: |
-          flutter pub get
-          flutter build apk --release
+        run: bundle exec fastlane build_apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -122,3 +126,19 @@ jobs:
           files: |
             omni_runner/build/app/outputs/flutter-apk/app-release.apk
           generate_release_notes: false
+
+      - name: Deploy to Google Play (internal)
+        if: secrets.PLAY_STORE_KEY_JSON != ''
+        working-directory: omni_runner
+        env:
+          SUPPLY_JSON_KEY_DATA: ${{ secrets.PLAY_STORE_KEY_JSON }}
+        run: bundle exec fastlane deploy_play_store
+
+      - name: Deploy to Firebase App Distribution (beta)
+        if: secrets.FIREBASE_APP_ID != ''
+        working-directory: omni_runner
+        env:
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          RELEASE_NOTES: "v${{ steps.bump.outputs.version }}"
+        run: bundle exec fastlane deploy_firebase_distribution

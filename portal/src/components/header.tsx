@@ -57,6 +57,7 @@ export function Header({
           <form action={clearPortalGroup}>
             <button
               type="submit"
+              aria-label="Trocar grupo"
               className="flex-shrink-0 rounded-lg bg-surface-elevated px-2 py-0.5 text-xs text-content-muted hover:text-content-primary hover:bg-bg-secondary transition-colors"
             >
               trocar
@@ -69,9 +70,10 @@ export function Header({
         <span className="hidden text-xs text-content-muted sm:inline">
           {userEmail}
         </span>
-        <form action={signOut}>
+        <form action={signOut} aria-label="Menu do usuário">
           <button
             type="submit"
+            aria-label="Sair da conta"
             className="rounded-lg px-3 py-1.5 text-xs font-medium text-content-secondary hover:bg-surface-elevated hover:text-content-primary transition-colors"
           >
             Sair

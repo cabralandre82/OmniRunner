@@ -12,13 +12,14 @@ import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
 import 'package:omni_runner/domain/entities/workout_status.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
 import 'package:omni_runner/domain/repositories/i_session_repo.dart';
+import 'package:go_router/go_router.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/presentation/screens/challenge_create_screen.dart';
 import 'package:omni_runner/features/parks/data/park_detection_service.dart';
 import 'package:omni_runner/features/parks/data/parks_seed.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_bloc.dart';
 import 'package:omni_runner/presentation/blocs/verification/verification_event.dart';
-import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/widgets/verification_gate.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
@@ -364,7 +365,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
 
   void _goToChallenge() {
     if (_matchedChallengeId == null) return;
-    Navigator.of(context).pop(_matchedChallengeId);
+    context.pop(_matchedChallengeId);
   }
 
   // ── Build ────────────────────────────────────────────────────────────────
@@ -485,10 +486,8 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
                         const SizedBox(height: 6),
                         GestureDetector(
                           onTap: () {
-                            Navigator.of(context)
-                                .push(MaterialPageRoute<void>(
-                                  builder: (_) => const SettingsScreen(),
-                                ))
+                            context
+                                .push(AppRoutes.settings)
                                 .then((_) => _checkStrava());
                           },
                           child: const Text(

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
-import 'package:omni_runner/presentation/screens/athlete_championship_ranking_screen.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 
 /// Athlete-facing screen to browse and join open championships.
@@ -153,13 +154,14 @@ class _AthleteChampionshipsScreenState
   }
 
   void _viewParticipants(_ChampItem champ) {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => AthleteChampionshipRankingScreen(
+    context.push(
+      AppRoutes.championshipRankingPath(champ.id),
+      extra: ChampionshipRankingExtra(
         championshipId: champ.id,
         championshipName: champ.name,
         metric: champ.metric,
       ),
-    ));
+    );
   }
 
   static String _friendlyError(String code) => switch (code) {

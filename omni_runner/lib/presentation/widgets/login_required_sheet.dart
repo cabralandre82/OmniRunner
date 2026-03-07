@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
-import 'package:omni_runner/presentation/screens/auth_gate.dart';
 
 /// Bottom sheet shown when an anonymous user taps a feature that requires
 /// a real account (assessoria, desafios, campeonatos, tokens, etc.).
@@ -92,12 +93,7 @@ class LoginRequiredSheet extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const AuthGate(),
-                    ),
-                    (_) => false,
-                  );
+                  context.go(AppRoutes.root);
                 },
                 icon: const Icon(Icons.login_rounded),
                 label: const Text('Criar conta / Entrar'),

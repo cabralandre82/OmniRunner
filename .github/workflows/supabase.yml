@@ -7,6 +7,9 @@ on:
       - 'supabase/**'
       - 'tools/integration_tests.ts'
       - 'tools/verify_metrics_snapshots.ts'
+      - 'tools/perf_benchmark.sql'
+      - 'tools/perf_benchmark_ci.sh'
+      - 'tools/perf_seed.ts'
       - '.github/workflows/supabase.yml'
   pull_request:
     branches: [master]
@@ -14,6 +17,9 @@ on:
       - 'supabase/**'
       - 'tools/integration_tests.ts'
       - 'tools/verify_metrics_snapshots.ts'
+      - 'tools/perf_benchmark.sql'
+      - 'tools/perf_benchmark_ci.sh'
+      - 'tools/perf_seed.ts'
       - '.github/workflows/supabase.yml'
 
 concurrency:
@@ -69,6 +75,13 @@ jobs:
           SUPABASE_URL: http://127.0.0.1:54321
           SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
           SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WO7jMlhUEkSia-H64vRXJvJI3VoLIU1suUts
+
+      - name: Run performance benchmarks
+        env:
+          SUPABASE_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: |
+          NODE_PATH=portal/node_modules npx tsx tools/perf_seed.ts
+          ./tools/perf_benchmark_ci.sh
 
       - name: Stop Supabase
         if: always()

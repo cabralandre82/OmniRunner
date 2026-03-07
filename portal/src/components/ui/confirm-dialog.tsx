@@ -48,6 +48,7 @@ export function ConfirmDialog({
       ref={dialogRef}
       onClose={onCancel}
       role="alertdialog"
+      aria-modal="true"
       aria-labelledby="confirm-dialog-title"
       aria-describedby={description ? "confirm-dialog-desc" : undefined}
       className="w-full max-w-md rounded-xl border border-border bg-surface p-0 shadow-lg backdrop:bg-overlay"

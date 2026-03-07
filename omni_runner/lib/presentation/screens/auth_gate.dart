@@ -1,17 +1,18 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/deep_links/deep_link_handler.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/profile_entity.dart';
 import 'package:omni_runner/domain/repositories/i_profile_repo.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
-import 'package:omni_runner/presentation/screens/challenge_join_screen.dart';
 import 'package:omni_runner/presentation/screens/home_screen.dart';
 import 'package:omni_runner/presentation/screens/login_screen.dart';
 import 'package:omni_runner/presentation/screens/onboarding_role_screen.dart';
@@ -103,9 +104,7 @@ class _AuthGateState extends State<AuthGate> {
     if (!mounted) return;
     if (_dest != _GateDestination.home) return;
 
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => ChallengeJoinScreen(challengeId: challengeId),
-    ));
+    context.push(AppRoutes.challengeJoinPath(challengeId));
   }
 
   /// Deep-link join flow: looks up the group, shows confirmation, then

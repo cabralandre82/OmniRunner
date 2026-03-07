@@ -32,7 +32,7 @@ async function requirePlatformAdmin() {
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? "unknown";
-  const rl = rateLimit(`platform-ff:${ip}`, {
+  const rl = await rateLimit(`platform-ff:${ip}`, {
     maxRequests: 20,
     windowMs: 60_000,
   });

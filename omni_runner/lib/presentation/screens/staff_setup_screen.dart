@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -145,7 +146,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
           ),
           actions: [
             FilledButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: () => ctx.pop(),
               child: const Text('Entendi'),
             ),
           ],
@@ -213,11 +214,11 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => ctx.pop(false),
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => ctx.pop(true),
             child: const Text('Solicitar'),
           ),
         ],
@@ -296,7 +297,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
         actions: [
           FilledButton(
             onPressed: () {
-              Navigator.pop(ctx);
+              ctx.pop();
               widget.onComplete();
             },
             child: const Text('Entendi'),
@@ -336,11 +337,11 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => ctx.pop(),
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, codeCtrl.text.trim()),
+            onPressed: () => ctx.pop(codeCtrl.text.trim()),
             child: const Text('Buscar'),
           ),
         ],
@@ -859,7 +860,7 @@ class _QrScannerPageState extends State<_QrScannerPage> {
     final barcode = capture.barcodes.firstOrNull;
     if (barcode?.rawValue == null) return;
     _scanned = true;
-    Navigator.of(context).pop(barcode!.rawValue);
+    context.pop(barcode!.rawValue);
   }
 
   @override

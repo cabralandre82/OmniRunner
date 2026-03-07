@@ -35,7 +35,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const rl = rateLimit(`gateway-pref:${request.headers.get("x-forwarded-for") ?? "unknown"}`);
+  const rl = await rateLimit(`gateway-pref:${request.headers.get("x-forwarded-for") ?? "unknown"}`);
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

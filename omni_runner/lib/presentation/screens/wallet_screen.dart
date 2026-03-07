@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/ledger_entry_entity.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_bloc.dart';
@@ -8,9 +10,6 @@ import 'package:omni_runner/presentation/blocs/wallet/wallet_event.dart';
 import 'package:omni_runner/presentation/blocs/wallet/wallet_state.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/l10n/l10n.dart';
-import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_bloc.dart';
-import 'package:omni_runner/presentation/screens/staff_scan_qr_screen.dart';
-import 'package:omni_runner/domain/repositories/i_token_intent_repo.dart';
 import 'package:omni_runner/presentation/widgets/contextual_tip_banner.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
@@ -54,12 +53,7 @@ class _WalletScreenState extends State<WalletScreen> {
       floatingActionButton: Tooltip(
         message: 'Escanear QR de distribuição de OmniCoins',
         child: FloatingActionButton.extended(
-          onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
-            builder: (_) => BlocProvider<StaffQrBloc>(
-              create: (_) => StaffQrBloc(repo: sl<ITokenIntentRepo>()),
-              child: const StaffScanQrScreen(),
-            ),
-          )),
+          onPressed: () => context.push(AppRoutes.staffScanQr),
           icon: const Icon(Icons.qr_code_scanner),
           label: const Text('Escanear QR'),
         ),

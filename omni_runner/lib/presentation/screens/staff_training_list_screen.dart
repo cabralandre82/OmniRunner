@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/training_session_entity.dart';
 import 'package:omni_runner/domain/repositories/i_training_attendance_repo.dart';
 import 'package:omni_runner/presentation/blocs/training_list/training_list_bloc.dart';
 import 'package:omni_runner/presentation/blocs/training_list/training_list_event.dart';
 import 'package:omni_runner/presentation/blocs/training_list/training_list_state.dart';
-import 'package:omni_runner/presentation/screens/staff_training_create_screen.dart';
-import 'package:omni_runner/presentation/screens/staff_training_detail_screen.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
@@ -41,13 +41,9 @@ class _StaffTrainingListView extends StatelessWidget {
 
   void _openCreate(BuildContext context) async {
     final uid = sl<UserIdentityProvider>().userId;
-    final result = await Navigator.of(context).push<TrainingSessionEntity?>(
-      MaterialPageRoute(
-        builder: (_) => StaffTrainingCreateScreen(
-          groupId: groupId,
-          userId: uid,
-        ),
-      ),
+    final result = await context.push<TrainingSessionEntity?>(
+      AppRoutes.staffTrainingCreate,
+      extra: StaffTrainingCreateExtra(groupId: groupId, userId: uid),
     );
     if (result != null && context.mounted) {
       context.read<TrainingListBloc>().add(const RefreshTrainingSessions());
@@ -55,10 +51,8 @@ class _StaffTrainingListView extends StatelessWidget {
   }
 
   void _openDetail(BuildContext context, String sessionId) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => StaffTrainingDetailScreen(sessionId: sessionId),
-      ),
+    context.push(
+      AppRoutes.staffTrainingDetailPath(sessionId),
     ).then((_) {
       if (context.mounted) {
         context.read<TrainingListBloc>().add(const RefreshTrainingSessions());

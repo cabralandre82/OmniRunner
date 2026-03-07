@@ -40,7 +40,7 @@ async function requireStaff() {
 export async function GET(req: NextRequest) {
   try {
     const ip = req.headers.get("x-forwarded-for") ?? "unknown";
-    const rl = rateLimit(`clearing:${ip}`, { maxRequests: 30, windowMs: 60_000 });
+    const rl = await rateLimit(`clearing:${ip}`, { maxRequests: 30, windowMs: 60_000 });
     if (!rl.allowed) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
 import { NoGroupSelected } from "@/components/no-group-selected";
 import { formatUsd } from "@/lib/format";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { WithdrawButton } from "./withdraw-button";
 import { FxSimulator } from "./fx-simulator";
 
@@ -113,9 +114,13 @@ export default async function FxPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-content-primary">Conversao Cambial (FX)</h1>
+          <h1 className="text-2xl font-bold text-content-primary">
+            <InfoTooltip text="A conversão cambial (FX) permite depositar e retirar valores em sua moeda local (ex.: BRL). O sistema converte automaticamente para dólares (USD) usando a cotação do momento, aplicando um pequeno spread como taxa de câmbio.">
+              Conversão Cambial (FX)
+            </InfoTooltip>
+          </h1>
           <p className="mt-1 text-sm text-content-secondary">
-            Spread atual: {spreadRate}% &mdash; Depositos com FX e retiradas em moeda local
+            Spread atual: {spreadRate}% &mdash; Depósitos com conversão automática e retiradas em moeda local
           </p>
         </div>
         <WithdrawButton available={available} />

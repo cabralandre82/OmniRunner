@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/announcement_entity.dart';
 import 'package:omni_runner/presentation/blocs/announcement_feed/announcement_feed_bloc.dart';
 import 'package:omni_runner/presentation/blocs/announcement_feed/announcement_feed_event.dart';
 import 'package:omni_runner/presentation/blocs/announcement_feed/announcement_feed_state.dart';
-import 'package:omni_runner/presentation/screens/announcement_create_screen.dart';
-import 'package:omni_runner/presentation/screens/announcement_detail_screen.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 
 /// Feed of announcements for both staff and athletes.
@@ -65,10 +65,8 @@ class _AnnouncementFeedView extends StatelessWidget {
   }
 
   Future<void> _openCreate(BuildContext context) async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => AnnouncementCreateScreen(groupId: groupId),
-      ),
+    final result = await context.push<bool>(
+      AppRoutes.announcementCreatePath(groupId),
     );
     if (result == true && context.mounted) {
       context.read<AnnouncementFeedBloc>().add(const RefreshAnnouncements());
@@ -76,13 +74,8 @@ class _AnnouncementFeedView extends StatelessWidget {
   }
 
   void _openDetail(BuildContext context, String announcementId) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => AnnouncementDetailScreen(
-          announcementId: announcementId,
-          isStaff: isStaff,
-        ),
-      ),
+    context.push(
+      '${AppRoutes.announcementDetailPath(announcementId)}?staff=$isStaff',
     ).then((_) {
       if (context.mounted) {
         context.read<AnnouncementFeedBloc>().add(const RefreshAnnouncements());

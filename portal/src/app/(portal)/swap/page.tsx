@@ -5,6 +5,7 @@ import { NoGroupSelected } from "@/components/no-group-selected";
 import { SwapActions } from "./swap-actions";
 import { SwapHistory } from "./swap-history";
 import { formatUsd } from "@/lib/format";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 
 export const metadata: Metadata = { title: "Swap de Lastro" };
 export const dynamic = "force-dynamic";
@@ -58,9 +59,13 @@ export default async function SwapPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-content-primary">Swap de Lastro</h1>
+          <h1 className="text-2xl font-bold text-content-primary">
+            <InfoTooltip text="Lastro é o dinheiro real (em dólares) que garante suas OmniCoins. O Swap permite que assessorias comprem e vendam lastro entre si, como um mercado de liquidez. Útil quando você precisa de mais lastro rapidamente sem depositar dinheiro novo.">
+              Swap de Lastro
+            </InfoTooltip>
+          </h1>
           <p className="mt-1 text-sm text-content-secondary">
-            Mercado B2B de liquidez entre assessorias &mdash; Taxa: {feeRate}%
+            Compra e venda de lastro (garantia em dólares) entre assessorias &mdash; Taxa: {feeRate}%
           </p>
         </div>
         <SwapActions />

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/features/parks/data/parks_seed.dart';
 import 'package:omni_runner/features/parks/domain/park_entity.dart';
-import 'package:omni_runner/features/parks/presentation/park_screen.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
 
 /// Listing of parks the athlete frequents + discovery of nearby parks.
@@ -263,11 +264,7 @@ class _MyParksScreenState extends State<MyParksScreen> {
   }
 
   void _openPark(ParkEntity park) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ParkScreen(park: park),
-      ),
-    );
+    context.push(AppRoutes.parkDetail, extra: park);
   }
 }
 

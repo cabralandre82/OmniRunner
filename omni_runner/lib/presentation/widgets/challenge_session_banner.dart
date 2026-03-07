@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/repositories/i_challenge_repo.dart';
-import 'package:omni_runner/presentation/screens/challenge_result_screen.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 
 /// Banner shown in [RunSummaryScreen] when the run was part of a challenge.
@@ -124,19 +125,20 @@ class _ChallengeSessionBannerState extends State<ChallengeSessionBanner> {
                   side: BorderSide(color: Colors.teal.shade300),
                 ),
                 onPressed: () async {
-                  final nav = Navigator.of(context);
                   final repo = sl<IChallengeRepo>();
                   final challenge =
                       await repo.getById(widget.challengeId);
                   final result = await repo
                       .getResultByChallengeId(widget.challengeId);
                   if (!mounted || challenge == null || result == null) return;
-                  nav.push(MaterialPageRoute<void>(
-                    builder: (_) => ChallengeResultScreen(
+                  if (!context.mounted) return;
+                  context.push(
+                    AppRoutes.challengeResult,
+                    extra: ChallengeResultExtra(
                       challenge: challenge,
                       result: result,
                     ),
-                  ));
+                  );
                 },
               ),
             ),

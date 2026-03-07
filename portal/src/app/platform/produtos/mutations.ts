@@ -39,7 +39,7 @@ export async function toggleProduct(productId: string, isActive: boolean) {
   const auth = await requirePlatformAdmin();
   if ("error" in auth) return { ok: false, error: auth.error };
 
-  const rl = rateLimit(`platform-product:${auth.user.id}`, { maxRequests: 20, windowMs: 60_000 });
+  const rl = await rateLimit(`platform-product:${auth.user.id}`, { maxRequests: 20, windowMs: 60_000 });
   if (!rl.allowed) return { ok: false, error: "Muitas requisições. Aguarde." };
 
   const parsed = platformProductToggleSchema.safeParse({
@@ -73,7 +73,7 @@ export async function deleteProduct(productId: string) {
   const auth = await requirePlatformAdmin();
   if ("error" in auth) return { ok: false, error: auth.error };
 
-  const rl = rateLimit(`platform-product:${auth.user.id}`, { maxRequests: 20, windowMs: 60_000 });
+  const rl = await rateLimit(`platform-product:${auth.user.id}`, { maxRequests: 20, windowMs: 60_000 });
   if (!rl.allowed) return { ok: false, error: "Muitas requisições. Aguarde." };
 
   const parsed = platformProductDeleteSchema.safeParse({
@@ -117,7 +117,7 @@ export async function updateProduct(data: {
   const auth = await requirePlatformAdmin();
   if ("error" in auth) return { ok: false, error: auth.error };
 
-  const rl = rateLimit(`platform-product:${auth.user.id}`, { maxRequests: 20, windowMs: 60_000 });
+  const rl = await rateLimit(`platform-product:${auth.user.id}`, { maxRequests: 20, windowMs: 60_000 });
   if (!rl.allowed) return { ok: false, error: "Muitas requisições. Aguarde." };
 
   const parsed = platformProductUpdateSchema.safeParse({ action: "update", ...data });
@@ -161,7 +161,7 @@ export async function createProduct(data: {
   const auth = await requirePlatformAdmin();
   if ("error" in auth) return { ok: false, error: auth.error };
 
-  const rl = rateLimit(`platform-product:${auth.user.id}`, { maxRequests: 20, windowMs: 60_000 });
+  const rl = await rateLimit(`platform-product:${auth.user.id}`, { maxRequests: 20, windowMs: 60_000 });
   if (!rl.allowed) return { ok: false, error: "Muitas requisições. Aguarde." };
 
   const parsed = platformProductCreateSchema.safeParse({ action: "create", ...data });

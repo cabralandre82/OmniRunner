@@ -25,11 +25,11 @@ import 'package:omni_runner/domain/usecases/finish_session.dart';
 import 'package:omni_runner/domain/usecases/recover_active_session.dart';
 import 'package:omni_runner/core/theme/app_theme.dart';
 import 'package:omni_runner/core/theme/theme_notifier.dart';
-import 'package:omni_runner/presentation/screens/auth_gate.dart';
+import 'package:go_router/go_router.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/presentation/screens/recovery_screen.dart';
 
 final themeNotifier = ThemeNotifier();
-final _navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -174,7 +174,7 @@ Future<void> _initServices() async {
   if (AppConfig.isSupabaseReady) {
     try {
       final pushService = sl<PushNotificationService>();
-      final pushNav = PushNavigationHandler(navigatorKey: _navigatorKey);
+      final pushNav = PushNavigationHandler(navigatorKey: rootNavigatorKey);
       pushService.onForegroundMessage = pushNav.showForegroundBanner;
       await pushService.init();
       await pushNav.init();
@@ -210,10 +210,12 @@ class OmniRunnerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final router = createAppRouter(recovery: recovery);
+
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: themeNotifier,
-      builder: (_, mode, __) => MaterialApp(
-        navigatorKey: _navigatorKey,
+      builder: (_, mode, __) => MaterialApp.router(
+        routerConfig: router,
         title: 'Omni Runner',
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
@@ -242,9 +244,6 @@ class OmniRunnerApp extends StatelessWidget {
             ),
           );
         },
-        home: recovery != null
-            ? _RecoveryWrapper(recovery: recovery!)
-            : const AuthGate(),
       ),
     );
   }
@@ -267,22 +266,14 @@ class _RecoveryWrapper extends StatelessWidget {
   Future<void> _finishAndNavigate(BuildContext context) async {
     await sl<FinishSession>()(sessionId: recovery.session.id);
     if (!context.mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(
-        builder: (_) => const AuthGate(),
-      ),
-    );
+    context.go(AppRoutes.root);
   }
 
   Future<void> _discardAndNavigate(BuildContext context) async {
     await sl<DiscardSession>()(recovery.session.id);
 
     if (context.mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => const AuthGate(),
-        ),
-      );
+      context.go(AppRoutes.root);
     }
   }
 }

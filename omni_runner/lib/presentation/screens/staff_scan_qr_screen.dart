@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'package:omni_runner/domain/entities/token_intent_entity.dart';
@@ -44,7 +45,7 @@ class _StaffScanQrScreenState extends State<StaffScanQrScreen> {
                 backgroundColor: DesignTokens.success,
               ),
             );
-            Navigator.of(context).pop();
+            context.pop();
           }
           if (state is StaffQrError) {
             setState(() => _hasScanned = false);

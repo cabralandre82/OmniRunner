@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/domain/entities/token_intent_entity.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_group_repo.dart';
-import 'package:omni_runner/domain/repositories/i_token_intent_repo.dart';
-import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_bloc.dart';
-import 'package:omni_runner/presentation/screens/invite_qr_screen.dart';
-import 'package:omni_runner/presentation/screens/staff_generate_qr_screen.dart';
-import 'package:omni_runner/presentation/screens/staff_scan_qr_screen.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Hub screen for staff QR operations. Gated by [CoachingMemberEntity.isStaff].
@@ -129,33 +125,21 @@ class StaffQrHubScreen extends StatelessWidget {
       return;
     }
     if (!context.mounted) return;
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => InviteQrScreen(
-        inviteCode: inviteCode,
-        groupName: group.name,
-      ),
-    ));
+    context.push(
+      AppRoutes.inviteQr,
+      extra: InviteQrExtra(inviteCode: inviteCode, groupName: group.name),
+    );
   }
 
   void _pushGenerate(BuildContext context, TokenIntentType type) {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => BlocProvider<StaffQrBloc>(
-        create: (_) => StaffQrBloc(repo: sl<ITokenIntentRepo>()),
-        child: StaffGenerateQrScreen(
-          type: type,
-          groupId: membership.groupId,
-        ),
-      ),
-    ));
+    context.push(
+      AppRoutes.staffGenerateQr,
+      extra: StaffGenerateQrExtra(type: type, groupId: membership.groupId),
+    );
   }
 
   void _pushScan(BuildContext context) {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => BlocProvider<StaffQrBloc>(
-        create: (_) => StaffQrBloc(repo: sl<ITokenIntentRepo>()),
-        child: const StaffScanQrScreen(),
-      ),
-    ));
+    context.push(AppRoutes.staffScanQr);
   }
 
   Widget _buildAccessDenied(BuildContext context) {

@@ -1,43 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_event.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_state.dart';
-import 'package:omni_runner/core/tips/first_use_tips.dart';
-import 'package:omni_runner/presentation/screens/challenge_create_screen.dart';
-import 'package:omni_runner/presentation/screens/challenge_details_screen.dart';
-import 'package:omni_runner/presentation/screens/matchmaking_screen.dart';
-import 'package:omni_runner/presentation/screens/settings_screen.dart';
 import 'package:omni_runner/presentation/widgets/error_state.dart';
-import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
-import 'package:omni_runner/core/logging/logger.dart';
-import 'package:omni_runner/core/theme/design_tokens.dart';
 
 void _openMatchmaking(BuildContext context) async {
-  final challengeId = await Navigator.of(context).push<String>(
-    MaterialPageRoute<String>(
-      builder: (_) => const MatchmakingScreen(),
-    ),
-  );
+  final challengeId = await context.push<String>(AppRoutes.matchmaking);
   if (challengeId != null && context.mounted) {
     final uid = sl<UserIdentityProvider>().userId;
     context.read<ChallengesBloc>().add(LoadChallenges(uid));
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => BlocProvider.value(
-        value: context.read<ChallengesBloc>()
-          ..add(ViewChallengeDetails(challengeId)),
-        child: ChallengeDetailsScreen(challengeId: challengeId),
-      ),
-    ));
+    context.push(AppRoutes.challengeDetailsPath(challengeId));
   }
 }
 
@@ -141,14 +129,7 @@ class _ChallengesListScreenState extends State<ChallengesListScreen> {
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Criar desafio',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => BlocProvider.value(
-                  value: context.read<ChallengesBloc>(),
-                  child: const ChallengeCreateScreen(),
-                ),
-              ),
-            ),
+            onPressed: () => context.push(AppRoutes.challengeCreate),
           ),
         ],
       ),
@@ -304,14 +285,7 @@ class _ChallengesListScreenState extends State<ChallengesListScreen> {
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => BlocProvider.value(
-                    value: context.read<ChallengesBloc>(),
-                    child: const ChallengeCreateScreen(),
-                  ),
-                ),
-              ),
+              onPressed: () => context.push(AppRoutes.challengeCreate),
               icon: const Icon(Icons.add_rounded),
               label: const Text('Criar e convidar'),
             ),
@@ -434,17 +408,7 @@ class _ChallengeListTile extends StatelessWidget {
           );
           return;
         }
-        context
-            .read<ChallengesBloc>()
-            .add(ViewChallengeDetails(challenge.id));
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => BlocProvider.value(
-              value: context.read<ChallengesBloc>(),
-              child: ChallengeDetailsScreen(challengeId: challenge.id),
-            ),
-          ),
-        );
+        context.push(AppRoutes.challengeDetailsPath(challenge.id));
       },
     );
   }
@@ -619,11 +583,7 @@ class _StravaConnectBanner extends StatelessWidget {
               const SizedBox(width: 12),
               FilledButton.icon(
                 onPressed: () {
-                  Navigator.of(context)
-                      .push(MaterialPageRoute<void>(
-                        builder: (_) => const SettingsScreen(),
-                      ))
-                      .then((_) => onConnected());
+                  context.push(AppRoutes.settings).then((_) => onConnected());
                 },
                 icon: const Icon(Icons.link, size: 16),
                 label: const Text('Conectar'),

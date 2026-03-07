@@ -61,42 +61,38 @@
 
 import 'dart:async';
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
-import 'package:omni_runner/l10n/l10n.dart';
+import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/push/notification_rules_service.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
+import 'package:omni_runner/data/services/today_data_service.dart';
 import 'package:omni_runner/domain/entities/badge_award_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
 import 'package:omni_runner/domain/entities/profile_progress_entity.dart';
 import 'package:omni_runner/domain/entities/workout_session_entity.dart';
 import 'package:omni_runner/domain/entities/workout_status.dart';
-import 'package:omni_runner/domain/repositories/i_challenge_repo.dart';
 import 'package:omni_runner/domain/repositories/i_badge_award_repo.dart';
+import 'package:omni_runner/domain/repositories/i_challenge_repo.dart';
 import 'package:omni_runner/domain/repositories/i_profile_progress_repo.dart';
 import 'package:omni_runner/domain/repositories/i_session_repo.dart';
 import 'package:omni_runner/features/parks/data/park_detection_service.dart';
 import 'package:omni_runner/features/parks/data/parks_seed.dart';
 import 'package:omni_runner/features/parks/domain/park_entity.dart';
-import 'package:omni_runner/features/parks/presentation/park_screen.dart';
-import 'package:omni_runner/core/push/notification_rules_service.dart';
-import 'package:omni_runner/data/services/today_data_service.dart';
-import 'package:omni_runner/presentation/screens/athlete_championships_screen.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
-import 'package:omni_runner/presentation/blocs/badges/badges_bloc.dart';
-import 'package:omni_runner/presentation/blocs/badges/badges_event.dart';
-import 'package:omni_runner/presentation/screens/badges_screen.dart';
-import 'package:omni_runner/presentation/screens/challenge_details_screen.dart';
+import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/widgets/run_share_card.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
-import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
-import 'package:omni_runner/core/theme/design_tokens.dart';
-import 'package:omni_runner/presentation/screens/streaks_leaderboard_screen.dart';
 
 class TodayScreen extends StatefulWidget {
   final bool isVisible;
@@ -583,15 +579,7 @@ class _TodayScreenState extends State<TodayScreen> {
                     _RecentBadgeUnlockCard(
                       badgeCount: _recentBadges.length,
                       onTap: () {
-                        Navigator.of(context).push(MaterialPageRoute<void>(
-                          builder: (_) => BlocProvider<BadgesBloc>(
-                            create: (_) => sl<BadgesBloc>()
-                              ..add(LoadBadges(
-                                sl<UserIdentityProvider>().userId,
-                              )),
-                            child: const BadgesScreen(),
-                          ),
-                        ));
+                        context.push(AppRoutes.badges);
                       },
                     ),
                     const SizedBox(height: 14),
@@ -602,11 +590,7 @@ class _TodayScreenState extends State<TodayScreen> {
                     _ActiveChallengesCard(
                       challenges: _activeChallenges,
                       onTap: (c) {
-                        Navigator.of(context).push(MaterialPageRoute<void>(
-                          builder: (_) => ChallengeDetailsScreen(
-                            challengeId: c.id,
-                          ),
-                        ));
+                        context.push(AppRoutes.challengeDetailsPath(c.id));
                       },
                     ),
                     const SizedBox(height: 14),
@@ -617,10 +601,7 @@ class _TodayScreenState extends State<TodayScreen> {
                     _ActiveChampionshipsCard(
                       championships: _activeChampionships,
                       onTap: () {
-                        Navigator.of(context).push(MaterialPageRoute<void>(
-                          builder: (_) =>
-                              const AthleteChampionshipsScreen(),
-                        ));
+                        context.push(AppRoutes.championships);
                       },
                     ),
                     const SizedBox(height: 14),
@@ -651,10 +632,7 @@ class _TodayScreenState extends State<TodayScreen> {
                     _ParkCheckinCard(
                       park: _detectedPark!,
                       onTap: () {
-                        Navigator.of(context).push(MaterialPageRoute<void>(
-                          builder: (_) =>
-                              ParkScreen(park: _detectedPark!),
-                        ));
+                        context.push(AppRoutes.parkDetail, extra: _detectedPark!);
                       },
                     ),
                     const SizedBox(height: 14),
@@ -800,7 +778,7 @@ class _TodayScreenState extends State<TodayScreen> {
                       debounceTimer?.cancel();
                       await saveJournal(controller.text, selectedMood);
                       if (!ctx.mounted) return;
-                      Navigator.pop(ctx, controller.text);
+                      ctx.pop(controller.text);
                     },
                     child: Text(ctx.l10n.save),
                   ),
@@ -946,9 +924,7 @@ class _StreakBanner extends StatelessWidget {
                 const SizedBox(height: 6),
                 GestureDetector(
                   onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute<void>(
-                      builder: (_) => const StreaksLeaderboardScreen(),
-                    ));
+                    context.push(AppRoutes.streaksLeaderboard);
                   },
                   child: Text(
                     'Ver ranking →',

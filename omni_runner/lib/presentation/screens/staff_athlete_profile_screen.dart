@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/athlete_note_entity.dart';
 import 'package:omni_runner/domain/entities/coaching_tag_entity.dart';
 import 'package:omni_runner/domain/entities/member_status_entity.dart';
@@ -10,7 +12,6 @@ import 'package:omni_runner/domain/repositories/i_training_attendance_repo.dart'
 import 'package:omni_runner/presentation/blocs/athlete_profile/athlete_profile_bloc.dart';
 import 'package:omni_runner/presentation/blocs/athlete_profile/athlete_profile_event.dart';
 import 'package:omni_runner/presentation/blocs/athlete_profile/athlete_profile_state.dart';
-import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Tabbed profile view for a specific athlete (staff perspective).
 class StaffAthleteProfileScreen extends StatefulWidget {
@@ -453,11 +454,11 @@ class _NotesTabState extends State<_NotesTab> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => ctx.pop(false),
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => ctx.pop(true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Excluir'),
           ),
@@ -642,11 +643,11 @@ class _TagsTab extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => ctx.pop(false),
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => ctx.pop(true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Remover'),
           ),
@@ -751,7 +752,7 @@ class _TagsTab extends StatelessWidget {
                   title: Text(t.name),
                   onTap: () {
                     context.read<AthleteProfileBloc>().add(AssignTag(t.id));
-                    Navigator.of(ctx).pop();
+                    ctx.pop();
                   },
                 ),
               ),

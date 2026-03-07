@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/core/utils/error_messages.dart';
@@ -84,7 +85,7 @@ class _AnnouncementCreateScreenState extends State<AnnouncementCreateScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Aviso publicado com sucesso!')),
         );
-        Navigator.of(context).pop(true);
+        context.pop(true);
       }
     } catch (e) {
       if (mounted) {

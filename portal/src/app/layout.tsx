@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { Toaster } from "sonner";
 import { WebVitals } from "@/components/web-vitals";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -40,13 +41,15 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className="dark">
+    <html lang={locale} suppressHydrationWarning>
       <body className={`${geistSans.variable} font-sans antialiased bg-bg-primary text-content-primary`}>
-        <NextIntlClientProvider messages={messages}>
-          <WebVitals />
-          {children}
-        </NextIntlClientProvider>
-        <Toaster richColors position="top-right" />
+        <ThemeProvider>
+          <NextIntlClientProvider messages={messages}>
+            <WebVitals />
+            {children}
+          </NextIntlClientProvider>
+          <Toaster richColors position="top-right" />
+        </ThemeProvider>
       </body>
     </html>
   );

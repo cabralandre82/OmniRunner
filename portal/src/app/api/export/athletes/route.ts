@@ -17,7 +17,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = rateLimit(`export:${user.id}`, { maxRequests: 3, windowMs: 60_000 });
+  const rl = await rateLimit(`export:${user.id}`, { maxRequests: 3, windowMs: 60_000 });
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

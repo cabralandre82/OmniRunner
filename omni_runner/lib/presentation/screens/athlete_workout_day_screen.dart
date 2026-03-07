@@ -14,7 +14,8 @@ import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/workout_assignment_entity.dart';
 import 'package:omni_runner/domain/entities/workout_template_entity.dart';
 import 'package:omni_runner/domain/repositories/i_workout_repo.dart';
-import 'package:omni_runner/presentation/screens/athlete_delivery_screen.dart';
+import 'package:go_router/go_router.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/presentation/widgets/state_widgets.dart';
 import 'package:omni_runner/presentation/widgets/error_state.dart';
@@ -241,9 +242,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
                 child: const Icon(Icons.delivery_dining),
               ),
               onPressed: () async {
-                await Navigator.of(context).push(MaterialPageRoute<void>(
-                  builder: (_) => const AthleteDeliveryScreen(),
-                ));
+                await context.push(AppRoutes.athleteDelivery);
                 _loadPendingDeliveryCount();
               },
               tooltip: 'Entregas Pendentes',

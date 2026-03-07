@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/feature_flags.dart';
 import 'package:omni_runner/core/logging/logger.dart';
-import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/domain/entities/workout_template_entity.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
 import 'package:omni_runner/domain/repositories/i_workout_repo.dart';
 import 'package:omni_runner/domain/usecases/wearable/push_to_trainingpeaks.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
-import 'package:omni_runner/core/theme/design_tokens.dart';
 
 // TODO: This screen appears to be unused. Consider removing or integrating it.
 /// Screen for staff to assign a workout template to an athlete on a date.
@@ -138,7 +138,7 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
         await _offerDelivery(assignment.id);
       }
       if (!mounted) return;
-      Navigator.of(context).pop(true);
+      context.pop(true);
     } catch (e, stack) {
       AppLogger.error(
         'Erro ao atribuir treino',
@@ -166,11 +166,11 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => ctx.pop(false),
             child: const Text('Não'),
           ),
           FilledButton.icon(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => ctx.pop(true),
             icon: const Icon(Icons.sync, size: 18),
             label: const Text('Sincronizar'),
           ),
@@ -209,11 +209,11 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => ctx.pop(false),
             child: const Text('Depois'),
           ),
           FilledButton.icon(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => ctx.pop(true),
             icon: const Icon(Icons.check_circle_outline, size: 18),
             label: const Text('Incluir'),
           ),

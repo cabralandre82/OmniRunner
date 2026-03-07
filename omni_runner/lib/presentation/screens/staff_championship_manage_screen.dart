@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
-import 'package:omni_runner/core/service_locator.dart';
-import 'package:omni_runner/domain/entities/token_intent_entity.dart';
-import 'package:omni_runner/domain/repositories/i_token_intent_repo.dart';
-import 'package:omni_runner/presentation/blocs/staff_qr/staff_qr_bloc.dart';
-import 'package:omni_runner/presentation/screens/staff_generate_qr_screen.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/domain/entities/token_intent_entity.dart';
+import 'package:omni_runner/presentation/screens/staff_generate_qr_screen.dart';
 import 'package:omni_runner/presentation/widgets/error_state.dart';
 
 /// Staff screen for managing a single championship: open it, invite groups,
@@ -158,8 +156,8 @@ class _StaffChampionshipManageScreenState
           'Você pode convidar assessorias antes ou depois.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Abrir')),
+          TextButton(onPressed: () => ctx.pop(false), child: const Text('Cancelar')),
+          FilledButton(onPressed: () => ctx.pop(true), child: const Text('Abrir')),
         ],
       ),
     );
@@ -199,15 +197,10 @@ class _StaffChampionshipManageScreenState
   }
 
   void _generateBadgeQr() {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => BlocProvider<StaffQrBloc>(
-        create: (_) => StaffQrBloc(repo: sl<ITokenIntentRepo>()),
-        child: _BadgeQrScreen(
-          groupId: widget.hostGroupId,
-          championshipId: widget.championshipId,
-          championshipName: _champ?.name ?? '',
-        ),
-      ),
+    context.push(AppRoutes.staffGenerateQr, extra: StaffGenerateQrExtra(
+      type: TokenIntentType.champBadgeActivate,
+      groupId: widget.hostGroupId,
+      championshipId: widget.championshipId,
     ));
   }
 
@@ -223,11 +216,11 @@ class _StaffChampionshipManageScreenState
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => ctx.pop(false),
             child: const Text('Voltar'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => ctx.pop(true),
             style: FilledButton.styleFrom(backgroundColor: DesignTokens.error),
             child: const Text('Cancelar campeonato'),
           ),
@@ -346,7 +339,7 @@ class _StaffChampionshipManageScreenState
                         ),
                       ),
                       title: Text(g['name'] ?? ''),
-                      onTap: () => Navigator.pop(ctx, g['id']),
+                      onTap: () => ctx.pop(g['id']),
                     );
                   },
                 ),
@@ -356,7 +349,7 @@ class _StaffChampionshipManageScreenState
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => ctx.pop(),
             child: const Text('Cancelar'),
           ),
         ],

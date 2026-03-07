@@ -1,8 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/domain/entities/coaching_group_entity.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
-import 'package:omni_runner/presentation/screens/invite_qr_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
@@ -349,12 +350,13 @@ class _HeaderCard extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute<void>(
-                      builder: (_) => InviteQrScreen(
+                    context.push(
+                      AppRoutes.inviteQr,
+                      extra: InviteQrExtra(
                         inviteCode: group.inviteCode!,
                         groupName: group.name,
                       ),
-                    ));
+                    );
                   },
                   icon: const Icon(Icons.qr_code_rounded, size: 20),
                   label: const Text('Compartilhar convite'),

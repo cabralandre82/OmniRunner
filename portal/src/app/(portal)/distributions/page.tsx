@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
 import { NoGroupSelected } from "@/components/no-group-selected";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
@@ -95,7 +96,11 @@ export default async function DistributionsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-content-primary">Distribuição de OmniCoins</h1>
+        <h1 className="text-2xl font-bold text-content-primary">
+          <InfoTooltip text="Distribuir OmniCoins significa transferir créditos do estoque da sua assessoria para os atletas. Eles podem usar esses créditos para pagar treinos, participar de desafios e acessar funcionalidades premium.">
+            Distribuição de OmniCoins
+          </InfoTooltip>
+        </h1>
         <p className="mt-1 text-sm text-content-secondary">
           Histórico completo de distribuições para atletas
         </p>

@@ -1,10 +1,12 @@
 /**
  * Pluggable sliding-window rate limiter for API routes.
  *
- * Default export is a synchronous in-memory limiter (zero-config).
- * For production at scale, use createAsyncRateLimiter() with a
- * Redis/Upstash store that implements RateLimitStore.
+ * Auto-detects Upstash Redis. When available, uses distributed store
+ * that works correctly across multiple serverless instances.
+ * Falls back to in-memory store (single-instance only) when Redis is not configured.
  */
+
+import { getRedis } from "./redis";
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -23,14 +25,14 @@ interface RateLimitOptions {
   windowMs?: number;
 }
 
-// --- In-memory store (default, sync) ---
+// --- In-memory store (fallback) ---
 
 interface Entry {
   count: number;
   resetAt: number;
 }
 
-const store = new Map<string, Entry>();
+const memoryStore = new Map<string, Entry>();
 const CLEANUP_INTERVAL = 60_000;
 let lastCleanup = Date.now();
 
@@ -38,21 +40,21 @@ function cleanup() {
   const now = Date.now();
   if (now - lastCleanup < CLEANUP_INTERVAL) return;
   lastCleanup = now;
-  store.forEach((entry, key) => {
-    if (entry.resetAt <= now) store.delete(key);
+  memoryStore.forEach((entry, key) => {
+    if (entry.resetAt <= now) memoryStore.delete(key);
   });
 }
 
-export function rateLimit(
+function rateLimitInMemory(
   key: string,
   { maxRequests = 10, windowMs = 60_000 }: RateLimitOptions = {},
 ): RateLimitResult {
   cleanup();
   const now = Date.now();
-  const entry = store.get(key);
+  const entry = memoryStore.get(key);
 
   if (!entry || entry.resetAt <= now) {
-    store.set(key, { count: 1, resetAt: now + windowMs });
+    memoryStore.set(key, { count: 1, resetAt: now + windowMs });
     return { allowed: true, remaining: maxRequests - 1, resetAt: now + windowMs };
   }
 
@@ -64,7 +66,55 @@ export function rateLimit(
   return { allowed: true, remaining: maxRequests - entry.count, resetAt: entry.resetAt };
 }
 
-// --- Async factory for distributed stores (Redis, Upstash, etc.) ---
+// --- Redis store (Upstash) ---
+
+async function rateLimitRedis(
+  key: string,
+  { maxRequests = 10, windowMs = 60_000 }: RateLimitOptions = {},
+): Promise<RateLimitResult> {
+  const redis = getRedis()!;
+  const now = Date.now();
+  const redisKey = `rl:${key}`;
+  const ttlSec = Math.ceil(windowMs / 1000);
+
+  try {
+    const raw = await redis.get<{ count: number; resetAt: number }>(redisKey);
+
+    if (!raw || raw.resetAt <= now) {
+      const entry = { count: 1, resetAt: now + windowMs };
+      await redis.set(redisKey, entry, { ex: ttlSec });
+      return { allowed: true, remaining: maxRequests - 1, resetAt: entry.resetAt };
+    }
+
+    raw.count++;
+    await redis.set(redisKey, raw, { ex: ttlSec });
+
+    if (raw.count > maxRequests) {
+      return { allowed: false, remaining: 0, resetAt: raw.resetAt };
+    }
+
+    return { allowed: true, remaining: maxRequests - raw.count, resetAt: raw.resetAt };
+  } catch (err) {
+    console.error("[rate-limit] Redis error, falling back to in-memory:", err);
+    return rateLimitInMemory(key, { maxRequests, windowMs });
+  }
+}
+
+// --- Unified entry point (always async for consistent API) ---
+
+const _hasRedis = !!getRedis();
+
+export async function rateLimit(
+  key: string,
+  options: RateLimitOptions = {},
+): Promise<RateLimitResult> {
+  if (_hasRedis) {
+    return rateLimitRedis(key, options);
+  }
+  return rateLimitInMemory(key, options);
+}
+
+// --- Async factory for custom stores (backward compat) ---
 
 export function createAsyncRateLimiter(externalStore: RateLimitStore) {
   return async function rateLimitAsync(

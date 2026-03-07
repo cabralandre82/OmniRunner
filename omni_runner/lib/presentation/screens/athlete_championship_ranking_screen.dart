@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
-import 'package:omni_runner/presentation/screens/friend_profile_screen.dart';
 
 /// Athlete screen showing the ranking/participants for a championship.
 class AthleteChampionshipRankingScreen extends StatefulWidget {
@@ -149,9 +150,7 @@ class _AthleteChampionshipRankingScreenState
                                     ? Text(_fmtProgress(p.progressValue, widget.metric), style: const TextStyle(fontWeight: FontWeight.bold))
                                     : null,
                                 onTap: isMe ? null : () {
-                                  Navigator.of(context).push(MaterialPageRoute<void>(
-                                    builder: (_) => FriendProfileScreen(userId: p.userId),
-                                  ));
+                                  context.push(AppRoutes.friendProfilePath(p.userId));
                                 },
                               ),
                             );

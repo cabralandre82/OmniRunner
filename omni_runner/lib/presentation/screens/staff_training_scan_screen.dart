@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'package:omni_runner/core/service_locator.dart';
@@ -56,7 +57,7 @@ class _StaffTrainingScanScreenState extends State<StaffTrainingScanScreen> {
                   backgroundColor: DesignTokens.success,
                 ),
               );
-              Navigator.of(context).pop(true);
+              context.pop(true);
             case CheckinError(:final message):
               setState(() => _hasScanned = false);
               ScaffoldMessenger.of(context).showSnackBar(

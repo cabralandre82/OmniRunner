@@ -1,3 +1,4 @@
+// ignore_for_file: uri_has_not_been_generated, undefined_identifier, undefined_getter
 import 'package:isar/isar.dart';
 
 part 'coaching_ranking_entry_model.g.dart';

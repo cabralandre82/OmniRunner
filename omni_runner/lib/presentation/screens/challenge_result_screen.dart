@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_result_entity.dart';
@@ -9,7 +11,6 @@ import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
 import 'package:omni_runner/domain/repositories/i_friendship_repo.dart';
 import 'package:omni_runner/domain/usecases/social/send_friend_invite.dart';
 import 'package:omni_runner/presentation/screens/challenge_create_screen.dart';
-import 'package:omni_runner/presentation/screens/leaderboards_screen.dart';
 import 'package:uuid/uuid.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
@@ -953,11 +954,7 @@ class _CtaBar extends StatelessWidget {
                   icon: const Icon(Icons.leaderboard_rounded, size: 16),
                   label: const Text('Ranking'),
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const LeaderboardsScreen(),
-                      ),
-                    );
+                    context.push(AppRoutes.leaderboards);
                   },
                 ),
               ),

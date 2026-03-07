@@ -1,0 +1,1770 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Runner Portal API",
+    "description": "API do portal de assessorias esportivas Omni Runner. Gerencia atletas, treinos, financeiro, OmniCoins e administração da plataforma.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Omni Runner"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://portal.omnirunner.app",
+      "description": "Produção"
+    }
+  ],
+  "security": [
+    { "bearerAuth": [] }
+  ],
+  "tags": [
+    { "name": "Auth", "description": "Autenticação e callback OAuth" },
+    { "name": "Athletes", "description": "Exportação e gestão de atletas" },
+    { "name": "Financial", "description": "Checkout, faturamento e planos" },
+    { "name": "Workouts", "description": "Templates e atribuição de treinos" },
+    { "name": "Platform Admin", "description": "Administração da plataforma (admin)" },
+    { "name": "OmniCoins", "description": "Distribuição, swap e custódia" },
+    { "name": "CRM", "description": "Notas, tags e alertas" },
+    { "name": "Export", "description": "Exportação em CSV" },
+    { "name": "Team", "description": "Convites e remoção de membros" },
+    { "name": "Verification", "description": "Verificação de atletas" },
+    { "name": "Settings", "description": "Branding e preferências" },
+    { "name": "Announcements", "description": "Avisos da assessoria" },
+    { "name": "System", "description": "Health e utilitários" }
+  ],
+  "paths": {
+    "/api/auth/callback": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Callback OAuth",
+        "description": "Troca o código de autorização por sessão. Redireciona para o dashboard ou login em caso de erro.",
+        "security": [],
+        "parameters": [
+          { "name": "code", "in": "query", "schema": { "type": "string" }, "description": "Código de autorização OAuth" },
+          { "name": "next", "in": "query", "schema": { "type": "string", "default": "/dashboard" }, "description": "URL de redirecionamento após sucesso" }
+        ],
+        "responses": {
+          "302": { "description": "Redirecionamento para dashboard ou login" }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Health check",
+        "description": "Verifica conectividade do banco e invariantes de custódia.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Sistema saudável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["ok", "degraded", "down"] },
+                    "ts": { "type": "integer" },
+                    "latencyMs": { "type": "number" },
+                    "checks": {
+                      "type": "object",
+                      "properties": {
+                        "db": { "type": "string" },
+                        "invariants": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": { "description": "Sistema degradado ou indisponível" }
+        }
+      }
+    },
+    "/api/set-group": {
+      "get": {
+        "tags": ["Settings"],
+        "summary": "Definir grupo ativo",
+        "description": "Define o grupo e role ativos via cookies. Redireciona para /select-group se parâmetros faltarem.",
+        "security": [],
+        "parameters": [
+          { "name": "groupId", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "role", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "302": { "description": "Redirecionamento para dashboard" }
+        }
+      }
+    },
+    "/api/checkout": {
+      "post": {
+        "tags": ["Financial"],
+        "summary": "Criar sessão de checkout",
+        "description": "Inicia checkout para compra de produto (OmniCoins/badges). Retorna URL de redirecionamento.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["product_id"],
+                "properties": {
+                  "product_id": { "type": "string", "description": "ID do produto" },
+                  "gateway": { "type": "string", "enum": ["mercadopago", "stripe"], "default": "mercadopago" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "checkout_url": { "type": "string" },
+                    "purchase_id": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Grupo não selecionado ou validação falhou" },
+          "401": { "description": "Não autorizado" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/billing-portal": {
+      "post": {
+        "tags": ["Financial"],
+        "summary": "Abrir portal de faturamento",
+        "description": "Retorna URL do portal Stripe/Mercado Pago para gestão de assinaturas e pagamentos.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "portal_url": { "type": "string" } }
+                }
+              }
+            }
+          },
+          "400": { "description": "Grupo não selecionado" },
+          "401": { "description": "Não autorizado" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/auto-topup": {
+      "post": {
+        "tags": ["Financial"],
+        "summary": "Configurar auto-recarga",
+        "description": "Define ou atualiza configurações de recarga automática de créditos.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": { "type": "boolean" },
+                  "threshold_tokens": { "type": "integer", "minimum": 1 },
+                  "product_id": { "type": "string" },
+                  "max_per_month": { "type": "integer", "minimum": 1, "maximum": 100 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Configuração salva" },
+          "400": { "description": "Validação falhou ou product_id obrigatório na criação" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin_master" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/branding": {
+      "get": {
+        "tags": ["Settings"],
+        "summary": "Obter branding",
+        "description": "Retorna configurações de marca da assessoria (logo, cores).",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "logo_url": { "type": "string", "nullable": true },
+                    "primary_color": { "type": "string" },
+                    "sidebar_bg": { "type": "string" },
+                    "sidebar_text": { "type": "string" },
+                    "accent_color": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Grupo não selecionado" }
+        }
+      },
+      "post": {
+        "tags": ["Settings"],
+        "summary": "Salvar branding",
+        "description": "Atualiza configurações de marca da assessoria.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "logo_url": { "type": "string", "format": "uri", "nullable": true },
+                  "primary_color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+                  "sidebar_bg": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+                  "sidebar_text": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+                  "accent_color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Branding salvo" },
+          "400": { "description": "Validação falhou" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin_master" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/gateway-preference": {
+      "get": {
+        "tags": ["Settings"],
+        "summary": "Obter gateway preferido",
+        "description": "Retorna o gateway de pagamento preferido (mercadopago ou stripe).",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "preferred_gateway": { "type": "string", "enum": ["mercadopago", "stripe"] } }
+                }
+              }
+            }
+          },
+          "400": { "description": "Grupo não selecionado" },
+          "401": { "description": "Não autorizado" }
+        }
+      },
+      "post": {
+        "tags": ["Settings"],
+        "summary": "Definir gateway preferido",
+        "description": "Define o gateway de pagamento preferido para a assessoria.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["preferred_gateway"],
+                "properties": {
+                  "preferred_gateway": { "type": "string", "enum": ["mercadopago", "stripe"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "preferred_gateway": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validação falhou" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin_master" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/custody": {
+      "get": {
+        "tags": ["OmniCoins"],
+        "summary": "Obter conta de custódia",
+        "description": "Retorna dados da conta de custódia da assessoria.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "account": { "type": "object" } }
+                }
+              }
+            }
+          },
+          "400": { "description": "Grupo não selecionado" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin_master" }
+        }
+      },
+      "post": {
+        "tags": ["OmniCoins"],
+        "summary": "Depósito ou confirmação de custódia",
+        "description": "Cria novo depósito ou confirma depósito existente (quando body contém deposit_id).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": ["amount_usd", "gateway"],
+                    "properties": {
+                      "amount_usd": { "type": "number", "minimum": 10, "maximum": 1000000 },
+                      "gateway": { "type": "string", "enum": ["stripe", "mercadopago"] }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": ["deposit_id"],
+                    "properties": { "deposit_id": { "type": "string", "format": "uuid" } }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    { "type": "object", "properties": { "deposit": { "type": "object" } } },
+                    { "type": "object", "properties": { "ok": { "type": "boolean" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "description": "Validação falhou" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin_master" },
+          "422": { "description": "Falha na confirmação" },
+          "429": { "description": "Rate limit excedido" },
+          "503": { "description": "Custódia não disponível" }
+        }
+      }
+    },
+    "/api/custody/withdraw": {
+      "get": {
+        "tags": ["OmniCoins"],
+        "summary": "Listar saques",
+        "description": "Lista saques realizados pela assessoria.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "withdrawals": { "type": "array", "items": { "type": "object" } } }
+                }
+              }
+            }
+          },
+          "400": { "description": "Grupo não selecionado" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin_master" }
+        }
+      },
+      "post": {
+        "tags": ["OmniCoins"],
+        "summary": "Solicitar saque",
+        "description": "Cria e executa saque da custódia para moeda local.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["amount_usd", "fx_rate"],
+                "properties": {
+                  "amount_usd": { "type": "number", "minimum": 1, "maximum": 1000000 },
+                  "target_currency": { "type": "string", "enum": ["BRL", "EUR", "GBP"], "default": "BRL" },
+                  "fx_rate": { "type": "number", "exclusiveMinimum": 0 },
+                  "provider_fee_usd": { "type": "number", "minimum": 0 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "withdrawal": { "type": "object" } }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validação falhou" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin_master" },
+          "422": { "description": "Falha no saque" },
+          "429": { "description": "Rate limit excedido" },
+          "503": { "description": "Sistema indisponível" }
+        }
+      }
+    },
+    "/api/custody/webhook": {
+      "post": {
+        "tags": ["OmniCoins"],
+        "summary": "Webhook de custódia",
+        "description": "Recebe webhooks de Stripe/Mercado Pago para confirmar depósitos. Usa assinatura do gateway, não Bearer.",
+        "security": [],
+        "parameters": [
+          { "name": "x-gateway", "in": "header", "schema": { "type": "string", "enum": ["stripe", "mercadopago"] } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "type": "object" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "deposit_id": { "type": "string" },
+                    "already_confirmed": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Assinatura ausente ou referência inválida" },
+          "401": { "description": "Assinatura inválida" },
+          "422": { "description": "Falha na confirmação" },
+          "503": { "description": "Custódia não disponível" }
+        }
+      }
+    },
+    "/api/swap": {
+      "get": {
+        "tags": ["OmniCoins"],
+        "summary": "Listar ofertas de swap abertas",
+        "description": "Lista ofertas de swap (USD por créditos) disponíveis para a assessoria.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "offers": { "type": "array", "items": { "type": "object" } } }
+                }
+              }
+            }
+          },
+          "400": { "description": "Grupo não selecionado" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin_master" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      },
+      "post": {
+        "tags": ["OmniCoins"],
+        "summary": "Criar, aceitar ou cancelar swap",
+        "description": "Cria nova oferta, aceita ou cancela oferta existente.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": ["action", "amount_usd"],
+                    "properties": {
+                      "action": { "type": "string", "enum": ["create"] },
+                      "amount_usd": { "type": "number", "minimum": 100, "maximum": 500000 }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": ["action", "order_id"],
+                    "properties": {
+                      "action": { "type": "string", "enum": ["accept", "cancel"] },
+                      "order_id": { "type": "string", "format": "uuid" }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    { "type": "object", "properties": { "order": { "type": "object" } } },
+                    { "type": "object", "properties": { "ok": { "type": "boolean" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "description": "Validação falhou" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin_master" },
+          "422": { "description": "Operação falhou" },
+          "429": { "description": "Rate limit excedido" },
+          "503": { "description": "Swap não disponível" }
+        }
+      }
+    },
+    "/api/distribute-coins": {
+      "post": {
+        "tags": ["OmniCoins"],
+        "summary": "Distribuir OmniCoins",
+        "description": "Credita OmniCoins para um atleta da assessoria. Apenas admin_master.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["athlete_user_id", "amount"],
+                "properties": {
+                  "athlete_user_id": { "type": "string", "format": "uuid" },
+                  "amount": { "type": "integer", "minimum": 1, "maximum": 1000 }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          { "name": "x-idempotency-key", "in": "header", "schema": { "type": "string" }, "description": "Chave para idempotência" }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "athlete_user_id": { "type": "string" },
+                    "amount": { "type": "integer" },
+                    "athlete_name": { "type": "string" },
+                    "idempotent": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validação falhou" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin_master" },
+          "404": { "description": "Atleta não encontrado" },
+          "422": { "description": "Lastro insuficiente" },
+          "429": { "description": "Rate limit excedido" },
+          "503": { "description": "Violação de invariante" }
+        }
+      }
+    },
+    "/api/clearing": {
+      "get": {
+        "tags": ["Financial"],
+        "summary": "Listar liquidações",
+        "description": "Lista liquidações (clearing) da assessoria. Query role: creditor, debtor ou both.",
+        "parameters": [
+          { "name": "role", "in": "query", "schema": { "type": "string", "enum": ["creditor", "debtor", "both"] } }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "settlements": { "type": "array", "items": { "type": "object" } } }
+                }
+              }
+            }
+          },
+          "400": { "description": "Grupo não selecionado" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin/coach" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/team/invite": {
+      "post": {
+        "tags": ["Team"],
+        "summary": "Convidar membro",
+        "description": "Adiciona usuário existente à assessoria como coach ou assistant.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "role"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "role": { "type": "string", "enum": ["coach", "assistant"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "user_id": { "type": "string" },
+                    "role": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validação falhou" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin_master" },
+          "404": { "description": "Usuário não encontrado" },
+          "409": { "description": "Usuário já é membro" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/team/remove": {
+      "post": {
+        "tags": ["Team"],
+        "summary": "Remover membro",
+        "description": "Remove membro da assessoria. Não é possível remover a si mesmo ou outro admin_master.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["member_id"],
+                "properties": { "member_id": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Membro removido" },
+          "400": { "description": "Validação falhou ou tentativa de remover a si mesmo" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin_master ou tentativa de remover admin" },
+          "404": { "description": "Membro não encontrado" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/verification/evaluate": {
+      "post": {
+        "tags": ["Verification"],
+        "summary": "Reavaliar verificação",
+        "description": "Dispara avaliação automática de verificação do atleta (mesmas regras do fluxo automático).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["user_id"],
+                "properties": { "user_id": { "type": "string", "format": "uuid" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Avaliação concluída" },
+          "400": { "description": "Validação falhou" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin_master ou coach" },
+          "404": { "description": "Atleta não encontrado na assessoria" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/announcements": {
+      "post": {
+        "tags": ["Announcements"],
+        "summary": "Criar aviso",
+        "description": "Cria novo aviso para a assessoria.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "body"],
+                "properties": {
+                  "title": { "type": "string", "minLength": 2, "maxLength": 200 },
+                  "body": { "type": "string" },
+                  "pinned": { "type": "boolean", "default": false }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "id": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validação falhou" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin/coach" }
+        }
+      }
+    },
+    "/api/announcements/{id}": {
+      "patch": {
+        "tags": ["Announcements"],
+        "summary": "Atualizar aviso",
+        "description": "Atualiza título, corpo ou pinned de um aviso.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string", "minLength": 2, "maxLength": 200 },
+                  "body": { "type": "string" },
+                  "pinned": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Aviso atualizado" },
+          "400": { "description": "Validação falhou" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin/coach" }
+        }
+      },
+      "delete": {
+        "tags": ["Announcements"],
+        "summary": "Excluir aviso",
+        "description": "Remove aviso da assessoria.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Aviso excluído" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin/coach" }
+        }
+      }
+    },
+    "/api/crm/notes": {
+      "post": {
+        "tags": ["CRM"],
+        "summary": "Adicionar nota",
+        "description": "Adiciona nota ao perfil de um atleta.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["athleteUserId", "note"],
+                "properties": {
+                  "athleteUserId": { "type": "string" },
+                  "note": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Nota adicionada" },
+          "400": { "description": "Campos obrigatórios faltando" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin/coach/assistant" }
+        }
+      }
+    },
+    "/api/crm/tags": {
+      "get": {
+        "tags": ["CRM"],
+        "summary": "Listar tags",
+        "description": "Lista tags da assessoria.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "string" },
+                      "name": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Grupo não selecionado" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin/coach/assistant" }
+        }
+      }
+    },
+    "/api/staff-alerts": {
+      "get": {
+        "tags": ["CRM"],
+        "summary": "Alertas da equipe",
+        "description": "Retorna alertas (atletas inativos, créditos baixos, etc.).",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alerts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": { "type": "string" },
+                          "label": { "type": "string" },
+                          "count": { "type": "integer" },
+                          "severity": { "type": "string", "enum": ["warning", "error", "info"] }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Grupo não selecionado" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin/coach" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/workouts/assign": {
+      "post": {
+        "tags": ["Workouts"],
+        "summary": "Atribuir treino",
+        "description": "Atribui template de treino a um ou mais atletas em data agendada.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["template_id", "athlete_user_ids", "scheduled_date"],
+                "properties": {
+                  "template_id": { "type": "string" },
+                  "athlete_user_ids": { "type": "array", "items": { "type": "string" } },
+                  "scheduled_date": { "type": "string", "format": "date" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "total": { "type": "integer" },
+                    "success": { "type": "integer" },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "userId": { "type": "string" },
+                          "ok": { "type": "boolean" },
+                          "message": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Campos obrigatórios faltando" }
+        }
+      }
+    },
+    "/api/workouts/watch-type": {
+      "post": {
+        "tags": ["Workouts"],
+        "summary": "Definir tipo de relógio",
+        "description": "Define o tipo de relógio do atleta (Garmin, Apple Watch, etc.).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["member_id"],
+                "properties": {
+                  "member_id": { "type": "string" },
+                  "watch_type": { "type": "string", "nullable": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Tipo definido" },
+          "400": { "description": "member_id obrigatório" },
+          "403": { "description": "Sem permissão" }
+        }
+      }
+    },
+    "/api/workouts/templates": {
+      "post": {
+        "tags": ["Workouts"],
+        "summary": "Criar ou atualizar template",
+        "description": "Cria novo template ou atualiza existente (se id informado). Inclui blocos.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "id": { "type": "string" },
+                  "name": { "type": "string", "minLength": 2 },
+                  "description": { "type": "string" },
+                  "blocks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "order_index": { "type": "integer" },
+                        "block_type": { "type": "string" },
+                        "duration_seconds": { "type": "integer", "nullable": true },
+                        "distance_meters": { "type": "number", "nullable": true },
+                        "target_pace_min_sec_per_km": { "type": "number", "nullable": true },
+                        "target_pace_max_sec_per_km": { "type": "number", "nullable": true },
+                        "target_hr_zone": { "type": "integer", "nullable": true },
+                        "target_hr_min": { "type": "integer", "nullable": true },
+                        "target_hr_max": { "type": "integer", "nullable": true },
+                        "rpe_target": { "type": "number", "nullable": true },
+                        "repeat_count": { "type": "integer", "nullable": true },
+                        "notes": { "type": "string", "nullable": true }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "id": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validação falhou" },
+          "401": { "description": "Não autenticado" }
+        }
+      },
+      "delete": {
+        "tags": ["Workouts"],
+        "summary": "Excluir template",
+        "description": "Remove template e seus blocos.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id"],
+                "properties": { "id": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Template excluído" },
+          "400": { "description": "id obrigatório" }
+        }
+      }
+    },
+    "/api/workouts/templates/blocks": {
+      "get": {
+        "tags": ["Workouts"],
+        "summary": "Listar blocos do template",
+        "description": "Retorna blocos de um template.",
+        "parameters": [
+          { "name": "template_id", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "blocks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "order_index": { "type": "integer" },
+                          "block_type": { "type": "string" },
+                          "duration_seconds": { "type": "integer", "nullable": true },
+                          "distance_meters": { "type": "number", "nullable": true },
+                          "notes": { "type": "string", "nullable": true }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/financial/plans": {
+      "post": {
+        "tags": ["Financial"],
+        "summary": "Criar ou atualizar plano",
+        "description": "Cria plano de assinatura ou atualiza existente.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "monthly_price"],
+                "properties": {
+                  "id": { "type": "string" },
+                  "name": { "type": "string", "minLength": 2 },
+                  "description": { "type": "string" },
+                  "monthly_price": { "type": "number", "minimum": 0 },
+                  "billing_cycle": { "type": "string", "default": "monthly" },
+                  "max_workouts_per_week": { "type": "integer", "nullable": true },
+                  "status": { "type": "string", "default": "active" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "id": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validação falhou" },
+          "401": { "description": "Não autenticado" }
+        }
+      },
+      "delete": {
+        "tags": ["Financial"],
+        "summary": "Excluir plano",
+        "description": "Remove plano. Falha se houver assinaturas ativas.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id"],
+                "properties": { "id": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Plano excluído" },
+          "400": { "description": "id obrigatório" },
+          "409": { "description": "Assinaturas ativas vinculadas" }
+        }
+      }
+    },
+    "/api/financial/subscriptions": {
+      "post": {
+        "tags": ["Financial"],
+        "summary": "Criar/atualizar assinaturas em lote",
+        "description": "Vincula atletas a um plano com datas de início e vencimento.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["plan_id", "athlete_user_ids", "started_at", "next_due_date"],
+                "properties": {
+                  "plan_id": { "type": "string" },
+                  "athlete_user_ids": { "type": "array", "items": { "type": "string" } },
+                  "started_at": { "type": "string", "format": "date" },
+                  "next_due_date": { "type": "string", "format": "date" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "total": { "type": "integer" },
+                    "success": { "type": "integer" },
+                    "subscription_ids": { "type": "object", "additionalProperties": { "type": "string" } },
+                    "results": { "type": "array" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Campos obrigatórios faltando" }
+        }
+      }
+    },
+    "/api/billing/batch": {
+      "post": {
+        "tags": ["Financial"],
+        "summary": "Cobrança em lote (Asaas)",
+        "description": "Cria cobranças em lote para atletas via integração Asaas.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["athletes", "plan_id"],
+                "properties": {
+                  "plan_id": { "type": "string" },
+                  "plan_value": { "type": "number" },
+                  "plan_name": { "type": "string" },
+                  "billing_cycle": { "type": "string" },
+                  "next_due_date": { "type": "string" },
+                  "athletes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["user_id", "subscription_id", "name", "cpf"],
+                      "properties": {
+                        "user_id": { "type": "string" },
+                        "subscription_id": { "type": "string" },
+                        "name": { "type": "string" },
+                        "cpf": { "type": "string" },
+                        "email": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "batch_job_id": { "type": "string" } }
+                }
+              }
+            }
+          },
+          "400": { "description": "athletes obrigatório" },
+          "401": { "description": "Sessão expirada" },
+          "403": { "description": "Apenas admin/coach" }
+        }
+      }
+    },
+    "/api/billing/asaas": {
+      "post": {
+        "tags": ["Financial"],
+        "summary": "Integração Asaas",
+        "description": "Endpoint de integração com gateway Asaas.",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": {
+          "200": { "description": "Sucesso" },
+          "400": { "description": "Requisição inválida" },
+          "401": { "description": "Não autorizado" }
+        }
+      }
+    },
+    "/api/export/athletes": {
+      "get": {
+        "tags": ["Export", "Athletes"],
+        "summary": "Exportar atletas CSV",
+        "description": "Exporta lista de membros da assessoria em CSV (Nome, Email, Função, Membro desde).",
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": { "schema": { "type": "string" } }
+            }
+          },
+          "400": { "description": "Grupo não selecionado" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin/coach" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/export/financial": {
+      "get": {
+        "tags": ["Export", "Financial"],
+        "summary": "Exportar financeiro CSV",
+        "description": "Exporta ledger financeiro da assessoria em CSV.",
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": { "schema": { "type": "string" } }
+            }
+          },
+          "400": { "description": "Grupo não selecionado" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin/coach" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/export/attendance": {
+      "get": {
+        "tags": ["Export"],
+        "summary": "Exportar presença CSV",
+        "description": "Exporta presença em treinos (sessões e check-ins) em CSV.",
+        "parameters": [
+          { "name": "from", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "to", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "session_id", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": { "schema": { "type": "string" } }
+            }
+          },
+          "400": { "description": "Grupo não selecionado" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin/coach/assistant" }
+        }
+      }
+    },
+    "/api/export/crm": {
+      "get": {
+        "tags": ["Export", "CRM"],
+        "summary": "Exportar CRM CSV",
+        "description": "Exporta dados de CRM da assessoria em CSV.",
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": { "schema": { "type": "string" } }
+            }
+          },
+          "400": { "description": "Grupo não selecionado" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin/coach" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/export/engagement": {
+      "get": {
+        "tags": ["Export"],
+        "summary": "Exportar engajamento CSV",
+        "description": "Exporta métricas de engajamento em CSV.",
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": { "schema": { "type": "string" } }
+            }
+          },
+          "400": { "description": "Grupo não selecionado" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin/coach" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/export/alerts": {
+      "get": {
+        "tags": ["Export"],
+        "summary": "Exportar alertas CSV",
+        "description": "Exporta alertas da assessoria em CSV.",
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": { "schema": { "type": "string" } }
+            }
+          },
+          "400": { "description": "Grupo não selecionado" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin/coach" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/export/announcements": {
+      "get": {
+        "tags": ["Export", "Announcements"],
+        "summary": "Exportar avisos CSV",
+        "description": "Exporta avisos da assessoria em CSV.",
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": { "schema": { "type": "string" } }
+            }
+          },
+          "400": { "description": "Grupo não selecionado" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin/coach" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/platform/products": {
+      "post": {
+        "tags": ["Platform Admin"],
+        "summary": "Produtos da plataforma",
+        "description": "Criar, atualizar, ativar/desativar ou excluir produto de billing. Apenas admin da plataforma.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": ["action", "name", "credits_amount", "price_cents"],
+                    "properties": {
+                      "action": { "type": "string", "enum": ["create"] },
+                      "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+                      "description": { "type": "string", "maxLength": 1000 },
+                      "credits_amount": { "type": "integer", "minimum": 1 },
+                      "price_cents": { "type": "integer", "minimum": 1 },
+                      "sort_order": { "type": "integer", "minimum": 0 },
+                      "product_type": { "type": "string", "enum": ["coins", "badges"] }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": ["action", "product_id", "is_active"],
+                    "properties": {
+                      "action": { "type": "string", "enum": ["toggle_active"] },
+                      "product_id": { "type": "string", "format": "uuid" },
+                      "is_active": { "type": "boolean" }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": ["action", "product_id"],
+                    "properties": {
+                      "action": { "type": "string", "enum": ["update"] },
+                      "product_id": { "type": "string", "format": "uuid" },
+                      "name": { "type": "string" },
+                      "description": { "type": "string" },
+                      "credits_amount": { "type": "integer" },
+                      "price_cents": { "type": "integer" },
+                      "sort_order": { "type": "integer" }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": ["action", "product_id"],
+                    "properties": {
+                      "action": { "type": "string", "enum": ["delete"] },
+                      "product_id": { "type": "string", "format": "uuid" }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "status": { "type": "string", "enum": ["created", "updated", "deleted"] } }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validação falhou" },
+          "401": { "description": "Não autenticado" },
+          "403": { "description": "Não é admin da plataforma" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/platform/fees": {
+      "get": {
+        "tags": ["Platform Admin"],
+        "summary": "Listar taxas",
+        "description": "Lista configuração de taxas da plataforma.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "fees": { "type": "array", "items": { "type": "object" } } }
+                }
+              }
+            }
+          },
+          "401": { "description": "Não autenticado" },
+          "403": { "description": "Não é admin da plataforma" }
+        }
+      },
+      "post": {
+        "tags": ["Platform Admin"],
+        "summary": "Atualizar taxa",
+        "description": "Atualiza taxa (clearing, swap, maintenance, billing_split).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["fee_type"],
+                "properties": {
+                  "fee_type": { "type": "string", "enum": ["clearing", "swap", "maintenance", "billing_split"] },
+                  "rate_pct": { "type": "number", "minimum": 0, "maximum": 100 },
+                  "rate_usd": { "type": "number", "minimum": 0, "maximum": 10 },
+                  "is_active": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Taxa atualizada" },
+          "400": { "description": "Validação falhou" },
+          "401": { "description": "Não autenticado" },
+          "403": { "description": "Não é admin da plataforma" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/platform/refunds": {
+      "post": {
+        "tags": ["Platform Admin"],
+        "summary": "Gestão de reembolsos",
+        "description": "Aprovar, rejeitar ou processar pedido de reembolso.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action", "refund_id"],
+                "properties": {
+                  "action": { "type": "string", "enum": ["approve", "reject", "process"] },
+                  "refund_id": { "type": "string", "format": "uuid" },
+                  "notes": { "type": "string", "maxLength": 1000 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "status": { "type": "string", "enum": ["approved", "rejected", "processed"] } }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validação falhou ou reembolso deve ser aprovado antes de processar" },
+          "401": { "description": "Não autenticado" },
+          "403": { "description": "Não é admin da plataforma" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/platform/assessorias": {
+      "post": {
+        "tags": ["Platform Admin"],
+        "summary": "Aprovar/rejeitar/suspender assessoria",
+        "description": "Altera status de aprovação de uma assessoria.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action", "group_id"],
+                "properties": {
+                  "action": { "type": "string", "enum": ["approve", "reject", "suspend"] },
+                  "group_id": { "type": "string", "format": "uuid" },
+                  "reason": { "type": "string", "maxLength": 500 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["approved", "rejected", "suspended"] },
+                    "group_id": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validação falhou" },
+          "401": { "description": "Não autenticado" },
+          "403": { "description": "Não é admin da plataforma" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/platform/support": {
+      "post": {
+        "tags": ["Platform Admin"],
+        "summary": "Gestão de suporte",
+        "description": "Responder, fechar ou reabrir ticket de suporte.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action", "ticket_id"],
+                "properties": {
+                  "action": { "type": "string", "enum": ["reply", "close", "reopen"] },
+                  "ticket_id": { "type": "string" },
+                  "message": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["replied", "closed", "reopened"] },
+                    "ticket_id": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "action/ticket_id obrigatórios ou message obrigatório para reply" },
+          "401": { "description": "Não autenticado" },
+          "403": { "description": "Não é admin da plataforma" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/platform/feature-flags": {
+      "post": {
+        "tags": ["Platform Admin"],
+        "summary": "Atualizar feature flag",
+        "description": "Atualiza enabled e rollout_pct de uma feature flag.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id", "enabled", "rollout_pct"],
+                "properties": {
+                  "id": { "type": "string", "format": "uuid" },
+                  "enabled": { "type": "boolean" },
+                  "rollout_pct": { "type": "integer", "minimum": 0, "maximum": 100 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Feature flag atualizada" },
+          "400": { "description": "Validação falhou" },
+          "401": { "description": "Não autenticado" },
+          "403": { "description": "Não é admin da plataforma" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    },
+    "/api/platform/liga": {
+      "post": {
+        "tags": ["Platform Admin"],
+        "summary": "Gestão da liga",
+        "description": "Ações de administração da liga: create_season, activate_season, complete_season, trigger_snapshot.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action"],
+                "properties": {
+                  "action": { "type": "string", "enum": ["create_season", "activate_season", "complete_season", "trigger_snapshot"] },
+                  "name": { "type": "string" },
+                  "start_at_ms": { "type": "integer" },
+                  "end_at_ms": { "type": "integer" },
+                  "season_id": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "type": "object" } } } },
+          "400": { "description": "Ação inválida ou campos faltando" },
+          "401": { "description": "Não autenticado" },
+          "403": { "description": "Não é admin da plataforma" },
+          "429": { "description": "Rate limit excedido" },
+          "503": { "description": "Funcionalidade não disponível" }
+        }
+      }
+    },
+    "/api/platform/invariants": {
+      "get": {
+        "tags": ["Platform Admin"],
+        "summary": "Verificar invariantes",
+        "description": "Verifica invariantes de custódia (check_custody_invariants).",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "healthy": { "type": "boolean" },
+                    "violations": { "type": "array" },
+                    "checked_at": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Não autenticado" },
+          "403": { "description": "Não é admin da plataforma" }
+        }
+      }
+    },
+    "/api/platform/invariants/enforce": {
+      "post": {
+        "tags": ["Platform Admin"],
+        "summary": "Forçar invariantes",
+        "description": "Executa ação de enforcement de invariantes.",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": {
+          "200": { "description": "Sucesso" },
+          "400": { "description": "Requisição inválida" },
+          "401": { "description": "Não autenticado" },
+          "403": { "description": "Não é admin da plataforma" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT do Supabase (access_token da sessão)"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string", "description": "Mensagem de erro" },
+          "details": { "type": "object", "description": "Detalhes adicionais de validação" }
+        }
+      }
+    }
+  }
+}

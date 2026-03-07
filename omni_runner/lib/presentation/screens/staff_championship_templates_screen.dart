@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/analytics/product_event_tracker.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
-import 'package:omni_runner/core/push/notification_rules_service.dart';
-import 'package:omni_runner/core/service_locator.dart';
-import 'package:omni_runner/presentation/screens/staff_championship_manage_screen.dart';
 import 'package:omni_runner/core/logging/logger.dart';
-import 'package:omni_runner/core/utils/error_messages.dart';
+import 'package:omni_runner/core/push/notification_rules_service.dart';
+import 'package:omni_runner/core/router/app_router.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 
 /// Staff screen for managing recurring championship templates.
 ///
@@ -136,21 +137,17 @@ class _StaffChampionshipTemplatesScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Campeonato criado com sucesso!')),
       );
-      Navigator.of(context).push(MaterialPageRoute<void>(
-        builder: (_) => StaffChampionshipManageScreen(
-          championshipId: champId,
-          hostGroupId: widget.groupId,
-        ),
+      context.push(AppRoutes.staffChampionshipManage, extra: StaffChampionshipManageExtra(
+        championshipId: champId,
+        hostGroupId: widget.groupId,
       ));
     }
   }
 
   void _openChampionship(_ChampItem c) {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => StaffChampionshipManageScreen(
-        championshipId: c.id,
-        hostGroupId: widget.groupId,
-      ),
+    context.push(AppRoutes.staffChampionshipManage, extra: StaffChampionshipManageExtra(
+      championshipId: c.id,
+      hostGroupId: widget.groupId,
     )).then((_) => _load());
   }
 
@@ -640,7 +637,7 @@ class _CreateTemplateScreenState extends State<_CreateTemplateScreen> {
 
       await db.from('championship_templates').insert(payload);
 
-      if (mounted) Navigator.of(context).pop(true);
+      if (mounted) context.pop(true);
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
@@ -1223,7 +1220,7 @@ class _LaunchFromTemplateDialogState
           championshipId: champId,
         );
       }
-      if (mounted) Navigator.of(context).pop(champId ?? '');
+      if (mounted) context.pop(champId ?? '');
     } catch (e) {
       AppLogger.warn('Caught error', tag: 'StaffChampionshipTemplates', error: e);
       if (mounted) {
@@ -1302,7 +1299,7 @@ class _LaunchFromTemplateDialogState
         TextButton(
           onPressed: _launching
               ? null
-              : () => Navigator.of(context).pop(),
+              : () => context.pop(),
           child: const Text('Cancelar'),
         ),
         FilledButton(

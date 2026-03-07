@@ -12,6 +12,7 @@ import 'package:omni_runner/presentation/widgets/challenge_session_banner.dart';
 import 'package:omni_runner/presentation/widgets/invalidated_run_card.dart';
 import 'package:omni_runner/presentation/widgets/run_share_card.dart';
 import 'package:omni_runner/presentation/widgets/summary_metrics_panel.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
@@ -171,7 +172,7 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
     return InvalidatedRunCard(
       integrityFlags: widget.integrityFlags,
       onRetry: () {
-        Navigator.of(context).pop();
+        context.pop();
       },
     );
   }
@@ -276,7 +277,7 @@ class _TopBar extends StatelessWidget {
         const Spacer(),
         const Text('Resumo da Corrida', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
         const Spacer(),
-        IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.of(context).pop()),
+        IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => context.pop()),
       ],),
     );
   }

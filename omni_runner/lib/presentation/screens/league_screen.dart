@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:omni_runner/core/config/feature_flags.dart';
 import 'package:omni_runner/core/logging/logger.dart';
+import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
@@ -134,23 +136,25 @@ class _LeagueScreenState extends State<LeagueScreen> {
     }
 
     if (_season == null) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(DesignTokens.spacingXl),
+          padding: const EdgeInsets.all(DesignTokens.spacingXl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.emoji_events_rounded, size: 64, color: DesignTokens.textMuted),
-              SizedBox(height: 16),
-              Text(
+              const Icon(Icons.emoji_events_rounded, size: 64, color: DesignTokens.textMuted),
+              const SizedBox(height: 16),
+              const Text(
                 'Nenhuma temporada ativa',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
-                'A próxima temporada da liga será anunciada em breve.',
+                sl<FeatureFlagService>().isEnabled('league_enabled')
+                    ? 'A próxima temporada da liga será anunciada em breve.'
+                    : 'A funcionalidade de ligas será habilitada em breve.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: DesignTokens.textMuted),
+                style: const TextStyle(color: DesignTokens.textMuted),
               ),
             ],
           ),

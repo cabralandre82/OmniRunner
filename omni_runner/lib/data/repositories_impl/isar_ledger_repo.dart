@@ -1,3 +1,4 @@
+// ignore_for_file: uri_has_not_been_generated, undefined_identifier, undefined_getter, invalid_assignment
 import 'package:isar/isar.dart';
 
 import 'package:omni_runner/data/models/isar/ledger_record.dart';

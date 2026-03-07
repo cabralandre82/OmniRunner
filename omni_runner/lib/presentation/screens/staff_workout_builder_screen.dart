@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:omni_runner/core/service_locator.dart';
@@ -126,7 +127,7 @@ class _BuilderViewState extends State<_BuilderView> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Template salvo com sucesso!')),
           );
-          Navigator.of(context).pop(true);
+          context.pop(true);
         }
         if (state is BuilderError) {
           ScaffoldMessenger.of(context).showSnackBar(

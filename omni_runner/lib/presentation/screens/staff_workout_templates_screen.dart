@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/workout_template_entity.dart';
 import 'package:omni_runner/domain/repositories/i_workout_repo.dart';
 import 'package:omni_runner/core/logging/logger.dart';
-import 'package:omni_runner/presentation/screens/staff_workout_builder_screen.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
@@ -65,14 +66,11 @@ class _StaffWorkoutTemplatesScreenState
   }
 
   void _openBuilder({String? templateId}) async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => StaffWorkoutBuilderScreen(
-          groupId: widget.groupId,
-          templateId: templateId,
-        ),
-      ),
+    final uri = Uri(
+      path: AppRoutes.staffWorkoutBuilderPath(widget.groupId),
+      queryParameters: templateId != null ? {'templateId': templateId} : null,
     );
+    final result = await context.push<bool>(uri.toString());
     if (result == true && mounted) {
       _loadTemplates();
     }

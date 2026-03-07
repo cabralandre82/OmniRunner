@@ -9,7 +9,7 @@ import { logger } from "@/lib/logger";
 
 export async function POST(request: Request) {
   try {
-  const rl = rateLimit(`auto-topup:${request.headers.get("x-forwarded-for") ?? "unknown"}`);
+  const rl = await rateLimit(`auto-topup:${request.headers.get("x-forwarded-for") ?? "unknown"}`);
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/coaching_tag_entity.dart';
 import 'package:omni_runner/domain/entities/member_status_entity.dart';
@@ -9,7 +11,6 @@ import 'package:omni_runner/domain/usecases/crm/manage_tags.dart';
 import 'package:omni_runner/presentation/blocs/crm_list/crm_list_bloc.dart';
 import 'package:omni_runner/presentation/blocs/crm_list/crm_list_event.dart';
 import 'package:omni_runner/presentation/blocs/crm_list/crm_list_state.dart';
-import 'package:omni_runner/presentation/screens/staff_athlete_profile_screen.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/core/utils/error_messages.dart';
@@ -89,13 +90,12 @@ class _StaffCrmListViewState extends State<_StaffCrmListView> {
     required String athleteUserId,
     required String athleteDisplayName,
   }) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => StaffAthleteProfileScreen(
-          groupId: groupId,
-          athleteUserId: athleteUserId,
-          athleteDisplayName: athleteDisplayName,
-        ),
+    context.push(
+      AppRoutes.staffAthleteProfile,
+      extra: StaffAthleteProfileExtra(
+        groupId: groupId,
+        athleteUserId: athleteUserId,
+        athleteDisplayName: athleteDisplayName,
       ),
     ).then((_) {
       if (context.mounted) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:omni_runner/core/service_locator.dart';
@@ -182,7 +183,7 @@ class _StaffTrainingCreateScreenState extends State<StaffTrainingCreateScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Treino salvo com sucesso!')),
         );
-        Navigator.of(context).pop(updated);
+        context.pop(updated);
       } else {
         final created = await sl<CreateTrainingSession>().call(
           id: const Uuid().v4(),
@@ -205,7 +206,7 @@ class _StaffTrainingCreateScreenState extends State<StaffTrainingCreateScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Treino salvo com sucesso!')),
         );
-        Navigator.of(context).pop(created);
+        context.pop(created);
       }
     } on Exception catch (e) {
       if (mounted) {

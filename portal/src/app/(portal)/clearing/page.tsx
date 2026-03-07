@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { NoGroupSelected } from "@/components/no-group-selected";
 import { formatUsd } from "@/lib/format";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { ClearingFilters } from "./clearing-filters";
 
 export const metadata: Metadata = { title: "Transferências OmniCoins" };
@@ -81,19 +82,23 @@ export default async function ClearingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-content-primary">Transferências OmniCoins</h1>
+        <h1 className="text-2xl font-bold text-content-primary">
+          <InfoTooltip text="Quando atletas de uma assessoria gastam OmniCoins emitidas por outra (ex.: em campeonatos ou desafios interclub), o sistema realiza uma transferência automática entre as contas de custódia das assessorias envolvidas.">
+            Transferências OmniCoins
+          </InfoTooltip>
+        </h1>
         <p className="mt-1 text-sm text-content-secondary">
-          Movimentações de OmniCoins entre assessorias (campeonatos, desafios e trocas)
+          Movimentações automáticas de OmniCoins entre assessorias (campeonatos, desafios e trocas)
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
-          <p className="text-sm font-medium text-content-secondary">A Receber</p>
+          <p className="text-sm font-medium text-content-secondary"><InfoTooltip text="OmniCoins de outras assessorias que foram usadas nos seus eventos. Esse valor será creditado na sua custódia.">A Receber</InfoTooltip></p>
           <p className="mt-1 text-2xl font-bold text-success">{formatUsd(totalReceivable)}</p>
         </div>
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
-          <p className="text-sm font-medium text-content-secondary">A Pagar</p>
+          <p className="text-sm font-medium text-content-secondary"><InfoTooltip text="OmniCoins seus que atletas gastaram em eventos de outras assessorias. Será debitado da sua custódia.">A Pagar</InfoTooltip></p>
           <p className="mt-1 text-2xl font-bold text-error">{formatUsd(totalPayable)}</p>
         </div>
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
@@ -105,7 +110,7 @@ export default async function ClearingPage() {
           <p className="mt-1 text-2xl font-bold text-content-primary">{formatUsd(totalSettledOut)}</p>
         </div>
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
-          <p className="text-sm font-medium text-content-secondary">Taxas Pagas</p>
+          <p className="text-sm font-medium text-content-secondary"><InfoTooltip text="Taxa cobrada pela plataforma sobre cada transferência interclub. É um percentual configurado pelo administrador.">Taxas Pagas</InfoTooltip></p>
           <p className="mt-1 text-2xl font-bold text-orange-600">{formatUsd(totalFeesPaid)}</p>
         </div>
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">

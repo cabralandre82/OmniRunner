@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/domain/entities/profile_progress_entity.dart';
@@ -116,7 +117,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => context.pop(),
               icon: const Icon(Icons.directions_run),
               label: const Text('Ir correr'),
             ),

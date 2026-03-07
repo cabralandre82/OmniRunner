@@ -13,7 +13,7 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = rateLimit(`billing-portal:${user.id}`, { maxRequests: 5, windowMs: 60_000 });
+  const rl = await rateLimit(`billing-portal:${user.id}`, { maxRequests: 5, windowMs: 60_000 });
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
