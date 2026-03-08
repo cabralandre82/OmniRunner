@@ -54,6 +54,14 @@ O deploy do Portal é acionado automaticamente pelo CI ao fazer `git push` na br
 
 ### 2.3 Flutter (App)
 
+**Build APK (produção):**
+```bash
+cd omni_runner
+flutter build apk --flavor prod --release --target lib/main.dart --dart-define-from-file=.env.prod
+```
+
+> **IMPORTANTE**: O flag `--dart-define-from-file=.env.prod` é obrigatório. Sem ele, `SUPABASE_URL` e `SUPABASE_ANON_KEY` ficam vazios e o login não funciona.
+
 **Google Play (internal track):**
 ```bash
 cd omni_runner

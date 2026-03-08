@@ -1,5 +1,29 @@
 # CHANGELOG — OS Assessoria (PASSO 05 + BLOCO 0–6)
 
+## [0.94.0] — 2026-03-08
+
+### Fixed
+- **Logout navigation**: all logout/sign-out/delete-account flows now navigate to `/welcome` instead of `/` — prevents AuthGate from staying mounted and trapping the user
+- **Demo mode exit**: "Criar conta / Entrar" and demo banner exit now route to `/welcome`, forcing AuthGate rebuild
+- **SQLite 2067 (UNIQUE constraint)**: replaced `insertOnConflictUpdate` with `InsertMode.insertOrReplace` across all 16 Drift repositories (19 call sites) — autoIncrement PK + unique column mismatch was causing upsert failures
+- **BlocProvider not found**: added BlocProvider wrappers for ChallengesBloc, BadgesBloc, MissionsBloc, ProgressionBloc, LeaderboardsBloc, CoachingGroupsBloc, StaffQrBloc, and AssessoriaFeedBloc in app_router.dart and push notification handler
+- **Missing DI registrations**: registered TodayDataService and WorkoutDeliveryService in data_module.dart
+- **Navigation stack**: changed `context.go` to `context.push` in challenge_create_screen for correct back-navigation
+- **OmniCoin distribution count**: app was using `lifetime_issued` (acquired + distributed) instead of querying `coin_ledger` with `reason = 'institution_token_issue'` — now matches portal's correct logic
+- **RLS Portuguese roles**: created migration `20260321000000` fixing 24 RLS policies across 18 tables + 2 functions that still referenced `'professor'`/`'assistente'` instead of `'coach'`/`'assistant'`
+- **Support tickets**: RLS policies now use English roles, staff can create and read tickets
+- **Partner assessorias**: RLS policies corrected for partnership queries
+- **Portal executions page**: removed broken `profiles!athlete_user_id` PostgREST join (no FK to profiles table), replaced with separate profiles query
+- **Maintenance fee description**: corrected from "dia 1" to "when athlete pays subscription" (matches Asaas Split implementation)
+- **League admin page**: shows actual error message instead of generic "em desenvolvimento" fallback
+- **Assessoria profile**: conquistas section now hidden for staff users (only shown for athletes)
+
+### Changed
+- All `context.go(AppRoutes.root)` calls after auth operations replaced with `context.go(AppRoutes.welcome)`
+- `login_required_sheet.dart` now clears `AppConfig.demoMode` before navigating to welcome
+
+---
+
 ## [0.93.0] - 2026-03-04
 
 ### Added
