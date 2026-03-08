@@ -218,7 +218,7 @@ class _MoreScreenState extends State<MoreScreen> {
                         child: FilledButton.icon(
                           onPressed: () {
                             AppConfig.demoMode = false;
-                            context.go(AppRoutes.root);
+                            context.go(AppRoutes.welcome);
                           },
                           icon: const Icon(Icons.login_rounded, size: 18),
                           label: const Text('Criar conta / Entrar'),

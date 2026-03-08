@@ -37,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _exitDemoMode() {
     AppConfig.demoMode = false;
-    context.go(AppRoutes.root);
+    context.go(AppRoutes.welcome);
   }
 
   Widget _buildAthleteShell() {
@@ -152,7 +152,7 @@ class _DemoModeBanner extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         AppConfig.demoMode = false;
-        context.go(AppRoutes.root);
+        context.go(AppRoutes.welcome);
       },
       child: Material(
         child: Container(
