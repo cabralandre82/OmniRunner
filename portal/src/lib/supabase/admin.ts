@@ -1,3 +1,7 @@
+// Platform admin client — bypasses RLS entirely.
+// Use ONLY in /platform/* pages and platform admin API routes.
+// Never use for assessoria-scoped operations.
+
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 const SUPABASE_FETCH_TIMEOUT_MS = 15_000;

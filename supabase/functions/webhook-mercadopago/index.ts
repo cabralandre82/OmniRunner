@@ -414,7 +414,11 @@ serve(async (req: Request) => {
           request_id: requestId,
           error_message: errMsg,
           payload: rawBody ?? null,
-          headers: Object.fromEntries(req.headers.entries()),
+          headers: Object.fromEntries(
+            [...req.headers.entries()].filter(
+              ([k]) => !["authorization", "cookie", "x-signature", "x-request-id"].includes(k.toLowerCase()),
+            ),
+          ),
           created_at: new Date().toISOString(),
         });
       }

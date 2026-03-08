@@ -87,7 +87,10 @@ import 'package:omni_runner/features/parks/data/park_detection_service.dart';
 import 'package:omni_runner/features/parks/data/parks_seed.dart';
 import 'package:omni_runner/features/parks/domain/park_entity.dart';
 import 'package:omni_runner/features/strava/presentation/strava_connect_controller.dart';
+import 'package:omni_runner/domain/usecases/ensure_location_ready.dart';
+import 'package:omni_runner/presentation/widgets/background_location_dialog.dart';
 import 'package:omni_runner/l10n/l10n.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:omni_runner/presentation/widgets/run_share_card.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
@@ -294,6 +297,7 @@ class _TodayScreenState extends State<TodayScreen> {
       });
 
       _checkStreakAtRisk(uid, profile, lastRun);
+      _promptBackgroundLocationOnce();
     } catch (e) {
       AppLogger.error('Today data load failed', tag: 'Today', error: e);
       if (mounted) {
@@ -302,6 +306,22 @@ class _TodayScreenState extends State<TodayScreen> {
           _errorMessage = 'Não foi possível carregar seus dados.';
         });
       }
+    }
+  }
+
+  Future<void> _promptBackgroundLocationOnce() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool('bg_location_prompted') == true) return;
+      if (!mounted) return;
+      final failure = await sl<EnsureLocationReady>().ensureBackground(
+        showRationale: () => showBackgroundLocationRationale(context),
+      );
+      if (failure == null) {
+        await prefs.setBool('bg_location_prompted', true);
+      }
+    } catch (e) {
+      AppLogger.debug('Background location prompt skipped', tag: 'Today', error: e);
     }
   }
 

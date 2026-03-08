@@ -15,6 +15,9 @@ import { startTimer, logRequest, logError } from "../_shared/obs.ts";
  *   D1: First run motivation
  *   D2: Explore challenges
  *   D3: Complete 3 runs for DNA
+ *   D4: Join an assessoria
+ *   D5: Check your progress
+ *   D6: Weekly goal motivation
  *   D7: One week recap
  *
  * Uses notification_log for dedup (rule = "onboarding_nudge").
@@ -46,6 +49,18 @@ const NUDGE_MESSAGES: Record<number, NudgeMessage> = {
   3: {
     title: "Continue correndo!",
     body: "Complete 3 corridas para ver seu perfil de corredor começar a se formar \u{1F4CA}",
+  },
+  4: {
+    title: "Já faz parte de uma assessoria?",
+    body: "Assessorias desbloqueiam ranking de grupo, treinos prescritos e desafios em equipe!",
+  },
+  5: {
+    title: "Confira seu progresso!",
+    body: "Acesse o hub de Progresso para ver badges, missões e sua evolução \u{1F4AA}",
+  },
+  6: {
+    title: "Sua meta semanal está perto!",
+    body: "Mais uma corrida e você mantém sua sequência ativa \u{1F525}",
   },
   7: {
     title: "Uma semana com o Omni Runner!",

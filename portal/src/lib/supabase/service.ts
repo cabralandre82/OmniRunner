@@ -1,3 +1,8 @@
+// Service-role client — bypasses RLS, used for cross-user writes.
+// Use in API routes that need to read/write across multiple users
+// (e.g. batch operations, cron-triggered tasks).
+// Prefer createClient() when the operation is user-scoped.
+
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 const SUPABASE_FETCH_TIMEOUT_MS = 15_000;

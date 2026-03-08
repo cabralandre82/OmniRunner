@@ -4,12 +4,14 @@ import 'dart:ui';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:omni_runner/l10n/app_localizations.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/observability/app_bloc_observer.dart';
 import 'package:omni_runner/core/deep_links/deep_link_handler.dart';
 import 'package:omni_runner/core/offline/connectivity_monitor.dart';
 import 'package:omni_runner/core/logging/logger.dart';
@@ -29,6 +31,7 @@ final themeNotifier = ThemeNotifier();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  Bloc.observer = AppBlocObserver();
 
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
