@@ -15,7 +15,7 @@ final class DriftAtomicLedgerOps implements IAtomicLedgerOps {
     WalletEntity wallet,
   ) async {
     await _db.transaction(() async {
-      await _db.into(_db.ledgerEntries).insertOnConflictUpdate(
+      await _db.into(_db.ledgerEntries).insert(
             LedgerEntriesCompanion(
               entryUuid: Value(entry.id),
               userId: Value(entry.userId),
@@ -25,9 +25,10 @@ final class DriftAtomicLedgerOps implements IAtomicLedgerOps {
               issuerGroupId: Value(entry.issuerGroupId),
               createdAtMs: Value(entry.createdAtMs),
             ),
+            mode: InsertMode.insertOrReplace,
           );
 
-      await _db.into(_db.wallets).insertOnConflictUpdate(
+      await _db.into(_db.wallets).insert(
             WalletsCompanion(
               userId: Value(wallet.userId),
               balanceCoins: Value(wallet.balanceCoins),
@@ -36,6 +37,7 @@ final class DriftAtomicLedgerOps implements IAtomicLedgerOps {
               lifetimeSpentCoins: Value(wallet.lifetimeSpentCoins),
               lastReconciledAtMs: Value(wallet.lastReconciledAtMs),
             ),
+            mode: InsertMode.insertOrReplace,
           );
     });
   }

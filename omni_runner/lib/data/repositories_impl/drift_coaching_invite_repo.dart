@@ -12,7 +12,7 @@ final class DriftCoachingInviteRepo implements ICoachingInviteRepo {
 
   @override
   Future<void> save(CoachingInviteEntity invite) async {
-    await _db.into(_db.coachingInvites).insertOnConflictUpdate(_toCompanion(invite));
+    await _db.into(_db.coachingInvites).insert(_toCompanion(invite), mode: InsertMode.insertOrReplace);
   }
 
   @override

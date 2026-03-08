@@ -35,6 +35,15 @@ class _PartnerAssessoriasScreenState extends State<PartnerAssessoriasScreen> {
           .toList();
       if (!mounted) return;
       setState(() { _partners = items; _loading = false; });
+    } on PostgrestException catch (e) {
+      AppLogger.warn('Partnership load failed: ${e.code} ${e.message}', tag: 'Partners');
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = e.code == '42883'
+            ? 'Recurso em preparação. Tente novamente em breve.'
+            : 'Não foi possível carregar parcerias.';
+      });
     } on Exception catch (e) {
       if (!mounted) return;
       setState(() { _loading = false; _error = '$e'; });

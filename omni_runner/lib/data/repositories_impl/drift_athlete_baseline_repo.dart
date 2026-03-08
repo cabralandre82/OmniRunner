@@ -14,7 +14,7 @@ final class DriftAthleteBaselineRepo implements IAthleteBaselineRepo {
   @override
   Future<void> save(AthleteBaselineEntity baseline) async {
     final companion = _toCompanion(baseline);
-    await _db.into(_db.athleteBaselines).insertOnConflictUpdate(companion);
+    await _db.into(_db.athleteBaselines).insert(companion, mode: InsertMode.insertOrReplace);
   }
 
   @override

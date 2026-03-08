@@ -15,7 +15,7 @@ final class DriftCoachInsightRepo implements ICoachInsightRepo {
   @override
   Future<void> save(CoachInsightEntity insight) async {
     final companion = _toCompanion(insight);
-    await _db.into(_db.coachInsights).insertOnConflictUpdate(companion);
+    await _db.into(_db.coachInsights).insert(companion, mode: InsertMode.insertOrReplace);
   }
 
   @override
@@ -29,7 +29,7 @@ final class DriftCoachInsightRepo implements ICoachInsightRepo {
         batch.insert(
           _db.coachInsights,
           _toCompanion(insight),
-          onConflict: DoUpdate((_) => _toCompanion(insight)),
+          mode: InsertMode.insertOrReplace,
         );
       }
     });

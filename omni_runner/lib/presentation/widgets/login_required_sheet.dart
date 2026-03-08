@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 
@@ -93,7 +94,8 @@ class LoginRequiredSheet extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  context.go(AppRoutes.root);
+                  AppConfig.demoMode = false;
+                  context.go(AppRoutes.welcome);
                 },
                 icon: const Icon(Icons.login_rounded),
                 label: const Text('Criar conta / Entrar'),

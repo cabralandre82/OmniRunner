@@ -287,7 +287,7 @@ class _MoreScreenState extends State<MoreScreen> {
     try {
       await sl<AuthRepository>().signOut();
       if (!context.mounted) return;
-      context.go(AppRoutes.root);
+      context.go(AppRoutes.welcome);
     } finally {
       if (mounted) setState(() => _busy = false);
     }

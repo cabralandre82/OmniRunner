@@ -11,7 +11,7 @@ final class DriftXpTransactionRepo implements IXpTransactionRepo {
 
   @override
   Future<void> append(XpTransactionEntity tx) async {
-    await _db.into(_db.xpTransactions).insertOnConflictUpdate(
+    await _db.into(_db.xpTransactions).insert(
           XpTransactionsCompanion(
             txUuid: Value(tx.id),
             userId: Value(tx.userId),
@@ -20,6 +20,7 @@ final class DriftXpTransactionRepo implements IXpTransactionRepo {
             refId: Value(tx.refId),
             createdAtMs: Value(tx.createdAtMs),
           ),
+            mode: InsertMode.insertOrReplace,
         );
   }
 

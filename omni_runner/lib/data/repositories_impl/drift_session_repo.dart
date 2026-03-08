@@ -15,8 +15,9 @@ final class DriftSessionRepo implements ISessionRepo {
 
   @override
   Future<void> save(WorkoutSessionEntity session) async {
-    await _db.into(_db.workoutSessions).insertOnConflictUpdate(
+    await _db.into(_db.workoutSessions).insert(
           _toCompanion(session),
+            mode: InsertMode.insertOrReplace,
         );
   }
 

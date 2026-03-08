@@ -13,7 +13,7 @@ final class DriftMissionProgressRepo implements IMissionProgressRepo {
 
   @override
   Future<void> save(MissionProgressEntity progress) async {
-    await _db.into(_db.missionProgresses).insertOnConflictUpdate(
+    await _db.into(_db.missionProgresses).insert(
           MissionProgressesCompanion(
             progressUuid: Value(progress.id),
             userId: Value(progress.userId),
@@ -27,6 +27,7 @@ final class DriftMissionProgressRepo implements IMissionProgressRepo {
             contributingSessionIdsJson:
                 Value(jsonEncode(progress.contributingSessionIds)),
           ),
+            mode: InsertMode.insertOrReplace,
         );
   }
 

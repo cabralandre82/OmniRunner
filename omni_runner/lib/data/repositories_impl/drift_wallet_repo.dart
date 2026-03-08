@@ -24,8 +24,9 @@ final class DriftWalletRepo implements IWalletRepo {
 
   @override
   Future<void> save(WalletEntity wallet) async {
-    await _db.into(_db.wallets).insertOnConflictUpdate(
+    await _db.into(_db.wallets).insert(
           _toCompanion(wallet),
+            mode: InsertMode.insertOrReplace,
         );
   }
 

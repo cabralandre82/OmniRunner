@@ -24,7 +24,7 @@ final class DriftChallengeRepo implements IChallengeRepo {
   Future<void> save(ChallengeEntity challenge) async {
     await _db
         .into(_db.challenges)
-        .insertOnConflictUpdate(_toCompanion(challenge));
+        .insert(_toCompanion(challenge), mode: InsertMode.insertOrReplace);
   }
 
   @override
@@ -77,7 +77,7 @@ final class DriftChallengeRepo implements IChallengeRepo {
   Future<void> update(ChallengeEntity challenge) async {
     await _db
         .into(_db.challenges)
-        .insertOnConflictUpdate(_toCompanion(challenge));
+        .insert(_toCompanion(challenge), mode: InsertMode.insertOrReplace);
   }
 
   @override
@@ -93,7 +93,7 @@ final class DriftChallengeRepo implements IChallengeRepo {
   Future<void> saveResult(ChallengeResultEntity result) async {
     await _db
         .into(_db.challengeResults)
-        .insertOnConflictUpdate(_resultToCompanion(result));
+        .insert(_resultToCompanion(result), mode: InsertMode.insertOrReplace);
   }
 
   @override

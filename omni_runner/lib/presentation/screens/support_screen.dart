@@ -48,8 +48,19 @@ class _SupportScreenState extends State<SupportScreen> {
           _loading = false;
         });
       }
+    } on PostgrestException catch (e) {
+      AppLogger.warn('Support load failed: ${e.code} ${e.message}', tag: 'SupportScreen');
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _tickets = [];
+          _error = e.code == '42P01'
+              ? 'Módulo de suporte em preparação.'
+              : 'Não foi possível carregar os chamados.';
+        });
+      }
     } on Exception catch (e) {
-      AppLogger.warn('Caught error', tag: 'SupportScreen', error: e);
+      AppLogger.warn('Support load error', tag: 'SupportScreen', error: e);
       if (mounted) {
         setState(() {
           _loading = false;

@@ -21,7 +21,7 @@ final class DriftCoachingRankingRepo implements ICoachingRankingRepo {
       // Upsert header.
       await _db
           .into(_db.coachingRankings)
-          .insertOnConflictUpdate(_headerCompanion(ranking));
+          .insert(_headerCompanion(ranking));
 
       // Replace entries: delete old, insert new.
       await (_db.delete(_db.coachingRankingEntries)
@@ -34,6 +34,7 @@ final class DriftCoachingRankingRepo implements ICoachingRankingRepo {
           ranking.entries
               .map((e) => _entryCompanion(ranking.id, e))
               .toList(),
+            mode: InsertMode.insertOrReplace,
         );
       });
     });

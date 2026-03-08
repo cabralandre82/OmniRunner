@@ -276,7 +276,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
-      context.go(AppRoutes.root);
+      context.go(AppRoutes.welcome);
     } finally {
       if (mounted) setState(() => _busyAuth = false);
     }
@@ -315,7 +315,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       await sl<AuthRepository>().signOut();
       if (!mounted) return;
-      context.go(AppRoutes.root);
+      context.go(AppRoutes.welcome);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -557,7 +557,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
 
-                // ── Achievements ──
+                // ── Achievements (athletes only) ──
+                if (_profile?.userRole != 'ASSESSORIA_STAFF') ...[
                 const SizedBox(height: 24),
                 const Divider(),
                 const SizedBox(height: DesignTokens.spacingSm),
@@ -611,6 +612,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ),
+                ],
 
                 // ── Sign out ──
                 if (!identity.isAnonymous) ...[

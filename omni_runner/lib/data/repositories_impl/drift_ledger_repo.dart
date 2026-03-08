@@ -17,7 +17,7 @@ final class DriftLedgerRepo implements ILedgerRepo {
   Future<void> append(LedgerEntryEntity entry) async {
     await _db
         .into(_db.ledgerEntries)
-        .insertOnConflictUpdate(_toCompanion(entry));
+        .insert(_toCompanion(entry), mode: InsertMode.insertOrReplace);
   }
 
   @override

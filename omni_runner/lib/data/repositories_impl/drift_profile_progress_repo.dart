@@ -23,7 +23,7 @@ final class DriftProfileProgressRepo implements IProfileProgressRepo {
 
   @override
   Future<void> save(ProfileProgressEntity profile) async {
-    await _db.into(_db.profileProgresses).insertOnConflictUpdate(
+    await _db.into(_db.profileProgresses).insert(
           ProfileProgressesCompanion(
             userId: Value(profile.userId),
             totalXp: Value(profile.totalXp),
@@ -39,6 +39,7 @@ final class DriftProfileProgressRepo implements IProfileProgressRepo {
             lifetimeDistanceM: Value(profile.lifetimeDistanceM),
             lifetimeMovingMs: Value(profile.lifetimeMovingMs),
           ),
+            mode: InsertMode.insertOrReplace,
         );
   }
 

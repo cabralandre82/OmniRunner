@@ -14,7 +14,7 @@ final class DriftAthleteTrendRepo implements IAthleteTrendRepo {
   @override
   Future<void> save(AthleteTrendEntity trend) async {
     final companion = _toCompanion(trend);
-    await _db.into(_db.athleteTrends).insertOnConflictUpdate(companion);
+    await _db.into(_db.athleteTrends).insert(companion, mode: InsertMode.insertOrReplace);
   }
 
   @override

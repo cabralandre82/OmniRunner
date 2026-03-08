@@ -10,7 +10,7 @@ final class DriftBadgeAwardRepo implements IBadgeAwardRepo {
 
   @override
   Future<void> save(BadgeAwardEntity award) async {
-    await _db.into(_db.badgeAwards).insertOnConflictUpdate(
+    await _db.into(_db.badgeAwards).insert(
           BadgeAwardsCompanion(
             awardUuid: Value(award.id),
             userId: Value(award.userId),
@@ -20,6 +20,7 @@ final class DriftBadgeAwardRepo implements IBadgeAwardRepo {
             xpAwarded: Value(award.xpAwarded),
             coinsAwarded: Value(award.coinsAwarded),
           ),
+            mode: InsertMode.insertOrReplace,
         );
   }
 
