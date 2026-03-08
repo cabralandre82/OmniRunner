@@ -206,9 +206,9 @@ class _RunReplayScreenState extends State<RunReplayScreen>
           if (!_mapReady)
             const Center(child: CircularProgressIndicator())
           else if (_mapTimedOut)
-            Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
               Icon(Icons.map_outlined, size: 48, color: DesignTokens.textMuted),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text('Mapa indisponível offline', style: TextStyle(color: DesignTokens.textSecondary, fontSize: 14)),
             ])),
           _TopBar(),
@@ -431,13 +431,13 @@ class _SprintCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.bolt, color: DesignTokens.warning, size: 22),
+          const Icon(Icons.bolt, color: DesignTokens.warning, size: 22),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Sprint final',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -462,7 +462,7 @@ class _SprintCard extends StatelessWidget {
             ),
             child: Text(
               formatPace(sprint.paceSecPerKm),
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
                 color: DesignTokens.warning,
@@ -574,7 +574,7 @@ class _SplitRow extends StatelessWidget {
           ),
           if (isBest) ...[
             const SizedBox(width: 4),
-            Icon(Icons.star, size: 14, color: DesignTokens.success),
+            const Icon(Icons.star, size: 14, color: DesignTokens.success),
           ],
         ],
       ),

@@ -74,9 +74,9 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
               begin: Alignment(-1.0 + 2.0 * _controller.value, 0),
               end: Alignment(-1.0 + 2.0 * _controller.value + 1, 0),
               colors: [
-                Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-                Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.6),
-                Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.6),
+                Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
               ],
             ),
           ),
@@ -91,16 +91,16 @@ class ShimmerListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          const ShimmerLoading(width: 48, height: 48, borderRadius: 24),
-          const SizedBox(width: 12),
+          ShimmerLoading(width: 48, height: 48, borderRadius: 24),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 ShimmerLoading(height: 14, width: 160),
                 SizedBox(height: 6),
                 ShimmerLoading(height: 12, width: 100),
@@ -118,13 +118,13 @@ class ShimmerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    return const Card(
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
+          children: [
             ShimmerLoading(height: 18, width: 200),
             SizedBox(height: 10),
             ShimmerLoading(height: 14),

@@ -23,13 +23,13 @@ class _FakeCrmListBloc extends Cubit<CrmListState> implements CrmListBloc {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-final _athlete1 = CrmAthleteView(
+const _athlete1 = CrmAthleteView(
   userId: 'u1',
   displayName: 'João Silva',
   status: MemberStatusValue.active,
 );
 
-final _athlete2 = CrmAthleteView(
+const _athlete2 = CrmAthleteView(
   userId: 'u2',
   displayName: 'Maria Santos',
   status: MemberStatusValue.paused,
@@ -106,7 +106,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      fakeBloc = _FakeCrmListBloc(CrmListLoaded(
+      fakeBloc = _FakeCrmListBloc(const CrmListLoaded(
         athletes: [_athlete1, _athlete2],
         tags: [],
       ));

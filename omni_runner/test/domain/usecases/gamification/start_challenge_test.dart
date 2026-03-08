@@ -28,16 +28,16 @@ class _FakeRepo implements IChallengeRepo {
   Future<ChallengeResultEntity?> getResultByChallengeId(String id) async => null;
 }
 
-ChallengeEntity _pending1v1() => ChallengeEntity(
+ChallengeEntity _pending1v1() => const ChallengeEntity(
       id: 'ch-1',
       creatorUserId: 'u1',
       status: ChallengeStatus.pending,
       type: ChallengeType.oneVsOne,
-      rules: const ChallengeRulesEntity(
+      rules: ChallengeRulesEntity(
         goal: ChallengeGoal.mostDistance,
         windowMs: 86400000,
       ),
-      participants: const [
+      participants: [
         ChallengeParticipantEntity(userId: 'u1', displayName: 'A', status: ParticipantStatus.accepted),
         ChallengeParticipantEntity(userId: 'u2', displayName: 'B', status: ParticipantStatus.accepted),
       ],
@@ -70,11 +70,11 @@ void main() {
   });
 
   test('throws when 1v1 has only 1 accepted', () {
-    repo.stored = ChallengeEntity(
+    repo.stored = const ChallengeEntity(
       id: 'ch-1', creatorUserId: 'u1', status: ChallengeStatus.pending,
       type: ChallengeType.oneVsOne,
-      rules: const ChallengeRulesEntity(goal: ChallengeGoal.mostDistance, windowMs: 86400000),
-      participants: const [
+      rules: ChallengeRulesEntity(goal: ChallengeGoal.mostDistance, windowMs: 86400000),
+      participants: [
         ChallengeParticipantEntity(userId: 'u1', displayName: 'A', status: ParticipantStatus.accepted),
         ChallengeParticipantEntity(userId: 'u2', displayName: 'B', status: ParticipantStatus.invited),
       ],

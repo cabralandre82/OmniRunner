@@ -140,7 +140,7 @@ void main() {
     });
 
     test('saveResult and getResultByChallengeId round-trip', () async {
-      final result = ChallengeResultEntity(
+      const result = ChallengeResultEntity(
         challengeId: 'c1',
         goal: ChallengeGoal.mostDistance,
         results: [

@@ -8,9 +8,9 @@ import '../../helpers/pump_app.dart';
 import '../../helpers/test_di.dart';
 
 final _points = [
-  LocationPointEntity(lat: -23.55, lng: -46.63, timestampMs: 1000),
-  LocationPointEntity(lat: -23.551, lng: -46.631, timestampMs: 2000),
-  LocationPointEntity(lat: -23.552, lng: -46.632, timestampMs: 3000),
+  const LocationPointEntity(lat: -23.55, lng: -46.63, timestampMs: 1000),
+  const LocationPointEntity(lat: -23.551, lng: -46.631, timestampMs: 2000),
+  const LocationPointEntity(lat: -23.552, lng: -46.632, timestampMs: 3000),
 ];
 
 void main() {

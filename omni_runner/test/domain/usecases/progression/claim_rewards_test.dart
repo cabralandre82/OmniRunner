@@ -60,7 +60,7 @@ void main() {
   });
 
   test('credits XP for badge', () async {
-    final badge = BadgeAwardEntity(
+    const badge = BadgeAwardEntity(
       id: 'ba1', userId: 'u1', badgeId: 'b1',
       unlockedAtMs: 0, xpAwarded: 50,
     );
@@ -75,7 +75,7 @@ void main() {
   });
 
   test('credits XP for mission', () async {
-    final mission = MissionProgressEntity(
+    const mission = MissionProgressEntity(
       id: 'mp1', userId: 'u1', missionId: 'tpl_daily_3km',
       status: MissionProgressStatus.completed, currentValue: 3000,
       targetValue: 3000, assignedAtMs: 0,
@@ -97,7 +97,7 @@ void main() {
   });
 
   test('skips already claimed badges (idempotent)', () async {
-    final badge = BadgeAwardEntity(
+    const badge = BadgeAwardEntity(
       id: 'ba1', userId: 'u1', badgeId: 'b1',
       unlockedAtMs: 0, xpAwarded: 50,
     );

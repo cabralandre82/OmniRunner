@@ -30,16 +30,16 @@ class _FakeChallengeRepo implements IChallengeRepo {
       null;
 }
 
-ChallengeEntity _pendingWithInvitee() => ChallengeEntity(
+ChallengeEntity _pendingWithInvitee() => const ChallengeEntity(
       id: 'ch-1',
       creatorUserId: 'creator',
       status: ChallengeStatus.pending,
       type: ChallengeType.oneVsOne,
-      rules: const ChallengeRulesEntity(
+      rules: ChallengeRulesEntity(
         goal: ChallengeGoal.mostDistance,
         windowMs: 86400000,
       ),
-      participants: const [
+      participants: [
         ChallengeParticipantEntity(
           userId: 'creator',
           displayName: 'Creator',
@@ -90,16 +90,16 @@ void main() {
   });
 
   test('throws when challenge is not pending', () {
-    repo.stored = ChallengeEntity(
+    repo.stored = const ChallengeEntity(
       id: 'ch-1',
       creatorUserId: 'creator',
       status: ChallengeStatus.active,
       type: ChallengeType.oneVsOne,
-      rules: const ChallengeRulesEntity(
+      rules: ChallengeRulesEntity(
         goal: ChallengeGoal.mostDistance,
         windowMs: 86400000,
       ),
-      participants: const [
+      participants: [
         ChallengeParticipantEntity(
           userId: 'invitee',
           displayName: 'Invitee',

@@ -301,7 +301,7 @@ class _AthleteMyEvolutionScreenState extends State<AthleteMyEvolutionScreen> {
                     padding: const EdgeInsets.only(bottom: DesignTokens.spacingSm),
                     child: Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.check_circle,
                           size: 18,
                           color: DesignTokens.success,

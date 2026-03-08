@@ -74,16 +74,16 @@ void main() {
   });
 
   test('throws when challenge is not pending', () {
-    repo.stored = ChallengeEntity(
+    repo.stored = const ChallengeEntity(
       id: 'ch-1',
       creatorUserId: 'u1',
       status: ChallengeStatus.active,
       type: ChallengeType.oneVsOne,
-      rules: const ChallengeRulesEntity(
+      rules: ChallengeRulesEntity(
         goal: ChallengeGoal.mostDistance,
         windowMs: 86400000,
       ),
-      participants: const [],
+      participants: [],
       createdAtMs: 0,
     );
 

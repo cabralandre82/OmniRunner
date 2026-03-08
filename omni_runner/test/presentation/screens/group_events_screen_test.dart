@@ -93,7 +93,7 @@ void main() {
 
       final bloc = _FakeRaceEventsBloc(RaceEventsLoaded(
         events: [_event],
-        participantCounts: {'e1': 15},
+        participantCounts: const {'e1': 15},
       ));
 
       await tester.pumpApp(

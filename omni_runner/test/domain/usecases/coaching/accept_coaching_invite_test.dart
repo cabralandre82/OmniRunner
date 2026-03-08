@@ -110,7 +110,7 @@ void main() {
   });
 
   test('throws when invite is not pending', () async {
-    inviteRepo.stored = CoachingInviteEntity(
+    inviteRepo.stored = const CoachingInviteEntity(
       id: 'inv-1',
       groupId: 'g1',
       invitedUserId: 'user-1',

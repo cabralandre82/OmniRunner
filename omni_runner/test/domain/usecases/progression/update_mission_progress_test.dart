@@ -21,12 +21,12 @@ class _FakeRepo implements IMissionProgressRepo {
 void main() {
   late _FakeRepo repo;
   late UpdateMissionProgress usecase;
-  final session = WorkoutSessionEntity(
+  const session = WorkoutSessionEntity(
     id: 'ses-1', userId: 'u1', status: WorkoutStatus.completed,
-    startTimeMs: 0, route: const [], isVerified: true,
+    startTimeMs: 0, route: [], isVerified: true,
   );
 
-  final profile = ProfileProgressEntity(userId: 'u1');
+  const profile = ProfileProgressEntity(userId: 'u1');
 
   setUp(() {
     repo = _FakeRepo();
@@ -45,7 +45,7 @@ void main() {
 
   test('updates distance mission progress', () async {
     repo.active = [
-      MissionProgressEntity(
+      const MissionProgressEntity(
         id: 'mp1', userId: 'u1', missionId: 'tpl_daily_3km',
         status: MissionProgressStatus.active, currentValue: 0,
         targetValue: 3000, assignedAtMs: 0,
@@ -68,9 +68,9 @@ void main() {
   });
 
   test('returns empty when no userId on session', () async {
-    final noUser = WorkoutSessionEntity(
+    const noUser = WorkoutSessionEntity(
       id: 'ses-2', status: WorkoutStatus.completed,
-      startTimeMs: 0, route: const [], isVerified: true,
+      startTimeMs: 0, route: [], isVerified: true,
     );
     final result = await usecase.call(
       session: noUser, sessionDistanceM: 5000, sessionMovingMs: 1800000,

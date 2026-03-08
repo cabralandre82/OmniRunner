@@ -627,7 +627,7 @@ class _RankingTile extends StatelessWidget {
   static String _formatValue(double v, ParkLeaderboardCategory cat) =>
       switch (cat) {
         ParkLeaderboardCategory.pace =>
-          '${(v ~/ 60)}:${(v % 60).round().toString().padLeft(2, '0')}/km',
+          '${v ~/ 60}:${(v % 60).round().toString().padLeft(2, '0')}/km',
         ParkLeaderboardCategory.distance =>
           '${(v / 1000).toStringAsFixed(1)}km',
         ParkLeaderboardCategory.frequency => '${v.round()}x',

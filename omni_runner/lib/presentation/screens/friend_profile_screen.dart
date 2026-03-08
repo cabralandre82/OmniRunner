@@ -172,22 +172,22 @@ class _FriendActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (status == 'accepted') {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingSm),
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingSm),
         child: Chip(
-          avatar: const Icon(Icons.check_circle, color: DesignTokens.success, size: 18),
-          label: const Text('Amigos'),
+          avatar: Icon(Icons.check_circle, color: DesignTokens.success, size: 18),
+          label: Text('Amigos'),
           backgroundColor: DesignTokens.success,
         ),
       );
     }
 
     if (status == 'pending') {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingSm),
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingSm),
         child: Chip(
-          avatar: const Icon(Icons.hourglass_top, color: DesignTokens.warning, size: 18),
-          label: const Text('Convite pendente'),
+          avatar: Icon(Icons.hourglass_top, color: DesignTokens.warning, size: 18),
+          label: Text('Convite pendente'),
           backgroundColor: DesignTokens.warning,
         ),
       );

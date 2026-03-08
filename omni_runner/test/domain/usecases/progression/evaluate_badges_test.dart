@@ -28,15 +28,15 @@ void main() {
   late EvaluateBadges usecase;
   int seq = 0;
 
-  final session = WorkoutSessionEntity(
+  const session = WorkoutSessionEntity(
     id: 'ses-1',
     userId: 'u1',
     status: WorkoutStatus.completed,
     startTimeMs: 0,
-    route: const [],
+    route: [],
   );
 
-  final profile = ProfileProgressEntity(
+  const profile = ProfileProgressEntity(
     userId: 'u1',
     lifetimeSessionCount: 100,
     lifetimeDistanceM: 500000,
@@ -51,19 +51,19 @@ void main() {
 
   test('unlocks SingleSessionDistance badge', () async {
     final catalog = [
-      BadgeEntity(
+      const BadgeEntity(
         id: 'badge-5k',
         category: BadgeCategory.distance,
         tier: BadgeTier.bronze,
         name: '5K Runner',
         description: 'Run 5km in a single session',
-        criteria: const SingleSessionDistance(5000),
+        criteria: SingleSessionDistance(5000),
         xpReward: 50,
         coinsReward: 10,
       ),
     ];
 
-    final ctx = BadgeEvalContext(
+    const ctx = BadgeEvalContext(
       session: session,
       profile: profile,
       sessionDistanceM: 5500,
@@ -86,19 +86,19 @@ void main() {
     awardRepo._unlocked.add('badge-5k');
 
     final catalog = [
-      BadgeEntity(
+      const BadgeEntity(
         id: 'badge-5k',
         category: BadgeCategory.distance,
         tier: BadgeTier.bronze,
         name: '5K',
         description: '',
-        criteria: const SingleSessionDistance(5000),
+        criteria: SingleSessionDistance(5000),
         xpReward: 50,
         coinsReward: 10,
       ),
     ];
 
-    final ctx = BadgeEvalContext(
+    const ctx = BadgeEvalContext(
       session: session,
       profile: profile,
       sessionDistanceM: 10000,
@@ -117,14 +117,14 @@ void main() {
   });
 
   test('returns empty when user has no userId', () async {
-    final noUserSession = WorkoutSessionEntity(
+    const noUserSession = WorkoutSessionEntity(
       id: 'ses-2',
       status: WorkoutStatus.completed,
       startTimeMs: 0,
-      route: const [],
+      route: [],
     );
 
-    final ctx = BadgeEvalContext(
+    const ctx = BadgeEvalContext(
       session: noUserSession,
       profile: profile,
       sessionDistanceM: 10000,
@@ -134,13 +134,13 @@ void main() {
 
     final awards = await usecase.call(
       catalog: [
-        BadgeEntity(
+        const BadgeEntity(
           id: 'b1',
           category: BadgeCategory.distance,
           tier: BadgeTier.bronze,
           name: 'Test',
           description: '',
-          criteria: const SingleSessionDistance(1000),
+          criteria: SingleSessionDistance(1000),
           xpReward: 10,
           coinsReward: 0,
         ),
@@ -155,19 +155,19 @@ void main() {
 
   test('unlocks SessionCount badge based on lifetime count', () async {
     final catalog = [
-      BadgeEntity(
+      const BadgeEntity(
         id: 'badge-100',
         category: BadgeCategory.frequency,
         tier: BadgeTier.silver,
         name: '100 runs',
         description: '',
-        criteria: const SessionCount(100),
+        criteria: SessionCount(100),
         xpReward: 100,
         coinsReward: 20,
       ),
     ];
 
-    final ctx = BadgeEvalContext(
+    const ctx = BadgeEvalContext(
       session: session,
       profile: profile,
       sessionDistanceM: 5000,
@@ -187,19 +187,19 @@ void main() {
 
   test('early bird badge for session before specified hour', () async {
     final catalog = [
-      BadgeEntity(
+      const BadgeEntity(
         id: 'badge-early',
         category: BadgeCategory.special,
         tier: BadgeTier.bronze,
         name: 'Early Bird',
         description: '',
-        criteria: const SessionBeforeHour(6),
+        criteria: SessionBeforeHour(6),
         xpReward: 30,
         coinsReward: 5,
       ),
     ];
 
-    final ctx = BadgeEvalContext(
+    const ctx = BadgeEvalContext(
       session: session,
       profile: profile,
       sessionDistanceM: 3000,

@@ -117,13 +117,13 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
         ? ChallengeSessionBanner(challengeId: challengeId)
         : null;
     if (ghost == null && integrity == null && challengeBanner == null) {
-      return Padding(
-        padding: const EdgeInsets.only(top: DesignTokens.spacingSm),
+      return const Padding(
+        padding: EdgeInsets.only(top: DesignTokens.spacingSm),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.schedule, size: 14, color: DesignTokens.textMuted),
-            const SizedBox(width: 4),
+            SizedBox(width: 4),
             Text(
               'Verificação final pelo servidor ao sincronizar',
               style: TextStyle(fontSize: 11, color: DesignTokens.textMuted),
@@ -137,13 +137,13 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
       if (ghost != null) ghost,
       if (integrity != null) integrity,
       if (integrity == null)
-        Padding(
-          padding: const EdgeInsets.only(top: DesignTokens.spacingSm),
+        const Padding(
+          padding: EdgeInsets.only(top: DesignTokens.spacingSm),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.schedule, size: 14, color: DesignTokens.textMuted),
-              const SizedBox(width: 4),
+              SizedBox(width: 4),
               Text(
                 'Verificação final pelo servidor ao sincronizar',
                 style: TextStyle(
@@ -231,9 +231,9 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
         if (!_mapReady)
           const Center(child: CircularProgressIndicator())
         else if (_mapTimedOut)
-          Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
             Icon(Icons.map_outlined, size: 48, color: DesignTokens.textMuted),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text('Mapa indisponível offline', style: TextStyle(color: DesignTokens.textSecondary, fontSize: 14)),
           ])),
         Positioned(top: 0, left: 0, right: 0, child: _TopBar(onShare: _shareRun)),

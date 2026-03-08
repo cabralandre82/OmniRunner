@@ -327,7 +327,7 @@ class _BlockTile extends StatelessWidget {
   static String _fmtPace(int secPerKm) {
     final m = secPerKm ~/ 60;
     final s = secPerKm % 60;
-    return '${m}:${s.toString().padLeft(2, '0')}';
+    return '$m:${s.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -524,7 +524,7 @@ class _AddBlockSheetState extends State<_AddBlockSheet> {
             Text('Adicionar Bloco', style: theme.textTheme.titleLarge),
             const SizedBox(height: 20),
             DropdownButtonFormField<WorkoutBlockType>(
-              value: _blockType,
+              initialValue: _blockType,
               decoration: const InputDecoration(
                 labelText: 'Tipo',
                 border: OutlineInputBorder(),
@@ -651,7 +651,7 @@ class _AddBlockSheetState extends State<_AddBlockSheet> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<int?>(
-                        value: _hrZone,
+                        initialValue: _hrZone,
                         decoration: const InputDecoration(
                           labelText: 'Zona FC',
                           border: OutlineInputBorder(),
@@ -667,7 +667,7 @@ class _AddBlockSheetState extends State<_AddBlockSheet> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: DropdownButtonFormField<int?>(
-                        value: _rpe,
+                        initialValue: _rpe,
                         decoration: const InputDecoration(
                           labelText: 'RPE',
                           border: OutlineInputBorder(),

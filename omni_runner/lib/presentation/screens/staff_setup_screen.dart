@@ -134,7 +134,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
         context: context,
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
-          icon: Icon(Icons.check_circle_outline,
+          icon: const Icon(Icons.check_circle_outline,
               size: 48, color: DesignTokens.success),
           title: const Text('Assessoria criada!'),
           content: const Text(
@@ -528,7 +528,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedState,
+              initialValue: _selectedState,
               decoration: InputDecoration(
                 labelText: 'Estado (UF)',
                 border: OutlineInputBorder(
@@ -709,7 +709,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search_rounded, size: 56, color: DesignTokens.textMuted),
+            const Icon(Icons.search_rounded, size: 56, color: DesignTokens.textMuted),
             const SizedBox(height: 12),
             Text(
               'Digite o nome da assessoria\nou escaneie um QR',

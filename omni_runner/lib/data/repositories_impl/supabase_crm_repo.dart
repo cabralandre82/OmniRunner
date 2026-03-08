@@ -236,7 +236,7 @@ final class SupabaseCrmRepo implements ICrmRepo {
     int offset = 0,
   }) async {
     try {
-      var memberQuery = _db
+      final memberQuery = _db
           .from('coaching_members')
           .select('user_id, profiles!user_id(display_name, avatar_url)')
           .eq('group_id', groupId)

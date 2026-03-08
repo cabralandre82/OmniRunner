@@ -771,7 +771,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.groups_outlined,
+            const Icon(Icons.groups_outlined,
                 size: 64, color: DesignTokens.border),
             const SizedBox(height: 12),
             Text(

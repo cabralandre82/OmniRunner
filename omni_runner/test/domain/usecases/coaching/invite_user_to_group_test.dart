@@ -8,14 +8,14 @@ import 'package:omni_runner/domain/repositories/i_coaching_invite_repo.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
 import 'package:omni_runner/domain/usecases/coaching/invite_user_to_group.dart';
 
-final _group = CoachingGroupEntity(
+const _group = CoachingGroupEntity(
   id: 'g1',
   name: 'Grupo',
   coachUserId: 'coach',
   createdAtMs: 0,
 );
 
-final _staffMember = CoachingMemberEntity(
+const _staffMember = CoachingMemberEntity(
   id: 'm-coach',
   userId: 'coach',
   groupId: 'g1',
@@ -132,7 +132,7 @@ void main() {
   });
 
   test('throws when caller is not staff', () {
-    memberRepo.setMember('g1', 'athlete', CoachingMemberEntity(
+    memberRepo.setMember('g1', 'athlete', const CoachingMemberEntity(
       id: 'm-a',
       userId: 'athlete',
       groupId: 'g1',
@@ -154,7 +154,7 @@ void main() {
   });
 
   test('throws when user already a member', () {
-    memberRepo.setMember('g1', 'user-1', CoachingMemberEntity(
+    memberRepo.setMember('g1', 'user-1', const CoachingMemberEntity(
       id: 'm-u1',
       userId: 'user-1',
       groupId: 'g1',
@@ -176,7 +176,7 @@ void main() {
   });
 
   test('throws when pending invite already exists', () {
-    inviteRepo.pendingInvite = CoachingInviteEntity(
+    inviteRepo.pendingInvite = const CoachingInviteEntity(
       id: 'old',
       groupId: 'g1',
       invitedUserId: 'user-1',

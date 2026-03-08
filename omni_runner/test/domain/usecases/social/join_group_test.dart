@@ -5,7 +5,7 @@ import 'package:omni_runner/domain/entities/group_member_entity.dart';
 import 'package:omni_runner/domain/repositories/i_group_repo.dart';
 import 'package:omni_runner/domain/usecases/social/join_group.dart';
 
-final _group = GroupEntity(
+const _group = GroupEntity(
   id: 'g1', name: 'Runners', createdByUserId: 'owner',
   createdAtMs: 0, privacy: GroupPrivacy.open, memberCount: 5, maxMembers: 100,
 );
@@ -58,7 +58,7 @@ void main() {
   });
 
   test('throws when already active member', () {
-    repo.existingMember = GroupMemberEntity(
+    repo.existingMember = const GroupMemberEntity(
       id: 'm1', groupId: 'g1', userId: 'u1', displayName: 'B',
       role: GroupRole.member, joinedAtMs: 0,
     );
@@ -69,7 +69,7 @@ void main() {
   });
 
   test('throws when banned', () {
-    repo.existingMember = GroupMemberEntity(
+    repo.existingMember = const GroupMemberEntity(
       id: 'm1', groupId: 'g1', userId: 'u1', displayName: 'B',
       role: GroupRole.member, status: GroupMemberStatus.banned, joinedAtMs: 0,
     );

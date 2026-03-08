@@ -19,7 +19,7 @@ final _session = WorkoutSessionEntity(
   route: const [],
 );
 
-final _metrics = WorkoutMetricsEntity(
+const _metrics = WorkoutMetricsEntity(
   totalDistanceM: 5000,
   elapsedMs: 1800000,
   movingMs: 1750000,

@@ -4,38 +4,38 @@ import 'package:omni_runner/features/parks/data/park_detection_service.dart';
 
 void main() {
   // Simple square polygon around (0,0): corners at (-1,-1), (-1,1), (1,1), (1,-1)
-  final squarePark = ParkEntity(
+  const squarePark = ParkEntity(
     id: 'p1',
     name: 'Parque Teste',
     city: 'São Paulo',
     state: 'SP',
-    polygon: const [
+    polygon: [
       LatLng(-1, -1),
       LatLng(-1, 1),
       LatLng(1, 1),
       LatLng(1, -1),
     ],
-    center: const LatLng(0, 0),
+    center: LatLng(0, 0),
   );
 
-  final farPark = ParkEntity(
+  const farPark = ParkEntity(
     id: 'p2',
     name: 'Parque Longe',
     city: 'Rio',
     state: 'RJ',
-    polygon: const [
+    polygon: [
       LatLng(10, 10),
       LatLng(10, 11),
       LatLng(11, 11),
       LatLng(11, 10),
     ],
-    center: const LatLng(10.5, 10.5),
+    center: LatLng(10.5, 10.5),
   );
 
   late ParkDetectionService sut;
 
   setUp(() {
-    sut = ParkDetectionService([squarePark, farPark]);
+    sut = const ParkDetectionService([squarePark, farPark]);
   });
 
   group('detectPark', () {
@@ -76,7 +76,7 @@ void main() {
     });
 
     test('results are sorted by distance', () {
-      final svc = ParkDetectionService([farPark, squarePark]);
+      const svc = ParkDetectionService([farPark, squarePark]);
       final results = svc.findNearby(0.001, 0.001, radiusM: 2000000);
       expect(results.first.id, 'p1');
     });

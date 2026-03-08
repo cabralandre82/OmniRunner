@@ -345,7 +345,7 @@ class _ChampCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.emoji_events_rounded,
+                const Icon(Icons.emoji_events_rounded,
                     size: 22, color: DesignTokens.warning),
                 const SizedBox(width: 8),
                 Expanded(

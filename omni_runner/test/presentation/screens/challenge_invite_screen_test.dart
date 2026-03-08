@@ -18,19 +18,19 @@ class _FakeChallengesBloc extends Cubit<ChallengesState>
   dynamic noSuchMethod(Invocation invocation) {}
 }
 
-final _challenge = ChallengeEntity(
+const _challenge = ChallengeEntity(
   id: 'c1',
   creatorUserId: 'test-user',
   status: ChallengeStatus.pending,
   type: ChallengeType.oneVsOne,
-  rules: const ChallengeRulesEntity(
+  rules: ChallengeRulesEntity(
     goal: ChallengeGoal.fastestAtDistance,
     target: 5000,
     windowMs: 10800000,
     entryFeeCoins: 50,
   ),
   participants: [
-    const ChallengeParticipantEntity(
+    ChallengeParticipantEntity(
       userId: 'test-user',
       displayName: 'Creator User',
       status: ParticipantStatus.accepted,
@@ -64,7 +64,7 @@ void main() {
       await tester.pumpApp(
         BlocProvider<ChallengesBloc>.value(
           value: bloc,
-          child: ChallengeInviteScreen(challenge: _challenge),
+          child: const ChallengeInviteScreen(challenge: _challenge),
         ),
         wrapScaffold: false,
       );
@@ -82,7 +82,7 @@ void main() {
       await tester.pumpApp(
         BlocProvider<ChallengesBloc>.value(
           value: bloc,
-          child: ChallengeInviteScreen(challenge: _challenge),
+          child: const ChallengeInviteScreen(challenge: _challenge),
         ),
         wrapScaffold: false,
       );
@@ -100,7 +100,7 @@ void main() {
       await tester.pumpApp(
         BlocProvider<ChallengesBloc>.value(
           value: bloc,
-          child: ChallengeInviteScreen(challenge: _challenge),
+          child: const ChallengeInviteScreen(challenge: _challenge),
         ),
         wrapScaffold: false,
       );
@@ -119,7 +119,7 @@ void main() {
       await tester.pumpApp(
         BlocProvider<ChallengesBloc>.value(
           value: bloc,
-          child: ChallengeInviteScreen(challenge: _challenge),
+          child: const ChallengeInviteScreen(challenge: _challenge),
         ),
         wrapScaffold: false,
       );
@@ -137,7 +137,7 @@ void main() {
       await tester.pumpApp(
         BlocProvider<ChallengesBloc>.value(
           value: bloc,
-          child: ChallengeInviteScreen(challenge: _challenge),
+          child: const ChallengeInviteScreen(challenge: _challenge),
         ),
         wrapScaffold: false,
       );
@@ -159,7 +159,7 @@ void main() {
       await tester.pumpApp(
         BlocProvider<ChallengesBloc>.value(
           value: bloc,
-          child: ChallengeInviteScreen(challenge: _challenge),
+          child: const ChallengeInviteScreen(challenge: _challenge),
         ),
         wrapScaffold: false,
       );
@@ -177,7 +177,7 @@ void main() {
       await tester.pumpApp(
         BlocProvider<ChallengesBloc>.value(
           value: bloc,
-          child: ChallengeInviteScreen(challenge: _challenge),
+          child: const ChallengeInviteScreen(challenge: _challenge),
         ),
         wrapScaffold: false,
       );

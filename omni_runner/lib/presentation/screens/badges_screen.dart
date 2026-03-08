@@ -568,7 +568,7 @@ void _showBadgeDetail(
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.check_circle,
+                const Icon(Icons.check_circle,
                     size: 16, color: DesignTokens.success),
                 const SizedBox(width: 6),
                 Text(

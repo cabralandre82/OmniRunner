@@ -14,7 +14,7 @@ import 'package:omni_runner/domain/entities/token_intent_entity.dart';
 void main() {
   group('StaffQrPayload', () {
     test('encode/decode round-trip preserves all fields', () {
-      final payload = StaffQrPayload(
+      const payload = StaffQrPayload(
         intentId: 'intent-abc',
         type: TokenIntentType.burnFromAthlete,
         groupId: 'group-xyz',
@@ -89,7 +89,7 @@ void main() {
     });
 
     test('championshipId is preserved in round-trip', () {
-      final payload = StaffQrPayload(
+      const payload = StaffQrPayload(
         intentId: 'i',
         type: TokenIntentType.champBadgeActivate,
         groupId: 'g',
@@ -104,7 +104,7 @@ void main() {
     });
 
     test('championshipId is null when not provided', () {
-      final payload = StaffQrPayload(
+      const payload = StaffQrPayload(
         intentId: 'i',
         type: TokenIntentType.burnFromAthlete,
         groupId: 'g',
@@ -158,7 +158,7 @@ void main() {
 
   group('QR payload structure (no money fields)', () {
     test('encoded JSON contains only coin-related keys', () {
-      final payload = StaffQrPayload(
+      const payload = StaffQrPayload(
         intentId: 'i',
         type: TokenIntentType.burnFromAthlete,
         groupId: 'g',
@@ -344,7 +344,7 @@ void main() {
     });
 
     test('net = gross - fee', () {
-      final gross = 100.0;
+      const gross = 100.0;
       final fee = calculateFee(gross, 3.0);
       final net = gross - fee;
       expect(net, 97.0);

@@ -6,7 +6,7 @@ import 'package:omni_runner/presentation/screens/group_details_screen.dart';
 
 import '../../helpers/pump_app.dart';
 
-final _group = GroupEntity(
+const _group = GroupEntity(
   id: 'g1',
   name: 'Grupo Corrida Leve',
   description: 'Um grupo para iniciantes',
@@ -16,7 +16,7 @@ final _group = GroupEntity(
   memberCount: 5,
 );
 
-final _member = GroupMemberEntity(
+const _member = GroupMemberEntity(
   id: 'm1',
   groupId: 'g1',
   userId: 'u1',
@@ -25,7 +25,7 @@ final _member = GroupMemberEntity(
   joinedAtMs: 0,
 );
 
-final _goal = GroupGoalEntity(
+const _goal = GroupGoalEntity(
   id: 'goal1',
   groupId: 'g1',
   title: '500 km em março',
@@ -51,7 +51,7 @@ void main() {
 
     testWidgets('renders group name in app bar', (tester) async {
       await tester.pumpApp(
-        GroupDetailsScreen(group: _group),
+        const GroupDetailsScreen(group: _group),
         wrapScaffold: false,
       );
 
@@ -64,7 +64,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       await tester.pumpApp(
-        GroupDetailsScreen(group: _group),
+        const GroupDetailsScreen(group: _group),
         wrapScaffold: false,
       );
 
@@ -74,7 +74,7 @@ void main() {
 
     testWidgets('shows members section with empty state', (tester) async {
       await tester.pumpApp(
-        GroupDetailsScreen(group: _group, members: const []),
+        const GroupDetailsScreen(group: _group, members: []),
         wrapScaffold: false,
       );
 
@@ -88,7 +88,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       await tester.pumpApp(
-        GroupDetailsScreen(group: _group, members: [_member]),
+        const GroupDetailsScreen(group: _group, members: [_member]),
         wrapScaffold: false,
       );
 
@@ -102,7 +102,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       await tester.pumpApp(
-        GroupDetailsScreen(group: _group, goals: [_goal]),
+        const GroupDetailsScreen(group: _group, goals: [_goal]),
         wrapScaffold: false,
       );
 

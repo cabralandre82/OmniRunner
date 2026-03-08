@@ -28,11 +28,11 @@ class _FakeRepo implements IChallengeRepo {
   Future<ChallengeResultEntity?> getResultByChallengeId(String id) async => null;
 }
 
-ChallengeEntity _pending() => ChallengeEntity(
+ChallengeEntity _pending() => const ChallengeEntity(
       id: 'ch-1', creatorUserId: 'u1', status: ChallengeStatus.pending,
       type: ChallengeType.group,
-      rules: const ChallengeRulesEntity(goal: ChallengeGoal.mostDistance, windowMs: 86400000),
-      participants: const [
+      rules: ChallengeRulesEntity(goal: ChallengeGoal.mostDistance, windowMs: 86400000),
+      participants: [
         ChallengeParticipantEntity(userId: 'u1', displayName: 'Creator', status: ParticipantStatus.accepted),
       ],
       createdAtMs: 0,

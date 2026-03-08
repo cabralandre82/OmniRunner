@@ -8,6 +8,7 @@ import 'package:omni_runner/domain/entities/feed_item_entity.dart';
 import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_bloc.dart';
 import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_event.dart';
 import 'package:omni_runner/presentation/blocs/assessoria_feed/assessoria_feed_state.dart';
+import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 
 /// Lightweight social feed scoped to the user's assessoria.
@@ -25,8 +26,8 @@ class AssessoriaFeedScreen extends StatelessWidget {
       ),
       body: BlocBuilder<AssessoriaFeedBloc, AssessoriaFeedState>(
         builder: (context, state) => switch (state) {
-          FeedInitial() => const Center(child: CircularProgressIndicator()),
-          FeedLoading() => const Center(child: CircularProgressIndicator()),
+          FeedInitial() => const ShimmerListLoader(),
+          FeedLoading() => const ShimmerListLoader(),
           FeedEmpty() => _EmptyState(),
           FeedError(:final message) => _ErrorState(message: message),
           FeedLoaded(:final items, :final hasMore, :final loadingMore) =>

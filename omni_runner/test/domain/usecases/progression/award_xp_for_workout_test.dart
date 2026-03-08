@@ -45,12 +45,12 @@ void main() {
   late _FakeProfileRepo profileRepo;
   late AwardXpForWorkout usecase;
 
-  final validSession = WorkoutSessionEntity(
+  const validSession = WorkoutSessionEntity(
     id: 'ses-1',
     userId: 'u1',
     status: WorkoutStatus.completed,
     startTimeMs: 0,
-    route: const [],
+    route: [],
     isVerified: true,
     avgBpm: 150,
   );
@@ -77,12 +77,12 @@ void main() {
   });
 
   test('rejects incomplete session', () async {
-    final incomplete = WorkoutSessionEntity(
+    const incomplete = WorkoutSessionEntity(
       id: 'ses-2',
       userId: 'u1',
       status: WorkoutStatus.running,
       startTimeMs: 0,
-      route: const [],
+      route: [],
     );
 
     final result = await usecase.call(
@@ -98,12 +98,12 @@ void main() {
   });
 
   test('rejects unverified session', () async {
-    final unverified = WorkoutSessionEntity(
+    const unverified = WorkoutSessionEntity(
       id: 'ses-2',
       userId: 'u1',
       status: WorkoutStatus.completed,
       startTimeMs: 0,
-      route: const [],
+      route: [],
       isVerified: false,
     );
 
@@ -133,11 +133,11 @@ void main() {
   });
 
   test('rejects session without userId', () async {
-    final noUser = WorkoutSessionEntity(
+    const noUser = WorkoutSessionEntity(
       id: 'ses-3',
       status: WorkoutStatus.completed,
       startTimeMs: 0,
-      route: const [],
+      route: [],
     );
 
     final result = await usecase.call(

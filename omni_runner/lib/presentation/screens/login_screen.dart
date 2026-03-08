@@ -257,7 +257,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.black87,
                       backgroundColor: Colors.white,
-                      side: BorderSide(color: DesignTokens.textMuted),
+                      side: const BorderSide(color: DesignTokens.textMuted),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -339,7 +339,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     label: const Text('Continuar com Email'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: DesignTokens.textSecondary,
-                      side: BorderSide(color: DesignTokens.textMuted),
+                      side: const BorderSide(color: DesignTokens.textMuted),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -409,7 +409,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       if (!_isSignUp) ...[
-                        Text('·',
+                        const Text('·',
                             style: TextStyle(color: DesignTokens.textMuted)),
                         TextButton(
                           onPressed: _resetPassword,

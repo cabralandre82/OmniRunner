@@ -4,7 +4,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/service_locator.dart';
 
 import 'package:omni_runner/core/router/app_router.dart';
-import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/repositories/i_challenge_repo.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 
@@ -35,7 +34,7 @@ class _ChallengeSessionBannerState extends State<ChallengeSessionBanner> {
   Future<void> _load() async {
     try {
       final repo = sl<IChallengeRepo>();
-      var challenge = await repo.getById(widget.challengeId);
+      final challenge = await repo.getById(widget.challengeId);
 
       // Fallback to Supabase if not in local Isar
       if (challenge == null) {

@@ -384,7 +384,7 @@ class _PersonalEvolutionScreenState extends State<PersonalEvolutionScreen> {
                 showTitles: true,
                 reservedSize: 36,
                 getTitlesWidget: (v, _) => Text(
-                  '${v.toStringAsFixed(0)}',
+                  v.toStringAsFixed(0),
                   style: theme.textTheme.bodySmall,
                 ),
               ),

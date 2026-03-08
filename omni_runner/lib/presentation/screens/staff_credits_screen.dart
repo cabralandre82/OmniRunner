@@ -178,7 +178,7 @@ class _InventoryCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(Icons.toll_rounded, size: 36, color: DesignTokens.warning),
+          const Icon(Icons.toll_rounded, size: 36, color: DesignTokens.warning),
           const SizedBox(height: 8),
           Text(
             '$available',

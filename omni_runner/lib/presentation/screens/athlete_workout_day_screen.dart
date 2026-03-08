@@ -279,7 +279,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
   }
 
   Widget _buildEmpty(ThemeData theme) {
-    return AppEmptyState(
+    return const AppEmptyState(
       message: 'Sem treino agendado para hoje',
       icon: Icons.event_available_outlined,
     );
@@ -496,7 +496,7 @@ class _WorkoutBlockCard extends StatelessWidget {
       String fmtPace(int v) {
         final m = v ~/ 60;
         final s = v % 60;
-        return '${m}:${s.toString().padLeft(2, '0')}';
+        return '$m:${s.toString().padLeft(2, '0')}';
       }
       final min = fmtPace(block.targetPaceMinSecPerKm!);
       final max = fmtPace(block.targetPaceMaxSecPerKm!);

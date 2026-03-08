@@ -50,32 +50,32 @@ class _FakeUserIdentity implements UserIdentityProvider {
   dynamic noSuchMethod(Invocation invocation) {}
 }
 
-final _activeChallenge = ChallengeEntity(
+const _activeChallenge = ChallengeEntity(
   id: 'c1',
   creatorUserId: 'test-user',
   status: ChallengeStatus.active,
   type: ChallengeType.oneVsOne,
-  rules: const ChallengeRulesEntity(
+  rules: ChallengeRulesEntity(
     goal: ChallengeGoal.fastestAtDistance,
     windowMs: 86400000,
     entryFeeCoins: 50,
   ),
-  participants: const [],
+  participants: [],
   createdAtMs: 1700000000000,
   title: 'Desafio 5K',
 );
 
-final _completedChallenge = ChallengeEntity(
+const _completedChallenge = ChallengeEntity(
   id: 'c2',
   creatorUserId: 'test-user',
   status: ChallengeStatus.completed,
   type: ChallengeType.group,
-  rules: const ChallengeRulesEntity(
+  rules: ChallengeRulesEntity(
     goal: ChallengeGoal.mostDistance,
     windowMs: 604800000,
     entryFeeCoins: 100,
   ),
-  participants: const [],
+  participants: [],
   createdAtMs: 1699000000000,
   title: 'Maratona Grupo',
 );
@@ -181,7 +181,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       final bloc = _FakeChallengesBloc(
-        ChallengesLoaded([_activeChallenge, _completedChallenge]),
+        const ChallengesLoaded([_activeChallenge, _completedChallenge]),
       );
 
       await tester.pumpApp(

@@ -8,6 +8,7 @@ import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/domain/entities/leaderboard_entity.dart';
 import 'package:omni_runner/presentation/blocs/leaderboards/leaderboards_bloc.dart';
 import 'package:omni_runner/presentation/blocs/leaderboards/leaderboards_event.dart';
+import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/presentation/blocs/leaderboards/leaderboards_state.dart';
 import 'package:omni_runner/presentation/widgets/tip_banner.dart';
 import 'package:omni_runner/core/logging/logger.dart';
@@ -212,7 +213,7 @@ class _LeaderboardsScreenState extends State<LeaderboardsScreen>
               builder: (context, state) => switch (state) {
                 LeaderboardsInitial() => _buildEmptyForTab(theme),
                 LeaderboardsLoading() =>
-                  const Center(child: CircularProgressIndicator()),
+                  const ShimmerListLoader(),
                 LeaderboardsLoaded(:final leaderboard) =>
                   leaderboard.entries.isEmpty
                       ? _buildEmptyForTab(theme)

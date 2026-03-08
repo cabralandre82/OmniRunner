@@ -174,7 +174,7 @@ class _AthleteDeliveryScreenState extends State<AthleteDeliveryScreen> {
     }
 
     if (_items.isEmpty) {
-      return AppEmptyState(
+      return const AppEmptyState(
         message: 'Nenhuma entrega pendente',
         icon: Icons.check_circle_outline,
       );

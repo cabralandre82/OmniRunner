@@ -87,7 +87,7 @@ class _TestCoachingGroupsScreen extends StatelessWidget {
   }
 }
 
-final _group = CoachingGroupEntity(
+const _group = CoachingGroupEntity(
   id: 'g1',
   name: 'Assessoria Top Run',
   coachUserId: 'coach1',
@@ -95,7 +95,7 @@ final _group = CoachingGroupEntity(
   createdAtMs: 0,
 );
 
-final _membership = CoachingMemberEntity(
+const _membership = CoachingMemberEntity(
   id: 'm1',
   userId: 'u1',
   groupId: 'g1',
@@ -161,7 +161,7 @@ void main() {
     });
 
     testWidgets('shows group card when loaded', (tester) async {
-      final bloc = _FakeCoachingGroupsBloc(CoachingGroupsLoaded(
+      final bloc = _FakeCoachingGroupsBloc(const CoachingGroupsLoaded(
         groups: [
           CoachingGroupItem(
             group: _group,

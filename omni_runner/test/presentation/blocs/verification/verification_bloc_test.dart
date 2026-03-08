@@ -161,7 +161,7 @@ void main() {
       });
 
       test('sets cached entity on success', () async {
-        final entity = const AthleteVerificationEntity(
+        const entity = AthleteVerificationEntity(
           status: VerificationStatus.verified,
           trustScore: 95,
           validRunsOk: true,
@@ -257,7 +257,7 @@ void main() {
       });
 
       test('preserves previous cached in Evaluating state', () async {
-        final entity = const AthleteVerificationEntity(
+        const entity = AthleteVerificationEntity(
           status: VerificationStatus.monitored,
           trustScore: 70,
           validRunsOk: true,
@@ -294,7 +294,7 @@ void main() {
       });
 
       test('Load → Evaluate full flow updates cached', () async {
-        final initial = const AthleteVerificationEntity(
+        const initial = AthleteVerificationEntity(
           status: VerificationStatus.calibrating,
           trustScore: 40,
           validRunsOk: false,
@@ -311,7 +311,7 @@ void main() {
         expect(bloc.cached?.trustScore, 40);
 
         // Simulate evaluation returning improved state
-        final improved = const AthleteVerificationEntity(
+        const improved = AthleteVerificationEntity(
           status: VerificationStatus.verified,
           trustScore: 90,
           validRunsOk: true,

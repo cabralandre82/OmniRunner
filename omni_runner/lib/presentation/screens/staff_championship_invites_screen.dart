@@ -49,7 +49,7 @@ class _StaffChampionshipInvitesScreenState
 
       // Fetch championship details
       final champIds = rows.map((r) => r['championship_id'] as String).toSet().toList();
-      Map<String, Map<String, dynamic>> champMap = {};
+      final Map<String, Map<String, dynamic>> champMap = {};
       if (champIds.isNotEmpty) {
         final champsRes = await _db
             .from('championships')
@@ -62,7 +62,7 @@ class _StaffChampionshipInvitesScreenState
 
       // Fetch host group names
       final hostGroupIds = champMap.values.map((c) => c['host_group_id'] as String).toSet().toList();
-      Map<String, String> hostNames = {};
+      final Map<String, String> hostNames = {};
       if (hostGroupIds.isNotEmpty) {
         final groupsRes = await _db
             .from('coaching_groups')
@@ -158,7 +158,7 @@ class _StaffChampionshipInvitesScreenState
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _invites.isEmpty
-                      ? AppEmptyState(
+                      ? const AppEmptyState(
                           message: 'Nenhum convite recebido',
                           icon: Icons.mail_outline_rounded,
                         )
@@ -209,7 +209,7 @@ class _InviteCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.emoji_events_rounded, size: 22, color: DesignTokens.warning),
+                const Icon(Icons.emoji_events_rounded, size: 22, color: DesignTokens.warning),
                 const SizedBox(width: 8),
                 Expanded(child: Text(invite.champName, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600))),
                 if (!isPending) Container(

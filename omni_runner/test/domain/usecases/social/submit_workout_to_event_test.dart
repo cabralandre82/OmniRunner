@@ -7,12 +7,12 @@ import 'package:omni_runner/domain/entities/workout_status.dart';
 import 'package:omni_runner/domain/repositories/i_event_repo.dart';
 import 'package:omni_runner/domain/usecases/social/submit_workout_to_event.dart';
 
-final _event = EventEntity(
+const _event = EventEntity(
   id: 'ev-1', title: 'Race', metric: GoalMetric.distance,
   targetValue: 10000, startsAtMs: 0, endsAtMs: 999999,
   status: EventStatus.active, creatorUserId: 'admin',
   type: EventType.individual,
-  rewards: const EventRewards(xpCompletion: 100),
+  rewards: EventRewards(xpCompletion: 100),
 );
 
 class _FakeEventRepo implements IEventRepo {
@@ -36,9 +36,9 @@ void main() {
   late _FakeEventRepo repo;
   late SubmitWorkoutToEvent usecase;
 
-  final session = WorkoutSessionEntity(
+  const session = WorkoutSessionEntity(
     id: 'ses-1', userId: 'u1', status: WorkoutStatus.completed,
-    startTimeMs: 100, route: const [], isVerified: true,
+    startTimeMs: 100, route: [], isVerified: true,
   );
 
   setUp(() {
@@ -48,7 +48,7 @@ void main() {
 
   test('adds distance to participation', () async {
     repo.userParticipations = [
-      EventParticipationEntity(id: 'p1', eventId: 'ev-1', userId: 'u1', displayName: 'A', joinedAtMs: 0),
+      const EventParticipationEntity(id: 'p1', eventId: 'ev-1', userId: 'u1', displayName: 'A', joinedAtMs: 0),
     ];
 
     final results = await usecase.call(
@@ -60,9 +60,9 @@ void main() {
   });
 
   test('returns empty for unverified session', () async {
-    final unverified = WorkoutSessionEntity(
+    const unverified = WorkoutSessionEntity(
       id: 'ses-2', userId: 'u1', status: WorkoutStatus.completed,
-      startTimeMs: 0, route: const [], isVerified: false,
+      startTimeMs: 0, route: [], isVerified: false,
     );
 
     final results = await usecase.call(
@@ -74,7 +74,7 @@ void main() {
 
   test('skips already completed participations', () async {
     repo.userParticipations = [
-      EventParticipationEntity(
+      const EventParticipationEntity(
         id: 'p1', eventId: 'ev-1', userId: 'u1', displayName: 'A',
         joinedAtMs: 0, completed: true,
       ),

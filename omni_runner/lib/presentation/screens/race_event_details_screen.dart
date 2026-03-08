@@ -335,7 +335,7 @@ class _MyResultCard extends StatelessWidget {
               Row(
                 children: [
                   if (result.xpAwarded > 0) ...[
-                    Icon(Icons.star, size: 16, color: DesignTokens.warning),
+                    const Icon(Icons.star, size: 16, color: DesignTokens.warning),
                     const SizedBox(width: 4),
                     Text('+${result.xpAwarded} XP',
                         style: theme.textTheme.bodySmall?.copyWith(

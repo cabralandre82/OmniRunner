@@ -41,7 +41,7 @@ final class RemoteTokenIntentRepo implements ITokenIntentRepo {
         },
       );
       if (res.data == null) {
-        throw TokenIntentFailed('Empty response from token-create-intent');
+        throw const TokenIntentFailed('Empty response from token-create-intent');
       }
       final data = res.data as Map<String, dynamic>;
       AppLogger.info('Intent created: ${data['intent_id']}', tag: _tag);

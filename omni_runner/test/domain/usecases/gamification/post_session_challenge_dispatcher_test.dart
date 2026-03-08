@@ -32,9 +32,9 @@ void main() {
   late _FakeRepo repo;
   late PostSessionChallengeDispatcher dispatcher;
 
-  final session = WorkoutSessionEntity(
+  const session = WorkoutSessionEntity(
     id: 'ses-1', userId: 'u1', status: WorkoutStatus.completed,
-    startTimeMs: 100, route: const [], isVerified: true, totalDistanceM: 5000,
+    startTimeMs: 100, route: [], isVerified: true, totalDistanceM: 5000,
   );
 
   setUp(() {
@@ -51,9 +51,9 @@ void main() {
   });
 
   test('returns empty when session has no userId', () async {
-    final noUser = WorkoutSessionEntity(
+    const noUser = WorkoutSessionEntity(
       id: 'ses-2', status: WorkoutStatus.completed,
-      startTimeMs: 0, route: const [], isVerified: true,
+      startTimeMs: 0, route: [], isVerified: true,
     );
     final bindings = await dispatcher.call(
       session: noUser, totalDistanceM: 5000, movingMs: 1800000, nowMs: 500,
@@ -62,11 +62,11 @@ void main() {
   });
 
   test('dispatches to active challenge', () async {
-    repo.addChallenge(ChallengeEntity(
+    repo.addChallenge(const ChallengeEntity(
       id: 'ch-1', creatorUserId: 'u1', status: ChallengeStatus.active,
       type: ChallengeType.oneVsOne,
-      rules: const ChallengeRulesEntity(goal: ChallengeGoal.mostDistance, windowMs: 86400000),
-      participants: const [
+      rules: ChallengeRulesEntity(goal: ChallengeGoal.mostDistance, windowMs: 86400000),
+      participants: [
         ChallengeParticipantEntity(userId: 'u1', displayName: 'A', status: ParticipantStatus.accepted),
         ChallengeParticipantEntity(userId: 'u2', displayName: 'B', status: ParticipantStatus.accepted),
       ],

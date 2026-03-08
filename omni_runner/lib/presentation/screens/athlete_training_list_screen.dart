@@ -119,7 +119,7 @@ class AthleteTrainingListScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm, horizontal: DesignTokens.spacingMd),
         children: [
           if (upcoming.isNotEmpty) ...[
-            _SectionHeader(title: 'Próximos'),
+            const _SectionHeader(title: 'Próximos'),
             ...upcoming.map((s) => _TrainingCard(
                   session: s,
                   onTap: () => _showSessionInfo(context, s),
@@ -127,7 +127,7 @@ class AthleteTrainingListScreen extends StatelessWidget {
             const SizedBox(height: 24),
           ],
           if (past.isNotEmpty) ...[
-            _SectionHeader(title: 'Anteriores'),
+            const _SectionHeader(title: 'Anteriores'),
             ...past.map((s) => _TrainingCard(
                   session: s,
                   onTap: () => _showSessionInfo(context, s),

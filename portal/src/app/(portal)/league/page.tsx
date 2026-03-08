@@ -134,7 +134,8 @@ export default async function LeaguePage() {
       <div>
         <h1 className="text-2xl font-bold text-content-primary">Liga</h1>
         <p className="mt-1 text-sm text-content-secondary">
-          Temporada atual, grupos inscritos e ranking
+          Temporada atual, grupos inscritos e ranking.
+          A criação e gestão de temporadas é feita pela administração da plataforma.
         </p>
       </div>
 

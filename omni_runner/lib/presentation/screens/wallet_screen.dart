@@ -77,11 +77,11 @@ class _WalletScreenState extends State<WalletScreen> {
                       vertical: DesignTokens.spacingSm,
                     ),
                     color: DesignTokens.warning,
-                    child: Row(
+                    child: const Row(
                       children: [
                         Icon(Icons.cloud_off, size: 16,
                             color: DesignTokens.warning),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Text(
                           'Dados offline — puxe para atualizar',
                           style: TextStyle(
@@ -327,7 +327,7 @@ class _BalanceCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, size: 16,
+                  const Icon(Icons.info_outline, size: 16,
                       color: DesignTokens.warning),
                   const SizedBox(width: 8),
                   Expanded(

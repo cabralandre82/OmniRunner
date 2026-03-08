@@ -6,12 +6,12 @@ import 'package:omni_runner/domain/entities/group_entity.dart';
 import 'package:omni_runner/domain/repositories/i_event_repo.dart';
 import 'package:omni_runner/domain/usecases/social/evaluate_event.dart';
 
-final _activeEvent = EventEntity(
+const _activeEvent = EventEntity(
   id: 'ev-1', title: 'Race', metric: GoalMetric.distance,
   targetValue: 10000, startsAtMs: 0, endsAtMs: 5000,
   status: EventStatus.active, creatorUserId: 'admin',
   type: EventType.individual,
-  rewards: const EventRewards(xpCompletion: 100, xpParticipation: 20),
+  rewards: EventRewards(xpCompletion: 100, xpParticipation: 20),
 );
 
 class _FakeEventRepo implements IEventRepo {
@@ -44,11 +44,11 @@ void main() {
 
   test('evaluates event and transitions to completed', () async {
     repo.participations = [
-      EventParticipationEntity(
+      const EventParticipationEntity(
         id: 'p1', eventId: 'ev-1', userId: 'u1', displayName: 'A',
         joinedAtMs: 0, currentValue: 12000, completed: true, contributingSessionCount: 3,
       ),
-      EventParticipationEntity(
+      const EventParticipationEntity(
         id: 'p2', eventId: 'ev-1', userId: 'u2', displayName: 'B',
         joinedAtMs: 0, currentValue: 5000, contributingSessionCount: 1,
       ),

@@ -67,22 +67,22 @@ void main() {
   });
 
   test('no-op when already completed', () async {
-    challengeRepo.stored = ChallengeEntity(
+    challengeRepo.stored = const ChallengeEntity(
       id: 'ch-1', creatorUserId: 'u1', status: ChallengeStatus.completed,
       type: ChallengeType.oneVsOne,
-      rules: const ChallengeRulesEntity(goal: ChallengeGoal.mostDistance, windowMs: 86400000),
-      participants: const [], createdAtMs: 0,
+      rules: ChallengeRulesEntity(goal: ChallengeGoal.mostDistance, windowMs: 86400000),
+      participants: [], createdAtMs: 0,
     );
     await usecase.call(challengeId: 'ch-1', uuidGenerator: () => 'id', nowMs: 1000);
     expect(challengeRepo.updatedWith, isNull);
   });
 
   test('throws when not completing status', () {
-    challengeRepo.stored = ChallengeEntity(
+    challengeRepo.stored = const ChallengeEntity(
       id: 'ch-1', creatorUserId: 'u1', status: ChallengeStatus.pending,
       type: ChallengeType.oneVsOne,
-      rules: const ChallengeRulesEntity(goal: ChallengeGoal.mostDistance, windowMs: 86400000),
-      participants: const [], createdAtMs: 0,
+      rules: ChallengeRulesEntity(goal: ChallengeGoal.mostDistance, windowMs: 86400000),
+      participants: [], createdAtMs: 0,
     );
     expect(
       () => usecase.call(challengeId: 'ch-1', uuidGenerator: () => 'id', nowMs: 1000),

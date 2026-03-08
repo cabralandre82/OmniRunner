@@ -105,7 +105,7 @@ void main() {
     });
 
     test('CoachingGroupEntity.inviteLink builds URL from code', () {
-      final g = CoachingGroupEntity(
+      const g = CoachingGroupEntity(
         id: 'g1',
         name: 'Test',
         coachUserId: 'c1',

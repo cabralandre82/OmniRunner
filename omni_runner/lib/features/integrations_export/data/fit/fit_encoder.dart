@@ -27,6 +27,9 @@ final class FitEncoder {
   static const _semicirclesPerDegree = 2147483648.0 / 180.0;
 
   /// Encode a workout session into FIT binary format.
+  ///
+  /// Returns a valid FIT binary even for edge cases (empty route,
+  /// zero timestamps, extreme coordinates).
   Uint8List encode({
     required WorkoutSessionEntity session,
     required List<LocationPointEntity> route,
@@ -34,11 +37,14 @@ final class FitEncoder {
     String activityName = 'Omni Runner',
   }) {
     final w = _FitWriter();
-    final startTs = _garminTs(session.startTimeMs);
-    final endMs = session.endTimeMs ?? session.startTimeMs;
+    final safeStartMs = session.startTimeMs > _garminEpochMs
+        ? session.startTimeMs
+        : DateTime.now().millisecondsSinceEpoch;
+    final startTs = _garminTs(safeStartMs);
+    final endMs = (session.endTimeMs ?? safeStartMs).clamp(safeStartMs, safeStartMs + 86400000);
     final endTs = _garminTs(endMs);
-    final elapsedMs = endMs - session.startTimeMs;
-    final distM = session.totalDistanceM ?? 0.0;
+    final elapsedMs = endMs - safeStartMs;
+    final distM = (session.totalDistanceM ?? 0.0).clamp(0.0, 1000000.0);
 
     // ── file_id (global mesg 0, local 0) ──
     w.defineMessage(0, 0, const [
@@ -82,22 +88,32 @@ final class FitEncoder {
     // ── trackpoint records ──
     var accDist = 0.0;
     LocationPointEntity? prev;
-    for (final pt in route) {
+    final safeRoute = route.where((pt) =>
+        pt.lat.isFinite && pt.lng.isFinite &&
+        pt.lat.abs() <= 90 && pt.lng.abs() <= 180).toList();
+    for (final pt in safeRoute) {
       if (prev != null) {
-        accDist += _haversine(prev.lat, prev.lng, pt.lat, pt.lng);
+        final seg = _haversine(prev.lat, prev.lng, pt.lat, pt.lng);
+        if (seg.isFinite && seg < 100000) accDist += seg;
       }
       prev = pt;
 
       final hr = _nearestHr(pt.timestampMs, hrSamples);
+      final altScaled = pt.alt != null && pt.alt!.isFinite
+          ? ((pt.alt!.clamp(-500, 9000) + 500) * 5).round()
+          : 0xFFFF;
+      final speedScaled = pt.speed != null && pt.speed!.isFinite
+          ? (pt.speed!.clamp(0, 100) * 1000).round()
+          : 0xFFFF;
 
       w.dataHeader(2);
-      w.u32(_garminTs(pt.timestampMs));
+      w.u32(_garminTs(pt.timestampMs.clamp(_garminEpochMs, safeStartMs + 86400000)));
       w.s32(_toSemicircles(pt.lat));
       w.s32(_toSemicircles(pt.lng));
-      w.u16(pt.alt != null ? ((pt.alt! + 500) * 5).round() : 0xFFFF);
+      w.u16(altScaled);
       w.u8(hr ?? 0xFF);
-      w.u32((accDist * 100).round());
-      w.u16(pt.speed != null ? (pt.speed! * 1000).round() : 0xFFFF);
+      w.u32((accDist * 100).round().clamp(0, 0xFFFFFFFF));
+      w.u16(speedScaled);
     }
 
     // event: timer stop

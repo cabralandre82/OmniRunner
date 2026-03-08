@@ -245,14 +245,14 @@ class _BodyState extends State<_Body> {
             color: DesignTokens.warning,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
-              side: BorderSide(color: DesignTokens.warning),
+              side: const BorderSide(color: DesignTokens.warning),
             ),
             child: Padding(
               padding: const EdgeInsets.all(DesignTokens.spacingMd),
               child: Row(
                 children: [
                   if (!_settlementTimedOut)
-                    SizedBox(
+                    const SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
@@ -261,7 +261,7 @@ class _BodyState extends State<_Body> {
                       ),
                     )
                   else
-                    Icon(Icons.hourglass_bottom,
+                    const Icon(Icons.hourglass_bottom,
                         size: 20, color: DesignTokens.warning),
                   const SizedBox(width: 12),
                   Expanded(
@@ -575,8 +575,8 @@ class _WarmupCardState extends State<_WarmupCard> {
           );
         }
 
-        final min = (remainMs ~/ 60000);
-        final sec = ((remainMs % 60000) ~/ 1000);
+        final min = remainMs ~/ 60000;
+        final sec = (remainMs % 60000) ~/ 1000;
         final countdown = '${min.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
 
         return Card(
@@ -1043,7 +1043,7 @@ class _RulesCard extends StatelessWidget {
       ChallengeType.oneVsOne =>
         'O vencedor leva $fee OmniCoins do oponente. Empate: todos recebem de volta.',
       ChallengeType.group =>
-        'O 1.o lugar leva todo o pool (${fee} x participantes). Empate: divisão igual.',
+        'O 1.o lugar leva todo o pool ($fee x participantes). Empate: divisão igual.',
       ChallengeType.team =>
         'Cada membro do time vencedor recebe o dobro da inscrição. '
         'Empate: todos recebem de volta.',
@@ -1271,7 +1271,7 @@ class _ResultsCard extends StatelessWidget {
       subtitle: Text(_fmtResultProgress(pr.finalValue, ch.rules.goal)),
       trailing: pr.coinsEarned > 0
           ? Text('+${pr.coinsEarned} OmniCoins',
-              style: TextStyle(
+              style: const TextStyle(
                   color: DesignTokens.success,
                   fontWeight: FontWeight.bold,
                   fontSize: 12))
@@ -1420,7 +1420,7 @@ class _GroupLiveProgressCard extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.check_circle,
+                    const Icon(Icons.check_circle,
                         size: 15, color: DesignTokens.success),
                     const SizedBox(width: 6),
                     Text(

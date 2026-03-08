@@ -203,9 +203,9 @@ class _MockModeBanner extends StatelessWidget {
           right: DesignTokens.spacingMd,
         ),
         color: DesignTokens.warning,
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
+          children: [
             Icon(Icons.science_outlined, size: 16, color: Colors.white),
             SizedBox(width: 8),
             Text(

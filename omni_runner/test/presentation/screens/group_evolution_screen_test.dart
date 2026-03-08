@@ -17,7 +17,7 @@ class _FakeGroupEvolutionBloc extends Cubit<GroupEvolutionState>
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-final _trend = AthleteTrendEntity(
+const _trend = AthleteTrendEntity(
   id: 't1',
   userId: 'user1',
   groupId: 'g1',
@@ -94,7 +94,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      final bloc = _FakeGroupEvolutionBloc(GroupEvolutionLoaded(
+      final bloc = _FakeGroupEvolutionBloc(const GroupEvolutionLoaded(
         trends: [_trend],
         improvingCount: 1,
         stableCount: 0,

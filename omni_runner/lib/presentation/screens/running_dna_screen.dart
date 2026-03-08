@@ -193,11 +193,11 @@ class _RunningDnaScreenState extends State<RunningDnaScreen> {
                   color: DesignTokens.warning.withValues(alpha: 0.4),
                 ),
               ),
-              child: Row(
+              child: const Row(
                 children: [
                   Icon(Icons.info_outline,
                       size: 20, color: DesignTokens.warning),
-                  const SizedBox(width: DesignTokens.spacingSm),
+                  SizedBox(width: DesignTokens.spacingSm),
                   Expanded(
                     child: Text(
                       'Perfil preliminar — Complete 10 corridas para DNA completo',

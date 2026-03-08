@@ -181,7 +181,7 @@ class _TestFeedScreen extends StatelessWidget {
       itemBuilder: (context, index) {
         final item = items[index];
         return ListTile(
-          leading: CircleAvatar(
+          leading: const CircleAvatar(
             child: Icon(Icons.directions_run),
           ),
           title: Text('${item.actorName} completou uma corrida'),

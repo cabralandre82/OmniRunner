@@ -195,17 +195,17 @@ class _StaffCrmListViewState extends State<_StaffCrmListView> {
                     ),
                   CrmListLoaded(:final athletes, hasMore: _, :final loadingMore) =>
                       athletes.isEmpty
-                          ? Center(
+                          ? const Center(
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(Icons.people_outline, size: 64, color: DesignTokens.textMuted),
-                                  const SizedBox(height: 16),
-                                  const Text(
+                                  SizedBox(height: 16),
+                                  Text(
                                     'Nenhum atleta encontrado',
                                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                                   ),
-                                  const SizedBox(height: 8),
+                                  SizedBox(height: 8),
                                   Text(
                                     'Convide atletas para sua assessoria',
                                     style: TextStyle(color: DesignTokens.textSecondary),
@@ -370,7 +370,7 @@ class _StatusDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return                     DropdownButtonFormField<MemberStatusValue?>(
-      value: value,
+      initialValue: value,
       decoration: const InputDecoration(
         isDense: true,
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: DesignTokens.spacingSm),
@@ -496,7 +496,7 @@ class _CrmAthleteCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   if (athlete.hasActiveAlerts)
-                    Icon(
+                    const Icon(
                       Icons.warning_amber_rounded,
                       color: DesignTokens.warning,
                       size: 22,

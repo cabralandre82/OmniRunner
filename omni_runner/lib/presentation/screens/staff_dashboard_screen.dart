@@ -381,7 +381,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.hourglass_top_rounded,
+              const Icon(Icons.hourglass_top_rounded,
                   size: 72, color: DesignTokens.warning),
               const SizedBox(height: DesignTokens.spacingLg),
               Text('Solicitação pendente',
@@ -411,12 +411,12 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                     color: DesignTokens.warning.withValues(alpha: 0.3),
                   ),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.info_outline,
                         size: 18, color: DesignTokens.warning),
-                    const SizedBox(width: DesignTokens.spacingSm),
+                    SizedBox(width: DesignTokens.spacingSm),
                     Flexible(
                       child: Text(
                         'Você será notificado quando o administrador '
@@ -553,13 +553,13 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.info_outline,
+                    const Icon(Icons.info_outline,
                         size: 18, color: DesignTokens.info),
                     const SizedBox(width: DesignTokens.spacingSm),
                     Flexible(
                       child: Text(
                         'Código de convite: ${_inviteCode ?? "..."}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: DesignTokens.info,
@@ -825,7 +825,7 @@ class _StaffCard extends StatelessWidget {
                 const SizedBox(height: DesignTokens.spacingSm),
                 Row(
                   children: [
-                    Icon(Icons.info_outline_rounded,
+                    const Icon(Icons.info_outline_rounded,
                         size: 14, color: DesignTokens.warning),
                     const SizedBox(width: DesignTokens.spacingXs),
                     Flexible(

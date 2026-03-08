@@ -219,7 +219,7 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
       padding: const EdgeInsets.all(20),
       children: [
         // Header
-        Icon(Icons.emoji_events_rounded,
+        const Icon(Icons.emoji_events_rounded,
             size: 56, color: DesignTokens.warning),
         const SizedBox(height: 12),
         Text(

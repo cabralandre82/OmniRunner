@@ -90,7 +90,7 @@ class _StaffChampionshipManageScreenState
 
       // Fetch group names for invites
       final groupIds = inviteRows.map((r) => r['to_group_id'] as String).toSet().toList();
-      Map<String, String> groupNames = {};
+      final Map<String, String> groupNames = {};
       if (groupIds.isNotEmpty) {
         final groupsRes = await _db
             .from('coaching_groups')
@@ -264,7 +264,7 @@ class _StaffChampionshipManageScreenState
 
   Future<void> _inviteGroup() async {
     if (_busy) return;
-    List<Map<String, String>> availableGroups = [];
+    final List<Map<String, String>> availableGroups = [];
     try {
       final rows = await _db
           .rpc('fn_list_partnerships', params: {'p_group_id': widget.hostGroupId});
@@ -441,7 +441,7 @@ class _StaffChampionshipManageScreenState
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.emoji_events_rounded, color: DesignTokens.warning),
+                        const Icon(Icons.emoji_events_rounded, color: DesignTokens.warning),
                         const SizedBox(width: 8),
                         Expanded(child: Text(c.name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold))),
                         Container(
@@ -520,7 +520,7 @@ class _StaffChampionshipManageScreenState
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.military_tech_rounded, size: 22, color: DesignTokens.primary),
+                          const Icon(Icons.military_tech_rounded, size: 22, color: DesignTokens.primary),
                           const SizedBox(width: 8),
                           Text('Badges de participação', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
                         ],

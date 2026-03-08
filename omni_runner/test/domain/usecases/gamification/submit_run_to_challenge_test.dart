@@ -22,20 +22,20 @@ class _FakeRepo implements IChallengeRepo {
   @override Future<ChallengeResultEntity?> getResultByChallengeId(String id) async => null;
 }
 
-final _activeChallenge = ChallengeEntity(
+const _activeChallenge = ChallengeEntity(
   id: 'ch-1', creatorUserId: 'u1', status: ChallengeStatus.active,
   type: ChallengeType.oneVsOne,
-  rules: const ChallengeRulesEntity(goal: ChallengeGoal.mostDistance, windowMs: 86400000),
-  participants: const [
+  rules: ChallengeRulesEntity(goal: ChallengeGoal.mostDistance, windowMs: 86400000),
+  participants: [
     ChallengeParticipantEntity(userId: 'u1', displayName: 'A', status: ParticipantStatus.accepted),
     ChallengeParticipantEntity(userId: 'u2', displayName: 'B', status: ParticipantStatus.accepted),
   ],
   createdAtMs: 0, startsAtMs: 0, endsAtMs: 86400000,
 );
 
-final _session = WorkoutSessionEntity(
+const _session = WorkoutSessionEntity(
   id: 'ses-1', userId: 'u1', status: WorkoutStatus.completed,
-  startTimeMs: 1000, route: const [], isVerified: true, totalDistanceM: 5000,
+  startTimeMs: 1000, route: [], isVerified: true, totalDistanceM: 5000,
 );
 
 void main() {
@@ -65,9 +65,9 @@ void main() {
   });
 
   test('throws when session unverified', () {
-    final unverified = WorkoutSessionEntity(
+    const unverified = WorkoutSessionEntity(
       id: 'ses-2', userId: 'u1', status: WorkoutStatus.completed,
-      startTimeMs: 0, route: const [], isVerified: false, totalDistanceM: 5000,
+      startTimeMs: 0, route: [], isVerified: false, totalDistanceM: 5000,
     );
     expect(
       () => usecase.call(challengeId: 'ch-1', userId: 'u1', session: unverified, metricValue: 5000),
@@ -76,9 +76,9 @@ void main() {
   });
 
   test('throws when session below min distance', () {
-    final short = WorkoutSessionEntity(
+    const short = WorkoutSessionEntity(
       id: 'ses-3', userId: 'u1', status: WorkoutStatus.completed,
-      startTimeMs: 0, route: const [], isVerified: true, totalDistanceM: 500,
+      startTimeMs: 0, route: [], isVerified: true, totalDistanceM: 500,
     );
     expect(
       () => usecase.call(challengeId: 'ch-1', userId: 'u1', session: short, metricValue: 500),

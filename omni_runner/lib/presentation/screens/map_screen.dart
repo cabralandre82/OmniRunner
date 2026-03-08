@@ -97,14 +97,14 @@ class _MapScreenState extends State<MapScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.map_outlined, size: 64, color: DesignTokens.textMuted),
+                    const Icon(Icons.map_outlined, size: 64, color: DesignTokens.textMuted),
                     const SizedBox(height: 16),
                     Text(
                       'Mapa indisponível',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    Text(
+                    const Text(
                       'Verifique sua conexão com a internet '
                       'ou a configuração da chave MapTiler.',
                       textAlign: TextAlign.center,

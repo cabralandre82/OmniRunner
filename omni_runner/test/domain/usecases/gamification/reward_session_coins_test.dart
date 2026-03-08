@@ -23,9 +23,9 @@ class _FakeWallet implements IWalletRepo {
 void main() {
   test('always returns 0 coins (deprecated use case)', () async {
     final usecase = RewardSessionCoins(ledgerRepo: _FakeLedger(), walletRepo: _FakeWallet());
-    final session = WorkoutSessionEntity(
+    const session = WorkoutSessionEntity(
       id: 'ses-1', userId: 'u1', status: WorkoutStatus.completed,
-      startTimeMs: 0, route: const [],
+      startTimeMs: 0, route: [],
     );
     final result = await usecase.call(session: session, uuidGenerator: () => 'id', nowMs: 1000);
     expect(result.rewarded, isTrue);

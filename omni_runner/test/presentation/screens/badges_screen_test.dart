@@ -15,24 +15,24 @@ class _FakeBadgesBloc extends Cubit<BadgesState> implements BadgesBloc {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-final _badge1 = BadgeEntity(
+const _badge1 = BadgeEntity(
   id: 'b1',
   category: BadgeCategory.distance,
   tier: BadgeTier.bronze,
   name: 'Primeiro 5K',
   description: 'Complete 5km em uma corrida',
   xpReward: 50,
-  criteria: const SingleSessionDistance(5000),
+  criteria: SingleSessionDistance(5000),
 );
 
-final _badge2 = BadgeEntity(
+const _badge2 = BadgeEntity(
   id: 'b2',
   category: BadgeCategory.frequency,
   tier: BadgeTier.silver,
   name: 'Corredor Frequente',
   description: 'Complete 10 corridas',
   xpReward: 100,
-  criteria: const SessionCount(10),
+  criteria: SessionCount(10),
 );
 
 void main() {
@@ -99,7 +99,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       final bloc = _FakeBadgesBloc(
-        BadgesLoaded(catalog: [_badge1, _badge2], awards: const []),
+        const BadgesLoaded(catalog: [_badge1, _badge2], awards: []),
       );
 
       await tester.pumpApp(
@@ -118,7 +118,7 @@ void main() {
 
     testWidgets('shows locked badge with lock icon', (tester) async {
       final bloc = _FakeBadgesBloc(
-        BadgesLoaded(catalog: [_badge2], awards: const []),
+        const BadgesLoaded(catalog: [_badge2], awards: []),
       );
 
       await tester.pumpApp(

@@ -188,7 +188,7 @@ class _BodyState extends State<_Body> {
         if (_loadingNames)
           const Padding(
             padding: EdgeInsets.all(DesignTokens.spacingMd),
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            child: ShimmerListLoader(),
           ),
         const SizedBox(height: 24),
       ],
@@ -315,9 +315,9 @@ class _PendingReceivedTile extends StatelessWidget {
     final name = info?.displayName ?? otherId.substring(0, 8);
 
     return ListTile(
-      leading: CircleAvatar(
+      leading: const CircleAvatar(
         backgroundColor: DesignTokens.warning,
-        child: const Icon(Icons.person_add, color: DesignTokens.warning),
+        child: Icon(Icons.person_add, color: DesignTokens.warning),
       ),
       title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
       subtitle: const Text('Quer ser seu amigo',
@@ -365,9 +365,9 @@ class _PendingSentTile extends StatelessWidget {
     final name = info?.displayName ?? otherId.substring(0, 8);
 
     return ListTile(
-      leading: CircleAvatar(
+      leading: const CircleAvatar(
         backgroundColor: DesignTokens.borderSubtle,
-        child: const Icon(Icons.hourglass_top, color: DesignTokens.textMuted),
+        child: Icon(Icons.hourglass_top, color: DesignTokens.textMuted),
       ),
       title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
       subtitle: const Text('Aguardando resposta',

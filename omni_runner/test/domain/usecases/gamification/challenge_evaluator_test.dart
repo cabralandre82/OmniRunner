@@ -8,7 +8,7 @@ import 'package:omni_runner/domain/usecases/gamification/challenge_evaluator.dar
 void main() {
   const evaluator = ChallengeEvaluator();
 
-  ChallengeParticipantEntity _p(
+  ChallengeParticipantEntity p(
     String userId, {
     double progress = 0.0,
     List<String> sessions = const [],
@@ -24,7 +24,7 @@ void main() {
         lastSubmittedAtMs: lastSubmittedAtMs,
       );
 
-  ChallengeEntity _challenge({
+  ChallengeEntity challenge({
     ChallengeType type = ChallengeType.oneVsOne,
     ChallengeGoal goal = ChallengeGoal.mostDistance,
     double? target,
@@ -48,10 +48,10 @@ void main() {
 
   group('1v1 distance', () {
     test('higher distance wins', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         participants: [
-          _p('u1', progress: 10000, sessions: ['s1']),
-          _p('u2', progress: 8000, sessions: ['s2']),
+          p('u1', progress: 10000, sessions: ['s1']),
+          p('u2', progress: 8000, sessions: ['s2']),
         ],
       ));
 
@@ -71,13 +71,13 @@ void main() {
     });
 
     test('tie broken by earliestFinish', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         participants: [
-          _p('u1',
+          p('u1',
               progress: 5000,
               sessions: ['s1'],
               lastSubmittedAtMs: 2000),
-          _p('u2',
+          p('u2',
               progress: 5000,
               sessions: ['s2'],
               lastSubmittedAtMs: 1000),
@@ -93,13 +93,13 @@ void main() {
     });
 
     test('true tie when same value and same timestamp', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         participants: [
-          _p('u1',
+          p('u1',
               progress: 5000,
               sessions: ['s1'],
               lastSubmittedAtMs: 1000),
-          _p('u2',
+          p('u2',
               progress: 5000,
               sessions: ['s2'],
               lastSubmittedAtMs: 1000),
@@ -115,10 +115,10 @@ void main() {
     });
 
     test('true tie when same value and both null timestamps', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         participants: [
-          _p('u1', progress: 5000, sessions: ['s1']),
-          _p('u2', progress: 5000, sessions: ['s2']),
+          p('u1', progress: 5000, sessions: ['s1']),
+          p('u2', progress: 5000, sessions: ['s2']),
         ],
       ));
 
@@ -133,11 +133,11 @@ void main() {
 
   group('1v1 time', () {
     test('lower duration wins (faster runner)', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         goal: ChallengeGoal.fastestAtDistance,
         participants: [
-          _p('u1', progress: 1800000, sessions: ['s1']),
-          _p('u2', progress: 1200000, sessions: ['s2']),
+          p('u1', progress: 1800000, sessions: ['s1']),
+          p('u2', progress: 1200000, sessions: ['s2']),
         ],
       ));
 
@@ -151,14 +151,14 @@ void main() {
     });
 
     test('time tie broken by earliestFinish', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         goal: ChallengeGoal.fastestAtDistance,
         participants: [
-          _p('u1',
+          p('u1',
               progress: 1200000,
               sessions: ['s1'],
               lastSubmittedAtMs: 5000),
-          _p('u2',
+          p('u2',
               progress: 1200000,
               sessions: ['s2'],
               lastSubmittedAtMs: 3000),
@@ -177,11 +177,11 @@ void main() {
 
   group('1v1 pace', () {
     test('lower pace wins', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         goal: ChallengeGoal.bestPaceAtDistance,
         participants: [
-          _p('u1', progress: 300, sessions: ['s1']),
-          _p('u2', progress: 270, sessions: ['s2']),
+          p('u1', progress: 300, sessions: ['s1']),
+          p('u2', progress: 270, sessions: ['s2']),
         ],
       ));
 
@@ -198,14 +198,14 @@ void main() {
 
   group('1v1 edge cases', () {
     test('no participants returns empty', () {
-      final results = evaluator.evaluate(_challenge(participants: []));
+      final results = evaluator.evaluate(challenge(participants: []));
       expect(results, isEmpty);
     });
 
     test('single participant auto-wins', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         participants: [
-          _p('u1', progress: 5000, sessions: ['s1']),
+          p('u1', progress: 5000, sessions: ['s1']),
         ],
       ));
 
@@ -215,10 +215,10 @@ void main() {
     });
 
     test('nobody submitted anything: both DNF with 0 coins (free)', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         participants: [
-          _p('u1', progress: 0),
-          _p('u2', progress: 0),
+          p('u1', progress: 0),
+          p('u2', progress: 0),
         ],
       ));
 
@@ -239,8 +239,8 @@ void main() {
           entryFeeCoins: 50,
         ),
         participants: [
-          _p('u1', progress: 0),
-          _p('u2', progress: 0),
+          p('u1', progress: 0),
+          p('u2', progress: 0),
         ],
         createdAtMs: 1000,
       ));
@@ -262,8 +262,8 @@ void main() {
           entryFeeCoins: 50,
         ),
         participants: [
-          _p('u1', progress: 5000, sessions: ['s1']),
-          _p('u2', progress: 0),
+          p('u1', progress: 5000, sessions: ['s1']),
+          p('u2', progress: 0),
         ],
         createdAtMs: 1000,
       ));
@@ -281,10 +281,10 @@ void main() {
     });
 
     test('one runs other does not: runner wins (free, 0 coins)', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         participants: [
-          _p('u1', progress: 5000, sessions: ['s1']),
-          _p('u2', progress: 0),
+          p('u1', progress: 5000, sessions: ['s1']),
+          p('u2', progress: 0),
         ],
       ));
 
@@ -301,10 +301,10 @@ void main() {
     });
 
     test('non-accepted participants appear as DNF', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         participants: [
-          _p('u1', progress: 5000, sessions: ['s1']),
-          _p('u2', status: ParticipantStatus.declined),
+          p('u1', progress: 5000, sessions: ['s1']),
+          p('u2', status: ParticipantStatus.declined),
         ],
       ));
 
@@ -321,14 +321,14 @@ void main() {
 
   group('group distance (cooperative via collectiveDistance)', () {
     test('collective sum meets target: 0 coins (free)', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         type: ChallengeType.group,
         goal: ChallengeGoal.collectiveDistance,
         target: 30000,
         participants: [
-          _p('u1', progress: 15000, sessions: ['s1']),
-          _p('u2', progress: 12000, sessions: ['s2']),
-          _p('u3', progress: 8000, sessions: ['s3']),
+          p('u1', progress: 15000, sessions: ['s1']),
+          p('u2', progress: 12000, sessions: ['s2']),
+          p('u3', progress: 8000, sessions: ['s3']),
         ],
       ));
 
@@ -340,14 +340,14 @@ void main() {
 
     test('collective sum does not meet target: 0 coins', () {
       // target = 50000. sum = 15000+12000+8000 = 35000 < 50000 → not met
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         type: ChallengeType.group,
         goal: ChallengeGoal.collectiveDistance,
         target: 50000,
         participants: [
-          _p('u1', progress: 15000, sessions: ['s1']),
-          _p('u2', progress: 12000, sessions: ['s2']),
-          _p('u3', progress: 8000, sessions: ['s3']),
+          p('u1', progress: 15000, sessions: ['s1']),
+          p('u2', progress: 12000, sessions: ['s2']),
+          p('u3', progress: 8000, sessions: ['s3']),
         ],
       ));
 
@@ -357,14 +357,14 @@ void main() {
     });
 
     test('non-runner shares result when group meets target (free, 0 coins)', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         type: ChallengeType.group,
         goal: ChallengeGoal.collectiveDistance,
         target: 10000,
         participants: [
-          _p('u1', progress: 8000, sessions: ['s1']),
-          _p('u2', progress: 5000, sessions: ['s2']),
-          _p('u3', progress: 0),
+          p('u1', progress: 8000, sessions: ['s1']),
+          p('u2', progress: 5000, sessions: ['s2']),
+          p('u3', progress: 0),
         ],
       ));
 
@@ -387,9 +387,9 @@ void main() {
           entryFeeCoins: 20,
         ),
         participants: [
-          _p('u1', progress: 6000, sessions: ['s1']),
-          _p('u2', progress: 5000, sessions: ['s2']),
-          _p('u3', progress: 0),
+          p('u1', progress: 6000, sessions: ['s1']),
+          p('u2', progress: 5000, sessions: ['s2']),
+          p('u3', progress: 0),
         ],
         createdAtMs: 1000,
       ));
@@ -400,12 +400,12 @@ void main() {
     });
 
     test('no target: group succeeds if anyone ran (free, 0 coins)', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         type: ChallengeType.group,
         goal: ChallengeGoal.collectiveDistance,
         participants: [
-          _p('u1', progress: 3000, sessions: ['s1']),
-          _p('u2', progress: 0),
+          p('u1', progress: 3000, sessions: ['s1']),
+          p('u2', progress: 0),
         ],
       ));
 
@@ -427,9 +427,9 @@ void main() {
           entryFeeCoins: 20,
         ),
         participants: [
-          _p('u1', progress: 0),
-          _p('u2', progress: 0),
-          _p('u3', progress: 0),
+          p('u1', progress: 0),
+          p('u2', progress: 0),
+          p('u3', progress: 0),
         ],
         createdAtMs: 1000,
       ));
@@ -440,13 +440,13 @@ void main() {
     });
 
     test('nobody ran free: all DNF, 0 coins', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         type: ChallengeType.group,
         goal: ChallengeGoal.collectiveDistance,
         target: 5000,
         participants: [
-          _p('u1', progress: 0),
-          _p('u2', progress: 0),
+          p('u1', progress: 0),
+          p('u2', progress: 0),
         ],
       ));
 
@@ -460,13 +460,13 @@ void main() {
 
   group('group pace (competitive)', () {
     test('lower pace wins in competitive group', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         type: ChallengeType.group,
         goal: ChallengeGoal.bestPaceAtDistance,
         target: 300,
         participants: [
-          _p('u1', progress: 270, sessions: ['s1']),
-          _p('u2', progress: 290, sessions: ['s2']),
+          p('u1', progress: 270, sessions: ['s1']),
+          p('u2', progress: 290, sessions: ['s2']),
         ],
       ));
 
@@ -476,13 +476,13 @@ void main() {
     });
 
     test('slower runner is ranked lower', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         type: ChallengeType.group,
         goal: ChallengeGoal.bestPaceAtDistance,
         target: 300,
         participants: [
-          _p('u1', progress: 270, sessions: ['s1']),
-          _p('u2', progress: 350, sessions: ['s2']),
+          p('u1', progress: 270, sessions: ['s1']),
+          p('u2', progress: 350, sessions: ['s2']),
         ],
       ));
 
@@ -497,13 +497,13 @@ void main() {
 
   group('group time (competitive)', () {
     test('fastest runner wins in competitive group', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         type: ChallengeType.group,
         goal: ChallengeGoal.fastestAtDistance,
         participants: [
-          _p('u1', progress: 1500000, sessions: ['s1']),
-          _p('u2', progress: 2000000, sessions: ['s2']),
-          _p('u3', progress: 1200000, sessions: ['s3']),
+          p('u1', progress: 1500000, sessions: ['s1']),
+          p('u2', progress: 2000000, sessions: ['s2']),
+          p('u3', progress: 1200000, sessions: ['s3']),
         ],
       ));
 
@@ -513,12 +513,12 @@ void main() {
     });
 
     test('slower runners are ranked by time ascending', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         type: ChallengeType.group,
         goal: ChallengeGoal.fastestAtDistance,
         participants: [
-          _p('u1', progress: 1500000, sessions: ['s1']),
-          _p('u2', progress: 1200000, sessions: ['s2']),
+          p('u1', progress: 1500000, sessions: ['s1']),
+          p('u2', progress: 1200000, sessions: ['s2']),
         ],
       ));
 
@@ -532,7 +532,7 @@ void main() {
 
   // ── TEAM VS TEAM ─────────────────────────────────────────────
 
-  ChallengeParticipantEntity _tp(
+  ChallengeParticipantEntity tp(
     String userId, {
     required String team,
     double progress = 0.0,
@@ -551,14 +551,14 @@ void main() {
 
   group('team mostDistance', () {
     test('team with higher total distance wins', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         type: ChallengeType.team,
         goal: ChallengeGoal.mostDistance,
         participants: [
-          _tp('a1', team: 'A', progress: 5000, sessions: ['s1']),
-          _tp('a2', team: 'A', progress: 6000, sessions: ['s2']),
-          _tp('b1', team: 'B', progress: 4000, sessions: ['s3']),
-          _tp('b2', team: 'B', progress: 3000, sessions: ['s4']),
+          tp('a1', team: 'A', progress: 5000, sessions: ['s1']),
+          tp('a2', team: 'A', progress: 6000, sessions: ['s2']),
+          tp('b1', team: 'B', progress: 4000, sessions: ['s3']),
+          tp('b2', team: 'B', progress: 3000, sessions: ['s4']),
         ],
       ));
 
@@ -580,8 +580,8 @@ void main() {
           entryFeeCoins: 100,
         ),
         participants: [
-          _tp('a1', team: 'A', progress: 8000, sessions: ['s1']),
-          _tp('b1', team: 'B', progress: 3000, sessions: ['s2']),
+          tp('a1', team: 'A', progress: 8000, sessions: ['s1']),
+          tp('b1', team: 'B', progress: 3000, sessions: ['s2']),
         ],
         createdAtMs: 1000,
       ));
@@ -597,15 +597,15 @@ void main() {
 
   group('team fastestAtDistance', () {
     test('last runner determines team time — faster team wins', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         type: ChallengeType.team,
         goal: ChallengeGoal.fastestAtDistance,
         target: 10000,
         participants: [
-          _tp('a1', team: 'A', progress: 3000, sessions: ['s1']),
-          _tp('a2', team: 'A', progress: 3500, sessions: ['s2']),
-          _tp('b1', team: 'B', progress: 3200, sessions: ['s3']),
-          _tp('b2', team: 'B', progress: 4000, sessions: ['s4']),
+          tp('a1', team: 'A', progress: 3000, sessions: ['s1']),
+          tp('a2', team: 'A', progress: 3500, sessions: ['s2']),
+          tp('b1', team: 'B', progress: 3200, sessions: ['s3']),
+          tp('b2', team: 'B', progress: 4000, sessions: ['s4']),
         ],
       ));
 
@@ -616,15 +616,15 @@ void main() {
     });
 
     test('incomplete team (missing runner) loses', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         type: ChallengeType.team,
         goal: ChallengeGoal.fastestAtDistance,
         target: 10000,
         participants: [
-          _tp('a1', team: 'A', progress: 5000, sessions: ['s1']),
-          _tp('a2', team: 'A', progress: 0, sessions: []),
-          _tp('b1', team: 'B', progress: 4000, sessions: ['s3']),
-          _tp('b2', team: 'B', progress: 3800, sessions: ['s4']),
+          tp('a1', team: 'A', progress: 5000, sessions: ['s1']),
+          tp('a2', team: 'A', progress: 0, sessions: []),
+          tp('b1', team: 'B', progress: 4000, sessions: ['s3']),
+          tp('b2', team: 'B', progress: 3800, sessions: ['s4']),
         ],
       ));
 
@@ -635,15 +635,15 @@ void main() {
 
   group('team bestPaceAtDistance', () {
     test('average pace determines winner — lower is better', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         type: ChallengeType.team,
         goal: ChallengeGoal.bestPaceAtDistance,
         target: 5000,
         participants: [
-          _tp('a1', team: 'A', progress: 300, sessions: ['s1']),
-          _tp('a2', team: 'A', progress: 320, sessions: ['s2']),
-          _tp('b1', team: 'B', progress: 290, sessions: ['s3']),
-          _tp('b2', team: 'B', progress: 350, sessions: ['s4']),
+          tp('a1', team: 'A', progress: 300, sessions: ['s1']),
+          tp('a2', team: 'A', progress: 320, sessions: ['s2']),
+          tp('b1', team: 'B', progress: 290, sessions: ['s3']),
+          tp('b2', team: 'B', progress: 350, sessions: ['s4']),
         ],
       ));
 
@@ -665,8 +665,8 @@ void main() {
           entryFeeCoins: 50,
         ),
         participants: [
-          _tp('a1', team: 'A'),
-          _tp('b1', team: 'B'),
+          tp('a1', team: 'A'),
+          tp('b1', team: 'B'),
         ],
         createdAtMs: 1000,
       ));
@@ -680,12 +680,12 @@ void main() {
 
   group('mixed participant statuses', () {
     test('invited + withdrawn appear as DNF', () {
-      final results = evaluator.evaluate(_challenge(
+      final results = evaluator.evaluate(challenge(
         type: ChallengeType.group,
         participants: [
-          _p('u1', progress: 5000, sessions: ['s1']),
-          _p('u2', status: ParticipantStatus.invited),
-          _p('u3', status: ParticipantStatus.withdrawn),
+          p('u1', progress: 5000, sessions: ['s1']),
+          p('u2', status: ParticipantStatus.invited),
+          p('u3', status: ParticipantStatus.withdrawn),
         ],
       ));
 

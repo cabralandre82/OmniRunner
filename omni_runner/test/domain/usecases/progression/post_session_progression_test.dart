@@ -87,9 +87,9 @@ void main() {
   });
 
   test('pipeline runs without throwing for verified session', () async {
-    final session = WorkoutSessionEntity(
+    const session = WorkoutSessionEntity(
       id: 'ses-1', userId: 'u1', status: WorkoutStatus.completed,
-      startTimeMs: 0, route: const [], isVerified: true, totalDistanceM: 5000,
+      startTimeMs: 0, route: [], isVerified: true, totalDistanceM: 5000,
     );
 
     final result = await usecase.call(
@@ -103,9 +103,9 @@ void main() {
   });
 
   test('pipeline handles unverified session gracefully', () async {
-    final session = WorkoutSessionEntity(
+    const session = WorkoutSessionEntity(
       id: 'ses-2', userId: 'u1', status: WorkoutStatus.completed,
-      startTimeMs: 0, route: const [], isVerified: false,
+      startTimeMs: 0, route: [], isVerified: false,
     );
 
     final result = await usecase.call(

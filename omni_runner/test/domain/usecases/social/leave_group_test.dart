@@ -5,7 +5,7 @@ import 'package:omni_runner/domain/entities/group_member_entity.dart';
 import 'package:omni_runner/domain/repositories/i_group_repo.dart';
 import 'package:omni_runner/domain/usecases/social/leave_group.dart';
 
-final _group = GroupEntity(
+const _group = GroupEntity(
   id: 'g1', name: 'R', createdByUserId: 'owner', createdAtMs: 0,
   privacy: GroupPrivacy.open, memberCount: 3,
 );

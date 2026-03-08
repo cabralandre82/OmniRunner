@@ -6,12 +6,12 @@ import 'package:omni_runner/domain/entities/group_entity.dart';
 import 'package:omni_runner/domain/repositories/i_event_repo.dart';
 import 'package:omni_runner/domain/usecases/social/join_event.dart';
 
-final _event = EventEntity(
+const _event = EventEntity(
   id: 'ev-1', title: 'Corrida Virtual', metric: GoalMetric.distance,
   targetValue: 42195, startsAtMs: 0, endsAtMs: 999999,
   status: EventStatus.active, creatorUserId: 'admin',
   type: EventType.individual,
-  rewards: const EventRewards(xpCompletion: 100),
+  rewards: EventRewards(xpCompletion: 100),
 );
 
 class _FakeEventRepo implements IEventRepo {
@@ -59,7 +59,7 @@ void main() {
   });
 
   test('throws when already joined', () {
-    repo.existing = EventParticipationEntity(id: 'p1', eventId: 'ev-1', userId: 'u1', displayName: 'A', joinedAtMs: 0);
+    repo.existing = const EventParticipationEntity(id: 'p1', eventId: 'ev-1', userId: 'u1', displayName: 'A', joinedAtMs: 0);
     expect(
       () => usecase.call(eventId: 'ev-1', userId: 'u1', displayName: 'A', uuidGenerator: () => 'id', nowMs: 1000),
       throwsA(isA<AlreadyJoinedEvent>()),

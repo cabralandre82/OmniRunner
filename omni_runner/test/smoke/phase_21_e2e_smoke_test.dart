@@ -782,8 +782,8 @@ void main() {
 
     test('zero athletes produces zero averages', () {
       const totalAthletes = 0;
-      final avgRuns = totalAthletes > 0 ? 10 / totalAthletes : 0.0;
-      final avgDist = totalAthletes > 0 ? 50.0 / totalAthletes : 0.0;
+      const avgRuns = totalAthletes > 0 ? 10 / totalAthletes : 0.0;
+      const avgDist = totalAthletes > 0 ? 50.0 / totalAthletes : 0.0;
       expect(avgRuns, 0.0);
       expect(avgDist, 0.0);
     });
@@ -793,8 +793,8 @@ void main() {
       const wau = 20;
       const total = 50;
 
-      final dauPct = total > 0 ? (dau / total * 100) : 0.0;
-      final wauPct = total > 0 ? (wau / total * 100) : 0.0;
+      const dauPct = total > 0 ? (dau / total * 100) : 0.0;
+      const wauPct = total > 0 ? (wau / total * 100) : 0.0;
 
       expect(dauPct, closeTo(10.0, 0.01));
       expect(wauPct, closeTo(40.0, 0.01));

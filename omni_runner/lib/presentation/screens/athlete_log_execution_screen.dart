@@ -191,7 +191,7 @@ class _AthleteLogExecutionScreenState extends State<AthleteLogExecutionScreen> {
               const SizedBox(height: 16),
 
               DropdownButtonFormField<String>(
-                value: _source,
+                initialValue: _source,
                 decoration: const InputDecoration(
                   labelText: 'Fonte',
                   prefixIcon: Icon(Icons.devices),

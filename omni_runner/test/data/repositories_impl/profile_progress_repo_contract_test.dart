@@ -36,7 +36,7 @@ void main() {
     });
 
     test('save and getByUserId round-trip', () async {
-      final p = ProfileProgressEntity(
+      const p = ProfileProgressEntity(
         userId: 'u1',
         totalXp: 5000,
         dailyStreakCount: 7,

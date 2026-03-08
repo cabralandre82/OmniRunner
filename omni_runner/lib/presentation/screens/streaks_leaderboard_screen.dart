@@ -201,7 +201,7 @@ class _StreaksLeaderboardScreenState extends State<StreaksLeaderboardScreen> {
                           const SizedBox(height: 28),
 
                           // Section 2: Consistency ranking
-                          _SectionHeader(
+                          const _SectionHeader(
                             icon: Icons.emoji_events_rounded,
                             title: 'Ranking de consistência',
                             color: DesignTokens.warning,

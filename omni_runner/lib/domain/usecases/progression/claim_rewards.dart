@@ -75,7 +75,7 @@ final class ClaimRewards {
   }) async {
     final entries = <ClaimEntry>[];
     var totalXp = 0;
-    var totalCoins = 0;
+    const totalCoins = 0;
     var totalCapped = 0;
 
     final bonusXpToday = await _xpRepo.sumBonusXpToday(userId);

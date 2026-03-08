@@ -18,7 +18,7 @@ class _FakeCoachingRankingsBloc extends Cubit<CoachingRankingsState>
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-final _ranking = CoachingGroupRankingEntity(
+const _ranking = CoachingGroupRankingEntity(
   id: 'r1',
   groupId: 'g1',
   metric: CoachingRankingMetric.volumeDistance,
@@ -27,14 +27,14 @@ final _ranking = CoachingGroupRankingEntity(
   startsAtMs: 0,
   endsAtMs: 1000000,
   entries: [
-    const CoachingRankingEntryEntity(
+    CoachingRankingEntryEntity(
       userId: 'u1',
       displayName: 'Ana',
       value: 42000,
       rank: 1,
       sessionCount: 5,
     ),
-    const CoachingRankingEntryEntity(
+    CoachingRankingEntryEntity(
       userId: 'u2',
       displayName: 'Bruno',
       value: 35000,
@@ -111,7 +111,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      final bloc = _FakeCoachingRankingsBloc(CoachingRankingsLoaded(
+      final bloc = _FakeCoachingRankingsBloc(const CoachingRankingsLoaded(
         ranking: _ranking,
         selectedMetric: CoachingRankingMetric.volumeDistance,
         selectedPeriod: CoachingRankingPeriod.weekly,

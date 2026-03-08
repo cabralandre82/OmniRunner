@@ -139,6 +139,39 @@ export default async function WorkoutDetailPage({
         </div>
       </div>
 
+      {blockList.length > 0 && (() => {
+        const totalDist = blockList.reduce((s, b) => s + (b.distance_meters ?? 0), 0);
+        const totalDur = blockList.reduce((s, b) => s + (b.duration_seconds ?? 0), 0);
+        const repeatBlocks = blockList.filter(b => b.block_type === "repeat");
+        const totalRepeats = repeatBlocks.reduce((s, b) => s + (b.repeat_count ?? 0), 0);
+        return (
+          <div className="flex gap-4 flex-wrap">
+            {totalDist > 0 && (
+              <div className="flex-1 min-w-[140px] rounded-xl border border-border bg-surface p-4 text-center shadow-sm">
+                <p className="text-2xl font-bold text-content-primary">{fmtDistance(totalDist)}</p>
+                <p className="text-xs text-content-secondary">Distância total</p>
+              </div>
+            )}
+            {totalDur > 0 && (
+              <div className="flex-1 min-w-[140px] rounded-xl border border-border bg-surface p-4 text-center shadow-sm">
+                <p className="text-2xl font-bold text-content-primary">{fmtDuration(totalDur)}</p>
+                <p className="text-xs text-content-secondary">Duração total</p>
+              </div>
+            )}
+            {totalRepeats > 0 && (
+              <div className="flex-1 min-w-[140px] rounded-xl border border-border bg-surface p-4 text-center shadow-sm">
+                <p className="text-2xl font-bold text-content-primary">{totalRepeats}x</p>
+                <p className="text-xs text-content-secondary">Repetições</p>
+              </div>
+            )}
+            <div className="flex-1 min-w-[140px] rounded-xl border border-border bg-surface p-4 text-center shadow-sm">
+              <p className="text-2xl font-bold text-content-primary">{blockList.length}</p>
+              <p className="text-xs text-content-secondary">Blocos</p>
+            </div>
+          </div>
+        );
+      })()}
+
       <div className="rounded-xl border border-border bg-surface shadow-sm">
         <div className="border-b border-border px-6 py-4">
           <h2 className="text-lg font-semibold text-content-primary">

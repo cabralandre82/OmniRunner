@@ -90,12 +90,12 @@ class StaffQrHubScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
               border: Border.all(color: DesignTokens.warning.withValues(alpha: 0.25)),
             ),
-            child: Row(
+            child: const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(Icons.info_outline,
                     color: DesignTokens.warning, size: 20),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Cada QR tem validade limitada e código de uso único. '

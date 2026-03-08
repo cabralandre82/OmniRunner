@@ -257,7 +257,7 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
                   padding: const EdgeInsets.all(20),
                   children: [
                     DropdownButtonFormField<WorkoutTemplateEntity>(
-                      value: _selectedTemplate,
+                      initialValue: _selectedTemplate,
                       decoration: const InputDecoration(
                         labelText: 'Template de treino',
                         border: OutlineInputBorder(),
@@ -274,7 +274,7 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<CoachingMemberEntity>(
-                      value: _selectedAthlete,
+                      initialValue: _selectedAthlete,
                       decoration: const InputDecoration(
                         labelText: 'Atleta',
                         border: OutlineInputBorder(),

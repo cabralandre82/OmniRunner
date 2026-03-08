@@ -285,15 +285,15 @@ class _RunDetailsScreenState extends State<RunDetailsScreen> {
           if (!_mapReady || _loading)
             const Center(child: CircularProgressIndicator())
           else if (_mapTimedOut)
-            Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
               Icon(Icons.map_outlined, size: 48, color: DesignTokens.textMuted),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text('Mapa indisponível offline', style: TextStyle(color: DesignTokens.textSecondary, fontSize: 14)),
             ]))
           else if (_coords.isEmpty)
-            Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
               Icon(Icons.route_outlined, size: 48, color: DesignTokens.textMuted),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text('Percurso não disponível', style: TextStyle(color: DesignTokens.textSecondary, fontSize: 14)),
             ])),
           Positioned(

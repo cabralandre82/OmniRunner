@@ -86,7 +86,7 @@ void main() {
   });
 
   test('reactivates declined friendship', () async {
-    repo.existing = FriendshipEntity(
+    repo.existing = const FriendshipEntity(
       id: 'f1',
       userIdA: 'alice',
       userIdB: 'bob',
@@ -106,7 +106,7 @@ void main() {
   });
 
   test('throws when friendship already exists (not declined)', () {
-    repo.existing = FriendshipEntity(
+    repo.existing = const FriendshipEntity(
       id: 'f1',
       userIdA: 'alice',
       userIdB: 'bob',

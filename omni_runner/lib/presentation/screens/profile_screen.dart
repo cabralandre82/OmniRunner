@@ -14,6 +14,7 @@ import 'package:omni_runner/domain/entities/profile_entity.dart';
 import 'package:omni_runner/domain/repositories/i_profile_repo.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/presentation/widgets/cached_avatar.dart';
+import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
 /// Screen showing the user's Supabase profile with editable display_name.
@@ -245,7 +246,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        icon: Icon(Icons.logout_rounded, color: DesignTokens.error, size: 40),
+        icon: const Icon(Icons.logout_rounded, color: DesignTokens.error, size: 40),
         title: const Text('Sair da conta?'),
         content: const Text(
           'Você será redirecionado para a tela de login. '
@@ -287,7 +288,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        icon: Icon(Icons.warning_rounded, color: DesignTokens.error, size: 40),
+        icon: const Icon(Icons.warning_rounded, color: DesignTokens.error, size: 40),
         title: const Text('Excluir conta permanentemente?'),
         content: const Text(
           'Todos os seus dados serão apagados permanentemente: '
@@ -390,7 +391,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: Text(context.l10n.profile),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const ShimmerListLoader()
           : ListView(
               padding: const EdgeInsets.all(DesignTokens.spacingMd),
               children: [
@@ -541,13 +542,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       padding: const EdgeInsets.all(12),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline,
+                          const Icon(Icons.error_outline,
                               color: DesignTokens.error, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _error!,
-                              style: TextStyle(
+                              style: const TextStyle(
                                   color: DesignTokens.error, fontSize: 13),
                             ),
                           ),

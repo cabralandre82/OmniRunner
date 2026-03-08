@@ -9,8 +9,8 @@ void main() {
   const gen = InsightGenerator();
   const msPerDay = 24 * 60 * 60 * 1000;
 
-  int _seq = 0;
-  String nextId() => 'id-${_seq++}';
+  int seq = 0;
+  String nextId() => 'id-${seq++}';
 
   AthleteTrendEntity makeTrend({
     required String userId,
@@ -68,7 +68,7 @@ void main() {
         computedAtMs: 0,
       );
 
-  setUp(() => _seq = 0);
+  setUp(() => seq = 0);
 
   group('InsightGenerator', () {
     test('performance improvement insight for improving athlete', () {
@@ -129,7 +129,7 @@ void main() {
     });
 
     test('inactivity warning when last session exceeds threshold', () {
-      final nowMs = 8 * msPerDay;
+      const nowMs = 8 * msPerDay;
       final insights = gen.generate(
         groupId: 'g1',
         trends: [],
@@ -146,7 +146,7 @@ void main() {
     });
 
     test('no inactivity warning when active recently', () {
-      final nowMs = 3 * msPerDay;
+      const nowMs = 3 * msPerDay;
       final insights = gen.generate(
         groupId: 'g1',
         trends: [],

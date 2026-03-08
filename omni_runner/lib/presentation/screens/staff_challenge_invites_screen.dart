@@ -181,7 +181,7 @@ class _StaffChallengeInvitesScreenState
                   },
                 )
               : _invites.isEmpty
-                  ? AppEmptyState(
+                  ? const AppEmptyState(
                       message: 'Nenhum convite de desafio',
                       icon: Icons.shield_outlined,
                     )

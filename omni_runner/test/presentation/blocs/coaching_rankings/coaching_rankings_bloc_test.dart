@@ -25,7 +25,7 @@ void main() {
     final states = <CoachingRankingsState>[];
     bloc.stream.listen(states.add);
 
-    bloc.add(LoadCoachingRanking(
+    bloc.add(const LoadCoachingRanking(
       groupId: 'g1', metric: CoachingRankingMetric.volumeDistance,
       period: CoachingRankingPeriod.weekly, periodKey: '2026-W09',
     ));
@@ -39,16 +39,16 @@ void main() {
   });
 
   test('emits [Loading, Loaded] when ranking exists', () async {
-    repo.result = CoachingGroupRankingEntity(
+    repo.result = const CoachingGroupRankingEntity(
       id: 'r1', groupId: 'g1', metric: CoachingRankingMetric.volumeDistance,
       period: CoachingRankingPeriod.weekly, periodKey: '2026-W09',
-      startsAtMs: 0, endsAtMs: 1000, entries: const [], computedAtMs: 500,
+      startsAtMs: 0, endsAtMs: 1000, entries: [], computedAtMs: 500,
     );
     final bloc = CoachingRankingsBloc(rankingRepo: repo);
     final states = <CoachingRankingsState>[];
     bloc.stream.listen(states.add);
 
-    bloc.add(LoadCoachingRanking(
+    bloc.add(const LoadCoachingRanking(
       groupId: 'g1', metric: CoachingRankingMetric.volumeDistance,
       period: CoachingRankingPeriod.weekly, periodKey: '2026-W09',
     ));

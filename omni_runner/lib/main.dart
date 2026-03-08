@@ -46,19 +46,19 @@ Future<void> main() async {
   };
 
   ErrorWidget.builder = (details) {
-    return MaterialApp(
+    return const MaterialApp(
       home: Scaffold(
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                const SizedBox(height: 16),
-                const Text('Algo deu errado', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                const Text('Tente reiniciar o aplicativo.', textAlign: TextAlign.center),
+                Icon(Icons.error_outline, size: 48, color: Colors.red),
+                SizedBox(height: 16),
+                Text('Algo deu errado', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                Text('Tente reiniciar o aplicativo.', textAlign: TextAlign.center),
               ],
             ),
           ),
@@ -87,6 +87,7 @@ Future<void> main() async {
 }
 
 Future<void> _bootstrap() async {
+  final stopwatch = Stopwatch()..start();
   RecoveredSession? recovery;
 
   try {
@@ -100,6 +101,12 @@ Future<void> _bootstrap() async {
       stack: stack,
     );
   }
+
+  stopwatch.stop();
+  AppLogger.info(
+    'Cold start completed in ${stopwatch.elapsedMilliseconds}ms',
+    tag: 'Startup',
+  );
 
   runApp(OmniRunnerApp(recovery: recovery));
 }

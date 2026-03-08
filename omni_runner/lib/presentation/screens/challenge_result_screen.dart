@@ -558,7 +558,7 @@ class _ResultRow extends StatelessWidget {
               ),
               child: Text(
                 '+${pr.coinsEarned}',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: DesignTokens.success,

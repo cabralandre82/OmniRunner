@@ -107,7 +107,7 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
           padding: const EdgeInsets.all(20),
           children: [
             // Success header
-            Icon(Icons.check_circle_rounded,
+            const Icon(Icons.check_circle_rounded,
                 size: 56, color: DesignTokens.success),
             const SizedBox(height: 12),
             Text(

@@ -874,7 +874,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
               color: DesignTokens.warning,
               border: Border.all(color: DesignTokens.warning, width: 3),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.handshake_rounded,
               size: 48,
               color: DesignTokens.warning,
@@ -955,14 +955,14 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline,
+                  const Icon(Icons.info_outline,
                       size: 18, color: DesignTokens.warning),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Ao aceitar, $fee OmniCoins serão debitados '
                       'como entrada do desafio.',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
                         color: DesignTokens.warning,
                       ),

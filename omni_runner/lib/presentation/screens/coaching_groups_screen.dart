@@ -8,6 +8,7 @@ import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_b
 import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_event.dart';
 import 'package:omni_runner/presentation/blocs/coaching_groups/coaching_groups_state.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 
 class CoachingGroupsScreen extends StatelessWidget {
@@ -33,7 +34,7 @@ class CoachingGroupsScreen extends StatelessWidget {
           CoachingGroupsInitial() =>
             const Center(child: Text('Carregue suas assessorias.')),
           CoachingGroupsLoading() =>
-            const Center(child: CircularProgressIndicator()),
+            const ShimmerListLoader(),
           CoachingGroupsLoaded(:final groups) => groups.isEmpty
               ? _empty(context)
               : _body(context, groups),

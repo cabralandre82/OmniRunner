@@ -161,7 +161,7 @@ class _PartnerAssessoriasScreenState extends State<PartnerAssessoriasScreen> {
           style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        _TutorialCard(
+        const _TutorialCard(
           icon: Icons.lightbulb_outline_rounded,
           title: 'O que são assessorias parceiras?',
           body: 'São assessorias amigas da sua — assessorias da mesma cidade, '
@@ -169,7 +169,7 @@ class _PartnerAssessoriasScreenState extends State<PartnerAssessoriasScreen> {
               'querem fazer eventos juntas.',
         ),
         const SizedBox(height: 12),
-        _TutorialCard(
+        const _TutorialCard(
           icon: Icons.emoji_events_outlined,
           title: 'Por que ter parceiras?',
           body: 'Apenas assessorias parceiras podem ser convidadas para '
@@ -177,7 +177,7 @@ class _PartnerAssessoriasScreenState extends State<PartnerAssessoriasScreen> {
               'você poderá convidar apenas assessorias da sua lista de parceiras.',
         ),
         const SizedBox(height: 12),
-        _TutorialCard(
+        const _TutorialCard(
           icon: Icons.send_rounded,
           title: 'Como funciona?',
           body: 'Toque no botão "Convidar" abaixo para buscar uma assessoria '
@@ -195,7 +195,7 @@ class _PartnerAssessoriasScreenState extends State<PartnerAssessoriasScreen> {
     final pendingSent = _partners.where((p) => p.status == 'pending' && p.isRequester).toList();
 
     final items = <Widget>[
-      _InfoBanner(
+      const _InfoBanner(
         text: 'Assessorias parceiras podem participar dos seus campeonatos. '
             'Convide assessorias amigas para criar eventos juntos!',
       ),

@@ -8,6 +8,7 @@
 /// - [registerFactory]: new instance on every access (BLoCs, stateful use cases)
 ///
 /// Call [setupServiceLocator] once from `main.dart` before `runApp`.
+library;
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

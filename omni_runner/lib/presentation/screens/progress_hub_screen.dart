@@ -20,53 +20,53 @@ class ProgressHubScreen extends StatelessWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: DesignTokens.spacingSm),
-        children: [
-          const _SectionHeader(title: 'Progresso'),
-          const _Tile(
+        children: const [
+          _SectionHeader(title: 'Progresso'),
+          _Tile(
             icon: Icons.trending_up,
             title: 'Nível e XP',
             subtitle: 'Seu nível, sequência e meta semanal',
             target: _Target.progression,
           ),
-          const _Tile(
+          _Tile(
+            icon: Icons.local_fire_department_rounded,
+            title: 'Sequências',
+            subtitle: 'Ranking de dias consecutivos correndo',
+            target: _Target.streaks,
+          ),
+          _Tile(
             icon: Icons.show_chart_rounded,
             title: 'Minha Evolução',
             subtitle: 'Gráficos de pace, volume e frequência',
             target: _Target.evolution,
           ),
-          const _Tile(
+          _Tile(
             icon: Icons.hexagon_outlined,
             title: 'Meu DNA de Corredor',
             subtitle: 'Perfil radar, insights e previsão de PR',
             target: _Target.dna,
           ),
-          const _Tile(
+          _Tile(
             icon: Icons.auto_awesome_rounded,
             title: 'Minha Retrospectiva',
             subtitle: 'OmniWrapped — seu resumo do período',
             target: _Target.wrapped,
           ),
 
-          const _SectionHeader(title: 'Conquistas'),
-          const _Tile(
+          _SectionHeader(title: 'Conquistas'),
+          _Tile(
             icon: Icons.military_tech,
             title: 'Badges',
             subtitle: 'Conquistas e badges desbloqueados',
             target: _Target.badges,
           ),
-          const _Tile(
+          _Tile(
             icon: Icons.flag,
             title: 'Missões',
             subtitle: 'Missões diárias e semanais',
             target: _Target.missions,
           ),
-          const _Tile(
-            icon: Icons.local_fire_department_rounded,
-            title: 'Sequências',
-            subtitle: 'Ranking de dias consecutivos correndo',
-            target: _Target.streaks,
-          ),
-          const _Tile(
+          _Tile(
             icon: Icons.leaderboard,
             title: 'Rankings',
             subtitle: 'Rankings semanais e mensais',

@@ -16,7 +16,7 @@ class _FakeMyAssessoriaBloc extends Cubit<MyAssessoriaState>
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-final _group = CoachingGroupEntity(
+const _group = CoachingGroupEntity(
   id: 'g1',
   name: 'Running Club SP',
   coachUserId: 'coach1',
@@ -25,7 +25,7 @@ final _group = CoachingGroupEntity(
   createdAtMs: 0,
 );
 
-final _membership = CoachingMemberEntity(
+const _membership = CoachingMemberEntity(
   id: 'm1',
   userId: 'u1',
   groupId: 'g1',
@@ -85,7 +85,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      final bloc = _FakeMyAssessoriaBloc(MyAssessoriaLoaded(
+      final bloc = _FakeMyAssessoriaBloc(const MyAssessoriaLoaded(
         currentGroup: _group,
         membership: _membership,
       ));
@@ -123,7 +123,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      final bloc = _FakeMyAssessoriaBloc(MyAssessoriaLoaded(
+      final bloc = _FakeMyAssessoriaBloc(const MyAssessoriaLoaded(
         currentGroup: _group,
         membership: _membership,
       ));

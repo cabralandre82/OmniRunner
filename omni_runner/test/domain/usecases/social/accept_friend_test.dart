@@ -85,7 +85,7 @@ void main() {
   });
 
   test('throws when friendship is not pending', () {
-    repo.stored = FriendshipEntity(
+    repo.stored = const FriendshipEntity(
       id: 'f1',
       userIdA: 'alice',
       userIdB: 'bob',

@@ -56,7 +56,7 @@ void main() {
   });
 
   test('transitions existing friendship when blocker is userIdA', () async {
-    repo.existing = FriendshipEntity(
+    repo.existing = const FriendshipEntity(
       id: 'f1',
       userIdA: 'alice',
       userIdB: 'bob',
@@ -76,7 +76,7 @@ void main() {
   });
 
   test('reorients and recreates when blocker is userIdB', () async {
-    repo.existing = FriendshipEntity(
+    repo.existing = const FriendshipEntity(
       id: 'f1',
       userIdA: 'bob',
       userIdB: 'alice',

@@ -322,7 +322,7 @@ class _TodayScreenState extends State<TodayScreen> {
       maxBpm: 171,
       source: 'strava',
     );
-    final demoProfile = ProfileProgressEntity(
+    const demoProfile = ProfileProgressEntity(
       userId: 'demo',
       totalXp: 1250,
       seasonXp: 480,
@@ -847,7 +847,7 @@ class _StreakBanner extends StatelessWidget {
       padding: const EdgeInsets.all(DesignTokens.spacingMd),
       decoration: BoxDecoration(
         gradient: isActive
-            ? LinearGradient(
+            ? const LinearGradient(
                 colors: [
                   DesignTokens.warning,
                   DesignTokens.error,
@@ -899,7 +899,7 @@ class _StreakBanner extends StatelessWidget {
                     ),
                     if (hasFreeze) ...[
                       const SizedBox(width: 6),
-                      Tooltip(
+                      const Tooltip(
                         message: 'Freeze disponível: protege 1 dia sem correr',
                         child: Icon(Icons.ac_unit,
                             size: 16, color: DesignTokens.primary),
@@ -969,14 +969,14 @@ class _StreakMilestones extends StatelessWidget {
                   minHeight: 6,
                   backgroundColor: DesignTokens.warning,
                   valueColor:
-                      AlwaysStoppedAnimation(DesignTokens.warning),
+                      const AlwaysStoppedAnimation(DesignTokens.warning),
                 ),
               ),
             ),
             const SizedBox(width: 8),
             Text(
               '$current/$next',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: DesignTokens.warning,
@@ -987,7 +987,7 @@ class _StreakMilestones extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           'Próximo marco: $next dias → +${_xpForMilestone(next)} XP',
-          style: TextStyle(fontSize: 10, color: DesignTokens.warning),
+          style: const TextStyle(fontSize: 10, color: DesignTokens.warning),
         ),
       ],
     );
@@ -1234,7 +1234,7 @@ class _RunRecapCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(DesignTokens.spacingMd, 0, DesignTokens.spacingMd, DesignTokens.spacingXs),
               child: Row(
                 children: [
-                  Icon(Icons.favorite, size: 14, color: DesignTokens.error),
+                  const Icon(Icons.favorite, size: 14, color: DesignTokens.error),
                   const SizedBox(width: 4),
                   Text(
                     'FC média: ${run.avgBpm} bpm',
@@ -1558,7 +1558,7 @@ class _ParkCheckinCard extends StatelessWidget {
                   color: DesignTokens.success,
                   borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 ),
-                child: Icon(Icons.park, color: DesignTokens.success, size: 24),
+                child: const Icon(Icons.park, color: DesignTokens.success, size: 24),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -1573,7 +1573,7 @@ class _ParkCheckinCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
+                    const Text(
                       'Toque para ver o ranking e quem mais corre aqui',
                       style: TextStyle(
                           fontSize: 12, color: DesignTokens.success),
@@ -1581,7 +1581,7 @@ class _ParkCheckinCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: DesignTokens.success),
+              const Icon(Icons.chevron_right, color: DesignTokens.success),
             ],
           ),
         ),
@@ -1723,7 +1723,7 @@ class _ActiveChallengeRow extends StatelessWidget {
                 ),
                 child: Text(
                   '${challenge.rules.entryFeeCoins} OC',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: DesignTokens.warning,
@@ -1802,8 +1802,8 @@ class _RecentBadgeUnlockCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [DesignTokens.warning, const Color(0xFFFFD700)],
+                  gradient: const LinearGradient(
+                    colors: [DesignTokens.warning, Color(0xFFFFD700)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -1836,7 +1836,7 @@ class _RecentBadgeUnlockCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: DesignTokens.warning),
+              const Icon(Icons.chevron_right, color: DesignTokens.warning),
             ],
           ),
         ),
@@ -1879,7 +1879,7 @@ class _ActiveChampionshipsCard extends StatelessWidget {
                   color: DesignTokens.warning,
                   borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 ),
-                child: Icon(Icons.emoji_events_rounded,
+                child: const Icon(Icons.emoji_events_rounded,
                     color: DesignTokens.warning, size: 24),
               ),
               const SizedBox(width: 14),
@@ -1910,7 +1910,7 @@ class _ActiveChampionshipsCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: DesignTokens.warning),
+              const Icon(Icons.chevron_right, color: DesignTokens.warning),
             ],
           ),
         ),
@@ -2056,7 +2056,7 @@ class _ActiveRunnersChipState extends State<_ActiveRunnersChip> {
               ),
             ),
           ),
-          Icon(Icons.trending_up, size: 16, color: DesignTokens.success),
+          const Icon(Icons.trending_up, size: 16, color: DesignTokens.success),
         ],
       ),
     );

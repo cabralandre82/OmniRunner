@@ -33,14 +33,14 @@ class _FakeUserIdentity implements UserIdentityProvider {
   dynamic noSuchMethod(Invocation invocation) {}
 }
 
-final _leaderboard = LeaderboardEntity(
+const _leaderboard = LeaderboardEntity(
   id: 'lb1',
   scope: LeaderboardScope.global,
   period: LeaderboardPeriod.weekly,
   metric: LeaderboardMetric.composite,
   periodKey: '2026-W10',
   entries: [
-    const LeaderboardEntryEntity(
+    LeaderboardEntryEntity(
       userId: 'u1',
       displayName: 'Runner Alpha',
       level: 5,
@@ -48,7 +48,7 @@ final _leaderboard = LeaderboardEntity(
       rank: 1,
       periodKey: '2026-W10',
     ),
-    const LeaderboardEntryEntity(
+    LeaderboardEntryEntity(
       userId: 'test-user',
       displayName: 'Test User',
       level: 3,
@@ -56,7 +56,7 @@ final _leaderboard = LeaderboardEntity(
       rank: 2,
       periodKey: '2026-W10',
     ),
-    const LeaderboardEntryEntity(
+    LeaderboardEntryEntity(
       userId: 'u3',
       displayName: 'Runner Gamma',
       level: 2,
@@ -68,13 +68,13 @@ final _leaderboard = LeaderboardEntity(
   computedAtMs: 1700000000000,
 );
 
-final _emptyLeaderboard = LeaderboardEntity(
+const _emptyLeaderboard = LeaderboardEntity(
   id: 'lb_empty',
   scope: LeaderboardScope.global,
   period: LeaderboardPeriod.weekly,
   metric: LeaderboardMetric.composite,
   periodKey: '2026-W10',
-  entries: const [],
+  entries: [],
   computedAtMs: 1700000000000,
 );
 
@@ -176,7 +176,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       final bloc = _FakeLeaderboardsBloc(
-        LeaderboardsLoaded(leaderboard: _emptyLeaderboard),
+        const LeaderboardsLoaded(leaderboard: _emptyLeaderboard),
       );
 
       await tester.pumpApp(
@@ -198,7 +198,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       final bloc = _FakeLeaderboardsBloc(
-        LeaderboardsLoaded(leaderboard: _leaderboard),
+        const LeaderboardsLoaded(leaderboard: _leaderboard),
       );
 
       await tester.pumpApp(
