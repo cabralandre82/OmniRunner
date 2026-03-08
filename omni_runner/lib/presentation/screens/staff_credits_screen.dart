@@ -47,16 +47,43 @@ class _StaffCreditsScreenState extends State<StaffCreditsScreen> {
     try {
       final db = sl<SupabaseClient>();
 
-      final inv = await db
+      final invFuture = db
           .from('coaching_token_inventory')
-          .select('available_tokens, lifetime_issued, lifetime_burned')
+          .select('available_tokens, lifetime_burned')
           .eq('group_id', widget.groupId)
           .maybeSingle();
 
+      // Distributed = sum of delta_coins from coin_ledger with reason 'institution_token_issue'
+      // scoped to members of this group (same logic as portal)
+      final membersFuture = db
+          .from('coaching_members')
+          .select('user_id')
+          .eq('group_id', widget.groupId);
+
+      final inv = await invFuture;
+      final members = await membersFuture;
+
       if (inv != null) {
         _available = (inv['available_tokens'] as int?) ?? 0;
-        _lifetimeIssued = (inv['lifetime_issued'] as int?) ?? 0;
         _lifetimeBurned = (inv['lifetime_burned'] as int?) ?? 0;
+      }
+
+      final memberIds = (members as List)
+          .cast<Map<String, dynamic>>()
+          .map((m) => m['user_id'] as String)
+          .toList();
+
+      if (memberIds.isNotEmpty) {
+        final ledgerRows = await db
+            .from('coin_ledger')
+            .select('delta_coins')
+            .inFilter('user_id', memberIds)
+            .eq('reason', 'institution_token_issue');
+        int sum = 0;
+        for (final row in (ledgerRows as List)) {
+          sum += ((row as Map<String, dynamic>)['delta_coins'] as int?) ?? 0;
+        }
+        _lifetimeIssued = sum;
       }
 
       final rows = await db

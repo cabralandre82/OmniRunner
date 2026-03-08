@@ -87,17 +87,42 @@ final class RemoteTokenIntentRepo implements ITokenIntentRepo {
   @override
   Future<EmissionCapacity> getEmissionCapacity(String groupId) async {
     try {
-      final row = await _client
+      final invFuture = _client
           .from('coaching_token_inventory')
-          .select('available_tokens, lifetime_issued, lifetime_burned')
+          .select('available_tokens, lifetime_burned')
           .eq('group_id', groupId)
           .maybeSingle();
 
+      final membersFuture = _client
+          .from('coaching_members')
+          .select('user_id')
+          .eq('group_id', groupId);
+
+      final row = await invFuture;
+      final members = await membersFuture;
+
       if (row == null) return EmissionCapacity.empty;
+
+      final memberIds = (members as List)
+          .cast<Map<String, dynamic>>()
+          .map((m) => m['user_id'] as String)
+          .toList();
+
+      int distributed = 0;
+      if (memberIds.isNotEmpty) {
+        final ledger = await _client
+            .from('coin_ledger')
+            .select('delta_coins')
+            .inFilter('user_id', memberIds)
+            .eq('reason', 'institution_token_issue');
+        for (final r in (ledger as List)) {
+          distributed += ((r as Map<String, dynamic>)['delta_coins'] as int?) ?? 0;
+        }
+      }
 
       return EmissionCapacity(
         availableTokens: (row['available_tokens'] as int?) ?? 0,
-        lifetimeIssued: (row['lifetime_issued'] as int?) ?? 0,
+        lifetimeIssued: distributed,
         lifetimeBurned: (row['lifetime_burned'] as int?) ?? 0,
       );
     } on PostgrestException catch (e) {

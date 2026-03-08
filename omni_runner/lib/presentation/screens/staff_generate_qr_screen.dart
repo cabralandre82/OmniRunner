@@ -322,8 +322,8 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _statChip(theme, 'Emitidos', cap.lifetimeIssued),
-                _statChip(theme, 'Queimados', cap.lifetimeBurned),
+                _statChip(theme, 'Distribuídos', cap.lifetimeIssued),
+                _statChip(theme, 'Devolvidos', cap.lifetimeBurned),
               ],
             ),
             const SizedBox(height: 4),
