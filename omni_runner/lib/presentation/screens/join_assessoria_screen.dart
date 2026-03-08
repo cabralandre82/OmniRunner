@@ -716,11 +716,11 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
               SizedBox(
                 width: double.infinity,
                 height: 48,
-                child: OutlinedButton(
+                child: FilledButton.tonal(
                   onPressed: _joining ? null : _skip,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: theme.colorScheme.onSurface,
-                    side: BorderSide(color: theme.colorScheme.outline),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: theme.colorScheme.secondaryContainer,
+                    foregroundColor: theme.colorScheme.onSecondaryContainer,
                   ),
                   child: _joining
                       ? const SizedBox(

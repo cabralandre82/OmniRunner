@@ -43,68 +43,6 @@ class AppLoadingState extends StatelessWidget {
   }
 }
 
-/// Reusable error state widget.
-///
-/// Shows error icon, message, and retry button.
-/// Use when API calls fail, Supabase errors occur, or data loading fails.
-@Deprecated('Use ErrorState from error_state.dart instead — it includes humanize() and a11y support')
-class AppErrorState extends StatelessWidget {
-  const AppErrorState({
-    super.key,
-    required this.message,
-    required this.onRetry,
-    this.iconSize = 48,
-  });
-
-  /// Error message to display.
-  final String message;
-
-  /// Called when user taps retry button.
-  final VoidCallback onRetry;
-
-  /// Size of the error icon. Defaults to 48.
-  final double iconSize;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(DesignTokens.spacingLg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.error_outline_rounded,
-              size: iconSize,
-              color: cs.error,
-            ),
-            const SizedBox(height: DesignTokens.spacingMd),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: cs.error,
-              ),
-            ),
-            const SizedBox(height: DesignTokens.spacingLg),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Tentar novamente'),
-              style: FilledButton.styleFrom(
-                backgroundColor: DesignTokens.error,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// Reusable empty state widget.
 ///
 /// Shows empty icon, message, and optional action button.

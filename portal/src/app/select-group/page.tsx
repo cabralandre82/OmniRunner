@@ -2,6 +2,12 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { setPortalGroup } from "@/lib/actions";
 
+const ROLE_LABELS: Record<string, string> = {
+  admin_master: "Administrador",
+  coach: "Coach",
+  assistant: "Assistente",
+};
+
 export default async function SelectGroupPage() {
   const supabase = createClient();
   const {
@@ -72,7 +78,7 @@ export default async function SelectGroupPage() {
                     <p className="font-medium text-content-primary">
                       {groupName ?? "Assessoria"}
                     </p>
-                    <p className="text-xs text-content-secondary">{role}</p>
+                    <p className="text-xs text-content-secondary">{ROLE_LABELS[role] ?? role}</p>
                   </div>
                   <span className="text-content-muted">→</span>
                 </button>
