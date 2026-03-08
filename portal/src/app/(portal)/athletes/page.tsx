@@ -42,7 +42,8 @@ export default async function AthletesPage() {
       .select("user_id, display_name, joined_at_ms")
       .eq("group_id", groupId)
       .in("role", ["athlete", "atleta"])
-      .order("joined_at_ms", { ascending: false });
+      .order("joined_at_ms", { ascending: false })
+      .limit(200);
 
     const allMembers = members ?? [];
     const userIds = allMembers.map((m: { user_id: string }) => m.user_id);

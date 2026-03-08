@@ -104,17 +104,23 @@ serve(async (req: Request) => {
   const incomingToken = req.headers.get("asaas-access-token") ??
     (payload as Record<string, unknown>).accessToken as string | undefined;
 
-  if (groupId) {
-    const { data: config } = await db
-      .from("payment_provider_config")
-      .select("webhook_token")
-      .eq("group_id", groupId)
-      .eq("provider", "asaas")
-      .maybeSingle();
+  if (!groupId) {
+    return new Response(JSON.stringify({ error: "Unknown subscription — cannot authenticate" }), { status: 400 });
+  }
 
-    if (config?.webhook_token && incomingToken !== config.webhook_token) {
-      return new Response(JSON.stringify({ error: "Invalid token" }), { status: 401 });
-    }
+  const { data: config } = await db
+    .from("payment_provider_config")
+    .select("webhook_token")
+    .eq("group_id", groupId)
+    .eq("provider", "asaas")
+    .maybeSingle();
+
+  if (!config?.webhook_token) {
+    return new Response(JSON.stringify({ error: "Webhook token not configured for group" }), { status: 401 });
+  }
+
+  if (incomingToken !== config.webhook_token) {
+    return new Response(JSON.stringify({ error: "Invalid token" }), { status: 401 });
   }
 
   // Deterministic event ID — never use random UUID, otherwise retries

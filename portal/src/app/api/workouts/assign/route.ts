@@ -24,6 +24,11 @@ export async function POST(req: Request) {
     }
 
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+
     const results: { userId: string; ok: boolean; message?: string }[] = [];
 
     for (const userId of athlete_user_ids) {

@@ -108,6 +108,15 @@ serve(async (req: Request) => {
     .eq("is_active", true)
     .maybeSingle();
   const splitPct = feeRow?.rate_pct ? Number(feeRow.rate_pct) : 2.5;
+
+  const { data: maintRow } = await db
+    .from("platform_fee_config")
+    .select("rate_usd")
+    .eq("fee_type", "maintenance")
+    .eq("is_active", true)
+    .maybeSingle();
+  const maintenanceUsd = maintRow?.rate_usd ? Number(maintRow.rate_usd) : 0;
+
   const omniWalletId = Deno.env.get("ASAAS_OMNI_WALLET_ID") ?? "";
 
   // Mark batch as processing
@@ -183,9 +192,16 @@ serve(async (req: Request) => {
       }
 
       // 3. Create Asaas subscription
-      const splitConfig = omniWalletId
-        ? [{ walletId: omniWalletId, percentualValue: splitPct }]
-        : undefined;
+      const splitEntries: Array<Record<string, unknown>> = [];
+      if (omniWalletId) {
+        if (splitPct > 0) {
+          splitEntries.push({ walletId: omniWalletId, percentualValue: splitPct });
+        }
+        if (maintenanceUsd > 0) {
+          splitEntries.push({ walletId: omniWalletId, fixedValue: maintenanceUsd });
+        }
+      }
+      const splitConfig = splitEntries.length > 0 ? splitEntries : undefined;
 
       const cycle = billingCycle === "quarterly" ? "QUARTERLY" : "MONTHLY";
 
@@ -232,7 +248,7 @@ serve(async (req: Request) => {
     await db
       .from("billing_batch_jobs")
       .update({
-        status: succeeded === athletes.length ? "completed" : "completed",
+        status: succeeded === athletes.length ? "completed" : "completed_with_errors",
         succeeded,
         failed: athletes.length - succeeded,
         results: JSON.stringify(results),

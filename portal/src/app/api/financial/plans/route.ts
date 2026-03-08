@@ -93,6 +93,10 @@ export async function DELETE(req: Request) {
     }
 
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
 
     const { count } = await supabase
       .from("coaching_subscriptions")

@@ -22,6 +22,11 @@ export async function POST(req: Request) {
     }
 
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+
     const results: { userId: string; ok: boolean; message?: string }[] = [];
 
     const subscriptionIds: Record<string, string> = {};

@@ -128,7 +128,7 @@ serve(async (req: Request) => {
 
     const { data: sessions, error: sessErr } = await db
       .from("sessions")
-      .select("total_distance_m, moving_ms, avg_pace_sec_km")
+      .select("total_distance_m, moving_ms, avg_pace_sec_km, total_elevation_m")
       .eq("user_id", user.id)
       .eq("is_verified", true)
       .gte("start_time_ms", startAtMs)
@@ -167,7 +167,7 @@ serve(async (req: Request) => {
         break;
       case "elevation":
         progressValue = rows.reduce(
-          (sum: number, s: { total_distance_m: number }) => sum + (s.total_distance_m ?? 0), 0);
+          (sum: number, s: Record<string, unknown>) => sum + (Number(s.total_elevation_m) || 0), 0);
         break;
       default:
         progressValue = rows.reduce(
