@@ -57,12 +57,14 @@ export default async function DashboardPage() {
           .from("coaching_members")
           .select("user_id")
           .eq("group_id", groupId)
-          .in("role", ["athlete", "atleta"]),
+          .in("role", ["athlete", "atleta"])
+          .limit(1000),
         role === "admin_master"
           ? supabase
               .from("billing_purchases")
               .select("status, credits_amount")
               .eq("group_id", groupId)
+              .limit(500)
           : Promise.resolve({ data: null }),
       ]);
 
@@ -90,7 +92,8 @@ export default async function DashboardPage() {
           .select("user_id, total_distance_m, start_time_ms")
           .in("user_id", athleteIds)
           .gte("start_time_ms", prevWeekStart)
-          .gte("status", 3),
+          .gte("status", 3)
+          .limit(5000),
         db
           .from("athlete_verification")
           .select("user_id", { count: "exact", head: true })

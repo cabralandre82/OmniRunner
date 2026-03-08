@@ -32,22 +32,18 @@ import 'package:omni_runner/presentation/screens/challenge_invite_screen.dart';
 import 'package:omni_runner/presentation/screens/challenge_join_screen.dart';
 import 'package:omni_runner/presentation/screens/challenge_result_screen.dart';
 import 'package:omni_runner/presentation/screens/challenges_list_screen.dart';
-import 'package:omni_runner/presentation/screens/coach_insights_screen.dart';
 import 'package:omni_runner/presentation/screens/coaching_group_details_screen.dart';
 import 'package:omni_runner/presentation/screens/coaching_groups_screen.dart';
 import 'package:omni_runner/presentation/screens/diagnostics_screen.dart';
 import 'package:omni_runner/presentation/screens/event_details_screen.dart';
-import 'package:omni_runner/presentation/screens/events_screen.dart';
 import 'package:omni_runner/presentation/screens/faq_screen.dart';
 import 'package:omni_runner/presentation/screens/friend_profile_screen.dart';
 import 'package:omni_runner/presentation/screens/friends_activity_feed_screen.dart';
 import 'package:omni_runner/presentation/screens/friends_screen.dart';
 import 'package:omni_runner/presentation/screens/group_details_screen.dart';
 import 'package:omni_runner/presentation/screens/group_evolution_screen.dart';
-import 'package:omni_runner/presentation/screens/group_events_screen.dart';
 import 'package:omni_runner/presentation/screens/group_members_screen.dart';
 import 'package:omni_runner/presentation/screens/group_rankings_screen.dart';
-import 'package:omni_runner/presentation/screens/groups_screen.dart';
 import 'package:omni_runner/presentation/screens/history_screen.dart';
 import 'package:omni_runner/presentation/screens/home_screen.dart';
 import 'package:omni_runner/presentation/screens/how_it_works_screen.dart';
@@ -69,7 +65,6 @@ import 'package:omni_runner/presentation/screens/personal_evolution_screen.dart'
 import 'package:omni_runner/presentation/screens/profile_screen.dart';
 import 'package:omni_runner/presentation/screens/progress_hub_screen.dart';
 import 'package:omni_runner/presentation/screens/progression_screen.dart';
-import 'package:omni_runner/presentation/screens/race_event_details_screen.dart';
 import 'package:omni_runner/presentation/screens/recovery_screen.dart';
 import 'package:omni_runner/presentation/screens/run_details_screen.dart';
 import 'package:omni_runner/presentation/screens/run_replay_screen.dart';
@@ -815,10 +810,6 @@ GoRouter createAppRouter({RecoveredSession? recovery}) {
 
       // ── Groups ──────────────────────────────────────────────────────────
       GoRoute(
-        path: AppRoutes.groups,
-        builder: (context, state) => const GroupsScreen(),
-      ),
-      GoRoute(
         path: AppRoutes.groupDetails,
         builder: (context, state) {
           final extra = state.extra as GroupDetailsExtra;
@@ -856,15 +847,6 @@ GoRouter createAppRouter({RecoveredSession? recovery}) {
           return GroupEvolutionScreen(groupName: groupName);
         },
       ),
-      GoRoute(
-        path: AppRoutes.groupEvents,
-        builder: (context, state) {
-          final groupName =
-              state.uri.queryParameters['name'] ?? state.extra as String? ?? '';
-          return GroupEventsScreen(groupName: groupName);
-        },
-      ),
-
       // ── Friends / Social ────────────────────────────────────────────────
       GoRoute(
         path: AppRoutes.friends,
@@ -1058,10 +1040,6 @@ GoRouter createAppRouter({RecoveredSession? recovery}) {
 
       // ── Events ──────────────────────────────────────────────────────────
       GoRoute(
-        path: AppRoutes.events,
-        builder: (context, state) => const EventsScreen(),
-      ),
-      GoRoute(
         path: AppRoutes.eventDetails,
         builder: (context, state) {
           final extra = state.extra as EventDetailsExtra;
@@ -1071,10 +1049,6 @@ GoRouter createAppRouter({RecoveredSession? recovery}) {
             allParticipations: extra.allParticipations,
           );
         },
-      ),
-      GoRoute(
-        path: AppRoutes.raceEventDetails,
-        builder: (context, state) => const RaceEventDetailsScreen(),
       ),
 
       // ── Announcements ─────────────────────────────────────────────────
@@ -1418,17 +1392,6 @@ GoRouter createAppRouter({RecoveredSession? recovery}) {
       GoRoute(
         path: AppRoutes.howToImport,
         builder: (context, state) => const HowToImportScreen(),
-      ),
-
-      // ── Coach Insights ──────────────────────────────────────────────────
-      GoRoute(
-        path: '/coach-insights',
-        builder: (context, state) {
-          final groupName = state.uri.queryParameters['name'] ??
-              state.extra as String? ??
-              '';
-          return CoachInsightsScreen(groupName: groupName);
-        },
       ),
 
       // ── Debug ───────────────────────────────────────────────────────────

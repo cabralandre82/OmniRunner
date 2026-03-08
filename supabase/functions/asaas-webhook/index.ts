@@ -221,6 +221,38 @@ serve(async (req: Request) => {
       }
     }
 
+    // Dunning notification: notify athlete of payment failure
+    if (event === "PAYMENT_OVERDUE" && subscriptionId) {
+      try {
+        const { data: sub } = await db
+          .from("coaching_subscriptions")
+          .select("user_id")
+          .eq("id", subscriptionId)
+          .maybeSingle();
+
+        if (sub?.user_id) {
+          const svcUrl = Deno.env.get("SUPABASE_URL");
+          const svcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SERVICE_ROLE_KEY");
+          if (svcUrl && svcKey) {
+            fetch(`${svcUrl}/functions/v1/notify-rules`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${svcKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                rule: "payment_overdue",
+                context: { user_id: sub.user_id, subscription_id: subscriptionId },
+              }),
+              signal: AbortSignal.timeout(10_000),
+            }).catch(() => {});
+          }
+        }
+      } catch {
+        // fire-and-forget dunning notification
+      }
+    }
+
     // Mark event as processed
     await db
       .from("payment_webhook_events")

@@ -196,6 +196,28 @@ serve(async (req: Request) => {
         .limit(100);
 
       for (const ch of stalePending ?? []) {
+        // Refund entry fees before expiring
+        const { data: feeRows } = await db
+          .from("coin_ledger")
+          .select("user_id, delta_coins")
+          .eq("ref_id", ch.id)
+          .eq("reason", "challenge_entry_fee");
+
+        if (feeRows && feeRows.length > 0) {
+          const refundEntries = (feeRows as { user_id: string; delta_coins: number }[])
+            .map((row) => ({
+              user_id: row.user_id,
+              delta_coins: Math.abs(row.delta_coins),
+              reason: "challenge_entry_refund",
+              ref_id: ch.id,
+              created_at_ms: nowMs,
+            }));
+
+          if (refundEntries.length > 0) {
+            await db.from("coin_ledger").insert(refundEntries);
+          }
+        }
+
         const { error } = await db.from("challenges")
           .update({ status: "expired" })
           .eq("id", ch.id)

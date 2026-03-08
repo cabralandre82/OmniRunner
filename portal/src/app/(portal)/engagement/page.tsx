@@ -52,7 +52,8 @@ export default async function EngagementPage({
       .from("coaching_members")
       .select("user_id")
       .eq("group_id", groupId)
-      .in("role", ["athlete", "atleta"]);
+      .in("role", ["athlete", "atleta"])
+      .limit(1000);
 
     athleteIds = (members ?? []).map((m: { user_id: string }) => m.user_id);
     totalAthletes = athleteIds.length;
@@ -64,13 +65,15 @@ export default async function EngagementPage({
           .select("user_id, total_distance_m, start_time_ms")
           .in("user_id", athleteIds)
           .gte("start_time_ms", weekStart)
-          .gte("status", 3),
+          .gte("status", 3)
+          .limit(5000),
         db
           .from("sessions")
           .select("user_id, total_distance_m, start_time_ms")
           .in("user_id", athleteIds)
           .gte("start_time_ms", monthStart)
-          .gte("status", 3),
+          .gte("status", 3)
+          .limit(10000),
         db
           .from("challenge_participants")
           .select("id", { count: "exact", head: true })
@@ -88,7 +91,8 @@ export default async function EngagementPage({
           .select("day, engagement_score, risk_level")
           .eq("group_id", groupId)
           .gte("day", thirtyDaysAgo)
-          .order("day", { ascending: false }),
+          .order("day", { ascending: false })
+          .limit(1000),
       ]);
 
       weekSessions = (weekRes.data ?? []) as typeof weekSessions;

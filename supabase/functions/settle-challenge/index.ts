@@ -137,8 +137,17 @@ serve(async (req: Request) => {
   }
 
   let settled = 0;
+  const SETTLE_TIMEOUT_MS = 50_000;
+  const settleStart = Date.now();
 
   for (const ch of challenges as Challenge[]) {
+    if (Date.now() - settleStart > SETTLE_TIMEOUT_MS) {
+      console.warn(JSON.stringify({
+        request_id: requestId, fn: FN,
+        msg: `Timeout after ${SETTLE_TIMEOUT_MS}ms, settled ${settled}/${(challenges as Challenge[]).length}`,
+      }));
+      break;
+    }
     const { data: participants } = await db
       .from("challenge_participants")
       .select("*")
