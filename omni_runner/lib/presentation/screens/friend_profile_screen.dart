@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/logging/logger.dart';
@@ -146,7 +147,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
       if (mounted) {
         setState(() => _inviteSending = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$e')),
+          SnackBar(content: Text(ErrorMessages.humanize(e))),
         );
       }
     }

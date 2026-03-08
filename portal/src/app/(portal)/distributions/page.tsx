@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
 import { NoGroupSelected } from "@/components/no-group-selected";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { logger } from "@/lib/logger";
@@ -23,7 +23,7 @@ export default async function DistributionsPage() {
   const groupId = cookies().get("portal_group_id")?.value;
   if (!groupId) return <NoGroupSelected />;
 
-  const db = createServiceClient();
+  const db = createClient();
 
   // Get group members to scope distributions to this assessoria
   const [membersRes, inventoryRes] = await Promise.all([

@@ -56,8 +56,12 @@ export async function invalidatePattern(pattern: string): Promise<void> {
   const redis = getRedis();
   if (redis) {
     try {
-      const keys = await redis.keys(pattern);
-      if (keys.length > 0) await redis.del(...keys);
+      let cursor = 0;
+      do {
+        const [next, keys] = await redis.scan(cursor, { match: pattern, count: 100 });
+        cursor = next;
+        if (keys.length > 0) await redis.del(...keys);
+      } while (cursor !== 0);
     } catch { /* best effort */ }
   }
 

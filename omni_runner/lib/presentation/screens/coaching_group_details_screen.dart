@@ -7,6 +7,7 @@ import 'package:omni_runner/domain/entities/coaching_group_entity.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 
 /// Displays group details and member list, querying Supabase directly.
 class CoachingGroupDetailsScreen extends StatefulWidget {
@@ -93,7 +94,7 @@ class _CoachingGroupDetailsScreenState
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Erro ao carregar dados: $e';
+          _error = ErrorMessages.humanize(e);
           _loading = false;
         });
       }

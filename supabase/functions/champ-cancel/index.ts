@@ -138,6 +138,28 @@ serve(async (req: Request) => {
       .eq("championship_id", championship_id)
       .eq("status", "pending");
 
+    // Refund badge credits: count activated badges and credit back to group inventory
+    try {
+      const { count: badgeCount } = await db
+        .from("championship_badges")
+        .select("id", { count: "exact", head: true })
+        .eq("championship_id", championship_id);
+
+      if (badgeCount && badgeCount > 0) {
+        await db.rpc("fn_credit_badge_inventory", {
+          p_group_id: champ.host_group_id,
+          p_amount: badgeCount,
+          p_source_ref: `champ_cancel_refund:${championship_id}`,
+        });
+      }
+    } catch (e) {
+      console.warn(JSON.stringify({
+        request_id: requestId, fn: FN,
+        msg: `Badge refund failed: ${e instanceof Error ? e.message : String(e)}`,
+        championship_id,
+      }));
+    }
+
     // Cancel the championship
     const { data: updated, error: updateErr } = await db
       .from("championships")

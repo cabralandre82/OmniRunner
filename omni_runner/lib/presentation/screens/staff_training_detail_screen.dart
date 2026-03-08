@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/domain/entities/training_attendance_entity.dart';
@@ -78,7 +79,7 @@ class _StaffTrainingDetailView extends StatelessWidget {
       AppLogger.error('Override attendance failed', error: e);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao alterar: $e')),
+          SnackBar(content: Text(ErrorMessages.humanize(e))),
         );
       }
     }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
@@ -108,7 +109,7 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
     } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao enviar: $e')),
+          SnackBar(content: Text(ErrorMessages.humanize(e))),
         );
       }
     } finally {

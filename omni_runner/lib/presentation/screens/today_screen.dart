@@ -706,6 +706,7 @@ class _TodayScreenState extends State<TodayScreen> {
       }
     }
 
+    if (!context.mounted) return;
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,

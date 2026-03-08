@@ -147,14 +147,14 @@ class AppEmptyState extends StatelessWidget {
             Icon(
               icon,
               size: iconSize,
-              color: DesignTokens.textMuted.withValues(alpha: 0.6),
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
             ),
             const SizedBox(height: DesignTokens.spacingMd),
             Text(
               message,
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium?.copyWith(
-                color: DesignTokens.textPrimary,
+                color: theme.colorScheme.onSurface,
               ),
             ),
             if (actionLabel != null && onAction != null) ...[

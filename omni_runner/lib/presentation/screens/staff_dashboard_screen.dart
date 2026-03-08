@@ -8,6 +8,7 @@ import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/domain/entities/coaching_group_entity.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_group_repo.dart';
@@ -291,7 +292,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Não foi possível abrir o portal: $e')),
+            SnackBar(content: Text(ErrorMessages.humanize(e))),
           );
         }
       }

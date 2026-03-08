@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/push/notification_rules_service.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
@@ -117,7 +118,7 @@ class _StaffJoinRequestsScreenState extends State<StaffJoinRequestsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao aprovar: $e'),
+            content: Text(ErrorMessages.humanize(e)),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -166,7 +167,7 @@ class _StaffJoinRequestsScreenState extends State<StaffJoinRequestsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao rejeitar: $e'),
+            content: Text(ErrorMessages.humanize(e)),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );

@@ -85,7 +85,8 @@ async function getData(groupId: string) {
     .from("coaching_workout_templates")
     .select("id, name")
     .eq("group_id", groupId)
-    .order("name");
+    .order("name")
+    .limit(200);
 
   const { data: blocks } = await supabase
     .from("coaching_workout_blocks")

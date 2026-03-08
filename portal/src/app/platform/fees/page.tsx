@@ -16,6 +16,10 @@ const FEE_LABELS: Record<string, { label: string; description: string }> = {
     label: "Manutenção",
     description: "Valor em USD por atleta ativo. Deduzida automaticamente quando o atleta paga a mensalidade.",
   },
+  billing_split: {
+    label: "Split de Cobrança",
+    description: "Percentual retido pela plataforma nas cobranças de assinaturas",
+  },
 };
 
 interface Fee {
@@ -79,7 +83,7 @@ export default async function FeesPage() {
                   Tipo
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-content-secondary">
-                  Taxa (%)
+                  Valor
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium uppercase text-content-secondary">
                   Ativa

@@ -290,6 +290,24 @@ async function runCheck(
       duration_ms: 0,
     });
 
+    // Notify staff about failed auto-topup (3DS required, card declined, etc)
+    const svcUrl = Deno.env.get("SUPABASE_URL");
+    const svcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SERVICE_ROLE_KEY");
+    if (svcUrl && svcKey) {
+      fetch(`${svcUrl}/functions/v1/notify-rules`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${svcKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          rule: "auto_topup_failed",
+          context: { group_id: groupId, reason: msg, purchase_id: purchase.id },
+        }),
+        signal: AbortSignal.timeout(10_000),
+      }).catch(() => {});
+    }
+
     return { triggered: false, reason: "stripe_charge_failed" };
   }
 

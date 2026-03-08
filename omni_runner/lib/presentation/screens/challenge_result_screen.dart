@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
 import 'package:omni_runner/core/router/app_router.dart';
 import 'package:omni_runner/core/service_locator.dart';
@@ -740,7 +741,7 @@ class _CtaBar extends StatelessWidget {
     } on Exception catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$e')),
+          SnackBar(content: Text(ErrorMessages.humanize(e))),
         );
       }
     }
@@ -751,7 +752,7 @@ class _CtaBar extends StatelessWidget {
     final goalLabel = c.rules.goal.name;
     final text = 'Acabei de completar o desafio "${c.title}" '
         '($goalLabel) no OmniRunner! 🏃‍♂️🏅';
-    Share.share(text);
+    SharePlus.instance.share(ShareParams(text: text));
   }
 
   @override

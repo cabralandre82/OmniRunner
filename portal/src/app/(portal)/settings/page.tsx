@@ -107,8 +107,8 @@ export default async function SettingsPage() {
   }
 
   const db2 = createServiceClient();
-  const feesRes = await db2.from("platform_fee_config").select("fee_type, rate_pct, is_active").order("fee_type");
-  const fees = (feesRes.data ?? []) as { fee_type: string; rate_pct: number; is_active: boolean }[];
+  const feesRes = await db2.from("platform_fee_config").select("fee_type, rate_pct, rate_usd, is_active").order("fee_type");
+  const fees = (feesRes.data ?? []) as { fee_type: string; rate_pct: number; rate_usd: number | null; is_active: boolean }[];
   let custodyAcct = null;
   try {
     const accountRes = await db2.from("custody_accounts").select("total_deposited_usd, total_committed, is_blocked, blocked_reason").eq("group_id", groupId).maybeSingle();
@@ -317,7 +317,7 @@ export default async function SettingsPage() {
           <thead>
             <tr className="text-left text-xs font-medium uppercase text-content-secondary">
               <th className="pb-2 pr-4">Tipo</th>
-              <th className="pb-2 pr-4 text-right">Taxa (%)</th>
+              <th className="pb-2 pr-4 text-right">Valor</th>
               <th className="pb-2">Status</th>
             </tr>
           </thead>
@@ -325,7 +325,7 @@ export default async function SettingsPage() {
             {fees.map((f) => (
               <tr key={f.fee_type}>
                 <td className="py-2 pr-4 text-content-primary capitalize">{f.fee_type.replace(/_/g, " ")}</td>
-                <td className="py-2 pr-4 text-right font-medium text-content-primary">{f.rate_pct}%</td>
+                <td className="py-2 pr-4 text-right font-medium text-content-primary">{f.fee_type === "maintenance" && f.rate_usd != null ? `$${f.rate_usd}/atleta` : `${f.rate_pct}%`}</td>
                 <td className="py-2">
                   <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${f.is_active ? "bg-success-soft text-success" : "bg-surface-elevated text-content-secondary"}`}>
                     {f.is_active ? "Ativa" : "Inativa"}

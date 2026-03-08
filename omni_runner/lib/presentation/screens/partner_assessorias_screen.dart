@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 
 class PartnerAssessoriasScreen extends StatefulWidget {
   final String groupId;
@@ -46,7 +47,7 @@ class _PartnerAssessoriasScreenState extends State<PartnerAssessoriasScreen> {
       });
     } on Exception catch (e) {
       if (!mounted) return;
-      setState(() { _loading = false; _error = '$e'; });
+      setState(() { _loading = false; _error = ErrorMessages.humanize(e); });
     }
   }
 
@@ -60,7 +61,7 @@ class _PartnerAssessoriasScreenState extends State<PartnerAssessoriasScreen> {
     } on Exception catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro: $e')),
+        SnackBar(content: Text(ErrorMessages.humanize(e))),
       );
     }
   }
@@ -105,7 +106,7 @@ class _PartnerAssessoriasScreenState extends State<PartnerAssessoriasScreen> {
     } on Exception catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao remover: $e')),
+        SnackBar(content: Text(ErrorMessages.humanize(e))),
       );
     }
   }
@@ -540,7 +541,7 @@ class _SearchAssessoriaDialogState extends State<_SearchAssessoriaDialog> {
       }
     } on Exception catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorMessages.humanize(e))));
     }
   }
 

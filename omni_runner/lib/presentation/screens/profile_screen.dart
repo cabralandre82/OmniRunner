@@ -114,7 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final db = sl<SupabaseClient>();
       final badgesFuture = db.from('badges_earned').select('id').eq('user_id', uid);
       final progFuture = db.from('user_progressions').select('level, xp, current_streak_days').eq('user_id', uid).maybeSingle();
-      final sessionsFuture = db.from('sessions').select('total_distance_m').eq('user_id', uid);
+      final sessionsFuture = db.from('sessions').select('total_distance_m').eq('user_id', uid).limit(5000);
 
       final badges = await badgesFuture;
       final prog = await progFuture;
