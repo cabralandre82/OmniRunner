@@ -48,7 +48,7 @@ async function getExecutions(
   let query = supabase
     .from("coaching_workout_executions")
     .select(
-      "id, actual_duration_seconds, actual_distance_meters, avg_pace_seconds_per_km, avg_hr, max_hr, calories, source, completed_at, athlete_user_id, coaching_workout_assignments(scheduled_date, coaching_workout_templates(name)), profiles!athlete_user_id(display_name)",
+      "id, actual_duration_seconds, actual_distance_meters, avg_pace_seconds_per_km, avg_hr, max_hr, calories, source, completed_at, athlete_user_id, coaching_workout_assignments(scheduled_date, coaching_workout_templates(name))",
     )
     .eq("group_id", groupId)
     .order("completed_at", { ascending: false })
@@ -64,14 +64,28 @@ async function getExecutions(
   const { data, error } = await query;
   if (error) throw error;
 
-  return (data ?? []).map((r: Record<string, unknown>) => {
+  const rows = data ?? [];
+
+  // Resolve athlete display names via separate profiles query
+  const athleteIds = Array.from(new Set(rows.map((r: Record<string, unknown>) => r.athlete_user_id as string)));
+  const profileMap = new Map<string, string>();
+  if (athleteIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, display_name")
+      .in("id", athleteIds);
+    for (const p of profiles ?? []) {
+      profileMap.set(p.id, p.display_name ?? "Atleta");
+    }
+  }
+
+  return rows.map((r: Record<string, unknown>) => {
     const assignment = r.coaching_workout_assignments as Record<string, unknown> | null;
     const template = assignment?.coaching_workout_templates as Record<string, unknown> | null;
-    const profile = r.profiles as Record<string, unknown> | null;
 
     return {
       id: r.id as string,
-      athlete_name: (profile?.display_name as string) ?? null,
+      athlete_name: profileMap.get(r.athlete_user_id as string) ?? null,
       template_name: (template?.name as string) ?? null,
       actual_duration_seconds: r.actual_duration_seconds as number | null,
       actual_distance_meters: r.actual_distance_meters as number | null,

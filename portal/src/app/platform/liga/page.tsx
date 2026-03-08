@@ -89,14 +89,11 @@ export default async function LigaPage() {
   );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    if (/PGRST|does not exist|league_enrollments/.test(msg)) {
-      return (
-        <div className="rounded-xl border border-border bg-surface p-8 text-center">
-          <p className="text-lg font-medium text-content-primary">Funcionalidade em desenvolvimento</p>
-          <p className="mt-2 text-sm text-content-muted">Este recurso estará disponível em breve.</p>
-        </div>
-      );
-    }
-    throw err;
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
+        <p className="text-lg font-medium text-red-800">Erro ao carregar Liga</p>
+        <p className="mt-2 text-sm text-red-600">{msg}</p>
+      </div>
+    );
   }
 }

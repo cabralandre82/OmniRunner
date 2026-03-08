@@ -14,7 +14,7 @@ const FEE_LABELS: Record<string, { label: string; description: string }> = {
   },
   maintenance: {
     label: "Manutenção",
-    description: "Valor mensal em USD por atleta ativo na assessoria. Cobrada automaticamente no dia 1.",
+    description: "Valor em USD por atleta ativo. Deduzida automaticamente quando o atleta paga a mensalidade.",
   },
 };
 
