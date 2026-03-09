@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/service_locator.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 
@@ -140,7 +141,7 @@ class _PersonalEvolutionScreenState extends State<PersonalEvolutionScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Erro ao carregar dados: $e';
+        _error = ErrorMessages.humanize(e);
       });
     }
   }

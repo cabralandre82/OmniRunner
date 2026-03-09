@@ -12,10 +12,12 @@ import { jsonErr } from "../_shared/http.ts";
  * No CORS needed — this is called server-to-server by Asaas.
  */
 
+const GRACE_PERIOD_DAYS = 3;
+
 const STATUS_MAP: Record<string, string> = {
   PAYMENT_CONFIRMED: "active",
   PAYMENT_RECEIVED: "active",
-  PAYMENT_OVERDUE: "late",
+  PAYMENT_OVERDUE: "grace",
   PAYMENT_REFUNDED: "cancelled",
   PAYMENT_DELETED: "paused",
 };
@@ -157,10 +159,43 @@ serve(async (req: Request) => {
   }
 
   // Process payment events → update subscription status
+  // Priority prevents a late-arriving webhook from overwriting a newer state
+  const STATUS_PRIORITY: Record<string, number> = {
+    cancelled: 0,
+    paused: 1,
+    grace: 2,
+    late: 3,
+    active: 4,
+  };
+
   const newStatus = STATUS_MAP[event];
   const errors: string[] = [];
 
   if (newStatus && subscriptionId) {
+    // Optimistic lock: only update if new status has higher or equal priority
+    const { data: currentSub } = await db
+      .from("coaching_subscriptions")
+      .select("status, updated_at")
+      .eq("id", subscriptionId)
+      .maybeSingle();
+
+    const currentPriority = STATUS_PRIORITY[currentSub?.status ?? ""] ?? -1;
+    const newPriority = STATUS_PRIORITY[newStatus] ?? -1;
+
+    // Skip if the subscription already has a higher-priority status
+    // (e.g., don't downgrade "active" to "grace" if a confirmation arrived first)
+    if (currentPriority > newPriority && newStatus !== "cancelled") {
+      await db
+        .from("payment_webhook_events")
+        .update({
+          processed: true,
+          processed_at: new Date().toISOString(),
+          error_message: `skipped: current status "${currentSub?.status}" has higher priority than "${newStatus}"`,
+        })
+        .eq("asaas_event_id", eventId);
+      return new Response(JSON.stringify({ ok: true, skipped: true, reason: "stale_event" }), { status: 200 });
+    }
+
     const updateData: Record<string, unknown> = {
       status: newStatus,
       updated_at: new Date().toISOString(),
@@ -172,6 +207,11 @@ serve(async (req: Request) => {
       if (nextDue) {
         updateData.next_due_date = nextDue;
       }
+    }
+
+    if (newStatus === "grace") {
+      const graceUntil = new Date(Date.now() + GRACE_PERIOD_DAYS * 86_400_000);
+      updateData.grace_until = graceUntil.toISOString();
     }
 
     if (newStatus === "cancelled") {
@@ -308,6 +348,24 @@ serve(async (req: Request) => {
 
   return new Response(JSON.stringify({ ok: true, errors: errors.length > 0 ? errors : undefined }), { status: 200 });
   } catch (error) {
+    // Dead-letter queue: persist failed webhooks for manual recovery
+    try {
+      const dlDb = getDb();
+      await dlDb.from("billing_webhook_dead_letters").insert({
+        provider: "asaas",
+        event_type: event ?? "unknown",
+        payload,
+        headers: Object.fromEntries(
+          [...req.headers.entries()].filter(
+            ([k]) => !["authorization", "cookie", "x-signature", "x-request-id"].includes(k.toLowerCase()),
+          ),
+        ),
+        error_message: error instanceof Error ? error.message : String(error),
+        created_at: new Date().toISOString(),
+      });
+    } catch {
+      // best-effort DLQ insert
+    }
     return jsonErr(500, "INTERNAL", error instanceof Error ? error.message : String(error), undefined, undefined, undefined, req);
   }
 });

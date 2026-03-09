@@ -371,6 +371,8 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 
   /// Merge local and remote sessions, dedup by id, sort by most recent.
+  /// For duplicates, prefer the version with the later endTimeMs (server wins
+  /// when it has newer data, local wins while unsynced or still recording).
   List<WorkoutSessionEntity> _mergeRuns(
     List<WorkoutSessionEntity> local,
     List<WorkoutSessionEntity> remote,
@@ -380,7 +382,17 @@ class _TodayScreenState extends State<TodayScreen> {
       byId[s.id] = s;
     }
     for (final s in remote) {
-      byId.putIfAbsent(s.id, () => s);
+      final existing = byId[s.id];
+      if (existing == null) {
+        byId[s.id] = s;
+      } else {
+        // Prefer whichever has the more recent endTimeMs
+        final existingEnd = existing.endTimeMs ?? 0;
+        final remoteEnd = s.endTimeMs ?? 0;
+        if (remoteEnd > existingEnd) {
+          byId[s.id] = s;
+        }
+      }
     }
     final list = byId.values.toList()
       ..sort((a, b) => b.startTimeMs.compareTo(a.startTimeMs));

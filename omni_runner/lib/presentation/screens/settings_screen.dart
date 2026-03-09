@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/core/config/app_config.dart';
 import 'package:omni_runner/core/errors/strava_failures.dart';
+import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/entities/coach_settings_entity.dart';
@@ -295,7 +296,7 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
     } on IntegrationFailure catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: $e')),
+          SnackBar(content: Text(ErrorMessages.humanize(e))),
         );
       }
     } finally {
