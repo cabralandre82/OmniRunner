@@ -584,6 +584,51 @@ class AppDatabase extends _$AppDatabase {
         },
       );
 
+  /// Prune locally-cached data older than [days] that has been synced.
+  /// GPS points are the largest growth driver; sessions, ledger, and XP follow.
+  Future<int> pruneOldData({int days = 90}) async {
+    final cutoffMs = DateTime.now()
+        .subtract(Duration(days: days))
+        .millisecondsSinceEpoch;
+    var deleted = 0;
+
+    // Find old synced session UUIDs first
+    final oldSessions = await (select(workoutSessions)
+          ..where((ws) =>
+              ws.isSynced.equals(true) &
+              ws.startTimeMs.isSmallerThanValue(cutoffMs)))
+        .get();
+
+    if (oldSessions.isNotEmpty) {
+      final uuids = oldSessions.map((s) => s.sessionUuid).toList();
+      // Delete GPS points in batches to avoid very large IN clauses
+      for (var i = 0; i < uuids.length; i += 500) {
+        final batch = uuids.sublist(i, i + 500 > uuids.length ? uuids.length : i + 500);
+        deleted += await (delete(locationPoints)
+              ..where((lp) => lp.sessionId.isIn(batch)))
+            .go();
+      }
+      // Delete the sessions themselves
+      deleted += await (delete(workoutSessions)
+            ..where((ws) =>
+                ws.isSynced.equals(true) &
+                ws.startTimeMs.isSmallerThanValue(cutoffMs)))
+          .go();
+    }
+
+    // Old ledger entries
+    deleted += await (delete(ledgerEntries)
+          ..where((le) => le.createdAtMs.isSmallerThanValue(cutoffMs)))
+        .go();
+
+    // Old XP transactions
+    deleted += await (delete(xpTransactions)
+          ..where((xp) => xp.createdAtMs.isSmallerThanValue(cutoffMs)))
+        .go();
+
+    return deleted;
+  }
+
   static String? _encryptionKey;
 
   /// Must be called before [getDatabase] to enable SQLCipher encryption.

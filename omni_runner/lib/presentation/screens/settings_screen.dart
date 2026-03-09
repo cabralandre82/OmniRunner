@@ -67,30 +67,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _header('Aparência'),
                 ValueListenableBuilder<ThemeMode>(
                   valueListenable: themeNotifier,
-                  builder: (_, mode, __) => Column(
-                    children: [
-                      RadioListTile<ThemeMode>(
-                        title: Text(context.l10n.systemMode),
-                        secondary: const Icon(Icons.brightness_auto),
-                        value: ThemeMode.system,
-                        groupValue: mode,
-                        onChanged: (v) => themeNotifier.setMode(v!),
-                      ),
-                      RadioListTile<ThemeMode>(
-                        title: Text(context.l10n.lightMode),
-                        secondary: const Icon(Icons.light_mode),
-                        value: ThemeMode.light,
-                        groupValue: mode,
-                        onChanged: (v) => themeNotifier.setMode(v!),
-                      ),
-                      RadioListTile<ThemeMode>(
-                        title: Text(context.l10n.darkMode),
-                        secondary: const Icon(Icons.dark_mode),
-                        value: ThemeMode.dark,
-                        groupValue: mode,
-                        onChanged: (v) => themeNotifier.setMode(v!),
-                      ),
-                    ],
+                  builder: (_, mode, __) => RadioGroup<ThemeMode>(
+                    groupValue: mode,
+                    onChanged: (v) { if (v != null) themeNotifier.setMode(v); },
+                    child: Column(
+                      children: [
+                        RadioListTile<ThemeMode>(
+                          title: Text(context.l10n.systemMode),
+                          secondary: const Icon(Icons.brightness_auto),
+                          value: ThemeMode.system,
+                        ),
+                        RadioListTile<ThemeMode>(
+                          title: Text(context.l10n.lightMode),
+                          secondary: const Icon(Icons.light_mode),
+                          value: ThemeMode.light,
+                        ),
+                        RadioListTile<ThemeMode>(
+                          title: Text(context.l10n.darkMode),
+                          secondary: const Icon(Icons.dark_mode),
+                          value: ThemeMode.dark,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 if (!widget.isStaff) ...[

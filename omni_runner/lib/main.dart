@@ -19,6 +19,7 @@ import 'package:omni_runner/core/push/push_navigation_handler.dart';
 import 'package:omni_runner/core/push/push_notification_service.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/sync/auto_sync_manager.dart';
+import 'package:omni_runner/data/datasources/drift_database.dart';
 import 'package:omni_runner/data/datasources/foreground_task_config.dart';
 import 'package:omni_runner/domain/repositories/i_sync_repo.dart';
 import 'package:omni_runner/features/watch_bridge/watch_bridge_init.dart';
@@ -110,6 +111,18 @@ Future<void> _bootstrap() async {
     'Cold start completed in ${stopwatch.elapsedMilliseconds}ms',
     tag: 'Startup',
   );
+
+  // Fire-and-forget: prune old local data to prevent unbounded DB growth
+  unawaited(Future.microtask(() async {
+    try {
+      final deleted = await getDatabase().pruneOldData();
+      if (deleted > 0) {
+        AppLogger.info('Pruned $deleted old local records', tag: 'Cleanup');
+      }
+    } catch (e) {
+      AppLogger.debug('Local data cleanup skipped', tag: 'Cleanup', error: e);
+    }
+  }));
 
   runApp(OmniRunnerApp(recovery: recovery));
 }

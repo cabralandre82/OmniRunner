@@ -274,10 +274,9 @@ class _RoleOption extends StatelessWidget {
                   ],
                 ),
               ),
-              Radio<bool>(
-                value: true,
-                groupValue: selected ? true : null,
-                onChanged: (_) => onTap?.call(),
+              Icon(
+                selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                color: selected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
               ),
             ],
           ),

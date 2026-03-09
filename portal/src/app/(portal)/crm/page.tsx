@@ -27,13 +27,18 @@ interface CrmAthlete {
   last_note_at: string | null;
 }
 
+const PAGE_SIZE = 50;
+
 async function getCrmData(
   groupId: string,
+  page: number,
   tagId?: string,
   status?: string,
   search?: string
-): Promise<{ athletes: CrmAthlete[]; totalCount: number }> {
+): Promise<{ athletes: CrmAthlete[]; totalCount: number; page: number; pageSize: number }> {
   const supabase = createClient();
+  const from = page * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
 
   const [{ data: members }, { count: totalCount }] = await Promise.all([
     supabase
@@ -41,7 +46,7 @@ async function getCrmData(
       .select("user_id")
       .eq("group_id", groupId)
       .in("role", ["athlete", "atleta"])
-      .range(0, 499),
+      .range(from, to),
     supabase
       .from("coaching_members")
       .select("user_id", { count: "exact", head: true })
@@ -171,18 +176,19 @@ async function getCrmData(
     );
   }
 
-  return { athletes, totalCount: totalCount ?? 0 };
+  return { athletes, totalCount: totalCount ?? 0, page, pageSize: PAGE_SIZE };
 }
 
 export default async function CrmPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tag?: string; status?: string; q?: string }>;
+  searchParams: Promise<{ tag?: string; status?: string; q?: string; page?: string }>;
 }) {
   const groupId = cookies().get("portal_group_id")?.value;
   if (!groupId) return <NoGroupSelected />;
 
   const params = await searchParams;
+  const currentPage = Math.max(0, parseInt(params.page ?? "0", 10) || 0);
 
   let athletes: CrmAthlete[] = [];
   let totalCount = 0;
@@ -191,6 +197,7 @@ export default async function CrmPage({
   try {
     const result = await getCrmData(
       groupId,
+      currentPage,
       params.tag,
       params.status,
       params.q
@@ -200,6 +207,8 @@ export default async function CrmPage({
   } catch (e) {
     fetchError = String(e);
   }
+
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const activeCount = athletes.filter((a) => a.status === "active").length;
   const atRiskCount = athletes.filter((a) => a.active_alerts > 0).length;
@@ -247,11 +256,9 @@ export default async function CrmPage({
       </div>
 
       <div className="flex items-center justify-between">
-        {totalCount > athletes.length && (
-          <p className="text-sm text-content-secondary">
-            Mostrando {athletes.length} de {totalCount} atletas
-          </p>
-        )}
+        <p className="text-sm text-content-secondary">
+          Mostrando {currentPage * PAGE_SIZE + 1}–{Math.min((currentPage + 1) * PAGE_SIZE, totalCount)} de {totalCount} atletas
+        </p>
         <a
           href={exportHref}
           className="ml-auto rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary shadow-sm hover:bg-surface-elevated"
@@ -363,6 +370,30 @@ export default async function CrmPage({
       {athletes.length === 0 && (
         <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
           <p className="text-sm text-content-secondary">Nenhum atleta encontrado.</p>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          {currentPage > 0 && (
+            <Link
+              href={{ pathname: "/crm", query: { ...params, page: String(currentPage - 1) } }}
+              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-content-secondary hover:bg-surface-elevated"
+            >
+              ← Anterior
+            </Link>
+          )}
+          <span className="text-sm text-content-secondary">
+            Página {currentPage + 1} de {totalPages}
+          </span>
+          {currentPage < totalPages - 1 && (
+            <Link
+              href={{ pathname: "/crm", query: { ...params, page: String(currentPage + 1) } }}
+              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-content-secondary hover:bg-surface-elevated"
+            >
+              Próxima →
+            </Link>
+          )}
         </div>
       )}
 

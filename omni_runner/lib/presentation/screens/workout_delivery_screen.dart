@@ -126,16 +126,18 @@ class _WorkoutDeliveryScreenState extends State<WorkoutDeliveryScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           title: const Text('Motivo da falha'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: _failureReasons
-                .map((r) => RadioListTile<String>(
-                      title: Text(r),
-                      value: r,
-                      groupValue: selected,
-                      onChanged: (v) => setDialogState(() => selected = v),
-                    ))
-                .toList(),
+          content: RadioGroup<String>(
+            groupValue: selected ?? '',
+            onChanged: (v) => setDialogState(() => selected = v),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: _failureReasons
+                  .map((r) => RadioListTile<String>(
+                        title: Text(r),
+                        value: r,
+                      ))
+                  .toList(),
+            ),
           ),
           actions: [
             TextButton(

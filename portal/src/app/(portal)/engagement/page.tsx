@@ -6,6 +6,7 @@ import { LastUpdated } from "@/components/last-updated";
 import { formatKm } from "@/lib/format";
 import { StatBlock, DashboardCard } from "@/components/ui";
 import { EngagementFilters } from "./engagement-filters";
+import { cached, CacheTTL } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -60,20 +61,26 @@ export default async function EngagementPage({
 
     if (athleteIds.length > 0) {
       const [weekRes, monthRes, challengeRes, kpisRes, athleteKpisRes] = await Promise.all([
-        db
-          .from("sessions")
-          .select("user_id, total_distance_m, start_time_ms")
-          .in("user_id", athleteIds)
-          .gte("start_time_ms", weekStart)
-          .gte("status", 3)
-          .limit(5000),
-        db
-          .from("sessions")
-          .select("user_id, total_distance_m, start_time_ms")
-          .in("user_id", athleteIds)
-          .gte("start_time_ms", monthStart)
-          .gte("status", 3)
-          .limit(10000),
+        cached(`engagement:sessions:week:${groupId}:${period}`, CacheTTL.DASHBOARD_KPI, async () => {
+          const res = await db
+            .from("sessions")
+            .select("user_id, total_distance_m, start_time_ms")
+            .in("user_id", athleteIds)
+            .gte("start_time_ms", weekStart)
+            .gte("status", 3)
+            .limit(5000);
+          return { data: res.data };
+        }),
+        cached(`engagement:sessions:month:${groupId}:${period}`, CacheTTL.DASHBOARD_KPI, async () => {
+          const res = await db
+            .from("sessions")
+            .select("user_id, total_distance_m, start_time_ms")
+            .in("user_id", athleteIds)
+            .gte("start_time_ms", monthStart)
+            .gte("status", 3)
+            .limit(10000);
+          return { data: res.data };
+        }),
         db
           .from("challenge_participants")
           .select("id", { count: "exact", head: true })

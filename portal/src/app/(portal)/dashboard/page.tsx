@@ -9,6 +9,7 @@ import { formatKm } from "@/lib/format";
 import { StatBlock, DashboardCard } from "@/components/ui";
 import { DashboardCharts } from "./dashboard-charts";
 import { DashboardAlerts } from "./dashboard-alerts";
+import { cached, CacheTTL } from "@/lib/cache";
 
 export const metadata: Metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
@@ -86,14 +87,17 @@ export default async function DashboardPage() {
     let prevWeekSessions: { user_id: string; total_distance_m: number; start_time_ms: number }[] = [];
 
     if (athleteIds.length > 0) {
-      const [allSessionsRes, verRes, challengeRes] = await Promise.all([
-        db
-          .from("sessions")
-          .select("user_id, total_distance_m, start_time_ms")
-          .in("user_id", athleteIds)
-          .gte("start_time_ms", prevWeekStart)
-          .gte("status", 3)
-          .limit(5000),
+      const [allSessions, verRes, challengeRes] = await Promise.all([
+        cached(`dashboard:sessions:${groupId}`, CacheTTL.DASHBOARD_KPI, async () => {
+          const res = await db
+            .from("sessions")
+            .select("user_id, total_distance_m, start_time_ms")
+            .in("user_id", athleteIds)
+            .gte("start_time_ms", prevWeekStart)
+            .gte("status", 3)
+            .limit(5000);
+          return (res.data ?? []) as typeof weekSessions;
+        }),
         db
           .from("athlete_verification")
           .select("user_id", { count: "exact", head: true })
@@ -106,7 +110,6 @@ export default async function DashboardPage() {
           .gte("joined_at_ms", monthStart),
       ]);
 
-      const allSessions = (allSessionsRes.data ?? []) as typeof weekSessions;
       weekSessions = allSessions.filter((s) => s.start_time_ms >= weekStart);
       prevWeekSessions = allSessions.filter((s) => s.start_time_ms < weekStart);
       verifiedCount = verRes.count ?? 0;

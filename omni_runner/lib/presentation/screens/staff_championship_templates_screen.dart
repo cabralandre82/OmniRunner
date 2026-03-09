@@ -795,49 +795,53 @@ class _CreateTemplateScreenState extends State<_CreateTemplateScreen> {
               theme: theme,
             ),
             const SizedBox(height: 12),
-            ...[
-              (
-                'distance',
-                Icons.straighten_rounded,
-                'Distância',
-                _isSingleRace
-                    ? 'Quem correr mais km na corrida'
-                    : 'Quem acumular mais km no período',
+            RadioGroup<String>(
+              groupValue: _metric,
+              onChanged: (v) { if (v != null) setState(() => _metric = v); },
+              child: Column(
+                children: [
+                  (
+                    'distance',
+                    Icons.straighten_rounded,
+                    'Distância',
+                    _isSingleRace
+                        ? 'Quem correr mais km na corrida'
+                        : 'Quem acumular mais km no período',
+                  ),
+                  (
+                    'time',
+                    Icons.timer_rounded,
+                    'Tempo de corrida',
+                    _isSingleRace
+                        ? 'Quem correr mais tempo na corrida'
+                        : 'Quem acumular mais tempo correndo',
+                  ),
+                  (
+                    'pace',
+                    Icons.speed_rounded,
+                    'Pace médio',
+                    'Quem tiver o melhor pace médio (min/km)',
+                  ),
+                  (
+                    'elevation',
+                    Icons.terrain_rounded,
+                    'Elevação',
+                    _isSingleRace
+                        ? 'Quem subir mais metros na corrida'
+                        : 'Quem acumular mais metros de subida',
+                  ),
+                ].map((e) => RadioListTile<String>(
+                      value: e.$1,
+                      secondary: Icon(e.$2, size: 22),
+                      title: Text(e.$3),
+                      subtitle: Text(e.$4,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant)),
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                    )).toList(),
               ),
-              (
-                'time',
-                Icons.timer_rounded,
-                'Tempo de corrida',
-                _isSingleRace
-                    ? 'Quem correr mais tempo na corrida'
-                    : 'Quem acumular mais tempo correndo',
-              ),
-              (
-                'pace',
-                Icons.speed_rounded,
-                'Pace médio',
-                'Quem tiver o melhor pace médio (min/km)',
-              ),
-              (
-                'elevation',
-                Icons.terrain_rounded,
-                'Elevação',
-                _isSingleRace
-                    ? 'Quem subir mais metros na corrida'
-                    : 'Quem acumular mais metros de subida',
-              ),
-            ].map((e) => RadioListTile<String>(
-                  value: e.$1,
-                  groupValue: _metric,
-                  onChanged: (v) => setState(() => _metric = v!),
-                  secondary: Icon(e.$2, size: 22),
-                  title: Text(e.$3),
-                  subtitle: Text(e.$4,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant)),
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                )),
+            ),
 
             if (_metric == 'pace') ...[
               const SizedBox(height: 12),

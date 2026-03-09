@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NoGroupSelected } from "@/components/no-group-selected";
 import { DashboardCard } from "@/components/ui";
 import { formatDateMs } from "@/lib/format";
+import { cached, CacheTTL } from "@/lib/cache";
 
 export const metadata: Metadata = { title: "Liga" };
 export const dynamic = "force-dynamic";
@@ -76,11 +77,15 @@ export default async function LeaguePage() {
         group_name: groupNames.get((e as { group_id: string }).group_id) ?? "—",
       }));
 
-      const { data: snapshots } = await db
-        .from("league_snapshots")
-        .select("group_id, week_key, cumulative_score, total_km, rank")
-        .eq("season_id", currentSeason.id)
-        .order("week_key", { ascending: false });
+      const { data: snapshots } = await cached(
+        `league:snapshots:${currentSeason.id}`,
+        CacheTTL.RANKINGS,
+        () => db
+          .from("league_snapshots")
+          .select("group_id, week_key, cumulative_score, total_km, rank")
+          .eq("season_id", currentSeason!.id)
+          .order("week_key", { ascending: false }),
+      );
 
       const snapshotList = snapshots ?? [];
       const latestWeek = snapshotList[0]?.week_key;

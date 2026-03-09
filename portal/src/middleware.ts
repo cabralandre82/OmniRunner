@@ -119,18 +119,22 @@ export async function middleware(request: NextRequest) {
     if (memberships.length === 1) {
       groupId = memberships[0].group_id as string;
       role = memberships[0].role as string;
-      supabaseResponse.cookies.set("portal_group_id", groupId, {
+      // Redirect so the next request carries the cookie in the request headers,
+      // preventing page server components from seeing a missing cookie.
+      const redirect = NextResponse.redirect(request.nextUrl);
+      redirect.cookies.set("portal_group_id", groupId, {
         path: "/",
         httpOnly: true,
         sameSite: "lax",
         maxAge: 60 * 60 * 8,
       });
-      supabaseResponse.cookies.set("portal_role", role, {
+      redirect.cookies.set("portal_role", role, {
         path: "/",
         httpOnly: true,
         sameSite: "lax",
         maxAge: 60 * 60 * 8,
       });
+      return redirect;
     } else {
       if (pathname !== "/select-group") {
         const url = request.nextUrl.clone();
