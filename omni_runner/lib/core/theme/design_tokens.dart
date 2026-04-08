@@ -18,6 +18,7 @@ abstract final class DesignTokens {
   static const surfaceElevated = Color(0xFF283548);
 
   static const primary = Color(0xFF3B82F6);
+  static const brand = primary;
   static const primarySoft = Color(0xFF1E3A5F);
   static const primaryGlow = Color(0x333B82F6);
 

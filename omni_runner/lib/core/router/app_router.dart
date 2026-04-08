@@ -102,6 +102,9 @@ import 'package:omni_runner/presentation/screens/wallet_screen.dart';
 import 'package:omni_runner/presentation/screens/welcome_screen.dart';
 import 'package:omni_runner/presentation/screens/workout_delivery_screen.dart';
 import 'package:omni_runner/presentation/screens/wrapped_screen.dart';
+import 'package:omni_runner/presentation/screens/athlete_training_feed_screen.dart';
+import 'package:omni_runner/presentation/screens/athlete_workout_detail_screen.dart';
+import 'package:omni_runner/presentation/screens/athlete_workout_feedback_screen.dart';
 
 // ── Feature screens ─────────────────────────────────────────────────────────
 import 'package:omni_runner/features/integrations_export/presentation/export_screen.dart';
@@ -128,6 +131,9 @@ import 'package:omni_runner/features/parks/domain/park_entity.dart';
 import 'package:omni_runner/domain/usecases/recover_active_session.dart';
 
 import 'package:omni_runner/presentation/blocs/badges/badges_bloc.dart';
+import 'package:omni_runner/presentation/blocs/training_feed/training_feed_bloc.dart';
+import 'package:omni_runner/presentation/blocs/training_feed/training_feed_event.dart';
+import 'package:omni_runner/domain/entities/plan_workout_entity.dart';
 import 'package:omni_runner/presentation/blocs/badges/badges_event.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_event.dart';
@@ -246,6 +252,17 @@ abstract final class AppRoutes {
   static const announcementFeed = '/announcements/:groupId';
   static const announcementDetail = '/announcements/detail/:id';
   static const announcementCreate = '/announcements/create/:groupId';
+
+  // ── Training Feed (plan-based) ────────────────────────────────────────
+  static const athleteTrainingFeed = '/athlete/training-feed';
+  static const athletePlanWorkout = '/athlete/plan-workout/:workoutId';
+  static const athletePlanWorkoutFeedback =
+      '/athlete/plan-workout/:workoutId/feedback';
+
+  static String athletePlanWorkoutPath(String workoutId) =>
+      '/athlete/plan-workout/$workoutId';
+  static String athletePlanWorkoutFeedbackPath(String workoutId) =>
+      '/athlete/plan-workout/$workoutId/feedback';
 
   // ── Athlete features ──────────────────────────────────────────────────
   static const athleteVerification = '/athlete/verification';
@@ -1079,6 +1096,38 @@ GoRouter createAppRouter({RecoveredSession? recovery}) {
           return AnnouncementCreateScreen(
             groupId: groupId,
             existing: existing,
+          );
+        },
+      ),
+
+      // ── Training Feed (plan-based) ────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.athleteTrainingFeed,
+        builder: (context, state) => BlocProvider<TrainingFeedBloc>(
+          create: (_) => sl<TrainingFeedBloc>()
+            ..add(LoadTrainingFeed(focusDate: DateTime.now())),
+          child: const AthleteTrainingFeedScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.athletePlanWorkout,
+        builder: (context, state) {
+          final workoutId = state.pathParameters['workoutId']!;
+          final extra = state.extra as PlanWorkoutEntity?;
+          return AthleteWorkoutDetailScreen(
+            workoutId: workoutId,
+            initialWorkout: extra,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.athletePlanWorkoutFeedback,
+        builder: (context, state) {
+          final workoutId = state.pathParameters['workoutId']!;
+          final extra = state.extra as PlanWorkoutEntity?;
+          return AthleteWorkoutFeedbackScreen(
+            releaseId: workoutId,
+            workout: extra,
           );
         },
       ),

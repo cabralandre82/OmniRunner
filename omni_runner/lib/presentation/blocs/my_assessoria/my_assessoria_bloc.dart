@@ -38,6 +38,11 @@ class MyAssessoriaBloc extends Bloc<MyAssessoriaEvent, MyAssessoriaState> {
     try {
       final members = await _remote.fetchMemberships(event.userId);
 
+      AppLogger.debug(
+        'Loaded coaching_members (count=${members.length}) for user ${event.userId}',
+        tag: 'MyAssessoria',
+      );
+
       // Sync to local repo for offline access
       for (final m in members) {
         try {
@@ -48,14 +53,16 @@ class MyAssessoriaBloc extends Bloc<MyAssessoriaEvent, MyAssessoriaState> {
         }
       }
 
-      final atletaMembership = members.where((m) => m.isAthlete).toList();
-
-      if (atletaMembership.isEmpty) {
+      if (members.isEmpty) {
         emit(const MyAssessoriaLoaded());
         return;
       }
 
-      final current = atletaMembership.first;
+      // Prefer athlete membership, but fall back to any staff membership (coach/admin/assistant).
+      final current = members.firstWhere(
+        (m) => m.isAthlete,
+        orElse: () => members.first,
+      );
 
       // Fetch current group
       final group = await _remote.fetchGroup(current.groupId);

@@ -78,6 +78,10 @@ import 'package:omni_runner/domain/repositories/i_workout_repo.dart';
 import 'package:omni_runner/domain/repositories/i_financial_repo.dart';
 import 'package:omni_runner/domain/repositories/i_trainingpeaks_repo.dart';
 import 'package:omni_runner/domain/repositories/i_wearable_repo.dart';
+import 'package:omni_runner/domain/repositories/i_training_plan_repo.dart';
+import 'package:omni_runner/data/repositories_impl/supabase_training_plan_repo.dart';
+import 'package:omni_runner/data/services/training_sync_service.dart';
+import 'package:omni_runner/core/auth/user_identity_provider.dart';
 import 'package:omni_runner/data/repositories_impl/supabase_trainingpeaks_repo.dart';
 import 'package:omni_runner/data/repositories_impl/supabase_leaderboard_repo.dart';
 import 'package:omni_runner/data/repositories_impl/supabase_feed_remote_source.dart';
@@ -668,6 +672,17 @@ Future<void> registerDataModule(GetIt sl) async {
       offlineQueue: AppConfig.isSupabaseReady ? sl<OfflineQueue>() : null,
     ),
   );
+
+  sl.registerLazySingleton<ITrainingPlanRepo>(
+    () => SupabaseTrainingPlanRepo(sl<SupabaseClient>()),
+  );
+  sl.registerLazySingleton<TrainingSyncService>(
+    () => TrainingSyncService(
+      repo: sl<ITrainingPlanRepo>(),
+      deviceId: sl<UserIdentityProvider>().userId,
+    ),
+  );
+
   sl.registerFactory<LinkDevice>(
     () => LinkDevice(repo: sl<IWearableRepo>()),
   );

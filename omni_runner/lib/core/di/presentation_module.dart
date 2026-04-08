@@ -84,6 +84,9 @@ import 'package:omni_runner/presentation/blocs/verification/verification_bloc.da
 import 'package:omni_runner/presentation/blocs/wallet/wallet_bloc.dart';
 import 'package:omni_runner/presentation/blocs/workout_assignments/workout_assignments_bloc.dart';
 import 'package:omni_runner/presentation/blocs/workout_builder/workout_builder_bloc.dart';
+import 'package:omni_runner/presentation/blocs/training_feed/training_feed_bloc.dart';
+import 'package:omni_runner/domain/repositories/i_training_plan_repo.dart';
+import 'package:omni_runner/data/services/training_sync_service.dart';
 
 /// Registers BLoCs and their remote data sources.
 void registerPresentationModule(GetIt sl) {
@@ -261,5 +264,12 @@ void registerPresentationModule(GetIt sl) {
   );
   sl.registerFactory<WorkoutAssignmentsBloc>(
     () => WorkoutAssignmentsBloc(repo: sl<IWorkoutRepo>()),
+  );
+
+  sl.registerFactory<TrainingFeedBloc>(
+    () => TrainingFeedBloc(
+      repo: sl<ITrainingPlanRepo>(),
+      syncService: sl<TrainingSyncService>(),
+    ),
   );
 }
