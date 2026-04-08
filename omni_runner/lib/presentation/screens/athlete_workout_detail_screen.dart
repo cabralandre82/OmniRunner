@@ -1,6 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
@@ -33,6 +38,7 @@ class _AthleteWorkoutDetailScreenState
   bool _loading = true;
   String? _error;
   bool _actionLoading = false;
+  bool _sendingToWatch = false;
 
   static const _tag = 'WorkoutDetailScreen';
 
@@ -95,6 +101,60 @@ class _AthleteWorkoutDetailScreenState
       '/athlete/plan-workout/${workout.id}/feedback',
       extra: workout,
     );
+  }
+
+  Future<void> _sendToWatch() async {
+    final workout = _workout;
+    final templateId = workout?.contentSnapshot?.templateId;
+    if (templateId == null || _sendingToWatch) return;
+
+    setState(() => _sendingToWatch = true);
+    try {
+      final response = await sl<SupabaseClient>().functions.invoke(
+        'generate-fit-workout',
+        body: {'template_id': templateId},
+      );
+
+      if (response.status != 200) {
+        throw Exception('Erro ao gerar arquivo .FIT (status ${response.status})');
+      }
+
+      final rawData = response.data;
+      final List<int> bytes;
+      if (rawData is List<int>) {
+        bytes = rawData;
+      } else if (rawData is List) {
+        bytes = rawData.cast<int>();
+      } else {
+        throw Exception('Formato de resposta inválido do servidor');
+      }
+
+      final dir = await getTemporaryDirectory();
+      final safeName = workout!.contentSnapshot!.templateName
+          .replaceAll(RegExp(r'[^a-zA-Z0-9_\- ]'), '')
+          .replaceAll(RegExp(r'\s+'), '_');
+      final file = File('${dir.path}/$safeName.fit');
+      await file.writeAsBytes(bytes);
+
+      if (!mounted) return;
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          text: 'Treino: ${workout.contentSnapshot!.templateName}',
+        ),
+      );
+    } on Exception catch (e, stack) {
+      AppLogger.error('sendToWatch failed', tag: _tag, error: e, stack: stack);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Não foi possível gerar o arquivo: ${e.toString().split(':').last.trim()}'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sendingToWatch = false);
+    }
   }
 
   @override
@@ -186,8 +246,12 @@ class _AthleteWorkoutDetailScreenState
           _BottomActionBar(
             workout: workout,
             loading: _actionLoading,
+            sendingToWatch: _sendingToWatch,
             onStart: _onStartWorkout,
             onComplete: _onCompleteWorkout,
+            onSendToWatch: workout.contentSnapshot?.templateId != null
+                ? _sendToWatch
+                : null,
           ),
         ],
       ),
@@ -844,14 +908,18 @@ class _BottomActionBar extends StatelessWidget {
   const _BottomActionBar({
     required this.workout,
     required this.loading,
+    required this.sendingToWatch,
     required this.onStart,
     required this.onComplete,
+    this.onSendToWatch,
   });
 
   final PlanWorkoutEntity workout;
   final bool loading;
+  final bool sendingToWatch;
   final VoidCallback onStart;
   final VoidCallback onComplete;
+  final VoidCallback? onSendToWatch;
 
   @override
   Widget build(BuildContext context) {
@@ -891,25 +959,51 @@ class _BottomActionBar extends StatelessWidget {
           }
 
           if (status == PlanWorkoutStatus.released) {
-            return FilledButton.icon(
-              onPressed: onStart,
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-              ),
-              icon: const Icon(Icons.play_arrow),
-              label: const Text('Iniciar treino'),
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (onSendToWatch != null) ...[
+                  _WatchButton(
+                    loading: sendingToWatch,
+                    onPressed: onSendToWatch,
+                  ),
+                  const SizedBox(height: DesignTokens.spacingSm),
+                ],
+                FilledButton.icon(
+                  onPressed: onStart,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('Iniciar treino'),
+                ),
+              ],
             );
           }
 
           if (status == PlanWorkoutStatus.inProgress) {
-            return FilledButton.icon(
-              onPressed: onComplete,
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-                backgroundColor: DesignTokens.success,
-              ),
-              icon: const Icon(Icons.check),
-              label: const Text('Concluir treino'),
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (onSendToWatch != null) ...[
+                  _WatchButton(
+                    loading: sendingToWatch,
+                    onPressed: onSendToWatch,
+                  ),
+                  const SizedBox(height: DesignTokens.spacingSm),
+                ],
+                FilledButton.icon(
+                  onPressed: onComplete,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    backgroundColor: DesignTokens.success,
+                  ),
+                  icon: const Icon(Icons.check),
+                  label: const Text('Concluir treino'),
+                ),
+              ],
             );
           }
 
@@ -928,6 +1022,35 @@ class _BottomActionBar extends StatelessWidget {
 
           return const SizedBox.shrink();
         }),
+      ),
+    );
+  }
+}
+
+class _WatchButton extends StatelessWidget {
+  const _WatchButton({required this.loading, required this.onPressed});
+
+  final bool loading;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: loading ? null : onPressed,
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(44),
+        side: const BorderSide(color: DesignTokens.border),
+      ),
+      icon: loading
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.watch_outlined, size: 20),
+      label: Text(
+        loading ? 'Gerando arquivo .FIT…' : 'Enviar para relógio',
+        style: const TextStyle(fontSize: 14),
       ),
     );
   }
