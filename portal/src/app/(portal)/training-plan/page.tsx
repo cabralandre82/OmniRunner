@@ -53,7 +53,7 @@ async function getPlans(groupId: string): Promise<Plan[]> {
 
   if (error || !data) return [];
 
-  const athleteIds = [...new Set(data.map((p) => p.athlete_user_id).filter(Boolean))];
+  const athleteIds = Array.from(new Set(data.map((p) => p.athlete_user_id).filter(Boolean)));
   const weekCounts = new Map<string, number>();
 
   // Fetch week counts
