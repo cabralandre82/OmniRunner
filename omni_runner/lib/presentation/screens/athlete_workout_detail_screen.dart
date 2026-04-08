@@ -1035,23 +1035,51 @@ class _WatchButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: loading ? null : onPressed,
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(44),
-        side: const BorderSide(color: DesignTokens.border),
-      ),
-      icon: loading
-          ? const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : const Icon(Icons.watch_outlined, size: 20),
-      label: Text(
-        loading ? 'Gerando arquivo .FIT…' : 'Enviar para relógio',
-        style: const TextStyle(fontSize: 14),
-      ),
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        OutlinedButton.icon(
+          onPressed: loading ? null : onPressed,
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(44),
+            side: const BorderSide(color: DesignTokens.border),
+          ),
+          icon: loading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.watch_outlined, size: 20),
+          label: Text(
+            loading ? 'Gerando arquivo .FIT…' : 'Enviar para relógio',
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.info_outline,
+              size: 12,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                'Garmin, COROS e Suunto: use o arquivo .FIT gerado. '
+                'Apple Watch e WearOS sincronizam automaticamente pelo celular.',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
