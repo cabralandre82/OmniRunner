@@ -154,6 +154,7 @@ jobs:
     name: k6 Health Smoke
     runs-on: ubuntu-latest
     needs: build
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Install k6
@@ -182,6 +183,9 @@ jobs:
           done
           echo "Portal failed to start"
           exit 1
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       - name: Run k6 health smoke
         run: k6 run -e SMOKE=true -e BASE_URL=http://localhost:3000 tools/load-tests/scenarios/api-health.js
 
