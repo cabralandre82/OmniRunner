@@ -2,9 +2,13 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
-  testIgnore: process.env.SKIP_VISUAL_REGRESSION
-    ? ["**/visual-regression.spec.ts"]
-    : [],
+  testIgnore: [
+    ...(process.env.SKIP_VISUAL_REGRESSION
+      ? ["**/visual-regression.spec.ts"]
+      : []),
+    // delivery tests require authenticated session setup
+    ...(process.env.CI ? ["**/delivery.spec.ts"] : []),
+  ],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
