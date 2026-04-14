@@ -87,7 +87,6 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     needs: build
-    continue-on-error: true
     defaults:
       run:
         working-directory: portal
@@ -168,7 +167,6 @@ jobs:
     name: k6 Health Smoke
     runs-on: ubuntu-latest
     needs: build
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Install k6
