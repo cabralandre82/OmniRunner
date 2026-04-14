@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { WeeklyPlanner } from "@/components/training-plan/weekly-planner";
 import { PlanWeek, CYCLE_LABEL, CycleType } from "@/components/training-plan/types";
 
@@ -301,9 +302,12 @@ export default function TrainingPlanDetailPage() {
             {/* Athlete avatar */}
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface-elevated text-lg font-semibold text-brand">
               {plan.athlete_avatar ? (
-                <img
+                <Image
                   src={plan.athlete_avatar}
                   alt={plan.athlete_name ?? ""}
+                  width={48}
+                  height={48}
+                  unoptimized
                   className="h-full w-full rounded-full object-cover"
                 />
               ) : (

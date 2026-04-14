@@ -54,7 +54,14 @@ async function getCrmData(
       .in("role", ["athlete", "atleta"]),
   ]);
 
-  if (!members || members.length === 0) return { athletes: [], totalCount: totalCount ?? 0 };
+  if (!members || members.length === 0) {
+    return {
+      athletes: [],
+      totalCount: totalCount ?? 0,
+      page,
+      pageSize: PAGE_SIZE,
+    };
+  }
 
   const userIds = members.map((m) => m.user_id);
 

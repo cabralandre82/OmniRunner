@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "./logger";
 
-// Flexible context type that covers both parameterized and param-less routes
-type RouteContext = { params?: Record<string, string | string[]> };
-type ApiHandler = (req: NextRequest, context: RouteContext) => Promise<NextResponse>;
+export type ApiHandler = (req: NextRequest, context?: Record<string, unknown>) => Promise<NextResponse>;
 
-export function withErrorHandler(handler: ApiHandler, routeName: string): ApiHandler {
-  return async (req: NextRequest, context: RouteContext) => {
+/**
+ * Wraps route handlers with consistent logging and 500 responses.
+ * The second argument is forwarded as Next.js supplies it (dynamic `params`, etc.).
+ */
+export function withErrorHandler(
+  handler: (req: NextRequest, ...routeArgs: any[]) => Promise<NextResponse>,
+  routeName: string,
+): ApiHandler {
+  return async (req: NextRequest, context?: Record<string, unknown>) => {
     const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
     try {
       return await handler(req, context);

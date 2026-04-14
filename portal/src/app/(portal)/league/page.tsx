@@ -77,17 +77,21 @@ export default async function LeaguePage() {
         group_name: groupNames.get((e as { group_id: string }).group_id) ?? "—",
       }));
 
-      const { data: snapshots } = await cached(
+      const snapshots = await cached(
         `league:snapshots:${currentSeason.id}`,
         CacheTTL.RANKINGS,
-        () => db
-          .from("league_snapshots")
-          .select("group_id, week_key, cumulative_score, total_km, rank")
-          .eq("season_id", currentSeason!.id)
-          .order("week_key", { ascending: false }),
+        async () => {
+          const { data, error } = await db
+            .from("league_snapshots")
+            .select("group_id, week_key, cumulative_score, total_km, rank")
+            .eq("season_id", currentSeason!.id)
+            .order("week_key", { ascending: false });
+          if (error) throw new Error(error.message);
+          return data ?? [];
+        },
       );
 
-      const snapshotList = snapshots ?? [];
+      const snapshotList = snapshots;
       const latestWeek = snapshotList[0]?.week_key;
       const latestByGroup = new Map<string, { group_id: string; rank: number; cumulative_score: number; total_km: number; week_key: string }>();
       for (const s of snapshotList) {
