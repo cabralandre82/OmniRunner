@@ -222,6 +222,7 @@ jobs:
       - run: npm run build
       - name: Deploy to Vercel
         if: env.VERCEL_TOKEN != ''
+        working-directory: ${{ github.workspace }}
         run: npx vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
