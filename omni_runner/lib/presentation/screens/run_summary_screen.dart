@@ -102,7 +102,7 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
           _aiLoading = false;
         });
       }
-    } catch (_) {
+    } on Exception catch (_) {
       if (mounted) setState(() => _aiLoading = false);
     }
   }
@@ -208,16 +208,16 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
         ? ChallengeSessionBanner(challengeId: challengeId)
         : null;
 
-    final syncNote = Padding(
-      padding: const EdgeInsets.only(top: DesignTokens.spacingSm),
+    const syncNote = Padding(
+      padding: EdgeInsets.only(top: DesignTokens.spacingSm),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.schedule, size: 14, color: DesignTokens.textMuted),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           Text(
             'Verificação final pelo servidor ao sincronizar',
-            style: const TextStyle(fontSize: 11, color: DesignTokens.textMuted),
+            style: TextStyle(fontSize: 11, color: DesignTokens.textMuted),
           ),
         ],
       ),
