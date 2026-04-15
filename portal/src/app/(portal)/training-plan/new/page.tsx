@@ -32,8 +32,8 @@ export default function NewTrainingPlanPage() {
         if (json.ok) {
           setAthletes(
             (json.data ?? []).map((a: Record<string, unknown>) => ({
-              id: a.user_id ?? a.id,
-              name: (a.full_name ?? a.username ?? "Atleta") as string,
+              id: a.user_id as string,
+              name: (a.display_name ?? a.full_name ?? a.username ?? "Atleta") as string,
             }))
           );
         }
