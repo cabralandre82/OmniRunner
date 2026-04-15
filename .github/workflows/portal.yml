@@ -223,50 +223,13 @@ jobs:
           cache-dependency-path: portal/package-lock.json
       - run: npm ci
       - run: npm run build
-      - name: Sync env vars to Vercel project
-        if: env.VERCEL_TOKEN != ''
-        run: |
-          TOKEN="${{ secrets.VERCEL_TOKEN }}"
-          PROJECT_ID="prj_1VCxeEcJaqeRy6C7ZtpCPVgPLuEg"
-          TEAM_ID="team_fccKc8W6hyQmvCcZAGCqV1UK"
-
-          upsert_env() {
-            local KEY="$1"
-            local VALUE="$2"
-            EXISTING=$(curl -sf \
-              "https://api.vercel.com/v9/projects/${PROJECT_ID}/env?teamId=${TEAM_ID}" \
-              -H "Authorization: Bearer ${TOKEN}" | \
-              python3 -c "
-import json,sys
-try:
-  data=json.load(sys.stdin)
-  found=[e for e in data.get('envs',[]) if e.get('key')=='${KEY}']
-  print(found[0]['id'] if found else '')
-except: print('')
-" 2>/dev/null || echo "")
-            if [ -n "$EXISTING" ]; then
-              curl -sf -X PATCH \
-                "https://api.vercel.com/v9/projects/${PROJECT_ID}/env/${EXISTING}?teamId=${TEAM_ID}" \
-                -H "Authorization: Bearer ${TOKEN}" \
-                -H "Content-Type: application/json" \
-                -d "{\"value\":\"${VALUE}\",\"type\":\"encrypted\",\"target\":[\"production\",\"preview\",\"development\"]}" > /dev/null && echo "Updated ${KEY}"
-            else
-              curl -sf -X POST \
-                "https://api.vercel.com/v10/projects/${PROJECT_ID}/env?teamId=${TEAM_ID}" \
-                -H "Authorization: Bearer ${TOKEN}" \
-                -H "Content-Type: application/json" \
-                -d "{\"key\":\"${KEY}\",\"value\":\"${VALUE}\",\"type\":\"encrypted\",\"target\":[\"production\",\"preview\",\"development\"]}" > /dev/null && echo "Created ${KEY}"
-            fi
-          }
-
-          upsert_env "OPENAI_API_KEY" "${{ secrets.OPENAI_API_KEY }}"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-
       - name: Deploy to Vercel
         if: env.VERCEL_TOKEN != ''
         working-directory: ${{ github.workspace }}
-        run: npx vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: |
+          npx vercel deploy --prod \
+            --token="${{ secrets.VERCEL_TOKEN }}" \
+            --env "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
