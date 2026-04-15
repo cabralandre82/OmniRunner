@@ -683,7 +683,7 @@ Returns workout templates for the group, enriched with block count and estimated
 
 Adds a workout to a week day. Supports two modes:
 - **Template-based** (with `template_id`): calls `fn_create_plan_workout`, builds `content_snapshot` from template blocks
-- **Descriptive** (without `template_id`): calls `fn_create_descriptive_workout`, uses free-text `workout_label` + `description`
+- **Descriptive** (without `template_id`): calls `fn_create_descriptive_workout`, uses free-text `workout_label` + `description` + optional `blocks[]` for GPS watch compatibility
 
 **Body (JSON):**
 | Campo | Tipo | Obrigatório |
@@ -696,6 +696,25 @@ Adds a workout to a week day. Supports two modes:
 | `description` | string (max 2000) | Não (modo descritivo) |
 | `coach_notes` | string (max 500) | Não |
 | `video_url` | string (max 500) | Não (URL do vídeo explicativo) |
+| `blocks` | `ReleaseBlock[]` (max 30) | Não (apenas modo descritivo — define estrutura de GPS watch) |
+
+**`ReleaseBlock` shape:**
+```ts
+{
+  order_index: number;           // 0-based
+  block_type: "warmup"|"steady"|"interval"|"recovery"|"repeat"|"rest"|"cooldown";
+  distance_meters: number|null;  // gatilho distância (alternativo a duration)
+  duration_seconds: number|null; // gatilho tempo
+  target_pace_min_sec_per_km: number|null; // pace mais rápido (segundos/km)
+  target_pace_max_sec_per_km: number|null; // pace mais lento
+  target_hr_zone: number|null;   // zona 1–5
+  target_hr_min: number|null;    // FC mínima absoluta
+  target_hr_max: number|null;    // FC máxima absoluta
+  rpe_target: number|null;       // 1–10
+  repeat_count: number|null;     // só em block_type=repeat
+  notes: string|null;
+}
+```
 
 **Response:** `{ "ok": true, "data": { "id": "<releaseId>" } }` (201)
 
@@ -755,11 +774,20 @@ Copies a workout to a different date.
 
 ### `PATCH /api/training-plan/workouts/[workoutId]/update`
 
-Updates label and/or coach notes of a workout.
+Updates label, coach notes, and/or structured blocks of a workout (per-athlete customization).
 
-**Body (JSON):** any subset of `{ "workout_label": string|null, "coach_notes": string|null }`
+**Body (JSON):** any subset of:
+```json
+{
+  "workout_label": "string|null",
+  "coach_notes": "string|null",
+  "blocks": "<ReleaseBlock[] max 30 — see POST workouts schema above>"
+}
+```
 
-**Response:** `{ "ok": true }`
+When `blocks` is present, the endpoint fetches the current `content_snapshot`, replaces only the `blocks` array (preserving `template_name`, `description`, etc.), and increments `content_version`.
+
+**Response:** `{ "ok": true, "data": { "id", "workout_label", "coach_notes", "content_snapshot", "content_version" } }`
 
 ---
 
@@ -836,7 +864,7 @@ Returns all athletes in the group enriched with their training status for the cu
 
 ### `POST /api/training-plan/ai/parse-workout`
 
-Parses a free-text workout description into structured fields using GPT-4o-mini. Requires `OPENAI_API_KEY` environment variable.
+Parses a free-text workout description into structured fields **and GPS watch blocks** using GPT-4o-mini. Requires `OPENAI_API_KEY` environment variable.
 
 **Body:** `{ "text": string (3–1000 chars) }`
 
@@ -849,13 +877,30 @@ Parses a free-text workout description into structured fields using GPT-4o-mini.
     "workout_label": "Intervalado 4×1km em 4:30/km",
     "description": "4 repetições de 1km cada no pace 4:30/km com 2 minutos de recuperação ativa",
     "coach_notes": "Aquecimento de 10min antes. Foco no pace.",
-    "estimated_distance_km": 4,
-    "estimated_duration_minutes": 28
+    "estimated_distance_km": 6,
+    "estimated_duration_minutes": 40,
+    "blocks": [
+      { "order_index": 0, "block_type": "warmup", "duration_seconds": 600, "distance_meters": null,
+        "target_pace_min_sec_per_km": null, "target_pace_max_sec_per_km": null,
+        "target_hr_zone": 2, "rpe_target": 3, "repeat_count": null, "notes": null },
+      { "order_index": 1, "block_type": "repeat", "duration_seconds": null, "distance_meters": null,
+        "target_hr_zone": null, "rpe_target": null, "repeat_count": 4, "notes": null },
+      { "order_index": 2, "block_type": "interval", "distance_meters": 1000, "duration_seconds": null,
+        "target_pace_min_sec_per_km": 255, "target_pace_max_sec_per_km": 275,
+        "target_hr_zone": 4, "rpe_target": 8, "repeat_count": null, "notes": null },
+      { "order_index": 3, "block_type": "recovery", "duration_seconds": 120, "distance_meters": null,
+        "target_hr_zone": 2, "rpe_target": 3, "repeat_count": null, "notes": null },
+      { "order_index": 4, "block_type": "cooldown", "duration_seconds": 600, "distance_meters": null,
+        "target_hr_zone": 2, "rpe_target": 3, "repeat_count": null, "notes": null }
+    ]
   }
 }
 ```
 
-Returns `503 AI_NOT_CONFIGURED` if `OPENAI_API_KEY` is not set.
+- `blocks` é um array de `ReleaseBlock` (max 30). Para treinos livres pode ser `[]`.
+- `max_tokens`: 1200 (aumentado de 400 para suportar a estrutura de blocos).
+- Bloco com `block_type` inválido é convertido automaticamente para `steady`.
+- Returns `503 AI_NOT_CONFIGURED` if `OPENAI_API_KEY` is not set.
 
 ---
 

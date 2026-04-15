@@ -5,6 +5,7 @@ import {
   PlanWeek,
   WorkoutRelease,
   WorkoutPickResult,
+  ReleaseBlock,
   STATUS_LABEL,
   STATUS_BG,
   WORKOUT_TYPE_LABEL,
@@ -102,6 +103,7 @@ export function WeeklyPlanner({
             description:    result.description,
             coach_notes:    result.coach_notes,
             video_url:      result.video_url,
+            blocks:         result.blocks,
           };
           toastName = result.label;
         }
@@ -189,6 +191,23 @@ export function WeeklyPlanner({
       if (!json.ok) throw new Error(json.error?.message ?? "Erro ao atualizar");
       await reloadWeeks();
       showToast("success", "Treino atualizado!");
+    },
+    [reloadWeeks, showToast],
+  );
+
+  // ── Update blocks (per-athlete customization) ─────────────────────────────
+
+  const handleUpdateBlocks = useCallback(
+    async (workoutId: string, blocks: ReleaseBlock[]) => {
+      const res = await fetch(`/api/training-plan/workouts/${workoutId}/update`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blocks }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error?.message ?? "Erro ao salvar blocos");
+      await reloadWeeks();
+      showToast("success", "Blocos personalizados salvos!");
     },
     [reloadWeeks, showToast],
   );
@@ -338,6 +357,7 @@ export function WeeklyPlanner({
         onCancel={handleCancel}
         onCopyToDay={handleCopyToDay}
         onUpdateLabel={handleUpdateLabel}
+        onUpdateBlocks={handleUpdateBlocks}
         onSchedule={handleSchedule}
       />
 

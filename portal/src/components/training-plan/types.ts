@@ -56,6 +56,22 @@ export interface WorkoutBlock {
   notes: string | null;
 }
 
+/** Block stored inside content_snapshot.blocks — same shape, no db id */
+export interface ReleaseBlock {
+  order_index: number;
+  block_type: "warmup" | "interval" | "recovery" | "cooldown" | "steady" | "rest" | "repeat";
+  duration_seconds: number | null;
+  distance_meters: number | null;
+  target_pace_min_sec_per_km: number | null;
+  target_pace_max_sec_per_km: number | null;
+  target_hr_zone: number | null;
+  target_hr_min: number | null;
+  target_hr_max: number | null;
+  rpe_target: number | null;
+  repeat_count: number | null;
+  notes: string | null;
+}
+
 export interface CompletedMetrics {
   id: string;
   actual_distance_m: number | null;
@@ -81,6 +97,11 @@ export interface WorkoutRelease {
   coach_notes: string | null;
   video_url: string | null;
   content_version: number;
+  content_snapshot: {
+    blocks: ReleaseBlock[];
+    template_name?: string;
+    description?: string;
+  } | null;
   template: { id: string; name: string; description: string | null } | null;
   completed: CompletedMetrics[];
   feedback: FeedbackSummary[];
@@ -97,6 +118,7 @@ export type WorkoutPickResult =
       workout_type: WorkoutType;
       coach_notes?: string;
       video_url?: string;
+      blocks?: ReleaseBlock[];
     };
 
 export interface PlanWeek {

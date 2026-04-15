@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   WorkoutRelease,
+  ReleaseBlock,
   STATUS_LABEL,
   STATUS_BG,
   WORKOUT_TYPE_LABEL,
@@ -11,6 +12,7 @@ import {
   formatDistanceM,
   formatPace,
 } from "./types";
+import { BlockEditor } from "./block-editor";
 
 interface WorkoutActionDrawerProps {
   workout: WorkoutRelease | null;
@@ -19,6 +21,7 @@ interface WorkoutActionDrawerProps {
   onCancel: (id: string) => Promise<void>;
   onCopyToDay: (id: string, targetDate: string) => Promise<void>;
   onUpdateLabel: (id: string, label: string, notes: string) => Promise<void>;
+  onUpdateBlocks: (id: string, blocks: ReleaseBlock[]) => Promise<void>;
   onSchedule: (id: string, scheduledAt: string) => Promise<void>;
 }
 
@@ -29,15 +32,21 @@ export function WorkoutActionDrawer({
   onCancel,
   onCopyToDay,
   onUpdateLabel,
+  onUpdateBlocks,
   onSchedule,
 }: WorkoutActionDrawerProps) {
   const open = workout !== null;
-  const [tab, setTab] = useState<"info" | "edit" | "copy" | "schedule">("info");
+  const [tab, setTab] = useState<"info" | "edit" | "blocks" | "copy" | "schedule">("info");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Edit state
   const [editLabel, setEditLabel] = useState(workout?.workout_label ?? "");
   const [editNotes, setEditNotes] = useState(workout?.coach_notes ?? "");
+
+  // Blocks state — initialised from content_snapshot
+  const [editBlocks, setEditBlocks] = useState<ReleaseBlock[]>(
+    workout?.content_snapshot?.blocks ?? [],
+  );
 
   // Copy state
   const [copyDate, setCopyDate] = useState("");
@@ -50,6 +59,7 @@ export function WorkoutActionDrawer({
   if (workout && editLabel !== (workout.workout_label ?? "") && tab === "info") {
     setEditLabel(workout.workout_label ?? "");
     setEditNotes(workout.coach_notes ?? "");
+    setEditBlocks(workout.content_snapshot?.blocks ?? []);
   }
 
   if (!workout) return null;
@@ -132,6 +142,7 @@ export function WorkoutActionDrawer({
         <div className="flex gap-1 border-b border-border px-5 pb-3">
           <button onClick={() => setTab("info")} className={tabClass("info")}>Detalhes</button>
           <button onClick={() => setTab("edit")} className={tabClass("edit")}>Editar</button>
+          <button onClick={() => setTab("blocks")} className={tabClass("blocks")}>🧩 Blocos</button>
           <button onClick={() => setTab("copy")} className={tabClass("copy")}>Copiar</button>
           {isActionable && (
             <button onClick={() => setTab("schedule")} className={tabClass("schedule")}>Agendar</button>
@@ -178,6 +189,14 @@ export function WorkoutActionDrawer({
                   {workout.template.description && (
                     <p className="text-xs text-content-secondary">{workout.template.description}</p>
                   )}
+                </div>
+              )}
+
+              {/* Blocks preview */}
+              {(workout.content_snapshot?.blocks?.length ?? 0) > 0 && (
+                <div className="rounded-lg border border-border bg-surface-elevated p-3">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-content-muted">Estrutura do treino</p>
+                  <BlockEditor blocks={workout.content_snapshot!.blocks} onChange={() => {}} readOnly />
                 </div>
               )}
 
@@ -295,6 +314,23 @@ export function WorkoutActionDrawer({
                 className="w-full rounded-lg bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand/90 disabled:opacity-60"
               >
                 {actionLoading === "update" ? "Salvando..." : "Salvar alterações"}
+              </button>
+            </div>
+          )}
+
+          {/* BLOCKS TAB */}
+          {tab === "blocks" && (
+            <div className="space-y-3">
+              <p className="text-xs text-content-muted">
+                Personalize os blocos deste treino para este atleta. Não altera o template original.
+              </p>
+              <BlockEditor blocks={editBlocks} onChange={setEditBlocks} />
+              <button
+                onClick={() => handleAction("blocks", () => onUpdateBlocks(workout.id, editBlocks))}
+                disabled={actionLoading !== null}
+                className="w-full rounded-lg bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand/90 disabled:opacity-60"
+              >
+                {actionLoading === "blocks" ? "Salvando..." : "Salvar blocos personalizados"}
               </button>
             </div>
           )}

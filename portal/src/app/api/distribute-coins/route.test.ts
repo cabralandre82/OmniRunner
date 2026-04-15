@@ -107,6 +107,7 @@ describe("POST /api/distribute-coins", () => {
   it("returns 422 when custody backing is insufficient", async () => {
     mockAdminCheck();
     mockAthleteFound(true);
+    // custody_commit_coins fails with insufficient backing
     serviceClient.rpc.mockReturnValueOnce(
       queryChain({ data: null, error: { message: "Insufficient backing" } }),
     );
@@ -115,10 +116,26 @@ describe("POST /api/distribute-coins", () => {
     expect((await res.json()).error).toContain("Lastro insuficiente");
   });
 
+  it("returns 422 when decrement_token_inventory fails (insufficient inventory)", async () => {
+    mockAdminCheck();
+    mockAthleteFound(true);
+    // custody_commit_coins succeeds (or is skipped)
+    serviceClient.rpc.mockReturnValueOnce(queryChain({ data: null, error: null }));
+    // decrement_token_inventory fails with CHECK constraint
+    serviceClient.rpc.mockReturnValueOnce(
+      queryChain({ data: null, error: { code: "23514", message: "CHECK constraint violated" } }),
+    );
+    const res = await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 50 }));
+    expect(res.status).toBe(422);
+    expect((await res.json()).error).toContain("Saldo insuficiente");
+  });
+
   it("returns 500 when wallet credit fails", async () => {
     mockAdminCheck();
     mockAthleteFound(true);
     // custody_commit_coins succeeds
+    serviceClient.rpc.mockReturnValueOnce(queryChain({ data: null, error: null }));
+    // decrement_token_inventory succeeds
     serviceClient.rpc.mockReturnValueOnce(queryChain({ data: null, error: null }));
     // increment_wallet_balance fails
     serviceClient.rpc.mockReturnValueOnce(
@@ -132,7 +149,7 @@ describe("POST /api/distribute-coins", () => {
   it("returns 200 on successful distribution", async () => {
     mockAdminCheck();
     mockAthleteFound(true);
-    // decrement + increment succeed
+    // custody, decrement, wallet all succeed
     serviceClient.rpc.mockReturnValue(queryChain({ data: null, error: null }));
     // ledger insert
     serviceClient.from.mockReturnValueOnce(queryChain({ data: null }));
@@ -142,5 +159,28 @@ describe("POST /api/distribute-coins", () => {
     const json = await res.json();
     expect(json.ok).toBe(true);
     expect(json.amount).toBe(50);
+  });
+
+  it("passes issuer_group_id to coin_ledger insert", async () => {
+    mockAdminCheck();
+    mockAthleteFound(true);
+    serviceClient.rpc.mockReturnValue(queryChain({ data: null, error: null }));
+
+    let insertedPayload: Record<string, unknown> | null = null;
+    const insertChain = queryChain({ data: null });
+    (insertChain.insert as ReturnType<typeof vi.fn>).mockImplementation(
+      (payload: Record<string, unknown>) => {
+        insertedPayload = payload;
+        return insertChain;
+      },
+    );
+    serviceClient.from.mockReturnValueOnce(insertChain);
+
+    await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 3 }));
+
+    expect(insertedPayload).not.toBeNull();
+    expect((insertedPayload as Record<string, unknown>).issuer_group_id).toBe("group-1");
+    expect((insertedPayload as Record<string, unknown>).reason).toBe("institution_token_issue");
+    expect((insertedPayload as Record<string, unknown>).delta_coins).toBe(3);
   });
 });

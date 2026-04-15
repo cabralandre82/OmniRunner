@@ -109,6 +109,23 @@ export async function POST(request: Request) {
     // custody_commit_coins RPC may not exist yet
   }
 
+  // Deduct from group inventory (atomic — CHECK >= 0 prevents overdraft)
+  const { error: decrErr } = await db.rpc("decrement_token_inventory", {
+    p_group_id: groupId,
+    p_amount: amount,
+  });
+
+  if (decrErr) {
+    const isInsufficient =
+      decrErr.code === "23514" || // CHECK constraint violation
+      decrErr.message?.includes("CHECK") ||
+      decrErr.message?.includes("INVENTORY");
+    return NextResponse.json(
+      { error: isInsufficient ? "Saldo insuficiente de OmniCoins" : "Erro ao debitar inventário" },
+      { status: isInsufficient ? 422 : 500 },
+    );
+  }
+
   const { error: walletErr } = await db.rpc("increment_wallet_balance", {
     p_user_id: athlete_user_id,
     p_delta: amount,
@@ -121,13 +138,24 @@ export async function POST(request: Request) {
     );
   }
 
-  await db.from("coin_ledger").insert({
+  const refId = idempotencyKey ?? `portal_${user.id}_${Date.now()}`;
+  const { error: ledgerErr } = await db.from("coin_ledger").insert({
     user_id: athlete_user_id,
     delta_coins: amount,
     reason: "institution_token_issue",
-    ref_id: idempotencyKey ?? `portal_${user.id}_${Date.now()}`,
+    ref_id: refId,
+    issuer_group_id: groupId,
     created_at_ms: Date.now(),
   });
+
+  if (ledgerErr) {
+    logger.error("coin_ledger insert failed after successful distribution", ledgerErr, {
+      athlete_user_id,
+      amount,
+      groupId,
+      refId,
+    });
+  }
 
   await auditLog({
     actorId: user.id,

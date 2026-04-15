@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.1] - 2026-04-15
+
+### Fixed
+- **[CRÍTICO] OmniCoins distribuídas sumindo do painel** (`staff_credits_screen.dart`, `distributions/page.tsx`, `distribute-coins/route.ts`): o painel mostrava 0 distribuídas porque a RLS da tabela `coin_ledger` só devolve as próprias linhas do usuário logado — coaches não viam as linhas dos atletas. Corrigido usando `fn_sum_coin_ledger_by_group` (SECURITY DEFINER) no app e `createServiceClient()` na página do portal. Adicionado `issuer_group_id` e chamada a `decrement_token_inventory` que estavam faltando em `distribute-coins/route.ts`.
+- **[CRÍTICO] OmniCoins: saldo disponível não era decrementado** (`distribute-coins/route.ts`): a rota distribuía tokens para o atleta mas nunca chamava `decrement_token_inventory`, deixando `available_tokens` inalterado na assessoria. Corrigido.
+- **Assessorias Parceiras: "Não foi possível carregar parcerias"** (`partner_assessorias_screen.dart`): o código verificava apenas o código de erro `42883` (Postgres) mas o PostgREST retorna `PGRST202` quando a função não está no schema cache. Corrigido para tratar ambos.
+- **Suporte: "Não foi possível carregar chamados"** (`20260408130000_support_member_messages.sql`): migration que amplia as políticas RLS de `support_tickets` / `support_messages` para incluir roles atuais (`coach`, `assistant`) e permitir que atletas abram chamados. **Aplicar manualmente no SQL editor.**
+
+### Infrastructure
+- `supabase/migrations/20260415020000_coin_ledger_group_visibility.sql`: adiciona política RLS `group_staff_read_issued_ledger` em `coin_ledger` (leitura por `issuer_group_id`), backfill de `issuer_group_id` em entradas legadas via `token_intents`, e GRANT em `fn_sum_coin_ledger_by_group`. **Aplicar no SQL editor.**
+
+---
+
+## [1.9.0] - 2026-04-15
+
+### Added
+- **Personalização de blocos por atleta** (`WorkoutActionDrawer` → aba 🧩 Blocos): o treinador pode editar os blocos do `content_snapshot` de um treino individual sem alterar o template original. Pace, distância, HR, RPE e notas de cada bloco ficam gravados exclusivamente para aquele atleta.
+- **Blocos estruturados em treinos "Descrever"** (`WorkoutPickerDrawer` → aba ✍️ Descrever): bloco editor inline agora aparece ao final do formulário, permitindo estruturar o treino com aquecimento/blocos/recuperação/volta-à-calma para compatibilidade com relógios GPS.
+- **IA gera blocos completos** (`WorkoutPickerDrawer` → aba ✨ IA): `POST /api/training-plan/ai/parse-workout` agora retorna `blocks[]` com todas as fases do treino. A IA recebe instruções detalhadas de estrutura (repeat, interval, recovery...) e os blocos são exibidos como preview antes de confirmar.
+- **Componente `BlockEditor`** (`portal/src/components/training-plan/block-editor.tsx`): editor reutilizável de blocos `ReleaseBlock[]` com modo edição (expandível por bloco, reordenação, remoção, adição) e modo readOnly (preview compacto). Usado na aba Blocos do drawer de ação e no formulário de treino.
+- **Tipo `ReleaseBlock`** (`types.ts`): novo tipo para blocos dentro de `content_snapshot` (sem `id` de DB), com campos `target_hr_min`, `target_hr_max` para alertas de FC absolutos.
+
+### Changed
+- **`PATCH /api/training-plan/workouts/[workoutId]/update`**: aceita campo `blocks: ReleaseBlock[]` — quando presente, faz fetch do `content_snapshot` atual, substitui apenas os blocos e incrementa `content_version`.
+- **`POST /api/training-plan/ai/parse-workout`**: prompt expandido, `max_tokens` 400 → 1200, retorna `blocks[]` estruturados compatíveis com GPS. Bloco com `block_type` inválido é convertido para `steady`.
+- **`POST /api/training-plan/weeks/[weekId]/workouts`**: aceita `blocks[]` no body e os passa para `fn_create_descriptive_workout` via novo parâmetro `p_blocks jsonb`.
+- **`GET /api/training-plan/[planId]/weeks`**: agora inclui `content_snapshot` no SELECT para que o drawer de ação exiba os blocos do treino imediatamente.
+
+### Infrastructure
+- `supabase/migrations/20260415010000_descriptive_workout_blocks.sql`: `CREATE OR REPLACE FUNCTION fn_create_descriptive_workout` — adiciona parâmetro `p_blocks jsonb DEFAULT '[]'` e usa `COALESCE(p_blocks, '[]'::jsonb)` no snapshot. **Aplicada em produção 2026-04-15** (requerido DROP da assinatura antiga antes do CREATE OR REPLACE pois o Postgres retornava `42725: function name is not unique`).
+
+### Tests (new)
+- `portal/src/app/api/training-plan/templates/route.test.ts` — 6 testes: auth, groupId, templates enriquecidos, DB error
+- `portal/src/app/api/training-plan/ai/parse-workout/route.test.ts` — 8 testes: sem API key, validação, resultado com blocos, blocos vazios, fallback de tipo, erro OpenAI, sanitização
+- `portal/src/app/api/training-plan/workouts/[workoutId]/update/route.test.ts` — 5 testes: auth, validação, update label, update blocos (merge snapshot), blocos > 30
+- `portal/src/components/training-plan/block-editor.test.tsx` — 9 testes (happy-dom): add/remove/reorder, preview readOnly, expand, summary com pace
+
 ## [1.8.1] - 2026-04-15
 
 ### Fixed

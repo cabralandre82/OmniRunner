@@ -4118,6 +4118,34 @@ Em uma decisão anterior (DECISAO 145), a integração nativa Vercel↔GitHub fo
 
 ---
 
+## DECISAO 149 — Arquitetura de Blocos Estruturados e Personalização por Atleta
+
+**Data:** 2026-04-15  
+**Contexto:** Dois problemas arquiteturais foram identificados após o lançamento do Training Plan v2:
+
+1. **Personalização por atleta**: ao usar um template em uma planilha, o treinador não conseguia editar os blocos daquele treino específico sem alterar o template original. O campo `content_snapshot (JSONB)` já existia na tabela `plan_workout_releases` para armazenar um "snapshot imutável" dos blocos na hora da liberação — passou a ser o mecanismo de personalização.
+
+2. **Compatibilidade com relógios GPS**: os modos "Descrever" (texto livre) e "IA" (parse de linguagem natural) geravam treinos sem estrutura de blocos, incompatíveis com Garmin, Apple Watch, etc. que precisam de fases bem definidas (warmup/interval/recovery/cooldown) com pace range, zona de FC e gatilho distância/tempo.
+
+**Decisões:**
+
+1. **`content_snapshot.blocks` como camada de personalização**: o PATCH `/api/training-plan/workouts/[workoutId]/update` aceita `blocks[]`, faz merge com o snapshot existente (preservando `template_name`, `description`, etc.) e incrementa `content_version`. O template original nunca é tocado. Esta é a "cópia de instância" do atleta.
+
+2. **`BlockEditor` como componente compartilhado**: criado `portal/src/components/training-plan/block-editor.tsx` com modos edição e readOnly. Usado no drawer de ação (aba 🧩 Blocos) e no formulário de prescrição livre. Tipo `ReleaseBlock` criado em `types.ts` — sem `id` de DB, pois vive dentro do JSONB.
+
+3. **`fn_create_descriptive_workout` aceita `p_blocks jsonb`**: migration `20260415010000_descriptive_workout_blocks.sql` adiciona o parâmetro com `DEFAULT '[]'::jsonb`. Mantém compatibilidade retroativa.
+
+4. **IA gera blocos com semântica de relógio**: prompt do `parse-workout` expandido com estrutura repeat→interval→recovery, instruções sobre `block_type`, `distance_meters` vs `duration_seconds` como gatilho. `max_tokens` aumentado de 400 para 1200.
+
+5. **Não usamos `coaching_workout_blocks` para personalizações**: essa tabela é vinculada ao template (via `template_id`). Para personalização por atleta usamos apenas o JSONB no release, evitando conflito de ownership.
+
+**Trade-offs aceitos:**
+- `content_version` incrementado a cada edição de blocos — atleta pode receber notificação de atualização mesmo sem mudança de label/notes.
+- Blocos gerados pela IA não são validados semânticamente (ex: repeat_count sem blocos seguintes). Validação visual fica por conta do treinador no editor.
+- Sem suporte a sub-blocos aninhados (repeat dentro de repeat) — limitação conhecida, suficiente para 99% dos treinos de corrida.
+
+---
+
 ## DECISAO 146 — Training Plan v2: Visão por Atleta, Prescrição Livre e IA
 
 *(entrada mantida abaixo — ver DECISAO 147 para expansão de IA)*

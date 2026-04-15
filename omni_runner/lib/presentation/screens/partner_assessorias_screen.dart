@@ -41,7 +41,8 @@ class _PartnerAssessoriasScreenState extends State<PartnerAssessoriasScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = e.code == '42883'
+        // PostgREST returns PGRST202 (schema cache miss) or 42883 (Postgres) when function not found
+      _error = (e.code == '42883' || e.code == 'PGRST202')
             ? 'Recurso em preparação. Tente novamente em breve.'
             : 'Não foi possível carregar parcerias.';
       });

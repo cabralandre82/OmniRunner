@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { NoGroupSelected } from "@/components/no-group-selected";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { logger } from "@/lib/logger";
@@ -24,6 +25,9 @@ export default async function DistributionsPage() {
   if (!groupId) return <NoGroupSelected />;
 
   const db = createClient();
+  // Use service client for coin_ledger: the table's RLS only lets users see
+  // their own rows, so a coach querying their athletes' entries would get 0.
+  const svc = createServiceClient();
 
   // Get group members to scope distributions to this assessoria
   const [membersRes, inventoryRes] = await Promise.all([
@@ -39,23 +43,47 @@ export default async function DistributionsPage() {
   ]);
 
   const balance = inventoryRes.data?.available_tokens ?? 0;
-  const memberIds = (membersRes.data ?? []).map((m: { user_id: string }) => m.user_id);
 
   let entries: LedgerEntry[] = [];
 
+  // Query by issuer_group_id (correct for modern entries) and fall back to
+  // user_id-based query for legacy entries without issuer_group_id.
+  const { data: byIssuer, error: issuerErr } = await svc
+    .from("coin_ledger")
+    .select("id, user_id, delta_coins, ref_id, created_at")
+    .eq("issuer_group_id", groupId)
+    .eq("reason", "institution_token_issue")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (issuerErr) {
+    logger.error("coin_ledger issuer query failed", issuerErr, { page: "distributions" });
+  }
+
+  const memberIds = (membersRes.data ?? []).map((m: { user_id: string }) => m.user_id);
+
   if (memberIds.length > 0) {
-    const { data, error } = await db
+    // Legacy entries (no issuer_group_id) — collect user_id-based records not already found
+    const foundIds = new Set((byIssuer ?? []).map((e) => e.id));
+    const { data: byMember, error: memberErr } = await svc
       .from("coin_ledger")
       .select("id, user_id, delta_coins, ref_id, created_at")
       .in("user_id", memberIds)
       .eq("reason", "institution_token_issue")
+      .is("issuer_group_id", null)
       .order("created_at", { ascending: false })
       .limit(200);
 
-    if (error) {
-      logger.error("coin_ledger query failed", error, { page: "distributions" });
+    if (memberErr) {
+      logger.error("coin_ledger member query failed", memberErr, { page: "distributions" });
     }
-    entries = (data ?? []) as LedgerEntry[];
+
+    const legacy = (byMember ?? []).filter((e) => !foundIds.has(e.id));
+    entries = [...(byIssuer ?? []), ...legacy].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    ).slice(0, 200) as LedgerEntry[];
+  } else {
+    entries = (byIssuer ?? []) as LedgerEntry[];
   }
 
   // Resolve display names for athletes and actors

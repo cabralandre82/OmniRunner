@@ -4,10 +4,12 @@ import { useEffect, useState, useMemo } from "react";
 import {
   WorkoutTemplate,
   WorkoutPickResult,
+  ReleaseBlock,
   WORKOUT_TYPE_LABEL,
   WorkoutType,
   formatDistanceM,
 } from "./types";
+import { BlockEditor } from "./block-editor";
 
 interface WorkoutPickerDrawerProps {
   open: boolean;
@@ -59,6 +61,7 @@ export function WorkoutPickerDrawer({
   const [descType, setDescType] = useState<WorkoutType>("continuous");
   const [descNotes, setDescNotes] = useState("");
   const [descVideo, setDescVideo] = useState("");
+  const [descBlocks, setDescBlocks] = useState<ReleaseBlock[]>([]);
 
   // ── AI tab state ──────────────────────────────────────────────────────────
   const [aiText, setAiText] = useState("");
@@ -70,6 +73,7 @@ export function WorkoutPickerDrawer({
     coach_notes: string | null;
     estimated_distance_km: number | null;
     estimated_duration_minutes: number | null;
+    blocks: ReleaseBlock[];
   } | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
 
@@ -83,6 +87,7 @@ export function WorkoutPickerDrawer({
       setDescType("continuous");
       setDescNotes("");
       setDescVideo("");
+      setDescBlocks([]);
       setAiText("");
       setAiResult(null);
       setAiError(null);
@@ -131,6 +136,7 @@ export function WorkoutPickerDrawer({
       workout_type: descType,
       coach_notes: descNotes.trim() || undefined,
       video_url: descVideo.trim() || undefined,
+      blocks: descBlocks.length > 0 ? descBlocks : undefined,
     });
   }
 
@@ -163,6 +169,7 @@ export function WorkoutPickerDrawer({
       description: aiResult.description ?? undefined,
       workout_type: aiResult.workout_type,
       coach_notes: aiResult.coach_notes ?? undefined,
+      blocks: aiResult.blocks.length > 0 ? aiResult.blocks : undefined,
     });
   }
 
@@ -416,6 +423,17 @@ export function WorkoutPickerDrawer({
                   className="w-full rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm text-content-primary placeholder:text-content-muted focus:border-brand focus:outline-none"
                 />
               </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-content-secondary">
+                  🧩 Blocos estruturados{" "}
+                  <span className="font-normal text-content-muted">(para relógio GPS)</span>
+                </label>
+                <p className="mb-2 text-[11px] text-content-muted">
+                  Opcional. Adicione blocos com pace/FC/distância para que o relógio guie o atleta fase a fase.
+                </p>
+                <BlockEditor blocks={descBlocks} onChange={setDescBlocks} />
+              </div>
             </div>
 
             <div className="border-t border-border px-4 py-3">
@@ -496,6 +514,14 @@ export function WorkoutPickerDrawer({
                   )}
                   {aiResult.coach_notes && (
                     <p className="text-xs text-brand">📌 {aiResult.coach_notes}</p>
+                  )}
+                  {aiResult.blocks.length > 0 && (
+                    <div className="mt-1">
+                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-content-muted">
+                        🧩 {aiResult.blocks.length} blocos gerados
+                      </p>
+                      <BlockEditor blocks={aiResult.blocks} onChange={() => {}} readOnly />
+                    </div>
                   )}
                   <button
                     onClick={handleUseAiResult}

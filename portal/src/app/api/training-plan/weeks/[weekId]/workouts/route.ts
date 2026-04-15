@@ -18,6 +18,21 @@ const WORKOUT_TYPES = [
   "technique", "test", "free", "race", "brick",
 ] as const;
 
+const BlockSchema = z.object({
+  order_index:                z.number().int().min(0),
+  block_type:                 z.enum(["warmup","interval","recovery","cooldown","steady","rest","repeat"]),
+  duration_seconds:           z.number().int().min(1).nullable().optional(),
+  distance_meters:            z.number().int().min(1).nullable().optional(),
+  target_pace_min_sec_per_km: z.number().int().nullable().optional(),
+  target_pace_max_sec_per_km: z.number().int().nullable().optional(),
+  target_hr_zone:             z.number().int().min(1).max(5).nullable().optional(),
+  target_hr_min:              z.number().int().nullable().optional(),
+  target_hr_max:              z.number().int().nullable().optional(),
+  rpe_target:                 z.number().int().min(1).max(10).nullable().optional(),
+  repeat_count:               z.number().int().min(1).max(100).nullable().optional(),
+  notes:                      z.string().max(200).nullable().optional(),
+});
+
 const CreateWorkoutSchema = z.object({
   athlete_id:     z.string().uuid(),
   template_id:    z.string().uuid().optional().nullable(),
@@ -28,6 +43,7 @@ const CreateWorkoutSchema = z.object({
   coach_notes:    z.string().max(500).optional().nullable(),
   video_url:      z.string().max(500).optional().nullable(),
   workout_order:  z.number().int().min(1).default(1),
+  blocks:         z.array(BlockSchema).max(30).optional().nullable(),
 });
 
 type Params = { params: { weekId: string } };
@@ -50,7 +66,7 @@ export const POST = withErrorHandler(async (req: NextRequest, { params }: Params
 
   const {
     athlete_id, template_id, scheduled_date, workout_type,
-    workout_label, description, coach_notes, video_url, workout_order,
+    workout_label, description, coach_notes, video_url, workout_order, blocks,
   } = parsed.data;
 
   if (template_id) {
@@ -98,6 +114,9 @@ export const POST = withErrorHandler(async (req: NextRequest, { params }: Params
     p_coach_notes:    coach_notes ?? null,
     p_video_url:      video_url ?? null,
     p_workout_order:  workout_order,
+    p_blocks:         blocks && blocks.length > 0
+      ? JSON.stringify(blocks.map((b, i) => ({ ...b, order_index: i })))
+      : "[]",
   });
 
   if (error) {
