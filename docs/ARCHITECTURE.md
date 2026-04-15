@@ -442,7 +442,7 @@ Retry: 3x exponential backoff em chamadas críticas (auth, create assessoria)
 | F40 — Assessoria Partnerships | App + DB + RPCs | assessoria_partnerships, fn_request/respond/list/search_partnership | Parcerias entre assessorias para campeonatos conjuntos |
 | F41 — Maintenance Fee per Athlete | Asaas Split + webhook + portal admin | platform_fee_config.rate_usd, platform_revenue | $0–10 USD/atleta deduzido automaticamente do pagamento |
 | F42 — Portal UX "Para Dummies" | Portal sidebar + pages | Labels OmniCoins, tutorial banners, human-friendly terminology | Saldo OmniCoins, Transferências, Histórico de Cobranças |
-| F43 — Training Plan Module (Passagem de Treino) | portal + DB migration | WeeklyPlanner, WorkoutPickerDrawer, WorkoutActionDrawer, BatchAssignModal, 5 API routes | Prescrição semanal visual estilo Treinus — requer migration `20260407000000_training_plan_module.sql` aplicada |
+| F43 — Training Plan Module (Passagem de Treino) | portal + DB migration | WeeklyPlanner, WorkoutPickerDrawer, WorkoutActionDrawer, BatchAssignModal, 5 API routes | Prescrição semanal visual estilo Treinus — migration aplicada em produção 2026-04-15 |
 
 ---
 

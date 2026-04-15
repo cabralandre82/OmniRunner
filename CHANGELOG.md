@@ -18,8 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Week-level actions: Liberar Semana, Duplicar, Distribuir para outros atletas
   - Real-time toast notifications for every action
 - **New Portal API endpoints**: `GET /api/training-plan/[planId]`, `GET /api/training-plan/templates`, `POST /api/training-plan/bulk-assign`, `PATCH /api/training-plan/workouts/[workoutId]/update`, `GET /api/groups/[groupId]/members`
-- **New DB tables** (migration `20260407000000_training_plan_module.sql`): `training_plans`, `training_plan_weeks`, `training_plan_workouts`, `training_week_releases` — fully additive, no conflicts with existing tables
-- **Support member messages** (migration `20260408130000_support_member_messages.sql`): `support_member_messages` table for support ticket thread replies
+- **New DB tables** (migration `20260407000000_training_plan_module.sql`, aplicada em produção 2026-04-15): `training_plans`, `training_plan_weeks`, `plan_workout_releases`, `completed_workouts`, `athlete_workout_feedback`, `workout_change_log`, `workout_sync_cursors` — fully additive, no conflicts with existing tables
+- **Support member messages** (migration `20260408130000_support_member_messages.sql`, aplicada em produção 2026-04-15): amplia RLS de `support_tickets` e `support_messages` para atletas poderem abrir e responder tickets
 
 ### Changed
 - **Vercel deployment pipeline**: disconnected Vercel automatic GitHub integration to prevent duplicate deployments; all portal deploys now go exclusively through GitHub Actions CI/CD to `omni-runner-portal` project

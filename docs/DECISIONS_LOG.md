@@ -4002,7 +4002,7 @@ Implementar um módulo de Training Plan independente do Workout Delivery existen
 - Os dois módulos coexistem. Training Plan é prescrição semanal estruturada. Workout Delivery é entrega avulsa com confirmação do atleta.
 - Os templates referenciados são os mesmos (`coaching_workout_templates`)
 
-**ATENÇÃO:** A migration `20260407000000_training_plan_module.sql` precisa ser aplicada ao Supabase de produção para o módulo funcionar. Ver `SUPABASE_BACKEND_GUIDE.md` para instruções.
+**Status:** Migrations `20260407000000_training_plan_module.sql` e `20260408130000_support_member_messages.sql` aplicadas em produção em 2026-04-15.
 
 ---
 
