@@ -1,0 +1,55 @@
+name: Update Visual Regression Snapshots
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update-snapshots:
+    name: Update Playwright Snapshots
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: portal
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: portal/package-lock.json
+
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+
+      - name: Start portal
+        run: |
+          npm run start &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/api/health > /dev/null 2>&1; then
+              echo "Portal ready"
+              break
+            fi
+            sleep 2
+          done
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Update snapshots
+        run: npx playwright test e2e/visual-regression.spec.ts --update-snapshots
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+
+      - name: Commit updated snapshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add e2e/visual-regression.spec.ts-snapshots/
+          git diff --staged --quiet || git commit -m "chore(e2e): atualiza baselines de visual regression"
+          git push
+        working-directory: portal
