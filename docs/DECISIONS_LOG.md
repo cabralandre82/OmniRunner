@@ -4015,9 +4015,9 @@ Menu ⋯ da semana ganha "Replicar como próxima semana" — calcula a segunda-f
 - **AI adaptar ritmos por atleta**: ao distribuir semana para múltiplos atletas (`BatchAssign`), IA sugere ajuste de paces baseado no histórico de pace de cada atleta — atleta mais rápido recebe paces mais rápidos mantendo a estrutura do treino
 - **Detecção de padrão de abandono**: alerta quando atleta completou <50% dos treinos nas últimas 2 semanas antes que o coach perceba
 
-**Migrations aplicadas:** `20260414000000_training_plan_v2.sql` precisa ser executada no SQL Editor do Supabase (ver seção de SQL abaixo).
+**Migrations aplicadas em produção:** `20260414000000_training_plan_v2.sql` aplicada manualmente via Supabase SQL Editor em 2026-04-14. Adiciona coluna `video_url` em `plan_workout_releases` e cria RPC `fn_create_descriptive_workout`.
 
-**Dependência de ambiente:** `OPENAI_API_KEY` no `.env.local` e como Vercel environment variable para ativar parsing por IA.
+**Dependência de ambiente:** `OPENAI_API_KEY` configurada como Vercel environment variable em 2026-04-14. Feature de parsing por IA está ativa em produção.
 
 ---
 

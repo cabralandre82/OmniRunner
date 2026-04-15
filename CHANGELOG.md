@@ -28,8 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Menu ⋯ da semana: "Replicar como próxima semana" adicionado acima de "Duplicar semana (escolher data)"
 
 ### Infrastructure
-- `supabase/migrations/20260414000000_training_plan_v2.sql`: ADD COLUMN `video_url` + CREATE FUNCTION `fn_create_descriptive_workout`
-- **Requer variável de ambiente**: `OPENAI_API_KEY` para o feature de IA (opcional; feature desabilitada graciosamente se ausente)
+- `supabase/migrations/20260414000000_training_plan_v2.sql`: ADD COLUMN `video_url` + CREATE FUNCTION `fn_create_descriptive_workout` — **aplicada em produção 2026-04-14**
+- `OPENAI_API_KEY` configurada como Vercel environment variable em 2026-04-14 — feature de IA ativa em produção
 
 ---
 
