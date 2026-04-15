@@ -1557,7 +1557,7 @@ LEFT JOIN public.athlete_workout_feedback fb
 --    Só roda se pg_cron estiver disponível (Supabase Pro+)
 -- ═══════════════════════════════════════════════════════════════════════════
 
-DO $$
+DO $cron_setup$
 BEGIN
   IF EXISTS (
     SELECT 1 FROM information_schema.tables
@@ -1566,13 +1566,13 @@ BEGIN
     PERFORM cron.schedule(
       'process-scheduled-workout-releases',
       '*/5 * * * *',
-      $$SELECT public.fn_process_scheduled_releases()$$
+      $job$SELECT public.fn_process_scheduled_releases()$job$
     );
   END IF;
 EXCEPTION WHEN OTHERS THEN
   -- pg_cron not available — releases will be processed by Edge Function instead
   NULL;
 END;
-$$;
+$cron_setup$;
 
 COMMIT;

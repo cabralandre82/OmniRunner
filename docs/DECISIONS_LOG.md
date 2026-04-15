@@ -3980,6 +3980,49 @@ Para o login Instagram funcionar de fato:
 
 ---
 
+## DECISAO 144 — Training Plan Module: Passagem de Treino estilo Treinus
+
+**Data:** 2026-04-08
+**Contexto:** O fluxo de "Workout Delivery" existente exige que o coach copie manualmente o treino e publique no app Treinus externo. Isso funciona mas não oferece visão semanal de prescrição. O coach não tem uma forma de planejar semanas com antecedência de forma visual, similar ao que o app Treinus oferece na perspectiva do coach.
+
+**Decisão:**
+Implementar um módulo de Training Plan independente do Workout Delivery existente, que permite:
+1. Coach cria uma planilha (training plan) para um atleta específico
+2. Coach adiciona semanas e arrasta templates de treino para cada dia
+3. Coach libera semanas para o atleta (controle de quando o atleta vê)
+4. Coach distribui a mesma semana para múltiplos atletas via BatchAssign
+
+**Arquitetura:**
+- 4 novas tabelas: `training_plans`, `training_plan_weeks`, `training_plan_workouts`, `training_week_releases`
+- 5 novos endpoints de API no portal (`/api/training-plan/*`, `/api/groups/[groupId]/members`)
+- 4 novos componentes: `WeeklyPlanner`, `WorkoutPickerDrawer`, `WorkoutActionDrawer`, `BatchAssignModal`
+- Migration: `supabase/migrations/20260407000000_training_plan_module.sql`
+
+**Coexistência com Workout Delivery:**
+- Os dois módulos coexistem. Training Plan é prescrição semanal estruturada. Workout Delivery é entrega avulsa com confirmação do atleta.
+- Os templates referenciados são os mesmos (`coaching_workout_templates`)
+
+**ATENÇÃO:** A migration `20260407000000_training_plan_module.sql` precisa ser aplicada ao Supabase de produção para o módulo funcionar. Ver `SUPABASE_BACKEND_GUIDE.md` para instruções.
+
+---
+
+## DECISAO 145 — Desconectar Integração Automática Vercel + Pipeline CI/CD Correto
+
+**Data:** 2026-04-14
+**Contexto:** O projeto tinha dois projetos Vercel (`omni-runner-portal` correto e `project-running` errado). Os deploys automáticos via integração GitHub do Vercel iam para o projeto errado. Após correção, o projeto correto (`omni-runner-portal`) recebia os deploys do pipeline CI do GitHub Actions, mas a integração automática do Vercel duplicava os deploys e causava race conditions.
+
+**Decisão:**
+1. Desconectar a integração automática GitHub do Vercel no projeto `omni-runner-portal`
+2. Todo deploy de produção passa pelo pipeline CI (`portal.yml`) que: roda testes → E2E → k6 smoke → deploy
+3. Variáveis necessárias como GitHub Secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+
+**Benefícios:**
+- Deploy só ocorre se todos os quality gates passam (unit + E2E + k6)
+- Sem deploys duplicados ou paralelos
+- Visual regression baselines atualizáveis via `update-snapshots.yml` (workflow_dispatch)
+
+---
+
 ## DECISAO 143 — Completar migração Isar→Drift + Correções do relatório cético
 
 **Data:** 2026-03-04

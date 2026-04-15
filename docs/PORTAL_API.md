@@ -553,6 +553,86 @@ Each action includes `requirePlatformAdmin()`, `rateLimit`, and `revalidatePath(
 
 ---
 
+---
+
+## Training Plan (Passagem de Treino)
+
+All endpoints require staff session (admin_master, coach, or assistant role in `coaching_members`).
+
+### `GET /api/training-plan/[planId]`
+
+Returns plan header plus all weeks and their workouts.
+
+**Response:**
+```json
+{
+  "plan": { "id", "name", "athlete_user_id", "group_id", "status", "starts_on", "ends_on", "sport_type" },
+  "weeks": [
+    {
+      "id", "week_number", "label", "cycle_type", "status", "starts_on", "ends_on",
+      "workouts": [
+        { "id", "day_of_week", "scheduled_date", "status", "label", "coach_notes",
+          "template": { "id", "name", "workout_type", "description" } }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+### `GET /api/training-plan/templates`
+
+Returns workout templates available for the caller's group.
+
+**Query params:** `groupId` (uuid, required)
+
+**Response:** `{ "templates": [{ "id", "name", "workout_type", "description", "blocks": [...] }] }`
+
+---
+
+### `POST /api/training-plan/bulk-assign`
+
+Distributes a source week's workouts to multiple athletes, creating plans and weeks as needed.
+
+**Body (JSON):**
+| Campo | Tipo | Obrigatório |
+|-------|------|-------------|
+| `sourceWeekId` | uuid | Sim |
+| `targetAthleteIds` | uuid[] | Sim |
+| `targetStartDate` | date (YYYY-MM-DD) | Sim |
+| `groupId` | uuid | Sim |
+
+**Response:**
+```json
+{
+  "ok": true,
+  "results": [
+    { "athleteId": "...", "ok": true, "planId": "...", "weekId": "..." }
+  ]
+}
+```
+
+---
+
+### `PATCH /api/training-plan/workouts/[workoutId]/update`
+
+Updates a single workout in the plan (label, coach notes, scheduled date, status).
+
+**Body (JSON):** any subset of `{ label, coach_notes, scheduled_date, status }`
+
+**Response:** `{ "ok": true, "workout": { ...updated fields... } }`
+
+---
+
+### `GET /api/groups/[groupId]/members`
+
+Returns athletes who are active members of the group.
+
+**Response:** `{ "members": [{ "user_id", "display_name", "avatar_url" }] }`
+
+---
+
 ## Audit Logging
 
 Mutating operations log to `audit_log` table via `src/lib/audit.ts`:

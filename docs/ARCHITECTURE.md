@@ -301,7 +301,8 @@ ParkDetectionService
 | Parks | `park_activities`, `park_leaderboard`, `park_segments` |
 | Notifications | `notification_log`, `push_tokens` |
 | Friends | `friendships` |
-| Support | `support_tickets`, `support_messages` |
+| Support | `support_tickets`, `support_messages`, `support_member_messages` |
+| Training Plan | `training_plans`, `training_plan_weeks`, `training_plan_workouts`, `training_week_releases` |
 
 ### 8.2 RPC Functions (SECURITY DEFINER)
 
@@ -441,6 +442,7 @@ Retry: 3x exponential backoff em chamadas críticas (auth, create assessoria)
 | F40 — Assessoria Partnerships | App + DB + RPCs | assessoria_partnerships, fn_request/respond/list/search_partnership | Parcerias entre assessorias para campeonatos conjuntos |
 | F41 — Maintenance Fee per Athlete | Asaas Split + webhook + portal admin | platform_fee_config.rate_usd, platform_revenue | $0–10 USD/atleta deduzido automaticamente do pagamento |
 | F42 — Portal UX "Para Dummies" | Portal sidebar + pages | Labels OmniCoins, tutorial banners, human-friendly terminology | Saldo OmniCoins, Transferências, Histórico de Cobranças |
+| F43 — Training Plan Module (Passagem de Treino) | portal + DB migration | WeeklyPlanner, WorkoutPickerDrawer, WorkoutActionDrawer, BatchAssignModal, 5 API routes | Prescrição semanal visual estilo Treinus — requer migration `20260407000000_training_plan_module.sql` aplicada |
 
 ---
 
