@@ -71,6 +71,49 @@ export async function GET(_req: NextRequest, { params }: Params) {
 }
 
 /**
+ * PATCH /api/training-plan/[planId]
+ *
+ * Updates plan status (e.g. restore archived plan back to active).
+ */
+export async function PATCH(req: NextRequest, { params }: Params) {
+  try {
+    const cookieStore = cookies();
+    const groupId = cookieStore.get("portal_group_id")?.value;
+    if (!groupId) {
+      return NextResponse.json({ ok: false, error: { code: "NO_GROUP" } }, { status: 400 });
+    }
+
+    const supabase = createClient();
+    const { data: { user }, error: authErr } = await supabase.auth.getUser();
+    if (authErr || !user) {
+      return NextResponse.json({ ok: false, error: { code: "UNAUTHORIZED" } }, { status: 401 });
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const { status } = body as { status?: string };
+    const allowed = ["active", "paused", "completed", "archived"];
+    if (!status || !allowed.includes(status)) {
+      return NextResponse.json({ ok: false, error: { code: "INVALID_STATUS" } }, { status: 422 });
+    }
+
+    const { error } = await supabase
+      .from("training_plans")
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq("id", params.planId)
+      .eq("group_id", groupId);
+
+    if (error) {
+      return NextResponse.json({ ok: false, error: { code: "DB_ERROR", message: error.message } }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    logger.error("PATCH /api/training-plan/[planId]", err);
+    return NextResponse.json({ ok: false, error: { code: "INTERNAL_ERROR" } }, { status: 500 });
+  }
+}
+
+/**
  * DELETE /api/training-plan/[planId]
  *
  * Soft-deletes the plan by setting status = 'archived'.

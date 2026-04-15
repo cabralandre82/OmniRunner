@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { NoGroupSelected } from "@/components/no-group-selected";
 import { formatDateISO } from "@/lib/format";
+import { UnarchiveButton } from "./unarchive-button";
 
 export const dynamic = "force-dynamic";
 
@@ -41,15 +42,17 @@ interface Plan {
   week_count: number;
 }
 
-async function getPlans(groupId: string): Promise<Plan[]> {
+async function getPlans(groupId: string, includeArchived = false): Promise<Plan[]> {
   const supabase = createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("training_plans")
     .select("id, name, sport_type, status, starts_on, ends_on, created_at, athlete_user_id")
     .eq("group_id", groupId)
-    .neq("status", "archived")
     .order("created_at", { ascending: false })
     .range(0, 99);
+
+  if (!includeArchived) query = query.neq("status", "archived");
+  const { data, error } = await query;
 
   if (error || !data) return [];
 
@@ -98,10 +101,13 @@ export default async function TrainingPlanListPage() {
   if (!groupId) return <NoGroupSelected />;
 
   let plans: Plan[] = [];
+  let archivedPlans: Plan[] = [];
   let fetchError: string | null = null;
 
   try {
-    plans = await getPlans(groupId);
+    const all = await getPlans(groupId, true);
+    plans = all.filter((p) => p.status !== "archived");
+    archivedPlans = all.filter((p) => p.status === "archived");
   } catch (e) {
     fetchError = String(e);
   }
@@ -194,6 +200,33 @@ export default async function TrainingPlanListPage() {
             </Link>
           ))}
         </div>
+      )}
+
+      {/* Archived plans */}
+      {archivedPlans.length > 0 && (
+        <details className="group">
+          <summary className="cursor-pointer list-none">
+            <div className="flex items-center gap-2 text-sm text-content-muted hover:text-content-secondary">
+              <svg className="h-4 w-4 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+              {archivedPlans.length} planilha{archivedPlans.length !== 1 ? "s" : ""} arquivada{archivedPlans.length !== 1 ? "s" : ""}
+            </div>
+          </summary>
+          <div className="mt-3 space-y-2">
+            {archivedPlans.map((plan) => (
+              <div key={plan.id} className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 opacity-60">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-content-secondary line-through">{plan.name}</p>
+                  {plan.athlete_name && (
+                    <p className="text-xs text-content-muted">{plan.athlete_name}</p>
+                  )}
+                </div>
+                <UnarchiveButton planId={plan.id} planName={plan.name} />
+              </div>
+            ))}
+          </div>
+        </details>
       )}
     </div>
   );

@@ -57,8 +57,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
         )
       `)
       .eq("group_id", params.groupId)
-      .eq("role", "athlete")
-      .eq("status", "active")
+      .in("role", ["athlete", "atleta"])
       .order("display_name");
 
     if (error) {
