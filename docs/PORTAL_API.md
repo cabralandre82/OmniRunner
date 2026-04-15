@@ -659,7 +659,7 @@ Creates a new week via `fn_create_plan_week` RPC. Week must start on Monday.
 
 ### `GET /api/training-plan/templates`
 
-Returns active workout templates for the group, enriched with block count and estimated distance.
+Returns workout templates for the group, enriched with block count and estimated distance.
 
 **Query params:** `groupId` (uuid, optional — falls back to session cookie)
 
@@ -668,12 +668,14 @@ Returns active workout templates for the group, enriched with block count and es
 {
   "ok": true,
   "data": [{
-    "id", "name", "description", "sport_type", "workout_type",
+    "id", "name", "description", "workout_type",
     "estimated_distance_m": 12000,
     "block_count": 4
   }]
 }
 ```
+
+> `sport_type` foi removido (coluna nunca existiu na tabela). `workout_type` adicionado via migration `20260415000000_workout_template_type.sql`.
 
 ---
 

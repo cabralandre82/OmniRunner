@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-04-15
+
+### Fixed
+- **Templates não apareciam no picker de treino**: `coaching_workout_templates` nunca teve colunas `sport_type` nem `workout_type`. A query `GET /api/training-plan/templates` selecionava essas colunas inexistentes → Supabase retornava `DB_ERROR` silencioso → picker sempre exibia "Sem templates cadastrados". Corrigido removendo `sport_type` da query e adicionando `workout_type` via migration.
+- **Biblioteca de templates não salvava tipo**: `POST /api/workouts/templates` não persistia `workout_type`. Corrigido para aceitar e gravar o campo.
+- **Build Vercel falhava por `node-fetch` sem types**: `src/test/setup.ts` estava incluído no typecheck de produção (não estava em `exclude` do `tsconfig.json`). Corrigido excluindo `src/test/**` do tsconfig e removendo polyfill desnecessário (Node 18+ tem `fetch` nativo).
+
+### Changed
+- **Deploy Vercel revertido para integração nativa**: o mecanismo de deploy via `VERCEL_TOKEN` no pipeline CI foi removido — o Vercel volta a detectar pushes no `master` e deployar automaticamente. O pipeline CI permanece como quality gate exclusivo (lint → typecheck → test → E2E → k6). Ver DECISAO 145 (revertida).
+
+### Infrastructure
+- `supabase/migrations/20260415000000_workout_template_type.sql`: ADD COLUMN `workout_type text NOT NULL DEFAULT 'free'` em `coaching_workout_templates` — **aplicada em produção 2026-04-15**
+- `.github/workflows/portal.yml`: job `deploy` removido; deploy delegado à integração nativa Vercel↔GitHub
+
 ## [1.8.0] - 2026-04-14
 
 ### Added
@@ -17,7 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Infrastructure
 - `supabase/functions/generate-run-comment/index.ts`: nova edge function para comentário pós-corrida
 - `supabase/config.toml`: registrada `[functions.generate-run-comment]` com `verify_jwt = true`
-- **Ação necessária:** executar `supabase secrets set OPENAI_API_KEY=<chave>` para ativar o comentário pós-corrida no app
+- **Deploy manual realizado:** função implantada via Supabase Dashboard Editor usando versão standalone (CORS, auth e helpers inlined; rate limiting omitido). Versão com módulos compartilhados mantida no repo para futuros deploys via CLI.
+- **Ação necessária:** executar `supabase secrets set OPENAI_API_KEY=<chave>` para ativar o comentário pós-corrida no app (ou definir via Dashboard → Settings → Edge Functions → Secrets)
 
 ---
 

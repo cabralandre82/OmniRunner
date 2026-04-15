@@ -4067,6 +4067,25 @@ Implementar um módulo de Training Plan independente do Workout Delivery existen
 
 ---
 
+## DECISAO 148 — Correções pós-deploy: templates picker, build Vercel, integração de deploy
+
+**Data:** 2026-04-15  
+**Contexto:** Após o deploy das features de IA (v1.8.0) e training plan v2 (v1.7.0), três problemas foram identificados em produção.
+
+**Problema 1 — Templates picker sempre vazio**  
+`GET /api/training-plan/templates` selecionava `sport_type` e `workout_type` da tabela `coaching_workout_templates`, mas essas colunas nunca existiram (a tabela foi criada em `20260304100000_workout_builder.sql` apenas com `id`, `group_id`, `name`, `description`, `created_by`, `created_at`, `updated_at`). O Supabase retornava erro silencioso e o picker exibia "Sem templates cadastrados".  
+**Correção:** migration `20260415000000_workout_template_type.sql` adiciona `workout_type text NOT NULL DEFAULT 'free'`; API atualizada para selecionar apenas colunas existentes; `POST /api/workouts/templates` passa a salvar `workout_type`; `TemplateBuilder` ganha seletor de tipo; página de edição passa `initialWorkoutType`.
+
+**Problema 2 — Build Vercel falhava**  
+`src/test/setup.ts` não estava em `exclude` do `tsconfig.json`, então era incluído no typecheck de produção. O arquivo importava `node-fetch` sem `@types/node-fetch`, causando `Type error: Could not find a declaration file`. Node 18+ (ambiente do Vercel) tem `fetch` nativo — o polyfill era desnecessário.  
+**Correção:** adicionado `src/test/**` ao `exclude` do `tsconfig.json`; removido import de `node-fetch` do setup.
+
+**Problema 3 — Deploy Vercel não ocorria após push**  
+Em uma decisão anterior (DECISAO 145), a integração nativa Vercel↔GitHub foi desconectada e substituída por deploy via `VERCEL_TOKEN` no pipeline CI. O secret `VERCEL_TOKEN` não estava configurado no GitHub, então o step de deploy era silenciosamente ignorado em todos os pushes.  
+**Correção:** job `deploy` removido do `portal.yml`; integração nativa Vercel↔GitHub reconectada pelo usuário no dashboard do Vercel. Pipeline CI mantido exclusivamente como quality gate.
+
+---
+
 ## DECISAO 147 — IA: Briefing do Atleta no CRM + Comentário Pós-Corrida
 
 **Data:** 2026-04-14  
@@ -4087,6 +4106,7 @@ Implementar um módulo de Training Plan independente do Workout Delivery existen
 - Exibido como card `✨` acima dos outros elementos extras no painel de métricas.
 - Falha completamente silenciosa: o bloco `try/catch` garante que qualquer falha (timeout, sem histórico, sem API key) resulta em `comment: null` e o card simplesmente não aparece.
 - Requer `OPENAI_API_KEY` como Supabase secret (`supabase secrets set OPENAI_API_KEY=...`).
+- **Deploy realizado via Supabase Dashboard Editor** (versão standalone sem imports relativos). A versão com módulos compartilhados em `supabase/functions/generate-run-comment/index.ts` é mantida no repositório para uso futuro via CLI (`supabase functions deploy generate-run-comment`). A versão de dashboard inlina CORS, helpers de resposta e autenticação, e omite rate limiting (que dependia de `_shared/rate_limit.ts`).
 
 **Princípios seguidos em ambas as features:**
 1. Dados reais para evitar alucinação — o prompt sempre inclui os números brutos.
@@ -4104,20 +4124,16 @@ Implementar um módulo de Training Plan independente do Workout Delivery existen
 
 ---
 
-## DECISAO 145 — Desconectar Integração Automática Vercel + Pipeline CI/CD Correto
+## DECISAO 145 — Integração Automática Vercel ↔ GitHub (REVERTIDA)
 
-**Data:** 2026-04-14
-**Contexto:** O projeto tinha dois projetos Vercel (`omni-runner-portal` correto e `project-running` errado). Os deploys automáticos via integração GitHub do Vercel iam para o projeto errado. Após correção, o projeto correto (`omni-runner-portal`) recebia os deploys do pipeline CI do GitHub Actions, mas a integração automática do Vercel duplicava os deploys e causava race conditions.
+**Data:** 2026-04-14 → revertida 2026-04-14  
+**Histórico:** Uma decisão anterior desconectou a integração nativa Vercel↔GitHub e tentou centralizar o deploy no pipeline CI via `VERCEL_TOKEN`. Isso quebrou o fluxo: o secret `VERCEL_TOKEN` nunca estava configurado no GitHub, o step de deploy era silenciosamente ignorado, e nenhum push chegava ao Vercel.
 
-**Decisão:**
-1. Desconectar a integração automática GitHub do Vercel no projeto `omni-runner-portal`
-2. Todo deploy de produção passa pelo pipeline CI (`portal.yml`) que: roda testes → E2E → k6 smoke → deploy
-3. Variáveis necessárias como GitHub Secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-
-**Benefícios:**
-- Deploy só ocorre se todos os quality gates passam (unit + E2E + k6)
-- Sem deploys duplicados ou paralelos
-- Visual regression baselines atualizáveis via `update-snapshots.yml` (workflow_dispatch)
+**Decisão atual:**
+- A integração nativa Vercel↔GitHub está **reconectada** no projeto `omni-runner-portal`
+- O pipeline CI (`portal.yml`) é exclusivamente **quality gate**: lint → typecheck → test → E2E → k6
+- O deploy ocorre diretamente pelo Vercel ao detectar push no `master`, sem intermediário CI
+- Não são necessários `VERCEL_TOKEN`, `VERCEL_ORG_ID` nem `VERCEL_PROJECT_ID` como GitHub Secrets
 
 ---
 
