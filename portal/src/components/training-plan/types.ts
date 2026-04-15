@@ -36,7 +36,6 @@ export interface WorkoutTemplate {
   id: string;
   name: string;
   description: string | null;
-  sport_type: string;
   workout_type: WorkoutType;
   estimated_distance_m: number | null;
   block_count: number;

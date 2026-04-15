@@ -42,7 +42,6 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
       id,
       name,
       description,
-      sport_type,
       workout_type,
       coaching_workout_blocks (
         id,
@@ -72,8 +71,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
       id: t.id,
       name: t.name,
       description: t.description,
-      sport_type: t.sport_type,
-      workout_type: t.workout_type,
+      workout_type: t.workout_type ?? "free",
       estimated_distance_m: totalDistanceM > 0 ? totalDistanceM : null,
       block_count: blocks.length,
     };

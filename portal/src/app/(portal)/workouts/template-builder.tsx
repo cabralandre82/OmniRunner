@@ -19,10 +19,24 @@ interface Block {
   notes: string | null;
 }
 
+const WORKOUT_TYPES = [
+  { value: "continuous",   label: "🏃 Contínuo" },
+  { value: "interval",     label: "⚡ Intervalado" },
+  { value: "regenerative", label: "🌱 Regenerativo" },
+  { value: "long_run",     label: "🛤️ Longão" },
+  { value: "strength",     label: "💪 Força" },
+  { value: "technique",    label: "🎯 Técnica" },
+  { value: "test",         label: "⏱️ Teste" },
+  { value: "race",         label: "🏆 Competição" },
+  { value: "brick",        label: "🔁 Brick" },
+  { value: "free",         label: "🆓 Livre" },
+];
+
 interface TemplateBuilderProps {
   templateId?: string;
   initialName?: string;
   initialDescription?: string;
+  initialWorkoutType?: string;
   initialBlocks?: Block[];
 }
 
@@ -80,6 +94,7 @@ export function TemplateBuilder({
   templateId,
   initialName = "",
   initialDescription = "",
+  initialWorkoutType = "free",
   initialBlocks = [],
 }: TemplateBuilderProps) {
   const router = useRouter();
@@ -87,6 +102,7 @@ export function TemplateBuilder({
 
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
+  const [workoutType, setWorkoutType] = useState(initialWorkoutType);
   const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -131,6 +147,7 @@ export function TemplateBuilder({
           id: templateId,
           name,
           description,
+          workout_type: workoutType,
           blocks,
         }),
       });
@@ -205,6 +222,20 @@ export function TemplateBuilder({
               rows={2}
               className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-brand focus:ring-1 focus:ring-brand"
             />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-content-secondary">
+              Tipo de treino
+            </label>
+            <select
+              value={workoutType}
+              onChange={(e) => setWorkoutType(e.target.value)}
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-brand focus:ring-1 focus:ring-brand"
+            >
+              {WORKOUT_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
           </div>
         </div>
       </div>

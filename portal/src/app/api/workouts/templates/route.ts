@@ -26,10 +26,11 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { id, name, description, blocks } = body as {
+    const { id, name, description, workout_type, blocks } = body as {
       id?: string;
       name: string;
       description?: string;
+      workout_type?: string;
       blocks: BlockPayload[];
     };
 
@@ -73,6 +74,7 @@ export async function POST(req: Request) {
           name: name.trim(),
           description: description?.trim() || null,
           created_by: user.id,
+          workout_type: workout_type ?? "free",
         })
         .select("id")
         .single();

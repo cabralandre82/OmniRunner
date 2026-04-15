@@ -18,7 +18,7 @@ export default async function EditWorkoutPage({
 
   const { data: template } = await supabase
     .from("coaching_workout_templates")
-    .select("id, name, description")
+    .select("id, name, description, workout_type")
     .eq("id", params.id)
     .eq("group_id", groupId)
     .single();
@@ -51,6 +51,7 @@ export default async function EditWorkoutPage({
         templateId={template.id}
         initialName={template.name}
         initialDescription={template.description ?? ""}
+        initialWorkoutType={template.workout_type ?? "free"}
         initialBlocks={(blocks ?? []).map((b) => ({
           id: b.id,
           order_index: b.order_index,
