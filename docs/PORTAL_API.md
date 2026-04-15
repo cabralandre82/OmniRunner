@@ -557,79 +557,263 @@ Each action includes `requirePlatformAdmin()`, `rateLimit`, and `revalidatePath(
 
 ## Training Plan (Passagem de Treino)
 
-All endpoints require staff session (admin_master, coach, or assistant role in `coaching_members`).
-
-### `GET /api/training-plan/[planId]`
-
-Returns plan header plus all weeks and their workouts.
-
-**Response:**
-```json
-{
-  "plan": { "id", "name", "athlete_user_id", "group_id", "status", "starts_on", "ends_on", "sport_type" },
-  "weeks": [
-    {
-      "id", "week_number", "label", "cycle_type", "status", "starts_on", "ends_on",
-      "workouts": [
-        { "id", "day_of_week", "scheduled_date", "status", "label", "coach_notes",
-          "template": { "id", "name", "workout_type", "description" } }
-      ]
-    }
-  ]
-}
-```
+All endpoints require staff session (`admin_master`, `coach`, or `assistant` role in `coaching_members`). Group context is read from the `portal_group_id` session cookie.
 
 ---
 
-### `GET /api/training-plan/templates`
+### `GET /api/training-plan`
 
-Returns workout templates available for the caller's group.
+Lists all non-archived plans for the session group (max 50, ordered by `created_at` desc).
 
-**Query params:** `groupId` (uuid, required)
+**Auth:** `admin_master` or `coach` required.
 
-**Response:** `{ "templates": [{ "id", "name", "workout_type", "description", "blocks": [...] }] }`
+**Response:** `{ "ok": true, "data": [{ "id", "name", "sport_type", "status", "starts_on", "ends_on", "created_at", "athlete", "weeks" }] }`
 
 ---
 
-### `POST /api/training-plan/bulk-assign`
+### `POST /api/training-plan`
 
-Distributes a source week's workouts to multiple athletes, creating plans and weeks as needed.
+Creates a new training plan via `fn_create_training_plan` RPC.
 
 **Body (JSON):**
 | Campo | Tipo | Obrigatório |
 |-------|------|-------------|
-| `sourceWeekId` | uuid | Sim |
-| `targetAthleteIds` | uuid[] | Sim |
-| `targetStartDate` | date (YYYY-MM-DD) | Sim |
-| `groupId` | uuid | Sim |
+| `name` | string (2–120) | Sim |
+| `sport_type` | `running\|cycling\|triathlon\|swimming\|strength\|multi` | Não (default: `running`) |
+| `athlete_user_id` | uuid | Não (omitir = modelo de grupo) |
+| `description` | string (max 500) | Não |
+| `starts_on` | YYYY-MM-DD | Não |
+| `ends_on` | YYYY-MM-DD | Não |
+
+**Response:** `{ "ok": true, "data": { "id": "<planId>" } }` (201)
+
+---
+
+### `GET /api/training-plan/[planId]`
+
+Returns plan header with resolved athlete name and avatar.
 
 **Response:**
 ```json
 {
   "ok": true,
-  "results": [
-    { "athleteId": "...", "ok": true, "planId": "...", "weekId": "..." }
+  "data": {
+    "id": "...", "name": "...", "sport_type": "running", "status": "active",
+    "starts_on": "2026-04-14", "ends_on": null,
+    "athlete_user_id": "...", "athlete_name": "João Silva", "athlete_avatar": null,
+    "group_id": "...", "description": null
+  }
+}
+```
+
+---
+
+### `DELETE /api/training-plan/[planId]`
+
+Soft-deletes the plan (sets `status = archived`). Plan disappears from all list views. Data is preserved.
+
+**Auth:** `admin_master` or `coach` required.
+
+**Response:** `{ "ok": true }`
+
+---
+
+### `GET /api/training-plan/[planId]/weeks`
+
+Returns all weeks for the plan with embedded workouts, completion metrics and feedback.
+
+**Response:**
+```json
+{
+  "ok": true,
+  "data": [{
+    "id", "week_number", "starts_on", "ends_on", "label", "coach_notes", "cycle_type", "status",
+    "workouts": [{
+      "id", "scheduled_date", "workout_order", "release_status", "workout_type",
+      "workout_label", "coach_notes", "content_version",
+      "template": { "id", "name", "description" },
+      "completed": [{ "id", "actual_distance_m", "actual_duration_s", "actual_avg_hr", "perceived_effort", "finished_at" }],
+      "feedback": [{ "rating", "mood", "how_was_it" }]
+    }]
+  }]
+}
+```
+
+---
+
+### `POST /api/training-plan/[planId]/weeks`
+
+Creates a new week via `fn_create_plan_week` RPC. Week must start on Monday.
+
+**Body (JSON):**
+| Campo | Tipo | Obrigatório |
+|-------|------|-------------|
+| `starts_on` | YYYY-MM-DD (must be Monday) | Sim |
+| `cycle_type` | `base\|build\|peak\|recovery\|test\|free\|taper\|transition` | Não (default: `base`) |
+| `label` | string (max 80) | Não |
+| `coach_notes` | string (max 500) | Não |
+
+**Response:** `{ "ok": true, "data": { "id": "<weekId>" } }` (201)
+
+---
+
+### `GET /api/training-plan/templates`
+
+Returns active workout templates for the group, enriched with block count and estimated distance.
+
+**Query params:** `groupId` (uuid, optional — falls back to session cookie)
+
+**Response:**
+```json
+{
+  "ok": true,
+  "data": [{
+    "id", "name", "description", "sport_type", "workout_type",
+    "estimated_distance_m": 12000,
+    "block_count": 4
+  }]
+}
+```
+
+---
+
+### `POST /api/training-plan/weeks/[weekId]/workouts`
+
+Adds a workout to a week day via `fn_create_plan_workout` RPC.
+
+**Body (JSON):**
+| Campo | Tipo | Obrigatório |
+|-------|------|-------------|
+| `athlete_id` | uuid | Sim |
+| `template_id` | uuid | Sim |
+| `scheduled_date` | YYYY-MM-DD | Sim |
+| `workout_type` | enum | Não (default: `continuous`) |
+| `workout_label` | string (max 120) | Não |
+| `coach_notes` | string (max 500) | Não |
+
+**Response:** `{ "ok": true, "data": { "id": "<releaseId>" } }` (201)
+
+---
+
+### `POST /api/training-plan/weeks/[weekId]/release`
+
+Bulk-releases all draft workouts in the week to athletes.
+
+**Body:** `{ "reason": string }`
+
+**Response:** `{ "ok": true, "data": { "released_count": 3 } }`
+
+---
+
+### `POST /api/training-plan/weeks/[weekId]/duplicate`
+
+Duplicates the week (all workouts copied as drafts, appended after last week).
+
+**Response:** `{ "ok": true, "data": { "id": "<newWeekId>" } }`
+
+---
+
+### `POST /api/training-plan/workouts/[workoutId]/release`
+
+Releases a single draft workout to the athlete.
+
+**Response:** `{ "ok": true }`
+
+---
+
+### `POST /api/training-plan/workouts/[workoutId]/cancel`
+
+Cancels a released workout.
+
+**Response:** `{ "ok": true }`
+
+---
+
+### `POST /api/training-plan/workouts/[workoutId]/copy`
+
+Copies a workout to a different date.
+
+**Body:** `{ "target_date": "YYYY-MM-DD" }`
+
+**Response:** `{ "ok": true, "data": { "id": "<newReleaseId>" } }`
+
+---
+
+### `PATCH /api/training-plan/workouts/[workoutId]/update`
+
+Updates label and/or coach notes of a workout.
+
+**Body (JSON):** any subset of `{ "workout_label": string|null, "coach_notes": string|null }`
+
+**Response:** `{ "ok": true }`
+
+---
+
+### `POST /api/training-plan/workouts/[workoutId]/schedule`
+
+Schedules a workout for automatic release at a future datetime.
+
+**Body:** `{ "scheduled_release_at": "ISO 8601 datetime" }`
+
+**Response:** `{ "ok": true }`
+
+---
+
+### `POST /api/training-plan/bulk-assign`
+
+Distributes a source week's workouts to multiple athletes via `fn_bulk_assign_week` RPC. Returns per-athlete results.
+
+**Body (JSON):**
+| Campo | Tipo | Obrigatório |
+|-------|------|-------------|
+| `source_week_id` | uuid | Sim |
+| `target_athlete_ids` | uuid[] (max 100) | Sim |
+| `target_start_date` | YYYY-MM-DD | Sim |
+| `group_id` | uuid | Sim |
+
+**Response:**
+```json
+{
+  "ok": true,
+  "data": {
+    "success_count": 3,
+    "results": [
+      { "athlete_id": "...", "success": true, "new_week_id": "..." },
+      { "athlete_id": "...", "success": false, "error": "athlete_not_member" }
+    ]
+  }
+}
+```
+
+---
+
+## Athletes
+
+### `GET /api/athletes`
+
+Returns active athlete members of the session group. Used by training-plan creation dropdown and any component needing an athlete list without knowing the `groupId` ahead of time.
+
+**Auth:** Session cookie + `portal_group_id` cookie.
+
+**Response:**
+```json
+{
+  "ok": true,
+  "data": [
+    { "user_id": "...", "display_name": "João Silva", "avatar_url": null }
   ]
 }
 ```
 
 ---
 
-### `PATCH /api/training-plan/workouts/[workoutId]/update`
-
-Updates a single workout in the plan (label, coach notes, scheduled date, status).
-
-**Body (JSON):** any subset of `{ label, coach_notes, scheduled_date, status }`
-
-**Response:** `{ "ok": true, "workout": { ...updated fields... } }`
-
----
+## Group Members
 
 ### `GET /api/groups/[groupId]/members`
 
-Returns athletes who are active members of the group.
+Returns active athlete members of a specific group. Requires the caller to be a member of that group and the `groupId` to match the `portal_group_id` session cookie.
 
-**Response:** `{ "members": [{ "user_id", "display_name", "avatar_url" }] }`
+**Response:** `{ "ok": true, "data": [{ "user_id", "display_name", "avatar_url" }] }`
 
 ---
 

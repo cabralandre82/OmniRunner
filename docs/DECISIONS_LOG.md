@@ -4010,6 +4010,20 @@ Implementar um módulo de Training Plan independente do Workout Delivery existen
 
 **Regra operacional:** Planos do tipo "modelo de grupo" (sem `athlete_user_id`) não suportam o `WeeklyPlanner` pois os RPCs de criação de workout exigem um atleta alvo. O coach deve sempre criar planos vinculados a um atleta específico para usar a prescrição semanal.
 
+**Bugs corrigidos em 2026-04-15 (v1.6.2) — varredura completa frontend↔API:**
+
+1. **`GET /api/athletes` inexistente**: o dropdown de atleta em "Nova Planilha" só mostrava "Modelo de grupo" porque o endpoint nunca foi criado. Criado `portal/src/app/api/athletes/route.ts` — lê `portal_group_id` do cookie e retorna atletas ativos do grupo.
+
+2. **`profiles.full_name` / `profiles.username` não existem**: a tabela `profiles` só tem `display_name`. Quatro arquivos consultavam colunas fantasma, causando fallback para "Atleta" em toda a UI de nomes:
+   - `api/athletes/route.ts`
+   - `api/groups/[groupId]/members/route.ts`
+   - `api/training-plan/[planId]/route.ts`
+   - `app/(portal)/training-plan/page.tsx`
+
+3. **Arquivar planilha**: não havia botão nem endpoint para remover uma planilha. Implementado soft-delete: `DELETE /api/training-plan/[planId]` define `status = archived`; botão de lixeira adicionado ao cabeçalho da página de detalhe da planilha com confirmação antes de executar.
+
+**Resultado da varredura:** 57 rotas existentes × 60+ `fetch()` calls auditados. Nenhuma outra rota faltando; shapes de resposta todos corretos nos demais endpoints.
+
 ---
 
 ## DECISAO 145 — Desconectar Integração Automática Vercel + Pipeline CI/CD Correto

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.2] - 2026-04-15
+
+### Added
+- **Training Plan — Arquivar planilha**: botão de arquivar (ícone lixeira) no cabeçalho da planilha; confirma antes de executar e redireciona para a lista. `DELETE /api/training-plan/[planId]` faz soft-delete (`status = archived`); a planilha some de todas as listagens (que já filtravam `status != archived`), dados preservados.
+- **`GET /api/athletes`**: novo endpoint que lê `portal_group_id` do cookie de sessão e retorna todos os atletas ativos do grupo (`user_id`, `display_name`, `avatar_url`). Usado pelo dropdown de atleta na criação de planilha.
+
+### Fixed
+- **Varredura de integridade frontend↔API**: revisão completa dos 60+ `fetch()` calls versus os 57 endpoints existentes. Uma rota faltando e 4 shape mismatches encontrados e corrigidos:
+  - `profiles.full_name` e `profiles.username` não existem — a tabela só tem `display_name`. Corrigidos em: `api/athletes/route.ts`, `api/groups/[groupId]/members/route.ts`, `api/training-plan/[planId]/route.ts`, `training-plan/page.tsx`. Resultado: nomes de atletas apareciam como "Atleta" em toda a UI.
+
+---
+
 ## [1.6.1] - 2026-04-15
 
 ### Fixed
