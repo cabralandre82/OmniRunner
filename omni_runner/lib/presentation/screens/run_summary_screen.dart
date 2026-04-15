@@ -63,6 +63,9 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
   late final LatLng _center;
   Timer? _mapTimeout;
 
+  String? _aiComment;
+  bool _aiLoading = true;
+
   static const _mapLoadTimeout = Duration(seconds: 6);
 
   @override
@@ -74,6 +77,34 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
       if (!mounted || _mapReady) return;
       setState(() { _mapReady = true; _mapTimedOut = true; });
     });
+    _fetchAiComment();
+  }
+
+  Future<void> _fetchAiComment() async {
+    try {
+      final res = await sl<SupabaseClient>().functions.invoke(
+        'generate-run-comment',
+        body: {
+          'distance_m': widget.totalDistanceM,
+          'duration_s': widget.elapsedMs ~/ 1000,
+          if (widget.avgPaceSecPerKm != null)
+            'avg_pace_sec_km': widget.avgPaceSecPerKm,
+          if (widget.avgBpm != null)
+            'avg_bpm': widget.avgBpm,
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      final data = res.data as Map<String, dynamic>?;
+      final comment = data?['comment'] as String?;
+      if (mounted) {
+        setState(() {
+          _aiComment = (comment?.isNotEmpty == true) ? comment : null;
+          _aiLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _aiLoading = false);
+    }
   }
 
   @override
@@ -109,6 +140,66 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
     ),);
   }
 
+  Widget _buildAiCommentCard() {
+    if (_aiLoading) {
+      return Padding(
+        padding: const EdgeInsets.only(top: DesignTokens.spacingSm),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(children: [
+            const SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(strokeWidth: 1.5),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Analisando sua corrida...',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+          ]),
+        ),
+      );
+    }
+
+    if (_aiComment == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: DesignTokens.spacingSm),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0F4FF),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFBFD0FF), width: 1),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('✨', style: TextStyle(fontSize: 14)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                _aiComment!,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF1E3A8A),
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget? _buildExtra() {
     final ghost = _buildGhostCard();
     final integrity = _buildIntegrityCard();
@@ -116,44 +207,28 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
     final challengeBanner = challengeId != null
         ? ChallengeSessionBanner(challengeId: challengeId)
         : null;
-    if (ghost == null && integrity == null && challengeBanner == null) {
-      return const Padding(
-        padding: EdgeInsets.only(top: DesignTokens.spacingSm),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.schedule, size: 14, color: DesignTokens.textMuted),
-            SizedBox(width: 4),
-            Text(
-              'Verificação final pelo servidor ao sincronizar',
-              style: TextStyle(fontSize: 11, color: DesignTokens.textMuted),
-            ),
-          ],
-        ),
-      );
-    }
+
+    final syncNote = Padding(
+      padding: const EdgeInsets.only(top: DesignTokens.spacingSm),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.schedule, size: 14, color: DesignTokens.textMuted),
+          const SizedBox(width: 4),
+          Text(
+            'Verificação final pelo servidor ao sincronizar',
+            style: const TextStyle(fontSize: 11, color: DesignTokens.textMuted),
+          ),
+        ],
+      ),
+    );
+
     return Column(mainAxisSize: MainAxisSize.min, children: [
+      _buildAiCommentCard(),
       if (challengeBanner != null) challengeBanner,
       if (ghost != null) ghost,
       if (integrity != null) integrity,
-      if (integrity == null)
-        const Padding(
-          padding: EdgeInsets.only(top: DesignTokens.spacingSm),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.schedule, size: 14, color: DesignTokens.textMuted),
-              SizedBox(width: 4),
-              Text(
-                'Verificação final pelo servidor ao sincronizar',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: DesignTokens.textMuted,
-                ),
-              ),
-            ],
-          ),
-        ),
+      if (integrity == null) syncNote,
     ]);
   }
 
@@ -243,7 +318,7 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
             totalDistanceM: widget.totalDistanceM, elapsedMs: widget.elapsedMs,
             avgPaceSecPerKm: widget.avgPaceSecPerKm, pointsCount: widget.points.length,
             avgBpm: widget.avgBpm, maxBpm: widget.maxBpm,
-            extraSection: _buildExtra(),
+            extraSection: _buildExtra() ?? const SizedBox.shrink(),
             replayPoints: widget.points,
           ),
         ),

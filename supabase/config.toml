@@ -498,6 +498,9 @@ verify_jwt = true
 [functions.generate-running-dna]
 verify_jwt = true
 
+[functions.generate-run-comment]
+verify_jwt = true
+
 [functions.generate-wrapped]
 verify_jwt = true
 

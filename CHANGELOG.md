@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-04-14
+
+### Added
+- **IA: Briefing do atleta no CRM**: ao abrir qualquer perfil em `/crm/[userId]`, um card lazy-loaded gera automaticamente um parágrafo de 2–4 frases resumindo os sinais atuais do atleta (aderência ao plano, RPE médio, dias inativo, alertas ativos, última nota do treinador). O card é colorido de acordo com o sinal semântico retornado pela IA: verde (positivo), âmbar (atenção), vermelho (risco). Falha silenciosamente — nunca bloqueia o carregamento da página. Endpoint: `POST /api/ai/athlete-briefing`.
+- **IA: Comentário pós-corrida personalizado**: ao finalizar qualquer corrida, o `RunSummaryScreen` chama a edge function `generate-run-comment` que compara a corrida atual com as últimas 8 sessões do atleta e gera 1–2 frases de feedback personalizado em português. Exibido como card `✨` no painel de métricas. Falha silenciosamente caso não haja histórico ou a IA esteja indisponível. Requer `OPENAI_API_KEY` configurada como Supabase secret.
+- **`docs/AI_ROADMAP.md`**: novo arquivo documentando o ecossistema de IA implementado e 7 ideias futuras priorizadas (narrativa semanal, rascunho de mensagem para atleta em risco, gerador de comunicado, ajuste de carga sugerido, plano periodizado, auto-classificação de corrida, matching inteligente).
+
+### Infrastructure
+- `supabase/functions/generate-run-comment/index.ts`: nova edge function para comentário pós-corrida
+- `supabase/config.toml`: registrada `[functions.generate-run-comment]` com `verify_jwt = true`
+- **Ação necessária:** executar `supabase secrets set OPENAI_API_KEY=<chave>` para ativar o comentário pós-corrida no app
+
+---
+
 ## [1.7.0] - 2026-04-14
 
 ### Added

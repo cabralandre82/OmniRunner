@@ -4,6 +4,7 @@ import { NoGroupSelected } from "@/components/no-group-selected";
 import Link from "next/link";
 import { formatDateISO, formatDateTime } from "@/lib/format";
 import { AddNoteForm } from "./add-note-form";
+import { AthleteBriefingCard } from "@/components/crm/athlete-briefing-card";
 
 export const dynamic = "force-dynamic";
 
@@ -190,6 +191,8 @@ export default async function AthleteDetailPage({
         <h1 className="text-2xl font-bold text-content-primary">{athlete.display_name}</h1>
         <p className="mt-1 text-sm text-content-secondary">Detalhes do atleta</p>
       </div>
+
+      <AthleteBriefingCard athleteId={userId} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">

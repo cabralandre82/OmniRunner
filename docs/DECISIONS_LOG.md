@@ -4067,6 +4067,43 @@ Implementar um módulo de Training Plan independente do Workout Delivery existen
 
 ---
 
+## DECISAO 147 — IA: Briefing do Atleta no CRM + Comentário Pós-Corrida
+
+**Data:** 2026-04-14  
+**Contexto:** Após o estudo de onde a IA pode agregar valor real ao produto (10 áreas mapeadas, ver `docs/AI_ROADMAP.md`), dois casos foram priorizados para implementação imediata por combinarem alto impacto, dados já disponíveis e baixo esforço.
+
+**Decisões:**
+
+**1. Briefing do atleta no CRM (`POST /api/ai/athlete-briefing`)**
+- O coach abre `/crm/[userId]` e um card carrega de forma assíncrona (lazy) um parágrafo de 2–4 frases gerado por GPT-4o-mini.
+- O modelo recebe dados estruturados (não texto livre): assiduidade 30d, RPE médio 4 semanas, compliance ao plano, dias inativo, alertas ativos, última nota, tags, tempo na assessoria.
+- Retorna além do texto um sinal semântico (`positive`/`attention`/`risk`) que define a cor do card na UI.
+- Falha silenciosa: se a API key estiver ausente ou a OpenAI retornar erro, o card simplesmente não aparece — nunca bloqueia a página.
+- Componente: `portal/src/components/crm/athlete-briefing-card.tsx`
+
+**2. Comentário pós-corrida (`supabase/functions/generate-run-comment`)**
+- Chamado pelo `RunSummaryScreen` imediatamente após uma corrida, com `timeout: 10s`.
+- A edge function busca as últimas 8 sessões verificadas do atleta, calcula médias de distância, pace e FC, e pede à IA 1–2 frases comparativas.
+- Exibido como card `✨` acima dos outros elementos extras no painel de métricas.
+- Falha completamente silenciosa: o bloco `try/catch` garante que qualquer falha (timeout, sem histórico, sem API key) resulta em `comment: null` e o card simplesmente não aparece.
+- Requer `OPENAI_API_KEY` como Supabase secret (`supabase secrets set OPENAI_API_KEY=...`).
+
+**Princípios seguidos em ambas as features:**
+1. Dados reais para evitar alucinação — o prompt sempre inclui os números brutos.
+2. Nunca conselho médico — explicitamente proibido nos prompts de sistema.
+3. Modelo `gpt-4o-mini` — custo mínimo, latência aceitável.
+4. Zero impacto em features existentes em caso de falha.
+
+**Roadmap documentado:** os outros 7 casos de uso identificados estão em `docs/AI_ROADMAP.md` com descrição, dados necessários, esforço estimado e prioridade.
+
+---
+
+## DECISAO 146 — Training Plan v2: Visão por Atleta, Prescrição Livre e IA
+
+*(entrada mantida abaixo — ver DECISAO 147 para expansão de IA)*
+
+---
+
 ## DECISAO 145 — Desconectar Integração Automática Vercel + Pipeline CI/CD Correto
 
 **Data:** 2026-04-14
