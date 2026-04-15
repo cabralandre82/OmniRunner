@@ -4004,6 +4004,12 @@ Implementar um módulo de Training Plan independente do Workout Delivery existen
 
 **Status:** Migrations `20260407000000_training_plan_module.sql` e `20260408130000_support_member_messages.sql` aplicadas em produção em 2026-04-15.
 
+**Bugs corrigidos em 2026-04-15 (v1.6.1):**
+1. `GET /api/training-plan/templates`: relacionamento `coaching_workout_template_blocks` → `coaching_workout_blocks` (nome errado causava picker vazio)
+2. `[planId]/page.tsx`: `WeeklyPlanner` só renderizava quando `plan.athlete_user_id` estava preenchido; planos de grupo ficavam em branco sem explicação
+
+**Regra operacional:** Planos do tipo "modelo de grupo" (sem `athlete_user_id`) não suportam o `WeeklyPlanner` pois os RPCs de criação de workout exigem um atleta alvo. O coach deve sempre criar planos vinculados a um atleta específico para usar a prescrição semanal.
+
 ---
 
 ## DECISAO 145 — Desconectar Integração Automática Vercel + Pipeline CI/CD Correto

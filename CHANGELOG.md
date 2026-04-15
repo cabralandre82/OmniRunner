@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-04-15
+
+### Fixed
+- **Training Plan — WorkoutPickerDrawer vazio**: `GET /api/training-plan/templates` usava nome de relacionamento errado (`coaching_workout_template_blocks`) ao invés de `coaching_workout_blocks`; o Supabase retornava `DB_ERROR` silencioso e o picker abria sem listar nenhum template
+- **Training Plan — WeeklyPlanner invisível em modelos de grupo**: a condição `plan.athlete_user_id` ocultava silenciosamente o `WeeklyPlanner` em planos criados sem atleta; agora exibe mensagem explicativa orientando o coach a criar um plano vinculado a um atleta específico
+
+---
+
 ## [1.6.0] - 2026-04-14
 
 ### Added
