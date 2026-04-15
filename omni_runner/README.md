@@ -8,8 +8,8 @@ Plataforma de corrida com gamificação e coaching. App mobile multiplataforma (
 - **Arquitetura:** Clean Architecture (domain → data → presentation)
 - **State Management:** BLoC / Cubit
 - **DI:** GetIt
-- **Local DB:** Isar
-- **Backend:** Supabase (PostgreSQL, Auth, Edge Functions, Storage)
+- **Local DB:** Drift (SQLite + SQLCipher)
+- **Backend:** Supabase (PostgreSQL, Auth, Edge Functions, Storage) — migrações SQL no repositório em `../supabase/migrations` (raiz do monorepo)
 - **Mapas:** MapLibre + MapTiler
 - **GPS:** Geolocator + flutter_foreground_task
 - **Crash Reporting:** Sentry

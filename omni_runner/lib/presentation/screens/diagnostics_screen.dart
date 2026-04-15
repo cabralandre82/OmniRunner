@@ -31,7 +31,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     try {
       final pkg = await PackageInfo.fromPlatform();
       items.add(_DiagItem('Versão do app', '${pkg.version}+${pkg.buildNumber}'));
-    } catch (e) {
+    } on Object catch (e) {
       items.add(_DiagItem('Versão do app', 'erro: $e'));
     }
 
@@ -52,7 +52,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
           user != null ? 'autenticado (${user.email ?? user.id.substring(0, 8)})' : 'não autenticado',
           ok: user != null,
         ));
-      } catch (e) {
+      } on Object catch (e) {
         items.add(_DiagItem('Auth', 'erro: $e', ok: false));
       }
     }
@@ -60,7 +60,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     try {
       sl<ISyncRepo>();
       items.add(const _DiagItem('Sync service', 'disponível', ok: true));
-    } catch (e) {
+    } on Object catch (_) {
       items.add(const _DiagItem('Sync service', 'indisponível', ok: false));
     }
 

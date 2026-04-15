@@ -1,0 +1,128 @@
+-- ============================================================================
+-- Training Plan Module v2 — Melhorias e features adicionais
+--
+-- CHANGES:
+--   1. ADD COLUMN video_url em plan_workout_releases
+--   2. CREATE FUNCTION fn_create_descriptive_workout
+--      (prescrição em texto livre, sem template)
+-- ============================================================================
+
+BEGIN;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 1. Adicionar video_url em plan_workout_releases
+--    Permite o treinador vincular um vídeo explicativo (YouTube, etc.)
+--    a qualquer treino prescrito.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+ALTER TABLE public.plan_workout_releases
+  ADD COLUMN IF NOT EXISTS video_url text;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 2. fn_create_descriptive_workout
+--    Cria um treino sem template (prescrição em texto livre).
+--    Diferente de fn_create_plan_workout que exige template_id.
+--    O treinador escreve diretamente o que o atleta deve fazer.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+CREATE OR REPLACE FUNCTION public.fn_create_descriptive_workout(
+  p_plan_week_id   uuid,
+  p_athlete_id     uuid,
+  p_scheduled_date date,
+  p_workout_label  text,
+  p_description    text DEFAULT NULL,
+  p_workout_type   text DEFAULT 'continuous',
+  p_coach_notes    text DEFAULT NULL,
+  p_video_url      text DEFAULT NULL,
+  p_workout_order  int  DEFAULT 1
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_group_id    uuid;
+  v_role        text;
+  v_release_id  uuid;
+  v_week_starts date;
+  v_week_ends   date;
+BEGIN
+  SELECT w.group_id, w.starts_on, w.ends_on
+  INTO v_group_id, v_week_starts, v_week_ends
+  FROM training_plan_weeks w
+  WHERE id = p_plan_week_id;
+
+  IF v_group_id IS NULL THEN
+    RAISE EXCEPTION 'week_not_found';
+  END IF;
+
+  SELECT role INTO v_role
+  FROM coaching_members
+  WHERE group_id = v_group_id AND user_id = auth.uid()
+  LIMIT 1;
+
+  IF v_role IS NULL OR v_role NOT IN ('admin_master', 'coach') THEN
+    RAISE EXCEPTION 'forbidden';
+  END IF;
+
+  IF p_scheduled_date < v_week_starts OR p_scheduled_date > v_week_ends THEN
+    RAISE EXCEPTION 'date_outside_week'
+      USING HINT = format('Date %s is outside week %s–%s',
+                          p_scheduled_date, v_week_starts, v_week_ends);
+  END IF;
+
+  IF p_workout_label IS NULL OR length(trim(p_workout_label)) = 0 THEN
+    RAISE EXCEPTION 'workout_label_required'
+      USING HINT = 'Descriptive workouts must have a label';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM coaching_members
+    WHERE group_id = v_group_id
+      AND user_id = p_athlete_id
+      AND role = 'athlete'
+  ) THEN
+    RAISE EXCEPTION 'athlete_not_member';
+  END IF;
+
+  INSERT INTO plan_workout_releases (
+    plan_week_id, group_id, athlete_user_id, template_id,
+    scheduled_date, workout_order, workout_type,
+    workout_label, coach_notes, video_url,
+    release_status, created_by, updated_by,
+    content_snapshot
+  ) VALUES (
+    p_plan_week_id, v_group_id, p_athlete_id, NULL,
+    p_scheduled_date, p_workout_order,
+    COALESCE(p_workout_type, 'continuous'),
+    p_workout_label, p_coach_notes, p_video_url,
+    'draft', auth.uid(), auth.uid(),
+    jsonb_build_object(
+      'template_id',   NULL,
+      'template_name', p_workout_label,
+      'description',   p_description,
+      'blocks',        '[]'::jsonb,
+      'snapshot_at',   now()
+    )
+  ) RETURNING id INTO v_release_id;
+
+  INSERT INTO workout_change_log (
+    release_id, group_id, changed_by, change_type, new_value
+  ) VALUES (
+    v_release_id, v_group_id, auth.uid(), 'created',
+    jsonb_build_object(
+      'descriptive', true,
+      'label', p_workout_label,
+      'date', p_scheduled_date
+    )
+  );
+
+  RETURN v_release_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.fn_create_descriptive_workout FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.fn_create_descriptive_workout TO authenticated;
+
+COMMIT;

@@ -75,7 +75,7 @@ class _StaffTrainingDetailView extends StatelessWidget {
       if (context.mounted) {
         context.read<TrainingDetailBloc>().add(const RefreshTrainingDetail());
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Override attendance failed', error: e);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

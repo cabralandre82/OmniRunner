@@ -161,10 +161,10 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
                   sum +
                   ((s['total_distance_m'] as num?)?.toDouble() ?? 0)) /
               1000;
-        } catch (e) {
+        } on Object catch (e) {
       AppLogger.warn('Unexpected error', tag: 'StaffPerformanceScreen', error: e);
     }
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.warn('Performance: sessions query failed: $e', tag: 'StaffPerf');
       }
 
@@ -184,7 +184,7 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
             .map((r) => (r as Map<String, dynamic>)['user_id'] as String)
             .toSet();
         _churnRiskCount = athleteIds.where((id) => !recentUserIds.contains(id)).length;
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.warn('Performance: churn risk query failed: $e', tag: 'StaffPerf');
       }
 
@@ -214,12 +214,12 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
             _challengesWon = results
                 .where((r) => athleteIds.contains(r['winner_user_id']))
                 .length;
-          } catch (e) {
+          } on Object catch (e) {
       AppLogger.warn('Caught error', tag: 'StaffPerformanceScreen', error: e);
             _challengesWon = 0;
           }
         }
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.warn('Performance: challenges query failed: $e', tag: 'StaffPerf');
       }
 
@@ -235,12 +235,12 @@ class _StaffPerformanceScreenState extends State<StaffPerformanceScreen> {
         _champCompleted = champParts
             .where((c) => c['status'] == 'completed')
             .length;
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.warn('Performance: championships query failed: $e', tag: 'StaffPerf');
       }
 
       if (mounted) setState(() => _loading = false);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Performance: load failed: $e', tag: 'StaffPerf', error: e);
       if (mounted) {
         setState(() {

@@ -74,7 +74,7 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
       emit(ChallengesLoaded(refreshed));
     } on GamificationFailure catch (e) {
       emit(ChallengesError(_failureMessage(e), failure: e));
-    } catch (e) {
+    } on Object catch (e) {
       emit(ChallengesError('Erro ao carregar desafios: $e'));
     }
   }
@@ -261,7 +261,7 @@ class ChallengesBloc extends Bloc<ChallengesEvent, ChallengesState> {
       emit(ChallengeCreated(challenge));
     } on GamificationFailure catch (e) {
       emit(ChallengesError(_failureMessage(e), failure: e));
-    } catch (e) {
+    } on Object catch (e) {
       emit(ChallengesError('Erro ao criar desafio: $e'));
     }
   }

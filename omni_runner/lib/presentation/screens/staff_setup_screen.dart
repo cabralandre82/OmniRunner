@@ -117,7 +117,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
             'p_state': _selectedState ?? '',
           });
           break;
-        } catch (e) {
+        } on Object catch (e) {
           AppLogger.warn('fn_create_assessoria attempt $attempt/3: $e', tag: _tag);
           if (attempt == 3) rethrow;
           await Future<void>.delayed(Duration(milliseconds: 500 * attempt));
@@ -154,7 +154,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
       );
       if (!mounted) return;
       widget.onComplete();
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Create assessoria failed: $e', tag: _tag, error: e);
       if (!mounted) return;
       setState(() {
@@ -197,7 +197,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
           _searching = false;
         });
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Search failed: $e', tag: _tag, error: e);
       if (mounted) setState(() => _searching = false);
     }
@@ -261,7 +261,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
       await _setReady();
       if (!mounted) return;
       _showRequestSent(groupName, alreadyExists: false);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Join request as professor failed: $e', tag: _tag, error: e);
       if (!mounted) return;
       setState(() {
@@ -381,7 +381,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
       if (!mounted) return;
       setState(() => _busy = false);
       await _joinGroup(group.id, group.name);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Lookup failed: $e', tag: _tag, error: e);
       if (!mounted) return;
       setState(() {

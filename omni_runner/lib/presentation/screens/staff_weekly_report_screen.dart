@@ -196,7 +196,7 @@ class _StaffWeeklyReportScreenState extends State<StaffWeeklyReportScreen> {
       }
 
       if (mounted) setState(() => _loading = false);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Caught error', tag: 'StaffWeeklyReport', error: e);
       if (mounted) {
         setState(() {

@@ -88,7 +88,8 @@ class _BodyState extends State<_Body> {
             .gte('total_distance_m', 1000)
             .order('start_time_ms', ascending: false)
             .limit(10);
-        remoteFiltered = (rows as List).map((r) {
+        remoteFiltered = (rows as List<dynamic>).map((raw) {
+          final r = raw as Map<String, dynamic>;
           return WorkoutSessionEntity(
             id: r['id'] as String,
             userId: r['user_id'] as String?,
@@ -107,9 +108,9 @@ class _BodyState extends State<_Body> {
             source: r['source'] as String? ?? 'app',
           );
         }).toList();
-      } catch (e) {
-      AppLogger.warn('Unexpected error', tag: 'AthleteVerificationScreen', error: e);
-    }
+      } on Object catch (e) {
+        AppLogger.warn('Unexpected error', tag: 'AthleteVerificationScreen', error: e);
+      }
 
       // Merge and dedup by id, sort by most recent
       final byId = <String, WorkoutSessionEntity>{};
@@ -125,7 +126,7 @@ class _BodyState extends State<_Body> {
       if (mounted) {
         setState(() => _recentSessions = merged.take(10).toList());
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Unexpected error', tag: 'AthleteVerificationScreen', error: e);
     }
   }

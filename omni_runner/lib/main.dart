@@ -97,7 +97,7 @@ Future<void> _bootstrap() async {
   try {
     await _initServices();
     recovery = await sl<RecoverActiveSession>()();
-  } catch (e, stack) {
+  } on Object catch (e, stack) {
     AppLogger.error(
       'Bootstrap failed — launching with fallback UI',
       tag: 'Main',
@@ -119,7 +119,7 @@ Future<void> _bootstrap() async {
       if (deleted > 0) {
         AppLogger.info('Pruned $deleted old local records', tag: 'Cleanup');
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.debug('Local data cleanup skipped', tag: 'Cleanup', error: e);
     }
   }));
@@ -174,19 +174,19 @@ Future<void> _initServices() async {
 
   try {
     await sl<DeepLinkHandler>().init();
-  } catch (e) {
+  } on Object catch (e) {
     AppLogger.warn('DeepLinkHandler init failed: $e', tag: 'Main');
   }
 
   try {
     ForegroundTaskConfig.init();
-  } catch (e) {
+  } on Object catch (e) {
     AppLogger.warn('ForegroundTaskConfig init failed: $e', tag: 'Main');
   }
 
   try {
     initWatchBridge();
-  } catch (e) {
+  } on Object catch (e) {
     AppLogger.warn('WatchBridge init failed: $e', tag: 'Main');
   }
 
@@ -197,7 +197,7 @@ Future<void> _initServices() async {
       pushService.onForegroundMessage = pushNav.showForegroundBanner;
       await pushService.init();
       await pushNav.init();
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Push init failed: $e', tag: 'Main');
     }
   }
@@ -205,19 +205,19 @@ Future<void> _initServices() async {
   try {
     final autoSync = AutoSyncManager(syncRepo: sl<ISyncRepo>());
     await autoSync.init();
-  } catch (e) {
+  } on Object catch (e) {
     AppLogger.warn('AutoSync init failed: $e', tag: 'Main');
   }
 
   if (AppConfig.isSupabaseReady) {
     try {
       sl<ConnectivityMonitor>().start();
-    } catch (_) {}
+    } on Object catch (_) {}
   }
 
   try {
     await themeNotifier.load();
-  } catch (e) {
+  } on Object catch (e) {
     AppLogger.warn('Theme load failed: $e', tag: 'Main');
   }
 }

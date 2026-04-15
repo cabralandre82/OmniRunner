@@ -189,7 +189,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
           _loadingInvites = false;
         });
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Load invites failed: $e', tag: _tag, error: e);
       if (mounted) setState(() => _loadingInvites = false);
     }
@@ -228,7 +228,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
           _loadingSearch = false;
         });
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Search failed: $e', tag: _tag, error: e);
       if (mounted) {
         setState(() {
@@ -256,7 +256,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
             .limit(1);
         hasPendingElsewhere = (pending as List).isNotEmpty;
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Unexpected error', tag: 'JoinAssessoriaScreen', error: e);
     }
 
@@ -341,7 +341,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
       await _setReady();
       if (!mounted) return;
       _showRequestSent(groupName, alreadyExists: false);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Join request failed: $e', tag: _tag, error: e);
       if (!mounted) return;
       setState(() {
@@ -428,7 +428,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
       });
       if (!mounted) return;
       widget.onComplete();
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Accept invite failed: $e', tag: _tag, error: e);
       if (!mounted) return;
       setState(() {
@@ -457,7 +457,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
       });
       if (!mounted) return;
       widget.onComplete();
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Skip failed: $e', tag: _tag, error: e);
       if (!mounted) return;
       setState(() {
@@ -562,7 +562,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
       if (!mounted) return;
       setState(() => _joining = false);
       await _joinGroup(group.id, group.name);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Invite code lookup failed: $e', tag: _tag, error: e);
       if (!mounted) return;
       setState(() {
@@ -596,7 +596,7 @@ class _JoinAssessoriaScreenState extends State<JoinAssessoriaScreen> {
       if (!mounted) return;
       setState(() => _joining = false);
       await _joinGroup(group.id, group.name);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Lookup failed: $e', tag: _tag, error: e);
       if (!mounted) return;
       setState(() {

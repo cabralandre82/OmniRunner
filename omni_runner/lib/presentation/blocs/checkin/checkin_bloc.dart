@@ -40,7 +40,7 @@ class CheckinBloc extends Bloc<CheckinEvent, CheckinState> {
         utf8.encode(json.encode(payload)),
       );
       emit(CheckinQrReady(token: token, encodedPayload: encodedPayload));
-    } catch (e) {
+    } on Object catch (e) {
       emit(CheckinError('Erro ao gerar QR: $e'));
     }
   }
@@ -93,7 +93,7 @@ class CheckinBloc extends Bloc<CheckinEvent, CheckinState> {
         case AttendanceFailed(:final message):
           emit(CheckinError(message));
       }
-    } catch (e) {
+    } on Object catch (e) {
       emit(CheckinError('Erro ao processar check-in: $e'));
     }
   }

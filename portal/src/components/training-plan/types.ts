@@ -80,11 +80,25 @@ export interface WorkoutRelease {
   workout_type: WorkoutType;
   workout_label: string | null;
   coach_notes: string | null;
+  video_url: string | null;
   content_version: number;
   template: { id: string; name: string; description: string | null } | null;
   completed: CompletedMetrics[];
   feedback: FeedbackSummary[];
 }
+
+// ── Workout Picker selection result ──────────────────────────────────────────
+
+export type WorkoutPickResult =
+  | { mode: "template"; template: WorkoutTemplate }
+  | {
+      mode: "descriptive";
+      label: string;
+      description?: string;
+      workout_type: WorkoutType;
+      coach_notes?: string;
+      video_url?: string;
+    };
 
 export interface PlanWeek {
   id: string;

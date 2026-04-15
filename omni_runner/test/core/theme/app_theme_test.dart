@@ -80,7 +80,13 @@ double _lum(Color c) {
     final s = v / 255.0;
     return s <= 0.04045 ? s / 12.92 : _pow((s + 0.055) / 1.055, 2.4);
   }
-  return 0.2126 * ch(c.red) + 0.7152 * ch(c.green) + 0.0722 * ch(c.blue);
+
+  int comp(double channel01) =>
+      (channel01 * 255.0).round().clamp(0, 255).toInt();
+
+  return 0.2126 * ch(comp(c.r)) +
+      0.7152 * ch(comp(c.g)) +
+      0.0722 * ch(comp(c.b));
 }
 
 double _pow(double base, double exp) {

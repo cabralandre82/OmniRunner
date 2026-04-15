@@ -56,7 +56,7 @@ class _ChallengeSessionBannerState extends State<ChallengeSessionBanner> {
             });
             return;
           }
-        } catch (e) {
+        } on Object catch (e) {
       AppLogger.warn('Unexpected error', tag: 'ChallengeSessionBanner', error: e);
     }
       }

@@ -594,20 +594,16 @@ class _StaffGenerateQrScreenState extends State<StaffGenerateQrScreen> {
           const SizedBox(height: 24),
           OutlinedButton.icon(
             onPressed: () {
-              context.read<StaffQrBloc>().add(const ResetStaffQr());
+              final bloc = context.read<StaffQrBloc>();
+              bloc.add(const ResetStaffQr());
               if (_hasInventoryControl) {
                 Future.microtask(() {
-                  if (mounted) {
-                    setState(() => _capacityLoading = true);
-                    if (_isIssue) {
-                      context
-                          .read<StaffQrBloc>()
-                          .add(LoadEmissionCapacity(widget.groupId));
-                    } else if (_isBadge) {
-                      context
-                          .read<StaffQrBloc>()
-                          .add(LoadBadgeCapacity(widget.groupId));
-                    }
+                  if (!mounted) return;
+                  setState(() => _capacityLoading = true);
+                  if (_isIssue) {
+                    bloc.add(LoadEmissionCapacity(widget.groupId));
+                  } else if (_isBadge) {
+                    bloc.add(LoadBadgeCapacity(widget.groupId));
                   }
                 });
               }

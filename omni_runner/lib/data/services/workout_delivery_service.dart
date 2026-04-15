@@ -20,7 +20,7 @@ class WorkoutDeliveryService {
       return List<Map<String, dynamic>>.from(
         (rows as List).map((r) => Map<String, dynamic>.from(r as Map)),
       );
-    } catch (e) {
+    } on Object catch (e) {
       if (e.toString().contains('PGRST205')) return [];
       rethrow;
     }
@@ -36,7 +36,7 @@ class WorkoutDeliveryService {
           .inFilter('status', ['published'])
           .count(CountOption.exact);
       return res.count;
-    } catch (e) {
+    } on Object catch (e) {
       if (e.toString().contains('PGRST205')) return 0;
       rethrow;
     }

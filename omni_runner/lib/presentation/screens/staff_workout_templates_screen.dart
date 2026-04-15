@@ -49,7 +49,7 @@ class _StaffWorkoutTemplatesScreenState
           _loading = false;
         });
       }
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error(
         'Erro ao listar templates',
         tag: 'WorkoutTemplatesScreen',

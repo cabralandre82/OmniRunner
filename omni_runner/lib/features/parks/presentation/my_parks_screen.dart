@@ -51,7 +51,8 @@ class _MyParksScreenState extends State<MyParksScreen> {
             .eq('user_id', uid);
 
         final byPark = <String, _ParkAgg>{};
-        for (final r in res as List) {
+        for (final raw in res as List<dynamic>) {
+          final r = raw as Map<String, dynamic>;
           final pid = r['park_id'] as String;
           byPark.putIfAbsent(pid, () => _ParkAgg());
           byPark[pid]!.count++;
@@ -83,7 +84,8 @@ class _MyParksScreenState extends State<MyParksScreen> {
             .select('park_id, user_id');
 
         final parkUserCounts = <String, Set<String>>{};
-        for (final r in popRows as List) {
+        for (final raw in popRows as List<dynamic>) {
+          final r = raw as Map<String, dynamic>;
           final pid = r['park_id'] as String;
           final uid2 = r['user_id'] as String;
           parkUserCounts.putIfAbsent(pid, () => {}).add(uid2);
@@ -99,7 +101,7 @@ class _MyParksScreenState extends State<MyParksScreen> {
           if (park == null) return null;
           return _PopularPark(park: park, runnerCount: e.value.length);
         }).whereType<_PopularPark>().toList();
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.debug('Popular parks load failed', tag: 'MyParksScreen', error: e);
       }
 
@@ -258,7 +260,7 @@ class _MyParksScreenState extends State<MyParksScreen> {
           .rpc('backfill_strava_sessions', params: {'p_user_id': uid});
       await sl<SupabaseClient>()
           .rpc('backfill_park_activities', params: {'p_user_id': uid});
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Park backfill skipped: $e', tag: 'MyParksScreen');
     }
   }

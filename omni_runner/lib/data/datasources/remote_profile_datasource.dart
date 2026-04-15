@@ -35,13 +35,11 @@ class RemoteProfileDataSource implements IProfileRepo {
 
       if (rows.isEmpty) return null;
       return ProfileEntity.fromJson(rows.first);
-    } on StateError {
-      rethrow;
     } on PostgrestException catch (e) {
       AppLogger.error('getMyProfile Postgrest error: ${e.message}',
           tag: _tag, error: e);
       rethrow;
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('getMyProfile failed: $e', tag: _tag, error: e);
       rethrow;
     }
@@ -82,13 +80,11 @@ class RemoteProfileDataSource implements IProfileRepo {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
-    } on StateError {
-      rethrow;
     } on PostgrestException catch (e) {
       AppLogger.error('upsertMyProfile Postgrest error: ${e.message}',
           tag: _tag, error: e);
       rethrow;
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('upsertMyProfile failed: $e', tag: _tag, error: e);
       rethrow;
     }

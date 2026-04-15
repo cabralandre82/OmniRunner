@@ -91,7 +91,7 @@ class _CoachingGroupDetailsScreenState
           .toList();
 
       if (mounted) setState(() => _loading = false);
-    } catch (e) {
+    } on Object catch (e) {
       if (mounted) {
         setState(() {
           _error = ErrorMessages.humanize(e);
@@ -176,7 +176,7 @@ class _CoachingGroupDetailsScreenState
         );
         _load();
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (!mounted) return;
       final msg = e.toString();
       final userMsg = msg.contains('CANNOT_REMOVE_ADMIN_MASTER')

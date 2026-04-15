@@ -28,7 +28,7 @@ final class SupabaseTrainingSessionRepo implements ITrainingSessionRepo {
         'pace_max_sec_km': session.paceMaxSecKm,
       }).select().single();
       return _fromRow(row);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('TrainingSession.create failed', error: e, stack: st);
       rethrow;
     }
@@ -57,7 +57,7 @@ final class SupabaseTrainingSessionRepo implements ITrainingSessionRepo {
           .select()
           .single();
       return _fromRow(row);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('TrainingSession.update failed', error: e, stack: st);
       rethrow;
     }
@@ -72,7 +72,7 @@ final class SupabaseTrainingSessionRepo implements ITrainingSessionRepo {
           .eq('id', id)
           .maybeSingle();
       return row == null ? null : _fromRow(row);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('TrainingSession.getById failed', error: e, stack: st);
       rethrow;
     }
@@ -107,7 +107,7 @@ final class SupabaseTrainingSessionRepo implements ITrainingSessionRepo {
           .order('starts_at', ascending: false)
           .range(offset, offset + limit - 1);
       return rows.map(_fromRow).toList();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('TrainingSession.listByGroup failed', error: e, stack: st);
       rethrow;
     }
@@ -123,7 +123,7 @@ final class SupabaseTrainingSessionRepo implements ITrainingSessionRepo {
             'updated_at': DateTime.now().toUtc().toIso8601String(),
           })
           .eq('id', sessionId);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('TrainingSession.cancel failed', error: e, stack: st);
       rethrow;
     }

@@ -87,7 +87,7 @@ class _AnnouncementCreateScreenState extends State<AnnouncementCreateScreen> {
         );
         context.pop(true);
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (mounted) {
         setState(() {
           _saving = false;

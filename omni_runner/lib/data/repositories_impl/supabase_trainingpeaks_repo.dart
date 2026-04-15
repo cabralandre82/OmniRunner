@@ -15,7 +15,7 @@ class SupabaseTrainingPeaksRepo implements ITrainingPeaksRepo {
         'p_assignment_id': assignmentId,
       });
       return res as Map<String, dynamic>;
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('PushToTrainingPeaks failed', error: e, stack: st);
       rethrow;
     }

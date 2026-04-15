@@ -48,7 +48,7 @@ class TrainingFeedBloc extends Bloc<TrainingFeedEvent, TrainingFeedState> {
 
       // Kick off background sync after initial load
       add(const SyncTrainingFeed());
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error('LoadTrainingFeed failed', tag: _tag, error: e, stack: stack);
       emit(TrainingFeedError(e.toString()));
     }
@@ -87,7 +87,7 @@ class TrainingFeedBloc extends Bloc<TrainingFeedEvent, TrainingFeedState> {
           lastSyncAt:     DateTime.now(),
         ));
       }
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error('RefreshTrainingFeed failed', tag: _tag, error: e, stack: stack);
       if (state is TrainingFeedLoaded) {
         emit((state as TrainingFeedLoaded).copyWith(isSyncing: false));
@@ -126,7 +126,7 @@ class TrainingFeedBloc extends Bloc<TrainingFeedEvent, TrainingFeedState> {
         workoutsByDate: updated,
         lastSyncAt:     DateTime.now(),
       ));
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.debug('Background sync failed silently', tag: _tag, error: e);
     }
   }

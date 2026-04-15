@@ -48,7 +48,7 @@ class _AthleteAttendanceScreenState extends State<AthleteAttendanceScreen> {
         _attendance = list;
         _loading = false;
       });
-    } catch (e) {
+    } on Object catch (e) {
       if (!mounted) return;
       setState(() {
         _error = 'Erro ao carregar treinos: $e';

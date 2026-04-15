@@ -3980,6 +3980,47 @@ Para o login Instagram funcionar de fato:
 
 ---
 
+## DECISAO 146 — Training Plan v2: Visão por Atleta, Prescrição Livre e IA
+
+**Data:** 2026-04-14
+
+**Contexto:** A primeira versão do módulo (v1.6.x) foi funcional mas ficou abaixo do esperado comparado ao app Treinus. Problemas identificados:
+1. Entrada pelo ângulo errado: coach entrava pela lista de *planilhas*, não de *atletas*
+2. Prescrição exigia templates: sem forma de escrever treinos ad-hoc diretamente
+3. Sem forma de replicar semana anterior como próxima semana de forma automática
+4. Sem alertas visuais de fadiga dos atletas
+
+**Decisões:**
+
+**1. Visão por Atleta como padrão:**
+`/training-plan` passa a mostrar por padrão a lista de atletas (não de planilhas). Cada linha mostra: avatar, nome, status da semana atual (rascunho/liberado/concluído), alerta de fadiga e CTA direto. View "Por Planilha" mantida como aba secundária para quando o coach precisa da visão global.
+
+**2. Prescrição em texto livre (fn_create_descriptive_workout):**
+Novo RPC `fn_create_descriptive_workout` aceita `workout_label + description` sem necessidade de `template_id`. O `WorkoutPickerDrawer` ganha aba "✍️ Descrever" com formulário completo (nome, tipo, descrição, notas, link de vídeo). Template_id torna-se opcional na rota API `POST /api/training-plan/weeks/[weekId]/workouts`.
+
+**3. IA para parsing de linguagem natural:**
+Aba "✨ IA" no picker — coach digita "30min leve" ou "4x1km em 4:30" e GPT-4o-mini retorna estrutura JSON completa. Endpoint `POST /api/training-plan/ai/parse-workout`. Feature desabilitada graciosamente se `OPENAI_API_KEY` não está configurada.
+
+**4. Replicar semana como próxima:**
+Menu ⋯ da semana ganha "Replicar como próxima semana" — calcula a segunda-feira seguinte ao `ends_on` da semana e chama `fn_duplicate_week` com esse target. Zero input extra do coach.
+
+**5. Alerta de fadiga automático:**
+`GET /api/training-plan/athletes-overview` calcula RPE médio das últimas 5 sessões de feedback por atleta. Threshold: avg_rpe ≥ 8 → `fatigue_alert: true` → badge ⚠️ na linha do atleta.
+
+**6. Campo video_url:**
+`plan_workout_releases.video_url` adicionado (migration `20260414000000_training_plan_v2.sql`). Campo no formulário "Descrever". Aba "Detalhes" do `WorkoutActionDrawer` exibe link clicável com ícone YouTube quando presente.
+
+**Sugestões de IA inteligentes (para fases futuras):**
+- **AI plano a partir de objetivo**: coach informa "corrida de 42km em 12 semanas, atleta atual 6:00/km, meta 5:00/km" → IA gera estrutura periodizada completa (semanas base/build/peak/taper com volumes e tipos de treino)
+- **AI adaptar ritmos por atleta**: ao distribuir semana para múltiplos atletas (`BatchAssign`), IA sugere ajuste de paces baseado no histórico de pace de cada atleta — atleta mais rápido recebe paces mais rápidos mantendo a estrutura do treino
+- **Detecção de padrão de abandono**: alerta quando atleta completou <50% dos treinos nas últimas 2 semanas antes que o coach perceba
+
+**Migrations aplicadas:** `20260414000000_training_plan_v2.sql` precisa ser executada no SQL Editor do Supabase (ver seção de SQL abaixo).
+
+**Dependência de ambiente:** `OPENAI_API_KEY` no `.env.local` e como Vercel environment variable para ativar parsing por IA.
+
+---
+
 ## DECISAO 144 — Training Plan Module: Passagem de Treino estilo Treinus
 
 **Data:** 2026-04-08

@@ -64,7 +64,7 @@ class _StaffJoinRequestsScreenState extends State<StaffJoinRequestsScreen> {
           _loading = false;
         });
       }
-    } catch (e) {
+    } on Object catch (_) {
       if (mounted) {
         setState(() {
           _error = 'Não foi possível carregar as solicitações.';
@@ -114,7 +114,7 @@ class _StaffJoinRequestsScreenState extends State<StaffJoinRequestsScreen> {
         );
         _load();
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -163,7 +163,7 @@ class _StaffJoinRequestsScreenState extends State<StaffJoinRequestsScreen> {
         );
         _load();
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

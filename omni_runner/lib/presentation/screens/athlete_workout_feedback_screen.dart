@@ -145,19 +145,19 @@ class _AthleteWorkoutFeedbackScreenState
       if (mounted) {
         Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.check_circle, color: DesignTokens.success),
-                const SizedBox(width: 8),
-                const Text('Treino concluído!'),
+                Icon(Icons.check_circle, color: DesignTokens.success),
+                SizedBox(width: 8),
+                Text('Treino concluído!'),
               ],
             ),
-            duration: const Duration(seconds: 3),
+            duration: Duration(seconds: 3),
           ),
         );
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('submitFeedback failed', tag: _tag, error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -190,7 +190,7 @@ class _AthleteWorkoutFeedbackScreenState
           ),
           children: [
             // ── Execution section ──────────────────────────────────────────
-            _SectionHeader(
+            const _SectionHeader(
               icon: Icons.directions_run,
               title: 'O que você fez',
               subtitle: 'Opcional — informe os dados da sua execução',
@@ -263,7 +263,7 @@ class _AthleteWorkoutFeedbackScreenState
             const SizedBox(height: DesignTokens.spacingLg),
 
             // ── Effort ────────────────────────────────────────────────────
-            _SectionHeader(
+            const _SectionHeader(
               icon: Icons.bar_chart,
               title: 'Esforço percebido (RPE)',
               subtitle: 'Como foi a intensidade do treino?',
@@ -277,7 +277,7 @@ class _AthleteWorkoutFeedbackScreenState
             const SizedBox(height: DesignTokens.spacingLg),
 
             // ── Mood ──────────────────────────────────────────────────────
-            _SectionHeader(
+            const _SectionHeader(
               icon: Icons.mood,
               title: 'Como você se sentiu?',
               subtitle: 'Seu estado físico e mental',
@@ -291,7 +291,7 @@ class _AthleteWorkoutFeedbackScreenState
             const SizedBox(height: DesignTokens.spacingLg),
 
             // ── Rating ────────────────────────────────────────────────────
-            _SectionHeader(
+            const _SectionHeader(
               icon: Icons.star_outline,
               title: 'Avalie o treino',
               subtitle: 'Opcional',
@@ -305,7 +305,7 @@ class _AthleteWorkoutFeedbackScreenState
             const SizedBox(height: DesignTokens.spacingLg),
 
             // ── Text fields ───────────────────────────────────────────────
-            _SectionHeader(
+            const _SectionHeader(
               icon: Icons.comment_outlined,
               title: 'Comentários',
               subtitle: 'Opcional',

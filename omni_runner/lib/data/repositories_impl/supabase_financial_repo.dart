@@ -21,7 +21,7 @@ final class SupabaseFinancialRepo implements IFinancialRepo {
           .eq('group_id', groupId)
           .order('name');
       return rows.map(_fromPlanRow).toList();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Financial.listPlans failed', error: e, stack: st);
       rethrow;
     }
@@ -41,7 +41,7 @@ final class SupabaseFinancialRepo implements IFinancialRepo {
         'status': planStatusToString(plan.status),
       }).select('id, group_id, name, description, monthly_price, billing_cycle, max_workouts_per_week, status, created_at').single();
       return _fromPlanRow(row);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Financial.createPlan failed', error: e, stack: st);
       rethrow;
     }
@@ -64,7 +64,7 @@ final class SupabaseFinancialRepo implements IFinancialRepo {
           .select('id, group_id, name, description, monthly_price, billing_cycle, max_workouts_per_week, status, created_at')
           .single();
       return _fromPlanRow(row);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Financial.updatePlan failed', error: e, stack: st);
       rethrow;
     }
@@ -83,7 +83,7 @@ final class SupabaseFinancialRepo implements IFinancialRepo {
           .eq('group_id', groupId)
           .order('created_at', ascending: false);
       return rows.map(_fromSubscriptionRow).toList();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Financial.listSubscriptions failed',
           error: e, stack: st);
       rethrow;
@@ -105,7 +105,7 @@ final class SupabaseFinancialRepo implements IFinancialRepo {
           .maybeSingle();
       if (row == null) return null;
       return _fromSubscriptionRow(row);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Financial.getSubscription failed',
           error: e, stack: st);
       rethrow;
@@ -120,7 +120,7 @@ final class SupabaseFinancialRepo implements IFinancialRepo {
         'p_subscription_id': subscriptionId,
         'p_new_status': newStatus,
       });
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Financial.updateSubscriptionStatus failed',
           error: e, stack: st);
       rethrow;
@@ -142,7 +142,7 @@ final class SupabaseFinancialRepo implements IFinancialRepo {
         'started_at': DateTime.now().toUtc().toIso8601String(),
       }).select('id, group_id, athlete_user_id, plan_id, status, started_at, created_at, coaching_plans(name), profiles!athlete_user_id(display_name)').single();
       return _fromSubscriptionRow(row);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Financial.createSubscription failed',
           error: e, stack: st);
       rethrow;
@@ -167,7 +167,7 @@ final class SupabaseFinancialRepo implements IFinancialRepo {
         'p_amount': amount,
         'p_description': description,
       });
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Financial.createLedgerEntry failed',
           error: e, stack: st);
       rethrow;

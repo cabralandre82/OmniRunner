@@ -65,6 +65,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
+        final surface = Theme.of(context).colorScheme.surfaceContainerHighest;
         return Container(
           width: widget.width,
           height: widget.height,
@@ -74,9 +75,9 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
               begin: Alignment(-1.0 + 2.0 * _controller.value, 0),
               end: Alignment(-1.0 + 2.0 * _controller.value + 1, 0),
               colors: [
-                Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.6),
-                Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                surface.withValues(alpha: 0.3),
+                surface.withValues(alpha: 0.6),
+                surface.withValues(alpha: 0.3),
               ],
             ),
           ),

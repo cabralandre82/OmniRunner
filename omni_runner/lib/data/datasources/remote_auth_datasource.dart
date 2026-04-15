@@ -91,7 +91,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
           AppLogger.warn('complete-social-profile returned ok=false: $data', tag: _tag);
         }
         return;
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.warn(
           'complete-social-profile attempt $attempt/3 failed: $e',
           tag: _tag,
@@ -128,7 +128,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
           .where((e) => e.value == true)
           .map((e) => e.key)
           .toSet();
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to fetch auth settings: $e', tag: _tag);
     }
     return {};
@@ -152,7 +152,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
       return mapped;
     } on AuthFailure {
       rethrow;
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Auth init failed: $e', tag: _tag);
       _rethrow(e);
     }
@@ -171,7 +171,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
       return _map(user);
     } on AuthFailure {
       rethrow;
-    } catch (e) {
+    } on Object catch (e) {
       _rethrow(e);
     }
   }
@@ -189,7 +189,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
       return _map(user);
     } on AuthFailure {
       rethrow;
-    } catch (e) {
+    } on Object catch (e) {
       _rethrow(e);
     }
   }
@@ -232,7 +232,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
       return mapped;
     } on AuthFailure {
       rethrow;
-    } catch (e) {
+    } on Object catch (e) {
       _rethrow(e);
     }
   }
@@ -278,7 +278,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
         throw const AuthSocialCancelled();
       }
       throw AuthUnknownError('Apple Sign-In error: ${e.message}');
-    } catch (e) {
+    } on Object catch (e) {
       _rethrow(e);
     }
   }
@@ -326,7 +326,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
       return mapped;
     } on AuthFailure {
       rethrow;
-    } catch (e) {
+    } on Object catch (e) {
       _rethrow(e);
     }
   }
@@ -388,7 +388,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
       return mapped;
     } on AuthFailure {
       rethrow;
-    } catch (e) {
+    } on Object catch (e) {
       _rethrow(e);
     }
   }
@@ -400,7 +400,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
       AppLogger.info('Password reset email sent to $email', tag: _tag);
     } on AuthException catch (e) {
       throw AuthUnknownError(e.message);
-    } catch (e) {
+    } on Object catch (e) {
       _rethrow(e);
     }
   }
@@ -408,14 +408,16 @@ class RemoteAuthDataSource implements IAuthDataSource {
   @override
   Future<void> signOut() async {
     try {
-      try { await GoogleSignIn().signOut(); } catch (e) {
-      AppLogger.warn('Unexpected error', tag: 'RemoteAuthDatasource', error: e);
-    }
+      try {
+        await GoogleSignIn().signOut();
+      } on Object catch (e) {
+        AppLogger.warn('Unexpected error', tag: 'RemoteAuthDatasource', error: e);
+      }
       await _auth.signOut();
       AppLogger.info('SignOut OK', tag: _tag);
     } on AuthFailure {
       rethrow;
-    } catch (e) {
+    } on Object catch (e) {
       _rethrow(e);
     }
   }
@@ -425,7 +427,7 @@ class RemoteAuthDataSource implements IAuthDataSource {
     try {
       final u = _auth.currentUser;
       return u == null ? null : _map(u);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Caught error', tag: 'RemoteAuthDatasource', error: e);
       return null;
     }

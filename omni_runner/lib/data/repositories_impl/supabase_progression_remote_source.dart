@@ -164,9 +164,12 @@ class SupabaseProgressionRemoteSource implements IProgressionRemoteSource {
           .from('badge_awards')
           .select('badge_id')
           .eq('user_id', userId);
-      final catalog = List<Map<String, dynamic>>.from(catalogRows as List);
-      final earned =
-          (awardsRows as List).map((r) => r['badge_id'] as String).toSet();
+      final catalog = (catalogRows as List<dynamic>)
+          .map((raw) => Map<String, dynamic>.from(raw as Map))
+          .toList();
+      final earned = (awardsRows as List<dynamic>)
+          .map((raw) => (raw as Map<String, dynamic>)['badge_id'] as String)
+          .toSet();
       return (catalog: catalog, earnedIds: earned);
     } on Exception catch (e) {
       AppLogger.debug('Badges fetch failed', tag: _tag, error: e);

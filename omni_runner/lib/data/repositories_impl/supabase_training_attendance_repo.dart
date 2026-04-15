@@ -35,7 +35,7 @@ final class SupabaseTrainingAttendanceRepo implements ITrainingAttendanceRepo {
       }
 
       return AttendanceInserted(data['attendance_id'] as String);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('TrainingAttendance.markAttendance failed', error: e, stack: st);
       rethrow;
     }
@@ -64,7 +64,7 @@ final class SupabaseTrainingAttendanceRepo implements ITrainingAttendanceRepo {
         nonce: data['nonce'] as String,
         expiresAtMs: (data['expires_at'] as num).toInt(),
       );
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('TrainingAttendance.issueCheckinToken failed', error: e, stack: st);
       rethrow;
     }
@@ -80,7 +80,7 @@ final class SupabaseTrainingAttendanceRepo implements ITrainingAttendanceRepo {
           .eq('session_id', sessionId)
           .order('checked_at');
       return rows.map(_fromRow).toList();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('TrainingAttendance.listBySession failed', error: e, stack: st);
       rethrow;
     }
@@ -102,7 +102,7 @@ final class SupabaseTrainingAttendanceRepo implements ITrainingAttendanceRepo {
           .order('checked_at', ascending: false)
           .range(offset, offset + limit - 1);
       return rows.map(_fromRow).toList();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('TrainingAttendance.listByAthlete failed', error: e, stack: st);
       rethrow;
     }
@@ -117,7 +117,7 @@ final class SupabaseTrainingAttendanceRepo implements ITrainingAttendanceRepo {
           .eq('session_id', sessionId)
           .count(CountOption.exact);
       return res.count;
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('TrainingAttendance.countBySession failed', error: e, stack: st);
       rethrow;
     }

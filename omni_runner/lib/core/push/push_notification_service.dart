@@ -65,7 +65,7 @@ class PushNotificationService {
       FirebaseMessaging.onBackgroundMessage(_backgroundHandler);
 
       AppLogger.info('Push notification service initialized', tag: _tag);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error(
         'Push init failed: $e',
         tag: _tag,
@@ -101,7 +101,7 @@ class PushNotificationService {
         'Device token registered ($platform)',
         tag: _tag,
       );
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Token registration failed: $e', tag: _tag);
     }
   }
@@ -127,7 +127,7 @@ class PushNotificationService {
           .delete()
           .eq('user_id', uid);
       AppLogger.info('Device tokens cleared', tag: _tag);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Token cleanup failed: $e', tag: _tag);
     }
   }

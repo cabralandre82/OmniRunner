@@ -679,17 +679,21 @@ Returns active workout templates for the group, enriched with block count and es
 
 ### `POST /api/training-plan/weeks/[weekId]/workouts`
 
-Adds a workout to a week day via `fn_create_plan_workout` RPC.
+Adds a workout to a week day. Supports two modes:
+- **Template-based** (with `template_id`): calls `fn_create_plan_workout`, builds `content_snapshot` from template blocks
+- **Descriptive** (without `template_id`): calls `fn_create_descriptive_workout`, uses free-text `workout_label` + `description`
 
 **Body (JSON):**
 | Campo | Tipo | Obrigatório |
 |-------|------|-------------|
 | `athlete_id` | uuid | Sim |
-| `template_id` | uuid | Sim |
+| `template_id` | uuid | Somente modo template |
 | `scheduled_date` | YYYY-MM-DD | Sim |
 | `workout_type` | enum | Não (default: `continuous`) |
-| `workout_label` | string (max 120) | Não |
+| `workout_label` | string (max 120) | Obrigatório no modo descritivo |
+| `description` | string (max 2000) | Não (modo descritivo) |
 | `coach_notes` | string (max 500) | Não |
+| `video_url` | string (max 500) | Não (URL do vídeo explicativo) |
 
 **Response:** `{ "ok": true, "data": { "id": "<releaseId>" } }` (201)
 
@@ -707,7 +711,15 @@ Bulk-releases all draft workouts in the week to athletes.
 
 ### `POST /api/training-plan/weeks/[weekId]/duplicate`
 
-Duplicates the week (all workouts copied as drafts, appended after last week).
+Duplicates the week (all workouts copied as drafts). Use `target_starts_on` to control where the copy lands; omit to let the RPC pick the next available week number.
+
+**Body (JSON, optional):**
+| Campo | Tipo | Obrigatório |
+|-------|------|-------------|
+| `target_starts_on` | YYYY-MM-DD | Não (deve ser segunda-feira) |
+| `target_plan_id` | uuid | Não |
+
+Tip: for "Replicar como próxima semana", the frontend calculates `week.ends_on + 1 day` (= next Monday) and passes as `target_starts_on`.
 
 **Response:** `{ "ok": true, "data": { "id": "<newWeekId>" } }`
 
@@ -784,6 +796,64 @@ Distributes a source week's workouts to multiple athletes via `fn_bulk_assign_we
   }
 }
 ```
+
+---
+
+### `GET /api/training-plan/athletes-overview`
+
+Returns all athletes in the group enriched with their training status for the current week. Used by the athlete-centric view of `/training-plan`.
+
+**Auth:** Session cookie + `portal_group_id` cookie.
+
+**Response:**
+```json
+{
+  "ok": true,
+  "data": [
+    {
+      "user_id": "...",
+      "display_name": "João Silva",
+      "avatar_url": null,
+      "plan": { "id": "...", "name": "Maratona SP 2026", "status": "active" },
+      "current_week": {
+        "id": "...", "week_number": 8,
+        "starts_on": "2026-04-14", "ends_on": "2026-04-20",
+        "status": "draft",
+        "total": 5, "draft": 2, "released": 3, "completed": 0
+      },
+      "avg_rpe_last5": 8.4,
+      "fatigue_alert": true
+    }
+  ]
+}
+```
+
+`fatigue_alert` is `true` when `avg_rpe_last5 >= 8`. `current_week` reflects the week that covers today (or the most recent week if no current week exists). Sorted: athletes with plans first, fatigue alerts first within that group.
+
+---
+
+### `POST /api/training-plan/ai/parse-workout`
+
+Parses a free-text workout description into structured fields using GPT-4o-mini. Requires `OPENAI_API_KEY` environment variable.
+
+**Body:** `{ "text": string (3–1000 chars) }`
+
+**Response:**
+```json
+{
+  "ok": true,
+  "data": {
+    "workout_type": "interval",
+    "workout_label": "Intervalado 4×1km em 4:30/km",
+    "description": "4 repetições de 1km cada no pace 4:30/km com 2 minutos de recuperação ativa",
+    "coach_notes": "Aquecimento de 10min antes. Foco no pace.",
+    "estimated_distance_km": 4,
+    "estimated_duration_minutes": 28
+  }
+}
+```
+
+Returns `503 AI_NOT_CONFIGURED` if `OPENAI_API_KEY` is not set.
 
 ---
 

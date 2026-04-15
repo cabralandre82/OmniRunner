@@ -766,7 +766,7 @@ Future<void> _shareDnaCard(
     AppLogger.info('DNA card shared (${bytes.length} bytes)', tag: _tag);
 
     try {
-      if (await file.exists()) await file.delete();
+      if (file.existsSync()) file.deleteSync();
     } on Exception {
       // best-effort cleanup
     }

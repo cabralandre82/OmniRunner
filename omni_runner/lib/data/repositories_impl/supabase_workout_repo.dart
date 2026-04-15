@@ -24,7 +24,7 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
         'created_by': template.createdBy,
       }).select('id, group_id, name, description, created_by, created_at, updated_at').single();
       return _fromTemplateRow(row);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Workout.createTemplate failed', error: e, stack: st);
       rethrow;
     }
@@ -52,7 +52,7 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
         );
       }
       return _fromTemplateRow(row);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Workout.updateTemplate failed', error: e, stack: st);
       rethrow;
     }
@@ -65,7 +65,7 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
           .from('coaching_workout_templates')
           .delete()
           .eq('id', templateId);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Workout.deleteTemplate failed', error: e, stack: st);
       rethrow;
     }
@@ -80,7 +80,7 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
           .eq('group_id', groupId)
           .order('name');
       return rows.map(_fromTemplateRow).toList();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Workout.listTemplates failed', error: e, stack: st);
       rethrow;
     }
@@ -104,7 +104,7 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
       final blocks = blockRows.map(_fromBlockRow).toList();
 
       return _fromTemplateRow(row, blocks: blocks);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Workout.getTemplateById failed', error: e, stack: st);
       rethrow;
     }
@@ -143,7 +143,7 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
                   .toList(),
             );
       }
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Workout.saveBlocks failed', error: e, stack: st);
       rethrow;
     }
@@ -173,7 +173,10 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
             rpc['message'] as String? ?? rpc['code'] as String? ?? 'Erro ao atribuir treino');
       }
 
-      final assignmentId = rpc['data']?['assignment_id'] as String?;
+      final nested = rpc['data'];
+      final assignmentId = nested is Map<String, dynamic>
+          ? nested['assignment_id'] as String?
+          : null;
       if (assignmentId == null) {
         throw Exception('RPC retornou sem assignment_id');
       }
@@ -184,7 +187,7 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
           .eq('id', assignmentId)
           .single();
       return _fromAssignmentRow(row);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Workout.assignWorkout failed', error: e, stack: st);
       rethrow;
     }
@@ -218,7 +221,7 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
           .order('scheduled_date', ascending: false)
           .range(offset, offset + limit - 1);
       return rows.map(_fromAssignmentRow).toList();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Workout.listAssignmentsByGroup failed',
           error: e, stack: st);
       rethrow;
@@ -254,7 +257,7 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
           .order('scheduled_date', ascending: false)
           .range(offset, offset + limit - 1);
       return rows.map(_fromAssignmentRow).toList();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Workout.listAssignmentsByAthlete failed',
           error: e, stack: st);
       rethrow;
@@ -271,7 +274,7 @@ final class SupabaseWorkoutRepo implements IWorkoutRepo {
             'status': assignmentStatusToString(status),
           })
           .eq('id', assignmentId);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Workout.updateAssignmentStatus failed',
           error: e, stack: st);
       rethrow;

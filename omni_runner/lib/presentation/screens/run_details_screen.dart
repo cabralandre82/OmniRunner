@@ -117,7 +117,7 @@ class _RunDetailsScreenState extends State<RunDetailsScreen> {
             return PolylineBuilder.decodeGooglePolyline(poly);
           }
         }
-      } catch (_) {}
+      } on Object catch (_) {}
 
       // 2) Fallback: match by date window (±2 hours around session start)
       final startMs = widget.session.startTimeMs;
@@ -141,7 +141,7 @@ class _RunDetailsScreenState extends State<RunDetailsScreen> {
       if (polyline == null || polyline.isEmpty) return const [];
 
       return PolylineBuilder.decodeGooglePolyline(polyline);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.debug('Polyline fallback failed: $e', tag: 'RunDetails');
       return const [];
     }

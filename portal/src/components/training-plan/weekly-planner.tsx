@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import {
   PlanWeek,
   WorkoutRelease,
-  WorkoutTemplate,
+  WorkoutPickResult,
   STATUS_LABEL,
   STATUS_BG,
   WORKOUT_TYPE_LABEL,
@@ -75,28 +75,47 @@ export function WeeklyPlanner({
     if (json.ok) onWeeksChange(json.data ?? []);
   }, [planId, onWeeksChange]);
 
-  // ── Add workout ────────────────────────────────────────────────────────────
+  // ── Add workout (template or descriptive) ──────────────────────────────────
 
-  const handlePickTemplate = useCallback(
-    async (template: WorkoutTemplate) => {
+  const handlePick = useCallback(
+    async (result: WorkoutPickResult) => {
       if (!activePicker) return;
       setPickerLoading(true);
       try {
+        let body: Record<string, unknown>;
+        let toastName: string;
+
+        if (result.mode === "template") {
+          body = {
+            athlete_id:     athleteId,
+            template_id:    result.template.id,
+            scheduled_date: activePicker.date,
+            workout_type:   result.template.workout_type,
+          };
+          toastName = result.template.name;
+        } else {
+          body = {
+            athlete_id:     athleteId,
+            scheduled_date: activePicker.date,
+            workout_type:   result.workout_type,
+            workout_label:  result.label,
+            description:    result.description,
+            coach_notes:    result.coach_notes,
+            video_url:      result.video_url,
+          };
+          toastName = result.label;
+        }
+
         const res = await fetch(`/api/training-plan/weeks/${activePicker.weekId}/workouts`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            athlete_id: athleteId,
-            template_id: template.id,
-            scheduled_date: activePicker.date,
-            workout_type: template.workout_type,
-          }),
+          body: JSON.stringify(body),
         });
         const json = await res.json();
         if (!json.ok) throw new Error(json.error?.message ?? "Erro");
         setActivePicker(null);
         await reloadWeeks();
-        showToast("success", `"${template.name}" adicionado para ${activePicker.dayLabel}`);
+        showToast("success", `"${toastName}" adicionado para ${activePicker.dayLabel}`);
       } catch (e) {
         showToast("error", e instanceof Error ? e.message : "Erro ao adicionar");
       } finally {
@@ -219,18 +238,19 @@ export function WeeklyPlanner({
   // ── Duplicate week ─────────────────────────────────────────────────────────
 
   const handleDuplicateWeek = useCallback(
-    async (weekId: string) => {
+    async (weekId: string, targetStartsOn?: string) => {
       setActionLoading(`dup-${weekId}`);
       try {
+        const body = targetStartsOn ? { target_starts_on: targetStartsOn } : {};
         const res = await fetch(`/api/training-plan/weeks/${weekId}/duplicate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
+          body: JSON.stringify(body),
         });
         const json = await res.json();
         if (!json.ok) throw new Error(json.error?.message ?? "Erro");
         await reloadWeeks();
-        showToast("success", "Semana duplicada!");
+        showToast("success", targetStartsOn ? "Semana replicada como próxima!" : "Semana duplicada!");
       } catch (e) {
         showToast("error", e instanceof Error ? e.message : "Erro ao duplicar");
       } finally {
@@ -238,6 +258,19 @@ export function WeeklyPlanner({
       }
     },
     [reloadWeeks, showToast],
+  );
+
+  // ── Replicate week as next week ─────────────────────────────────────────────
+
+  const handleReplicateAsNext = useCallback(
+    async (weekId: string, weekEndsOn: string) => {
+      // Monday after week.ends_on (which is Sunday)
+      const sunday = new Date(weekEndsOn + "T00:00:00");
+      sunday.setDate(sunday.getDate() + 1);
+      const nextMonday = sunday.toISOString().split("T")[0];
+      await handleDuplicateWeek(weekId, nextMonday);
+    },
+    [handleDuplicateWeek],
   );
 
   // ── Batch assign success ───────────────────────────────────────────────────
@@ -278,6 +311,7 @@ export function WeeklyPlanner({
             onWorkoutClick={(w) => setActiveWorkout(w)}
             onBulkRelease={handleBulkRelease}
             onDuplicate={handleDuplicateWeek}
+            onReplicateAsNext={(weekId) => handleReplicateAsNext(weekId, week.ends_on)}
             onBatchAssign={(w) => setBatchWeek(w)}
             actionLoading={actionLoading}
             activePicker={activePicker}
@@ -291,7 +325,7 @@ export function WeeklyPlanner({
         targetDate={activePicker?.date ?? null}
         targetDayLabel={activePicker?.dayLabel ?? ""}
         groupId={groupId}
-        onPick={handlePickTemplate}
+        onPick={handlePick}
         onClose={() => setActivePicker(null)}
         loading={pickerLoading}
       />
@@ -328,6 +362,7 @@ interface WeekBlockProps {
   onWorkoutClick: (w: WorkoutRelease) => void;
   onBulkRelease: (weekId: string, label: string) => void;
   onDuplicate: (weekId: string) => void;
+  onReplicateAsNext: (weekId: string) => void;
   onBatchAssign: (week: PlanWeek) => void;
   actionLoading: string | null;
   activePicker: ActivePicker | null;
@@ -339,6 +374,7 @@ function WeekBlock({
   onWorkoutClick,
   onBulkRelease,
   onDuplicate,
+  onReplicateAsNext,
   onBatchAssign,
   actionLoading,
   activePicker,
@@ -425,6 +461,16 @@ function WeekBlock({
                 <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} aria-hidden="true" />
                 <div className="absolute right-0 top-full z-20 mt-1 w-52 rounded-xl border border-border bg-surface shadow-lg">
                   <button
+                    onClick={() => { setShowMenu(false); onReplicateAsNext(week.id); }}
+                    disabled={isDuplicating}
+                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-content-secondary hover:bg-surface-elevated disabled:opacity-60"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
+                    Replicar como próxima semana
+                  </button>
+                  <button
                     onClick={() => { setShowMenu(false); onDuplicate(week.id); }}
                     disabled={isDuplicating}
                     className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-content-secondary hover:bg-surface-elevated disabled:opacity-60"
@@ -432,7 +478,7 @@ function WeekBlock({
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
                     </svg>
-                    Duplicar semana
+                    Duplicar semana (escolher data)
                   </button>
                   <button
                     onClick={() => { setShowMenu(false); onBatchAssign(week); }}

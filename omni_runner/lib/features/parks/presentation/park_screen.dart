@@ -93,20 +93,23 @@ class _ParkScreenState extends State<ParkScreen>
           .order('rank', ascending: true)
           .limit(50);
 
-      _rankings = (res as List)
-          .map((r) => ParkLeaderboardEntry(
-                parkId: r['park_id'] as String,
-                userId: r['user_id'] as String,
-                displayName: r['display_name'] as String? ?? 'Atleta',
-                category: ParkLeaderboardCategory.values.firstWhere(
-                  (c) => c.name == r['category'],
-                  orElse: () => ParkLeaderboardCategory.pace,
-                ),
-                rank: r['rank'] as int,
-                tier: ParkLeaderboardEntry.tierFromRank(r['rank'] as int),
-                value: (r['value'] as num).toDouble(),
-                period: r['period'] as String? ?? '',
-              ))
+      _rankings = (res as List<dynamic>)
+          .map((raw) {
+            final r = raw as Map<String, dynamic>;
+            return ParkLeaderboardEntry(
+              parkId: r['park_id'] as String,
+              userId: r['user_id'] as String,
+              displayName: r['display_name'] as String? ?? 'Atleta',
+              category: ParkLeaderboardCategory.values.firstWhere(
+                (c) => c.name == r['category'],
+                orElse: () => ParkLeaderboardCategory.pace,
+              ),
+              rank: r['rank'] as int,
+              tier: ParkLeaderboardEntry.tierFromRank(r['rank'] as int),
+              value: (r['value'] as num).toDouble(),
+              period: r['period'] as String? ?? '',
+            );
+          })
           .toList();
     } on Exception {
       _rankings = [];
@@ -124,7 +127,8 @@ class _ParkScreenState extends State<ParkScreen>
 
       final seen = <String>{};
       _community = [];
-      for (final r in res as List) {
+      for (final raw in res as List<dynamic>) {
+        final r = raw as Map<String, dynamic>;
         final uid = r['user_id'] as String;
         if (seen.contains(uid)) continue;
         seen.add(uid);
@@ -149,17 +153,20 @@ class _ParkScreenState extends State<ParkScreen>
           .select()
           .eq('park_id', widget.park.id);
 
-      _segments = (res as List)
-          .map((r) => ParkSegmentEntity(
-                id: r['id'] as String,
-                parkId: r['park_id'] as String,
-                name: r['name'] as String? ?? 'Segmento',
-                path: const [],
-                lengthM: (r['length_m'] as num?)?.toDouble() ?? 0,
-                recordHolderName: r['record_holder_name'] as String?,
-                recordPaceSecPerKm:
-                    (r['record_pace_sec_per_km'] as num?)?.toDouble(),
-              ))
+      _segments = (res as List<dynamic>)
+          .map((raw) {
+            final r = raw as Map<String, dynamic>;
+            return ParkSegmentEntity(
+              id: r['id'] as String,
+              parkId: r['park_id'] as String,
+              name: r['name'] as String? ?? 'Segmento',
+              path: const [],
+              lengthM: (r['length_m'] as num?)?.toDouble() ?? 0,
+              recordHolderName: r['record_holder_name'] as String?,
+              recordPaceSecPerKm:
+                  (r['record_pace_sec_per_km'] as num?)?.toDouble(),
+            );
+          })
           .toList();
     } on Exception {
       _segments = [];
@@ -212,7 +219,7 @@ class _ParkScreenState extends State<ParkScreen>
           .rpc('backfill_strava_sessions', params: {'p_user_id': uid});
       await sl<SupabaseClient>()
           .rpc('backfill_park_activities', params: {'p_user_id': uid});
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Park backfill skipped: $e', tag: 'ParkScreen');
     }
   }

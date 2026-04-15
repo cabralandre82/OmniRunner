@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-04-14
+
+### Added
+- **Passagem de Treino — Visão por Atleta (padrão)**: `/training-plan` agora abre por padrão na visão "Por Atleta", mostrando todos os atletas do grupo com status da semana atual (rascunho/liberado/concluído), alerta de fadiga e link direto para a planilha. Visão "Por Planilha" mantida como aba secundária.
+- **Prescrição em texto livre (Descrever)**: aba "✍️ Descrever" no `WorkoutPickerDrawer` — coach pode prescrever treinos sem usar templates: nome, tipo, descrição completa, notas, link de vídeo YouTube. Novo RPC `fn_create_descriptive_workout` no Supabase (migration `20260414000000_training_plan_v2.sql`).
+- **IA: Parse de treino em linguagem natural**: aba "✨ IA" no picker — coach digita em texto livre (ex: "4x1km em 4:30 com 2min de descanso") e a IA (GPT-4o-mini via `OPENAI_API_KEY`) interpreta e retorna estrutura de treino. Endpoint `POST /api/training-plan/ai/parse-workout`.
+- **Replicar semana como próxima**: menu ⋯ de cada semana ganha "Replicar como próxima semana" — calcula automaticamente a segunda-feira seguinte e duplica todos os treinos (via `fn_duplicate_week` existente). Não exige input do usuário.
+- **Link de vídeo por treino**: campo `video_url` em `plan_workout_releases` (coluna adicionada via migration). Na aba "Descrever", campo de URL de vídeo. No `WorkoutActionDrawer`, link clicável com ícone YouTube na aba "Detalhes".
+- **Alerta de fadiga automático**: visão "Por Atleta" detecta atletas com RPE médio ≥ 8 nas últimas 5 sessões de feedback e exibe badge ⚠️ RPE alto com valor exato.
+- **Criar planilha pré-preenchida com atleta**: botão "+ Criar planilha" na linha de atleta sem planilha navega para `/training-plan/new?athleteId=xxx` com o atleta já selecionado.
+- **`GET /api/training-plan/athletes-overview`**: novo endpoint retorna todos os atletas do grupo com plano ativo, semana atual, contagem de treinos por status e RPE médio.
+- **`POST /api/training-plan/ai/parse-workout`**: novo endpoint chama OpenAI GPT-4o-mini para parsear descrição de treino em texto livre e retornar estrutura `{ workout_type, workout_label, description, coach_notes, estimated_distance_km, estimated_duration_minutes }`.
+
+### Changed
+- `WorkoutPickerDrawer`: 3 abas (📋 Templates / ✍️ Descrever / ✨ IA) em vez da view única de templates
+- `WeeklyPlanner`: `handlePickTemplate` → `handlePick(result: WorkoutPickResult)` — aceita tanto templates quanto treinos descritivos
+- `POST /api/training-plan/weeks/[weekId]/workouts`: `template_id` agora opcional; rota para `fn_create_descriptive_workout` quando ausente
+- `/training-plan/page.tsx` renomeada para "Passagem de Treino" (era "Planilhas de Treino")
+- Menu ⋯ da semana: "Replicar como próxima semana" adicionado acima de "Duplicar semana (escolher data)"
+
+### Infrastructure
+- `supabase/migrations/20260414000000_training_plan_v2.sql`: ADD COLUMN `video_url` + CREATE FUNCTION `fn_create_descriptive_workout`
+- **Requer variável de ambiente**: `OPENAI_API_KEY` para o feature de IA (opcional; feature desabilitada graciosamente se ausente)
+
+---
+
 ## [1.6.2] - 2026-04-15
 
 ### Added

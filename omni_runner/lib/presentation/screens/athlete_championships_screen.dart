@@ -49,9 +49,9 @@ class _AthleteChampionshipsScreenState
       try {
         await _db.functions.invoke('champ-lifecycle', body: {})
             .timeout(const Duration(seconds: 10));
-      } catch (e) {
-      AppLogger.warn('Unexpected error', tag: 'AthleteChampionshipsScreen', error: e);
-    }
+      } on Object catch (e) {
+        AppLogger.warn('Unexpected error', tag: 'AthleteChampionshipsScreen', error: e);
+      }
 
       final res = await _db.functions.invoke('champ-list', body: {});
       final data = res.data as Map<String, dynamic>? ?? {};
@@ -67,8 +67,9 @@ class _AthleteChampionshipsScreenState
             .select('championship_id')
             .eq('user_id', uid)
             .inFilter('championship_id', champIds);
-        for (final row in (partRes as List)) {
-          _enrolled.add(row['championship_id'] as String);
+        for (final row in (partRes as List<dynamic>)) {
+          final map = row as Map<String, dynamic>;
+          _enrolled.add(map['championship_id'] as String);
         }
       }
 
@@ -89,7 +90,7 @@ class _AthleteChampionshipsScreenState
       }).toList();
 
       if (mounted) setState(() => _loading = false);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Failed to load championships: $e',
           tag: _tag, error: e);
       if (mounted) {
@@ -144,7 +145,7 @@ class _AthleteChampionshipsScreenState
           );
         }
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Enrollment failed: $e', tag: _tag, error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

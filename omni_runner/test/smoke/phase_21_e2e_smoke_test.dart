@@ -43,8 +43,7 @@ const _phase21UserFacingStrings = <String>[
   'Distribuídos',
   'Devolvidos',
   'Precisa de mais créditos?',
-  'Entre em contato com a equipe Omni Runner '
-      'para adquirir novos créditos para sua assessoria.',
+  'Entre em contato com a equipe Omni Runner para adquirir novos créditos para sua assessoria.',
   'contato@omnirunner.com.br',
   'Histórico de créditos',
   'Nenhum registro de créditos ainda.',
@@ -64,8 +63,7 @@ const _phase21UserFacingStrings = <String>[
   // InviteFriendsScreen
   'Convidar amigos',
   'Traga seus amigos!',
-  'Compartilhe seu link pessoal e corra junto '
-      'com outros atletas no Omni Runner.',
+  'Compartilhe seu link pessoal e corra junto com outros atletas no Omni Runner.',
   'Mostre o QR ou compartilhe o link abaixo',
   'Copiar link',
   'Compartilhar',

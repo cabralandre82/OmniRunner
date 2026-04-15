@@ -52,7 +52,7 @@ class TrainingDetailBloc extends Bloc<TrainingDetailEvent, TrainingDetailState> 
     try {
       await _cancelTrainingSession.call(sessionId: _sessionId);
       await _fetch(emit);
-    } catch (e) {
+    } on Object catch (e) {
       emit(TrainingDetailError('Erro ao cancelar treino: $e'));
     }
   }
@@ -78,7 +78,7 @@ class TrainingDetailBloc extends Bloc<TrainingDetailEvent, TrainingDetailState> 
         attendance: attendance,
         attendanceCount: attendance.length,
       ));
-    } catch (e) {
+    } on Object catch (e) {
       emit(TrainingDetailError('Erro ao carregar detalhe do treino: $e'));
     }
   }

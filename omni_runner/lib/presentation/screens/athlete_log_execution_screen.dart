@@ -79,7 +79,7 @@ class _AthleteLogExecutionScreenState extends State<AthleteLogExecutionScreen> {
         const SnackBar(content: Text('Execução registrada com sucesso!')),
       );
       context.pop(true);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('LogExecution submit failed', error: e, stack: st);
       if (!mounted) return;
       setState(() => _submitting = false);

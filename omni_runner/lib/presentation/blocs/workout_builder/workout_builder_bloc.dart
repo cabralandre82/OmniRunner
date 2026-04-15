@@ -39,7 +39,7 @@ class WorkoutBuilderBloc
       } else {
         emit(BuilderLoaded(blocks: const [], groupId: event.groupId));
       }
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error(
         'Erro ao carregar template',
         tag: 'WorkoutBuilderBloc',
@@ -141,7 +141,7 @@ class WorkoutBuilderBloc
 
       await _repo.saveBlocks(saved.id, reindexed);
       emit(const BuilderSaved());
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error(
         'Erro ao salvar template',
         tag: 'WorkoutBuilderBloc',

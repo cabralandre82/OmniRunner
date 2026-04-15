@@ -312,7 +312,7 @@ class _MoreScreenState extends State<MoreScreen> {
         return;
       }
       context.push(AppRoutes.partnerAssessoriasPath(staffRow['group_id'] as String));
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Caught error', tag: 'MoreScreen', error: e);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -364,7 +364,7 @@ class _MoreScreenState extends State<MoreScreen> {
       );
 
       context.push(AppRoutes.staffQrHub, extra: membership);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Caught error', tag: 'MoreScreen', error: e);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -421,7 +421,7 @@ class _MoreScreenState extends State<MoreScreen> {
       }
       final groupId = list.first['group_id'] as String;
       context.push(AppRoutes.supportPath(groupId));
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to open support', tag: 'MoreScreen', error: e);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

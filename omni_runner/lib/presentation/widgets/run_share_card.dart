@@ -78,7 +78,7 @@ Future<void> shareRunCard(
 
     // Cleanup
     try {
-      if (await file.exists()) await file.delete();
+      if (file.existsSync()) file.deleteSync();
     } on Exception {
       // best-effort
     }

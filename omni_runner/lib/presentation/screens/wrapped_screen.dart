@@ -1100,7 +1100,7 @@ Future<void> _shareWrappedCard(
     AppLogger.info('Wrapped card shared (${bytes.length} bytes)', tag: _tag);
 
     try {
-      if (await file.exists()) await file.delete();
+      if (file.existsSync()) file.deleteSync();
     } on Exception {
       // best-effort cleanup
     }

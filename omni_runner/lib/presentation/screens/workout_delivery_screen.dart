@@ -61,7 +61,7 @@ class _WorkoutDeliveryScreenState extends State<WorkoutDeliveryScreen> {
           _loading = false;
         });
       }
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       final msg = e.toString();
       if (msg.contains('PGRST205') || msg.contains('workout_delivery_items')) {
         AppLogger.debug('workout_delivery_items table not available yet', tag: 'WorkoutDelivery');
@@ -103,7 +103,7 @@ class _WorkoutDeliveryScreenState extends State<WorkoutDeliveryScreen> {
         ),
       );
       _loadItems();
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error(
         'Erro ao confirmar entrega',
         tag: 'WorkoutDelivery',
@@ -279,7 +279,7 @@ class _WorkoutDeliveryScreenState extends State<WorkoutDeliveryScreen> {
       try {
         final dt = DateTime.parse(createdAt);
         dateLabel = DateFormat('dd/MM/yyyy HH:mm', 'pt_BR').format(dt.toLocal());
-      } catch (_) {
+      } on Object catch (_) {
         dateLabel = createdAt;
       }
     }

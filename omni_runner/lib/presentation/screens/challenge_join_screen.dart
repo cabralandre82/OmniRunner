@@ -98,7 +98,7 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
       );
 
       if (mounted) setState(() => _loading = false);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Load challenge failed: $e', tag: _tag, error: e);
       if (mounted) {
         setState(() {
@@ -155,7 +155,7 @@ class _ChallengeJoinScreenState extends State<ChallengeJoinScreen> {
           setState(() => _joining = false);
         }
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Join challenge failed: $e', tag: _tag, error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

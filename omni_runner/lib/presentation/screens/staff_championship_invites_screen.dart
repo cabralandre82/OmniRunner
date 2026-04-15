@@ -55,8 +55,8 @@ class _StaffChampionshipInvitesScreenState
             .from('championships')
             .select('id, name, metric, status, start_at, end_at, host_group_id')
             .inFilter('id', champIds);
-        for (final c in (champsRes as List)) {
-          champMap[c['id'] as String] = c as Map<String, dynamic>;
+        for (final c in (champsRes as List).cast<Map<String, dynamic>>()) {
+          champMap[c['id'] as String] = c;
         }
       }
 
@@ -68,7 +68,7 @@ class _StaffChampionshipInvitesScreenState
             .from('coaching_groups')
             .select('id, name')
             .inFilter('id', hostGroupIds);
-        for (final g in (groupsRes as List)) {
+        for (final g in (groupsRes as List).cast<Map<String, dynamic>>()) {
           hostNames[g['id'] as String] = (g['name'] as String?) ?? '';
         }
       }
@@ -90,7 +90,7 @@ class _StaffChampionshipInvitesScreenState
       }).toList();
 
       if (mounted) setState(() => _loading = false);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Load invites failed: $e', tag: _tag, error: e);
       if (mounted) setState(() { _error = 'Erro ao carregar convites.'; _loading = false; });
     }
@@ -137,7 +137,7 @@ class _StaffChampionshipInvitesScreenState
           );
         }
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Respond invite failed: $e', tag: _tag, error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

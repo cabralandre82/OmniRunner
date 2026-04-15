@@ -54,7 +54,7 @@ class _StaffChallengeInvitesScreenState
           .order('created_at', ascending: false)
           .limit(50);
 
-      final rows = res as List<dynamic>;
+      final rows = (res as List).cast<Map<String, dynamic>>();
 
       if (rows.isEmpty) {
         setState(() {
@@ -74,8 +74,8 @@ class _StaffChallengeInvitesScreenState
           .inFilter('id', challengeIds);
 
       final challengeMap = <String, Map<String, dynamic>>{};
-      for (final c in (challengeRes as List<dynamic>)) {
-        challengeMap[c['id'] as String] = c as Map<String, dynamic>;
+      for (final c in (challengeRes as List).cast<Map<String, dynamic>>()) {
+        challengeMap[c['id'] as String] = c;
       }
 
       // Collect team_a_group_ids to resolve names
@@ -92,7 +92,7 @@ class _StaffChallengeInvitesScreenState
             .select('id, name')
             .inFilter('id', fromGroupIds);
 
-        for (final g in (groupRes as List<dynamic>)) {
+        for (final g in (groupRes as List).cast<Map<String, dynamic>>()) {
           groupNameMap[g['id'] as String] = g['name'] as String;
         }
       }
@@ -121,7 +121,7 @@ class _StaffChallengeInvitesScreenState
         _invites = invites;
         _loading = false;
       });
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to load challenge invites: $e', tag: _tag);
       setState(() {
         _error = 'Erro ao carregar convites';
@@ -148,7 +148,7 @@ class _StaffChallengeInvitesScreenState
         ));
         await _loadInvites();
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to respond to invite: $e', tag: _tag);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(

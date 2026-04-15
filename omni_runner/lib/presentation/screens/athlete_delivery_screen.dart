@@ -51,7 +51,7 @@ class _AthleteDeliveryScreenState extends State<AthleteDeliveryScreen> {
           _loading = false;
         });
       }
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error(
         'Erro ao carregar entregas pendentes',
         tag: 'DeliveryScreen',
@@ -87,7 +87,7 @@ class _AthleteDeliveryScreenState extends State<AthleteDeliveryScreen> {
         ),
       );
       _loadItems();
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error(
         'Erro ao confirmar entrega',
         tag: 'DeliveryScreen',
@@ -211,7 +211,7 @@ class _AthleteDeliveryScreenState extends State<AthleteDeliveryScreen> {
       try {
         final dt = DateTime.parse(scheduledDate);
         dateLabel = DateFormat('dd/MM/yyyy', 'pt_BR').format(dt);
-      } catch (_) {
+      } on Object catch (_) {
         dateLabel = scheduledDate;
       }
     }

@@ -59,6 +59,12 @@ class UnknownLinkAction extends DeepLinkAction {
 class DeepLinkHandler {
   static const _tag = 'DeepLink';
 
+  /// Production web host(s) for universal links. Accepts `www` and case variants.
+  static bool isOmniRunnerWebHost(String host) {
+    final h = host.toLowerCase();
+    return h == 'omnirunner.app' || h == 'www.omnirunner.app';
+  }
+
   final _appLinks = AppLinks();
   final _controller = StreamController<DeepLinkAction>.broadcast();
 
@@ -73,7 +79,7 @@ class DeepLinkHandler {
       if (initial != null) {
         _handle(initial);
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('getInitialLink failed: $e', tag: _tag);
     }
 
@@ -100,10 +106,13 @@ class DeepLinkHandler {
     _controller.add(action);
   }
 
+  /// Same parsing as cold-start / stream handling; exposed for tests.
+  DeepLinkAction parseUri(Uri uri) => _parse(uri);
+
   DeepLinkAction _parse(Uri uri) {
     // https://omnirunner.app/invite/{code}
     // https://omnirunner.app/refer/{userId}
-    if (uri.host == 'omnirunner.app' && uri.pathSegments.length >= 2) {
+    if (isOmniRunnerWebHost(uri.host) && uri.pathSegments.length >= 2) {
       final segment = uri.pathSegments[0];
       final value = uri.pathSegments[1];
       if (segment == 'invite' && value.isNotEmpty) {
@@ -175,7 +184,7 @@ class DeepLinkHandler {
     // Full URL: https://omnirunner.app/invite/{code}
     final uri = Uri.tryParse(trimmed);
     if (uri != null &&
-        uri.host == 'omnirunner.app' &&
+        isOmniRunnerWebHost(uri.host) &&
         uri.pathSegments.length >= 2 &&
         uri.pathSegments[0] == 'invite') {
       final code = uri.pathSegments[1];

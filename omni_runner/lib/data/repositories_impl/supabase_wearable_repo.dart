@@ -25,7 +25,7 @@ final class SupabaseWearableRepo implements IWearableRepo {
     for (var i = 0; i < maxAttempts; i++) {
       try {
         return await fn();
-      } catch (e) {
+      } on Object catch (_) {
         if (i == maxAttempts - 1) rethrow;
         await Future.delayed(Duration(milliseconds: 500 * (i + 1)));
       }
@@ -44,7 +44,7 @@ final class SupabaseWearableRepo implements IWearableRepo {
           .eq('athlete_user_id', athleteUserId)
           .order('linked_at', ascending: false);
       return rows.map(_fromDeviceLinkRow).toList();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Wearable.listDeviceLinks failed', error: e, stack: st);
       rethrow;
     }
@@ -70,7 +70,7 @@ final class SupabaseWearableRepo implements IWearableRepo {
         }, onConflict: 'athlete_user_id,provider').select().single();
         return _fromDeviceLinkRow(row);
       });
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Wearable.linkDevice failed', error: e, stack: st);
       rethrow;
     }
@@ -80,7 +80,7 @@ final class SupabaseWearableRepo implements IWearableRepo {
   Future<void> unlinkDevice(String linkId) async {
     try {
       await _db.from('coaching_device_links').delete().eq('id', linkId);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Wearable.unlinkDevice failed', error: e, stack: st);
       rethrow;
     }
@@ -96,7 +96,7 @@ final class SupabaseWearableRepo implements IWearableRepo {
         'p_assignment_id': assignmentId,
       });
       return res as Map<String, dynamic>;
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Wearable.generateWorkoutPayload failed',
           error: e, stack: st);
       rethrow;
@@ -134,7 +134,10 @@ final class SupabaseWearableRepo implements IWearableRepo {
         if (data['ok'] != true) {
           throw Exception(data['message'] ?? 'Erro ao importar execução');
         }
-        final execId = data['data']?['execution_id'] as String?;
+        final nested = data['data'];
+        final execId = nested is Map<String, dynamic>
+            ? nested['execution_id'] as String?
+            : null;
         return WorkoutExecutionEntity(
           id: execId ?? '',
           groupId: '',
@@ -150,7 +153,7 @@ final class SupabaseWearableRepo implements IWearableRepo {
           completedAt: DateTime.now(),
         );
       });
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Wearable.importExecution failed', error: e, stack: st);
       if (_isNetworkError(e) && _offlineQueue != null) {
         final params = {
@@ -186,7 +189,7 @@ final class SupabaseWearableRepo implements IWearableRepo {
           .order('completed_at', ascending: false)
           .limit(limit);
       return rows.map(_fromExecutionRow).toList();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Wearable.listExecutions failed', error: e, stack: st);
       rethrow;
     }

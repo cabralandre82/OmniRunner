@@ -72,7 +72,7 @@ class _AthleteDeviceLinkScreenState extends State<AthleteDeviceLinkScreen> {
         _links = links;
         _loading = false;
       });
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('DeviceLink load failed', error: e, stack: st);
       if (!mounted) return;
       setState(() {
@@ -131,7 +131,7 @@ class _AthleteDeviceLinkScreenState extends State<AthleteDeviceLinkScreen> {
               : '${_providerLabels[provider]} conectado'),
         ),
       );
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('DeviceLink toggle failed', error: e, stack: st);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

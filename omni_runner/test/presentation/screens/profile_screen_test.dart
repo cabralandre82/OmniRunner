@@ -10,6 +10,7 @@ import 'package:omni_runner/data/services/profile_data_service.dart';
 import 'package:omni_runner/domain/entities/profile_entity.dart';
 import 'package:omni_runner/domain/repositories/i_profile_repo.dart';
 import 'package:omni_runner/presentation/screens/profile_screen.dart';
+import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 
 import '../../helpers/pump_app.dart';
 
@@ -106,7 +107,7 @@ void main() {
       expect(find.byType(ProfileScreen), findsOneWidget);
     });
 
-    testWidgets('shows loading indicator while profile loads', (tester) async {
+    testWidgets('shows shimmer placeholder while profile loads', (tester) async {
       final gate = Completer<void>();
       registerDeps(gate: gate);
 
@@ -115,7 +116,7 @@ void main() {
         wrapScaffold: false,
       );
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(ShimmerListLoader), findsOneWidget);
 
       gate.complete();
       await tester.pumpAndSettle();

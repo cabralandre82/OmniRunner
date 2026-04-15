@@ -6,6 +6,7 @@ import 'package:omni_runner/core/utils/error_messages.dart';
 import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/core/utils/support_sender_role.dart';
 
 class SupportTicketScreen extends StatefulWidget {
   final String ticketId;
@@ -27,6 +28,7 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
   bool _loading = true;
   bool _sending = false;
   String _status = 'open';
+  String? _groupId;
   List<Map<String, dynamic>> _messages = [];
 
   String get _uid => sl<UserIdentityProvider>().userId;
@@ -48,7 +50,7 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
     try {
       final ticketRes = await sl<SupabaseClient>()
           .from('support_tickets')
-          .select('status')
+          .select('status, group_id')
           .eq('id', widget.ticketId)
           .single();
 
@@ -61,6 +63,7 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
       if (mounted) {
         setState(() {
           _status = ticketRes['status'] as String? ?? 'open';
+          _groupId = ticketRes['group_id'] as String?;
           _messages = (msgs as List).cast<Map<String, dynamic>>();
           _loading = false;
         });
@@ -90,10 +93,19 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
 
     setState(() => _sending = true);
     try {
-      await sl<SupabaseClient>().from('support_messages').insert({
+      final client = sl<SupabaseClient>();
+      final gid = _groupId;
+      final senderRole = gid == null
+          ? 'staff'
+          : await resolveSupportMessageSenderRole(
+              client: client,
+              userId: _uid,
+              groupId: gid,
+            );
+      await client.from('support_messages').insert({
         'ticket_id': widget.ticketId,
         'sender_id': _uid,
-        'sender_role': 'staff',
+        'sender_role': senderRole,
         'body': body,
       });
 
@@ -149,7 +161,7 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
                         itemCount: _messages.length,
                         itemBuilder: (ctx, i) => _MessageBubble(
                           message: _messages[i],
-                          isMe: _messages[i]['sender_role'] == 'staff',
+                          isMe: (_messages[i]['sender_id'] as String?) == _uid,
                         ),
                       ),
           ),

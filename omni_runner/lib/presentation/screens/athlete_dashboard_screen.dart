@@ -117,7 +117,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
         }
         setState(() => _displayName = name);
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.debug('Failed to load display name', tag: 'Dashboard', error: e);
     }
   }
@@ -132,7 +132,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
     try {
       final connected = await sl<StravaConnectController>().isConnected;
       if (mounted) setState(() => _stravaConnected = connected);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.debug('Strava status check failed', tag: 'Dashboard', error: e);
     }
   }
@@ -144,7 +144,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
       if (localSessions.isNotEmpty && mounted) {
         setState(() => _hasFirstRun = true);
       }
-    } catch (_) {}
+    } on Object catch (_) {}
 
     // Then verify against Supabase (authoritative)
     try {
@@ -166,7 +166,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
           _hasChallenge = (challengeRows as List).isNotEmpty;
         });
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.debug('First steps check failed', tag: 'Dashboard', error: e);
     }
   }
@@ -191,7 +191,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
           groupName =
               (row['coaching_groups'] as Map?)?['name'] as String?;
         }
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.debug('Supabase offline, falling back to Isar', tag: 'Dashboard', error: e);
         final memberships =
             await sl<ICoachingMemberRepo>().getByUserId(uid);
@@ -221,7 +221,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
           _staggerCtrl.forward();
         }
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to load assessoria status', tag: 'Dashboard', error: e);
       if (mounted) {
         setState(() => _loading = false);
@@ -252,7 +252,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
           });
         }
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.debug('Pending request check failed', tag: 'Dashboard', error: e);
     }
   }

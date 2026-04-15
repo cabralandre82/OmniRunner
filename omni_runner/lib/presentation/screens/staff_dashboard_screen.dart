@@ -13,6 +13,7 @@ import 'package:omni_runner/domain/entities/coaching_group_entity.dart';
 import 'package:omni_runner/domain/entities/coaching_member_entity.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_group_repo.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
+import 'package:omni_runner/domain/entities/wallet_entity.dart';
 import 'package:omni_runner/domain/repositories/i_wallet_repo.dart';
 import 'package:omni_runner/core/tips/first_use_tips.dart';
 import 'package:omni_runner/presentation/widgets/ds/fade_in.dart';
@@ -110,7 +111,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
           try {
             await sl<ICoachingGroupRepo>().save(groupEntity);
             await sl<ICoachingMemberRepo>().save(membership);
-          } catch (e) {
+          } on Object catch (e) {
             AppLogger.debug('Isar cache write failed', tag: 'StaffDash', error: e);
           }
         }
@@ -139,7 +140,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
         ]);
 
         final allMembers = (results[0] as List).cast<Map<String, dynamic>>();
-        final wallet = results[1];
+        final wallet = results[1] as WalletEntity?;
         final pendingPartnerCount = results[2] as int;
         final joinReqs = results[3] as List;
 
@@ -156,7 +157,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
             );
             await sl<ICoachingMemberRepo>().save(m);
           }
-        } catch (e) {
+        } on Object catch (e) {
           AppLogger.debug('Members Isar batch sync failed', tag: 'StaffDash', error: e);
         }
 
@@ -203,7 +204,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                   (groupRow?['name'] as String?) ?? 'Assessoria';
             }
           }
-        } catch (e) {
+        } on Object catch (e) {
           AppLogger.debug('Pending professor check failed', tag: 'StaffDash', error: e);
         }
         if (mounted) setState(() => _loading = false);
@@ -216,7 +217,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
           _errorMessage = 'Dados não encontrados. Verifique suas permissões.';
         });
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('StaffDashboard load failed', tag: 'StaffDash', error: e);
       if (mounted) {
         setState(() {
@@ -285,11 +286,11 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
       if (!ok) {
         await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
       }
-    } catch (e1) {
+    } on Object catch (e1) {
       AppLogger.debug('External browser failed, trying in-app', tag: 'StaffDash', error: e1);
       try {
         await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
-      } catch (e) {
+      } on Object catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(ErrorMessages.humanize(e))),

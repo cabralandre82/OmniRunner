@@ -36,7 +36,7 @@ export const GET = withErrorHandler(async (_req: NextRequest, { params }: Params
       id, week_number, starts_on, ends_on, label, coach_notes, cycle_type, status,
       workouts:plan_workout_releases (
         id, scheduled_date, workout_order, release_status, workout_type,
-        workout_label, coach_notes, content_version,
+        workout_label, coach_notes, content_version, video_url,
         template:template_id (id, name, description),
         completed:completed_workouts (
           id, actual_distance_m, actual_duration_s, actual_avg_hr,

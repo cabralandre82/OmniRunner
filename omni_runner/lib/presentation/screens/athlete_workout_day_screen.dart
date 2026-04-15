@@ -20,7 +20,7 @@ import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:omni_runner/presentation/widgets/state_widgets.dart';
 import 'package:omni_runner/presentation/widgets/error_state.dart';
 
-// TODO: This screen appears to be unused. Consider removing or integrating it.
+// Not currently registered in app_router; kept for a dedicated day view.
 /// Shows the athlete's workout for today (or selected date).
 /// Allows marking the workout as completed.
 class AthleteWorkoutDayScreen extends StatefulWidget {
@@ -85,7 +85,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
 
       final provider = linkRow?['provider'] as String?;
       if (mounted) setState(() => _fitCompatible = _fitProviders.contains(provider));
-    } catch (_) {
+    } on Object catch (_) {
       // Default to false
     }
   }
@@ -97,7 +97,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
       if (mounted) {
         setState(() => _pendingDeliveries = count);
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to load delivery count', tag: 'WorkoutDayScreen', error: e);
     }
   }
@@ -135,7 +135,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
           _loading = false;
         });
       }
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error(
         'Erro ao carregar treino do dia',
         tag: 'WorkoutDayScreen',
@@ -176,7 +176,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
           text: 'Treino: ${_template?.name ?? ""}',
         ),
       );
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error(
         'Erro ao enviar treino para relógio',
         tag: 'WorkoutDayScreen',
@@ -208,7 +208,7 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
         const SnackBar(content: Text('Treino marcado como concluído!')),
       );
       _loadToday();
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error(
         'Erro ao marcar treino como concluído',
         tag: 'WorkoutDayScreen',

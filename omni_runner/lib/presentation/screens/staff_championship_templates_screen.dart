@@ -105,7 +105,7 @@ class _StaffChampionshipTemplatesScreenState
       }).toList();
 
       if (mounted) setState(() => _loading = false);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Caught error', tag: 'StaffChampionshipTemplates', error: e);
       if (mounted) {
         setState(() {
@@ -638,7 +638,7 @@ class _CreateTemplateScreenState extends State<_CreateTemplateScreen> {
       await db.from('championship_templates').insert(payload);
 
       if (mounted) context.pop(true);
-    } catch (e) {
+    } on Object catch (e) {
       if (mounted) {
         setState(() => _saving = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1225,7 +1225,7 @@ class _LaunchFromTemplateDialogState
         );
       }
       if (mounted) context.pop(champId ?? '');
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Caught error', tag: 'StaffChampionshipTemplates', error: e);
       if (mounted) {
         setState(() => _launching = false);

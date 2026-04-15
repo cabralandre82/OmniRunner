@@ -66,7 +66,7 @@ class _InviteQrScreenState extends State<InviteQrScreen> {
         _inviteEnabled = (row?['invite_enabled'] as bool?) ?? true;
         _memberCount = memberCount;
       });
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Unexpected error', tag: 'InviteQrScreen', error: e);
     }
   }

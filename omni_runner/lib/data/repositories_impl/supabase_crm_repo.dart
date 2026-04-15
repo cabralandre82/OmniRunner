@@ -22,7 +22,7 @@ final class SupabaseCrmRepo implements ICrmRepo {
           .eq('group_id', groupId)
           .order('name');
       return rows.map(_tagFromRow).toList();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Crm.listTags failed', error: e, stack: st);
       rethrow;
     }
@@ -41,7 +41,7 @@ final class SupabaseCrmRepo implements ICrmRepo {
           .select()
           .single();
       return _tagFromRow(row);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Crm.createTag failed', error: e, stack: st);
       rethrow;
     }
@@ -51,7 +51,7 @@ final class SupabaseCrmRepo implements ICrmRepo {
   Future<void> deleteTag(String tagId) async {
     try {
       await _db.from('coaching_tags').delete().eq('id', tagId);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Crm.deleteTag failed', error: e, stack: st);
       rethrow;
     }
@@ -74,7 +74,7 @@ final class SupabaseCrmRepo implements ICrmRepo {
         final tag = r['coaching_tags'] as Map<String, dynamic>;
         return _tagFromRow(tag);
       }).toList();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Crm.getAthleteTags failed', error: e, stack: st);
       rethrow;
     }
@@ -95,7 +95,7 @@ final class SupabaseCrmRepo implements ICrmRepo {
         },
         onConflict: 'group_id,athlete_user_id,tag_id',
       );
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Crm.assignTag failed', error: e, stack: st);
       rethrow;
     }
@@ -114,7 +114,7 @@ final class SupabaseCrmRepo implements ICrmRepo {
           .eq('group_id', groupId)
           .eq('athlete_user_id', athleteUserId)
           .eq('tag_id', tagId);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Crm.removeTag failed', error: e, stack: st);
       rethrow;
     }
@@ -138,7 +138,7 @@ final class SupabaseCrmRepo implements ICrmRepo {
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
       return rows.map(_noteFromRow).toList();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Crm.listNotes failed', error: e, stack: st);
       rethrow;
     }
@@ -159,7 +159,7 @@ final class SupabaseCrmRepo implements ICrmRepo {
         'note': note,
       }).select('*, profiles!created_by(display_name)').single();
       return _noteFromRow(row);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Crm.createNote failed', error: e, stack: st);
       rethrow;
     }
@@ -169,7 +169,7 @@ final class SupabaseCrmRepo implements ICrmRepo {
   Future<void> deleteNote(String noteId) async {
     try {
       await _db.from('coaching_athlete_notes').delete().eq('id', noteId);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Crm.deleteNote failed', error: e, stack: st);
       rethrow;
     }
@@ -190,7 +190,7 @@ final class SupabaseCrmRepo implements ICrmRepo {
           .eq('user_id', userId)
           .maybeSingle();
       return row == null ? null : _statusFromRow(row);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Crm.getStatus failed', error: e, stack: st);
       rethrow;
     }
@@ -219,7 +219,7 @@ final class SupabaseCrmRepo implements ICrmRepo {
         updatedAt: DateTime.now(),
         updatedBy: _db.auth.currentUser?.id,
       );
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Crm.upsertStatus failed', error: e, stack: st);
       rethrow;
     }
@@ -283,25 +283,30 @@ final class SupabaseCrmRepo implements ICrmRepo {
       final alertRows = results[3] as List<dynamic>;
 
       final tagsByUser = <String, List<CoachingTagEntity>>{};
-      for (final r in tagsRows) {
+      for (final raw in tagsRows) {
+        final r = raw as Map<String, dynamic>;
         final uid = r['athlete_user_id'] as String;
         final tag = _tagFromRow(r['coaching_tags'] as Map<String, dynamic>);
         tagsByUser.putIfAbsent(uid, () => []).add(tag);
       }
 
       final statusByUser = <String, MemberStatusValue>{};
-      for (final r in statusRows) {
+      for (final raw in statusRows) {
+        final r = raw as Map<String, dynamic>;
         statusByUser[r['user_id'] as String] =
             memberStatusFromString(r['status'] as String);
       }
 
       final attendanceCountByUser = <String, int>{};
-      for (final r in attendanceRows) {
+      for (final raw in attendanceRows) {
+        final r = raw as Map<String, dynamic>;
         final uid = r['athlete_user_id'] as String;
         attendanceCountByUser[uid] = (attendanceCountByUser[uid] ?? 0) + 1;
       }
 
-      final alertUserIds = alertRows.map((r) => r['user_id'] as String).toSet();
+      final alertUserIds = alertRows
+          .map((raw) => (raw as Map<String, dynamic>)['user_id'] as String)
+          .toSet();
 
       var filteredMembers = members;
       if (tagIds != null && tagIds.isNotEmpty) {
@@ -333,7 +338,7 @@ final class SupabaseCrmRepo implements ICrmRepo {
           hasActiveAlerts: alertUserIds.contains(uid),
         );
       }).toList();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Crm.listAthletes failed', error: e, stack: st);
       rethrow;
     }

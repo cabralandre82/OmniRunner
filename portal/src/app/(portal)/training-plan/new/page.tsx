@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 interface Athlete {
@@ -11,6 +11,9 @@ interface Athlete {
 
 export default function NewTrainingPlanPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const prefilledAthleteId = searchParams.get("athleteId") ?? "";
+
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [loadingAthletes, setLoadingAthletes] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -20,7 +23,7 @@ export default function NewTrainingPlanPage() {
     name: "",
     description: "",
     sport_type: "running",
-    athlete_user_id: "",
+    athlete_user_id: prefilledAthleteId,
     starts_on: "",
     ends_on: "",
   });

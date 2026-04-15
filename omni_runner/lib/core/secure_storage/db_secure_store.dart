@@ -66,11 +66,11 @@ class DbSecureStore {
     try {
       final dir = await getApplicationDocumentsDirectory();
       final dbFile = File('${dir.path}/$_dbFileName');
-      if (await dbFile.exists()) {
-        await dbFile.delete();
+      if (dbFile.existsSync()) {
+        dbFile.deleteSync();
         AppLogger.debug('Encrypted DB file deleted', tag: _tag);
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to delete DB file: $e', tag: _tag);
     }
     AppLogger.debug('DB encryption key cleared', tag: _tag);

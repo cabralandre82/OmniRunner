@@ -81,9 +81,11 @@ class PushNavigationHandler {
       ),
     );
 
-    // Auto-dismiss after 6 seconds
+    // Auto-dismiss after 6 seconds (re-resolve context — [ctx] is stale after the gap).
     Future.delayed(const Duration(seconds: 6), () {
-      ScaffoldMessenger.maybeOf(ctx)?.hideCurrentMaterialBanner();
+      final after = navigatorKey.currentContext;
+      if (after == null || !after.mounted) return;
+      ScaffoldMessenger.maybeOf(after)?.hideCurrentMaterialBanner();
     });
   }
 
@@ -106,6 +108,7 @@ class PushNavigationHandler {
             builder: (_) => ChallengeJoinScreen(challengeId: challengeId),
           ));
         }
+        return;
 
       case 'challenge_accepted':
       case 'challenge_settled':
@@ -121,6 +124,7 @@ class PushNavigationHandler {
             ),
           ));
         }
+        return;
 
       case 'friend_request_received':
       case 'friend_request_accepted':
@@ -130,6 +134,7 @@ class PushNavigationHandler {
             child: const FriendsScreen(),
           ),
         ));
+        return;
 
       case 'badge_earned':
       case 'streak_at_risk':

@@ -206,7 +206,7 @@ class _AuthGateState extends State<AuthGate> {
         'Join request sent for group $groupId via invite link (status: $status)',
         tag: _tag,
       );
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Auto-join request failed: $e', tag: _tag, error: e);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -282,7 +282,7 @@ class _AuthGateState extends State<AuthGate> {
       } else {
         _go(_GateDestination.onboarding);
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('AuthGate profile fetch failed: $e', tag: _tag, error: e);
       await _retryResolve();
     }
@@ -312,7 +312,7 @@ class _AuthGateState extends State<AuthGate> {
       } else {
         _go(_GateDestination.onboarding);
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('AuthGate retry #$_retryCount failed: $e', tag: _tag, error: e);
       await _retryResolve();
     }
@@ -336,7 +336,7 @@ class _AuthGateState extends State<AuthGate> {
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       }).eq('id', uid);
       AppLogger.info('Atleta onboarding_state → READY (skipped assessoria)', tag: _tag);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to set READY for atleta: $e', tag: _tag, error: e);
     }
   }

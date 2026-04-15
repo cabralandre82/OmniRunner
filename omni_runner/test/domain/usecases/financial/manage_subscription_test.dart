@@ -24,7 +24,7 @@ class _FakeFinancialRepo implements IFinancialRepo {
     try {
       return subscriptions.firstWhere(
           (s) => s.groupId == groupId && s.athleteUserId == athleteUserId);
-    } catch (_) {
+    } on Object catch (_) {
       return null;
     }
   }

@@ -35,7 +35,7 @@ Future<void> registerAuthModule(GetIt sl) async {
   final userIdentity = UserIdentityProvider(authRepo: authRepo);
   try {
     await userIdentity.init();
-  } catch (e) {
+  } on Object catch (e) {
     AppLogger.error('UserIdentityProvider.init failed — continuing with anonymous identity', error: e);
   }
   sl.registerSingleton<UserIdentityProvider>(userIdentity);

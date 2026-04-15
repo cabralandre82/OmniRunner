@@ -129,7 +129,7 @@ class _StreaksLeaderboardScreenState extends State<StreaksLeaderboardScreen> {
         });
 
       if (mounted) setState(() => _loading = false);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Caught error', tag: 'StreaksLeaderboardScreen', error: e);
       if (mounted) {
         setState(() {

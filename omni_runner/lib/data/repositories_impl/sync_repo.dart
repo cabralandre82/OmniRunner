@@ -148,7 +148,7 @@ class SyncRepo implements ISyncRepo {
             activityName: 'Corrida — Omni Runner',
           ),
         );
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.warn('Strava auto-upload failed (non-blocking): $e', tag: _tag);
       }
     });

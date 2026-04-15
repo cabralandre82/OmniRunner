@@ -53,7 +53,7 @@ class _OnboardingRoleScreenState extends State<OnboardingRoleScreen> {
           );
           lastData = res.data as Map<String, dynamic>? ?? {};
           if (lastData['ok'] == true) break;
-        } catch (e) {
+        } on Object catch (e) {
           AppLogger.warn('set-user-role attempt $attempt/3: $e', tag: _tag);
           if (attempt == 3) rethrow;
           await Future<void>.delayed(Duration(milliseconds: 500 * attempt));
@@ -69,7 +69,7 @@ class _OnboardingRoleScreenState extends State<OnboardingRoleScreen> {
 
       if (!mounted) return;
       widget.onComplete();
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Role selection failed: $e', tag: _tag, error: e);
       if (!mounted) return;
       setState(() {

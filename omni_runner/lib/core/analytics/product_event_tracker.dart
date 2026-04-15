@@ -45,7 +45,7 @@ class ProductEventTracker {
         'properties': properties ?? {},
       });
       AppLogger.debug('Event tracked: $eventName', tag: _tag);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to track event $eventName: $e', tag: _tag);
     }
   }
@@ -77,7 +77,7 @@ class ProductEventTracker {
         'properties': properties ?? {},
       });
       AppLogger.debug('Event tracked (once): $eventName', tag: _tag);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to track event $eventName: $e', tag: _tag);
     }
   }
@@ -86,7 +86,7 @@ class ProductEventTracker {
     if (!AppConfig.isSupabaseReady) return null;
     try {
       return sl<SupabaseClient>().auth.currentUser?.id;
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Caught error', tag: 'ProductEventTracker', error: e);
       return null;
     }

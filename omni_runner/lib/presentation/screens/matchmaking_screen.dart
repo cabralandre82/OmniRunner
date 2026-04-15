@@ -83,7 +83,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
     try {
       final connected = await sl<StravaConnectController>().isConnected;
       if (mounted) setState(() => _stravaConnected = connected);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Unexpected error', tag: 'MatchmakingScreen', error: e);
     }
   }
@@ -102,7 +102,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
             .inFilter('role', ['athlete', 'atleta'])
             .maybeSingle();
         groupId = row?['group_id'] as String?;
-      } catch (e) {
+      } on Object catch (e) {
       AppLogger.warn('Caught error', tag: 'MatchmakingScreen', error: e);
         final memberships =
             await sl<ICoachingMemberRepo>().getByUserId(uid);
@@ -134,7 +134,7 @@ class _MatchmakingScreenState extends State<MatchmakingScreen>
               .toList();
         });
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Unexpected error', tag: 'MatchmakingScreen', error: e);
     }
   }

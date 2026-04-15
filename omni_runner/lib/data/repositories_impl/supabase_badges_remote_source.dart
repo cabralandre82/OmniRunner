@@ -30,7 +30,8 @@ class SupabaseBadgesRemoteSource implements IBadgesRemoteSource {
               'id, category, tier, name, description, xp_reward, coins_reward, criteria_type, criteria_json, is_secret')
           .order('category')
           .order('tier');
-      return (rows as List).map((r) {
+      return (rows as List<dynamic>).map((raw) {
+        final r = raw as Map<String, dynamic>;
         final category = _parseCategory(r['category'] as String? ?? '');
         final tier = _parseTier(r['tier'] as String? ?? '');
         final criteria = _parseCriteria(
@@ -66,16 +67,19 @@ class SupabaseBadgesRemoteSource implements IBadgesRemoteSource {
               'id, user_id, badge_id, trigger_session_id, unlocked_at_ms, xp_awarded, coins_awarded')
           .eq('user_id', userId)
           .order('unlocked_at_ms', ascending: false);
-      return rows
-          .map((r) => BadgeAwardEntity(
-                id: r['id'] as String,
-                userId: r['user_id'] as String,
-                badgeId: r['badge_id'] as String,
-                triggerSessionId: r['trigger_session_id'] as String?,
-                unlockedAtMs: (r['unlocked_at_ms'] as num).toInt(),
-                xpAwarded: (r['xp_awarded'] as num?)?.toInt() ?? 0,
-                coinsAwarded: (r['coins_awarded'] as num?)?.toInt() ?? 0,
-              ))
+      return (rows as List<dynamic>)
+          .map((raw) {
+            final r = raw as Map<String, dynamic>;
+            return BadgeAwardEntity(
+              id: r['id'] as String,
+              userId: r['user_id'] as String,
+              badgeId: r['badge_id'] as String,
+              triggerSessionId: r['trigger_session_id'] as String?,
+              unlockedAtMs: (r['unlocked_at_ms'] as num).toInt(),
+              xpAwarded: (r['xp_awarded'] as num?)?.toInt() ?? 0,
+              coinsAwarded: (r['coins_awarded'] as num?)?.toInt() ?? 0,
+            );
+          })
           .toList();
     } on Exception catch (e) {
       AppLogger.debug('Awards fetch failed',

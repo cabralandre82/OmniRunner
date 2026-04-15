@@ -85,7 +85,7 @@ class ConnectivityMonitor {
       _wasOffline = false;
       _stopHealthCheck();
       await _replayQueue();
-    } catch (_) {
+    } on Object catch (_) {
       AppLogger.debug('ConnectivityMonitor: health check failed, still offline',
           tag: 'ConnectivityMonitor');
     }
@@ -102,7 +102,7 @@ class ConnectivityMonitor {
         AppLogger.info('ConnectivityMonitor: replayed $count queued operations',
             tag: 'ConnectivityMonitor');
       }
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('ConnectivityMonitor: replay failed', error: e, stack: st);
     } finally {
       _replayInProgress = false;

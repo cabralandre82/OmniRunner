@@ -48,7 +48,7 @@ class WorkoutAssignmentsBloc
         to: _to,
       );
       emit(AssignmentsLoaded(assignments: assignments));
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error(
         'Erro ao carregar atribuições',
         tag: 'WorkoutAssignmentsBloc',
@@ -73,7 +73,7 @@ class WorkoutAssignmentsBloc
       if (_groupId != null) {
         await _fetch(emit);
       }
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error(
         'Erro ao atribuir treino',
         tag: 'WorkoutAssignmentsBloc',

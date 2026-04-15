@@ -47,7 +47,7 @@ class TrainingListBloc extends Bloc<TrainingListEvent, TrainingListState> {
         to: _to,
       );
       emit(TrainingListLoaded(sessions: sessions));
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Failed to load trainings', tag: 'TrainingListBloc', error: e, stack: st);
       emit(TrainingListError('Erro ao carregar treinos: $e'));
     }

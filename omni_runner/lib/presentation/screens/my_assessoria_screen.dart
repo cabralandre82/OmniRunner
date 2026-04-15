@@ -548,7 +548,7 @@ class _NoAssessoriaBodyState extends State<_NoAssessoriaBody> {
       } else {
         if (mounted) setState(() => _loading = false);
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Caught error', tag: 'MyAssessoriaScreen', error: e);
       if (mounted) setState(() => _loading = false);
     }

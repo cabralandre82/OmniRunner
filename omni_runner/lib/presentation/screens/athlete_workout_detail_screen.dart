@@ -64,7 +64,7 @@ class _AthleteWorkoutDetailScreenState
           _error = workout == null ? 'Treino não encontrado.' : null;
         });
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('loadWorkout failed', tag: _tag, error: e);
       if (mounted) {
         setState(() {
@@ -82,7 +82,7 @@ class _AthleteWorkoutDetailScreenState
     try {
       await sl<ITrainingPlanRepo>().startWorkout(workout.id);
       await _loadWorkout();
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('startWorkout failed', tag: _tag, error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

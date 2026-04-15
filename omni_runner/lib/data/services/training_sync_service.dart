@@ -54,7 +54,7 @@ class TrainingSyncService {
       }
 
       return result.workouts;
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error('syncDelta failed', tag: _tag, error: e, stack: stack);
       return [];
     } finally {
@@ -74,7 +74,7 @@ class TrainingSyncService {
       final stored = prefs.getString(_cursorKey);
       if (stored == null) return null;
       return DateTime.tryParse(stored);
-    } catch (_) {
+    } on Object catch (_) {
       return null;
     }
   }
@@ -83,7 +83,7 @@ class TrainingSyncService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_cursorKey, cursor.toUtc().toIso8601String());
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.debug('Failed to save cursor', tag: _tag, error: e);
     }
   }
@@ -92,6 +92,6 @@ class TrainingSyncService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_cursorKey);
-    } catch (_) {}
+    } on Object catch (_) {}
   }
 }

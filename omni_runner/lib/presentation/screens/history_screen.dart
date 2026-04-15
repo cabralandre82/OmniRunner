@@ -107,7 +107,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           await repo.save(session);
         }
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('History: Supabase pull failed (showing local): $e',
           tag: _tag);
     }

@@ -25,7 +25,7 @@ class ProfileRepo implements IProfileRepo {
         );
       }
       return profile;
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('getMyProfile failed: $e', tag: _tag, error: e);
       return null;
     }
@@ -35,7 +35,7 @@ class ProfileRepo implements IProfileRepo {
   Future<ProfileEntity> upsertMyProfile(ProfilePatch patch) async {
     try {
       return await _ds.upsertMyProfile(patch);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('upsertMyProfile failed: $e', tag: _tag, error: e);
       rethrow;
     }

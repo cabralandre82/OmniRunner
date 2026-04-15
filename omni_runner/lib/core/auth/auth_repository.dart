@@ -44,7 +44,7 @@ class AuthRepository {
     } on AuthFailure catch (f) {
       AppLogger.warn('signUp failed: $f', tag: _tag);
       return (user: null, failure: f);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('signUp unexpected: $e', tag: _tag, error: e);
       return (user: null, failure: AuthUnknownError(e.toString()));
     }
@@ -61,7 +61,7 @@ class AuthRepository {
     } on AuthFailure catch (f) {
       AppLogger.warn('signIn failed: $f', tag: _tag);
       return (user: null, failure: f);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('signIn unexpected: $e', tag: _tag, error: e);
       return (user: null, failure: AuthUnknownError(e.toString()));
     }
@@ -75,7 +75,7 @@ class AuthRepository {
     } on AuthFailure catch (f) {
       AppLogger.warn('signInWithGoogle failed: $f', tag: _tag);
       return (user: null, failure: f);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('signInWithGoogle unexpected: $e', tag: _tag, error: e);
       return (user: null, failure: AuthUnknownError(e.toString()));
     }
@@ -89,7 +89,7 @@ class AuthRepository {
     } on AuthFailure catch (f) {
       AppLogger.warn('signInWithApple failed: $f', tag: _tag);
       return (user: null, failure: f);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('signInWithApple unexpected: $e', tag: _tag, error: e);
       return (user: null, failure: AuthUnknownError(e.toString()));
     }
@@ -103,7 +103,7 @@ class AuthRepository {
     } on AuthFailure catch (f) {
       AppLogger.warn('signInWithInstagram failed: $f', tag: _tag);
       return (user: null, failure: f);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('signInWithInstagram unexpected: $e', tag: _tag, error: e);
       return (user: null, failure: AuthUnknownError(e.toString()));
     }
@@ -117,7 +117,7 @@ class AuthRepository {
     } on AuthFailure catch (f) {
       AppLogger.warn('signInWithTikTok failed: $f', tag: _tag);
       return (user: null, failure: f);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('signInWithTikTok unexpected: $e', tag: _tag, error: e);
       return (user: null, failure: AuthUnknownError(e.toString()));
     }
@@ -131,7 +131,7 @@ class AuthRepository {
     } on AuthFailure catch (f) {
       AppLogger.warn('resetPassword failed: $f', tag: _tag);
       return f;
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('resetPassword unexpected: $e', tag: _tag, error: e);
       return AuthUnknownError(e.toString());
     }
@@ -145,7 +145,7 @@ class AuthRepository {
     } on AuthFailure catch (f) {
       AppLogger.warn('signOut failed: $f', tag: _tag);
       return f;
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('signOut unexpected: $e', tag: _tag, error: e);
       return AuthUnknownError(e.toString());
     }

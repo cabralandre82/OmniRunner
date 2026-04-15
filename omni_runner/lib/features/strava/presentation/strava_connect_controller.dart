@@ -96,7 +96,7 @@ class StravaConnectController {
       int importedCount = 0;
       try {
         importedCount = await _importAndBackfill();
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.warn('Backfill after connect failed: $e', tag: _tag);
       }
 
@@ -136,12 +136,12 @@ class StravaConnectController {
         tag: _tag,
       );
 
-      // TODO: Send local notification on new session sync
-      // When flutter_local_notifications is added, trigger here:
+      // Future: send a local notification on new session sync when
+      // flutter_local_notifications is added; trigger here:
       //   Title: "Corrida registrada!"
       //   Body: "Você correu X.Xkm. Confira seu recap e veja se desbloqueou algo novo."
       // Use the latest session distance from the backfill result.
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to backfill Strava sessions: $e', tag: _tag);
     }
   }
@@ -161,7 +161,7 @@ class StravaConnectController {
         'Backfilled $count park activities',
         tag: _tag,
       );
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to backfill park activities: $e', tag: _tag);
     }
   }
@@ -178,7 +178,7 @@ class StravaConnectController {
           .rpc('recalculate_profile_progress', params: {'p_user_id': uid});
 
       AppLogger.info('Profile progress recalculated', tag: _tag);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to recalculate profile progress: $e', tag: _tag);
     }
   }
@@ -193,7 +193,7 @@ class StravaConnectController {
           .rpc('evaluate_badges_retroactive', params: {'p_user_id': uid});
 
       AppLogger.info('Badges evaluated retroactively', tag: _tag);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to evaluate badges: $e', tag: _tag);
     }
   }
@@ -204,7 +204,7 @@ class StravaConnectController {
       await sl<SupabaseClient>().functions
           .invoke('eval-athlete-verification', body: {});
       AppLogger.info('Verification evaluation triggered', tag: _tag);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to trigger verification eval: $e', tag: _tag);
     }
   }
@@ -246,7 +246,7 @@ class StravaConnectController {
       }, onConflict: 'user_id');
 
       AppLogger.info('Strava tokens synced to server', tag: _tag);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to sync Strava tokens to server: $e', tag: _tag);
     }
   }
@@ -267,7 +267,7 @@ class StravaConnectController {
             .eq('user_id', uid);
         AppLogger.info('Server-side Strava tokens removed', tag: _tag);
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to remove server tokens: $e', tag: _tag);
     }
   }
@@ -310,7 +310,7 @@ class StravaConnectController {
       final state = await _authRepo.getAuthState();
       if (state is! StravaConnected) return;
       await _importAndBackfill();
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('retryBackfillIfNeeded failed: $e', tag: _tag);
     }
   }

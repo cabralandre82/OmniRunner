@@ -8,6 +8,7 @@ import 'package:omni_runner/domain/entities/leaderboard_entity.dart';
 import 'package:omni_runner/presentation/blocs/leaderboards/leaderboards_bloc.dart';
 import 'package:omni_runner/presentation/blocs/leaderboards/leaderboards_state.dart';
 import 'package:omni_runner/presentation/screens/leaderboards_screen.dart';
+import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -94,7 +95,7 @@ void main() {
         anonKey:
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZha2UiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcwMDAwMDAwMCwiZXhwIjo5OTk5OTk5OTk5fQ.fake',
       );
-    } catch (_) {}
+    } on Object catch (_) {}
   });
 
   group('LeaderboardsScreen', () {
@@ -133,7 +134,7 @@ void main() {
       expect(find.byType(Scaffold), findsOneWidget);
     });
 
-    testWidgets('shows loading indicator for LeaderboardsLoading state',
+    testWidgets('shows shimmer placeholder for LeaderboardsLoading state',
         (tester) async {
       final bloc = _FakeLeaderboardsBloc(const LeaderboardsLoading());
 
@@ -147,7 +148,7 @@ void main() {
       await tester.pump();
       tester.takeException();
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(ShimmerListLoader), findsOneWidget);
     });
 
     testWidgets('shows error message for LeaderboardsError state',

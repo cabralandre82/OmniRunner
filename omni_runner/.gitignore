@@ -1,3 +1,6 @@
+# Local temp when system /tmp is on a full root volume (e.g. TMPDIR=$PWD/.tmp flutter test)
+.tmp/
+
 # Miscellaneous
 *.class
 *.log

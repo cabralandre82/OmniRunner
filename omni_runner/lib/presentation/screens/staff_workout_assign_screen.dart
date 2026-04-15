@@ -15,7 +15,7 @@ import 'package:omni_runner/domain/repositories/i_workout_repo.dart';
 import 'package:omni_runner/domain/usecases/wearable/push_to_trainingpeaks.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 
-// TODO: This screen appears to be unused. Consider removing or integrating it.
+// Not currently registered in app_router; kept for staff assign flow.
 /// Screen for staff to assign a workout template to an athlete on a date.
 class StaffWorkoutAssignScreen extends StatefulWidget {
   final String groupId;
@@ -73,7 +73,7 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
           _loading = false;
         });
       }
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error(
         'Erro ao carregar dados de atribuição',
         tag: 'WorkoutAssignScreen',
@@ -139,7 +139,7 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
       }
       if (!mounted) return;
       context.pop(true);
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error(
         'Erro ao atribuir treino',
         tag: 'WorkoutAssignScreen',
@@ -190,7 +190,7 @@ class _StaffWorkoutAssignScreenState extends State<StaffWorkoutAssignScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg)),
       );
-    } catch (e) {
+    } on Object catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(ErrorMessages.humanize(e))),

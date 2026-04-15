@@ -18,7 +18,8 @@ class SupabaseMissionsRemoteSource implements IMissionsRemoteSource {
               'id, title, description, difficulty, slot, xp_reward, coins_reward, criteria_type, criteria_json, expires_at_ms, season_id, max_completions, cooldown_ms')
           .order('slot')
           .order('difficulty');
-      return (rows as List).map((r) {
+      return (rows as List<dynamic>).map((raw) {
+        final r = raw as Map<String, dynamic>;
         final difficulty = switch (r['difficulty'] as String? ?? 'easy') {
           'medium' => MissionDifficulty.medium,
           'hard' => MissionDifficulty.hard,
@@ -64,7 +65,8 @@ class SupabaseMissionsRemoteSource implements IMissionsRemoteSource {
           .select(
               'id, user_id, mission_id, status, current_value, target_value, assigned_at_ms, completed_at_ms, completion_count, contributing_session_ids')
           .eq('user_id', userId);
-      return rows.map((r) {
+      return (rows as List<dynamic>).map((raw) {
+        final r = raw as Map<String, dynamic>;
         final statusStr = r['status'] as String? ?? 'active';
         final status = switch (statusStr) {
           'completed' => MissionProgressStatus.completed,

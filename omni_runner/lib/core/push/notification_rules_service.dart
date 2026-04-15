@@ -175,7 +175,7 @@ class NotificationRulesService {
 
       await sl<SupabaseClient>().functions.invoke(_fn, body: body);
       AppLogger.debug('Notify rule dispatched: ${rule ?? "all"}', tag: _tag);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Notify rule failed: $e', tag: _tag);
     }
   }

@@ -118,7 +118,7 @@ class _StaffRetentionDashboardScreenState
       _weeklyRetention = _computeWeeklyRetention(sessions, weekStart);
 
       if (mounted) setState(() => _loading = false);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Caught error', tag: 'StaffRetentionDashboard', error: e);
       if (mounted) {
         setState(() {

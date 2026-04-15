@@ -575,7 +575,7 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
       try {
         final decoded = jsonDecode(response.body);
         body = const JsonEncoder.withIndent('  ').convert(decoded);
-      } catch (e) {
+      } on Object catch (e) {
       AppLogger.warn('Caught error', tag: 'SettingsScreen', error: e);
         body = response.body;
       }
@@ -627,7 +627,7 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
       try {
         final decoded = jsonDecode(response.body);
         body = const JsonEncoder.withIndent('  ').convert(decoded);
-      } catch (e) {
+      } on Object catch (e) {
       AppLogger.warn('Caught error', tag: 'SettingsScreen', error: e);
         body = response.body;
       }
@@ -685,7 +685,7 @@ class _AuthDebugCardState extends State<_AuthDebugCard> {
       try {
         final decoded = jsonDecode(response.body);
         body = const JsonEncoder.withIndent('  ').convert(decoded);
-      } catch (e) {
+      } on Object catch (e) {
       AppLogger.warn('Caught error', tag: 'SettingsScreen', error: e);
         body = response.body;
       }

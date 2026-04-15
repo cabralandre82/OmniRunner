@@ -106,7 +106,7 @@ class _StaffCreditsScreenState extends State<StaffCreditsScreen> {
       }).toList();
 
       if (mounted) setState(() => _loading = false);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Caught error', tag: 'StaffCreditsScreen', error: e);
       if (mounted) {
         setState(() {

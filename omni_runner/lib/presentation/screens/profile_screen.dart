@@ -101,7 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _socialColumnsAvailable = socialOk;
         _loading = false;
       });
-    } catch (e) {
+    } on Object catch (e) {
       if (!mounted) return;
       setState(() {
         _error = _friendlyError(e);
@@ -185,7 +185,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           duration: Duration(seconds: 2),
         ),
       );
-    } catch (e) {
+    } on Object catch (e) {
       if (!mounted) return;
       AppLogger.error('Profile save failed: $e', tag: _tag, error: e);
       setState(() {
@@ -231,7 +231,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Foto atualizada')),
       );
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Avatar upload failed: $e', tag: _tag, error: e);
       if (!mounted) return;
       setState(() {
@@ -317,7 +317,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await sl<AuthRepository>().signOut();
       if (!mounted) return;
       context.go(AppRoutes.welcome);
-    } catch (e) {
+    } on Object catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

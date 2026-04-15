@@ -39,7 +39,7 @@ class SupabaseVerificationRemoteSource implements IVerificationRemoteSource {
 
       try {
         await controller.importStravaHistory(count: 30);
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.warn('Strava import skipped: $e', tag: _tag);
       }
 
@@ -51,7 +51,7 @@ class SupabaseVerificationRemoteSource implements IVerificationRemoteSource {
           .rpc('recalculate_profile_progress', params: {'p_user_id': uid});
 
       AppLogger.info('Strava + park + profile backfill completed', tag: _tag);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Strava backfill skipped: $e', tag: _tag);
     }
   }

@@ -8,6 +8,7 @@ import 'package:omni_runner/core/service_locator.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/l10n/l10n.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
+import 'package:omni_runner/core/utils/support_sender_role.dart';
 
 class SupportScreen extends StatefulWidget {
   final String groupId;
@@ -83,9 +84,15 @@ class _SupportScreenState extends State<SupportScreen> {
 
     setState(() => _busy = true);
     try {
+      final client = sl<SupabaseClient>();
       final uid = sl<UserIdentityProvider>().userId;
+      final senderRole = await resolveSupportMessageSenderRole(
+        client: client,
+        userId: uid,
+        groupId: widget.groupId,
+      );
 
-      final ticketRes = await sl<SupabaseClient>()
+      final ticketRes = await client
           .from('support_tickets')
           .insert({
             'group_id': widget.groupId,
@@ -96,10 +103,10 @@ class _SupportScreenState extends State<SupportScreen> {
 
       final ticketId = ticketRes['id'] as String;
 
-      await sl<SupabaseClient>().from('support_messages').insert({
+      await client.from('support_messages').insert({
         'ticket_id': ticketId,
         'sender_id': uid,
-        'sender_role': 'staff',
+        'sender_role': senderRole,
         'body': result.message,
       });
 

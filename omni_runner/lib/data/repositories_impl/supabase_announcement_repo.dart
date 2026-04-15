@@ -43,7 +43,7 @@ final class SupabaseAnnouncementRepo implements IAnnouncementRepo {
       return rows
           .map((r) => _fromRow(r, isRead: readIds.contains(r['id'] as String)))
           .toList();
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Announcement.listByGroup failed', error: e, stack: st);
       rethrow;
     }
@@ -71,7 +71,7 @@ final class SupabaseAnnouncementRepo implements IAnnouncementRepo {
         isRead = readRow != null;
       }
       return _fromRow(row, isRead: isRead);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Announcement.getById failed', error: e, stack: st);
       rethrow;
     }
@@ -94,7 +94,7 @@ final class SupabaseAnnouncementRepo implements IAnnouncementRepo {
         'pinned': pinned,
       }).select('*, profiles!created_by(display_name)').single();
       return _fromRow(row, isRead: true);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Announcement.create failed', error: e, stack: st);
       rethrow;
     }
@@ -115,7 +115,7 @@ final class SupabaseAnnouncementRepo implements IAnnouncementRepo {
           .select('*, profiles!created_by(display_name)')
           .single();
       return _fromRow(row, isRead: a.isRead);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Announcement.update failed', error: e, stack: st);
       rethrow;
     }
@@ -125,7 +125,7 @@ final class SupabaseAnnouncementRepo implements IAnnouncementRepo {
   Future<void> delete(String id) async {
     try {
       await _db.from('coaching_announcements').delete().eq('id', id);
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Announcement.delete failed', error: e, stack: st);
       rethrow;
     }
@@ -141,7 +141,7 @@ final class SupabaseAnnouncementRepo implements IAnnouncementRepo {
       if (data['ok'] != true) {
         throw Exception(data['error'] ?? 'Failed to mark read');
       }
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Announcement.markRead failed', error: e, stack: st);
       rethrow;
     }
@@ -162,7 +162,7 @@ final class SupabaseAnnouncementRepo implements IAnnouncementRepo {
         readCount: (data['read_count'] as num).toInt(),
         readRate: (data['read_rate'] as num).toDouble(),
       );
-    } catch (e, st) {
+    } on Object catch (e, st) {
       AppLogger.error('Announcement.getReadStats failed', error: e, stack: st);
       rethrow;
     }

@@ -50,7 +50,7 @@ class _AthleteChampionshipRankingScreenState
         await _db.functions.invoke('champ-update-progress', body: {
           'championship_id': widget.championshipId,
         }).timeout(const Duration(seconds: 10));
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.debug('Progress update skipped: $e', tag: _tag);
       }
 
@@ -59,7 +59,7 @@ class _AthleteChampionshipRankingScreenState
         await _db.functions.invoke('champ-lifecycle', body: {
           'championship_id': widget.championshipId,
         }).timeout(const Duration(seconds: 10));
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.debug('Lifecycle check skipped: $e', tag: _tag);
       }
 
@@ -81,7 +81,7 @@ class _AthleteChampionshipRankingScreenState
       }).toList();
 
       if (mounted) setState(() => _loading = false);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Load ranking failed: $e', tag: _tag, error: e);
       if (mounted) setState(() { _error = 'Erro ao carregar ranking.'; _loading = false; });
     }

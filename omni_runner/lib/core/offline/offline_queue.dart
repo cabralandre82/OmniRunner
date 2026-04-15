@@ -17,12 +17,26 @@ class OfflineQueue {
 
   final SharedPreferences _prefs;
   final SupabaseClient _client;
+  final Future<void> Function(String operation, Map<String, dynamic> params)?
+      _rpcInvoker;
 
   const OfflineQueue({
     required SharedPreferences prefs,
     required SupabaseClient client,
+    Future<void> Function(String operation, Map<String, dynamic> params)?
+        rpcInvoker,
   })  : _prefs = prefs,
-        _client = client;
+        _client = client,
+        _rpcInvoker = rpcInvoker;
+
+  Future<void> _callRpc(String operation, Map<String, dynamic> params) async {
+    final invoker = _rpcInvoker;
+    if (invoker != null) {
+      await invoker(operation, params);
+      return;
+    }
+    await _client.rpc(operation, params: params);
+  }
 
   /// Enqueue a failed RPC call for later retry.
   /// Call this when an RPC fails due to network/connectivity issues.
@@ -62,11 +76,11 @@ class OfflineQueue {
 
     for (final entry in valid) {
       try {
-        await _client.rpc(entry.operation, params: entry.params);
+        await _callRpc(entry.operation, entry.params);
         replayed++;
         AppLogger.info(
             'OfflineQueue: replayed ${entry.operation}', tag: 'OfflineQueue');
-      } catch (e, st) {
+      } on Object catch (e, st) {
         AppLogger.error('OfflineQueue: replay failed for ${entry.operation}',
             error: e, stack: st);
         final updated = _QueueEntry(
@@ -109,7 +123,7 @@ class OfflineQueue {
       try {
         final map = jsonDecode(json) as Map<String, dynamic>;
         items.add(_QueueEntry.fromJson(map));
-      } catch (_) {
+      } on Object catch (_) {
         // Skip malformed entries
       }
     }

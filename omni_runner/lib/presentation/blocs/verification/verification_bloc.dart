@@ -32,7 +32,7 @@ class VerificationBloc extends Bloc<VerificationEvent, VerificationState> {
       final entity = await _remote.fetchVerificationState();
       _cached = entity;
       emit(VerificationLoaded(entity));
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Failed to load verification state: $e', tag: _tag);
       emit(const VerificationError(
         'Não foi possível carregar o status de verificação.',
@@ -62,7 +62,7 @@ class VerificationBloc extends Bloc<VerificationEvent, VerificationState> {
       final entity = await _remote.fetchVerificationState();
       _cached = entity;
       emit(VerificationLoaded(entity));
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.warn('Evaluation failed: $e', tag: _tag);
       emit(VerificationError(
         'Falha na avaliação: $e',

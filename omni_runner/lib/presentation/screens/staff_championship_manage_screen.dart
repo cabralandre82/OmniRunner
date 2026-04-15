@@ -96,7 +96,7 @@ class _StaffChampionshipManageScreenState
             .from('coaching_groups')
             .select('id, name')
             .inFilter('id', groupIds);
-        for (final g in (groupsRes as List)) {
+        for (final g in (groupsRes as List).cast<Map<String, dynamic>>()) {
           groupNames[g['id'] as String] = (g['name'] as String?) ?? '';
         }
       }
@@ -128,7 +128,7 @@ class _StaffChampionshipManageScreenState
               finalRank: m['final_rank'] as int?,
             );
           }).toList();
-        } catch (e) {
+        } on Object catch (e) {
           AppLogger.warn('Load participants failed (non-fatal): $e', tag: _tag);
           _participants = [];
         }
@@ -137,7 +137,7 @@ class _StaffChampionshipManageScreenState
       }
 
       if (mounted) setState(() => _loading = false);
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Load championship failed: $e', tag: _tag, error: e);
       if (mounted) {
         setState(() { _error = 'Erro ao carregar campeonato.'; _loading = false; });
@@ -184,7 +184,7 @@ class _StaffChampionshipManageScreenState
           );
         }
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Open championship failed: $e', tag: _tag, error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -380,7 +380,7 @@ class _StaffChampionshipManageScreenState
           );
         }
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Invite failed: $e', tag: _tag, error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -147,7 +147,7 @@ class _TodayScreenState extends State<TodayScreen> {
       // Strava sessions that never went through calculate-progression)
       try {
         await sl<TodayDataService>().recalculateProfileProgress(uid);
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.debug('recalculate_profile_progress failed', tag: 'Today', error: e);
       }
 
@@ -183,7 +183,7 @@ class _TodayScreenState extends State<TodayScreen> {
         } else {
           profile = await sl<IProfileProgressRepo>().getByUserId(uid);
         }
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.debug('Profile fetch offline, using Isar', tag: 'Today', error: e);
         profile = await sl<IProfileProgressRepo>().getByUserId(uid);
       }
@@ -201,7 +201,7 @@ class _TodayScreenState extends State<TodayScreen> {
       try {
         final rows = await sl<TodayDataService>().getRemoteSessions(uid);
         remoteCompleted = rows.map((r) => _remoteSessionToEntity(r)).toList();
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.debug('Remote sessions fetch failed', tag: 'Today', error: e);
       }
 
@@ -241,14 +241,14 @@ class _TodayScreenState extends State<TodayScreen> {
             );
           }).toList();
         }
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.debug('Challenges fetch offline, using Isar', tag: 'Today', error: e);
         try {
           final all = await sl<IChallengeRepo>().getByUserId(uid);
           active = all
               .where((c) => c.status == ChallengeStatus.active)
               .toList();
-        } catch (e2) {
+        } on Object catch (e2) {
           AppLogger.warn('Isar challenges fallback failed', tag: 'Today', error: e2);
         }
       }
@@ -260,7 +260,7 @@ class _TodayScreenState extends State<TodayScreen> {
           champs =
               await sl<TodayDataService>().getChampionshipsByIds(ids);
         }
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.debug('Championships fetch failed', tag: 'Today', error: e);
       }
 
@@ -269,7 +269,7 @@ class _TodayScreenState extends State<TodayScreen> {
         final allAwards = await sl<IBadgeAwardRepo>().getByUserId(uid);
         final cutoff = DateTime.now().subtract(const Duration(hours: 24)).millisecondsSinceEpoch;
         recentBadges = allAwards.where((a) => a.unlockedAtMs > cutoff).toList();
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.debug('Recent badges fetch failed', tag: 'Today', error: e);
       }
 
@@ -298,7 +298,7 @@ class _TodayScreenState extends State<TodayScreen> {
 
       _checkStreakAtRisk(uid, profile, lastRun);
       _promptBackgroundLocationOnce();
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.error('Today data load failed', tag: 'Today', error: e);
       if (mounted) {
         setState(() {
@@ -320,7 +320,7 @@ class _TodayScreenState extends State<TodayScreen> {
       if (failure == null) {
         await prefs.setBool('bg_location_prompted', true);
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.debug('Background location prompt skipped', tag: 'Today', error: e);
     }
   }
@@ -467,7 +467,7 @@ class _TodayScreenState extends State<TodayScreen> {
         _lastLoadTime = null;
         _load();
       }
-    } catch (e) {
+    } on Object catch (_) {
       final controller = sl<StravaConnectController>();
       final stillConnected = await controller.isConnected;
       if (mounted) {
@@ -717,7 +717,7 @@ class _TodayScreenState extends State<TodayScreen> {
         initialNotes = row['notes'] as String?;
         initialMood = row['mood_emoji'] as String?;
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.debug('Journal load failed', tag: 'Today', error: e);
     }
 
@@ -733,12 +733,12 @@ class _TodayScreenState extends State<TodayScreen> {
           notes: notes.isEmpty ? null : notes,
           moodEmoji: mood,
         );
-      } catch (e) {
+      } on Object catch (e) {
         AppLogger.debug('Journal save failed', tag: 'Today', error: e);
       }
     }
 
-    if (!context.mounted) return;
+    if (!mounted) return;
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -822,7 +822,8 @@ class _TodayScreenState extends State<TodayScreen> {
     );
 
     debounceTimer?.cancel();
-    if (result != null && mounted) {
+    if (!mounted) return;
+    if (result != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Anotação salva!')),
       );
@@ -2049,12 +2050,13 @@ class _ActiveRunnersChipState extends State<_ActiveRunnersChip> {
           .select('user_id')
           .gte('start_time_ms', sevenDaysAgo);
 
+      final list = (rows as List).cast<Map<String, dynamic>>();
       final uniqueUsers =
-          (rows as List).map((r) => r['user_id']).toSet().length;
+          list.map((r) => r['user_id'] as String).toSet().length;
       if (mounted && uniqueUsers > 0) {
         setState(() => _count = uniqueUsers);
       }
-    } catch (e) {
+    } on Object catch (e) {
       AppLogger.debug('Active runners count failed', tag: 'Today', error: e);
     }
   }

@@ -41,7 +41,7 @@ class SupabaseTrainingPlanRepo implements ITrainingPlanRepo {
         cursor:   DateTime.tryParse(cursorStr) ?? DateTime.fromMillisecondsSinceEpoch(0),
         count:    workouts.length,
       );
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error('getSyncDelta failed', tag: _tag, error: e, stack: stack);
       rethrow;
     }
@@ -79,7 +79,7 @@ class SupabaseTrainingPlanRepo implements ITrainingPlanRepo {
       return (rows as List<dynamic>)
           .map((r) => PlanWorkoutEntity.fromJson(r as Map<String, dynamic>))
           .toList();
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error('getWorkoutsForPeriod failed', tag: _tag, error: e, stack: stack);
       rethrow;
     }
@@ -107,7 +107,7 @@ class SupabaseTrainingPlanRepo implements ITrainingPlanRepo {
 
       if (row == null) return null;
       return PlanWorkoutEntity.fromJson(row);
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error('getWorkoutById failed', tag: _tag, error: e, stack: stack);
       rethrow;
     }
@@ -121,7 +121,7 @@ class SupabaseTrainingPlanRepo implements ITrainingPlanRepo {
       await _client.rpc('fn_athlete_start_workout', params: {
         'p_release_id': releaseId,
       });
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error('startWorkout failed', tag: _tag, error: e, stack: stack);
       rethrow;
     }
@@ -150,7 +150,7 @@ class SupabaseTrainingPlanRepo implements ITrainingPlanRepo {
         'p_source':            source,
       });
       return (result as String?) ?? '';
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error('completeWorkout failed', tag: _tag, error: e, stack: stack);
       rethrow;
     }
@@ -179,7 +179,7 @@ class SupabaseTrainingPlanRepo implements ITrainingPlanRepo {
         'p_notes':            notes,
       });
       return (result as String?) ?? '';
-    } catch (e, stack) {
+    } on Object catch (e, stack) {
       AppLogger.error('submitFeedback failed', tag: _tag, error: e, stack: stack);
       rethrow;
     }
