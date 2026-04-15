@@ -3,6 +3,9 @@ name: Update Visual Regression Snapshots
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   update-snapshots:
     name: Update Playwright Snapshots
