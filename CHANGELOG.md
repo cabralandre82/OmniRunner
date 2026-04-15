@@ -13,10 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **[CRÍTICO] OmniCoins distribuídas sumindo do painel** (`staff_credits_screen.dart`, `distributions/page.tsx`, `distribute-coins/route.ts`): o painel mostrava 0 distribuídas porque a RLS da tabela `coin_ledger` só devolve as próprias linhas do usuário logado — coaches não viam as linhas dos atletas. Corrigido usando `fn_sum_coin_ledger_by_group` (SECURITY DEFINER) no app e `createServiceClient()` na página do portal. Adicionado `issuer_group_id` e chamada a `decrement_token_inventory` que estavam faltando em `distribute-coins/route.ts`.
 - **[CRÍTICO] OmniCoins: saldo disponível não era decrementado** (`distribute-coins/route.ts`): a rota distribuía tokens para o atleta mas nunca chamava `decrement_token_inventory`, deixando `available_tokens` inalterado na assessoria. Corrigido.
 - **Assessorias Parceiras: "Não foi possível carregar parcerias"** (`partner_assessorias_screen.dart`): o código verificava apenas o código de erro `42883` (Postgres) mas o PostgREST retorna `PGRST202` quando a função não está no schema cache. Corrigido para tratar ambos.
-- **Suporte: "Não foi possível carregar chamados"** (`20260408130000_support_member_messages.sql`): migration que amplia as políticas RLS de `support_tickets` / `support_messages` para incluir roles atuais (`coach`, `assistant`) e permitir que atletas abram chamados. **Aplicar manualmente no SQL editor.**
+- **Suporte: "Não foi possível carregar chamados"** (`20260408130000_support_member_messages.sql`): migration que amplia as políticas RLS de `support_tickets` / `support_messages` para incluir roles atuais (`coach`, `assistant`) e permitir que atletas abram chamados. **Aplicada em produção 2026-04-15.**
 
 ### Infrastructure
-- `supabase/migrations/20260415020000_coin_ledger_group_visibility.sql`: adiciona política RLS `group_staff_read_issued_ledger` em `coin_ledger` (leitura por `issuer_group_id`), backfill de `issuer_group_id` em entradas legadas via `token_intents`, e GRANT em `fn_sum_coin_ledger_by_group`. **Aplicar no SQL editor.**
+- `supabase/migrations/20260415020000_coin_ledger_group_visibility.sql`: adiciona política RLS `group_staff_read_issued_ledger` em `coin_ledger` (leitura por `issuer_group_id`), backfill de `issuer_group_id` em entradas legadas via `token_intents`, e GRANT em `fn_sum_coin_ledger_by_group`. **Aplicada em produção 2026-04-15.**
 
 ---
 

@@ -4144,6 +4144,33 @@ Em uma decisão anterior (DECISAO 145), a integração nativa Vercel↔GitHub fo
 - Blocos gerados pela IA não são validados semânticamente (ex: repeat_count sem blocos seguintes). Validação visual fica por conta do treinador no editor.
 - Sem suporte a sub-blocos aninhados (repeat dentro de repeat) — limitação conhecida, suficiente para 99% dos treinos de corrida.
 
+**Status:** Migrations `20260415010000_descriptive_workout_blocks.sql` e `20260408130000_support_member_messages.sql` aplicadas em produção em 2026-04-15.
+
+---
+
+## DECISAO 150 — Correção crítica de visibilidade de OmniCoins distribuídas
+
+**Data:** 2026-04-15  
+**Contexto:** Após distribuir 3 OmniCoins para um atleta via portal, o painel da assessoria (app e portal) continuava mostrando "0 distribuídas" mesmo com `available_tokens` corretamente decrementado.
+
+**Causa raiz:** A tabela `coin_ledger` possui política RLS `ledger_own_read` que restringe cada usuário a ver apenas as próprias linhas (`auth.uid() = user_id`). A query do portal e do app usava o cliente autenticado do coach para somar entradas de `user_id` dos atletas — o Postgres retornava 0 linhas silenciosamente por RLS.
+
+**Causa secundária:** `distribute-coins/route.ts` nunca chamava `decrement_token_inventory` (o decremento de `available_tokens` que ocorria era via `token-consume-intent` Edge Function em fluxos mais antigos) e não gravava `issuer_group_id` no `coin_ledger`, impossibilitando rastreio futuro por grupo emissor.
+
+**Decisões:**
+
+1. **App Flutter usa `fn_sum_coin_ledger_by_group`** (SECURITY DEFINER): em vez de query direta na tabela (bloqueada por RLS), `StaffCreditsScreen` agora chama o RPC que soma por `issuer_group_id` contornando a RLS de forma segura e auditável.
+
+2. **Portal distributions usa `createServiceClient()`**: a página de distribuições (Server Component) agora consulta `coin_ledger` via service role. A query prioriza `issuer_group_id = groupId` e faz fallback para entradas legadas (`issuer_group_id IS NULL AND user_id IN memberIds`).
+
+3. **`distribute-coins/route.ts` corrigido**: adicionadas chamadas a `decrement_token_inventory` (antes de creditar o atleta) e `issuer_group_id: groupId` no INSERT do `coin_ledger`. Erros de inventory insuficiente retornam 422. Erro de ledger é logado sem bloquear a operação (moeda já creditada).
+
+4. **Migration `20260415020000_coin_ledger_group_visibility.sql`**: política RLS `group_staff_read_issued_ledger` permite que admins/coaches leiam entradas de `coin_ledger` onde `issuer_group_id` = seu grupo. Backfill de `issuer_group_id` para entradas legadas via `token_intents.ref_id`. Grant de `fn_sum_coin_ledger_by_group` ao role `authenticated`.
+
+**Invariante preservada:** As OmniCoins não sumiam — estavam na carteira do atleta. O bug era exclusivamente de visibilidade no painel de gestão da assessoria.
+
+**Status:** Migration `20260415020000_coin_ledger_group_visibility.sql` e a migration de suporte `20260408130000_support_member_messages.sql` aplicadas em produção em 2026-04-15.
+
 ---
 
 ## DECISAO 146 — Training Plan v2: Visão por Atleta, Prescrição Livre e IA
