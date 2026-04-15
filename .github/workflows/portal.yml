@@ -224,7 +224,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - name: Sync env vars to Vercel project
-        if: secrets.VERCEL_TOKEN != ''
+        if: env.VERCEL_TOKEN != ''
         run: |
           TOKEN="${{ secrets.VERCEL_TOKEN }}"
           PROJECT_ID="prj_1VCxeEcJaqeRy6C7ZtpCPVgPLuEg"
