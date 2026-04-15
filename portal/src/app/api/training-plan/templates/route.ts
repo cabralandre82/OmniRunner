@@ -51,7 +51,6 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
       )
     `)
     .eq("group_id", groupId)
-    .eq("is_active", true)
     .order("name");
 
   if (error) {
