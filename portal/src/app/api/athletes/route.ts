@@ -48,9 +48,9 @@ export async function GET() {
       .select(
         `
         user_id,
+        display_name,
         profiles (
-          full_name,
-          username,
+          display_name,
           avatar_url
         )
       `,
@@ -58,7 +58,7 @@ export async function GET() {
       .eq("group_id", groupId)
       .eq("role", "athlete")
       .eq("status", "active")
-      .order("user_id");
+      .order("display_name");
 
     if (error) {
       logger.error("GET /api/athletes — DB error", error);
@@ -73,10 +73,8 @@ export async function GET() {
       return {
         user_id: m.user_id,
         display_name:
-          (profile as { full_name?: string; username?: string } | null)
-            ?.full_name ||
-          (profile as { full_name?: string; username?: string } | null)
-            ?.username ||
+          m.display_name ||
+          (profile as { display_name?: string } | null)?.display_name ||
           "Atleta",
         avatar_url:
           (profile as { avatar_url?: string | null } | null)?.avatar_url ??

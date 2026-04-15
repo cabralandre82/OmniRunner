@@ -72,10 +72,10 @@ async function getPlans(groupId: string): Promise<Plan[]> {
   if (athleteIds.length > 0) {
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, full_name, username")
+      .select("id, display_name")
       .in("id", athleteIds);
     for (const p of profiles ?? []) {
-      athleteNames.set(p.id, p.full_name || p.username || "Atleta");
+      athleteNames.set(p.id, p.display_name || "Atleta");
     }
   }
 

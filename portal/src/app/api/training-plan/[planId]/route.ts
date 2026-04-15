@@ -38,11 +38,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
     if (plan.athlete_user_id) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, username, avatar_url")
+        .select("display_name, avatar_url")
         .eq("id", plan.athlete_user_id)
         .maybeSingle();
       if (profile) {
-        athleteName = profile.full_name || profile.username || null;
+        athleteName = profile.display_name || null;
         athleteAvatar = profile.avatar_url ?? null;
       }
     }

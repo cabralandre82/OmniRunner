@@ -49,17 +49,17 @@ export async function GET(_req: NextRequest, { params }: Params) {
       .from("coaching_members")
       .select(`
         user_id,
+        display_name,
         role,
         profiles (
-          full_name,
-          username,
+          display_name,
           avatar_url
         )
       `)
       .eq("group_id", params.groupId)
       .eq("role", "athlete")
       .eq("status", "active")
-      .order("user_id");
+      .order("display_name");
 
     if (error) {
       return NextResponse.json(
@@ -72,8 +72,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
       const profile = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
       return {
         user_id: m.user_id,
-        display_name: (profile as { full_name?: string; username?: string } | null)?.full_name
-          || (profile as { full_name?: string; username?: string } | null)?.username
+        display_name: m.display_name
+          || (profile as { display_name?: string } | null)?.display_name
           || "Atleta",
         avatar_url: (profile as { avatar_url?: string | null } | null)?.avatar_url ?? null,
       };
