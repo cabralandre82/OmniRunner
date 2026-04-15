@@ -44,7 +44,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
       description,
       sport_type,
       workout_type,
-      coaching_workout_template_blocks (
+      coaching_workout_blocks (
         id,
         distance_meters,
         duration_seconds
@@ -62,8 +62,8 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
   }
 
   const enriched = (templates ?? []).map((t) => {
-    const blocks = Array.isArray(t.coaching_workout_template_blocks)
-      ? t.coaching_workout_template_blocks
+    const blocks = Array.isArray(t.coaching_workout_blocks)
+      ? t.coaching_workout_blocks
       : [];
     const totalDistanceM = blocks.reduce(
       (sum: number, b: { distance_meters: number | null }) => sum + (b.distance_meters ?? 0),

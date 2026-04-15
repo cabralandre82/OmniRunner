@@ -414,6 +414,18 @@ export default function TrainingPlanDetailPage() {
         />
       )}
 
+      {/* Group template plan — no athlete assigned */}
+      {weeks.length > 0 && !plan.athlete_user_id && (
+        <div className="rounded-xl border border-warning/30 bg-warning-soft p-6 text-center">
+          <p className="text-sm font-medium text-warning">
+            Este é um modelo de grupo sem atleta associado.
+          </p>
+          <p className="mt-1 text-sm text-content-secondary">
+            Para prescrever treinos na planilha semanal, crie uma planilha vinculada a um atleta específico.
+          </p>
+        </div>
+      )}
+
       {/* Add week button (shown below all weeks) */}
       {weeks.length > 0 && (
         <button
