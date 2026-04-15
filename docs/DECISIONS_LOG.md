@@ -4148,6 +4148,23 @@ Em uma decisão anterior (DECISAO 145), a integração nativa Vercel↔GitHub fo
 
 ---
 
+## DECISAO 151 — Correção de rota go_router e sobrecarga de fn_list_partnerships
+
+**Data:** 2026-04-14  
+**Contexto:** Após correções de OmniCoins e suporte (v1.9.1), dois erros persistiam no app:
+
+1. **Suporte (`22P02`):** A tela `SupportScreen` recebia `groupId = "ticket"` porque a rota estática `/support/ticket` (SupportTicketScreen) estava declarada após a rota parametrizada `/support/:groupId` no `app_router.dart`. O go_router fazia match da string `"ticket"` como valor do parâmetro `groupId`. A query `.eq('group_id', 'ticket')` falhava com `invalid input syntax for type uuid: "ticket"`.
+
+2. **Assessorias Parceiras (`PGRST203`):** A função `fn_list_partnerships` tinha duas sobrecargas na base — `fn_list_partnerships(uuid)` original (migration `20260225`) e `fn_list_partnerships(uuid, int, int)` reescrita (migration `20260318`). O PostgREST não conseguia determinar qual sobrecargas chamar e retornava `PGRST203` (ambiguidade). O código Flutter só tratava `42883` e `PGRST202`, então mostrava "Não foi possível carregar parcerias."
+
+**Decisões:**
+1. **Reordenar rotas estáticas antes de parametrizadas:** Em go_router, rotas estáticas (`/support/ticket`) devem ser declaradas antes de rotas parametrizadas com mesmo prefixo (`/support/:groupId`). Regra aplicada a todos os pares similares no router.
+2. **Dropar sobrecarga obsoleta de fn_list_partnerships:** `DROP FUNCTION IF EXISTS public.fn_list_partnerships(uuid)` remove a versão de 1 argumento. A versão de 3 argumentos (com `DEFAULT`) já cobre chamadas com apenas `p_group_id`.
+
+**Status:** Corrigido em v1.9.2. SQL aplicado em produção 2026-04-14.
+
+---
+
 ## DECISAO 150 — Correção crítica de visibilidade de OmniCoins distribuídas
 
 **Data:** 2026-04-15  

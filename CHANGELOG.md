@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.2] - 2026-04-14
+
+### Fixed
+- **Suporte: tela abria com `groupId = "ticket"` causando erro `22P02`** (`app_router.dart`): a rota estática `/support/ticket` (SupportTicketScreen) estava declarada DEPOIS da rota parametrizada `/support/:groupId` (SupportScreen). O go_router capturava "ticket" como groupId, e a query no banco falhava com `invalid input syntax for type uuid: "ticket"`. Corrigido invertendo a ordem das rotas — a estática deve vir antes da parametrizada.
+- **Assessorias Parceiras: `PGRST203` — ambiguidade de função** (SQL): `fn_list_partnerships` tinha duas sobrecargas (1 arg e 3 args com defaults). O PostgREST não sabia qual chamar e retornava `PGRST203`. Corrigido dropando a versão antiga de 1 argumento via `DROP FUNCTION IF EXISTS public.fn_list_partnerships(uuid)`.
+
+---
+
 ## [1.9.1] - 2026-04-15
 
 ### Fixed

@@ -1399,13 +1399,9 @@ GoRouter createAppRouter({RecoveredSession? recovery}) {
       ),
 
       // ── Support ─────────────────────────────────────────────────────────
-      GoRoute(
-        path: AppRoutes.support,
-        builder: (context, state) {
-          final groupId = state.pathParameters['groupId']!;
-          return SupportScreen(groupId: groupId);
-        },
-      ),
+      // IMPORTANT: static route (/support/ticket) must come before the
+      // parameterised route (/support/:groupId) so go_router doesn't
+      // capture "ticket" as a groupId value.
       GoRoute(
         path: AppRoutes.supportTicket,
         builder: (context, state) {
@@ -1414,6 +1410,13 @@ GoRouter createAppRouter({RecoveredSession? recovery}) {
             ticketId: extra.ticketId,
             subject: extra.subject,
           );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.support,
+        builder: (context, state) {
+          final groupId = state.pathParameters['groupId']!;
+          return SupportScreen(groupId: groupId);
         },
       ),
 
