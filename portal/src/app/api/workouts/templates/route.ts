@@ -73,6 +73,7 @@ export async function POST(req: Request) {
           name: name.trim(),
           description: description?.trim() || null,
           created_by: user.id,
+          is_active: true,
         })
         .select("id")
         .single();
