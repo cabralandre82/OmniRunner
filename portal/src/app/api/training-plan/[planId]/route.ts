@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { logger } from "@/lib/logger";
+import { MANAGER_ROLES } from "@/lib/roles";
 
 function createClient() {
   const cookieStore = cookies();
@@ -65,6 +66,58 @@ export async function GET(_req: NextRequest, { params }: Params) {
     });
   } catch (err) {
     logger.error("GET /api/training-plan/[planId]", err);
+    return NextResponse.json({ ok: false, error: { code: "INTERNAL_ERROR" } }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/training-plan/[planId]
+ *
+ * Soft-deletes the plan by setting status = 'archived'.
+ * The plan disappears from all list views (which filter out archived).
+ * Only managers of the owning group can archive.
+ */
+export async function DELETE(_req: NextRequest, { params }: Params) {
+  try {
+    const cookieStore = cookies();
+    const groupId = cookieStore.get("portal_group_id")?.value;
+    if (!groupId) {
+      return NextResponse.json({ ok: false, error: { code: "NO_GROUP" } }, { status: 400 });
+    }
+
+    const supabase = createClient();
+    const { data: { user }, error: authErr } = await supabase.auth.getUser();
+    if (authErr || !user) {
+      return NextResponse.json({ ok: false, error: { code: "UNAUTHORIZED" } }, { status: 401 });
+    }
+
+    const { data: membership } = await supabase
+      .from("coaching_members")
+      .select("role")
+      .eq("group_id", groupId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!membership || !MANAGER_ROLES.includes(membership.role as never)) {
+      return NextResponse.json({ ok: false, error: { code: "FORBIDDEN" } }, { status: 403 });
+    }
+
+    const { error } = await supabase
+      .from("training_plans")
+      .update({ status: "archived", updated_at: new Date().toISOString() })
+      .eq("id", params.planId)
+      .eq("group_id", groupId);
+
+    if (error) {
+      return NextResponse.json(
+        { ok: false, error: { code: "DB_ERROR", message: error.message } },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    logger.error("DELETE /api/training-plan/[planId]", err);
     return NextResponse.json({ ok: false, error: { code: "INTERNAL_ERROR" } }, { status: 500 });
   }
 }

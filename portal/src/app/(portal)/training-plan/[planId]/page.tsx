@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { WeeklyPlanner } from "@/components/training-plan/weekly-planner";
@@ -225,11 +225,28 @@ function AddWeekModal({
 
 export default function TrainingPlanDetailPage() {
   const { planId } = useParams<{ planId: string }>();
+  const router = useRouter();
   const [plan, setPlan] = useState<PlanHeader | null>(null);
   const [weeks, setWeeks] = useState<PlanWeek[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddWeek, setShowAddWeek] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+
+  const handleArchive = useCallback(async () => {
+    if (!confirm(`Arquivar a planilha "${plan?.name}"?\n\nEla não aparecerá mais na lista, mas os dados são preservados.`)) return;
+    setArchiving(true);
+    try {
+      const res = await fetch(`/api/training-plan/${planId}`, { method: "DELETE" });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error?.message ?? "Erro ao arquivar");
+      router.push("/training-plan");
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Erro ao arquivar planilha");
+    } finally {
+      setArchiving(false);
+    }
+  }, [planId, plan, router]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -362,6 +379,16 @@ export default function TrainingPlanDetailPage() {
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+            </button>
+            <button
+              onClick={handleArchive}
+              disabled={archiving}
+              className="rounded-lg border border-error/40 p-2 text-error/70 hover:bg-error-soft hover:text-error disabled:opacity-50"
+              title="Arquivar planilha"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
               </svg>
             </button>
           </div>
