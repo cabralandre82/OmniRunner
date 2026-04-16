@@ -297,7 +297,6 @@ class _TodayScreenState extends State<TodayScreen> {
       });
 
       _checkStreakAtRisk(uid, profile, lastRun);
-      _promptBackgroundLocationOnce();
     } on Object catch (e) {
       AppLogger.error('Today data load failed', tag: 'Today', error: e);
       if (mounted) {

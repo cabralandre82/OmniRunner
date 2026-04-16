@@ -12,9 +12,24 @@ import 'package:omni_runner/domain/repositories/i_profile_repo.dart';
 import 'package:omni_runner/presentation/screens/profile_screen.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
 
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show SupabaseClient, SupabaseQueryBuilder;
+
 import '../../helpers/pump_app.dart';
+import '../../helpers/test_di.dart';
 
 // ─── Stubs ───────────────────────────────────────────────────────────────────
+
+/// Supabase client spy that records every table name passed to [from].
+class _SpySupabaseClient extends FakeSupabaseClient {
+  final List<String> queriedTables = [];
+
+  @override
+  SupabaseQueryBuilder from(String table) {
+    queriedTables.add(table);
+    return super.from(table);
+  }
+}
 
 class _StubAuthRepo implements AuthRepository {
   @override
@@ -181,6 +196,41 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ProfileScreen), findsOneWidget);
+    });
+
+    // Regression: _loadStats was querying 'badges_earned' which doesn't exist.
+    // The correct table is 'badge_awards'. This test ensures the right table
+    // is always used so the badge count is never silently stuck at 0.
+    testWidgets('_loadStats queries badge_awards not badges_earned',
+        (tester) async {
+      final spy = _SpySupabaseClient();
+      sl.registerSingleton<SupabaseClient>(spy);
+      registerDeps(
+        profile: ProfileEntity(
+          id: 'test-uid',
+          displayName: 'Test',
+          userRole: 'ATLETA',
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        ),
+      );
+
+      await tester.pumpApp(
+        const ProfileScreen(),
+        wrapScaffold: false,
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        spy.queriedTables,
+        isNot(contains('badges_earned')),
+        reason: 'badges_earned table does not exist — use badge_awards',
+      );
+      expect(
+        spy.queriedTables,
+        contains('badge_awards'),
+        reason: '_loadStats must query badge_awards for the badge count',
+      );
     });
   });
 }

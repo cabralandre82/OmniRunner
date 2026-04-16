@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.3] - 2026-04-15
+
+### Fixed
+- **Localização em segundo plano solicitada desnecessariamente** (`today_screen.dart`): o app pedia permissão de localização em background mesmo com GPS via Strava sendo a única forma de rastrear corridas. Removida chamada a `_promptBackgroundLocationOnce()` do `TodayScreen`.
+- **Foto de perfil: "Bucket not found" (StorageException 404)** (`profile_data_service.dart`): o bucket `avatars` não existia no Supabase Storage. Criado via SQL com políticas de leitura pública e upload restrito ao próprio usuário.
+- **Conquistas do perfil travadas em 0** (`profile_screen.dart`): `_loadStats` consultava a tabela `badges_earned` que não existe; a tabela correta é `badge_awards`. Corrigido. Adicionado teste de regressão em `profile_screen_test.dart`.
+- **Maior corrida mostrando 8.8km em vez de 10.02km** — comportamento correto por design: a Edge Function `generate-running-dna` filtra apenas `is_verified = true`. A corrida de 10.02km tem `is_verified = false` (flag "atividade não pode ser validada"), portanto não conta como PR.
+
+---
+
 ## [1.9.2] - 2026-04-14
 
 ### Fixed

@@ -4148,6 +4148,29 @@ Em uma decisão anterior (DECISAO 145), a integração nativa Vercel↔GitHub fo
 
 ---
 
+## DECISAO 152 — Background location, avatar bucket e badge_awards
+
+**Data:** 2026-04-15
+
+**Contexto:** Três bugs independentes encontrados na versão atleta do app:
+
+1. **Localização em segundo plano desnecessária:** `TodayScreen._promptBackgroundLocationOnce()` pedia permissão de GPS background mesmo com o produto definindo Strava como único rastreador de corridas (DECISAO anterior). O prompt nunca deveria aparecer.
+
+2. **Bucket `avatars` inexistente:** `ProfileDataService.uploadAvatar` usava `storage.from('avatars')` mas o bucket nunca foi criado no Supabase Storage. Resultado: `StorageException(Bucket not found, 404)` no upload de foto de perfil.
+
+3. **Tabela `badges_earned` não existe:** `ProfileScreen._loadStats` consultava `badges_earned` mas a tabela real é `badge_awards` (criada em `20260218000000_full_schema.sql`). A exceção era swallowed silenciosamente, deixando o contador de conquistas em 0 para sempre.
+
+**Decisões:**
+1. Remover `_promptBackgroundLocationOnce()` do `TodayScreen`. Toda a infraestrutura de `EnsureLocationReady` permanece disponível para uso futuro, mas não é ativada automaticamente.
+2. Criar bucket `avatars` via SQL com `public = true`, limite de 5 MB e tipos MIME restritos a imagem. Políticas: leitura pública, upload/update restrito ao próprio `auth.uid()`.
+3. Corrigir `badges_earned` → `badge_awards` no `_loadStats`. Adicionar teste de regressão com spy client que verifica o nome da tabela.
+
+**Sobre o PR de 10.02km:** A corrida não validada (`is_verified = false`) está corretamente excluída dos cálculos de DNA e PR pela Edge Function `generate-running-dna`. Este é o comportamento esperado — corridas não validadas podem ter dados de GPS inconsistentes ou suspeitos.
+
+**Status:** Aplicado em produção 2026-04-15. Bucket criado via SQL editor.
+
+---
+
 ## DECISAO 151 — Correção de rota go_router e sobrecarga de fn_list_partnerships
 
 **Data:** 2026-04-14  
