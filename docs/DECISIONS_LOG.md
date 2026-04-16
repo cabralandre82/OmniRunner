@@ -4250,6 +4250,24 @@ Em uma decisão anterior (DECISAO 145), a integração nativa Vercel↔GitHub fo
 
 ---
 
+## DECISAO 155 — Contador real do plano e visual de chip cancelado
+
+**Data:** 2026-04-14  
+**Contexto:** Após as correções anteriores, o contador de treinos ainda exibia o número errado. Investigação revelou que havia **dois** contadores independentes: o do `WeekBlock` (já correto) e o do `[planId]/page.tsx` (nunca corrigido). Além disso, o usuário não gostou de os chips cancelados sumirem da grade.
+
+**Causa raiz do contador persistindo errado:**  
+`[planId]/page.tsx` linha 279 usava `w.workouts?.length ?? 0` — sem nenhum filtro — para calcular `totalWorkouts` do cabeçalho da página do plano. Como o `WeekBlock` já estava correto, a atenção foi focada lá, mas o bug estava na página-pai.
+
+**Decisões:**
+
+1. **Consertar o contador do plano:** `totalWorkouts` e `releasedCount` em `[planId]/page.tsx` passam a usar o mesmo critério de exclusão (`cancelled/replaced/archived`). O `releasedCount` também foi corrigido — estava contando `completed` junto com `released/in_progress`, o que era incorreto.
+
+2. **Chip cancelado volta à grade com visual distinto:** A v1.9.5 ocultou completamente os chips cancelados, mas o coach prefere vê-los como referência. Decisão: chips com status `cancelled/replaced/archived` permanecem na grade com `opacity-40 + grayscale + text-line-through`, deixando claro que são inativas sem confundir a contagem.
+
+**Testes:** `weekly-planner.test.ts` — substituídos os 3 testes `workoutsForGrid` (comportamento revertido) por 5 testes `plan-level stats` que cobrem `planTotalWorkouts` e `planReleasedCount`, incluindo regressão explícita para o caso "4 treinos → cancela 1 → mostra 3". Total: 16 testes.
+
+---
+
 ## DECISAO 154 — Correção de regressões: chip cancelado na grade e estado do drawer não resetando
 
 **Data:** 2026-04-14  

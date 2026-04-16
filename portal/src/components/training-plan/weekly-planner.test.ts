@@ -30,9 +30,20 @@ function activeWorkouts(workouts: WorkoutRelease[]) {
   return workouts.filter((w) => !INACTIVE.includes(w.release_status));
 }
 
-/** Mirrors the workoutsByDate map filter in WeekBlock (grid chips) */
-function workoutsForGrid(workouts: WorkoutRelease[]) {
-  return workouts.filter((w) => !INACTIVE.includes(w.release_status));
+/** Mirrors plan-level totalWorkouts in [planId]/page.tsx */
+function planTotalWorkouts(weeks: { workouts?: WorkoutRelease[] }[]) {
+  return weeks.reduce(
+    (s, w) => s + (w.workouts?.filter((x) => !INACTIVE.includes(x.release_status)).length ?? 0),
+    0,
+  );
+}
+
+/** Mirrors plan-level releasedCount in [planId]/page.tsx */
+function planReleasedCount(weeks: { workouts?: WorkoutRelease[] }[]) {
+  return weeks.reduce(
+    (s, w) => s + (w.workouts?.filter((x) => ["released", "in_progress"].includes(x.release_status)).length ?? 0),
+    0,
+  );
 }
 
 // ── Mirrors the initialBlocks helper in WorkoutActionDrawer ──────────────────
@@ -65,27 +76,44 @@ function initialBlocks(workout: WorkoutRelease | null): ReleaseBlock[] {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("WeekBlock — grid chips (workoutsForGrid)", () => {
-  it("excludes cancelled chips from the calendar grid", () => {
-    const workouts = [makeWorkout("released", "a"), makeWorkout("cancelled", "b")];
-    expect(workoutsForGrid(workouts)).toHaveLength(1);
-    expect(workoutsForGrid(workouts)[0].id).toBe("a");
-  });
-
-  it("excludes replaced and archived chips from the grid", () => {
-    const workouts = [
-      makeWorkout("completed", "a"),
-      makeWorkout("replaced", "b"),
-      makeWorkout("archived", "c"),
+describe("plan-level stats — [planId]/page.tsx", () => {
+  it("totalWorkouts excludes cancelled across all weeks", () => {
+    const weeks = [
+      { workouts: [makeWorkout("released"), makeWorkout("cancelled")] },
+      { workouts: [makeWorkout("completed"), makeWorkout("replaced")] },
     ];
-    expect(workoutsForGrid(workouts)).toHaveLength(1);
+    expect(planTotalWorkouts(weeks)).toBe(2);
   });
 
-  it("does not exclude draft, released, in_progress, completed", () => {
-    const workouts = ["draft", "released", "in_progress", "completed"].map((s, i) =>
-      makeWorkout(s as Status, `id-${i}`),
-    );
-    expect(workoutsForGrid(workouts)).toHaveLength(4);
+  it("totalWorkouts counts 3 after 1 cancellation (regression: was showing 4)", () => {
+    const weeks = [
+      {
+        workouts: [
+          makeWorkout("released"),
+          makeWorkout("released"),
+          makeWorkout("released"),
+          makeWorkout("cancelled"),
+        ],
+      },
+    ];
+    expect(planTotalWorkouts(weeks)).toBe(3);
+  });
+
+  it("totalWorkouts handles weeks with no workouts", () => {
+    const weeks = [{ workouts: undefined }, { workouts: [] }, { workouts: [makeWorkout("draft")] }];
+    expect(planTotalWorkouts(weeks)).toBe(1);
+  });
+
+  it("releasedCount does NOT include completed (regression: was counting completed as released)", () => {
+    const weeks = [
+      { workouts: [makeWorkout("released"), makeWorkout("in_progress"), makeWorkout("completed")] },
+    ];
+    expect(planReleasedCount(weeks)).toBe(2);
+  });
+
+  it("releasedCount excludes cancelled", () => {
+    const weeks = [{ workouts: [makeWorkout("released"), makeWorkout("cancelled")] }];
+    expect(planReleasedCount(weeks)).toBe(1);
   });
 });
 

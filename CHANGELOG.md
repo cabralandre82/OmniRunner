@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.6] - 2026-04-14
+
+### Fixed (portal)
+- **Contador do plano ainda mostrava treinos cancelados** (`[planId]/page.tsx`): o contador global do plano (`totalWorkouts` linha 279) usava `w.workouts?.length` sem nenhum filtro — o WeekBlock da grade semanal já estava correto, mas o resumo no cabeçalho da página do plano incluía cancelados. Corrigido para excluir `cancelled/replaced/archived`.
+- **`releasedCount` do plano incluía `completed` incorretamente** (`[planId]/page.tsx`): o filtro era `released|in_progress|completed`; corrigido para `released|in_progress` apenas.
+- **Chip de treino cancelado voltou à grade** (`weekly-planner.tsx`): revertida a ocultação da v1.9.5. Treinos `cancelled/replaced/archived` agora aparecem na grade mas com `opacity-40 + grayscale + line-through` no nome, deixando-os visíveis como referência sem serem contados.
+
+### Tests (updated)
+- `portal/src/components/training-plan/weekly-planner.test.ts`: removidos os 3 testes `workoutsForGrid` (comportamento revertido); adicionados 5 testes `plan-level stats` cobrindo `planTotalWorkouts` e `planReleasedCount` com regressão explícita; total 16 testes.
+
+---
+
 ## [1.9.5] - 2026-04-14
 
 ### Fixed (portal)
