@@ -401,12 +401,16 @@ function WeekBlock({
 }: WeekBlockProps) {
   const [showMenu, setShowMenu] = useState(false);
 
-  const totalWorkouts = week.workouts?.length ?? 0;
-  const completedCount = week.workouts?.filter((w) => w.release_status === "completed").length ?? 0;
-  const releasedCount = week.workouts?.filter((w) =>
+  // Exclude cancelled / replaced / archived workouts from all counts
+  const activeWorkouts = week.workouts?.filter(
+    (w) => !["cancelled", "replaced", "archived"].includes(w.release_status)
+  ) ?? [];
+  const totalWorkouts = activeWorkouts.length;
+  const completedCount = activeWorkouts.filter((w) => w.release_status === "completed").length;
+  const releasedCount = activeWorkouts.filter((w) =>
     ["released", "in_progress"].includes(w.release_status)
-  ).length ?? 0;
-  const draftCount = week.workouts?.filter((w) => w.release_status === "draft").length ?? 0;
+  ).length;
+  const draftCount = activeWorkouts.filter((w) => w.release_status === "draft").length;
   const hasUnreleased = draftCount > 0;
   const isReleasing = actionLoading === `bulk-release-${week.id}`;
   const isDuplicating = actionLoading === `dup-${week.id}`;

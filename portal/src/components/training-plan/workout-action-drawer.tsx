@@ -36,17 +36,23 @@ export function WorkoutActionDrawer({
   onSchedule,
 }: WorkoutActionDrawerProps) {
   const open = workout !== null;
-  const [tab, setTab] = useState<"info" | "edit" | "blocks" | "copy" | "schedule">("info");
+  const [tab, setTab] = useState<"info" | "edit" | "personalizar" | "copy" | "schedule">("info");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Edit state
   const [editLabel, setEditLabel] = useState(workout?.workout_label ?? "");
   const [editNotes, setEditNotes] = useState(workout?.coach_notes ?? "");
 
-  // Blocks state — initialised from content_snapshot
-  const [editBlocks, setEditBlocks] = useState<ReleaseBlock[]>(
-    workout?.content_snapshot?.blocks ?? [],
-  );
+  // Blocks: prefer content_snapshot (athlete-specific), fall back to template blocks
+  const initialBlocks = (blocks: typeof workout): ReleaseBlock[] => {
+    if (!blocks) return [];
+    const snap = blocks.content_snapshot?.blocks;
+    if (snap && snap.length > 0) return snap;
+    const tpl = blocks.template?.coaching_workout_blocks;
+    if (tpl && tpl.length > 0) return [...tpl].sort((a, b) => a.order_index - b.order_index);
+    return [];
+  };
+  const [editBlocks, setEditBlocks] = useState<ReleaseBlock[]>(() => initialBlocks(workout));
 
   // Copy state
   const [copyDate, setCopyDate] = useState("");
@@ -59,7 +65,7 @@ export function WorkoutActionDrawer({
   if (workout && editLabel !== (workout.workout_label ?? "") && tab === "info") {
     setEditLabel(workout.workout_label ?? "");
     setEditNotes(workout.coach_notes ?? "");
-    setEditBlocks(workout.content_snapshot?.blocks ?? []);
+    setEditBlocks(initialBlocks(workout));
   }
 
   if (!workout) return null;
@@ -81,6 +87,8 @@ export function WorkoutActionDrawer({
     }
   }
 
+  const isPersonalizar = tab === "personalizar";
+
   const tabClass = (t: typeof tab) =>
     `px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
       tab === t
@@ -99,12 +107,12 @@ export function WorkoutActionDrawer({
         />
       )}
 
-      {/* Bottom drawer */}
+      {/* Bottom drawer — full height when editing blocks */}
       <div
         className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl bg-surface shadow-xl transition-transform duration-300 ${
           open ? "translate-y-0" : "translate-y-full"
         }`}
-        style={{ maxHeight: "85vh" }}
+        style={{ height: isPersonalizar ? "96vh" : undefined, maxHeight: isPersonalizar ? "96vh" : "85vh" }}
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1">
@@ -142,7 +150,7 @@ export function WorkoutActionDrawer({
         <div className="flex gap-1 border-b border-border px-5 pb-3">
           <button onClick={() => setTab("info")} className={tabClass("info")}>Detalhes</button>
           <button onClick={() => setTab("edit")} className={tabClass("edit")}>Editar</button>
-          <button onClick={() => setTab("blocks")} className={tabClass("blocks")}>🧩 Blocos</button>
+          <button onClick={() => setTab("personalizar")} className={tabClass("personalizar")}>✏️ Personalizar</button>
           <button onClick={() => setTab("copy")} className={tabClass("copy")}>Copiar</button>
           {isActionable && (
             <button onClick={() => setTab("schedule")} className={tabClass("schedule")}>Agendar</button>
@@ -318,19 +326,23 @@ export function WorkoutActionDrawer({
             </div>
           )}
 
-          {/* BLOCKS TAB */}
-          {tab === "blocks" && (
-            <div className="space-y-3">
-              <p className="text-xs text-content-muted">
-                Personalize os blocos deste treino para este atleta. Não altera o template original.
-              </p>
-              <BlockEditor blocks={editBlocks} onChange={setEditBlocks} />
+          {/* PERSONALIZAR TAB */}
+          {tab === "personalizar" && (
+            <div className="flex flex-col gap-3 h-full">
+              <div className="rounded-lg border border-brand/20 bg-brand-soft px-3 py-2 text-xs text-brand">
+                {editBlocks.length === 0
+                  ? "Nenhum bloco no template. Adicione blocos para estruturar o treino deste atleta."
+                  : `${editBlocks.length} bloco${editBlocks.length !== 1 ? "s" : ""} — edite, reordene ou adicione. Não altera o template original.`}
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                <BlockEditor blocks={editBlocks} onChange={setEditBlocks} />
+              </div>
               <button
-                onClick={() => handleAction("blocks", () => onUpdateBlocks(workout.id, editBlocks))}
+                onClick={() => handleAction("personalizar", () => onUpdateBlocks(workout.id, editBlocks))}
                 disabled={actionLoading !== null}
-                className="w-full rounded-lg bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand/90 disabled:opacity-60"
+                className="sticky bottom-0 w-full rounded-lg bg-brand py-3 text-sm font-semibold text-white hover:bg-brand/90 disabled:opacity-60 shadow-md"
               >
-                {actionLoading === "blocks" ? "Salvando..." : "Salvar blocos personalizados"}
+                {actionLoading === "personalizar" ? "Salvando..." : "💾 Salvar personalização para este atleta"}
               </button>
             </div>
           )}

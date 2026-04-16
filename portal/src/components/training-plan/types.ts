@@ -102,7 +102,14 @@ export interface WorkoutRelease {
     template_name?: string;
     description?: string;
   } | null;
-  template: { id: string; name: string; description: string | null } | null;
+  template: {
+    id: string;
+    name: string;
+    description: string | null;
+    /** Blocks from the original template — used to pre-populate the editor
+     *  when content_snapshot.blocks is still empty. */
+    coaching_workout_blocks?: ReleaseBlock[];
+  } | null;
   completed: CompletedMetrics[];
   feedback: FeedbackSummary[];
 }

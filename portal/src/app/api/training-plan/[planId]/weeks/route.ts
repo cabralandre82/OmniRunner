@@ -37,7 +37,15 @@ export const GET = withErrorHandler(async (_req: NextRequest, { params }: Params
       workouts:plan_workout_releases (
         id, scheduled_date, workout_order, release_status, workout_type,
         workout_label, coach_notes, content_version, content_snapshot, video_url,
-        template:template_id (id, name, description),
+        template:template_id (
+          id, name, description,
+          coaching_workout_blocks (
+            order_index, block_type, duration_seconds, distance_meters,
+            target_pace_min_sec_per_km, target_pace_max_sec_per_km,
+            target_hr_zone, target_hr_min, target_hr_max,
+            rpe_target, repeat_count, notes
+          )
+        ),
         completed:completed_workouts (
           id, actual_distance_m, actual_duration_s, actual_avg_hr,
           perceived_effort, finished_at
