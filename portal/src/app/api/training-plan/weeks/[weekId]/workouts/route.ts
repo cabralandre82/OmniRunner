@@ -115,8 +115,8 @@ export const POST = withErrorHandler(async (req: NextRequest, { params }: Params
     p_video_url:      video_url ?? null,
     p_workout_order:  workout_order,
     p_blocks:         blocks && blocks.length > 0
-      ? JSON.stringify(blocks.map((b, i) => ({ ...b, order_index: i })))
-      : "[]",
+      ? blocks.map((b, i) => ({ ...b, order_index: i }))
+      : [],
   });
 
   if (error) {
