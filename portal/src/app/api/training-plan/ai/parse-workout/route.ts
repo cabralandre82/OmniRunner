@@ -91,7 +91,7 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: text },
       ],
-      max_tokens: 1200,
+      max_tokens: 2000,
       temperature: 0.1,
       response_format: { type: "json_object" },
     }),
@@ -106,21 +106,32 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
   }
 
   const openaiJson = await openaiRes.json();
-  const content = openaiJson.choices?.[0]?.message?.content;
+  const rawContent: string = openaiJson.choices?.[0]?.message?.content ?? "";
+  const finishReason: string = openaiJson.choices?.[0]?.finish_reason ?? "";
 
-  if (!content) {
+  if (!rawContent) {
     return NextResponse.json(
       { ok: false, error: { code: "AI_EMPTY_RESPONSE" } },
       { status: 502 }
     );
   }
 
+  // Strip markdown code fences if the model wrapped the JSON (e.g. ```json ... ```)
+  const content = rawContent
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/, "")
+    .trim();
+
   let result: Record<string, unknown>;
   try {
     result = JSON.parse(content);
   } catch {
+    // If the response was cut off due to token limit, give a clearer error
+    const hint = finishReason === "length"
+      ? "Resposta cortada por limite de tokens. Tente uma descrição mais curta."
+      : "A IA retornou um formato inesperado. Tente novamente.";
     return NextResponse.json(
-      { ok: false, error: { code: "AI_PARSE_ERROR", message: "AI returned invalid JSON" } },
+      { ok: false, error: { code: "AI_PARSE_ERROR", message: hint } },
       { status: 502 }
     );
   }

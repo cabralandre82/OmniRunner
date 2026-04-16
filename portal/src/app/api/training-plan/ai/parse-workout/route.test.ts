@@ -162,6 +162,46 @@ describe("POST /api/training-plan/ai/parse-workout", () => {
     expect(json.error.code).toBe("AI_API_ERROR");
   });
 
+  it("handles AI response wrapped in markdown code fences", async () => {
+    const aiPayload = {
+      workout_type: "continuous",
+      workout_label: "Corrida 30min",
+      description: "30 minutos de corrida leve",
+      coach_notes: null,
+      estimated_distance_km: 5,
+      estimated_duration_minutes: 30,
+      blocks: [],
+    };
+    // Simulate model wrapping JSON in ```json ... ```
+    const wrappedContent = "```json\n" + JSON.stringify(aiPayload) + "\n```";
+    mockFetch.mockReturnValueOnce(openaiResponse({
+      choices: [{ message: { content: wrappedContent }, finish_reason: "stop" }],
+    }));
+
+    const { POST } = await import("./route");
+    const res = await POST(makeReq({ text: "30min leve" }));
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.ok).toBe(true);
+    expect(json.data.workout_label).toBe("Corrida 30min");
+  });
+
+  it("returns token-limit hint when finish_reason is length", async () => {
+    // Simulate truncated response (finish_reason=length breaks the JSON)
+    mockFetch.mockReturnValueOnce(openaiResponse({
+      choices: [{ message: { content: '{"workout_type":"interval","blocks":[{"order_index":0' }, finish_reason: "length" }],
+    }));
+
+    const { POST } = await import("./route");
+    const res = await POST(makeReq({ text: "treino muito longo com muitos blocos e detalhes" }));
+    const json = await res.json();
+
+    expect(res.status).toBe(502);
+    expect(json.error.code).toBe("AI_PARSE_ERROR");
+    expect(json.error.message).toContain("Resposta cortada");
+  });
+
   it("sanitizes blocks — strips unknown block_type, caps at 30 blocks", async () => {
     const tooManyBlocks = Array.from({ length: 35 }, (_, i) => ({
       order_index: i,
