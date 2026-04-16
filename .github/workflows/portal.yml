@@ -61,7 +61,7 @@ jobs:
           CI: true
       - name: Upload coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: portal-coverage
           path: portal/coverage/
@@ -160,7 +160,7 @@ jobs:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
       - name: Upload screenshot artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: visual-regression-screenshots
           path: portal/e2e/visual-regression.spec.ts-snapshots/
