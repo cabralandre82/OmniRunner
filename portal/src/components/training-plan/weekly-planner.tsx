@@ -351,6 +351,7 @@ export function WeeklyPlanner({
 
       {/* Workout Action Drawer */}
       <WorkoutActionDrawer
+        key={activeWorkout?.id ?? "closed"}
         workout={activeWorkout}
         onClose={() => setActiveWorkout(null)}
         onRelease={handleRelease}
@@ -421,6 +422,7 @@ function WeekBlock({
   const workoutsByDate = new Map<string, WorkoutRelease[]>();
   for (const d of dates) workoutsByDate.set(d, []);
   for (const w of week.workouts ?? []) {
+    if (["cancelled", "replaced", "archived"].includes(w.release_status)) continue;
     const list = workoutsByDate.get(w.scheduled_date) ?? [];
     list.push(w);
     workoutsByDate.set(w.scheduled_date, list);

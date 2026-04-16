@@ -61,13 +61,6 @@ export function WorkoutActionDrawer({
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("06:00");
 
-  // Reset when workout changes
-  if (workout && editLabel !== (workout.workout_label ?? "") && tab === "info") {
-    setEditLabel(workout.workout_label ?? "");
-    setEditNotes(workout.coach_notes ?? "");
-    setEditBlocks(initialBlocks(workout));
-  }
-
   if (!workout) return null;
 
   const completed = workout.completed?.[0];

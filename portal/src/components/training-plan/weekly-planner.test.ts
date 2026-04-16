@@ -5,9 +5,9 @@ import type { WorkoutRelease, ReleaseBlock } from "./types";
 
 type Status = WorkoutRelease["release_status"];
 
-function makeWorkout(status: Status): WorkoutRelease {
+function makeWorkout(status: Status, id = "workout-id"): WorkoutRelease {
   return {
-    id: "workout-id",
+    id,
     scheduled_date: "2026-04-14",
     workout_order: 1,
     release_status: status,
@@ -23,11 +23,16 @@ function makeWorkout(status: Status): WorkoutRelease {
   };
 }
 
-/** Mirrors the activeWorkouts filter in WeekBlock */
+const INACTIVE: Status[] = ["cancelled", "replaced", "archived"];
+
+/** Mirrors the activeWorkouts filter in WeekBlock (header counter) */
 function activeWorkouts(workouts: WorkoutRelease[]) {
-  return workouts.filter(
-    (w) => !["cancelled", "replaced", "archived"].includes(w.release_status),
-  );
+  return workouts.filter((w) => !INACTIVE.includes(w.release_status));
+}
+
+/** Mirrors the workoutsByDate map filter in WeekBlock (grid chips) */
+function workoutsForGrid(workouts: WorkoutRelease[]) {
+  return workouts.filter((w) => !INACTIVE.includes(w.release_status));
 }
 
 // ── Mirrors the initialBlocks helper in WorkoutActionDrawer ──────────────────
@@ -59,6 +64,30 @@ function initialBlocks(workout: WorkoutRelease | null): ReleaseBlock[] {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+
+describe("WeekBlock — grid chips (workoutsForGrid)", () => {
+  it("excludes cancelled chips from the calendar grid", () => {
+    const workouts = [makeWorkout("released", "a"), makeWorkout("cancelled", "b")];
+    expect(workoutsForGrid(workouts)).toHaveLength(1);
+    expect(workoutsForGrid(workouts)[0].id).toBe("a");
+  });
+
+  it("excludes replaced and archived chips from the grid", () => {
+    const workouts = [
+      makeWorkout("completed", "a"),
+      makeWorkout("replaced", "b"),
+      makeWorkout("archived", "c"),
+    ];
+    expect(workoutsForGrid(workouts)).toHaveLength(1);
+  });
+
+  it("does not exclude draft, released, in_progress, completed", () => {
+    const workouts = ["draft", "released", "in_progress", "completed"].map((s, i) =>
+      makeWorkout(s as Status, `id-${i}`),
+    );
+    expect(workoutsForGrid(workouts)).toHaveLength(4);
+  });
+});
 
 describe("WeekBlock — active workout counting", () => {
   it("excludes cancelled workouts from total", () => {
