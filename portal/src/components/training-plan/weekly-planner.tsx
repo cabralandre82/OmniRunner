@@ -19,7 +19,7 @@ import {
 import { WorkoutPickerDrawer } from "./workout-picker-drawer";
 import { WorkoutActionDrawer } from "./workout-action-drawer";
 import { BatchAssignModal } from "./batch-assign-modal";
-import { SaveWeekTemplateModal, WeekTemplateLibrary } from "./week-template-library";
+import { WeekTemplateLibrary, type ApplyTarget } from "./week-template-library";
 
 const DAYS_PT = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
@@ -60,9 +60,8 @@ export function WeeklyPlanner({
   const [activePicker, setActivePicker] = useState<ActivePicker | null>(null);
   const [activeWorkout, setActiveWorkout] = useState<WorkoutRelease | null>(null);
   const [batchWeek, setBatchWeek] = useState<PlanWeek | null>(null);
-  const [saveTemplateWeek, setSaveTemplateWeek] = useState<{ id: string; label: string } | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
-  const [libraryTargetWeek, setLibraryTargetWeek] = useState<PlanWeek | null>(null);
+  const [libraryApplyTarget, setLibraryApplyTarget] = useState<ApplyTarget | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [pickerLoading, setPickerLoading] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -348,9 +347,17 @@ export function WeeklyPlanner({
             onBulkRelease={handleBulkRelease}
             onDuplicate={handleDuplicateWeek}
             onReplicateAsNext={(weekId) => handleReplicateAsNext(weekId, week.ends_on)}
-            onBatchAssign={(w) => setBatchWeek(w)}
-            onSaveAsTemplate={(w) => setSaveTemplateWeek({ id: w.id, label: w.label ?? `Semana ${w.week_number}` })}
-            onApplyTemplate={(w) => { setLibraryTargetWeek(w); setShowLibrary(true); }}
+            onBatchAssign={setBatchWeek}
+            onApplyTemplate={(w) => {
+              setLibraryApplyTarget({
+                planWeekId:  w.id,
+                athleteId:   athleteId,
+                weekStart:   w.starts_on,
+                weekLabel:   w.label ?? `Semana ${w.week_number}`,
+                athleteName: "atleta",
+              });
+              setShowLibrary(true);
+            }}
             actionLoading={actionLoading}
             activePicker={activePicker}
           />
@@ -393,25 +400,15 @@ export function WeeklyPlanner({
         onSuccess={handleBatchSuccess}
       />
 
-      {/* Save Week as Template Modal */}
-      <SaveWeekTemplateModal
-        open={saveTemplateWeek !== null}
-        weekId={saveTemplateWeek?.id ?? null}
-        weekLabel={saveTemplateWeek?.label ?? ""}
-        onClose={() => setSaveTemplateWeek(null)}
-        onSaved={() => showToast("success", "Modelo salvo na biblioteca!")}
-      />
-
       {/* Week Template Library */}
       <WeekTemplateLibrary
         open={showLibrary}
         groupId={groupId}
-        currentAthleteId={athleteId}
-        onClose={() => { setShowLibrary(false); setLibraryTargetWeek(null); }}
-        onApply={(templateWeekId, templateName) => {
-          setShowLibrary(false);
-          setBatchWeek(weeks.find((w) => w.id === templateWeekId) ?? { id: templateWeekId, plan_id: "", week_number: 0, starts_on: "", ends_on: "", label: templateName, coach_notes: null, cycle_type: "base", status: "draft", workouts: [] });
-          setLibraryTargetWeek(null);
+        applyTarget={libraryApplyTarget}
+        onClose={() => { setShowLibrary(false); setLibraryApplyTarget(null); }}
+        onApplied={() => {
+          showToast("success", "Modelo aplicado com sucesso!");
+          reloadWeeks();
         }}
       />
     </>
@@ -428,7 +425,6 @@ interface WeekBlockProps {
   onDuplicate: (weekId: string) => void;
   onReplicateAsNext: (weekId: string) => void;
   onBatchAssign: (week: PlanWeek) => void;
-  onSaveAsTemplate: (week: PlanWeek) => void;
   onApplyTemplate: (week: PlanWeek) => void;
   actionLoading: string | null;
   activePicker: ActivePicker | null;
@@ -442,7 +438,6 @@ function WeekBlock({
   onDuplicate,
   onReplicateAsNext,
   onBatchAssign,
-  onSaveAsTemplate,
   onApplyTemplate,
   actionLoading,
   activePicker,
@@ -562,15 +557,6 @@ function WeekBlock({
                     Distribuir para outros atletas
                   </button>
                   <div className="mx-3 my-1 border-t border-border" />
-                  <button
-                    onClick={() => { setShowMenu(false); onSaveAsTemplate(week); }}
-                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-content-secondary hover:bg-surface-elevated"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                    </svg>
-                    Salvar como modelo de semana
-                  </button>
                   <button
                     onClick={() => { setShowMenu(false); onApplyTemplate(week); }}
                     className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-content-secondary hover:bg-surface-elevated"

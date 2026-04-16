@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-04-16
+
+### Added (portal — biblioteca de modelos de semana redesenhada)
+- **Criar modelos do zero** (`📚 Biblioteca de Modelos` → `+ Novo modelo`): o treinador cria modelos abstratos com nome, descrição e grade de 7 dias. Para cada dia adiciona treinos com tipo, nome, descrição, observações e blocos GPS completos via `BlockEditor`.
+- **Editar modelos existentes**: botão ✏️ em cada modelo da lista abre o editor para alterar nome, descrição e treinos.
+- **Aplicar modelo com customização** (`Aplicar modelo da biblioteca` no menu ⋮ da semana): o treinador escolhe um modelo, vê preview de cada treino com a data real calculada, pode editar label/tipo/notas/blocos de cada treino individualmente, remover treinos indesejados, e opcionalmente liberar imediatamente. Confirma → treinos criados como draft (ou released) na semana do atleta.
+- **Toggle liberar imediatamente** no fluxo de aplicação (sem precisar abrir cada treino depois).
+
+### Changed
+- **`WeekTemplateLibrary` completamente reescrita**: substituída a abordagem de "salvar uma semana existente como template" por um editor de modelos independente. Componente agora tem 4 views: `library` (lista), `new`/`edit` (editor), `apply` (customização antes de aplicar).
+- **Removido "Salvar como modelo de semana"** do menu ⋮ de cada semana (fluxo anterior era invertido e pouco intuitivo).
+- **`SaveWeekTemplateModal` removido** (substituído pelo editor completo).
+
+### Infrastructure
+- `supabase/migrations/20260416200000_coaching_week_templates.sql`:
+  - `CREATE TABLE coaching_week_templates` — modelos com `group_id`, `name`, `description`
+  - `CREATE TABLE coaching_week_template_workouts` — treinos com `day_of_week` (0=Seg…6=Dom) em vez de `scheduled_date`
+  - RLS: staff do grupo pode ler/escrever seus próprios modelos
+  - `CREATE FUNCTION fn_apply_week_template` — copia treinos do modelo para a semana do atleta, com suporte a overrides por treino e `p_auto_release`
+- Novas rotas API:
+  - `GET|POST /week-templates` — listar e criar modelos
+  - `GET|PATCH|DELETE /week-templates/[id]` — detalhe, editar e excluir modelo
+  - `GET|POST /week-templates/[id]/workouts` — listar e adicionar treinos ao modelo
+  - `PATCH|DELETE /week-templates/[id]/workouts/[wid]` — editar e remover treino do modelo
+  - `POST /week-templates/[id]/apply` — aplicar modelo com overrides via `fn_apply_week_template`
+
+### Tests
+- Reescrita de `week-templates/route.test.ts` para o novo contrato (GET lista ordenada, POST cria template, erros de validação)
+- Novo `week-templates/[templateId]/apply/route.test.ts` — 7 casos: auth, validação UUID/data, chamada ao RPC com parâmetros corretos, contagem de workouts_created, mapeamento de erros (template_not_found/forbidden), passagem de overrides
+- Suite: **85 arquivos, 691 testes passando**
+
 ## [2.0.2] - 2026-04-16
 
 ### Fixed

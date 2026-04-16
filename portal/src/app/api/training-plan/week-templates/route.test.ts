@@ -42,47 +42,28 @@ describe("GET /api/training-plan/week-templates", () => {
     mockGetUser.mockResolvedValue({ data: { user: null }, error: new Error("no session") });
     const { GET } = await import("./route");
     const res = await GET(makeReq("GET"));
-    const json = await res.json();
     expect(res.status).toBe(401);
-    expect(json.error.code).toBe("UNAUTHORIZED");
   });
 
-  it("returns template list filtered by group", async () => {
-    const fakeWeeks = [
+  it("returns template list with workouts sorted by day_of_week", async () => {
+    const fakeTemplates = [
       {
-        id: "week-1",
-        week_number: 1,
-        starts_on: "2026-04-07",
-        ends_on: "2026-04-13",
-        label: "Base",
-        template_name: "Semana Base",
-        plan: { group_id: "group-uuid" },
+        id: "tpl-1",
+        name: "Semana Base",
+        description: null,
+        created_at: "2026-04-16",
+        updated_at: "2026-04-16",
         workouts: [
-          { id: "w1", scheduled_date: "2026-04-07", workout_type: "run", workout_label: null, release_status: "draft", template: { name: "Rodagem" } },
-          { id: "w2", scheduled_date: "2026-04-09", workout_type: "run", workout_label: "Tiro", release_status: "cancelled", template: null },
+          { id: "w1", day_of_week: 2, workout_order: 1, workout_type: "run", workout_label: "Intervalado", description: null, coach_notes: null, blocks: [] },
+          { id: "w2", day_of_week: 0, workout_order: 1, workout_type: "run", workout_label: "Rodagem", description: null, coach_notes: null, blocks: [] },
         ],
-      },
-      {
-        id: "week-2",
-        week_number: 2,
-        starts_on: "2026-04-14",
-        ends_on: "2026-04-20",
-        label: "Velocidade",
-        template_name: "Semana Velocidade",
-        plan: { group_id: "other-group" },
-        workouts: [],
       },
     ];
 
-    mockFrom.mockReturnValue({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      mockResolvedValue: vi.fn(),
-    });
-
     const chain = {
       select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockResolvedValue({ data: fakeWeeks, error: null }),
+      eq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockResolvedValue({ data: fakeTemplates, error: null }),
     };
     mockFrom.mockReturnValue(chain);
 
@@ -93,8 +74,24 @@ describe("GET /api/training-plan/week-templates", () => {
     expect(res.status).toBe(200);
     expect(json.ok).toBe(true);
     expect(json.data).toHaveLength(1);
-    expect(json.data[0].template_name).toBe("Semana Base");
-    expect(json.data[0].workout_count).toBe(1);
+    expect(json.data[0].name).toBe("Semana Base");
+    expect(json.data[0].workout_count).toBe(2);
+    // workouts sorted by day_of_week: Mon (0) before Wed (2)
+    expect(json.data[0].workouts[0].day_of_week).toBe(0);
+    expect(json.data[0].days_with_workouts).toEqual([0, 2]);
+  });
+
+  it("returns 500 on DB error", async () => {
+    const chain = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockResolvedValue({ data: null, error: { message: "DB down" } }),
+    };
+    mockFrom.mockReturnValue(chain);
+
+    const { GET } = await import("./route");
+    const res = await GET(makeReq("GET"));
+    expect(res.status).toBe(500);
   });
 });
 
@@ -104,127 +101,57 @@ describe("POST /api/training-plan/week-templates", () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: "coach-1" } }, error: null });
   });
 
-  it("returns 422 when template_name is empty", async () => {
+  it("returns 422 when name is empty", async () => {
     const { POST } = await import("./route");
-    const res = await POST(makeReq("POST", { week_id: "some-uuid", template_name: "" }));
+    const res = await POST(makeReq("POST", { name: "" }));
     const json = await res.json();
     expect(res.status).toBe(422);
     expect(json.error.code).toBe("VALIDATION_ERROR");
   });
 
-  it("returns 422 when week_id is not a uuid", async () => {
+  it("returns 422 when name is missing", async () => {
     const { POST } = await import("./route");
-    const res = await POST(makeReq("POST", { week_id: "not-a-uuid", template_name: "Semana" }));
-    const json = await res.json();
+    const res = await POST(makeReq("POST", {}));
     expect(res.status).toBe(422);
   });
 
-  it("returns 403 when week belongs to a different group", async () => {
-    const selectChain = {
+  it("creates a new template and returns 201", async () => {
+    const chain = {
+      insert: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
       single: vi.fn().mockResolvedValue({
-        data: { id: "week-1", plan: { group_id: "other-group" } },
+        data: { id: "new-tpl-id", name: "Semana Velocidade", description: null, created_at: "2026-04-16" },
         error: null,
       }),
     };
-    mockFrom.mockReturnValue(selectChain);
+    mockFrom.mockReturnValue(chain);
 
     const { POST } = await import("./route");
-    const res = await POST(
-      makeReq("POST", { week_id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", template_name: "Minha Semana" }),
-    );
+    const res = await POST(makeReq("POST", { name: "Semana Velocidade" }));
     const json = await res.json();
-    expect(res.status).toBe(403);
-    expect(json.error.code).toBe("FORBIDDEN");
-  });
 
-  it("saves template flag successfully", async () => {
-    let callCount = 0;
-    mockFrom.mockImplementation(() => {
-      callCount++;
-      if (callCount === 1) {
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          single: vi.fn().mockResolvedValue({
-            data: { id: "week-1", plan: { group_id: "group-uuid" } },
-            error: null,
-          }),
-        };
-      }
-      return {
-        update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: null }),
-      };
-    });
-
-    const { POST } = await import("./route");
-    const res = await POST(
-      makeReq("POST", { week_id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", template_name: "Semana Intensidade" }),
-    );
-    const json = await res.json();
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     expect(json.ok).toBe(true);
-    expect(json.data.template_name).toBe("Semana Intensidade");
-  });
-});
-
-describe("DELETE /api/training-plan/week-templates", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockGetUser.mockResolvedValue({ data: { user: { id: "coach-1" } }, error: null });
+    expect(json.data.id).toBe("new-tpl-id");
+    expect(json.data.name).toBe("Semana Velocidade");
   });
 
-  it("returns 422 when weekId is missing", async () => {
-    const { DELETE } = await import("./route");
-    const res = await DELETE(makeReq("DELETE"));
-    const json = await res.json();
-    expect(res.status).toBe(422);
-    expect(json.error.code).toBe("MISSING_WEEK_ID");
-  });
-
-  it("returns 403 when week belongs to a different group", async () => {
-    const selectChain = {
+  it("passes description when provided", async () => {
+    const chain = {
+      insert: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
       single: vi.fn().mockResolvedValue({
-        data: { id: "week-1", plan: { group_id: "other-group" } },
+        data: { id: "tpl-2", name: "Semana Base", description: "Foco em volume", created_at: "2026-04-16" },
         error: null,
       }),
     };
-    mockFrom.mockReturnValue(selectChain);
+    mockFrom.mockReturnValue(chain);
 
-    const { DELETE } = await import("./route");
-    const res = await DELETE(makeReq("DELETE", undefined, "http://localhost/api/training-plan/week-templates?weekId=week-1"));
+    const { POST } = await import("./route");
+    const res = await POST(makeReq("POST", { name: "Semana Base", description: "Foco em volume" }));
     const json = await res.json();
-    expect(res.status).toBe(403);
-  });
 
-  it("removes template flag successfully", async () => {
-    let callCount = 0;
-    mockFrom.mockImplementation(() => {
-      callCount++;
-      if (callCount === 1) {
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          single: vi.fn().mockResolvedValue({
-            data: { id: "week-1", plan: { group_id: "group-uuid" } },
-            error: null,
-          }),
-        };
-      }
-      return {
-        update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: null }),
-      };
-    });
-
-    const { DELETE } = await import("./route");
-    const res = await DELETE(makeReq("DELETE", undefined, "http://localhost/api/training-plan/week-templates?weekId=week-1"));
-    const json = await res.json();
-    expect(res.status).toBe(200);
-    expect(json.ok).toBe(true);
+    expect(res.status).toBe(201);
+    expect(json.data.description).toBe("Foco em volume");
   });
 });

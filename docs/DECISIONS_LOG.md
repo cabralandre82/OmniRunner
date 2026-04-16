@@ -4384,6 +4384,37 @@ Em uma decisão anterior (DECISAO 145), a integração nativa Vercel↔GitHub fo
 
 ---
 
+## DECISAO 159 — Redesenho da Biblioteca de Modelos de Semana (template-first)
+
+**Data:** 2026-04-16
+
+**Contexto:** O fluxo anterior da biblioteca de modelos era invertido: o treinador precisava primeiro criar uma semana para um atleta, depois salvar essa semana como template. Isso era pouco intuitivo, amarrava o modelo a datas e atletaIDs reais, e impedia criar modelos "em branco" de forma proativa.
+
+**Problema identificado:** `training_plan_weeks.is_week_template` era um atalho arquitetural insuficiente. Dados de semanas reais (scheduled_date, release_status, athlete_user_id) não pertencem a um modelo reutilizável.
+
+**Decisões:**
+
+1. **Novas tabelas dedicadas:**
+   - `coaching_week_templates` — cabeçalho do modelo (group_id, name, description)
+   - `coaching_week_template_workouts` — treinos com `day_of_week` (0=Seg…6=Dom) em vez de `scheduled_date`. A data real só é calculada no momento da aplicação: `week_start + day_of_week`.
+
+2. **Fluxo correto:** Coach cria modelo → define treinos por dia → aplica para atleta → customiza por treino → confirma.
+
+3. **`fn_apply_week_template`:** Itera os treinos do modelo, aplica overrides por `template_workout_id` (label, tipo, notas, blocos, ou `remove: true`), calcula `scheduled_date = p_week_start_date + day_of_week`, insere em `plan_workout_releases`. Suporta `p_auto_release`.
+
+4. **Componente `WeekTemplateLibrary` reescrito** com 4 views internas:
+   - `library`: lista de modelos com preview por dia, botões Editar/Aplicar/Excluir e botão "+ Novo modelo"
+   - `new`/`edit`: editor de template com campo de nome, grade de 7 dias, adicionar/editar/remover treinos por dia com `BlockEditor` embutido
+   - `apply`: preview com datas reais, edição inline de cada treino antes de confirmar, toggle "liberar imediatamente"
+
+5. **`SaveWeekTemplateModal` removido** — fluxo antigo eliminado.
+
+6. **Colunas `is_week_template`/`template_name` em `training_plan_weeks`** mantidas por ora (não causam dano, remoção futura com migration de cleanup).
+
+**Testes:** `week-templates/route.test.ts` reescrito + novo `[templateId]/apply/route.test.ts` (7 casos). 85 arquivos, 691 testes.
+
+---
+
 ## DECISAO 158 — Correção de dois bugs no fluxo de criação de treino via IA
 
 **Data:** 2026-04-16
