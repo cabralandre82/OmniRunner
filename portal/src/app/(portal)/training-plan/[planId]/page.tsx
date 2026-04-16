@@ -276,9 +276,13 @@ export default function TrainingPlanDetailPage() {
 
   // ── Stats ──────────────────────────────────────────────────────────────────
 
-  const totalWorkouts = weeks.reduce((s, w) => s + (w.workouts?.length ?? 0), 0);
+  const INACTIVE_STATUSES = ["cancelled", "replaced", "archived"];
+  const totalWorkouts = weeks.reduce(
+    (s, w) => s + (w.workouts?.filter((x) => !INACTIVE_STATUSES.includes(x.release_status)).length ?? 0),
+    0,
+  );
   const releasedCount = weeks.reduce(
-    (s, w) => s + (w.workouts?.filter((x) => ["released", "in_progress", "completed"].includes(x.release_status)).length ?? 0),
+    (s, w) => s + (w.workouts?.filter((x) => ["released", "in_progress"].includes(x.release_status)).length ?? 0),
     0,
   );
   const completedCount = weeks.reduce(

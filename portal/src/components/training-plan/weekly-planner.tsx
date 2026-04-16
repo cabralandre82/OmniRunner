@@ -422,7 +422,6 @@ function WeekBlock({
   const workoutsByDate = new Map<string, WorkoutRelease[]>();
   for (const d of dates) workoutsByDate.set(d, []);
   for (const w of week.workouts ?? []) {
-    if (["cancelled", "replaced", "archived"].includes(w.release_status)) continue;
     const list = workoutsByDate.get(w.scheduled_date) ?? [];
     list.push(w);
     workoutsByDate.set(w.scheduled_date, list);
@@ -596,13 +595,18 @@ function WeekBlock({
 function WorkoutChip({ workout, onClick }: { workout: WorkoutRelease; onClick: () => void }) {
   const completed = workout.completed?.[0];
   const isCompleted = workout.release_status === "completed";
+  const isInactive = ["cancelled", "replaced", "archived"].includes(workout.release_status);
   const emoji = TYPE_EMOJI[workout.workout_type] ?? "🏃";
   const name = workout.workout_label || workout.template?.name || "Treino";
 
   return (
     <button
       onClick={onClick}
-      className={`group relative w-full rounded-lg border px-2 py-1.5 text-left text-[11px] transition-all hover:shadow-sm hover:scale-[1.02] active:scale-100 ${STATUS_BG[workout.release_status]}`}
+      className={`group relative w-full rounded-lg border px-2 py-1.5 text-left text-[11px] transition-all ${
+        isInactive
+          ? "cursor-default opacity-40 grayscale"
+          : "hover:shadow-sm hover:scale-[1.02] active:scale-100"
+      } ${STATUS_BG[workout.release_status]}`}
     >
       {/* Updated badge */}
       {workout.content_version > 1 && workout.release_status === "released" && (
@@ -614,7 +618,7 @@ function WorkoutChip({ workout, onClick }: { workout: WorkoutRelease; onClick: (
       <div className="flex items-start gap-1.5">
         <span className="text-[13px] leading-none mt-0.5">{emoji}</span>
         <div className="min-w-0">
-          <p className="truncate font-medium leading-tight">{name}</p>
+          <p className={`truncate font-medium leading-tight ${isInactive ? "line-through" : ""}`}>{name}</p>
           <p className="opacity-70 leading-tight mt-0.5">
             {STATUS_LABEL[workout.release_status as ReleaseStatus]}
           </p>
