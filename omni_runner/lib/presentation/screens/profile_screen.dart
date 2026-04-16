@@ -111,31 +111,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadStats(String uid) async {
+    final db = sl<SupabaseClient>();
+
+    // Each query is independent: one failure does not prevent the others
+    // from updating the UI.
+
+    int? badgeCount;
     try {
-      final db = sl<SupabaseClient>();
-      final badgesFuture = db.from('badge_awards').select('id').eq('user_id', uid);
-      final progFuture = db.from('user_progressions').select('level, xp, current_streak_days').eq('user_id', uid).maybeSingle();
-      final sessionsFuture = db.from('sessions').select('total_distance_m').eq('user_id', uid).limit(5000);
+      final rows = await db.from('badge_awards').select('id').eq('user_id', uid);
+      badgeCount = (rows as List).length;
+    } on Exception catch (e) {
+      AppLogger.debug('badge_awards query failed', tag: _tag, error: e);
+    }
 
-      final badges = await badgesFuture;
-      final prog = await progFuture;
-      final sessions = await sessionsFuture;
+    int? level;
+    int? xp;
+    int? streak;
+    try {
+      final prog = await db
+          .from('profile_progress')
+          .select('level, total_xp, daily_streak_count')
+          .eq('user_id', uid)
+          .maybeSingle();
+      level = (prog?['level'] as int?) ?? 1;
+      xp = (prog?['total_xp'] as int?) ?? 0;
+      streak = (prog?['daily_streak_count'] as int?) ?? 0;
+    } on Exception catch (e) {
+      AppLogger.debug('profile_progress query failed', tag: _tag, error: e);
+    }
 
+    double? totalKm;
+    try {
+      final sessions = await db
+          .from('sessions')
+          .select('total_distance_m')
+          .eq('user_id', uid)
+          .limit(5000);
       double km = 0;
       for (final s in sessions) {
         km += (s['total_distance_m'] as num?)?.toDouble() ?? 0;
       }
-      if (mounted) {
-        setState(() {
-          _badgeCount = badges.length;
-          _level = (prog?['level'] as int?) ?? 1;
-          _xp = (prog?['xp'] as int?) ?? 0;
-          _currentStreak = (prog?['current_streak_days'] as int?) ?? 0;
-          _totalKm = km / 1000;
-        });
-      }
+      totalKm = km / 1000;
     } on Exception catch (e) {
-      AppLogger.debug('Profile stats load failed', tag: _tag, error: e);
+      AppLogger.debug('sessions query failed', tag: _tag, error: e);
+    }
+
+      if (mounted) {
+      setState(() {
+        if (badgeCount != null) _badgeCount = badgeCount;
+        if (level != null) _level = level;
+        if (xp != null) _xp = xp;
+        if (streak != null) _currentStreak = streak;
+        if (totalKm != null) _totalKm = totalKm;
+      });
     }
   }
 
