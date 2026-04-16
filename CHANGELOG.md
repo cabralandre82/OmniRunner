@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.4] - 2026-04-14
+
+### Changed (portal)
+- **Aba "Blocos" renomeada para "✏️ Personalizar"** (`workout-action-drawer.tsx`): nome anterior era pouco descritivo para o professor.
+- **Editor de blocos pré-populado com o template** (`workout-action-drawer.tsx`, `types.ts`, `[planId]/weeks/route.ts`): ao abrir a aba Personalizar, o editor agora exibe todos os blocos do template original. Prioridade: `content_snapshot.blocks` (edições do atleta) → `template.coaching_workout_blocks` (template original, ordenado por `order_index`) → vazio.
+- **Modal Personalizar ampliado para 96vh** (`workout-action-drawer.tsx`): quando a aba Personalizar está ativa, o drawer ocupa quase toda a tela para facilitar a edição de múltiplos blocos.
+- **Treinos cancelados excluídos da contagem semanal** (`weekly-planner.tsx`): `totalWorkouts`, `completedCount`, `releasedCount` e `draftCount` agora excluem treinos com status `cancelled`, `replaced` ou `archived`. Corrige regressão onde cancelar 1 de 4 treinos ainda mostrava "0 de 4" em vez de "0 de 3".
+- **API `/api/training-plan/[planId]/weeks`** (`route.ts`): passa a incluir `coaching_workout_blocks` no join do template para que o frontend receba os blocos sem round-trip adicional.
+
+### Tests (new)
+- `portal/src/components/training-plan/weekly-planner.test.ts` — 11 testes: contagem de treinos ativos excluindo `cancelled`/`replaced`/`archived`, regressão "4 treinos → cancelar 1 → 3 ativos", lógica `initialBlocks` (prioridade snapshot vs template, ordenação, nulo).
+
+---
+
 ## [1.9.3] - 2026-04-15
 
 ### Fixed

@@ -4249,3 +4249,31 @@ Em uma decisão anterior (DECISAO 145), a integração nativa Vercel↔GitHub fo
 **Resultado:** 2051 testes passando (0 falhas), 0 erros no `dart analyze`, build APK funcional, todas as migrations Supabase aplicadas.
 
 ---
+
+## DECISAO 153 — Editor de blocos: pré-popular com template, modal fullscreen, contar apenas treinos ativos
+
+**Data:** 2026-04-14  
+**Contexto:** O professor relatou quatro problemas na planilha de treinos do portal:
+1. A aba "Blocos" tinha nome pouco descritivo.
+2. Ao abrir a aba, o editor aparecia vazio — o template selecionado não era carregado.
+3. O modal era pequeno demais para editar múltiplos blocos.
+4. Cancelar um treino da semana não alterava o contador ("0 de 4" em vez de "0 de 3").
+
+**Decisões:**
+
+1. **Renomeação da aba:** `"🧩 Blocos"` → `"✏️ Personalizar"`. Nome mais claro para o professor entender que está personalizando o treino do atleta sem alterar o template original.
+
+2. **Pré-população com blocos do template:**  
+   - A API `GET /api/training-plan/[planId]/weeks` passou a incluir `coaching_workout_blocks` no join do template (antes só trazia `id`, `name`, `description`).  
+   - O tipo `WorkoutRelease.template` foi estendido com `coaching_workout_blocks?: ReleaseBlock[]`.  
+   - A função `initialBlocks()` no drawer prioriza: `content_snapshot.blocks` (edições do atleta) → `template.coaching_workout_blocks` (template original, ordenado por `order_index`) → `[]`.  
+   - Isso garante que na primeira abertura o professor vê todos os blocos do template e pode modificar/adicionar sem recriar do zero.
+
+3. **Modal fullscreen:** Quando a aba Personalizar está ativa, o drawer usa `height: 96vh` em vez de `maxHeight: 85vh`. Nas demais abas o comportamento original é mantido.
+
+4. **Excluir cancelados da contagem:** O filtro `activeWorkouts` exclui `cancelled`, `replaced` e `archived` antes de calcular `totalWorkouts`, `completedCount`, `releasedCount` e `draftCount`. Assim um cancelamento é imediatamente refletido no cabeçalho da semana.
+
+**Testes adicionados:**  
+`portal/src/components/training-plan/weekly-planner.test.ts` — 11 casos cobrindo a lógica `activeWorkouts` e `initialBlocks`, incluindo regressão explícita "4 treinos → cancelar 1 → mostra 3".
+
+---
