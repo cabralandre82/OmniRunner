@@ -34,6 +34,7 @@ export function BatchAssignModal({
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [targetStartDate, setTargetStartDate] = useState("");
+  const [autoRelease, setAutoRelease] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const [results, setResults] = useState<AssignResult[]>([]);
   const [done, setDone] = useState(false);
@@ -45,6 +46,7 @@ export function BatchAssignModal({
     setSelectedIds(new Set());
     setResults([]);
     setDone(false);
+    setAutoRelease(false);
 
     // Calculate default target start (same week next cycle)
     if (sourceWeek) {
@@ -109,6 +111,7 @@ export function BatchAssignModal({
           target_athlete_ids: athleteIds,
           target_start_date: targetStartDate,
           group_id: groupId,
+          auto_release: autoRelease,
         }),
       });
       const json = await res.json();
@@ -252,6 +255,39 @@ export function BatchAssignModal({
                   Os treinos serão copiados mantendo o dia da semana relativo.
                 </p>
               </div>
+
+              {/* Auto-release toggle */}
+              <button
+                type="button"
+                onClick={() => setAutoRelease((v) => !v)}
+                className={`flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors ${
+                  autoRelease
+                    ? "border-brand bg-brand-soft"
+                    : "border-border hover:bg-surface-elevated"
+                }`}
+              >
+                <div
+                  className={`relative flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                    autoRelease ? "bg-brand" : "bg-border"
+                  }`}
+                >
+                  <span
+                    className={`absolute h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                      autoRelease ? "translate-x-4" : "translate-x-0.5"
+                    }`}
+                  />
+                </div>
+                <div>
+                  <p className={`text-sm font-medium ${autoRelease ? "text-brand" : "text-content-primary"}`}>
+                    Liberar treinos imediatamente
+                  </p>
+                  <p className="text-[11px] text-content-muted">
+                    {autoRelease
+                      ? "Os atletas já receberão os treinos liberados no app."
+                      : "Os treinos ficarão como rascunho — você libera depois."}
+                  </p>
+                </div>
+              </button>
 
               {/* Athlete selector */}
               <div>

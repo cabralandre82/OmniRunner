@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   WorkoutRelease,
   ReleaseBlock,
+  GroupMember,
   STATUS_LABEL,
   STATUS_BG,
   WORKOUT_TYPE_LABEL,
@@ -16,6 +17,8 @@ import { BlockEditor } from "./block-editor";
 
 interface WorkoutActionDrawerProps {
   workout: WorkoutRelease | null;
+  groupId: string;
+  currentAthleteId: string;
   onClose: () => void;
   onRelease: (id: string) => Promise<void>;
   onCancel: (id: string) => Promise<void>;
@@ -27,6 +30,8 @@ interface WorkoutActionDrawerProps {
 
 export function WorkoutActionDrawer({
   workout,
+  groupId,
+  currentAthleteId,
   onClose,
   onRelease,
   onCancel,
@@ -36,7 +41,7 @@ export function WorkoutActionDrawer({
   onSchedule,
 }: WorkoutActionDrawerProps) {
   const open = workout !== null;
-  const [tab, setTab] = useState<"info" | "edit" | "personalizar" | "copy" | "schedule">("info");
+  const [tab, setTab] = useState<"info" | "edit" | "personalizar" | "copy" | "distribute" | "schedule">("info");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Edit state
@@ -56,6 +61,66 @@ export function WorkoutActionDrawer({
 
   // Copy state
   const [copyDate, setCopyDate] = useState("");
+
+  // Distribute state
+  const [distDate, setDistDate] = useState(workout?.scheduled_date ?? "");
+  const [distMembers, setDistMembers] = useState<GroupMember[]>([]);
+  const [distLoading, setDistLoading] = useState(false);
+  const [distSelected, setDistSelected] = useState<Set<string>>(new Set());
+  const [distSearch, setDistSearch] = useState("");
+  const [distResults, setDistResults] = useState<{ name: string; ok: boolean; error?: string }[]>([]);
+  const [distDone, setDistDone] = useState(false);
+
+  useEffect(() => {
+    if (tab !== "distribute" || distMembers.length > 0) return;
+    setDistLoading(true);
+    fetch(`/api/groups/${groupId}/members`)
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.ok) setDistMembers((j.data ?? []).filter((m: GroupMember) => m.user_id !== currentAthleteId));
+      })
+      .catch(() => {})
+      .finally(() => setDistLoading(false));
+  }, [tab, groupId, currentAthleteId, distMembers.length]);
+
+  const distFiltered = useMemo(() => {
+    if (!distSearch.trim()) return distMembers;
+    const q = distSearch.toLowerCase();
+    return distMembers.filter((m) => m.display_name.toLowerCase().includes(q));
+  }, [distMembers, distSearch]);
+
+  async function handleDistribute() {
+    if (distSelected.size === 0 || !distDate || !workout) return;
+    setDistDone(false);
+    setDistResults([]);
+    setActionLoading("distribute");
+    try {
+      const res = await fetch(`/api/training-plan/workouts/${workout.id}/distribute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          target_athlete_ids: Array.from(distSelected),
+          target_date: distDate,
+          group_id: groupId,
+        }),
+      });
+      const json = await res.json();
+      if (json.ok) {
+        setDistResults(
+          (json.data.results ?? []).map((r: { athlete_id: string; success: boolean; error?: string }) => ({
+            name: distMembers.find((m) => m.user_id === r.athlete_id)?.display_name ?? r.athlete_id,
+            ok: r.success,
+            error: r.error,
+          })),
+        );
+        setDistDone(true);
+      }
+    } catch {
+      // noop
+    } finally {
+      setActionLoading(null);
+    }
+  }
 
   // Schedule state
   const [scheduleDate, setScheduleDate] = useState("");
@@ -145,6 +210,7 @@ export function WorkoutActionDrawer({
           <button onClick={() => setTab("edit")} className={tabClass("edit")}>Editar</button>
           <button onClick={() => setTab("personalizar")} className={tabClass("personalizar")}>✏️ Personalizar</button>
           <button onClick={() => setTab("copy")} className={tabClass("copy")}>Copiar</button>
+          <button onClick={() => setTab("distribute")} className={tabClass("distribute")}>📤 Distribuir</button>
           {isActionable && (
             <button onClick={() => setTab("schedule")} className={tabClass("schedule")}>Agendar</button>
           )}
@@ -367,6 +433,88 @@ export function WorkoutActionDrawer({
               >
                 {actionLoading === "copy" ? "Copiando..." : "Copiar para este dia"}
               </button>
+            </div>
+          )}
+
+          {/* DISTRIBUTE TAB */}
+          {tab === "distribute" && (
+            <div className="space-y-4">
+              {distDone ? (
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-content-primary">✅ Resultado</p>
+                  {distResults.map((r, i) => (
+                    <div key={i} className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm ${r.ok ? "bg-success-soft text-success" : "bg-error-soft text-error"}`}>
+                      <span>{r.name}</span>
+                      <span>{r.ok ? "✓ Enviado" : `✗ ${r.error ?? "Erro"}`}</span>
+                    </div>
+                  ))}
+                  <button onClick={() => { setDistDone(false); setDistSelected(new Set()); }} className="w-full rounded-lg border border-border py-2 text-sm text-content-secondary hover:bg-surface-elevated">
+                    Distribuir para mais atletas
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-content-secondary">
+                    Copia este treino específico para outros atletas na data escolhida. Cada atleta recebe o treino como rascunho.
+                  </p>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-content-secondary">Data de destino</label>
+                    <input
+                      type="date"
+                      value={distDate}
+                      onChange={(e) => setDistDate(e.target.value)}
+                      className="w-full rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm text-content-primary focus:border-brand focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <div className="mb-2 flex items-center justify-between">
+                      <label className="text-xs font-medium text-content-secondary">
+                        Atletas ({distSelected.size} selecionado{distSelected.size !== 1 ? "s" : ""})
+                      </label>
+                      <div className="flex gap-2 text-xs">
+                        <button onClick={() => setDistSelected(new Set(distFiltered.map((m) => m.user_id)))} className="text-brand hover:underline">Todos</button>
+                        <span className="text-border">|</span>
+                        <button onClick={() => setDistSelected(new Set())} className="text-content-muted hover:underline">Limpar</button>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Buscar atleta..."
+                      value={distSearch}
+                      onChange={(e) => setDistSearch(e.target.value)}
+                      className="mb-2 w-full rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm text-content-primary placeholder:text-content-muted focus:border-brand focus:outline-none"
+                    />
+                    <div className="max-h-44 overflow-y-auto rounded-lg border border-border divide-y divide-border">
+                      {distLoading ? (
+                        <div className="p-4 text-center text-sm text-content-muted">Carregando atletas...</div>
+                      ) : distFiltered.length === 0 ? (
+                        <div className="p-4 text-center text-sm text-content-muted">Nenhum atleta encontrado.</div>
+                      ) : distFiltered.map((m) => {
+                        const sel = distSelected.has(m.user_id);
+                        return (
+                          <button
+                            key={m.user_id}
+                            onClick={() => setDistSelected((prev) => { const n = new Set(prev); sel ? n.delete(m.user_id) : n.add(m.user_id); return n; })}
+                            className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors ${sel ? "bg-brand-soft" : "hover:bg-surface-elevated"}`}
+                          >
+                            <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${sel ? "border-brand bg-brand text-white" : "border-border"}`}>
+                              {sel && <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>}
+                            </div>
+                            <span className={`text-sm ${sel ? "font-medium text-brand" : "text-content-primary"}`}>{m.display_name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleDistribute}
+                    disabled={distSelected.size === 0 || !distDate || actionLoading !== null}
+                    className="w-full rounded-lg bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand/90 disabled:opacity-60"
+                  >
+                    {actionLoading === "distribute" ? "Enviando..." : `📤 Distribuir para ${distSelected.size || ""} atleta${distSelected.size !== 1 ? "s" : ""}`}
+                  </button>
+                </>
+              )}
             </div>
           )}
 

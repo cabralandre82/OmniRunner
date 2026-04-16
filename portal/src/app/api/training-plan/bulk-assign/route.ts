@@ -19,6 +19,7 @@ const BulkAssignSchema = z.object({
   target_athlete_ids: z.array(z.string().uuid()).min(1).max(100),
   target_start_date:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   group_id:           z.string().uuid(),
+  auto_release:       z.boolean().default(false),
 });
 
 /**
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { source_week_id, target_athlete_ids, target_start_date, group_id } = parsed.data;
+    const { source_week_id, target_athlete_ids, target_start_date, group_id, auto_release } = parsed.data;
 
     // Fetch source week + its workouts
     const { data: sourceWeek, error: weekErr } = await supabase
@@ -134,6 +135,7 @@ export async function POST(req: NextRequest) {
             p_target_start_date: target_start_date,
             p_group_id:          group_id,
             p_actor_id:          user.id,
+            p_auto_release:      auto_release,
           },
         );
 

@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-04-16
+
+### Added (portal — passagem de treino)
+- **Distribuir treino individual para N atletas** (`WorkoutActionDrawer` → aba 📤 Distribuir): o professor abre qualquer treino da planilha, escolhe N atletas do grupo + data destino e envia em paralelo. Cada atleta recebe o treino como rascunho na semana correta (criando plano/semana automaticamente se necessário).
+- **Biblioteca de modelos de semana** (menu ⋮ da semana → "Salvar como modelo" + botão "📚 Biblioteca de Modelos"): qualquer semana pode ser salva como modelo reutilizável com um nome. A biblioteca lista todos os modelos do grupo com preview por dia da semana e permite aplicar para N atletas via fluxo existente de distribuição.
+- **Liberar treinos ao distribuir** (`BatchAssignModal` → toggle "Liberar treinos imediatamente"): ao distribuir uma semana, o professor pode optar por liberar os treinos imediatamente para os atletas sem precisar abrir cada planilha depois.
+- **Visão coletiva do grupo** (aba "Visão Grupo" em Passagem de Treino): grade com atletas nas linhas e dias da semana nas colunas. Chips coloridos por status mostram o que cada atleta tem na semana. Navegação por semana com setas e botão "Hoje". Clicar no ícone de link abre a planilha do atleta.
+
+### Fixed (SQL)
+- **`fn_bulk_assign_week` nunca foi versionada**: a função existia apenas no banco de produção sem migration. Versionada em `20260416000000_bulk_assign_and_week_templates.sql` com suporte a `p_auto_release`.
+- **`fn_copy_workout` com `p_target_athlete` usava semana errada**: quando copiava para outro atleta sem `p_target_week_id`, usava o `plan_week_id` do atleta origem. Nova função `fn_distribute_workout` resolve calculando/criando a semana correta do atleta destino.
+
+### Infrastructure
+- `supabase/migrations/20260416000000_bulk_assign_and_week_templates.sql`:
+  - `ALTER TABLE training_plan_weeks ADD COLUMN is_week_template boolean, template_name text`
+  - `CREATE FUNCTION fn_bulk_assign_week` (versiona função existente + `p_auto_release`)
+  - `CREATE FUNCTION fn_distribute_workout` (copia treino individual para outro atleta com semana automática)
+- Novas rotas API: `POST /workouts/[id]/distribute`, `GET|POST|DELETE /week-templates`, `GET /group-week-view`
+
+---
+
 ## [1.9.6] - 2026-04-14
 
 ### Fixed (portal)

@@ -28,6 +28,7 @@ Os demais estão documentados para avaliação e implementação futura.
 ### ✅ AI-03 — Comentário pós-corrida personalizado
 **Onde:** App — `RunSummaryScreen`  
 **O que faz:** Imediatamente após uma corrida, o app chama a edge function que busca as últimas 8 sessões do atleta, calcula a média histórica e pede à IA um comentário de 1–2 frases comparando a corrida atual com o histórico. Aparece como um card `✨` no painel de métricas. Falha silenciosamente — nunca quebra a tela de resumo.  
+**Deploy:** Realizado manualmente via editor do Supabase Dashboard (versão standalone, sem imports relativos — lógica de CORS, autenticação e helpers inlined diretamente no arquivo). Rate limiting removido da versão de dashboard (dependia de módulo compartilhado `_shared/rate_limit.ts`). Versão completa com módulos compartilhados mantida em `supabase/functions/generate-run-comment/index.ts` para deploy via CLI (`supabase functions deploy generate-run-comment`).  
 **Edge Function:** `generate-run-comment`  
 **Arquivos:** `supabase/functions/generate-run-comment/index.ts`, `omni_runner/lib/presentation/screens/run_summary_screen.dart`  
 **Implementado em:** 2026-04-14

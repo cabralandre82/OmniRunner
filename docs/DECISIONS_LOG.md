@@ -4250,6 +4250,45 @@ Em uma decisão anterior (DECISAO 145), a integração nativa Vercel↔GitHub fo
 
 ---
 
+## DECISAO 156 — Features de distribuição em massa: distribuir treino individual, biblioteca de modelos, liberar ao distribuir, visão coletiva do grupo
+
+**Data:** 2026-04-16  
+**Contexto:** O coach relatou que o fluxo de passagem de treino exigia muitos passos. Quatro melhorias foram implementadas após estudo detalhado da arquitetura.
+
+### Achado crítico
+`fn_bulk_assign_week` estava referenciada no código (`bulk-assign/route.ts`) mas **nunca havia sido versionada em nenhuma migration**. A função provavelmente foi criada manualmente no dashboard do Supabase. Isso significava que o "Distribuir para outros atletas" poderia quebrar se o banco fosse recriado. A migration `20260416000000_bulk_assign_and_week_templates.sql` versiona essa função corretamente e adiciona suporte a `p_auto_release`.
+
+### Achado crítico 2
+`fn_copy_workout` com `p_target_athlete` e `p_target_week_id = NULL` usava o `plan_week_id` do atleta de origem, inserindo o treino na semana errada. A nova função `fn_distribute_workout` resolve isso calculando a segunda-feira correta da data destino e criando plano/semana do atleta destino automaticamente.
+
+### Feature 1 — Distribuir treino individual para N atletas
+- **Por que:** antes só havia "Copiar para mesmo atleta" no drawer. Para enviar um treino específico para 10 atletas era necessário entrar em cada plano individualmente.
+- **Implementação:** nova rota `POST /api/training-plan/workouts/[workoutId]/distribute`, nova função SQL `fn_distribute_workout`, nova aba "📤 Distribuir" no `WorkoutActionDrawer` com seleção múltipla de atletas + data destino + resultado por atleta.
+- **Novas props no drawer:** `groupId` e `currentAthleteId` (para excluir o atleta atual da lista).
+
+### Feature 2 — Biblioteca de modelos de semana
+- **Por que:** o professor montava a mesma estrutura de semana repetidamente. Sem um lugar para salvar e reutilizar, cada nova semana era criada do zero.
+- **Decisão de design:** usar `is_week_template + template_name` na tabela `training_plan_weeks` em vez de criar uma tabela nova. Mais simples, sem migração de dados. Uma semana existente pode ser salva como modelo com um clique.
+- **Implementação:** `GET/POST/DELETE /api/training-plan/week-templates`, componentes `SaveWeekTemplateModal` e `WeekTemplateLibrary`, botões "Salvar como modelo" e "Aplicar modelo da biblioteca" no menu ⋮ de cada semana, botão "📚 Biblioteca de Modelos" global na planilha.
+- **Aplicar modelo:** reutiliza o `BatchAssignModal` existente com a semana-template como origem.
+
+### Feature 4 — Distribuir + liberar em um passo
+- **Por que:** após distribuir, o professor ainda precisava abrir o plano de cada atleta para clicar "Liberar semana".
+- **Implementação:** toggle "Liberar treinos imediatamente" no `BatchAssignModal` (UI tipo switch com texto explicativo dinâmico), parâmetro `auto_release: boolean` na rota `bulk-assign`, parâmetro `p_auto_release` na SQL `fn_bulk_assign_week` (insere com `release_status = 'released'` em vez de `'draft'`).
+
+### Feature 5 — Visão coletiva do grupo (aba "Visão Grupo")
+- **Por que:** o professor só conseguia ver um atleta por vez. Para ter uma visão da semana do grupo inteiro era necessário abrir cada planilha individualmente.
+- **Decisão de design:** aba separada (`?view=group`) na página principal de Passagem de Treino, para não confundir com a visão individual. Apenas leitura na fase 1 — clicar no chip abre a planilha do atleta. Ações (liberar, cancelar) permanecem na visão individual.
+- **Layout:** tabela com atletas nas linhas e dias da semana nas colunas. Chips coloridos por status. Legenda de cores no rodapé.
+- **API:** `GET /api/training-plan/group-week-view?weekStart=YYYY-MM-DD` — resolve automaticamente para a segunda-feira da semana atual se `weekStart` for omitido. Navegação por semana no frontend (setas + botão "Hoje").
+
+### Feature 3 — Plano de grupo (broadcast) — PENDENTE
+**Descrição:** um plano único vinculado ao grupo inteiro onde o professor publica treinos e todos os atletas herdam automaticamente. Personalização individual seria um override por atleta, não a regra.  
+**Por que não foi implementado agora:** é uma mudança arquitetural maior — exige nova tabela `group_training_plans`, conceito de "herança" de treinos (atleta pode ter treino do plano de grupo + override individual), e impacto no app mobile (Flutter). Requer design detalhado antes de implementar.  
+**Pré-requisito para implementação futura:** definir o modelo de herança (cópia no momento da distribuição vs. referência live), comportamento quando o professor edita o plano de grupo depois que atletas já receberam, e como o mobile distingue treino do plano de grupo de treino personalizado.
+
+---
+
 ## DECISAO 155 — Contador real do plano e visual de chip cancelado
 
 **Data:** 2026-04-14  
