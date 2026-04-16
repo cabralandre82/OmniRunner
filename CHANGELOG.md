@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.5] - 2026-04-14
+
+### Fixed (portal)
+- **Chip de treino cancelado ainda aparecia na grade** (`weekly-planner.tsx`): a correção anterior (`v1.9.4`) só filtrava o contador do cabeçalho; o mapa `workoutsByDate` que alimenta os chips na grade ainda incluía treinos `cancelled/replaced/archived`. Adicionado `continue` ao iterar sobre `week.workouts` ao construir o mapa.
+- **Blocos do template não carregavam na aba Personalizar** (`workout-action-drawer.tsx`): o `WorkoutActionDrawer` é um componente persistente — `useState(() => initialBlocks(workout))` só executa uma vez na montagem. Ao clicar em outro treino o estado não reinicializava. A lógica de reset existente falhava silenciosamente quando ambos os treinos tinham `workout_label = null` (condição `editLabel !== workout.workout_label` nunca disparava). Corrigido com `key={activeWorkout?.id ?? "closed"}` no `WeeklyPlanner`, forçando remontagem completa do drawer a cada troca de treino.
+
+### Tests (updated)
+- `portal/src/components/training-plan/weekly-planner.test.ts`: adicionados 3 testes para `workoutsForGrid` cobrindo exclusão de chips cancelados/replaced/archived da grade; total 14 testes.
+
+---
+
 ## [1.9.4] - 2026-04-14
 
 ### Changed (portal)

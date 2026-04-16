@@ -4250,6 +4250,29 @@ Em uma decisão anterior (DECISAO 145), a integração nativa Vercel↔GitHub fo
 
 ---
 
+## DECISAO 154 — Correção de regressões: chip cancelado na grade e estado do drawer não resetando
+
+**Data:** 2026-04-14  
+**Contexto:** Após a `v1.9.4`, dois bugs persistiram:
+1. O chip do treino cancelado ainda aparecia na grade mesmo com o contador corrigido.
+2. A aba Personalizar continuava vazia ao abrir um treino com template.
+
+**Causa raiz de cada bug:**
+
+1. **Chip cancelado:** A `v1.9.4` filtrou corretamente o array `activeWorkouts` usado no cabeçalho, mas o mapa `workoutsByDate` — que alimenta os chips na grade — ainda iterava sobre `week.workouts ?? []` sem filtro. O chip aparecia com badge "Cancelado" porque nunca foi excluído da construção do mapa.
+
+2. **Estado do drawer:** `WorkoutActionDrawer` é montado uma vez e recebe `workout` como prop. O `useState(() => initialBlocks(workout))` só executa na **primeira** montagem. A lógica de reset que existia (`if (workout && editLabel !== ... && tab === "info")`) nunca disparava quando ambos os treinos tinham `workout_label = null`, porque `"" !== ""` é `false`. Portanto `editBlocks` ficava no valor da inicialização (geralmente `[]`) para qualquer treino aberto após o primeiro.
+
+**Decisões:**
+
+1. **Filtrar `workoutsByDate` na fonte:** ao construir o mapa de chips por data, pular workouts com status `cancelled`, `replaced` ou `archived` com um `continue` explícito. Isso elimina o chip da grade sem afetar o drawer (que ainda recebe o objeto completo via `activeWorkout`).
+
+2. **`key` prop para forçar remontagem:** adicionar `key={activeWorkout?.id ?? "closed"}` ao `WorkoutActionDrawer` no `WeeklyPlanner`. O React destrói e recria o componente sempre que a key muda, garantindo que `useState` reinicialize corretamente com `initialBlocks(novoWorkout)`. A lógica de reset manual foi removida por ser desnecessária e frágil.
+
+**Testes:** `weekly-planner.test.ts` — 3 novos casos para `workoutsForGrid`, total 14 testes passando.
+
+---
+
 ## DECISAO 153 — Editor de blocos: pré-popular com template, modal fullscreen, contar apenas treinos ativos
 
 **Data:** 2026-04-14  
