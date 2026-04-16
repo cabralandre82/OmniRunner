@@ -4383,3 +4383,27 @@ Em uma decisão anterior (DECISAO 145), a integração nativa Vercel↔GitHub fo
 **Resultado:** 83 arquivos de teste, 672 testes passando no portal.
 
 ---
+
+## DECISAO 158 — Correção de dois bugs no fluxo de criação de treino via IA
+
+**Data:** 2026-04-16
+
+**Contexto:** Após implementar o parse de treinos por IA, dois bugs foram relatados pelo usuário ao tentar usar a feature no portal:
+1. "AI returned invalid JSON" ao gerar o treino.
+2. "cannot get array length of a scalar" ao clicar em "Usar este treino".
+
+**Decisões:**
+
+1. **Bug 1 — Code fences no JSON da IA:**
+   O modelo `gpt-4o-mini` (e ocasionalmente o `gpt-4o`) retorna o JSON embrulhado em code fences de markdown (` ```json ... ``` `) mesmo quando `response_format: { type: "json_object" }` está configurado. O `JSON.parse()` do conteúdo cru falha com SyntaxError. Solução: fazer strip das fences com `.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "")` antes do parse. Também adicionada mensagem específica quando `finish_reason === "length"` (JSON cortado no meio por limite de tokens).
+
+2. **Bug 2 — `p_blocks` como string:**
+   A rota `POST /api/training-plan/weeks/[weekId]/workouts` chamava `supabase.rpc("fn_create_descriptive_workout", { p_blocks: JSON.stringify(blocks) })`. O `JSON.stringify()` converte o array em uma string de texto. O Supabase envia essa string ao PostgreSQL como tipo `text`, não `jsonb`. Quando a função SQL chama `jsonb_array_length(p_blocks)`, o PostgreSQL rejeita com "cannot get array length of a scalar". Solução: passar `blocks` (array JS) diretamente — o Supabase client serializa automaticamente para JSONB.
+
+3. **Upgrade de modelo:** `gpt-4o-mini` → `gpt-4o`. O custo por chamada é baixo para um portal B2B com volume moderado, e a qualidade de estruturação de blocos de treino (paces, zonas cardíacas, séries) é visivelmente superior. `max_tokens` ajustado de 1200 → 2000.
+
+**Testes adicionados:**
+- `weeks/[weekId]/workouts/route.test.ts` — 11 casos, incluindo regressão explícita que verifica `Array.isArray(p_blocks) === true` e `typeof p_blocks !== "string"`.
+- `ai/parse-workout/route.test.ts` — 2 novos casos: strip de code fences e hint de token limit.
+
+---

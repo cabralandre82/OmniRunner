@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-04-16
+
+### Fixed
+- **`p_blocks` enviado como string ao RPC** (`weeks/[weekId]/workouts`): `JSON.stringify(blocks)` passava texto ao PostgreSQL; `jsonb_array_length()` explodia com "cannot get array length of a scalar". Corrigido passando o array JS diretamente — o Supabase client serializa para JSONB automaticamente. Regressão inclui teste que verifica `typeof p_blocks !== "string"`.
+- **AI parse-workout retornando "AI returned invalid JSON"**: o modelo `gpt-4o` (e `gpt-4o-mini`) às vezes embrulha a resposta em code fences de markdown (` ```json ... ``` `) mesmo com `response_format: json_object`. A rota agora faz strip das fences antes de `JSON.parse`. Também exibe mensagem específica quando `finish_reason=length` (resposta cortada por limite de tokens).
+
+### Changed
+- **Modelo de IA de `gpt-4o-mini` → `gpt-4o`** para parse de treinos: melhor qualidade de estruturação de blocos (pace, zona cardíaca, repetições), menos propenso a embrulhar JSON em code fences. `max_tokens` ajustado de 1200 → 2000.
+
+### Tests
+- `POST /api/training-plan/weeks/[weekId]/workouts` — 11 novos casos: auth, validação, regressão `p_blocks` como array (não string), array vazio, criação bem-sucedida, `fn_create_plan_workout` com template, mapeamento de erros DB (forbidden/date_outside_week), reindexação de `order_index`.
+- `POST /api/training-plan/ai/parse-workout` — 2 novos casos: strip de code fences markdown, hint específico para `finish_reason=length`.
+- Suite total: **84 arquivos, 685 testes passando**.
+
 ## [2.0.1] - 2026-04-16
 
 ### Infrastructure
