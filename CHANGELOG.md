@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-04-16
+
+### Infrastructure
+- **Migration `20260416000000_bulk_assign_and_week_templates.sql` aplicada via CLI** (`supabase db push`): funções `fn_bulk_assign_week` e `fn_distribute_workout`, colunas `is_week_template` / `template_name` em produção.
+- **Arquivo de migration renomeado** de `20260414000000_training_plan_v2.sql` → `20260414001000_training_plan_v2.sql` para resolver conflito de timestamp duplicado no histórico do Supabase CLI.
+
+### Tests
+- Novos testes unitários para as 3 rotas API criadas em v2.0.0:
+  - `POST /api/training-plan/workouts/[workoutId]/distribute` — 7 casos: autenticação, validação Zod (UUIDs RFC 4122, data, lista vazia), sucesso total, sucesso parcial, chamada ao RPC correto.
+  - `GET|POST|DELETE /api/training-plan/week-templates` — 9 casos: autenticação, validação, filtro por grupo, FORBIDDEN entre grupos.
+  - `GET /api/training-plan/group-week-view` — 5 casos: autenticação, grupo sem atletas, weekStart/weekEnd calculados, montagem de dados, erro 500 em falha de DB.
+- Total do suite do portal: **83 arquivos, 672 testes passando**.
+
 ## [2.0.0] - 2026-04-16
 
 ### Added (portal — passagem de treino)

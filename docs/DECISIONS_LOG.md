@@ -4357,3 +4357,29 @@ Em uma decisão anterior (DECISAO 145), a integração nativa Vercel↔GitHub fo
 `portal/src/components/training-plan/weekly-planner.test.ts` — 11 casos cobrindo a lógica `activeWorkouts` e `initialBlocks`, incluindo regressão explícita "4 treinos → cancelar 1 → mostra 3".
 
 ---
+
+## DECISAO 157 — Aplicação da migration v2.0.0 e cobertura de testes das novas rotas API
+
+**Data:** 2026-04-16  
+**Contexto:** A migration `20260416000000_bulk_assign_and_week_templates.sql` criada na v2.0.0 ainda não havia sido aplicada em produção. As 3 rotas API novas (`/distribute`, `/week-templates`, `/group-week-view`) também não tinham cobertura de testes unitários.
+
+**Decisões:**
+
+1. **Aplicação da migration via `supabase db push`:**  
+   Migrations anteriores haviam sido aplicadas manualmente via SQL editor do Supabase Dashboard, sem passar pelo CLI. O CLI tentou reaplicá-las e falhou. Estratégia adotada:
+   - Executar `supabase migration repair --status applied` para as migrations já aplicadas manualmente (`20260414000000`, `20260415000000`, `20260415010000`, `20260415020000`).
+   - Renomear `20260414000000_training_plan_v2.sql` → `20260414001000_training_plan_v2.sql` para resolver o conflito de timestamp duplicado (dois arquivos com o mesmo prefixo `20260414000000`). O novo timestamp `20260414001000` foi registrado diretamente na tabela `supabase_migrations.schema_migrations` via psql.
+   - Executar `supabase db push` para aplicar apenas `20260416000000_bulk_assign_and_week_templates.sql`.
+
+2. **Testes para rotas API novas:**  
+   Seguindo o padrão dos testes existentes (`update/route.test.ts`, `templates/route.test.ts`):
+   - **`distribute/route.test.ts`** (7 testes): 401 sem auth, 422 para lista vazia/data inválida/UUID inválido, sucesso total com `success_count=2`, sucesso parcial com erro por atleta, verificação do RPC `fn_distribute_workout` com parâmetros corretos.
+   - **`week-templates/route.test.ts`** (9 testes): GET filtra por grupo (exclui `cancelled`), POST valida template_name vazio e UUID inválido, POST retorna 403 se semana é de outro grupo, POST salva flag com sucesso, DELETE sem `weekId` retorna 422, DELETE de outro grupo retorna 403, DELETE remove flag com sucesso.
+   - **`group-week-view/route.test.ts`** (5 testes): 401 sem auth, grupo sem atletas retorna lista vazia, `weekStart`/`weekEnd` calculados corretamente, montagem de dados de atleta com treinos, 500 em erro de DB.
+   
+3. **Descoberta: Zod v4 valida UUID com RFC 4122 estrito:**  
+   Zod v4 (usado no portal) verifica que o 3° grupo do UUID começa com `[1-8]` (versão) e o 4° grupo começa com `[89abAB]` (variante). UUIDs inventados ad-hoc como `cc7e-...` podem falhar. Todos os UUIDs dos testes foram corrigidos para respeitar o padrão RFC 4122.
+
+**Resultado:** 83 arquivos de teste, 672 testes passando no portal.
+
+---
