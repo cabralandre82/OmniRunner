@@ -1,0 +1,40 @@
+name: Audit Registry
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'docs/audit/**'
+      - 'tools/audit/**'
+      - '.github/workflows/audit.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'docs/audit/**'
+      - 'tools/audit/**'
+      - '.github/workflows/audit.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate audit findings
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install root deps (js-yaml + tsx)
+        run: npm install --no-save js-yaml@4 tsx@4 @types/js-yaml@4
+
+      - name: Verify finding schemas
+        run: npx tsx tools/audit/verify.ts
+
+      - name: Check registry/FINDINGS/SCORECARD drift
+        run: npx tsx tools/audit/build-registry.ts --check

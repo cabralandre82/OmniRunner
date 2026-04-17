@@ -3,11 +3,17 @@
   "private": true,
   "description": "Omni Runner — plataforma de corrida com gamificação e coaching",
   "scripts": {
-    "prepare": "npx lefthook install"
+    "prepare": "npx lefthook install",
+    "audit:build": "npx tsx tools/audit/build-registry.ts",
+    "audit:verify": "npx tsx tools/audit/verify.ts",
+    "audit:check": "npx tsx tools/audit/verify.ts && npx tsx tools/audit/build-registry.ts --check"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.4.2",
     "@commitlint/config-conventional": "^20.4.2",
-    "lefthook": "^2.1.1"
+    "@types/js-yaml": "^4.0.9",
+    "js-yaml": "^4.1.0",
+    "lefthook": "^2.1.1",
+    "tsx": "^4.19.2"
   }
 }
