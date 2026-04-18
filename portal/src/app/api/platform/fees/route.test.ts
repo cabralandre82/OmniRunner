@@ -198,5 +198,30 @@ describe("Platform Fees API", () => {
       );
       expect(res.status).toBe(400);
     });
+
+    // L01-13 / L01-44: garante que fx_spread é editável via UI após fix
+    it("accepts fee_type='fx_spread' (L01-13 fix)", async () => {
+      mockPlatformAdmin();
+      mockAdminFrom.mockReturnValueOnce(
+        adminQueryChain({ error: null }),
+      );
+
+      const res = await POST(
+        req({ fee_type: "fx_spread", rate_pct: 1.2 }),
+      );
+      expect(res.status).toBe(200);
+    });
+
+    it("accepts fee_type='billing_split'", async () => {
+      mockPlatformAdmin();
+      mockAdminFrom.mockReturnValueOnce(
+        adminQueryChain({ error: null }),
+      );
+
+      const res = await POST(
+        req({ fee_type: "billing_split", rate_pct: 2.5 }),
+      );
+      expect(res.status).toBe(200);
+    });
   });
 });

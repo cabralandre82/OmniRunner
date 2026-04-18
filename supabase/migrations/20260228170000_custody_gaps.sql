@@ -37,6 +37,17 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_clearing_events_burn_ref
   ON public.clearing_events(burn_ref_id);
 
 -- 4. FX spread config (add to platform_fee_config)
+-- L01-44 fix: o CHECK original criado em 20260228150001 só permite
+-- ('clearing','swap','maintenance'). Sem expandi-lo antes do INSERT, fresh
+-- installs quebram aqui. A edição abaixo torna esta migration idempotente
+-- e forward-compatible. A source of truth canônica é 20260417130000.
+ALTER TABLE public.platform_fee_config
+  DROP CONSTRAINT IF EXISTS platform_fee_config_fee_type_check;
+
+ALTER TABLE public.platform_fee_config
+  ADD CONSTRAINT platform_fee_config_fee_type_check
+    CHECK (fee_type IN ('clearing', 'swap', 'maintenance', 'billing_split', 'fx_spread'));
+
 INSERT INTO public.platform_fee_config (fee_type, rate_pct) VALUES
   ('fx_spread', 0.75)
 ON CONFLICT (fee_type) DO NOTHING;

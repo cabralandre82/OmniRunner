@@ -4,27 +4,31 @@ audit_ref: "1.13"
 lens: 1
 title: "POST /api/platform/fees — Alteração de taxas"
 severity: medium
-status: fix-pending
+status: in-progress
 wave: 2
 discovered_at: 2026-04-17
+fix_ready_at: 2026-04-17
 tags: ["finance", "rate-limit", "mobile", "portal", "migration", "reliability"]
 files:
   - portal/src/app/api/platform/fees/route.ts
-correction_type: process
-test_required: false
-tests: []
+  - portal/src/app/platform/fees/page.tsx
+  - portal/src/app/api/platform/fees/route.test.ts
+correction_type: code
+test_required: true
+tests:
+  - portal/src/app/api/platform/fees/route.test.ts
 linked_issues: []
 linked_prs: []
 owner: unassigned
 runbook: null
 effort_points: 2
 blocked_by: []
-duplicate_of: null
+duplicate_of: L01-44
 deferred_to_wave: null
-note: null
+note: "Corrigido junto com L01-44 (mesma raiz: drift em platform_fee_config). Zod enum estendido + FEE_LABELS.fx_spread + 2 testes adicionais."
 ---
 # [L01-13] POST /api/platform/fees — Alteração de taxas
-> **Lente:** 1 — CISO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending
+> **Lente:** 1 — CISO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** in-progress · **Duplicate of:** [L01-44](./L01-44-migration-drift-platform-fee-config-fee-type-check.md)
 **Camada:** PORTAL + BACKEND
 **Personas impactadas:** Plataforma (platform_admin)
 ## Achado

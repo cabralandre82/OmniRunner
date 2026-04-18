@@ -20,6 +20,10 @@ const FEE_LABELS: Record<string, { label: string; description: string }> = {
     label: "Split de Cobrança",
     description: "Percentual retido pela plataforma nas cobranças de assinaturas",
   },
+  fx_spread: {
+    label: "FX Spread (Saques)",
+    description: "Percentual retido como spread cambial quando uma assessoria solicita saque em moeda local (ex.: BRL). Crítico em crises cambiais — ajuste imediato aqui evita saques com prejuízo operacional.",
+  },
 };
 
 interface Fee {

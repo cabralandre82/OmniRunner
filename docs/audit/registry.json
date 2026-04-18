@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T02:43:21.704Z",
+  "generated_at": "2026-04-18T02:50:03.569Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 329,
-    "in-progress": 2,
+    "fix-pending": 327,
+    "in-progress": 4,
     "fixed": 17
   },
   "by_wave": {
@@ -444,9 +444,10 @@
       "lens": 1,
       "title": "POST /api/platform/fees — Alteração de taxas",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "in-progress",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "rate-limit",
@@ -456,20 +457,24 @@
         "reliability"
       ],
       "files": [
-        "portal/src/app/api/platform/fees/route.ts"
+        "portal/src/app/api/platform/fees/route.ts",
+        "portal/src/app/platform/fees/page.tsx",
+        "portal/src/app/api/platform/fees/route.test.ts"
       ],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "portal/src/app/api/platform/fees/route.test.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
-      "duplicate_of": null,
+      "duplicate_of": "L01-44",
       "deferred_to_wave": null,
-      "note": null
+      "note": "Corrigido junto com L01-44 (mesma raiz: drift em platform_fee_config). Zod enum estendido + FEE_LABELS.fx_spread + 2 testes adicionais."
     },
     {
       "id": "L01-14",
@@ -1359,19 +1364,26 @@
       "lens": 1,
       "title": "Migration drift — platform_fee_config.fee_type CHECK + INSERT 'fx_spread'",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "in-progress",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "migration",
         "ux",
         "reliability"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260228170000_custody_gaps.sql",
+        "supabase/migrations/20260417130000_fix_platform_fee_config_check.sql",
+        "tools/integration_tests.ts"
+      ],
+      "correction_type": "migration",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/integration_tests.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "unassigned",
@@ -1380,7 +1392,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Correção implementada em 2026-04-17: nova migration canônica + edição forward-compat em 170000 + 2 testes de integração. L01-13 corrigido junto (cross-ref; enum portal/fees atualizado)."
     },
     {
       "id": "L01-45",

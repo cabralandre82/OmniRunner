@@ -6,8 +6,12 @@ import { rateLimit } from "@/lib/rate-limit";
 import { cached, invalidate, CacheTTL } from "@/lib/cache";
 import { z } from "zod";
 
+// L01-13 / L01-44 fix: inclui 'fx_spread' para espelhar o CHECK canônico em
+// platform_fee_config (ver supabase/migrations/20260417130000_fix_platform_fee_config_check.sql).
+// Alterar fx_spread via UI é crítico em crises cambiais — antes do fix, só era
+// possível alterar via SQL direto no DB.
 const updateSchema = z.object({
-  fee_type: z.enum(["clearing", "swap", "maintenance", "billing_split"]),
+  fee_type: z.enum(["clearing", "swap", "maintenance", "billing_split", "fx_spread"]),
   rate_pct: z.number().min(0).max(100).optional(),
   rate_usd: z.number().min(0).max(10).optional(),
   is_active: z.boolean().optional(),

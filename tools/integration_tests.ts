@@ -715,6 +715,41 @@ async function testConstraints() {
       `Expected check violation, got: ${error!.message}`
     );
   });
+
+  // 3.8 L01-44: platform_fee_config.fee_type CHECK aceita todos os 5 valores canônicos
+  const CANONICAL_FEE_TYPES = [
+    "clearing",
+    "swap",
+    "maintenance",
+    "billing_split",
+    "fx_spread",
+  ];
+
+  await test("L01-44: platform_fee_config has all 5 canonical fee_type rows seeded", async () => {
+    const { data, error } = await db
+      .from("platform_fee_config")
+      .select("fee_type")
+      .in("fee_type", CANONICAL_FEE_TYPES);
+    assert(!error, `Unexpected error: ${error?.message}`);
+    const seeded = new Set((data ?? []).map((r: { fee_type: string }) => r.fee_type));
+    for (const t of CANONICAL_FEE_TYPES) {
+      assert(seeded.has(t), `fee_type '${t}' ausente em platform_fee_config (drift em 170000 não aplicado)`);
+    }
+  });
+
+  await test("L01-44: platform_fee_config.fee_type CHECK rejects invalid fee_type", async () => {
+    const { error } = await db.from("platform_fee_config").insert({
+      fee_type: "not_a_real_fee",
+      rate_pct: 1.0,
+    });
+    assert(!!error, "Expected check constraint violation for invalid fee_type");
+    assert(
+      error!.message.includes("check") ||
+        error!.message.includes("violates") ||
+        error!.code === "23514",
+      `Expected check violation, got: ${error!.message}`
+    );
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
