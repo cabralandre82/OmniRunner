@@ -2775,6 +2775,123 @@ async function testIdempotency() {
       );
     }
   });
+
+  // ───────────────────────────────────────────────────────────────────────
+  // L01-04: custody_deposits idempotency-key + cross-group ownership
+  // ───────────────────────────────────────────────────────────────────────
+  await test("L01-04: fn_create_custody_deposit_idempotent — same key returns same id", async () => {
+    // Garante account (FK requirement de confirm + invariants)
+    await db.from("custody_accounts").upsert(
+      { group_id: GROUP_A },
+      { onConflict: "group_id" },
+    );
+
+    const key = `l0104-itest-${Date.now()}`;
+
+    const { data: r1, error: e1 } = await db.rpc(
+      "fn_create_custody_deposit_idempotent",
+      {
+        p_group_id: GROUP_A,
+        p_amount_usd: 250,
+        p_coins_equivalent: 250,
+        p_payment_gateway: "stripe",
+        p_idempotency_key: key,
+      },
+    );
+    assert(!e1, `First call error: ${e1?.message}`);
+    const row1 = (Array.isArray(r1) ? r1[0] : r1) as any;
+    assert(!!row1?.deposit_id, "first call must return deposit_id");
+    assert(
+      row1.was_idempotent === false,
+      `first call should be was_idempotent=false, got ${row1.was_idempotent}`,
+    );
+
+    const { data: r2, error: e2 } = await db.rpc(
+      "fn_create_custody_deposit_idempotent",
+      {
+        p_group_id: GROUP_A,
+        p_amount_usd: 250,
+        p_coins_equivalent: 250,
+        p_payment_gateway: "stripe",
+        p_idempotency_key: key,
+      },
+    );
+    assert(!e2, `Replay call error: ${e2?.message}`);
+    const row2 = (Array.isArray(r2) ? r2[0] : r2) as any;
+    assert(
+      row2.deposit_id === row1.deposit_id,
+      `replay should return same deposit_id; got ${row2.deposit_id} vs ${row1.deposit_id}`,
+    );
+    assert(
+      row2.was_idempotent === true,
+      `replay should be was_idempotent=true, got ${row2.was_idempotent}`,
+    );
+
+    // Cleanup
+    await db.from("custody_deposits").delete().eq("idempotency_key", key);
+  });
+
+  await test("L01-04: confirm_custody_deposit blocks cross-group", async () => {
+    await db.from("custody_accounts").upsert(
+      [{ group_id: GROUP_A }, { group_id: GROUP_B }],
+      { onConflict: "group_id" },
+    );
+
+    const key = `l0104-cross-${Date.now()}`;
+
+    // Cria depósito no GROUP_A
+    const { data: created } = await db.rpc(
+      "fn_create_custody_deposit_idempotent",
+      {
+        p_group_id: GROUP_A,
+        p_amount_usd: 50,
+        p_coins_equivalent: 50,
+        p_payment_gateway: "stripe",
+        p_idempotency_key: key,
+      },
+    );
+    const depositId = (Array.isArray(created) ? created[0] : created)
+      ?.deposit_id;
+    assert(!!depositId, "setup: deposit must be created");
+
+    // Tenta confirmar via GROUP_B → deve falhar
+    const { error: errCross } = await db.rpc("confirm_custody_deposit", {
+      p_deposit_id: depositId,
+      p_group_id: GROUP_B,
+    });
+    assert(
+      !!errCross && /not found|wrong group|already processed/i.test(errCross.message ?? ""),
+      `cross-group confirm should fail with generic message, got: ${errCross?.message ?? "no error"}`,
+    );
+
+    // Confirm legítimo no GROUP_A funciona
+    const { error: errOk } = await db.rpc("confirm_custody_deposit", {
+      p_deposit_id: depositId,
+      p_group_id: GROUP_A,
+    });
+    assert(!errOk, `legitimate confirm should succeed, got: ${errOk?.message}`);
+
+    // Reverter custody_account smoke (subtrai os 50 que confirm creditou)
+    await db
+      .from("custody_accounts")
+      .update({ total_deposited_usd: 0 })
+      .eq("group_id", GROUP_A);
+
+    // Cleanup
+    await db.from("custody_deposits").delete().eq("idempotency_key", key);
+  });
+
+  await test("L01-04: confirm_custody_deposit on non-existent deposit fails generic", async () => {
+    const fakeUuid = "00000000-0000-4000-a000-deadbeef0001";
+    const { error } = await db.rpc("confirm_custody_deposit", {
+      p_deposit_id: fakeUuid,
+      p_group_id: GROUP_A,
+    });
+    assert(
+      !!error && /not found|wrong group|already processed/i.test(error.message ?? ""),
+      `non-existent confirm should return generic error (anti-enumeration), got: ${error?.message ?? "no error"}`,
+    );
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

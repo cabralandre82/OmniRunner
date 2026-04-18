@@ -87,42 +87,81 @@ export async function getCustodyDeposits(groupId: string): Promise<CustodyDeposi
   }
 }
 
+/**
+ * L01-04 — cria custody_deposit idempotente.
+ *
+ * `idempotencyKey` é OBRIGATÓRIO. O caller (route handler) deve:
+ *   • Aceitar `x-idempotency-key` do cliente (UUID v4 recomendado).
+ *   • Rejeitar requests sem header (force conscious idempotency).
+ *
+ * Reuso da mesma chave para o mesmo `groupId` retorna o deposit existente
+ * (`wasIdempotent=true`) em vez de criar duplicata. Race entre dois
+ * requests concorrentes com a mesma chave é resolvida pela RPC via
+ * `unique_violation` capturado.
+ */
 export async function createCustodyDeposit(
   groupId: string,
   amountUsd: number,
   gateway: "stripe" | "mercadopago",
-): Promise<{ deposit: CustodyDeposit; checkoutUrl?: string } | null> {
+  idempotencyKey: string,
+): Promise<{
+  deposit: CustodyDeposit;
+  wasIdempotent: boolean;
+  checkoutUrl?: string;
+} | null> {
   try {
     const db = createServiceClient();
     const coinsEquivalent = Math.floor(amountUsd);
 
-    const { data: deposit, error } = await db
-      .from("custody_deposits")
-      .insert({
-        group_id: groupId,
-        amount_usd: amountUsd,
-        coins_equivalent: coinsEquivalent,
-        payment_gateway: gateway,
-        status: "pending",
-      })
-      .select("*")
-      .single();
+    const { data, error } = await db.rpc(
+      "fn_create_custody_deposit_idempotent",
+      {
+        p_group_id: groupId,
+        p_amount_usd: amountUsd,
+        p_coins_equivalent: coinsEquivalent,
+        p_payment_gateway: gateway,
+        p_idempotency_key: idempotencyKey,
+      },
+    );
 
-    if (error || !deposit) {
-      throw new Error(error?.message ?? "Failed to create deposit");
+    if (error) throw new Error(error.message);
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row?.deposit_id) {
+      throw new Error("RPC returned no deposit_id");
     }
 
-    return { deposit };
+    const deposit: CustodyDeposit = {
+      id: row.deposit_id,
+      group_id: groupId,
+      amount_usd: row.amount_usd,
+      coins_equivalent: row.coins_equivalent,
+      payment_gateway: row.payment_gateway,
+      payment_reference: row.payment_reference,
+      status: row.status,
+      created_at: row.created_at,
+      confirmed_at: null,
+    };
+
+    return { deposit, wasIdempotent: Boolean(row.was_idempotent) };
   } catch (err) {
     if (isTableMissing(err)) return null;
     throw err;
   }
 }
 
-export async function confirmDeposit(depositId: string): Promise<void> {
+/**
+ * L01-04 — exige `groupId` para bloquear confirm cross-group. SQL valida
+ * `WHERE id = p_deposit_id AND group_id = p_group_id` no mesmo SELECT
+ * que faz FOR UPDATE.
+ */
+export async function confirmDeposit(
+  depositId: string,
+  groupId: string,
+): Promise<void> {
   const db = createServiceClient();
   const { error } = await db.rpc("confirm_custody_deposit", {
     p_deposit_id: depositId,
+    p_group_id: groupId,
   });
 
   if (error) {
@@ -285,9 +324,10 @@ export async function confirmDepositByReference(paymentReference: string): Promi
   try {
     const db = createServiceClient();
 
+    // L01-04 — also fetch group_id; confirmDeposit agora exige.
     const { data: existing } = await db
       .from("custody_deposits")
-      .select("id, status")
+      .select("id, status, group_id")
       .eq("payment_reference", paymentReference)
       .maybeSingle();
 
@@ -295,7 +335,7 @@ export async function confirmDepositByReference(paymentReference: string): Promi
     if (existing.status === "confirmed") return { depositId: existing.id, alreadyConfirmed: true };
     if (existing.status !== "pending") throw new Error(`Deposit status is ${existing.status}`);
 
-    await confirmDeposit(existing.id);
+    await confirmDeposit(existing.id, existing.group_id);
     return { depositId: existing.id, alreadyConfirmed: false };
   } catch (err) {
     if (isTableMissing(err)) return null;

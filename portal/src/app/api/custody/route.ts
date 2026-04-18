@@ -12,14 +12,26 @@ import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
-const depositSchema = z.object({
-  amount_usd: z.number().min(10).max(1_000_000),
-  gateway: z.enum(["stripe", "mercadopago"]),
-});
+const depositSchema = z
+  .object({
+    amount_usd: z.number().min(10).max(1_000_000),
+    gateway: z.enum(["stripe", "mercadopago"]),
+  })
+  .strict();
 
-const confirmSchema = z.object({
-  deposit_id: z.string().uuid(),
-});
+const confirmSchema = z
+  .object({
+    deposit_id: z.string().uuid(),
+  })
+  .strict();
+
+/**
+ * L01-04 — UUID v4 (RFC 4122) — formato canônico aceito.
+ * Aceitamos qualquer UUID v4 OU outras chaves opacas com >= 16 chars
+ * (alguns clientes usam ULID, etc).
+ */
+const IDEMPOTENCY_KEY_RE =
+  /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[A-Za-z0-9_-]{16,128})$/i;
 
 async function requireAdminMaster() {
   const supabase = createClient();
@@ -82,7 +94,11 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      await confirmDeposit(parsed.data.deposit_id);
+      // L01-04 — propaga auth.groupId para confirm (cross-group block).
+      // Se um admin_master do grupo A tentar confirmar deposit do grupo B,
+      // a RPC retorna "Deposit not found, wrong group, or already processed"
+      // (mensagem genérica para defender contra enumeration).
+      await confirmDeposit(parsed.data.deposit_id, auth.groupId);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Confirm failed";
       return NextResponse.json({ error: msg }, { status: 422 });
@@ -98,7 +114,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // Create deposit
+  // ─── Create deposit ────────────────────────────────────────────────────
+  // L01-04 — exige x-idempotency-key. Sem header: 400. UUID v4 ou opaque
+  // 16-128 chars (ULID, nanoid, etc). Mesma chave + mesmo group → mesmo
+  // deposit (idempotent hit).
+  const idempotencyKey = req.headers.get("x-idempotency-key")?.trim();
+  if (!idempotencyKey) {
+    return NextResponse.json(
+      {
+        error: "Missing x-idempotency-key header",
+        hint: "Send a UUID v4 in the x-idempotency-key header to make this request safely retryable.",
+        code: "IDEMPOTENCY_KEY_REQUIRED",
+      },
+      { status: 400 },
+    );
+  }
+  if (!IDEMPOTENCY_KEY_RE.test(idempotencyKey)) {
+    return NextResponse.json(
+      {
+        error: "Invalid x-idempotency-key format",
+        hint: "Expected UUID v4 or opaque 16-128 char [A-Za-z0-9_-] string.",
+        code: "IDEMPOTENCY_KEY_INVALID",
+      },
+      { status: 400 },
+    );
+  }
+
   const parsed = depositSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
@@ -114,6 +155,7 @@ export async function POST(req: NextRequest) {
       auth.groupId,
       parsed.data.amount_usd,
       parsed.data.gateway,
+      idempotencyKey,
     );
 
     if (!result) {
@@ -123,22 +165,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { deposit } = result;
+    const { deposit, wasIdempotent } = result;
 
-    await auditLog({
-      actorId: auth.user.id,
-      groupId: auth.groupId,
-      action: "custody.deposit.created",
-      targetId: deposit.id,
-      metadata: {
-        amount_usd: parsed.data.amount_usd,
-        gateway: parsed.data.gateway,
+    // Audit só registra na criação real — replays não inflam o log.
+    if (!wasIdempotent) {
+      await auditLog({
+        actorId: auth.user.id,
+        groupId: auth.groupId,
+        action: "custody.deposit.created",
+        targetId: deposit.id,
+        metadata: {
+          amount_usd: parsed.data.amount_usd,
+          gateway: parsed.data.gateway,
+          idempotency_key: idempotencyKey,
+        },
+      });
+    }
+
+    // L01-04 — header `Idempotent-Replayed: true` permite ao cliente
+    // detectar (Stripe usa convenção similar com `Idempotency-Key`).
+    return NextResponse.json(
+      { deposit, idempotent: wasIdempotent },
+      {
+        headers: wasIdempotent
+          ? { "Idempotent-Replayed": "true" }
+          : undefined,
       },
-    });
-
-    // In production, initiate gateway checkout here and return checkout URL
-    // For now, return the deposit for manual/webhook confirmation
-    return NextResponse.json({ deposit });
+    );
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Deposit failed";
     return NextResponse.json({ error: msg }, { status: 500 });

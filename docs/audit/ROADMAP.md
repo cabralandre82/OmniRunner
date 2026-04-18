@@ -1,7 +1,7 @@
 # ROADMAP — Execução das Correções em Ondas
 
 > **Atualizado:** 2026-04-17
-> **Status do overall:** Onda 0 ✅ concluída (15/15 fixed, E2E verde) — Onda 1 em execução (11/177 fixed: supply chain trinca L11 + observabilidade SRE L20 + runbooks financeiros L06-01 + kill switches L06-06)
+> **Status do overall:** Onda 0 ✅ concluída (15/15 fixed, E2E verde) — Onda 1 em execução (12/177 fixed: supply chain trinca L11 + observabilidade SRE L20 + runbooks financeiros L06-01 + kill switches L06-06 + custody idempotency L01-04)
 
 A auditoria identificou **348 findings** distribuídos em **23 lentes** (69 🔴 critical, 123 🟠 high, 127 🟡 medium, 17 🟢 safe, 12 ⚪ não-auditados). Corrigir todos em paralelo seria caótico. Esta estratégia distribui o trabalho em **4 ondas** com objetivos bem definidos e critérios de saída mensuráveis.
 
@@ -63,11 +63,12 @@ Detalhes completos + correções em `docs/audit/findings/LXX-YY-*.md`.
 **Duração alvo:** 3-5 sprints
 **Foco:** fundação que acelera as correções das demais ondas. Inclui 54 criticals que não sangram dinheiro diretamente mas estabelecem padrões (observability, idempotência unificada, runbooks, OpenAPI, tracing).
 
-**Progresso atual:** 11/177 fixed:
+**Progresso atual:** 12/177 fixed:
 - L11-01/02/03 — supply chain trinca (dep vuln scan, SBOM CycloneDX, gitleaks)
 - L20-01/02/04/05/07/08 — SRE foundation (financial-ops dashboard JSON, SLO catalog, Sentry adaptive sampler + severity tags, alert policy, DR runbook, postmortem template)
 - L06-01 — runbooks financeiros operacionais (custody incident, clearing stuck, withdraw stuck, chargeback, gateway outage, webhook backlog)
 - L06-06 — kill switches operacionais (feature_flags estendida com category/scope/audit, helpers SQL+TS+Deno, wiring em 3 routes financeiras, admin UI corrigida)
+- L01-04 — custody idempotency-key + cross-group ownership (UNIQUE composto, RPC `fn_create_custody_deposit_idempotent` com `was_idempotent`, `confirm_custody_deposit` agora exige `(deposit_id, group_id)`, header `x-idempotency-key` obrigatório no portal, defesa contra double-click/replay/cross-group enumeration)
 
 ### Escopo
 
@@ -75,6 +76,7 @@ Detalhes completos + correções em `docs/audit/findings/LXX-YY-*.md`.
 - ✅ **SRE foundation (L20-01/02/04/05/07/08)** — dashboard versionado, SLO/SLI canônicos com burn-rate alerting, Sentry tuning adaptativo (P1=100% / P4=0%), severity-based alert routing, DR drill protocol, blameless postmortem template.
 - ✅ **Runbooks financeiros (L06-01)** — 6 runbooks operacionais (CUSTODY_INCIDENT, CLEARING_STUCK, WITHDRAW_STUCK, CHARGEBACK, GATEWAY_OUTAGE, WEBHOOK_BACKLOG) com SQL real, decisão por cenário, validação e postmortem mandatório. Indexados em `docs/runbooks/README.md` por severidade e tempo alvo.
 - ✅ **Kill switches (L06-06)** — `feature_flags` estendida com `id`/`scope`/`category`/`reason`/`updated_by` + audit trigger imutável + helpers SQL/TS/Deno (fail-open semantics) + wiring em `/api/distribute-coins`, `/api/custody/withdraw`, `/api/swap` + admin UI com badge por categoria, motivo obrigatório e cache invalidation. Runbooks atualizados para usar schema real.
+- ✅ **Custody idempotency (L01-04)** — `custody_deposits.idempotency_key` + UNIQUE parcial composto `(group_id, key)` + RPC `fn_create_custody_deposit_idempotent` (SELECT-first, race resolvido via `unique_violation`) + `confirm_custody_deposit(uuid, uuid)` exige match de ambos (mensagem genérica defende contra UUID enumeration) + header `x-idempotency-key` obrigatório no POST com formato UUIDv4/ULID validado + audit log skipa replays + 3 testes integration (replay/cross-group/non-existent).
 - Testes de regressão para **todos** os fluxos financeiros (portal + edge)
 - Observabilidade restante: OTel distributed tracing (L20-03), status page público (L20-06), structured logger correlation IDs em todas rotas
 - LGPD: endpoints de exportação/deleção, consentimento versionado

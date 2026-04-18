@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T19:27:10.083Z",
+  "generated_at": "2026-04-18T19:39:25.319Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 304,
-    "fixed": 43,
+    "fix-pending": 303,
+    "fixed": 44,
     "in-progress": 1
   },
   "by_wave": {
@@ -176,9 +176,10 @@
       "lens": 1,
       "title": "POST /api/custody (create deposit / confirm) — Sem idempotency-key",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "idempotency",
@@ -188,21 +189,33 @@
         "portal"
       ],
       "files": [
+        "supabase/migrations/20260417260000_custody_deposit_idempotency.sql",
+        "portal/src/lib/custody.ts",
+        "portal/src/lib/custody.test.ts",
         "portal/src/app/api/custody/route.ts",
-        "portal/src/app/api/custody/route.test.ts"
+        "portal/src/app/api/custody/route.test.ts",
+        "portal/src/lib/concurrency.test.ts",
+        "portal/src/lib/qa-e2e.test.ts",
+        "tools/integration_tests.ts"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/custody.test.ts",
+        "portal/src/app/api/custody/route.test.ts",
+        "tools/integration_tests.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "commit:pending"
+      ],
+      "owner": "platform",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Implementação L01-04 (2026-04-17):\n\n1. **Schema** (`supabase/migrations/20260417260000_custody_deposit_idempotency.sql`):\n   - `custody_deposits.idempotency_key text` (nullable p/ legacy).\n   - UNIQUE parcial `(group_id, idempotency_key) WHERE idempotency_key IS NOT NULL` —\n     protege durante TODA a janela do request, não só após gateway responder\n     (corrige limitação da UNIQUE em `payment_reference WHERE NOT NULL`).\n\n2. **RPC `fn_create_custody_deposit_idempotent`**:\n   - SECURITY DEFINER + search_path travado.\n   - Hit barato via SELECT antes de INSERT.\n   - Race entre 2 requests concorrentes resolvido via `EXCEPTION WHEN\n     unique_violation` que re-SELECT a row vencedora.\n   - Validações de entrada (key >= 8 chars, amount > 0, gateway whitelist).\n   - Retorna `was_idempotent` para o caller distinguir criação vs replay.\n   - `lock_timeout = 2s` (consistência L19-05).\n\n3. **RPC `confirm_custody_deposit(uuid, uuid)`** — DROP single-arg, CREATE\n   dual-arg. Match `WHERE id = p_deposit_id AND group_id = p_group_id` no\n   mesmo SELECT do FOR UPDATE. Mensagem de erro genérica\n   (\"Deposit not found, wrong group, or already processed\") defende contra\n   **enumeration de UUIDs cross-group** por admin malicioso. `lock_timeout = 2s`.\n\n4. **Portal** (`portal/src/lib/custody.ts`):\n   - `createCustodyDeposit(group, amount, gateway, idempotencyKey)` — assinatura\n     quebrante; agora chama RPC e retorna `{ deposit, wasIdempotent }`.\n   - `confirmDeposit(depositId, groupId)` — exige `groupId`; propagado pelo\n     caller (route handler usa `auth.groupId` do cookie).\n   - `confirmDepositByReference` (webhook gateway) — agora também busca\n     `group_id` na row e propaga para `confirmDeposit`.\n\n5. **Route** (`portal/src/app/api/custody/route.ts`):\n   - **EXIGE** header `x-idempotency-key`. Rejeita 400 sem header\n     (`code: IDEMPOTENCY_KEY_REQUIRED`) ou formato inválido\n     (`IDEMPOTENCY_KEY_INVALID`).\n   - Aceita UUID v4 ou opaque `[A-Za-z0-9_-]{16,128}` (ULID/nanoid).\n   - Passa `auth.groupId` para `confirmDeposit` (cross-group block).\n   - Retorna `{ deposit, idempotent: bool }` + header `Idempotent-Replayed: true`\n     em replays (convenção alinhada com Stripe).\n   - Audit log só registra criação real (replays não inflam o log).\n   - `depositSchema`/`confirmSchema` agora `.strict()` — rejeita campos extras\n     (defesa em profundidade contra body injection).\n\n6. **Invariants** (in-migration DO block):\n   - 4a/4b: garante coluna + UNIQUE criados.\n   - 4c: smoke test idempotency hit (2 chamadas com mesma chave → mesmo deposit).\n   - 4d: smoke test confirm com group_id correto.\n   - 4e: cleanup das rows de smoke (não polui prod).\n\n7. **Testes** (3 layers):\n   - Unit (`portal/src/lib/custody.test.ts`): nova RPC mock, wasIdempotent=true/false,\n     confirm com group_id (24 tests).\n   - Route (`portal/src/app/api/custody/route.test.ts`): rejeita sem key, valida formato,\n     Idempotent-Replayed header, cross-group propagation (13 tests).\n   - Integration (`tools/integration_tests.ts`): 3 testes E2E com Postgres real\n     — replay returns same id, cross-group blocked, non-existent generic error.\n\nResultado: 149/149 integration, 792/792 unit, lint+tsc verdes.\n\nDefense-in-depth contra:\n  a) Double-click no botão \"Comprar\" (UI quase sempre dispara 2 requests).\n  b) Network retry após timeout (cliente não sabe se deu certo).\n  c) Replay attack autenticado com body válido (idempotency key bloqueia).\n  d) Admin malicioso de grupo A confirmando depósito do grupo B\n     (RPC valida ownership; caller obriga via cookie).\n  e) Enumeration de UUIDs por timing/error message.\n"
     },
     {
       "id": "L01-05",

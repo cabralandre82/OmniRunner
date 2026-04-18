@@ -22,6 +22,13 @@ vi.mock("@/lib/audit", () => ({
 vi.mock("@/lib/rate-limit", () => ({
   rateLimit: () => ({ allowed: true, remaining: 10 }),
 }));
+
+const createCustodyDepositMock = vi.fn().mockResolvedValue({
+  deposit: { id: "dep-1", amount_usd: 1000, status: "pending" },
+  wasIdempotent: false,
+});
+const confirmDepositMock = vi.fn().mockResolvedValue(undefined);
+
 vi.mock("@/lib/custody", () => ({
   getCustodyAccount: vi.fn().mockResolvedValue({
     id: "acc-1",
@@ -33,20 +40,24 @@ vi.mock("@/lib/custody", () => ({
     available: 3000,
   }),
   getOrCreateCustodyAccount: vi.fn().mockResolvedValue({ id: "acc-1" }),
-  createCustodyDeposit: vi.fn().mockResolvedValue({
-    deposit: { id: "dep-1", amount_usd: 1000, status: "pending" },
-  }),
-  confirmDeposit: vi.fn().mockResolvedValue(undefined),
+  createCustodyDeposit: createCustodyDepositMock,
+  confirmDeposit: confirmDepositMock,
 }));
 
 const { GET, POST } = await import("./route");
 
-function req(body: Record<string, unknown>) {
+const VALID_IDEMPOTENCY_KEY = "550e8400-e29b-41d4-a716-446655440000";
+
+function req(
+  body: Record<string, unknown>,
+  headers: Record<string, string> = {},
+) {
   return new Request("http://localhost/api/custody", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "x-forwarded-for": "127.0.0.1",
+      ...headers,
     },
     body: JSON.stringify(body),
   }) as unknown as import("next/server").NextRequest;
@@ -64,6 +75,11 @@ describe("Custody API", () => {
     authClient.auth.getUser.mockResolvedValue({
       data: { user: { id: "user-1" } },
     });
+    createCustodyDepositMock.mockResolvedValue({
+      deposit: { id: "dep-1", amount_usd: 1000, status: "pending" },
+      wasIdempotent: false,
+    });
+    confirmDepositMock.mockResolvedValue(undefined);
   });
 
   describe("GET", () => {
@@ -85,35 +101,146 @@ describe("Custody API", () => {
     });
   });
 
-  describe("POST (deposit)", () => {
-    it("creates deposit for valid input", async () => {
+  describe("POST (deposit) — L01-04 idempotency", () => {
+    it("creates deposit for valid input with idempotency-key", async () => {
       mockAdminCheck();
-      const res = await POST(req({ amount_usd: 1000, gateway: "stripe" }));
+      const res = await POST(
+        req(
+          { amount_usd: 1000, gateway: "stripe" },
+          { "x-idempotency-key": VALID_IDEMPOTENCY_KEY },
+        ),
+      );
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.deposit).toBeDefined();
+      expect(body.idempotent).toBe(false);
+      expect(res.headers.get("Idempotent-Replayed")).toBe(null);
+      expect(createCustodyDepositMock).toHaveBeenCalledWith(
+        "group-1",
+        1000,
+        "stripe",
+        VALID_IDEMPOTENCY_KEY,
+      );
+    });
+
+    it("returns 400 when x-idempotency-key header is missing", async () => {
+      mockAdminCheck();
+      const res = await POST(req({ amount_usd: 1000, gateway: "stripe" }));
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.code).toBe("IDEMPOTENCY_KEY_REQUIRED");
+    });
+
+    it("returns 400 when x-idempotency-key is too short", async () => {
+      mockAdminCheck();
+      const res = await POST(
+        req(
+          { amount_usd: 1000, gateway: "stripe" },
+          { "x-idempotency-key": "short" },
+        ),
+      );
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.code).toBe("IDEMPOTENCY_KEY_INVALID");
+    });
+
+    it("returns 400 when x-idempotency-key has invalid chars", async () => {
+      mockAdminCheck();
+      const res = await POST(
+        req(
+          { amount_usd: 1000, gateway: "stripe" },
+          { "x-idempotency-key": "invalid key with spaces and special!@#chars" },
+        ),
+      );
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.code).toBe("IDEMPOTENCY_KEY_INVALID");
+    });
+
+    it("accepts opaque 16+ char keys (ULID, nanoid)", async () => {
+      mockAdminCheck();
+      const ulid = "01HFYC8Q3T_ABC-1234XYZ"; // 22 chars, valid set
+      const res = await POST(
+        req(
+          { amount_usd: 1000, gateway: "stripe" },
+          { "x-idempotency-key": ulid },
+        ),
+      );
+      expect(res.status).toBe(200);
+    });
+
+    it("returns idempotent=true and Idempotent-Replayed header on replay", async () => {
+      createCustodyDepositMock.mockResolvedValueOnce({
+        deposit: { id: "dep-1", amount_usd: 1000, status: "pending" },
+        wasIdempotent: true,
+      });
+      mockAdminCheck();
+      const res = await POST(
+        req(
+          { amount_usd: 1000, gateway: "stripe" },
+          { "x-idempotency-key": VALID_IDEMPOTENCY_KEY },
+        ),
+      );
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.idempotent).toBe(true);
+      expect(res.headers.get("Idempotent-Replayed")).toBe("true");
     });
 
     it("returns 400 for amount below minimum", async () => {
       mockAdminCheck();
-      const res = await POST(req({ amount_usd: 5, gateway: "stripe" }));
+      const res = await POST(
+        req(
+          { amount_usd: 5, gateway: "stripe" },
+          { "x-idempotency-key": VALID_IDEMPOTENCY_KEY },
+        ),
+      );
       expect(res.status).toBe(400);
     });
 
     it("returns 400 for invalid gateway", async () => {
       mockAdminCheck();
-      const res = await POST(req({ amount_usd: 1000, gateway: "paypal" }));
+      const res = await POST(
+        req(
+          { amount_usd: 1000, gateway: "paypal" },
+          { "x-idempotency-key": VALID_IDEMPOTENCY_KEY },
+        ),
+      );
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects unknown fields (strict schema)", async () => {
+      mockAdminCheck();
+      const res = await POST(
+        req(
+          { amount_usd: 1000, gateway: "stripe", evil_field: "bypass" },
+          { "x-idempotency-key": VALID_IDEMPOTENCY_KEY },
+        ),
+      );
       expect(res.status).toBe(400);
     });
   });
 
-  describe("POST (confirm)", () => {
-    it("confirms deposit", async () => {
+  describe("POST (confirm) — L01-04 cross-group block", () => {
+    it("propagates groupId to confirmDeposit (cross-group block)", async () => {
+      mockAdminCheck();
+      const depositId = "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4";
+      const res = await POST(req({ deposit_id: depositId }));
+      expect(res.status).toBe(200);
+      expect(confirmDepositMock).toHaveBeenCalledWith(depositId, "group-1");
+    });
+
+    it("returns 422 when confirm fails (e.g. wrong group from RPC)", async () => {
+      confirmDepositMock.mockRejectedValueOnce(
+        new Error("Deposit not found, wrong group, or already processed"),
+      );
       mockAdminCheck();
       const res = await POST(
         req({ deposit_id: "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4" }),
       );
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(422);
+      const body = await res.json();
+      expect(body.error).toMatch(/wrong group/);
     });
   });
 });

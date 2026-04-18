@@ -145,21 +145,22 @@ describe("custody service", () => {
     });
   });
 
-  describe("confirmDeposit", () => {
-    it("calls confirm_custody_deposit RPC", async () => {
+  describe("confirmDeposit (L01-04)", () => {
+    it("calls confirm_custody_deposit RPC with deposit_id + group_id", async () => {
       mockRpc.mockResolvedValueOnce({ error: null });
-      await confirmDeposit("dep-1");
+      await confirmDeposit("dep-1", "group-1");
       expect(mockRpc).toHaveBeenCalledWith("confirm_custody_deposit", {
         p_deposit_id: "dep-1",
+        p_group_id: "group-1",
       });
     });
 
-    it("throws on RPC error", async () => {
+    it("throws on RPC error (cross-group, etc)", async () => {
       mockRpc.mockResolvedValueOnce({
-        error: { message: "Deposit not found" },
+        error: { message: "Deposit not found, wrong group, or already processed" },
       });
-      await expect(confirmDeposit("dep-x")).rejects.toThrow(
-        "Deposit not found",
+      await expect(confirmDeposit("dep-x", "group-y")).rejects.toThrow(
+        /wrong group/,
       );
     });
   });
@@ -216,33 +217,71 @@ describe("custody service", () => {
     });
   });
 
-  describe("createCustodyDeposit", () => {
-    it("creates deposit with correct coins_equivalent", async () => {
-      mockSingle.mockResolvedValueOnce({
-        data: {
-          id: "dep-1",
-          group_id: "g1",
-          amount_usd: 500.75,
-          coins_equivalent: 500,
-          payment_gateway: "stripe",
-          status: "pending",
-        },
+  describe("createCustodyDeposit (L01-04)", () => {
+    const VALID_KEY = "550e8400-e29b-41d4-a716-446655440000";
+
+    it("calls fn_create_custody_deposit_idempotent and returns wasIdempotent=false on first call", async () => {
+      mockRpc.mockResolvedValueOnce({
+        data: [
+          {
+            deposit_id: "dep-1",
+            was_idempotent: false,
+            status: "pending",
+            amount_usd: 500.75,
+            coins_equivalent: 500,
+            payment_gateway: "stripe",
+            payment_reference: null,
+            created_at: "2026-04-17T00:00:00Z",
+          },
+        ],
         error: null,
       });
 
-      const result = await createCustodyDeposit("g1", 500.75, "stripe");
-      expect(result.deposit.coins_equivalent).toBe(500);
-      expect(result.deposit.amount_usd).toBe(500.75);
+      const result = await createCustodyDeposit("g1", 500.75, "stripe", VALID_KEY);
+      expect(mockRpc).toHaveBeenCalledWith(
+        "fn_create_custody_deposit_idempotent",
+        {
+          p_group_id: "g1",
+          p_amount_usd: 500.75,
+          p_coins_equivalent: 500,
+          p_payment_gateway: "stripe",
+          p_idempotency_key: VALID_KEY,
+        },
+      );
+      expect(result?.deposit.coins_equivalent).toBe(500);
+      expect(result?.wasIdempotent).toBe(false);
     });
 
-    it("throws on insert error", async () => {
-      mockSingle.mockResolvedValueOnce({
+    it("returns wasIdempotent=true on replay with same key", async () => {
+      mockRpc.mockResolvedValueOnce({
+        data: [
+          {
+            deposit_id: "dep-1",
+            was_idempotent: true,
+            status: "pending",
+            amount_usd: 500.75,
+            coins_equivalent: 500,
+            payment_gateway: "stripe",
+            payment_reference: null,
+            created_at: "2026-04-17T00:00:00Z",
+          },
+        ],
+        error: null,
+      });
+
+      const result = await createCustodyDeposit("g1", 500.75, "stripe", VALID_KEY);
+      expect(result?.wasIdempotent).toBe(true);
+      expect(result?.deposit.id).toBe("dep-1");
+    });
+
+    it("throws on RPC error", async () => {
+      mockRpc.mockResolvedValueOnce({
         data: null,
-        error: { message: "insert failed" },
+        error: { message: "p_idempotency_key must be >= 8 chars" },
       });
       await expect(
-        createCustodyDeposit("g1", 100, "mercadopago"),
-      ).rejects.toThrow("insert failed");
+        createCustodyDeposit("g1", 100, "mercadopago", "x"),
+      ).rejects.toThrow("p_idempotency_key");
     });
   });
 

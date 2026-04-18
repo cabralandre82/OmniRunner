@@ -170,11 +170,16 @@ describe("idempotency: settlement processing", () => {
   it("confirm_custody_deposit on already-confirmed deposit raises error", async () => {
     mockRpc.mockResolvedValueOnce({
       data: null,
-      error: { message: "Deposit not found or already processed" },
+      error: { message: "Deposit not found, wrong group, or already processed" },
     });
 
     const db = (await import("@/lib/supabase/service")).createServiceClient();
-    const { error } = await db.rpc("confirm_custody_deposit", { p_deposit_id: "done" });
+    // L01-04 — confirm agora exige (p_deposit_id, p_group_id) — bloqueia
+    // cross-group spoof e enumeration de UUIDs.
+    const { error } = await db.rpc("confirm_custody_deposit", {
+      p_deposit_id: "done",
+      p_group_id: "g1",
+    });
 
     expect(error).not.toBeNull();
     expect(error!.message).toContain("already processed");

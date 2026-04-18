@@ -588,8 +588,11 @@ describe("2. Idempotency — repeated operations produce no side effects", () =>
   });
 
   it("2.4 Re-confirm already-confirmed deposit is rejected", () => {
-    const result = handleRpc("confirm_custody_deposit", { p_deposit_id: "already-done" });
-    // Our mock doesn't have this deposit, so it returns an error
+    // L01-04 — confirm exige p_group_id também (cross-group block).
+    const result = handleRpc("confirm_custody_deposit", {
+      p_deposit_id: "already-done",
+      p_group_id: "club-a",
+    });
     expect(result).toBeDefined();
   });
 });
