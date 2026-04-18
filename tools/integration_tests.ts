@@ -792,6 +792,35 @@ async function testConstraints() {
     const { error } = await db.from("clearing_failures_unresolved").select("*").limit(1);
     assert(!error, `clearing_failures_unresolved view not queryable: ${error?.message}`);
   });
+
+  // 3.10 L18-03: todas SECURITY DEFINER em public com search_path fixo
+  await test("L18-03: no SECURITY DEFINER function in public lacks SET search_path", async () => {
+    const { data, error } = await db
+      .from("security_definer_hardening_audit")
+      .select("function_name, args, has_search_path")
+      .eq("has_search_path", false);
+
+    assert(!error, `security_definer_hardening_audit not queryable: ${error?.message}`);
+    const unhardened = data ?? [];
+    if (unhardened.length > 0) {
+      const list = unhardened
+        .map((r: { function_name: string; args: string }) => `  - public.${r.function_name}(${r.args})`)
+        .join("\n");
+      assert(
+        false,
+        `L18-03 regression: ${unhardened.length} SECURITY DEFINER function(s) without search_path:\n${list}\n` +
+          `Fix: adicione SET search_path = public, pg_temp no CREATE OR REPLACE FUNCTION correspondente.`
+      );
+    }
+  });
+
+  await test("L18-03: security_definer_hardening_audit lists all SECDEF in public", async () => {
+    const { count, error } = await db
+      .from("security_definer_hardening_audit")
+      .select("*", { count: "exact", head: true });
+    assert(!error, `count failed: ${error?.message}`);
+    assert(typeof count === "number" && count > 0, "Expected at least one SECURITY DEFINER function in public");
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

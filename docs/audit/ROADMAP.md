@@ -32,7 +32,7 @@ A auditoria identificou **348 findings** distribuídos em **23 lentes** (69 🔴
 | 3 | `L01-17` | 100 | fix-pending | Asaas API Key armazenada em texto puro |
 | 4 | `L04-03` | 100 | fix-pending | Sem registro de consentimento (LGPD Art. 8) |
 | 5 | `L04-01` | 80 | fix-pending | `fn_delete_user_data` incompleta (LGPD Art. 48) |
-| 6 | `L18-03` | 80 | fix-pending | SECURITY DEFINER sem SET search_path |
+| 6 | `L18-03` | 80 | 🟡 in-progress | SECURITY DEFINER sem SET search_path |
 | 7 | `L04-04` | 64 | fix-pending | Dados de saúde/biométricos sem proteção reforçada (LGPD Art. 11) |
 | 8 | `L01-44` | 60 | 🟡 in-progress | Migration drift em `platform_fee_config.fee_type` CHECK |
 | 9 | `L02-01` | 60 | 🟡 in-progress | `distribute-coins` não-atômico ⭐ (exemplar, correção pronta) |
@@ -43,7 +43,7 @@ A auditoria identificou **348 findings** distribuídos em **23 lentes** (69 🔴
 | 14 | `L14-03` | 45 | 🟡 in-progress | Swagger-UI carregado de unpkg sem SRI |
 | 15 | `L05-01` | 40* | fix-pending | Swap race entre accept/cancel (*override manual — double-spend direto) |
 
-**Progresso Onda 0:** 5/15 em `in-progress` (L02-01, L01-03, L01-44, L14-03, L02-02) — ~33% do escopo rumo ao fixed.
+**Progresso Onda 0:** 6/15 em `in-progress` (L02-01, L01-03, L01-44, L14-03, L02-02, L18-03) — ~40% do escopo rumo ao fixed.
 
 Detalhes completos + correções em `docs/audit/findings/LXX-YY-*.md`.
 
@@ -161,4 +161,5 @@ Os seguintes findings já têm **correção proposta + testes de regressão + SQ
 - `L01-13` — `/api/platform/fees` sem suporte a `fx_spread` — resolvido junto com L01-44 (`duplicate_of`)
 - `L14-03` — Swagger-UI self-host (remove dependência de unpkg)
 - `L02-02` — `execute_burn_atomic` hardenizado (custody re-raise, settle log-and-continue + `clearing_failure_log`)
+- `L18-03` — 26 SECURITY DEFINER em `public` hardenizadas com `SET search_path` + invariante bloqueadora
 - Gradualmente, conforme o time converter outros findings da Onda 0 em PRs, estes também ganharão detalhamento similar.

@@ -1,7 +1,7 @@
 # SCORECARD — Progresso da Auditoria
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 03:03:42 UTC.
+> Atualizado em 2026-04-18 03:14:29 UTC.
 
 ## Visão Geral
 
@@ -9,8 +9,8 @@
 |---|---|---|
 | **Total de findings** | 348 | — |
 | **✅ Corrigidos** | 17 / 348 (4.9%) | `█░░░░░░░░░░░░░░░░░░░` |
-| **🚧 Em progresso** | 6 | — |
-| **⏳ Pendentes** | 325 | — |
+| **🚧 Em progresso** | 7 | — |
+| **⏳ Pendentes** | 324 | — |
 | **⏭️ Adiados** | 0 | — |
 | **🚫 Won't fix** | 0 | — |
 
