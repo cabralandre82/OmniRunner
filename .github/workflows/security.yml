@@ -24,6 +24,12 @@ concurrency:
   group: security-${{ github.ref }}
   cancel-in-progress: true
 
+# L11-09 — least-privilege root. Jobs override quando precisam de mais
+# (osv-scanner: security-events: write para upload SARIF; gitleaks usa
+# GITHUB_TOKEN built-in com leitura).
+permissions:
+  contents: read
+
 jobs:
   # ─────────────────────────────────────────────────────────────────────
   # L11-01 — Dependency vulnerability scanning
@@ -71,6 +77,8 @@ jobs:
   osv-scanner:
     name: osv-scanner (portal + flutter)
     runs-on: ubuntu-latest
+    # L11-09 — job-level permissions OVERRIDE workflow-level (não merge),
+    # então precisamos re-declarar contents: read explicitamente para checkout.
     permissions:
       contents: read
       security-events: write

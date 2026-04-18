@@ -19,6 +19,12 @@ concurrency:
   group: portal-${{ github.ref }}
   cancel-in-progress: true
 
+# L11-09 — least-privilege GITHUB_TOKEN (default era 'write-all').
+# Workflow é apenas quality gate; deploy é via Vercel↔GitHub native.
+# Nenhum job precisa escrever no repo. Override por-job se necessário.
+permissions:
+  contents: read
+
 env:
   NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
   NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
@@ -101,6 +107,27 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run build
+      # L11-09 — Verificação anti-prod: o secret SUPABASE_SERVICE_ROLE_KEY
+      # injetado em CI DEVE ser do projeto de STAGING, jamais do prod.
+      # Política está em docs/security/CI_SECRETS_AND_OIDC.md §"Supabase".
+      # Se a URL contém o domínio prod conhecido, falhamos imediatamente.
+      - name: Assert non-prod Supabase target
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+        run: |
+          if [ -z "${NEXT_PUBLIC_SUPABASE_URL:-}" ]; then
+            echo "ERROR: NEXT_PUBLIC_SUPABASE_URL secret unset"
+            exit 1
+          fi
+          # Block conhecidos hosts de produção. Adicionar mais conforme
+          # provisionamento (ex: hash específico do projeto prod).
+          if echo "${NEXT_PUBLIC_SUPABASE_URL}" | grep -qiE 'omnirunner\.app|prod|production'; then
+            echo "ERROR: CI must not target production Supabase. Got: ${NEXT_PUBLIC_SUPABASE_URL}"
+            echo "See docs/security/CI_SECRETS_AND_OIDC.md for staging setup."
+            exit 1
+          fi
+          echo "✓ Target appears to be staging/dev: ${NEXT_PUBLIC_SUPABASE_URL}"
+
       - name: Start portal
         run: |
           npm run start &
@@ -112,6 +139,8 @@ jobs:
             sleep 2
           done
         env:
+          # L11-09 — secrets DEVEM ser do projeto Supabase staging
+          # (rotacionados a cada 90 dias, ver runbook). Validação acima.
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

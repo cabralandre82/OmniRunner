@@ -16,6 +16,11 @@ concurrency:
   group: flutter-${{ github.ref }}
   cancel-in-progress: true
 
+# L11-09 — least-privilege GITHUB_TOKEN. Workflow só lê código + sobe artifacts
+# (que herdam permissão do GITHUB_TOKEN do uploader, não precisam write).
+permissions:
+  contents: read
+
 jobs:
   analyze:
     name: Analyze

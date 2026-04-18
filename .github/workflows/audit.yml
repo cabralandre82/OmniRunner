@@ -19,6 +19,10 @@ concurrency:
   group: audit-${{ github.ref }}
   cancel-in-progress: true
 
+# L11-09 — least-privilege. Audit registry é validação read-only.
+permissions:
+  contents: read
+
 jobs:
   validate:
     name: Validate audit findings

@@ -26,6 +26,11 @@ concurrency:
   group: supabase-${{ github.ref }}
   cancel-in-progress: true
 
+# L11-09 — least-privilege. Migrations validation roda contra Supabase
+# local (supabase start) com JWT demo hardcoded; nenhuma escrita externa.
+permissions:
+  contents: read
+
 jobs:
   validate-migrations:
     name: Validate Migrations

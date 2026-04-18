@@ -3,6 +3,9 @@ name: Update Visual Regression Snapshots
 on:
   workflow_dispatch:
 
+# L11-09 — workflow só rodável por workflow_dispatch (= ação manual,
+# requer permissão de escrita no repo). Job precisa de contents: write
+# para commitar baselines atualizadas. Demais escopos negados.
 permissions:
   contents: write
 

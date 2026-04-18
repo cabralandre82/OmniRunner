@@ -20,12 +20,24 @@ concurrency:
   group: release
   cancel-in-progress: false
 
+# L11-09 — least-privilege workflow-level. Release job override para
+# adicionar id-token: write (OIDC para Firebase WIF) + contents: write
+# (commit/tag/push do version bump) + actions: read (futuro uso de
+# attestations). Demais jobs herdam contents: read.
+permissions:
+  contents: read
+
 jobs:
   release:
     name: Bump, Tag & Build
     runs-on: ubuntu-latest
+    # L11-09 — id-token: write habilita GitHub OIDC. Firebase + GCP usam
+    # Workload Identity Federation: deploy steps trocam o JWT do GitHub
+    # por credencial GCP de curta duração (1h), sem precisar de chave
+    # JSON estática. Ver docs/security/CI_SECRETS_AND_OIDC.md.
     permissions:
       contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -127,18 +139,71 @@ jobs:
             omni_runner/build/app/outputs/flutter-apk/app-release.apk
           generate_release_notes: false
 
-      - name: Deploy to Google Play (internal)
-        if: secrets.PLAY_STORE_KEY_JSON != ''
+      # ─────────────────────────────────────────────────────────────────
+      # L11-09 — Workload Identity Federation (preferencial)
+      #
+      # Quando o repo está configurado para WIF (vars GCP_WORKLOAD_IDENTITY_PROVIDER
+      # + GCP_SERVICE_ACCOUNT existem), trocamos o JWT do OIDC do GitHub
+      # por credencial GCP de curta duração via google-github-actions/auth.
+      # Isso elimina:
+      #   • PLAY_STORE_KEY_JSON (chave JSON com TTL infinito)
+      #   • FIREBASE_TOKEN (token de longa duração)
+      # Fallback para o modo "secrets-based" continua se WIF não configurado
+      # (ver docs/security/CI_SECRETS_AND_OIDC.md para o setup do WIF).
+      # ─────────────────────────────────────────────────────────────────
+      - name: Authenticate to GCP via OIDC (WIF)
+        id: gcp-auth
+        if: vars.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && vars.GCP_SERVICE_ACCOUNT != ''
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_lifetime: 3600s
+          # Audience explícito ata o token a este projeto (defesa contra
+          # sub-claim-spoofing / repo-jacking).
+          audience: ${{ vars.GCP_WORKLOAD_IDENTITY_AUDIENCE }}
+          create_credentials_file: true
+
+      - name: Deploy to Google Play (OIDC/WIF)
+        if: steps.gcp-auth.conclusion == 'success'
+        working-directory: omni_runner
+        env:
+          # Fastlane lê GOOGLE_APPLICATION_CREDENTIALS automaticamente.
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.gcp-auth.outputs.credentials_file_path }}
+        run: bundle exec fastlane deploy_play_store
+
+      - name: Deploy to Firebase App Distribution (OIDC/WIF)
+        if: steps.gcp-auth.conclusion == 'success' && vars.FIREBASE_APP_ID != ''
+        working-directory: omni_runner
+        env:
+          FIREBASE_APP_ID: ${{ vars.FIREBASE_APP_ID }}
+          # Fastlane lê GOOGLE_APPLICATION_CREDENTIALS para Firebase também.
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.gcp-auth.outputs.credentials_file_path }}
+          RELEASE_NOTES: "v${{ steps.bump.outputs.version }}"
+        run: bundle exec fastlane deploy_firebase_distribution
+
+      # ─────────────────────────────────────────────────────────────────
+      # Fallback secrets-based (DEPRECATED — migrar para WIF)
+      # Só executa se WIF NÃO configurado E secrets ainda existem.
+      # Roadmap L11-09: remover após cutover comprovado em staging.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Deploy to Google Play (legacy secrets — DEPRECATED)
+        if: steps.gcp-auth.conclusion != 'success' && secrets.PLAY_STORE_KEY_JSON != ''
         working-directory: omni_runner
         env:
           SUPPLY_JSON_KEY_DATA: ${{ secrets.PLAY_STORE_KEY_JSON }}
-        run: bundle exec fastlane deploy_play_store
+        run: |
+          echo "::warning title=L11-09::Using legacy PLAY_STORE_KEY_JSON. Migrate to WIF (see docs/security/CI_SECRETS_AND_OIDC.md)."
+          bundle exec fastlane deploy_play_store
 
-      - name: Deploy to Firebase App Distribution (beta)
-        if: secrets.FIREBASE_APP_ID != ''
+      - name: Deploy to Firebase App Distribution (legacy secrets — DEPRECATED)
+        if: steps.gcp-auth.conclusion != 'success' && secrets.FIREBASE_TOKEN != ''
         working-directory: omni_runner
         env:
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
           RELEASE_NOTES: "v${{ steps.bump.outputs.version }}"
-        run: bundle exec fastlane deploy_firebase_distribution
+        run: |
+          echo "::warning title=L11-09::Using legacy FIREBASE_TOKEN. Migrate to WIF (see docs/security/CI_SECRETS_AND_OIDC.md)."
+          bundle exec fastlane deploy_firebase_distribution
