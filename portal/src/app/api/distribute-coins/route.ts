@@ -11,6 +11,7 @@ import {
   FeatureDisabledError,
 } from "@/lib/feature-flags";
 import { logger } from "@/lib/logger";
+import { withSpan, currentTraceId } from "@/lib/observability/tracing";
 
 // L02-01: todas as mutações (custódia + inventário + wallet + ledger) são
 // executadas por um único RPC SECURITY DEFINER em transação única. Qualquer
@@ -107,12 +108,38 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data: rpcData, error: rpcErr } = await db.rpc("emit_coins_atomic", {
-      p_group_id: groupId,
-      p_athlete_user_id: athlete_user_id,
-      p_amount: amount,
-      p_ref_id: refId,
-    });
+    // L20-03 — wrap RPC in span so the DB call appears as a child of the
+    // request transaction in Sentry. Attributes follow OTel semantic conv:
+    // db.system + db.operation + omni.* domain identifiers.
+    const { data: rpcData, error: rpcErr } = await withSpan(
+      "rpc emit_coins_atomic",
+      "db.rpc",
+      async (setAttr) => {
+        const result = await db.rpc("emit_coins_atomic", {
+          p_group_id: groupId,
+          p_athlete_user_id: athlete_user_id,
+          p_amount: amount,
+          p_ref_id: refId,
+        });
+        if (result.data) {
+          const row = Array.isArray(result.data) ? result.data[0] : result.data;
+          setAttr("db.row_count", Array.isArray(result.data) ? result.data.length : 1);
+          setAttr("omni.was_idempotent", Boolean(row?.was_idempotent));
+        }
+        if (result.error) {
+          setAttr("db.error_code", result.error.code);
+        }
+        return result;
+      },
+      {
+        "db.system": "postgresql",
+        "db.operation": "rpc:emit_coins_atomic",
+        "omni.group_id": groupId,
+        "omni.athlete_user_id": athlete_user_id,
+        "omni.amount": amount,
+        "omni.ref_id": refId,
+      },
+    );
 
     if (rpcErr) {
       const msg = rpcErr.message ?? "";
@@ -171,14 +198,23 @@ export async function POST(request: Request) {
       });
     }
 
-    return NextResponse.json({
-      ok: true,
-      athlete_user_id,
-      amount,
-      athlete_name: member.display_name,
-      idempotent: wasIdempotent,
-      new_balance: row?.new_balance ?? null,
-    });
+    // L20-03 — echo trace_id to client so support/users can quote it when
+    // reporting incidents ("trace_id 1234 took 15s") and we can pivot
+    // straight to the Sentry trace tree.
+    const traceId = currentTraceId();
+    const responseHeaders: Record<string, string> = {};
+    if (traceId) responseHeaders["x-trace-id"] = traceId;
+    return NextResponse.json(
+      {
+        ok: true,
+        athlete_user_id,
+        amount,
+        athlete_name: member.display_name,
+        idempotent: wasIdempotent,
+        new_balance: row?.new_balance ?? null,
+      },
+      { headers: responseHeaders },
+    );
   } catch (error) {
     logger.error("Failed to distribute coins", error);
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });

@@ -11,6 +11,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:omni_runner/core/config/app_config.dart';
+import 'package:omni_runner/core/http/traced_http_client.dart';
 import 'package:omni_runner/core/observability/app_bloc_observer.dart';
 import 'package:omni_runner/core/deep_links/deep_link_handler.dart';
 import 'package:omni_runner/core/offline/connectivity_monitor.dart';
@@ -77,6 +78,13 @@ Future<void> main() async {
         options.dsn = AppConfig.sentryDsn;
         options.environment = AppConfig.sentryEnvironment;
         options.tracesSampleRate = AppConfig.isProd ? 0.2 : 1.0;
+        // L20-03 — restrict trace propagation to first-party hosts. Without
+        // this, Sentry defaults to ['.*'] and we'd leak trace context to
+        // Strava, Asaas, Google APIs, etc. (data hygiene + zero benefit
+        // since they ignore the headers anyway).
+        options.tracePropagationTargets
+          ..clear()
+          ..addAll(TracedHttpClient.defaultFirstPartyAllowlist);
       },
       appRunner: _bootstrap,
     );
