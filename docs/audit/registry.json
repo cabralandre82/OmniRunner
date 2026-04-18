@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T22:48:56.643Z",
+  "generated_at": "2026-04-18T23:02:49.425Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 296,
-    "fixed": 51,
+    "fix-pending": 293,
+    "fixed": 54,
     "in-progress": 1
   },
   "by_wave": {
@@ -1197,27 +1197,40 @@
       "lens": 1,
       "title": "delete-account — fn_delete_user_data não-aborta no erro",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "lgpd",
         "finance",
-        "performance"
+        "edge-function",
+        "audit-trail"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/functions/delete-account/index.ts",
+        "supabase/functions/_shared/account_deletion.ts",
+        "supabase/migrations/20260417300000_account_deletion_log.sql",
+        "docs/runbooks/ACCOUNT_DELETION_RUNBOOK.md"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "supabase/functions/_shared/account_deletion.test.ts",
+        "tools/integration_tests.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "commit:5de4d0d"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/ACCOUNT_DELETION_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
-      "duplicate_of": null,
+      "duplicate_of": "L04-02",
       "deferred_to_wave": null,
-      "note": null
+      "note": "Mesmo root cause de **L04-02** (CLO lens). Resolvido conjuntamente:\no pipeline de `delete-account` agora retorna 500 com `DATA_CLEANUP_FAILED`\ne **não** chama `auth.admin.deleteUser` quando `fn_delete_user_data`\nfalha. O cancelamento de `challenge_participants` recebe o mesmo\ntratamento (falha → abort). O motivo do abort é gravado em\n`account_deletion_log.failure_reason` para investigação por SRE/DPO.\nVer L04-02 para detalhes completos da fix.\n"
     },
     {
       "id": "L01-37",
@@ -2729,30 +2742,44 @@
       "lens": 4,
       "title": "Edge Function delete-account deleta auth.users mesmo quando fn_delete_user_data falha",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "edge-function",
-        "performance",
+        "lgpd",
+        "audit-trail",
         "testing"
       ],
       "files": [
-        "supabase/functions/delete-account/index.ts"
+        "supabase/functions/delete-account/index.ts",
+        "supabase/functions/_shared/account_deletion.ts",
+        "supabase/functions/_shared/account_deletion.test.ts",
+        "supabase/migrations/20260417300000_account_deletion_log.sql",
+        "tools/integration_tests.ts",
+        "tools/edge_function_smoke_tests.ts",
+        "docs/runbooks/ACCOUNT_DELETION_RUNBOOK.md"
       ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "supabase/functions/_shared/account_deletion.test.ts",
+        "tools/integration_tests.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "commit:5de4d0d"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/ACCOUNT_DELETION_RUNBOOK.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Resolvido em 2026-04-17 reescrevendo o pipeline da edge function\n`delete-account` para ser **atômico** e sempre auditável:\n\n1. **Abort-on-cleanup-error** (núcleo do L04-02): se\n   `fn_delete_user_data` (ou o cancelamento de challenges) falhar, a\n   função retorna 500 com `DATA_CLEANUP_FAILED` e **nunca** chama\n   `auth.admin.deleteUser`. O usuário pode reexecutar pelo app sem\n   ficar sem identidade.\n\n2. **Audit trail imutável** (cobre também L01-36 e L06-08): nova\n   tabela `public.account_deletion_log` (migration\n   `20260417300000_account_deletion_log.sql`) registra cada tentativa\n   com `request_id`, `user_id`, `email_hash` (SHA-256), `user_role`,\n   `client_ip`/`client_ua`, `outcome` (success / cleanup_failed /\n   auth_delete_failed / cancelled_by_validation / internal_error),\n   `failure_reason` e `cleanup_report` jsonb. A tabela **não tem FK\n   para `auth.users`** (o registro sobrevive à deleção que documenta)\n   e tem trigger `account_deletion_log_immutable` que rejeita reescrita\n   de qualquer coluna terminal já preenchida. RLS restrita a\n   `platform_role='admin'`.\n\n3. **Helpers puros e testáveis** em `supabase/functions/_shared/account_deletion.ts`:\n   `hashEmail` (SHA-256 normalizado, lowercase+trim), `truncateReason`\n   (cap 500 chars + strip de control chars), `extractClientIp`\n   (parse defensivo de XFF, rejeita garbage), `extractClientUserAgent`,\n   `buildInitialLogRow`, `buildTerminalLogRow`. 23 unit-tests Deno\n   cobrem reflexividade do hash, vetores SHA-256 conhecidos, casos\n   de truncamento e limpeza de XFF spoofado.\n\n4. **Integration tests** em `tools/integration_tests.ts` validam\n   existência da tabela, CHECK regex em `email_hash`, CHECK enum em\n   `outcome`, UNIQUE em `request_id`, e o trigger de imutabilidade\n   (segunda escrita de outcome é rejeitada com mensagem `immutable`).\n\n5. **Runbook operacional** `docs/runbooks/ACCOUNT_DELETION_RUNBOOK.md`\n   cobre diagnóstico (queries por outcome, in-flight crashes, busca\n   por email_hash para responder ANPD), mitigação por outcome\n   (`cleanup_failed` é estado seguro, `auth_delete_failed` requer\n   re-rodar o auth delete via service-role), template de comunicação\n   ao usuário (Art. 18, VI), drill trimestral e alertas P1/P2.\n\nValidação: 23/23 deno tests do helper + 56/56 do conjunto\n`_shared/*.test.ts` + 864/864 vitest do portal + `tsc --noEmit`\nlimpo + `npx tsx tools/audit/verify.ts` = 348 findings ok. Smoke\ntests passaram de 590→598 (todos os novos exports do shared module\nsão detectados).\n"
     },
     {
       "id": "L04-03",
@@ -4006,29 +4033,40 @@
       "lens": 6,
       "title": "delete-account executa deleteUser sem audit_log",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
-        "anti-cheat",
         "edge-function",
-        "performance"
+        "audit-trail",
+        "lgpd"
       ],
       "files": [
-        "supabase/functions/delete-account/index.ts"
+        "supabase/functions/delete-account/index.ts",
+        "supabase/functions/_shared/account_deletion.ts",
+        "supabase/migrations/20260417300000_account_deletion_log.sql",
+        "tools/integration_tests.ts",
+        "docs/runbooks/ACCOUNT_DELETION_RUNBOOK.md"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "supabase/functions/_shared/account_deletion.test.ts",
+        "tools/integration_tests.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "commit:5de4d0d"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/ACCOUNT_DELETION_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Resolvido junto com L04-02. Nova tabela\n`public.account_deletion_log` recebe um INSERT logo após validação\nde admin_master e ANTES de qualquer mutação (cancel challenges /\nfn_delete_user_data / auth.admin.deleteUser), garantindo que toda\ntentativa de auto-exclusão deixa rastro mesmo em caso de crash.\n\nPara preservar a privacidade do email original (que será removido\ndo `auth.users`), persistimos apenas seu `email_hash` (SHA-256\nhex de 64 chars, lowercase+trim) — o helper `hashEmail` em\n`supabase/functions/_shared/account_deletion.ts` é determinístico\ne tem cobertura por unit-tests com vetor SHA-256 NIST.\n\nAo final, um UPDATE registra `outcome` (success / cleanup_failed /\nauth_delete_failed / internal_error / cancelled_by_validation),\n`failure_reason` (truncado, sem PII) e `cleanup_report`\n(jsonb retornado por `fn_delete_user_data`). Trigger\n`account_deletion_log_immutable` rejeita reescrita das colunas\nterminais. RLS limita SELECT a `platform_role='admin'`.\n\nO runbook `docs/runbooks/ACCOUNT_DELETION_RUNBOOK.md` documenta\ncomo responder a inquéritos ANPD (\"apaguei essa conta?\") usando o\nemail_hash.\n"
     },
     {
       "id": "L06-09",

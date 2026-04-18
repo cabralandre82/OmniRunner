@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 22:48:56 UTC.
+> Atualizado em 2026-04-18 23:02:49 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -44,7 +44,7 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L01-33](./findings/L01-33-flutter-db-key-storage-fallback-ausente.md) | 2 | L01 · CISO | Flutter — DB key storage fallback ausente | unassigned |
 | 🟢 safe | ✅ fixed | [L01-34](./findings/L01-34-flutter-getorcreatekey-sha-256-ofuscacao-e-redundante.md) | 3 | L01 · CISO | Flutter — getOrCreateKey SHA-256 ofuscação é redundante | unassigned |
 | 🟢 safe | ✅ fixed | [L01-35](./findings/L01-35-supabase-functions-delete-account-admin-master-nao-pode.md) | 3 | L01 · CISO | supabase/functions/delete-account — Admin master não pode se auto-deletar | unassigned |
-| 🟠 high | ⏳ fix-pending | [L01-36](./findings/L01-36-delete-account-fn-delete-user-data-nao-aborta.md) | 1 | L01 · CISO | delete-account — fn_delete_user_data não-aborta no erro | unassigned |
+| 🟠 high | ✅ fixed | [L01-36](./findings/L01-36-delete-account-fn-delete-user-data-nao-aborta.md) | 1 | L01 · CISO | delete-account — fn_delete_user_data não-aborta no erro | platform |
 | 🟢 safe | ✅ fixed | [L01-37](./findings/L01-37-set-user-role-aceita-so-strings-explicitas.md) | 3 | L01 · CISO | set-user-role — Aceita só strings explícitas | unassigned |
 | 🟠 high | ⏳ fix-pending | [L01-38](./findings/L01-38-csp-unsafe-inline-unsafe-eval-em-script-src.md) | 1 | L01 · CISO | CSP 'unsafe-inline' + 'unsafe-eval' em script-src | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L01-39](./findings/L01-39-csp-style-src-unsafe-inline.md) | 2 | L01 · CISO | CSP — style-src 'unsafe-inline' | unassigned |
@@ -95,7 +95,7 @@ Total: **348** findings.
 | ⚪ na | ⏳ fix-pending | [L03-19](./findings/L03-19-nfs-e-fiscal-nao-observado.md) | 3 | L03 · CFO | NFS-e / fiscal — Não observado | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L03-20](./findings/L03-20-disputa-chargeback-stripe.md) | 1 | L03 · CFO | Disputa / chargeback Stripe | unassigned |
 | 🔴 critical | ✅ fixed | [L04-01](./findings/L04-01-fn-delete-user-data-e-incompleta-multiplas-tabelas.md) | 0 | L04 · CLO | fn_delete_user_data é incompleta — múltiplas tabelas com PII não cobertas | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L04-02](./findings/L04-02-edge-function-delete-account-deleta-auth-users-mesmo.md) | 1 | L04 · CLO | Edge Function delete-account deleta auth.users mesmo quando fn_delete_user_data falha | unassigned |
+| 🔴 critical | ✅ fixed | [L04-02](./findings/L04-02-edge-function-delete-account-deleta-auth-users-mesmo.md) | 1 | L04 · CLO | Edge Function delete-account deleta auth.users mesmo quando fn_delete_user_data falha | platform |
 | 🔴 critical | ✅ fixed | [L04-03](./findings/L04-03-nao-ha-registro-de-consentimento-opt-in-explicito.md) | 0 | L04 · CLO | Não há registro de consentimento (opt-in explícito LGPD Art. 8) | platform-privacy |
 | 🔴 critical | ✅ fixed | [L04-04](./findings/L04-04-dados-de-saude-biometricos-dados-sensiveis-lgpd-art.md) | 0 | L04 · CLO | Dados de saúde/biométricos (dados sensíveis, LGPD Art. 11) sem proteção reforçada | unassigned |
 | 🟠 high | ⏳ fix-pending | [L04-05](./findings/L04-05-trajetorias-gps-brutas-sem-opcao-de-privacy-zones.md) | 1 | L04 · CLO | Trajetórias GPS brutas sem opção de privacy zones (home/work zones) | unassigned |
@@ -136,7 +136,7 @@ Total: **348** findings.
 | 🟠 high | ⏳ fix-pending | [L06-05](./findings/L06-05-edge-functions-sem-retry-em-falha-de-pg.md) | 1 | L06 · COO | Edge Functions sem retry em falha de pg_net | unassigned |
 | 🟠 high | ✅ fixed | [L06-06](./findings/L06-06-sem-feature-flags-para-desligar-subsistemas.md) | 1 | L06 · COO | Sem feature flags para desligar subsistemas | unassigned |
 | 🟠 high | ⏳ fix-pending | [L06-07](./findings/L06-07-global-error-do-next-js-nao-reporta-a.md) | 1 | L06 · COO | Global error do Next.js não reporta a Sentry | unassigned |
-| 🟠 high | ⏳ fix-pending | [L06-08](./findings/L06-08-delete-account-executa-deleteuser-sem-audit-log.md) | 1 | L06 · COO | delete-account executa deleteUser sem audit_log | unassigned |
+| 🟠 high | ✅ fixed | [L06-08](./findings/L06-08-delete-account-executa-deleteuser-sem-audit-log.md) | 1 | L06 · COO | delete-account executa deleteUser sem audit_log | platform |
 | 🟡 medium | ⏳ fix-pending | [L06-09](./findings/L06-09-metricas-portal-src-lib-metrics-ts-so-geram.md) | 2 | L06 · COO | Métricas (portal/src/lib/metrics.ts) só geram log JSON, sem exporter real | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L06-10](./findings/L06-10-nao-ha-slo-documentado.md) | 2 | L06 · COO | Não há SLO documentado | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L06-11](./findings/L06-11-secret-rotation-sem-playbook.md) | 2 | L06 · COO | Secret rotation sem playbook | unassigned |
