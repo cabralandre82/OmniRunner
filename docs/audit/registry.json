@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T19:04:26.998Z",
+  "generated_at": "2026-04-18T19:05:05.997Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -3720,7 +3720,7 @@
       ],
       "linked_issues": [],
       "linked_prs": [
-        "commit:HEAD"
+        "commit:c996831"
       ],
       "owner": "unassigned",
       "runbook": "docs/runbooks/README.md",

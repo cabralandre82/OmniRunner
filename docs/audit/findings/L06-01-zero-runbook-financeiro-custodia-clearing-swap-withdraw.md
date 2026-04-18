@@ -23,7 +23,7 @@ tests:
   - "docs/runbooks/README.md"
 linked_issues: []
 linked_prs:
-  - "commit:HEAD"
+  - "commit:c996831"
 owner: unassigned
 runbook: docs/runbooks/README.md
 effort_points: 5
