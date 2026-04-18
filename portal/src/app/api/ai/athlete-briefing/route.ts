@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { cookies } from "next/headers";
+import { randomUUID } from "node:crypto";
 import { withErrorHandler } from "@/lib/api-handler";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
+import { ensureCoachHealthAccess } from "@/lib/sensitive-access";
 
 const BodySchema = z.object({
   athlete_id: z.string().uuid(),
@@ -111,6 +113,25 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
     return NextResponse.json(
       { ok: false, error: { code: "ATHLETE_NOT_FOUND" } },
       { status: 404 }
+    );
+  }
+
+  // L04-04: valida consent coach_data_share + loga acesso em sensitive_data_access_log
+  // antes de ler sessions.start_time_ms (GPS/HR estão no mesmo snapshot) via service_role.
+  const consentCheck = await ensureCoachHealthAccess({
+    db,
+    actorId: user.id,
+    athleteId: athlete_id,
+    resource: "sessions",
+    action: "read",
+    requestId: randomUUID(),
+    ip: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+    userAgent: req.headers.get("user-agent"),
+  });
+  if (!consentCheck.ok) {
+    return NextResponse.json(
+      { ok: false, error: { code: consentCheck.code, message: consentCheck.message } },
+      { status: 403 },
     );
   }
 

@@ -157,7 +157,7 @@ async function constraintExists(constraintName: string): Promise<boolean> {
 }
 
 async function createUserClient(userId: string): Promise<SupabaseClient> {
-  const email = `inttest-${userId.slice(0, 8)}@test.local`;
+  const email = `inttest-${userId}@test.local`;
   const client = createClient(SUPABASE_URL, ANON_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
@@ -176,7 +176,7 @@ async function seed() {
 
   // Create auth users
   for (const uid of ALL_USER_IDS) {
-    const email = `inttest-${uid.slice(0, 8)}@test.local`;
+    const email = `inttest-${uid}@test.local`;
     const { error } = await db.auth.admin.createUser({
       id: uid,
       email,
@@ -1748,8 +1748,8 @@ async function testConstraints() {
 
   await test("L04-03: auth.users DELETE preserva consent_events anonimizado (Art. 16 + 18 VI)", async () => {
     const tempUid = "77777777-0403-0403-0403-000000000003";
-    // createUserClient() expects email format `inttest-${uid.slice(0,8)}@test.local`
-    const tempEmail = `inttest-${tempUid.slice(0, 8)}@test.local`;
+    // createUserClient() expects email format `inttest-${uid}@test.local`
+    const tempEmail = `inttest-${tempUid}@test.local`;
     const rid = `l0403-scrub-${Date.now()}`;
 
     // Pré-limpeza defensiva
@@ -1822,6 +1822,296 @@ async function testConstraints() {
     assert(!error, `L04-03: select strategy falhou: ${error?.message}`);
     assert((data as any)?.strategy === "anonymize",
       `L04-03: strategy esperado 'anonymize', got '${(data as any)?.strategy}'`);
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // L04-04: proteção reforçada de dados sensíveis (saúde / biométrico / GPS)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  await test("L04-04: sensitive_health_columns registry inclui HR, pace, GPS", async () => {
+    const { data, error } = await db
+      .from("sensitive_health_columns")
+      .select("table_name, column_name, sensitivity, legal_basis");
+    assert(!error, `L04-04: select registry falhou: ${error?.message}`);
+    const rows = (data ?? []) as any[];
+    assert(rows.length >= 11, `L04-04: esperado ≥11 colunas registradas, got ${rows.length}`);
+    const key = (t: string, c: string) => rows.some(r => r.table_name === t && r.column_name === c);
+    assert(key("sessions", "avg_bpm"), "L04-04: sessions.avg_bpm ausente");
+    assert(key("sessions", "max_bpm"), "L04-04: sessions.max_bpm ausente");
+    assert(key("sessions", "points_path"), "L04-04: sessions.points_path (GPS) ausente");
+    assert(key("athlete_baselines", "value"), "L04-04: athlete_baselines.value ausente");
+    assert(key("athlete_trends", "current_value"), "L04-04: athlete_trends.current_value ausente");
+  });
+
+  await test("L04-04: v_sensitive_health_coverage_gaps status='ok' para tabelas base", async () => {
+    const { data, error } = await db
+      .from("v_sensitive_health_coverage_gaps")
+      .select("table_name, column_name, status")
+      .in("table_name", ["sessions", "runs", "athlete_baselines", "athlete_trends"]);
+    assert(!error, `L04-04: select coverage gaps falhou: ${error?.message}`);
+    const rows = (data ?? []) as any[];
+    assert(rows.length > 0, "L04-04: registry não projeta nada em coverage view");
+    const bad = rows.filter(r => r.status !== "ok");
+    assert(bad.length === 0,
+      `L04-04: drift detectado: ${bad.map(b => `${b.table_name}.${b.column_name}=${b.status}`).join(", ")}`);
+  });
+
+  await test("L04-04: fn_can_read_athlete_health — atleta lê o próprio", async () => {
+    const client = await createUserClient(ATHLETE_A1);
+    const { data, error } = await client.rpc("fn_can_read_athlete_health", {
+      p_athlete_id: ATHLETE_A1,
+    });
+    assert(!error, `L04-04: fn_can_read_athlete_health falhou: ${error?.message}`);
+    assert(data === true, `L04-04: self-read deveria retornar true, got ${data}`);
+  });
+
+  // Helper: garante que ATHLETE tem coach_data_share GRANTED (idempotente via
+  // grant → nova row é criada mesmo se já granted). Helper: revoga.
+  async function l0404GrantCds(uid: string): Promise<void> {
+    const c = await createUserClient(uid);
+    await c.rpc("fn_consent_grant", {
+      p_consent_type: "coach_data_share",
+      p_version: "1.0",
+      p_source: "portal",
+      p_request_id: `l0404-grant-${uid.slice(0, 8)}-${Date.now()}`,
+    });
+  }
+  async function l0404RevokeCds(uid: string): Promise<void> {
+    const c = await createUserClient(uid);
+    await c.rpc("fn_consent_revoke", {
+      p_consent_type: "coach_data_share",
+      p_source: "portal",
+      p_request_id: `l0404-revoke-${uid.slice(0, 8)}-${Date.now()}`,
+    });
+  }
+
+  await test("L04-04: fn_can_read_athlete_health — coach bloqueado após revoke do atleta", async () => {
+    // Atleta A2 revoga o coach_data_share auto-granted pelo seed/trigger
+    await l0404GrantCds(ATHLETE_A2);   // garante que existe antes de revogar
+    await l0404RevokeCds(ATHLETE_A2);
+
+    const coach = await createUserClient(COACH_A);
+    const { data, error } = await coach.rpc("fn_can_read_athlete_health", {
+      p_athlete_id: ATHLETE_A2,
+    });
+    assert(!error, `L04-04: fn_can_read_athlete_health coach falhou: ${error?.message}`);
+    assert(data === false,
+      `L04-04: coach após revoke do atleta deveria ser bloqueado, got ${data}`);
+  });
+
+  await test("L04-04: fn_can_read_athlete_health — coach libera após atleta grant", async () => {
+    await l0404RevokeCds(ATHLETE_A2);
+    await l0404GrantCds(ATHLETE_A2);
+
+    const coach = await createUserClient(COACH_A);
+    const { data, error } = await coach.rpc("fn_can_read_athlete_health", {
+      p_athlete_id: ATHLETE_A2,
+    });
+    assert(!error, `L04-04: fn_can_read coach pós-grant falhou: ${error?.message}`);
+    assert(data === true, `L04-04: coach deveria ler após consent, got ${data}`);
+  });
+
+  await test("L04-04: coach de outro grupo NUNCA lê (fail-closed)", async () => {
+    await l0404GrantCds(ATHLETE_A1);
+
+    // COACH_B não está em GROUP_A — nunca pode ler ATHLETE_A1
+    const coachB = await createUserClient(COACH_B);
+    const { data, error } = await coachB.rpc("fn_can_read_athlete_health", {
+      p_athlete_id: ATHLETE_A1,
+    });
+    assert(!error, `L04-04: coach_b fn_can_read falhou: ${error?.message}`);
+    assert(data === false,
+      `L04-04: coach de outro grupo deveria ser bloqueado, got ${data}`);
+  });
+
+  await test("L04-04: fn_read_athlete_health_snapshot — payload NOT_AUTHORIZED quando sem consent", async () => {
+    await l0404GrantCds(ATHLETE_A2);
+    await l0404RevokeCds(ATHLETE_A2);
+
+    const coach = await createUserClient(COACH_A);
+    const rid = `l0404-deny-${Date.now()}`;
+    const { data, error } = await coach.rpc("fn_read_athlete_health_snapshot", {
+      p_athlete_id: ATHLETE_A2,
+      p_request_id: rid,
+      p_ip: "203.0.113.9",
+      p_user_agent: "IntTest/L04-04",
+    });
+    // Denial NÃO eleva erro SQL — retorna payload para preservar log forense
+    assert(!error, `L04-04: snapshot denial não deveria raise: ${error?.message}`);
+    assert((data as any)?.error === "NOT_AUTHORIZED",
+      `L04-04: esperado payload.error=NOT_AUTHORIZED, got: ${JSON.stringify(data)}`);
+    assert((data as any)?.denial_reason === "missing_coach_data_share_consent",
+      `L04-04: payload.denial_reason inesperado: ${(data as any)?.denial_reason}`);
+
+    const { data: log, error: logErr } = await db
+      .from("sensitive_data_access_log")
+      .select("denied, denial_reason, actor_role, resource")
+      .eq("request_id", rid)
+      .maybeSingle();
+    assert(!logErr, `L04-04: select log falhou: ${logErr?.message}`);
+    assert(!!log, "L04-04: deveria ter registrado tentativa negada no log");
+    assert((log as any).denied === true, "L04-04: log.denied deveria ser true");
+    assert((log as any).resource === "athlete_health_snapshot",
+      `L04-04: log.resource inesperado: ${(log as any).resource}`);
+    assert((log as any).denial_reason === "missing_coach_data_share_consent",
+      `L04-04: denial_reason inesperado: ${(log as any).denial_reason}`);
+  });
+
+  await test("L04-04: fn_read_athlete_health_snapshot — sucesso registra log + snapshot JSON", async () => {
+    await l0404GrantCds(ATHLETE_A2);
+
+    const coach = await createUserClient(COACH_A);
+    const rid = `l0404-ok-${Date.now()}`;
+    const { data, error } = await coach.rpc("fn_read_athlete_health_snapshot", {
+      p_athlete_id: ATHLETE_A2,
+      p_request_id: rid,
+      p_ip: "198.51.100.11",
+      p_user_agent: "IntTest/L04-04",
+    });
+    assert(!error, `L04-04: snapshot com consent falhou: ${error?.message}`);
+    assert(typeof data === "object" && data !== null,
+      `L04-04: snapshot deveria retornar jsonb, got ${typeof data}`);
+    const snap = data as any;
+    assert(snap.athlete_id === ATHLETE_A2, "L04-04: athlete_id no snapshot errado");
+    assert(Array.isArray(snap.sessions), "L04-04: sessions deveria ser array");
+    assert(Array.isArray(snap.baselines), "L04-04: baselines deveria ser array");
+    assert(Array.isArray(snap.trends), "L04-04: trends deveria ser array");
+
+    const { data: log, error: logErr } = await db
+      .from("sensitive_data_access_log")
+      .select("denied, actor_role, resource, ip_address")
+      .eq("request_id", rid)
+      .maybeSingle();
+    assert(!logErr, `L04-04: select log ok falhou: ${logErr?.message}`);
+    assert(!!log && (log as any).denied === false,
+      `L04-04: log de sucesso não encontrado ou denied=true`);
+    assert(["admin_master","coach","assistant"].includes((log as any).actor_role),
+      `L04-04: actor_role inesperado: ${(log as any).actor_role}`);
+  });
+
+  await test("L04-04: RLS — coach vê athlete_baselines apenas com consent", async () => {
+    await db.from("athlete_baselines").delete().eq("user_id", ATHLETE_A2);
+
+    const baselineId = "bbbb0404-0000-4000-8000-000000000001";
+    await db.from("athlete_baselines").insert({
+      id: baselineId,
+      user_id: ATHLETE_A2,
+      group_id: GROUP_A,
+      metric: "avg_hr_bpm",
+      value: 152.0,
+      sample_size: 10,
+      window_start_ms: NOW_MS - 30 * 24 * 3600 * 1000,
+      window_end_ms: NOW_MS,
+      computed_at_ms: NOW_MS,
+    });
+
+    try {
+      // SEM consent: coach lê 0 rows
+      await l0404GrantCds(ATHLETE_A2);   // cria base revocável
+      await l0404RevokeCds(ATHLETE_A2);
+      const coach = await createUserClient(COACH_A);
+      const noConsent = await coach
+        .from("athlete_baselines")
+        .select("id, value")
+        .eq("id", baselineId);
+      assert(!noConsent.error, `L04-04: baselines select falhou: ${noConsent.error?.message}`);
+      assert((noConsent.data ?? []).length === 0,
+        `L04-04: coach sem consent não deveria ver baseline do A2 (got ${(noConsent.data ?? []).length})`);
+
+      // COM consent: coach lê 1 row
+      await l0404GrantCds(ATHLETE_A2);
+      const withConsent = await coach
+        .from("athlete_baselines")
+        .select("id, value")
+        .eq("id", baselineId);
+      assert(!withConsent.error, `L04-04: baselines select (consent) falhou: ${withConsent.error?.message}`);
+      assert((withConsent.data ?? []).length === 1,
+        `L04-04: coach com consent deveria ver 1 baseline, got ${(withConsent.data ?? []).length}`);
+    } finally {
+      await db.from("athlete_baselines").delete().eq("id", baselineId);
+    }
+  });
+
+  await test("L04-04: RLS — atleta sempre lê o próprio baseline (bypass consent)", async () => {
+    const baselineId = "bbbb0404-0000-4000-8000-000000000002";
+    await db.from("athlete_baselines").delete().eq("id", baselineId);
+    await db.from("athlete_baselines").insert({
+      id: baselineId,
+      user_id: ATHLETE_A1,
+      group_id: GROUP_A,
+      metric: "avg_pace_sec_km",
+      value: 320.0,
+      sample_size: 8,
+      window_start_ms: NOW_MS - 30 * 24 * 3600 * 1000,
+      window_end_ms: NOW_MS,
+      computed_at_ms: NOW_MS,
+    });
+    // Revoga consent para provar que bypass é independente de consent
+    await l0404GrantCds(ATHLETE_A1);
+    await l0404RevokeCds(ATHLETE_A1);
+
+    try {
+      const athlete = await createUserClient(ATHLETE_A1);
+      const { data, error } = await athlete
+        .from("athlete_baselines")
+        .select("id, value")
+        .eq("id", baselineId);
+      assert(!error, `L04-04: atleta self-read falhou: ${error?.message}`);
+      assert((data ?? []).length === 1,
+        `L04-04: atleta deveria ler o próprio baseline mesmo sem consent`);
+    } finally {
+      await db.from("athlete_baselines").delete().eq("id", baselineId);
+    }
+  });
+
+  await test("L04-04: trigger _auto_grant_coach_data_share emite consent_event no INSERT coaching_members", async () => {
+    // Seed já inseriu ATHLETE_A1 em GROUP_A → trigger deve ter emitido auto-grant
+    // source=system. Basta verificar que EXISTE uma row com essa assinatura.
+    const { data: evts, error: evErr } = await db
+      .from("consent_events")
+      .select("user_id, consent_type, action, source")
+      .eq("consent_type", "coach_data_share")
+      .eq("source", "system")
+      .in("user_id", [ATHLETE_A1, ATHLETE_A2, ATHLETE_B1]);
+    assert(!evErr, `L04-04: select evts trigger falhou: ${evErr?.message}`);
+    assert((evts ?? []).length >= 1,
+      `L04-04: trigger deveria ter emitido ≥1 consent_event source=system durante seed, got ${(evts ?? []).length}`);
+    const firstAction = (evts as any[])[0].action;
+    assert(firstAction === "granted",
+      `L04-04: evento do trigger deveria ter action=granted, got '${firstAction}'`);
+  });
+
+  await test("L04-04: sensitive_data_access_log é append-only (UPDATE bloqueado)", async () => {
+    // Garante existência de ao menos 1 log (reusa log do teste anterior de sucesso)
+    const { data: logs } = await db
+      .from("sensitive_data_access_log")
+      .select("id")
+      .limit(1);
+    assert((logs ?? []).length > 0, "L04-04: precisa de pelo menos 1 log para teste append-only");
+
+    const { error } = await db
+      .from("sensitive_data_access_log")
+      .update({ denied: true })
+      .eq("id", (logs as any[])[0].id);
+    assert(error !== null, "L04-04: UPDATE deveria falhar (append-only)");
+    assert(
+      (error!.message || "").includes("SDAL_APPEND_ONLY"),
+      `L04-04: esperado SDAL_APPEND_ONLY, got: ${error!.message}`,
+    );
+  });
+
+  await test("L04-04: sensitive_data_access_log.actor_id e subject_id registrados em lgpd_deletion_strategy", async () => {
+    const { data, error } = await db
+      .from("lgpd_deletion_strategy")
+      .select("column_name, strategy")
+      .eq("table_name", "sensitive_data_access_log");
+    assert(!error, `L04-04: select strategy falhou: ${error?.message}`);
+    const rows = (data ?? []) as any[];
+    const byCol = new Map(rows.map(r => [r.column_name, r.strategy]));
+    assert(byCol.get("actor_id") === "anonymize",
+      `L04-04: actor_id strategy esperado 'anonymize', got '${byCol.get("actor_id")}'`);
+    assert(byCol.get("subject_id") === "anonymize",
+      `L04-04: subject_id strategy esperado 'anonymize', got '${byCol.get("subject_id")}'`);
   });
 
   // 3.20 L05-01: cancel_swap_order happy path retorna previous_status + new_status
@@ -2211,6 +2501,18 @@ async function cleanup() {
     .delete()
     .eq("user_id", "00000000-0000-0000-0000-000000000000")
     .like("request_id", "l0403-%")
+    .then(() => void 0, () => void 0);
+
+  // L04-04: limpa logs de acesso (não anonimizados — apenas cross-user entries)
+  await db
+    .from("sensitive_data_access_log")
+    .delete()
+    .in("actor_id", ALL_USER_IDS)
+    .then(() => void 0, () => void 0);
+  await db
+    .from("sensitive_data_access_log")
+    .delete()
+    .like("request_id", "l0404-%")
     .then(() => void 0, () => void 0);
 
   // Delete in dependency order (children first)

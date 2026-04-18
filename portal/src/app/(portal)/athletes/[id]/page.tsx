@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
+import { ensureCoachHealthAccess } from "@/lib/sensitive-access";
 import { NoGroupSelected } from "@/components/no-group-selected";
 import { StatBlock, DashboardCard } from "@/components/ui";
 import { formatKm } from "@/lib/format";
@@ -71,6 +73,22 @@ export default async function AthleteProfilePage({
     totalDistance: 0,
   };
 
+  // L04-04: garante consent coach_data_share + audita acesso a dados sensíveis
+  // (sessions.total_distance_m / start_time_ms são dados de performance física – LGPD Art. 11).
+  const userClient = createClient();
+  const { data: { user } } = await userClient.auth.getUser();
+  let sensitiveAllowed = false;
+  if (user) {
+    const outcome = await ensureCoachHealthAccess({
+      db,
+      actorId: user.id,
+      athleteId,
+      resource: "sessions",
+      action: "read",
+    });
+    sensitiveAllowed = outcome.ok;
+  }
+
   try {
     const thirtyDaysAgo = Date.now() - 30 * 86_400_000;
 
@@ -84,12 +102,14 @@ export default async function AthleteProfilePage({
         .from("badge_awards")
         .select("id", { count: "exact", head: true })
         .eq("user_id", athleteId),
-      db
-        .from("sessions")
-        .select("total_distance_m")
-        .eq("user_id", athleteId)
-        .gte("start_time_ms", thirtyDaysAgo)
-        .gte("status", 3),
+      sensitiveAllowed
+        ? db
+            .from("sessions")
+            .select("total_distance_m")
+            .eq("user_id", athleteId)
+            .gte("start_time_ms", thirtyDaysAgo)
+            .gte("status", 3)
+        : Promise.resolve({ data: [] as { total_distance_m: number }[], error: null }),
     ]);
 
     const progress = progressRes.data as {

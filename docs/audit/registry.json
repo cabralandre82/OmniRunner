@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T12:32:02.784Z",
+  "generated_at": "2026-04-18T13:10:23.726Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 317,
-    "in-progress": 14,
+    "fix-pending": 316,
+    "in-progress": 15,
     "fixed": 17
   },
   "by_wave": {
@@ -2750,7 +2750,7 @@
       "lens": 4,
       "title": "Dados de saúde/biométricos (dados sensíveis, LGPD Art. 11) sem proteção reforçada",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "in-progress",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
@@ -2761,19 +2761,27 @@
         "migration",
         "testing"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260417230000_sensitive_health_data_protection.sql",
+        "portal/src/lib/sensitive-access.ts",
+        "portal/src/app/api/ai/athlete-briefing/route.ts",
+        "portal/src/app/(portal)/athletes/[id]/page.tsx",
+        "tools/integration_tests.ts"
+      ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/integration_tests.ts::\"L04-04 ·*\""
+      ],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "unassigned",
-      "runbook": null,
+      "runbook": "docs/audit/runbooks/L04-04-sensitive-health-access.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "RPCs fn_can_read_athlete_health / fn_log_sensitive_access / fn_read_athlete_health_snapshot entregues; service_role clients no Portal refatorados para `ensureCoachHealthAccess` antes de acessar sessions/runs/baselines/trends."
     },
     {
       "id": "L04-05",
