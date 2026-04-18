@@ -60,6 +60,7 @@ const FUNCTIONS_DIR = resolve(__dirname, "../supabase/functions");
 const FETCH_TIMEOUT_MS = 5_000;
 
 const SHARED_FILES = [
+  "account_deletion.ts",
   "asaas_webhook_auth.ts",
   "auth.ts",
   "cors.ts",
@@ -73,6 +74,15 @@ const SHARED_FILES = [
 ];
 
 const SHARED_EXPORTS: Record<string, string[]> = {
+  "account_deletion.ts": [
+    "hashEmail",
+    "truncateReason",
+    "extractClientIp",
+    "extractClientUserAgent",
+    "buildInitialLogRow",
+    "buildTerminalLogRow",
+    "MAX_REASON_LENGTH",
+  ],
   "asaas_webhook_auth.ts": [
     "verifyAsaasWebhookAuth",
     "computeAsaasIdempotencyKey",

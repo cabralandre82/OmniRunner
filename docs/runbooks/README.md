@@ -22,6 +22,11 @@
 | [`WEBHOOK_BACKLOG_RUNBOOK.md`](./WEBHOOK_BACKLOG_RUNBOOK.md) | `payment_webhook_events.processed=false` count > 100 sustained 10min | P1 | 1 h |
 | [`ASAAS_WEBHOOK_RUNBOOK.md`](./ASAAS_WEBHOOK_RUNBOOK.md) | 401 spike no `asaas-webhook` OU DLQ provider=asaas crescendo (L01-18) | P1/P2 | 4 h drenagem |
 
+### Privacidade / LGPD
+| Runbook | Trigger | Severidade | Tempo alvo |
+|---|---|---|---|
+| [`ACCOUNT_DELETION_RUNBOOK.md`](./ACCOUNT_DELETION_RUNBOOK.md) | `account_deletion_log.outcome` em estado de falha (L04-02 / L01-36 / L06-08) OU reclamação ANPD | P1 (`auth_delete_failed`) / P2 (`cleanup_failed`) | resolução < 24 h |
+
 ## Convenções
 
 - **Nome**: `<DOMÍNIO>_<NATUREZA>_RUNBOOK.md` (UPPERCASE para destaque vs.

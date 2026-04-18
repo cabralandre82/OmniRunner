@@ -1221,6 +1221,103 @@ async function testConstraints() {
     );
   });
 
+  // 3.25b L04-02 / L01-36 / L06-08 — account_deletion_log audit trail
+  await test("L04-02: account_deletion_log table exists with expected columns", async () => {
+    const probeId = randomUUID();
+    const { error } = await db
+      .from("account_deletion_log")
+      .select(
+        "id,request_id,user_id,email_hash,user_role,initiated_at,completed_at,outcome,failure_reason,cleanup_report,client_ip,client_ua",
+      )
+      .eq("request_id", probeId)
+      .limit(1);
+    assert(
+      !error,
+      `L04-02: account_deletion_log not queryable: ${error?.message}`,
+    );
+  });
+
+  await test("L04-02: account_deletion_log rejects malformed email_hash", async () => {
+    const { error } = await db.from("account_deletion_log").insert({
+      request_id: randomUUID(),
+      user_id: randomUUID(),
+      email_hash: "not-a-valid-sha256",
+    });
+    assert(error, "L04-02: deveria rejeitar email_hash malformado");
+    assert(
+      /check|email_hash/i.test(error.message),
+      `L04-02: erro inesperado para email_hash inválido: ${error.message}`,
+    );
+  });
+
+  await test("L04-02: account_deletion_log rejects unknown outcome value", async () => {
+    const { error } = await db.from("account_deletion_log").insert({
+      request_id: randomUUID(),
+      user_id: randomUUID(),
+      email_hash: "a".repeat(64),
+      outcome: "totally_made_up",
+    });
+    assert(error, "L04-02: deveria rejeitar outcome desconhecido");
+    assert(
+      /check|outcome/i.test(error.message),
+      `L04-02: erro inesperado para outcome inválido: ${error.message}`,
+    );
+  });
+
+  await test("L04-02: account_deletion_log enforces unique request_id", async () => {
+    const reqId = randomUUID();
+    const row = {
+      request_id: reqId,
+      user_id: randomUUID(),
+      email_hash: "b".repeat(64),
+    };
+    const { error: e1 } = await db.from("account_deletion_log").insert(row);
+    assert(!e1, `L04-02: insert inicial falhou: ${e1?.message}`);
+    try {
+      const { error: e2 } = await db.from("account_deletion_log").insert(row);
+      assert(e2, "L04-02: deveria rejeitar request_id duplicado");
+      assert(
+        /duplicate|unique/i.test(e2!.message),
+        `L04-02: erro inesperado para request_id duplicado: ${e2!.message}`,
+      );
+    } finally {
+      await db.from("account_deletion_log").delete().eq("request_id", reqId);
+    }
+  });
+
+  await test("L04-02: account_deletion_log immutability — outcome cannot be rewritten", async () => {
+    const reqId = randomUUID();
+    const row = {
+      request_id: reqId,
+      user_id: randomUUID(),
+      email_hash: "c".repeat(64),
+    };
+    const { error: insErr } = await db
+      .from("account_deletion_log")
+      .insert(row);
+    assert(!insErr, `L04-02: insert falhou: ${insErr?.message}`);
+    try {
+      // First terminal write succeeds (outcome was NULL).
+      const { error: u1 } = await db
+        .from("account_deletion_log")
+        .update({ outcome: "success", completed_at: new Date().toISOString() })
+        .eq("request_id", reqId);
+      assert(!u1, `L04-02: primeiro update falhou: ${u1?.message}`);
+      // Second terminal write must be rejected by the trigger.
+      const { error: u2 } = await db
+        .from("account_deletion_log")
+        .update({ outcome: "cleanup_failed" })
+        .eq("request_id", reqId);
+      assert(u2, "L04-02: deveria rejeitar overwrite de outcome");
+      assert(
+        /immutable/i.test(u2!.message),
+        `L04-02: erro inesperado para overwrite: ${u2!.message}`,
+      );
+    } finally {
+      await db.from("account_deletion_log").delete().eq("request_id", reqId);
+    }
+  });
+
   // 3.26 L19-01: coin_ledger partições mensais existem (prova estrutural)
   // Consultamos diretamente partições conhecidas por nome (coin_ledger_pYYYYMM).
   // Se a tabela pai não for particionada, essas tabelas também não existiriam.
