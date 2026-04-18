@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T22:33:29.546Z",
+  "generated_at": "2026-04-18T22:48:56.643Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 297,
-    "fixed": 50,
+    "fix-pending": 296,
+    "fixed": 51,
     "in-progress": 1
   },
   "by_wave": {
@@ -2110,34 +2110,42 @@
       "lens": 3,
       "title": "Divergência de fórmula de fee — TS vs SQL",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
-        "atomicity",
-        "mobile",
+        "money",
+        "rounding",
         "portal",
-        "migration",
-        "ux"
+        "billing"
       ],
       "files": [
-        "portal/src/lib/clearing.ts",
         "portal/src/lib/money.ts",
-        "supabase/migrations/20260303100000_gateway_fee_backing_fix.sql"
+        "portal/src/lib/clearing.ts",
+        "portal/src/lib/swap.ts",
+        "portal/src/lib/custody.ts",
+        "portal/src/lib/billing/edge-cases.ts",
+        "portal/src/lib/qa-reconciliation.test.ts"
       ],
-      "correction_type": "migration",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/money.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "commit:3958b00"
+      ],
+      "owner": "backend-platform",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Onda 1, 2026-04-17. Divergência eliminada via novo módulo\n`portal/src/lib/money.ts` que implementa banker's rounding\n(half-to-even) sobre BigInt mantissa, replicando bit-a-bit\n`Postgres ROUND((g * r / 100)::numeric, 2)`.\n\nSubstitui `Math.round(g * r) / 100` em 5 call-sites do portal:\nclearing.ts, swap.ts, custody.ts, billing/edge-cases.ts e o teste\nde reconciliação. Funções SQL (`execute_burn_atomic`,\n`execute_swap`, `execute_withdrawal`) já usam a fórmula correta\ndesde `20260303100000_gateway_fee_backing_fix.sql` e\n`20260417140000_execute_burn_atomic_hardening.sql` — esta correção\nalinha o lado TS.\n\nProperty-based test executa 5.000 pares aleatórios (gross,\nratePct) e verifica equivalência contra implementação BigInt de\nreferência do `ROUND` do Postgres. Cobre exact-half boundaries\n(0.005 → 0.00, 0.015 → 0.02) onde `Math.round` diverge.\n\n`processBurnForClearing` permanece no repo mas marcado\n`@deprecated`: produção usa `executeBurnAtomic`, mas testes\nlegados (`qa-e2e`, `concurrency`, `clearing.test`) ainda exercitam\no caminho não-atômico. Manter o código + corrigir a aritmética\nevita drift caso algum caller legado seja descoberto antes da\nremoção definitiva.\n"
     },
     {
       "id": "L03-02",

@@ -1,7 +1,7 @@
 # ROADMAP — Execução das Correções em Ondas
 
 > **Atualizado:** 2026-04-17
-> **Status do overall:** Onda 0 ✅ concluída (15/15 fixed, E2E verde) — Onda 1 em execução (18/177 fixed: supply chain quinteto L11-01/02/03/04/09 + observabilidade SRE L20-01/02/03/04/05/07/08 + runbooks financeiros L06-01 + kill switches L06-06 + custody idempotency L01-04 + swap TTL L05-02 + swap ADR cessão de crédito L02-07/ADR-008 + Asaas webhook hardening L01-18)
+> **Status do overall:** Onda 0 ✅ concluída (15/15 fixed, E2E verde) — Onda 1 em execução (19/177 fixed: supply chain quinteto L11-01/02/03/04/09 + observabilidade SRE L20-01/02/03/04/05/07/08 + runbooks financeiros L06-01 + kill switches L06-06 + custody idempotency L01-04 + swap TTL L05-02 + swap ADR cessão de crédito L02-07/ADR-008 + Asaas webhook hardening L01-18 + money math TS↔SQL convergence L03-01)
 
 A auditoria identificou **348 findings** distribuídos em **23 lentes** (69 🔴 critical, 123 🟠 high, 127 🟡 medium, 17 🟢 safe, 12 ⚪ não-auditados). Corrigir todos em paralelo seria caótico. Esta estratégia distribui o trabalho em **4 ondas** com objetivos bem definidos e critérios de saída mensuráveis.
 
@@ -63,7 +63,7 @@ Detalhes completos + correções em `docs/audit/findings/LXX-YY-*.md`.
 **Duração alvo:** 3-5 sprints
 **Foco:** fundação que acelera as correções das demais ondas. Inclui 54 criticals que não sangram dinheiro diretamente mas estabelecem padrões (observability, idempotência unificada, runbooks, OpenAPI, tracing).
 
-**Progresso atual:** 18/177 fixed:
+**Progresso atual:** 19/177 fixed:
 - L11-01/02/03 — supply chain trinca (dep vuln scan, SBOM CycloneDX, gitleaks)
 - L11-04 — Dependabot reorganizado em 27 grupos semânticos (10 portal + 13 mobile + 4 actions), majors isolados, security-updates separados, commit messages padronizados
 - L11-09 — Least-privilege `permissions:` em 7 workflows + WIF opt-in (Firebase/Play OIDC) em release.yml + assert anti-prod Supabase em portal.yml + runbook canônico CI_SECRETS_AND_OIDC.md
@@ -75,6 +75,7 @@ Detalhes completos + correções em `docs/audit/findings/LXX-YY-*.md`.
 - L05-02 — swap TTL/expiração (coluna `expires_at`, RPC `fn_expire_swap_orders` + cron `*/10 * * * *`, `execute_swap` rejeita expirado com P0005, portal aceita `expires_in_days` 1/7/30/90, HTTP 410 Gone para offers expiradas)
 - L02-07/ADR-008 — swap formalizado como cessão de crédito off-platform (coluna `external_payment_ref` com CHECK constraint, `execute_swap` ganha 3º param + SQLSTATE P0006, validação tripla portal Zod+lib+DB, WARN log estruturado quando ref ausente, ADR documentando rejeição de gateway Stripe/MP)
 - L01-18 — Asaas webhook hardening: header-only auth (path `payload.accessToken` removido, defense-in-depth vs JSON dump leak), constant-time compare (`safeEq`), HMAC-SHA256 forward-compat (`asaas-signature` opt-in fail-closed), idempotency via `sha256(rawBody)` (mata colisão do antigo `slice(0,64)`), tabela `billing_webhook_dead_letters` materializada (3 edge functions já INSERTavam mas tabela não existia), bug fix DLQ scope (`event`/`payload` ReferenceError no catch), helpers extraídos em `_shared/asaas_webhook_auth.ts` (33 testes Deno + RFC 4231 HMAC + collision-resistance), runbook canônico `docs/runbooks/ASAAS_WEBHOOK_RUNBOOK.md` (5 cenários + replay), CI ganha job `edge-function-deno-tests`
+- L03-01 — Convergência fee math TS ↔ SQL: novo `portal/src/lib/money.ts` (`roundToCents`/`calcPercentFee`/`addMoney`/`subtractMoney`/`multiplyMoney`/`calcSplit`) implementado sobre BigInt mantissa + half-to-even, replicando bit-a-bit `Postgres ROUND((g*r/100)::numeric, 2)`. 5 call-sites do portal migrados (clearing, swap, custody FX, billing split, qa-reconciliation), `processBurnForClearing` marcado `@deprecated`, 22 testes incluindo property-based 5.000 pares aleatórios contra implementação BigInt de referência do `ROUND` Postgres — elimina drift por banker's rounding (e.g. `0.005 → 0.00` em SQL vs `0.01` em `Math.round`)
 
 ### Escopo
 
