@@ -1,34 +1,262 @@
 version: 2
+
+# ─────────────────────────────────────────────────────────────────────────────
+# L11-04 — Dependabot agrupado por área semântica
+#
+# Antes: 1 PR mensal com TODAS minor+patch — qualquer falha bloqueava o lote.
+# Agora: PRs separados por ecossistema interno (next, supabase, sentry,
+# testing, etc), permitindo merge independente. Majors continuam isolados
+# (não-agrupados, default Dependabot) para forçar revisão individual.
+#
+# Grupos cobrem APENAS minor+patch dentro do mesmo "tema". Pacotes fora
+# de qualquer grupo caem no catch-all `other-minor-patch`. Major bumps
+# nunca são agrupados — geram um PR cada para diff isolado.
+# ─────────────────────────────────────────────────────────────────────────────
+
 updates:
+  # ───────── Portal (Next.js/React/TypeScript) ─────────
   - package-ecosystem: "npm"
     directory: "/portal"
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 10
+      time: "06:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 15
+    versioning-strategy: "increase"
     labels:
       - "dependencies"
       - "portal"
+    commit-message:
+      prefix: "chore(portal-deps)"
+      prefix-development: "chore(portal-deps-dev)"
+      include: "scope"
     groups:
-      minor-and-patch:
-        update-types:
-          - "minor"
-          - "patch"
+      next-ecosystem:
+        applies-to: version-updates
+        patterns:
+          - "next"
+          - "next-*"
+          - "@next/*"
+          - "eslint-config-next"
+        update-types: ["minor", "patch"]
+      react-ecosystem:
+        applies-to: version-updates
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+        update-types: ["minor", "patch"]
+      supabase-ecosystem:
+        applies-to: version-updates
+        patterns:
+          - "@supabase/*"
+        update-types: ["minor", "patch"]
+      sentry-ecosystem:
+        applies-to: version-updates
+        patterns:
+          - "@sentry/*"
+        update-types: ["minor", "patch"]
+      testing-ecosystem:
+        applies-to: version-updates
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "@testing-library/*"
+          - "@playwright/*"
+          - "happy-dom"
+          - "jsdom"
+        update-types: ["minor", "patch"]
+      styling-ecosystem:
+        applies-to: version-updates
+        patterns:
+          - "tailwindcss"
+          - "postcss"
+          - "framer-motion"
+          - "next-themes"
+        update-types: ["minor", "patch"]
+      types-and-tooling:
+        applies-to: version-updates
+        patterns:
+          - "@types/*"
+          - "typescript"
+          - "eslint"
+          - "eslint-*"
+        exclude-patterns:
+          # Already grouped above
+          - "@types/react"
+          - "@types/react-dom"
+          - "eslint-config-next"
+        update-types: ["minor", "patch"]
+      validation-and-state:
+        applies-to: version-updates
+        patterns:
+          - "zod"
+          - "next-intl"
+          - "sonner"
+          - "@upstash/*"
+        update-types: ["minor", "patch"]
+      other-portal-minor-patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types: ["minor", "patch"]
+      # ── Security updates: agrupar agressivamente para deploy rápido ──
+      portal-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
 
+  # ───────── Mobile app (Flutter / Dart pub) ─────────
   - package-ecosystem: "pub"
     directory: "/omni_runner"
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 5
+      time: "06:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 12
     labels:
       - "dependencies"
       - "flutter"
+    commit-message:
+      prefix: "chore(mobile-deps)"
+      prefix-development: "chore(mobile-deps-dev)"
+      include: "scope"
+    groups:
+      bloc-stack:
+        applies-to: version-updates
+        patterns:
+          - "flutter_bloc"
+          - "equatable"
+          - "get_it"
+        update-types: ["minor", "patch"]
+      firebase-stack:
+        applies-to: version-updates
+        patterns:
+          - "firebase_*"
+        update-types: ["minor", "patch"]
+      supabase-flutter:
+        applies-to: version-updates
+        patterns:
+          - "supabase_flutter"
+        update-types: ["minor", "patch"]
+      sentry-flutter:
+        applies-to: version-updates
+        patterns:
+          - "sentry_flutter"
+        update-types: ["minor", "patch"]
+      drift-and-storage:
+        applies-to: version-updates
+        patterns:
+          - "drift"
+          - "drift_*"
+          - "shared_preferences"
+          - "path_provider"
+          - "sqlcipher_flutter_libs"
+          - "flutter_secure_storage"
+        update-types: ["minor", "patch"]
+      auth-stack:
+        applies-to: version-updates
+        patterns:
+          - "google_sign_in"
+          - "sign_in_with_apple"
+          - "flutter_web_auth_2"
+        update-types: ["minor", "patch"]
+      geolocation-and-maps:
+        applies-to: version-updates
+        patterns:
+          - "geolocator"
+          - "permission_handler"
+          - "maplibre_gl"
+          - "flutter_foreground_task"
+        update-types: ["minor", "patch"]
+      health-and-fitness:
+        applies-to: version-updates
+        patterns:
+          - "health"
+          - "flutter_blue_plus"
+        update-types: ["minor", "patch"]
+      media-and-content:
+        applies-to: version-updates
+        patterns:
+          - "image_picker"
+          - "share_plus"
+          - "cached_network_image"
+          - "flutter_cache_manager"
+          - "qr_flutter"
+          - "mobile_scanner"
+          - "google_fonts"
+          - "fl_chart"
+        update-types: ["minor", "patch"]
+      networking-and-routing:
+        applies-to: version-updates
+        patterns:
+          - "http"
+          - "http_parser"
+          - "url_launcher"
+          - "app_links"
+          - "go_router"
+          - "connectivity_plus"
+        update-types: ["minor", "patch"]
+      mobile-testing-and-tooling:
+        applies-to: version-updates
+        patterns:
+          - "mocktail"
+          - "flutter_lints"
+          - "build_runner"
+          - "flutter_launcher_icons"
+          - "flutter_native_splash"
+        update-types: ["minor", "patch"]
+      other-mobile-minor-patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types: ["minor", "patch"]
+      mobile-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
 
+  # ───────── GitHub Actions (CI workflows) ─────────
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 5
     labels:
       - "dependencies"
       - "ci"
+    commit-message:
+      prefix: "chore(ci-deps)"
+      include: "scope"
+    groups:
+      official-actions:
+        applies-to: version-updates
+        patterns:
+          - "actions/*"
+          - "github/*"
+        update-types: ["minor", "patch"]
+      security-actions:
+        applies-to: version-updates
+        patterns:
+          - "gitleaks/*"
+          - "anchore/*"
+          - "ossf/*"
+          - "google/osv-scanner-action"
+          - "trufflesecurity/*"
+          - "aquasecurity/*"
+        update-types: ["minor", "patch"]
+      other-ci-minor-patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types: ["minor", "patch"]
+      ci-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
