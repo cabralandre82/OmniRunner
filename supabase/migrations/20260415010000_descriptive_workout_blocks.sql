@@ -1,6 +1,14 @@
 -- Adds p_blocks jsonb parameter to fn_create_descriptive_workout so that
 -- workouts created via "Descrever" or AI parse can carry structured blocks
 -- (pace zones, HR targets, distance/duration triggers) that GPS watches need.
+--
+-- 20260414001000_training_plan_v2.sql criou a versão de 9 args. Como o
+-- 10º parâmetro (p_blocks) tem DEFAULT, PostgreSQL trata como overload
+-- distinto — `CREATE OR REPLACE` só substituiria se a assinatura bater.
+-- Drop explícito da versão anterior evita ambiguidade no REVOKE/GRANT abaixo.
+DROP FUNCTION IF EXISTS public.fn_create_descriptive_workout(
+  uuid, uuid, date, text, text, text, text, text, int
+);
 
 CREATE OR REPLACE FUNCTION public.fn_create_descriptive_workout(
   p_plan_week_id   uuid,
@@ -101,5 +109,9 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.fn_create_descriptive_workout FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.fn_create_descriptive_workout TO authenticated;
+REVOKE ALL ON FUNCTION public.fn_create_descriptive_workout(
+  uuid, uuid, date, text, text, text, text, text, int, jsonb
+) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.fn_create_descriptive_workout(
+  uuid, uuid, date, text, text, text, text, text, int, jsonb
+) TO authenticated;

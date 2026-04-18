@@ -165,7 +165,9 @@ IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' A
       SELECT
         le.group_id,
         COALESCE(SUM(s.total_distance_m), 0) AS total_distance_m,
-        COALESCE(SUM(s.duration_seconds), 0) AS total_duration_s,
+        -- sessions só tem moving_ms (base schema). duration_seconds é
+        -- adicionada por migration posterior; usar moving_ms/1000 cobre ambos.
+        COALESCE(SUM(s.moving_ms), 0) / 1000.0 AS total_duration_s,
         COUNT(DISTINCT s.id) AS total_sessions,
         COUNT(DISTINCT s.user_id) AS active_members,
         COALESCE(cw.wins, 0) AS challenge_wins
@@ -176,11 +178,15 @@ IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' A
         AND s.start_time_ms >= p_window_start_ms
         AND s.start_time_ms < p_window_end_ms
       LEFT JOIN LATERAL (
+        -- challenge_results carrega user_id diretamente; challenge_participants
+        -- tem PK composta (challenge_id, user_id) — não há coluna `id` nem
+        -- `participant_id`. Timestamp correto é `calculated_at_ms` (bigint),
+        -- não `created_at`.
         SELECT COUNT(*) AS wins
         FROM challenge_results cr
-        JOIN challenge_participants cp ON cp.id = cr.participant_id
-        WHERE cp.user_id = cm.user_id AND cr.rank = 1
-          AND cr.created_at >= to_timestamp(p_window_start_ms / 1000.0)
+        WHERE cr.user_id = cm.user_id AND cr.rank = 1
+          AND cr.calculated_at_ms >= p_window_start_ms
+          AND cr.calculated_at_ms <  p_window_end_ms
       ) cw ON true
       WHERE le.season_id = p_season_id
       GROUP BY le.group_id, cw.wins;
@@ -225,7 +231,10 @@ BEGIN
       p_day,
       COUNT(DISTINCT s.id),
       COALESCE(SUM(s.total_distance_m), 0),
-      COALESCE(SUM(s.duration_seconds), 0),
+      -- moving_ms sempre existe; duration_seconds só em migrations posteriores.
+      -- 20260312000000_fix_broken_functions.sql re-escreve esta função com a
+      -- mesma substituição; duplicamos aqui para sobreviver a fresh replay.
+      COALESCE(SUM(s.moving_ms), 0) / 1000.0,
       COUNT(DISTINCT s.user_id),
       CASE WHEN COUNT(DISTINCT s.user_id) > 0
            THEN COUNT(DISTINCT s.id)::numeric / COUNT(DISTINCT s.user_id)

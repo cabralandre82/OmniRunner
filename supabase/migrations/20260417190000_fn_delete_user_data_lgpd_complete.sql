@@ -208,19 +208,92 @@ INSERT INTO public.lgpd_deletion_strategy (table_name, column_name, strategy, ra
   ('notification_log',         'user_id',             'defensive_optional', 'Log de notificações'),
   ('strava_connections',       'user_id',             'defensive_optional', 'Tokens OAuth Strava'),
   ('workout_delivery_items',   'athlete_user_id',     'defensive_optional', 'Entregas de treino (feature legacy)'),
-  ('coaching_athlete_kpis_daily','user_id',           'defensive_optional', 'KPIs diários agregados (feature legacy)')
+  ('coaching_athlete_kpis_daily','user_id',           'defensive_optional', 'KPIs diários agregados (feature legacy)'),
+
+  -- Category E: migrations posteriores à L04-01 — registro retroativo.
+  -- Estratégia aplicada por inspeção semântica. Execução concreta em
+  -- fn_delete_user_data depende de edição caso-a-caso; defensive_optional
+  -- aqui sinaliza "tabela existe mas fn_delete_user_data pode não cobrir
+  -- ainda" — o bloco EXCEPTION WHEN undefined_table/column garante que
+  -- fn_delete_user_data nunca quebre por falta de cobertura.
+  ('_role_migration_audit',            'user_id',          'defensive_optional', 'Audit legado — deletar entries do sujeito'),
+  ('assessoria_partnerships',          'requested_by',     'defensive_optional', 'Parceria B2B — actor vira NULL (partnership persiste)'),
+  ('athlete_verification',             'user_id',          'defensive_optional', 'Verificação de atleta (dados do sujeito)'),
+  ('athlete_workout_feedback',         'athlete_user_id',  'defensive_optional', 'Feedback do atleta sobre treino'),
+  ('billing_events',                   'actor_id',         'defensive_optional', 'Trilha fiscal — anonimiza actor (L09-04 retenção)'),
+  ('billing_purchases',                'requested_by',     'defensive_optional', 'Compra B2B — actor nullify, registro persiste'),
+  ('billing_refund_requests',          'requested_by',     'defensive_optional', 'Pedido de refund do sujeito'),
+  ('billing_refund_requests',          'reviewed_by',      'defensive_optional', 'Reviewer do refund (actor admin) — nullify'),
+  ('challenge_queue',                  'user_id',          'defensive_optional', 'Fila de desafio pessoal'),
+  ('championship_badges',              'user_id',          'defensive_optional', 'Badges em campeonato'),
+  ('championship_participants',        'user_id',          'defensive_optional', 'Participação em campeonato'),
+  ('championship_templates',           'created_by',       'defensive_optional', 'Template de campeonato — nullify creator'),
+  ('championships',                    'created_by',       'defensive_optional', 'Campeonato criado — nullify creator, evento persiste'),
+  ('clearing_case_events',             'actor_id',         'defensive_optional', 'Evento de clearing — anonimiza actor (audit preservado)'),
+  ('coaching_alerts',                  'user_id',          'defensive_optional', 'Alertas coaching pessoais'),
+  ('coaching_announcement_reads',      'user_id',          'defensive_optional', 'Read-receipts de anúncios'),
+  ('coaching_announcements',           'created_by',       'defensive_optional', 'Anúncios — nullify creator, conteúdo persiste'),
+  ('coaching_athlete_notes',           'athlete_user_id',  'defensive_optional', 'Notas sobre o atleta (dados do sujeito)'),
+  ('coaching_athlete_notes',           'created_by',       'defensive_optional', 'Autor da nota (coach) — nullify'),
+  ('coaching_athlete_tags',            'athlete_user_id',  'defensive_optional', 'Tags do atleta'),
+  ('coaching_device_links',            'athlete_user_id',  'defensive_optional', 'Vínculo de device do atleta'),
+  ('coaching_financial_ledger',        'created_by',       'defensive_optional', 'Lançamento fiscal — anonimiza actor'),
+  ('coaching_member_status',           'updated_by',       'defensive_optional', 'Atualizador de status — nullify'),
+  ('coaching_member_status',           'user_id',          'defensive_optional', 'Status do sujeito'),
+  ('coaching_plans',                   'created_by',       'defensive_optional', 'Plano criado — nullify creator'),
+  ('coaching_subscriptions',           'athlete_user_id',  'defensive_optional', 'Assinatura do atleta'),
+  ('coaching_tp_sync',                 'athlete_user_id',  'defensive_optional', 'Estado de sync TrainingPeaks do atleta'),
+  ('coaching_training_attendance',     'athlete_user_id',  'defensive_optional', 'Presença em treino'),
+  ('coaching_training_sessions',       'created_by',       'defensive_optional', 'Sessão criada — nullify creator'),
+  ('coaching_week_templates',          'created_by',       'defensive_optional', 'Template semanal — nullify creator'),
+  ('coaching_workout_assignments',     'athlete_user_id',  'defensive_optional', 'Atribuição de treino (sujeito)'),
+  ('coaching_workout_assignments',     'created_by',       'defensive_optional', 'Atribuição (autor coach) — nullify'),
+  ('coaching_workout_executions',      'athlete_user_id',  'defensive_optional', 'Execução de treino (sujeito)'),
+  ('coaching_workout_templates',       'created_by',       'defensive_optional', 'Template — nullify creator'),
+  ('coin_ledger_archive',              'user_id',          'defensive_optional', 'Archive ledger — anonimiza (contábil)'),
+  ('completed_workouts',               'athlete_user_id',  'defensive_optional', 'Treino completado (sujeito)'),
+  ('device_tokens',                    'user_id',          'defensive_optional', 'Device tokens de push notification'),
+  ('institution_credit_purchases',     'created_by',       'defensive_optional', 'Compra de créditos — nullify actor'),
+  ('park_activities',                  'user_id',          'defensive_optional', 'Atividade em parque (sujeito)'),
+  ('park_leaderboard',                 'user_id',          'defensive_optional', 'Entrada em leaderboard de parque'),
+  ('plan_workout_releases',            'athlete_user_id',  'defensive_optional', 'Release de treino do atleta'),
+  ('plan_workout_releases',            'created_by',       'defensive_optional', 'Release — nullify autor'),
+  ('plan_workout_releases',            'updated_by',       'defensive_optional', 'Release — nullify atualizador'),
+  ('portal_audit_log',                 'actor_id',         'defensive_optional', 'Audit do portal — anonimiza actor (trilha preservada)'),
+  ('product_events',                   'user_id',          'defensive_optional', 'Product analytics events (PII)'),
+  ('running_dna',                      'user_id',          'defensive_optional', 'Perfil comportamental de corrida (sujeito)'),
+  ('session_journal_entries',          'user_id',          'defensive_optional', 'Diário de sessão (sujeito)'),
+  ('sessions_archive',                 'user_id',          'defensive_optional', 'Archive de sessions — anonimiza (agregados preservados)'),
+  ('strava_activity_history',          'user_id',          'defensive_optional', 'Histórico de atividades Strava'),
+  ('token_intents',                    'created_by',       'defensive_optional', 'Intent de token — nullify creator'),
+  ('token_intents',                    'target_user_id',   'defensive_optional', 'Intent direcionado ao sujeito'),
+  ('training_plans',                   'athlete_user_id',  'defensive_optional', 'Plano de treino do sujeito'),
+  ('training_plans',                   'created_by',       'defensive_optional', 'Plano — nullify creator'),
+  ('training_plans',                   'updated_by',       'defensive_optional', 'Plano — nullify atualizador'),
+  ('user_wrapped',                     'user_id',          'defensive_optional', 'Year-in-review do sujeito'),
+  ('weekly_goals',                     'user_id',          'defensive_optional', 'Metas semanais do sujeito'),
+  ('workout_delivery_batches',         'created_by',       'defensive_optional', 'Batch de delivery — nullify creator'),
+  ('workout_sync_cursors',             'athlete_user_id',  'defensive_optional', 'Cursor de sync do sujeito'),
+  ('asaas_customer_map',               'athlete_user_id',  'defensive_optional', 'Mapping Asaas→atleta (L09-04 retenção fiscal; anonimiza)'),
+  ('billing_batch_jobs',               'created_by',       'defensive_optional', 'Job de billing — nullify creator (job persiste)')
 ON CONFLICT (table_name, column_name) DO UPDATE
   SET strategy = EXCLUDED.strategy,
       rationale = EXCLUDED.rationale;
 
 -- 2. Coverage gaps view — CI-testable regression blocker.
 -- Lista user-referencing columns em information_schema que NÃO têm estratégia.
+-- Filtra views (v_*): cobertura só se aplica a BASE TABLE; views herdam do
+-- que subjacem. Evita falso-positivo em v_athlete_watch_type, v_weekly_progress etc.
 CREATE OR REPLACE VIEW public.lgpd_user_data_coverage_gaps AS
 WITH user_ref_columns AS (
   SELECT c.table_name, c.column_name
   FROM information_schema.columns c
+  JOIN information_schema.tables t
+    ON t.table_schema = c.table_schema
+   AND t.table_name   = c.table_name
   WHERE c.table_schema = 'public'
-    AND c.data_type = 'uuid'
+    AND t.table_type   = 'BASE TABLE'
+    AND c.data_type    = 'uuid'
     AND (
       c.column_name IN (
         'user_id', 'athlete_user_id', 'target_user_id', 'actor_id',
@@ -581,7 +654,10 @@ BEGIN
   BEGIN UPDATE public.profiles SET active_coaching_group_id = NULL WHERE id = p_user_id;
   EXCEPTION WHEN undefined_column THEN NULL; END;
 
-  BEGIN UPDATE public.profiles SET onboarding_state = NULL WHERE id = p_user_id;
+  -- onboarding_state é NOT NULL DEFAULT 'NEW' (20260221000021). Fazer NULL
+  -- violaria a constraint. Resetamos ao default — a conta anonimizada se
+  -- comporta como um shell cru (sem progresso funcional), sem quebrar FK.
+  BEGIN UPDATE public.profiles SET onboarding_state = 'NEW' WHERE id = p_user_id;
   EXCEPTION WHEN undefined_column THEN NULL; END;
 
   v_report := v_report || jsonb_build_object('completed_at', now());

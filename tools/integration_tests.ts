@@ -922,11 +922,9 @@ async function testConstraints() {
 
   // 3.17 L05-01: cancel_swap_order RPC exists and has expected config
   await test("L05-01: cancel_swap_order has search_path and lock_timeout configured", async () => {
-    const { data, error } = await db.rpc("__sql_noop__").catch(() => ({
-      data: null,
-      error: null,
-    })) as { data: unknown; error: unknown };
-    // Use raw SQL via pg_proc lookup through a view we trust
+    // Note: db.rpc() returns a PostgrestBuilder which becomes a promise only
+    // via await/then — it doesn't expose `.catch()` directly. We query
+    // security_definer_hardening_audit (already validated above) instead.
     const { data: audit, error: auditErr } = await db
       .from("security_definer_hardening_audit")
       .select("function_name, proconfig, has_search_path")
@@ -953,7 +951,6 @@ async function testConstraints() {
       (exec!.proconfig ?? []).some((c: string) => c.startsWith("lock_timeout=")),
       "L05-01: execute_swap sem lock_timeout",
     );
-    void data; void error; // silence unused
   });
 
   // 3.18 L05-01: cancel_swap_order P0002 on unknown order
@@ -2707,19 +2704,30 @@ async function testIdempotency() {
 
   // 5.4 fn_upsert_member_status is idempotent
   await test("fn_upsert_member_status: double call is idempotent", async () => {
+    // fn_upsert_member_status valida auth.uid() via SECURITY DEFINER — precisa
+    // de JWT de coach autenticado (não service_role, que carrega auth.uid()=NULL).
+    const coach = await createUserClient(COACH_A);
     const params = {
       p_group_id: GROUP_A,
       p_user_id: ATHLETE_A1,
       p_status: "paused",
     };
 
-    const { data: d1, error: e1 } = await db.rpc("fn_upsert_member_status", params);
+    const { data: d1, error: e1 } = await coach.rpc("fn_upsert_member_status", params);
     assert(!e1, `First call error: ${e1?.message}`);
+    assert(
+      (d1 as { ok?: boolean } | null)?.ok === true,
+      `First call rejected: ${JSON.stringify(d1)}`,
+    );
 
-    const { data: d2, error: e2 } = await db.rpc("fn_upsert_member_status", params);
+    const { data: d2, error: e2 } = await coach.rpc("fn_upsert_member_status", params);
     assert(!e2, `Second call error: ${e2?.message}`);
+    assert(
+      (d2 as { ok?: boolean } | null)?.ok === true,
+      `Second call rejected: ${JSON.stringify(d2)}`,
+    );
 
-    // Verify only one row exists
+    // Verify only one row exists (service_role bypass RLS para conferir)
     const { data: rows } = await db
       .from("coaching_member_status")
       .select("*")

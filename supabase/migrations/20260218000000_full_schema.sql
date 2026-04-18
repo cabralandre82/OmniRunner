@@ -1036,12 +1036,16 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('session-points', 'session-points', false)
 ON CONFLICT (id) DO NOTHING;
 
+-- storage.objects policies sobrevivem a DROP SCHEMA public — drop idempotente
+-- garante fresh replay (disaster recovery / CI reset).
+DROP POLICY IF EXISTS "session_points_own_upload" ON storage.objects;
 CREATE POLICY "session_points_own_upload" ON storage.objects
   FOR INSERT WITH CHECK (
     bucket_id = 'session-points'
     AND (storage.foldername(name))[1] = auth.uid()::text
   );
 
+DROP POLICY IF EXISTS "session_points_own_read" ON storage.objects;
 CREATE POLICY "session_points_own_read" ON storage.objects
   FOR SELECT USING (
     bucket_id = 'session-points'

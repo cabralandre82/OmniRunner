@@ -481,8 +481,15 @@ BEGIN
     user_ref_columns AS (
       SELECT c.table_name, c.column_name
       FROM information_schema.columns c
+      -- L19-01 + views-fix: filtra BASE TABLE para não computar views como
+      -- gaps (v_* herdam cobertura das tabelas subjacentes). Mantém a
+      -- exclusão de partitions via pg_inherits.
+      JOIN information_schema.tables t
+        ON t.table_schema = c.table_schema
+       AND t.table_name   = c.table_name
       WHERE c.table_schema = 'public'
-        AND c.data_type = 'uuid'
+        AND t.table_type   = 'BASE TABLE'
+        AND c.data_type    = 'uuid'
         AND (
           c.column_name IN (
             'user_id', 'athlete_user_id', 'target_user_id', 'actor_id',

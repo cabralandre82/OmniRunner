@@ -209,9 +209,11 @@ CREATE POLICY "pwe_staff_select"
 ALTER TABLE public.platform_fee_config
   DROP CONSTRAINT IF EXISTS platform_fee_config_fee_type_check;
 
+-- L01-44 retro-fix: inclui fx_spread aqui (introduzido por 20260228170000)
+-- para manter o CHECK forward-compatible. Canonical source em 20260417130000.
 ALTER TABLE public.platform_fee_config
   ADD CONSTRAINT platform_fee_config_fee_type_check
-    CHECK (fee_type IN ('clearing', 'swap', 'maintenance', 'billing_split'));
+    CHECK (fee_type IN ('clearing', 'swap', 'maintenance', 'billing_split', 'fx_spread'));
 
 INSERT INTO public.platform_fee_config (fee_type, rate_pct, is_active)
 VALUES ('billing_split', 2.50, true)

@@ -117,6 +117,9 @@ WHERE points_path LIKE 'session-points/%'
 -- Allow reading old files uploaded with the legacy path prefix.
 -- Legacy objects: name = "session-points/<uid>/<sid>.json"
 -- foldername[1] = 'session-points', foldername[2] = uid
+-- storage.objects policies persistem fora do public schema — drop idempotente
+-- para suportar fresh replay (disaster recovery / CI reset).
+DROP POLICY IF EXISTS "session_points_legacy_read" ON storage.objects;
 CREATE POLICY "session_points_legacy_read" ON storage.objects
   FOR SELECT USING (
     bucket_id = 'session-points'

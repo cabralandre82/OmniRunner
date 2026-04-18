@@ -585,7 +585,10 @@ BEGIN
       ('consent_events', 'user_id', 'anonymize',
        'L04-03: log imutável de consentimento. Anonimiza user_id para satisfazer '
        'LGPD Art. 18 VI (direito ao esquecimento) preservando row como prova '
-       'estatística/auditória (LGPD Art. 16 — obrigação legal documental).')
+       'estatística/auditória (LGPD Art. 16 — obrigação legal documental).'),
+      ('consent_policy_versions', 'updated_by', 'defensive_optional',
+       'L04-03: metadado da versão de política (actor admin). Nullify do actor '
+       'preserva a versão canônica de consent; não contém PII do sujeito.')
     ON CONFLICT (table_name, column_name) DO UPDATE
       SET strategy = EXCLUDED.strategy,
           rationale = EXCLUDED.rationale;
