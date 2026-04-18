@@ -48,6 +48,7 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
+SET lock_timeout = '2s'
 AS $$
 DECLARE
   v_ledger_id      uuid;

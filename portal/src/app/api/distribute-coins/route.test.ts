@@ -149,6 +149,32 @@ describe("POST /api/distribute-coins (L02-01: atomic RPC)", () => {
     expect(res.status).toBe(500);
   });
 
+  it("L19-05: returns 503 with Retry-After when RPC hits lock_timeout (55P03)", async () => {
+    mockAdminCheck();
+    mockAthleteFound(true);
+    mockEmitCoinsAtomic(null, {
+      code: "55P03",
+      message: "canceling statement due to lock timeout",
+    });
+    const res = await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 50 }));
+    expect(res.status).toBe(503);
+    expect(res.headers.get("Retry-After")).toBe("2");
+    expect((await res.json()).error).toMatch(/em uso.*tente novamente/i);
+    // audit log NÃO deve ser chamado em 503 (operação não committada)
+    expect(auditLog).not.toHaveBeenCalled();
+  });
+
+  it("L19-05: also maps lock_not_available message (without code) to 503", async () => {
+    mockAdminCheck();
+    mockAthleteFound(true);
+    mockEmitCoinsAtomic(null, {
+      message: "lock_not_available: could not obtain lock on row",
+    });
+    const res = await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 50 }));
+    expect(res.status).toBe(503);
+    expect(res.headers.get("Retry-After")).toBe("2");
+  });
+
   it("returns 200 on successful distribution (first call, not idempotent)", async () => {
     mockAdminCheck();
     mockAthleteFound(true);

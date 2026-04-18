@@ -118,6 +118,7 @@ CREATE OR REPLACE FUNCTION public.execute_burn_atomic(
   LANGUAGE plpgsql
   SECURITY DEFINER
   SET search_path = public, pg_temp
+  SET lock_timeout = '2s'
 AS $$
 DECLARE
   v_wallet_balance integer;

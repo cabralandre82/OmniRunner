@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T03:14:29.168Z",
+  "generated_at": "2026-04-18T03:20:38.282Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 324,
-    "in-progress": 7,
+    "fix-pending": 323,
+    "in-progress": 8,
     "fixed": 17
   },
   "by_wave": {
@@ -7788,17 +7788,31 @@
       "lens": 19,
       "title": "Falta FOR UPDATE NOWAIT em funções de lock crítico",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "in-progress",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
-        "atomicity"
+        "atomicity",
+        "locks",
+        "sre",
+        "observability"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260417160000_lock_timeout_financial_rpcs.sql",
+        "supabase/migrations/20260417120000_emit_coins_atomic.sql",
+        "supabase/migrations/20260417140000_execute_burn_atomic_hardening.sql",
+        "portal/src/app/api/distribute-coins/route.ts",
+        "portal/src/app/api/distribute-coins/route.test.ts",
+        "tools/integration_tests.ts"
+      ],
+      "correction_type": "migration",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/app/api/distribute-coins/route.test.ts",
+        "tools/integration_tests.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "unassigned",

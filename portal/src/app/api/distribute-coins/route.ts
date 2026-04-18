@@ -95,6 +95,16 @@ export async function POST(request: Request) {
 
     if (rpcErr) {
       const msg = rpcErr.message ?? "";
+      // L19-05 — 55P03 lock_not_available: emit_coins_atomic tem
+      // SET lock_timeout = '2s' → se custódia/wallet/inventário do grupo
+      // está sob contenção, falha rápido em vez de segurar conexão. Cliente
+      // deve fazer backoff e retry.
+      if (rpcErr.code === "55P03" || msg.includes("lock_not_available")) {
+        return new NextResponse(
+          JSON.stringify({ error: "Recurso em uso, tente novamente em instantes." }),
+          { status: 503, headers: { "Content-Type": "application/json", "Retry-After": "2" } },
+        );
+      }
       // P0002 — CUSTODY_FAILED (lastro insuficiente ou falha no check de custódia)
       if (msg.includes("CUSTODY_FAILED") || rpcErr.code === "P0002") {
         return NextResponse.json(

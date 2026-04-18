@@ -821,6 +821,45 @@ async function testConstraints() {
     assert(!error, `count failed: ${error?.message}`);
     assert(typeof count === "number" && count > 0, "Expected at least one SECURITY DEFINER function in public");
   });
+
+  // 3.11 L19-05: todas as RPCs financeiras críticas deployadas têm lock_timeout
+  await test("L19-05: no deployed financial RPC lacks SET lock_timeout", async () => {
+    const { data, error } = await db
+      .from("financial_rpc_lock_config_audit")
+      .select("function_name, deployed, has_lock_timeout, lock_timeout_setting")
+      .eq("deployed", true)
+      .eq("has_lock_timeout", false);
+
+    assert(!error, `financial_rpc_lock_config_audit not queryable: ${error?.message}`);
+    const unhardened = data ?? [];
+    if (unhardened.length > 0) {
+      const list = unhardened
+        .map((r: { function_name: string }) => `  - public.${r.function_name}`)
+        .join("\n");
+      assert(
+        false,
+        `L19-05 regression: ${unhardened.length} financial RPC(s) deployed without lock_timeout:\n${list}\n` +
+          `Fix: adicione SET lock_timeout = '2s' no CREATE OR REPLACE FUNCTION ou rode migration de hardening.`
+      );
+    }
+  });
+
+  await test("L19-05: lock_timeout setting is '2s' for all hardened RPCs", async () => {
+    const { data, error } = await db
+      .from("financial_rpc_lock_config_audit")
+      .select("function_name, lock_timeout_setting")
+      .eq("deployed", true)
+      .eq("has_lock_timeout", true);
+
+    assert(!error, `query failed: ${error?.message}`);
+    const rows = data ?? [];
+    for (const r of rows as Array<{ function_name: string; lock_timeout_setting: string }>) {
+      assert(
+        r.lock_timeout_setting === "lock_timeout=2s",
+        `L19-05: ${r.function_name} tem lock_timeout_setting="${r.lock_timeout_setting}", esperado "lock_timeout=2s"`
+      );
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
