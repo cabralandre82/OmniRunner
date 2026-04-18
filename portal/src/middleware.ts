@@ -1,42 +1,39 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import {
+  isPublicRoute,
+  isAuthOnlyRoute,
+  resolveRouteAccess,
+  isStaffRole,
+} from "@/lib/route-policy";
+import {
+  MEMBERSHIP_NONE,
+  getCachedMembership,
+  setCachedMembership,
+} from "@/lib/route-policy-cache";
 
-const PUBLIC_ROUTES = new Set(["/login", "/no-access", "/api/auth/callback", "/api/health", "/api/custody/webhook", "/api/liveness"]);
-
-const PUBLIC_PREFIXES = [
-  "/challenge/",
-  "/invite/",
-];
-
-const AUTH_ONLY_PREFIXES = [
-  "/platform",
-  "/api/platform/",
-];
-
-const ADMIN_ONLY_ROUTES = [
-  "/credits/history",
-  "/credits/request",
-  "/billing",
-  "/settings",
-];
-
-const ADMIN_PROFESSOR_ROUTES = ["/engagement/export", "/settings/invite"];
+/**
+ * Portal middleware (L13-01 / L13-02 / L13-03).
+ *
+ * Route policy is delegated to `lib/route-policy.ts` so the precedence
+ * rule "ADMIN_COACH_ROUTES win over ADMIN_ONLY_ROUTES on conflicting
+ * prefixes" is verified by unit tests rather than re-implemented inline.
+ *
+ * Membership lookups go through the LRU cache in
+ * `lib/route-policy-cache.ts` (60 s TTL, negative-cached) so a single
+ * page-load with N RSCs costs at most one Postgres round-trip per
+ * `(user, group)` instead of one per RSC.
+ */
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isPublic =
-    PUBLIC_ROUTES.has(pathname) ||
-    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
-
-  if (isPublic) {
+  if (isPublicRoute(pathname)) {
     const { supabaseResponse } = await updateSession(request);
     return supabaseResponse;
   }
 
-  const isAuthOnly = AUTH_ONLY_PREFIXES.some((p) => pathname.startsWith(p));
-
-  if (isAuthOnly) {
+  if (isAuthOnlyRoute(pathname)) {
     const { user, supabaseResponse, supabase } = await updateSession(request);
     if (!user) {
       const url = request.nextUrl.clone();
@@ -44,8 +41,10 @@ export async function middleware(request: NextRequest) {
       url.searchParams.set("next", pathname);
       return NextResponse.redirect(url);
     }
-    // Server-side platform admin gate: verify platform_role (admin_master equivalent for platform)
-    if (pathname.startsWith("/platform") || pathname.startsWith("/api/platform/")) {
+    if (
+      pathname.startsWith("/platform") ||
+      pathname.startsWith("/api/platform/")
+    ) {
       const { data: profile } = await supabase
         .from("profiles")
         .select("platform_role")
@@ -63,7 +62,6 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // Step 1: verify session
   const { user, supabaseResponse, supabase } = await updateSession(request);
 
   if (!user) {
@@ -73,33 +71,67 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Step 2: verify staff membership (check cookie cache first, re-verify group membership)
   let groupId = request.cookies.get("portal_group_id")?.value;
   let role = request.cookies.get("portal_role")?.value;
 
-  // Re-verify: user must belong to the group stored in cookie (prevents tampering)
   if (groupId) {
-    const { data: membership } = await supabase
-      .from("coaching_members")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("group_id", groupId)
-      .in("role", ["admin_master", "coach", "assistant"])
-      .maybeSingle();
-    if (!membership) {
+    // L13-03: try the LRU cache first. Cache stores both positive and
+    // negative results (MEMBERSHIP_NONE). Cache misses fall through to
+    // the existing Postgres query, which then populates the cache.
+    const cached = getCachedMembership(user.id, groupId);
+
+    if (cached === MEMBERSHIP_NONE) {
       groupId = undefined;
       role = undefined;
       const clearOpts = { path: "/", maxAge: 0 };
       supabaseResponse.cookies.set("portal_group_id", "", clearOpts);
       supabaseResponse.cookies.set("portal_role", "", clearOpts);
-    } else {
-      role = membership.role as string;
+    } else if (cached) {
+      role = cached.role;
       supabaseResponse.cookies.set("portal_role", role, {
         path: "/",
         httpOnly: true,
         sameSite: "lax",
         maxAge: 60 * 60 * 8,
       });
+    } else {
+      const { data: membership } = await supabase
+        .from("coaching_members")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("group_id", groupId)
+        .in("role", ["admin_master", "coach", "assistant"])
+        .maybeSingle();
+      if (!membership) {
+        setCachedMembership(user.id, groupId, MEMBERSHIP_NONE);
+        groupId = undefined;
+        role = undefined;
+        const clearOpts = { path: "/", maxAge: 0 };
+        supabaseResponse.cookies.set("portal_group_id", "", clearOpts);
+        supabaseResponse.cookies.set("portal_role", "", clearOpts);
+      } else {
+        role = membership.role as string;
+        // Defensive: if the DB ever returns a value we don't recognise
+        // (e.g. legacy `professor` slipping through a migration),
+        // we treat it as "no membership" instead of trusting it.
+        // This converts a silent privilege escalation into a hard 403.
+        if (!isStaffRole(role)) {
+          setCachedMembership(user.id, groupId, MEMBERSHIP_NONE);
+          groupId = undefined;
+          role = undefined;
+          const clearOpts = { path: "/", maxAge: 0 };
+          supabaseResponse.cookies.set("portal_group_id", "", clearOpts);
+          supabaseResponse.cookies.set("portal_role", "", clearOpts);
+        } else {
+          setCachedMembership(user.id, groupId, { role });
+          supabaseResponse.cookies.set("portal_role", role, {
+            path: "/",
+            httpOnly: true,
+            sameSite: "lax",
+            maxAge: 60 * 60 * 8,
+          });
+        }
+      }
     }
   }
 
@@ -119,8 +151,11 @@ export async function middleware(request: NextRequest) {
     if (memberships.length === 1) {
       groupId = memberships[0].group_id as string;
       role = memberships[0].role as string;
-      // Redirect so the next request carries the cookie in the request headers,
-      // preventing page server components from seeing a missing cookie.
+      // Populate the cache with the resolved membership so the
+      // immediately-following navigation does not re-query.
+      if (isStaffRole(role)) {
+        setCachedMembership(user.id, groupId, { role });
+      }
       const redirect = NextResponse.redirect(request.nextUrl);
       redirect.cookies.set("portal_group_id", groupId, {
         path: "/",
@@ -145,17 +180,13 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Step 3: role-based route protection
-  if (ADMIN_ONLY_ROUTES.some((r) => pathname.startsWith(r))) {
-    if (role !== "admin_master") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-  }
-
-  if (ADMIN_PROFESSOR_ROUTES.some((r) => pathname.startsWith(r))) {
-    if (role !== "admin_master" && role !== "coach") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  // L13-01: role-based protection delegated to a single, ordering-aware
+  // resolver. Admin-coach routes (e.g. /settings/invite) are checked
+  // BEFORE admin-only prefixes (e.g. /settings) so a coach is allowed
+  // through /settings/invite even though /settings is in ADMIN_ONLY_ROUTES.
+  const verdict = resolveRouteAccess(pathname, role);
+  if (verdict === "forbidden") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();

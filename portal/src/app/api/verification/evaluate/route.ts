@@ -11,7 +11,9 @@ import { verificationEvaluateSchema } from "@/lib/schemas";
  *
  * Triggers eval_athlete_verification RPC for a specific athlete.
  * This is NOT an override — it runs the same automated rules.
- * Only admin_master and professor roles can trigger this.
+ * Only admin_master and coach roles can trigger this (the role
+ * formerly known as `professor` was renamed to `coach` in
+ * migration 20260304050000_fix_coaching_role_mismatch.sql).
  * The athlete must belong to the caller's assessoria group.
  */
 export async function POST(request: Request) {
