@@ -4,10 +4,11 @@ audit_ref: "2.2"
 lens: 2
 title: "execute_burn_atomic — Exceções engolidas em custody_release_committed e settle_clearing"
 severity: critical
-status: in-progress
+status: fixed
 wave: 0
 discovered_at: 2026-04-17
 fix_ready_at: 2026-04-17
+fixed_at: 2026-04-17
 tags: ["finance", "atomicity", "migration", "cron", "observability"]
 files:
   - supabase/migrations/20260228160001_burn_plan_atomic.sql
@@ -19,7 +20,8 @@ test_required: true
 tests:
   - tools/integration_tests.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "commit:94f5cea"
 owner: unassigned
 runbook: null
 effort_points: 5
@@ -29,7 +31,7 @@ deferred_to_wave: null
 note: null
 ---
 # [L02-02] execute_burn_atomic — Exceções engolidas em custody_release_committed e settle_clearing
-> **Lente:** 2 — CTO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** in-progress
+> **Lente:** 2 — CTO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟢 fixed
 **Camada:** BACKEND (Supabase RPC)
 **Personas impactadas:** Plataforma, Assessoria, Atleta (efeito indireto)
 
@@ -170,3 +172,4 @@ Contexto completo e motivação detalhada em
 - `2026-04-17` — Correção implementada: tabela `clearing_failure_log`,
   view `clearing_failures_unresolved`, `execute_burn_atomic` hardenizado
   (custody re-raise, settle log-and-continue), 3 testes de integração.
+- `2026-04-17` — E2E green (`tools/validate-migrations.sh --run-tests` 165/165 + 146/146). Promovido a `fixed` (commit `94f5cea`).

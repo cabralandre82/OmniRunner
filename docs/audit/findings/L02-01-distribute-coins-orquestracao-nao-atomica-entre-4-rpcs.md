@@ -4,10 +4,11 @@ audit_ref: "2.1"
 lens: 2
 title: "distribute-coins — Orquestração não-atômica entre 4 RPCs (partial-failure silencioso)"
 severity: critical
-status: in-progress
+status: fixed
 wave: 0
 discovered_at: 2026-04-17
 fix_ready_at: 2026-04-17
+fixed_at: 2026-04-17
 tags: ["finance", "atomicity", "idempotency", "ledger", "portal"]
 files:
   - portal/src/app/api/distribute-coins/route.ts
@@ -17,7 +18,8 @@ test_required: true
 tests:
   - portal/src/app/api/distribute-coins/route.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "commit:affc69b"
 owner: unassigned
 runbook: null
 effort_points: 5
@@ -29,7 +31,7 @@ note: "EXEMPLAR — referência de nível de detalhe para findings críticos da 
 
 # [L02-01] distribute-coins — Orquestração não-atômica entre 4 RPCs (partial-failure silencioso)
 
-> **Lente:** 2 — CTO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** in-progress (correção pronta, aguardando PR)
+> **Lente:** 2 — CTO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟢 fixed
 
 **Camada:** PORTAL + BACKEND
 **Personas impactadas:** Atleta, Assessoria, Plataforma (CFO)
@@ -242,4 +244,5 @@ Também auditado pela Lente 1 (CISO) como `[1.3]` em `docs/audit/parts/01-ciso.m
 ## Histórico
 
 - `2026-04-17` — Descoberto na auditoria inicial (Lente 2 — CTO, item 2.1 + cross-ref Lente 1, item 1.3).
-- `2026-04-17` — Correção implementada (migration + route + tests). Status: `in-progress`, aguardando PR/merge.
+- `2026-04-17` — Correção implementada (migration `emit_coins_atomic` + refactor da rota + 15 casos de teste).
+- `2026-04-17` — E2E green (`tools/validate-migrations.sh --run-tests` 165/165 + 146/146). Promovido a `fixed` (commit `affc69b`).

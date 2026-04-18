@@ -4,10 +4,11 @@ audit_ref: "4.3"
 lens: 4
 title: "Não há registro de consentimento (opt-in explícito LGPD Art. 8)"
 severity: critical
-status: in-progress
+status: fixed
 wave: 0
 discovered_at: 2026-04-17
 fix_ready_at: 2026-04-17
+fixed_at: 2026-04-17
 tags: ["lgpd", "integration", "mobile", "portal", "migration", "backend", "edge-function", "audit-log"]
 files:
   - supabase/migrations/20260417220000_lgpd_consent_management.sql
@@ -18,21 +19,10 @@ files:
 correction_type: process
 test_required: true
 tests:
-  - integration/L04-03-consent-policy-seed
-  - integration/L04-03-profiles-snapshot-cols
-  - integration/L04-03-fn-consent-grant-happy-path
-  - integration/L04-03-fn-consent-grant-version-too-old
-  - integration/L04-03-fn-consent-grant-invalid-type
-  - integration/L04-03-fn-consent-revoke-terms-blocked
-  - integration/L04-03-marketing-grant-revoke-last-wins
-  - integration/L04-03-has-required-athlete
-  - integration/L04-03-status-returns-8-rows
-  - integration/L04-03-status-cross-user-forbidden
-  - integration/L04-03-append-only-update-blocked
-  - integration/L04-03-anon-preserves-row-on-auth-delete
-  - integration/L04-03-registered-in-lgpd-strategy
+  - tools/integration_tests.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "commit:b5d55a6"
 owner: platform-privacy
 runbook: docs/audit/runbooks/L04-03-lgpd-consent-management.md
 effort_points: 5
@@ -42,7 +32,7 @@ deferred_to_wave: null
 note: null
 ---
 # [L04-03] Não há registro de consentimento (opt-in explícito LGPD Art. 8)
-> **Lente:** 4 — CLO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟡 in-progress
+> **Lente:** 4 — CLO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟢 fixed
 **Camada:** backend + integração + mobile + portal
 **Personas impactadas:** Atletas, Coaches, Admin Master, DPO/Legal
 ## Achado
@@ -139,3 +129,5 @@ Contexto completo e motivação detalhada em [`docs/audit/parts/`](../parts/) �
 ## Histórico
 - `2026-04-17` — Descoberto na auditoria inicial (Lente 4 — CLO, item 4.3).
 - `2026-04-17` — Fix implementado: migration + 2 thin wrappers (edge fn + portal route) + 13 testes integração + runbook.
+- `2026-04-17` — Hardening adicional descoberto via E2E: `consent_policy_versions.updated_by` adicionado ao registry `lgpd_deletion_strategy` (defensive_optional).
+- `2026-04-17` — E2E green (`tools/validate-migrations.sh --run-tests` 165/165 + 146/146; inclui os 13 testes L04-03). Promovido a `fixed` (commit `b5d55a6`).

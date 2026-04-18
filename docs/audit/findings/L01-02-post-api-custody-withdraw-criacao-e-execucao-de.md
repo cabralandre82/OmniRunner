@@ -4,10 +4,11 @@ audit_ref: "1.2"
 lens: 1
 title: "POST /api/custody/withdraw — Criação e execução de saque em um único request"
 severity: critical
-status: in-progress
+status: fixed
 wave: 0
 discovered_at: 2026-04-17
 fix_ready_at: 2026-04-17
+fixed_at: 2026-04-17
 tags: ["finance", "anti-cheat", "portal", "security", "custody", "fx"]
 files:
   - supabase/migrations/20260417170000_platform_fx_quotes.sql
@@ -25,7 +26,8 @@ tests:
   - portal/src/app/api/custody/withdraw/route.test.ts
   - portal/src/app/api/custody/fx-quote/route.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "commit:0e66852"
 owner: unassigned
 runbook: null
 effort_points: 5
@@ -35,7 +37,7 @@ deferred_to_wave: null
 note: "Core anti-fraud fix entregue. Follow-ups em wave-1: (a) 2-phase approval (platform_admin independente do admin_master), (b) limite diário por grupo em platform_fee_config, (c) refresh automático de platform_fx_quotes via cron PTAX/ECB."
 ---
 # [L01-02] POST /api/custody/withdraw — Criação e execução de saque em um único request
-> **Lente:** 1 — CISO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** in-progress
+> **Lente:** 1 — CISO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟢 fixed
 **Camada:** PORTAL
 **Personas impactadas:** Plataforma (CFO), Assessoria
 ## Achado
@@ -119,3 +121,4 @@ Contexto completo e motivação detalhada em [`docs/audit/parts/`](../parts/) �
 ## Histórico
 - `2026-04-17` — Descoberto na auditoria inicial (Lente 1 — CISO, item 1.2).
 - `2026-04-17` — Fix core implementado: `fx_rate` removido do body, quote server-side authoritative, fail-closed em staleness. Follow-ups (2-phase approval, daily limit, cron refresh) movidos para Onda 1.
+- `2026-04-17` — Validação end-to-end (`tools/validate-migrations.sh --run-tests`): fresh-install aplica 165/165 migrations; suite 146/146 verde (inclui 32 testes desta correção). Promovido a `fixed` (commit `0e66852`).

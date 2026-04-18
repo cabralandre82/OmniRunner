@@ -1,7 +1,7 @@
 # ROADMAP — Execução das Correções em Ondas
 
 > **Atualizado:** 2026-04-17
-> **Status do overall:** Onda 0 em execução (2/15 fixed, 13/15 in-progress, E2E verde)
+> **Status do overall:** Onda 0 ✅ concluída (15/15 fixed, E2E verde) — Onda 1 desbloqueada
 
 A auditoria identificou **348 findings** distribuídos em **23 lentes** (69 🔴 critical, 123 🟠 high, 127 🟡 medium, 17 🟢 safe, 12 ⚪ não-auditados). Corrigir todos em paralelo seria caótico. Esta estratégia distribui o trabalho em **4 ondas** com objetivos bem definidos e critérios de saída mensuráveis.
 
@@ -28,22 +28,22 @@ A auditoria identificou **348 findings** distribuídos em **23 lentes** (69 🔴
 | Pri | ID | Score | Status | Título |
 |---|---|---|---|---|
 | 1 | `L09-04` | 125 | 🟢 fixed | Nota fiscal não emitida em withdrawals (regulatório fiscal) |
-| 2 | `L01-02` | 100 | 🟡 in-progress | FX rate client-supplied em `/api/custody/withdraw` (fraude direta) |
-| 3 | `L01-17` | 100 | 🟡 in-progress | Asaas API Key armazenada em texto puro |
-| 4 | `L04-03` | 100 | 🟡 in-progress | Sem registro de consentimento (LGPD Art. 8) |
-| 5 | `L04-01` | 80 | 🟡 in-progress | `fn_delete_user_data` incompleta (LGPD Art. 48) |
-| 6 | `L18-03` | 80 | 🟡 in-progress | SECURITY DEFINER sem SET search_path |
+| 2 | `L01-02` | 100 | 🟢 fixed | FX rate client-supplied em `/api/custody/withdraw` (fraude direta) |
+| 3 | `L01-17` | 100 | 🟢 fixed | Asaas API Key armazenada em texto puro |
+| 4 | `L04-03` | 100 | 🟢 fixed | Sem registro de consentimento (LGPD Art. 8) |
+| 5 | `L04-01` | 80 | 🟢 fixed | `fn_delete_user_data` incompleta (LGPD Art. 48) |
+| 6 | `L18-03` | 80 | 🟢 fixed | SECURITY DEFINER sem SET search_path |
 | 7 | `L04-04` | 64 | 🟢 fixed | Dados de saúde/biométricos sem proteção reforçada (LGPD Art. 11) |
-| 8 | `L01-44` | 60 | 🟡 in-progress | Migration drift em `platform_fee_config.fee_type` CHECK |
-| 9 | `L02-01` | 60 | 🟡 in-progress | `distribute-coins` não-atômico ⭐ (exemplar, correção pronta) |
-| 10 | `L19-01` | 60 | 🟡 in-progress | `coin_ledger` não particionada |
-| 11 | `L19-05` | 60 | 🟡 in-progress | Falta `FOR UPDATE NOWAIT` em locks críticos |
-| 12 | `L01-03` | 50 | 🟡 in-progress | `/api/distribute-coins` fallback silencioso (cross-ref L02-01) |
-| 13 | `L02-02` | 50 | 🟡 in-progress | `execute_burn_atomic` exceções engolidas |
-| 14 | `L14-03` | 45 | 🟡 in-progress | Swagger-UI carregado de unpkg sem SRI |
-| 15 | `L05-01` | 40* | 🟡 in-progress | Swap race entre accept/cancel (*override manual — double-spend direto) |
+| 8 | `L01-44` | 60 | 🟢 fixed | Migration drift em `platform_fee_config.fee_type` CHECK |
+| 9 | `L02-01` | 60 | 🟢 fixed | `distribute-coins` não-atômico ⭐ (exemplar) |
+| 10 | `L19-01` | 60 | 🟢 fixed | `coin_ledger` particionada por mês |
+| 11 | `L19-05` | 60 | 🟢 fixed | `lock_timeout=2s` em RPCs financeiras |
+| 12 | `L01-03` | 50 | 🟢 fixed | `/api/distribute-coins` fallback silencioso (cross-ref L02-01) |
+| 13 | `L02-02` | 50 | 🟢 fixed | `execute_burn_atomic` exceções engolidas |
+| 14 | `L14-03` | 45 | 🟢 fixed | Swagger-UI self-hosted (sem unpkg) |
+| 15 | `L05-01` | 40* | 🟢 fixed | Swap race entre accept/cancel (cancel_swap_order race-safe) |
 
-**Progresso Onda 0:** 2/15 em `fixed` (L04-04, L09-04), 13/15 em `in-progress` (L02-01, L01-03, L01-44, L14-03, L02-02, L18-03, L19-05, L01-02, L05-01, L04-01, L19-01, L01-17, L04-03) — validação end-to-end (`tools/validate-migrations.sh`): 165/165 migrations aplicando fresh-install, 146/146 testes de integração verdes (2026-04-17).
+**Progresso Onda 0:** ✅ **15/15 fixed** (100 %). Validação end-to-end via `tools/validate-migrations.sh --run-tests`: 165/165 migrations aplicando em fresh `public` schema, 146/146 testes de integração verdes (2026-04-17). Cada finding linka ao commit do fix em `linked_prs:`.
 
 Detalhes completos + correções em `docs/audit/findings/LXX-YY-*.md`.
 

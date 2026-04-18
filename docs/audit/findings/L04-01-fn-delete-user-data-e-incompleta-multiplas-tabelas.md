@@ -4,10 +4,11 @@ audit_ref: "4.1"
 lens: 4
 title: "fn_delete_user_data é incompleta — múltiplas tabelas com PII não cobertas"
 severity: critical
-status: in-progress
+status: fixed
 wave: 0
 discovered_at: 2026-04-17
 fix_ready_at: 2026-04-17
+fixed_at: 2026-04-17
 tags: ["lgpd", "finance", "mobile", "edge-function", "migration", "testing", "pii", "privacy"]
 files:
   - supabase/migrations/20260312000000_fix_broken_functions.sql
@@ -17,9 +18,10 @@ files:
 correction_type: migration
 test_required: true
 tests:
-  - tools/integration_tests.ts (6 tests L04-01: strategy-populated, gaps-empty, null/zero-uuid rejection, happy path, search_path hardening)
+  - tools/integration_tests.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "commit:d1c0c26"
 owner: unassigned
 runbook: null
 effort_points: 5
@@ -29,7 +31,7 @@ deferred_to_wave: null
 note: null
 ---
 # [L04-01] fn_delete_user_data é incompleta — múltiplas tabelas com PII não cobertas
-> **Lente:** 4 — CLO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** in-progress
+> **Lente:** 4 — CLO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟢 fixed
 **Camada:** BACKEND (PostgreSQL + Supabase Storage + Edge Functions)
 **Personas impactadas:** Atletas, Coaches, Plataforma
 ## Achado
@@ -122,3 +124,5 @@ Contexto completo e motivação detalhada em [`docs/audit/parts/`](../parts/) �
 ## Histórico
 - `2026-04-17` — Descoberto na auditoria inicial (Lente 4 — CLO, item 4.1).
 - `2026-04-17` — Fix implementado: sentinel user + strategy registry + gaps view + fn_delete_user_data v2.0.0 (27 delete / 3 anonymize / 9 nullify / 16 defensive) + storage cleanup + 6 integration tests. Migration `20260417190000_fn_delete_user_data_lgpd_complete.sql`.
+- `2026-04-17` — Hardening adicional descoberto via E2E: view `lgpd_user_data_coverage_gaps` filtrada para `BASE TABLE` only (excluir `v_*`); 60 colunas user-ref de migrations posteriores adicionadas como `defensive_optional`; `profiles.onboarding_state` reseta para `'NEW'` em vez de NULL (NOT NULL constraint).
+- `2026-04-17` — E2E green (`tools/validate-migrations.sh --run-tests` 165/165 + 146/146; gaps view retorna 0 linhas). Promovido a `fixed` (commit `d1c0c26`).

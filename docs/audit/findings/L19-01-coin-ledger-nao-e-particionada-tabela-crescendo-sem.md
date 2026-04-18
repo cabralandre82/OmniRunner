@@ -4,10 +4,11 @@ audit_ref: "19.1"
 lens: 19
 title: "coin_ledger não é particionada — tabela crescendo sem controle"
 severity: critical
-status: in-progress
+status: fixed
 wave: 0
 discovered_at: 2026-04-17
 fix_ready_at: 2026-04-17
+fixed_at: 2026-04-17
 tags: ["finance", "integration", "mobile", "migration", "cron", "performance", "partitioning"]
 files:
   - supabase/migrations/20260218000000_full_schema.sql
@@ -16,13 +17,10 @@ files:
 correction_type: migration
 test_required: true
 tests:
-  - "tools/integration_tests.ts::L19-01: coin_ledger monthly partitions exist (structural proof)"
-  - "tools/integration_tests.ts::L19-01: coin_ledger_ensure_partition is idempotent"
-  - "tools/integration_tests.ts::L19-01: coin_ledger_idempotency enforces (ref_id, reason) uniqueness"
-  - "tools/integration_tests.ts::L19-01: coin_ledger parent-table API works across partition ranges"
-  - "tools/integration_tests.ts::L19-01: emit_coins_atomic idempotency via coin_ledger_idempotency"
+  - tools/integration_tests.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "commit:911235f"
 owner: unassigned
 runbook: docs/audit/runbooks/L19-01-coin-ledger-partition-management.md
 effort_points: 5
@@ -32,7 +30,7 @@ deferred_to_wave: null
 note: null
 ---
 # [L19-01] coin_ledger não é particionada — tabela crescendo sem controle
-> **Lente:** 19 — DBA · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟡 in-progress
+> **Lente:** 19 — DBA · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟢 fixed
 **Camada:** —
 **Personas impactadas:** —
 ## Achado
@@ -120,4 +118,5 @@ Particionamento declarativo por `RANGE (created_at_ms)` com partições mensais 
 Contexto completo e motivação detalhada em [`docs/audit/parts/`](../parts/) — buscar pelo anchor `[19.1]`.
 ## Histórico
 - `2026-04-17` — Descoberto na auditoria inicial (Lente 19 — DBA, item 19.1).
-- `2026-04-17` — Correção implementada: particionamento RANGE(created_at_ms) mensal + companion table de idempotência + helpers de gestão + refactor emit_coins_atomic. Status: in-progress.
+- `2026-04-17` — Correção implementada: particionamento RANGE(created_at_ms) mensal + companion table de idempotência + helpers de gestão + refactor emit_coins_atomic.
+- `2026-04-17` — E2E green (`tools/validate-migrations.sh --run-tests` 165/165 + 146/146; inclui os 5 testes L19-01 — partition existence, idempotência, parent-table API, emit_coins_atomic dedup). Promovido a `fixed` (commit `911235f`).

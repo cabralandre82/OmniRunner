@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 13:56:52 UTC.
+> Atualizado em 2026-04-18 18:26:27 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -10,8 +10,8 @@ Total: **348** findings.
 | Sev | Status | ID | Onda | Lente | Título | Owner |
 |-----|--------|----|------|-------|--------|-------|
 | 🟠 high | ⏳ fix-pending | [L01-01](./findings/L01-01-post-api-custody-webhook-webhook-de-custodia-stripe.md) | 1 | L01 · CISO | POST /api/custody/webhook — Webhook de custódia (Stripe + MercadoPago) | unassigned |
-| 🔴 critical | 🚧 in-progress | [L01-02](./findings/L01-02-post-api-custody-withdraw-criacao-e-execucao-de.md) | 0 | L01 · CISO | POST /api/custody/withdraw — Criação e execução de saque em um único request | unassigned |
-| 🔴 critical | 🚧 in-progress | [L01-03](./findings/L01-03-post-api-distribute-coins-distribuicao-de-coins-a.md) | 0 | L01 · CISO | POST /api/distribute-coins — Distribuição de coins a atleta | unassigned |
+| 🔴 critical | ✅ fixed | [L01-02](./findings/L01-02-post-api-custody-withdraw-criacao-e-execucao-de.md) | 0 | L01 · CISO | POST /api/custody/withdraw — Criação e execução de saque em um único request | unassigned |
+| 🔴 critical | ✅ fixed | [L01-03](./findings/L01-03-post-api-distribute-coins-distribuicao-de-coins-a.md) | 0 | L01 · CISO | POST /api/distribute-coins — Distribuição de coins a atleta | unassigned |
 | 🟠 high | ⏳ fix-pending | [L01-04](./findings/L01-04-post-api-custody-create-deposit-confirm-sem-idempotency.md) | 1 | L01 · CISO | POST /api/custody (create deposit / confirm) — Sem idempotency-key | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L01-05](./findings/L01-05-post-api-swap-criacao-aceite-cancelamento.md) | 2 | L01 · CISO | POST /api/swap — Criação/aceite/cancelamento | unassigned |
 | 🟠 high | ⏳ fix-pending | [L01-06](./findings/L01-06-get-api-swap-get-api-clearing-get-api.md) | 1 | L01 · CISO | GET /api/swap, GET /api/clearing, GET /api/custody — Autorização por cookie | unassigned |
@@ -25,7 +25,7 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L01-14](./findings/L01-14-sessao-supabase-auth-getsession-no-middleware-auth-getuser.md) | 2 | L01 · CISO | Sessão Supabase.auth.getSession() no middleware + auth.getUser() em updateSession | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L01-15](./findings/L01-15-jwt-expiry-window-logout-forcado.md) | 2 | L01 · CISO | JWT expiry window — Logout forçado | unassigned |
 | ⚪ na | ⏳ fix-pending | [L01-16](./findings/L01-16-upload-de-documentos-cnh-comprovantes-de-liga.md) | 3 | L01 · CISO | Upload de documentos — CNH, comprovantes de liga | unassigned |
-| 🔴 critical | 🚧 in-progress | [L01-17](./findings/L01-17-post-api-billing-asaas-armazenamento-de-api-key.md) | 0 | L01 · CISO | POST /api/billing/asaas — Armazenamento de API Key | unassigned |
+| 🔴 critical | ✅ fixed | [L01-17](./findings/L01-17-post-api-billing-asaas-armazenamento-de-api-key.md) | 0 | L01 · CISO | POST /api/billing/asaas — Armazenamento de API Key | unassigned |
 | 🟠 high | ⏳ fix-pending | [L01-18](./findings/L01-18-asaas-webhook-supabase-functions-asaas-webhook-index-ts.md) | 1 | L01 · CISO | Asaas Webhook — supabase/functions/asaas-webhook/index.ts | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L01-19](./findings/L01-19-edge-functions-verify-jwt-false-com-auth-manual.md) | 2 | L01 · CISO | Edge Functions — verify_jwt = false com auth manual | unassigned |
 | 🟢 safe | ✅ fixed | [L01-20](./findings/L01-20-checkratelimit-via-rpc-fail-closed.md) | 3 | L01 · CISO | checkRateLimit via RPC — Fail-closed | unassigned |
@@ -52,15 +52,15 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L01-41](./findings/L01-41-coin-ledger-sem-assinatura-criptografica.md) | 2 | L01 · CISO | coin_ledger — Sem assinatura criptográfica | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L01-42](./findings/L01-42-platform-fee-config-rls-for-select-using-true.md) | 2 | L01 · CISO | platform_fee_config — RLS FOR SELECT USING (true) | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L01-43](./findings/L01-43-custody-accounts-rls-role-professor-nunca-corresponde.md) | 2 | L01 · CISO | custody_accounts RLS — role 'professor' nunca corresponde | unassigned |
-| 🔴 critical | 🚧 in-progress | [L01-44](./findings/L01-44-migration-drift-platform-fee-config-fee-type-check.md) | 0 | L01 · CISO | Migration drift — platform_fee_config.fee_type CHECK + INSERT 'fx_spread' | unassigned |
+| 🔴 critical | ✅ fixed | [L01-44](./findings/L01-44-migration-drift-platform-fee-config-fee-type-check.md) | 0 | L01 · CISO | Migration drift — platform_fee_config.fee_type CHECK + INSERT 'fx_spread' | unassigned |
 | 🟠 high | ⏳ fix-pending | [L01-45](./findings/L01-45-fee-type-fx-spread-ausente-do-endpoint-admin.md) | 1 | L01 · CISO | fee_type — 'fx_spread' ausente do endpoint admin | unassigned |
 | 🟢 safe | ✅ fixed | [L01-46](./findings/L01-46-execute-swap-locks-for-update-com-ordering.md) | 3 | L01 · CISO | execute_swap — Locks FOR UPDATE com ordering | unassigned |
 | ⚪ na | ⏳ fix-pending | [L01-47](./findings/L01-47-executewithdrawal-execute-withdrawal-rpc-sem-codigo-mostrado.md) | 3 | L01 · CISO | executeWithdrawal — execute_withdrawal RPC sem código mostrado | unassigned |
 | 🟢 safe | ✅ fixed | [L01-48](./findings/L01-48-aggregateclearingwindow-aggregation-only.md) | 3 | L01 · CISO | aggregateClearingWindow — Aggregation only | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L01-49](./findings/L01-49-processburnforclearing-audit-actor-id-system.md) | 2 | L01 · CISO | processBurnForClearing — Audit actor_id = "system" | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L01-50](./findings/L01-50-getswapordersforgroup-query-string-interpolation.md) | 2 | L01 · CISO | getSwapOrdersForGroup — Query string interpolation | unassigned |
-| 🔴 critical | 🚧 in-progress | [L02-01](./findings/L02-01-distribute-coins-orquestracao-nao-atomica-entre-4-rpcs.md) | 0 | L02 · CTO | distribute-coins — Orquestração não-atômica entre 4 RPCs (partial-failure silencioso) | unassigned |
-| 🔴 critical | 🚧 in-progress | [L02-02](./findings/L02-02-execute-burn-atomic-excecoes-engolidas-em-custody-release.md) | 0 | L02 · CTO | execute_burn_atomic — Exceções engolidas em custody_release_committed e settle_clearing | unassigned |
+| 🔴 critical | ✅ fixed | [L02-01](./findings/L02-01-distribute-coins-orquestracao-nao-atomica-entre-4-rpcs.md) | 0 | L02 · CTO | distribute-coins — Orquestração não-atômica entre 4 RPCs (partial-failure silencioso) | unassigned |
+| 🔴 critical | ✅ fixed | [L02-02](./findings/L02-02-execute-burn-atomic-excecoes-engolidas-em-custody-release.md) | 0 | L02 · CTO | execute_burn_atomic — Exceções engolidas em custody_release_committed e settle_clearing | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L02-03](./findings/L02-03-execute-burn-atomic-function-language-plpgsql-sem-security.md) | 2 | L02 · CTO | execute_burn_atomic — Function LANGUAGE plpgsql sem SECURITY DEFINER vs. chamadas a funções SECURITY DEFINER | unassigned |
 | 🟢 safe | ✅ fixed | [L02-04](./findings/L02-04-confirm-custody-deposit-for-update-upsert.md) | 3 | L02 · CTO | confirm_custody_deposit — FOR UPDATE + UPSERT | unassigned |
 | 🟢 safe | ✅ fixed | [L02-05](./findings/L02-05-execute-swap-deadlock-prevention-via-uuid-ordering.md) | 3 | L02 · CTO | execute_swap — Deadlock prevention via UUID ordering | unassigned |
@@ -94,9 +94,9 @@ Total: **348** findings.
 | 🟢 safe | ✅ fixed | [L03-18](./findings/L03-18-coin-ledger-delta-coins-tipo-integer.md) | 3 | L03 · CFO | coin_ledger.delta_coins — Tipo integer | unassigned |
 | ⚪ na | ⏳ fix-pending | [L03-19](./findings/L03-19-nfs-e-fiscal-nao-observado.md) | 3 | L03 · CFO | NFS-e / fiscal — Não observado | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L03-20](./findings/L03-20-disputa-chargeback-stripe.md) | 1 | L03 · CFO | Disputa / chargeback Stripe | unassigned |
-| 🔴 critical | 🚧 in-progress | [L04-01](./findings/L04-01-fn-delete-user-data-e-incompleta-multiplas-tabelas.md) | 0 | L04 · CLO | fn_delete_user_data é incompleta — múltiplas tabelas com PII não cobertas | unassigned |
+| 🔴 critical | ✅ fixed | [L04-01](./findings/L04-01-fn-delete-user-data-e-incompleta-multiplas-tabelas.md) | 0 | L04 · CLO | fn_delete_user_data é incompleta — múltiplas tabelas com PII não cobertas | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L04-02](./findings/L04-02-edge-function-delete-account-deleta-auth-users-mesmo.md) | 1 | L04 · CLO | Edge Function delete-account deleta auth.users mesmo quando fn_delete_user_data falha | unassigned |
-| 🔴 critical | 🚧 in-progress | [L04-03](./findings/L04-03-nao-ha-registro-de-consentimento-opt-in-explicito.md) | 0 | L04 · CLO | Não há registro de consentimento (opt-in explícito LGPD Art. 8) | platform-privacy |
+| 🔴 critical | ✅ fixed | [L04-03](./findings/L04-03-nao-ha-registro-de-consentimento-opt-in-explicito.md) | 0 | L04 · CLO | Não há registro de consentimento (opt-in explícito LGPD Art. 8) | platform-privacy |
 | 🔴 critical | ✅ fixed | [L04-04](./findings/L04-04-dados-de-saude-biometricos-dados-sensiveis-lgpd-art.md) | 0 | L04 · CLO | Dados de saúde/biométricos (dados sensíveis, LGPD Art. 11) sem proteção reforçada | unassigned |
 | 🟠 high | ⏳ fix-pending | [L04-05](./findings/L04-05-trajetorias-gps-brutas-sem-opcao-de-privacy-zones.md) | 1 | L04 · CLO | Trajetórias GPS brutas sem opção de privacy zones (home/work zones) | unassigned |
 | 🟠 high | ⏳ fix-pending | [L04-06](./findings/L04-06-campo-instagram-handle-tiktok-handle-em-profiles-sem.md) | 1 | L04 · CLO | Campo instagram_handle, tiktok_handle em profiles sem política de uso | unassigned |
@@ -109,7 +109,7 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L04-13](./findings/L04-13-logs-estruturados-enviam-user-id-e-podem-enviar.md) | 2 | L04 · CLO | Logs estruturados enviam user_id e podem enviar ip_address ao Sentry | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L04-14](./findings/L04-14-ausencia-de-verificacao-de-idade-coppa-eca.md) | 2 | L04 · CLO | Ausência de verificação de idade (COPPA/ECA) | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L04-15](./findings/L04-15-right-to-portability-nao-ha-export-self-service.md) | 2 | L04 · CLO | Right to portability — não há export self-service | unassigned |
-| 🔴 critical | 🚧 in-progress | [L05-01](./findings/L05-01-swap-race-entre-accept-e-cancel-do-dono.md) | 0 | L05 · CPO | Swap: race entre accept e cancel do dono da oferta | unassigned |
+| 🔴 critical | ✅ fixed | [L05-01](./findings/L05-01-swap-race-entre-accept-e-cancel-do-dono.md) | 0 | L05 · CPO | Swap: race entre accept e cancel do dono da oferta | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L05-02](./findings/L05-02-swap-nao-tem-ttl-expiracao-ofertas-ficam-para.md) | 1 | L05 · CPO | Swap não tem TTL/expiração — ofertas ficam para sempre | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L05-03](./findings/L05-03-post-api-distribute-coins-amount-max-1000-conflita.md) | 1 | L05 · CPO | POST /api/distribute-coins: amount max 1000 — conflita com grandes clubes | unassigned |
 | 🟠 high | ⏳ fix-pending | [L05-04](./findings/L05-04-challenge-championship-participante-pode-retirar-se-withdraw.md) | 1 | L05 · CPO | Challenge/Championship: participante pode retirar-se (withdraw) durante disputa — sem regra de cutoff | unassigned |
@@ -230,7 +230,7 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L13-09](./findings/L13-09-middleware-redirect-chain-em-single-membership-causa-duplo.md) | 2 | L13 · Middleware | Middleware redirect chain em single-membership causa duplo round-trip | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L14-01](./findings/L14-01-74-route-handlers-46-documentados-em-openapi.md) | 1 | L14 · Contracts | 74 route handlers, 46 documentados em OpenAPI | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L14-02](./findings/L14-02-sem-versionamento-de-path-api-v1.md) | 1 | L14 · Contracts | Sem versionamento de path (/api/v1) | unassigned |
-| 🔴 critical | 🚧 in-progress | [L14-03](./findings/L14-03-api-docs-carrega-swagger-ui-de-unpkg-sem.md) | 0 | L14 · Contracts | /api/docs carrega Swagger-UI de unpkg sem SRI | unassigned |
+| 🔴 critical | ✅ fixed | [L14-03](./findings/L14-03-api-docs-carrega-swagger-ui-de-unpkg-sem.md) | 0 | L14 · Contracts | /api/docs carrega Swagger-UI de unpkg sem SRI | unassigned |
 | 🟠 high | ⏳ fix-pending | [L14-04](./findings/L14-04-rate-limit-por-ip-em-swap-custody-vs.md) | 1 | L14 · Contracts | Rate-limit por IP em swap/custody vs por user/group | unassigned |
 | 🟠 high | ⏳ fix-pending | [L14-05](./findings/L14-05-respostas-de-erro-nao-padronizadas-error-string-vs.md) | 1 | L14 · Contracts | Respostas de erro não padronizadas (error: string vs error: { code, message }) | unassigned |
 | 🟠 high | ⏳ fix-pending | [L14-06](./findings/L14-06-pagination-inconsistente-ou-inexistente.md) | 1 | L14 · Contracts | Pagination inconsistente (ou inexistente) | unassigned |
@@ -266,7 +266,7 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L17-09](./findings/L17-09-sem-shared-types-ts-dart-entre-portal-e.md) | 2 | L17 · VP Eng | Sem shared types TS/Dart entre portal e mobile | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L18-01](./findings/L18-01-duas-fontes-da-verdade-para-balance-de-wallet.md) | 1 | L18 · Principal Eng | Duas fontes da verdade para balance de wallet (wallets.balance_coins vs SUM(coin_ledger)) | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L18-02](./findings/L18-02-idempotencia-ad-hoc-em-cada-rpc-padrao-nao.md) | 1 | L18 · Principal Eng | Idempotência ad-hoc em cada RPC — padrão não unificado | unassigned |
-| 🔴 critical | 🚧 in-progress | [L18-03](./findings/L18-03-security-definer-sem-set-search-path-em-funcoes.md) | 0 | L18 · Principal Eng | SECURITY DEFINER sem SET search_path em funções antigas | unassigned |
+| 🔴 critical | ✅ fixed | [L18-03](./findings/L18-03-security-definer-sem-set-search-path-em-funcoes.md) | 0 | L18 · Principal Eng | SECURITY DEFINER sem SET search_path em funções antigas | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L18-04](./findings/L18-04-architecture-flutter-viola-clean-arch-em-varios-pontos.md) | 1 | L18 · Principal Eng | Architecture: Flutter viola Clean Arch em vários pontos | unassigned |
 | 🟠 high | ⏳ fix-pending | [L18-05](./findings/L18-05-event-bus-inexistente-cascatas-de-efeitos-em-codigo.md) | 1 | L18 · Principal Eng | Event bus inexistente — cascatas de efeitos em código imperativo | unassigned |
 | 🟠 high | ⏳ fix-pending | [L18-06](./findings/L18-06-cachedflags-em-feature-flags-ts-cache-de-modulo.md) | 1 | L18 · Principal Eng | cachedFlags em feature-flags.ts — cache de módulo com TTL racional | unassigned |
@@ -274,11 +274,11 @@ Total: **348** findings.
 | 🟠 high | ⏳ fix-pending | [L18-08](./findings/L18-08-edge-functions-vs-route-handlers-responsabilidade-duplicada.md) | 1 | L18 · Principal Eng | Edge Functions vs Route Handlers — responsabilidade duplicada | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L18-09](./findings/L18-09-sem-domain-events-em-audit-log.md) | 2 | L18 · Principal Eng | Sem domain events em audit_log | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L18-10](./findings/L18-10-sem-health-check-de-business-logic-vs-infra.md) | 2 | L18 · Principal Eng | Sem health-check de business logic (vs infra) | unassigned |
-| 🔴 critical | 🚧 in-progress | [L19-01](./findings/L19-01-coin-ledger-nao-e-particionada-tabela-crescendo-sem.md) | 0 | L19 · DBA | coin_ledger não é particionada — tabela crescendo sem controle | unassigned |
+| 🔴 critical | ✅ fixed | [L19-01](./findings/L19-01-coin-ledger-nao-e-particionada-tabela-crescendo-sem.md) | 0 | L19 · DBA | coin_ledger não é particionada — tabela crescendo sem controle | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L19-02](./findings/L19-02-delete-em-archive-cron-gera-table-bloat-massivo.md) | 1 | L19 · DBA | DELETE em archive cron gera table bloat massivo | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L19-03](./findings/L19-03-indexes-redundantes-em-sessions.md) | 1 | L19 · DBA | Indexes redundantes em sessions | unassigned |
 | 🟠 high | ⏳ fix-pending | [L19-04](./findings/L19-04-idx-ledger-user-vs-idx-coin-ledger-user.md) | 1 | L19 · DBA | idx_ledger_user vs idx_coin_ledger_user_created — evoluções sem limpeza | unassigned |
-| 🔴 critical | 🚧 in-progress | [L19-05](./findings/L19-05-falta-for-update-nowait-em-funcoes-de-lock.md) | 0 | L19 · DBA | Falta FOR UPDATE NOWAIT em funções de lock crítico | unassigned |
+| 🔴 critical | ✅ fixed | [L19-05](./findings/L19-05-falta-for-update-nowait-em-funcoes-de-lock.md) | 0 | L19 · DBA | Falta FOR UPDATE NOWAIT em funções de lock crítico | unassigned |
 | 🟠 high | ⏳ fix-pending | [L19-06](./findings/L19-06-jsonb-em-audit-logs-metadata-sem-indice-gin.md) | 1 | L19 · DBA | JSONB em audit_logs.metadata sem índice GIN | unassigned |
 | 🟠 high | ⏳ fix-pending | [L19-07](./findings/L19-07-pg-stat-statements-nao-referenciado-em-tuning.md) | 1 | L19 · DBA | pg_stat_statements não referenciado em tuning | unassigned |
 | 🟠 high | ⏳ fix-pending | [L19-08](./findings/L19-08-constraints-check-sem-name-padronizado.md) | 1 | L19 · DBA | Constraints CHECK sem name padronizado | unassigned |

@@ -4,10 +4,11 @@ audit_ref: "1.17"
 lens: 1
 title: "POST /api/billing/asaas — Armazenamento de API Key"
 severity: critical
-status: in-progress
+status: fixed
 wave: 0
 discovered_at: 2026-04-17
 fix_ready_at: 2026-04-17
+fixed_at: 2026-04-17
 tags: ["portal", "backend", "security", "vault", "migration", "secrets"]
 files:
   - portal/src/app/api/billing/asaas/route.ts
@@ -23,17 +24,10 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "L01-17: payment_provider_config não expõe colunas plaintext api_key/webhook_token"
-  - "L01-17: fn_ppc_save_api_key + fn_ppc_get_api_key roundtrip (service_role)"
-  - "L01-17: fn_ppc_save_api_key rotates existing secret (preserva config_id)"
-  - "L01-17: fn_ppc_save_api_key rejeita api_key curta (< 8)"
-  - "L01-17: fn_ppc_save_api_key rejeita environment inválido"
-  - "L01-17: fn_ppc_get_api_key retorna NO_CONFIG para grupo sem configuração"
-  - "L01-17: fn_ppc_has_api_key exposes metadata flags sem revelar secret"
-  - "L01-17: fn_ppc_save_webhook_token cria + fn_ppc_get_webhook_token retorna valor"
-  - "L01-17: payment_provider_secret_access_log registra operações"
+  - tools/integration_tests.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "commit:35be23a"
 owner: unassigned
 runbook: docs/audit/runbooks/L01-17-asaas-vault-rotation.md
 effort_points: 5
@@ -43,7 +37,7 @@ deferred_to_wave: null
 note: null
 ---
 # [L01-17] POST /api/billing/asaas — Armazenamento de API Key
-> **Lente:** 1 — CISO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟡 in-progress
+> **Lente:** 1 — CISO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟢 fixed
 **Camada:** PORTAL + BACKEND
 **Personas impactadas:** Assessoria (admin_master)
 ## Achado
@@ -86,4 +80,5 @@ Se o banco vazar, TODAS as API Keys Asaas das assessorias vazam. Um atacante pod
 Contexto completo e motivação detalhada em [`docs/audit/parts/`](../parts/) — buscar pelo anchor `[1.17]`.
 ## Histórico
 - `2026-04-17` — Descoberto na auditoria inicial (Lente 1 — CISO, item 1.17).
-- `2026-04-17` — Correção implementada (migration + refactor 4 Edge Functions + portal route + 8 integration tests + runbook).
+- `2026-04-17` — Correção implementada (migration + refactor 4 Edge Functions + portal route + 9 integration tests + runbook).
+- `2026-04-17` — E2E green (`tools/validate-migrations.sh --run-tests` 165/165 + 146/146; inclui os 9 testes L01-17). Promovido a `fixed` (commit `35be23a`).

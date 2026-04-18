@@ -4,10 +4,11 @@ audit_ref: "1.3"
 lens: 1
 title: "POST /api/distribute-coins — Distribuição de coins a atleta"
 severity: critical
-status: in-progress
+status: fixed
 wave: 0
 discovered_at: 2026-04-17
 fix_ready_at: 2026-04-17
+fixed_at: 2026-04-17
 tags: ["finance", "atomicity", "mobile", "portal", "migration", "testing"]
 files:
   - portal/src/app/api/distribute-coins/route.ts
@@ -18,7 +19,8 @@ test_required: true
 tests:
   - portal/src/app/api/distribute-coins/route.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "commit:affc69b"
 owner: unassigned
 runbook: null
 effort_points: 5
@@ -28,7 +30,7 @@ deferred_to_wave: null
 note: "Corrigido junto com L02-01 (mesma rota, mesmas mudanças). Ver detalhes em docs/audit/findings/L02-01-*.md. O fallback silencioso de custody_commit_coins é tratado via SQLSTATE P0002 (propagado como 422 'Lastro insuficiente' — não mais silencioso)."
 ---
 # [L01-03] POST /api/distribute-coins — Distribuição de coins a atleta
-> **Lente:** 1 — CISO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** in-progress · **Duplicate of:** [L02-01](./L02-01-distribute-coins-orquestracao-nao-atomica-entre-4-rpcs.md)
+> **Lente:** 1 — CISO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟢 fixed · **Duplicate of:** [L02-01](./L02-01-distribute-coins-orquestracao-nao-atomica-entre-4-rpcs.md)
 **Camada:** PORTAL
 **Personas impactadas:** Atleta, Assessoria, Plataforma
 ## Achado
@@ -65,3 +67,5 @@ note: "Corrigido junto com L02-01 (mesma rota, mesmas mudanças). Ver detalhes e
 Contexto completo e motivação detalhada em [`docs/audit/parts/`](../parts/) — buscar pelo anchor `[1.3]`.
 ## Histórico
 - `2026-04-17` — Descoberto na auditoria inicial (Lente 1 — CISO, item 1.3).
+- `2026-04-17` — Corrigido em conjunto com L02-01 (commit `affc69b`): rota refatorada para `emit_coins_atomic` RPC, fallback silencioso eliminado (P0002 → 422 explícito).
+- `2026-04-17` — E2E green (`tools/validate-migrations.sh --run-tests` 165/165 + 146/146). Promovido a `fixed`.

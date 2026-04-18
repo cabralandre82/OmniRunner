@@ -4,10 +4,11 @@ audit_ref: "5.1"
 lens: 5
 title: "Swap: race entre accept e cancel do dono da oferta"
 severity: critical
-status: in-progress
+status: fixed
 wave: 0
 discovered_at: 2026-04-17
 fix_ready_at: 2026-04-17
+fixed_at: 2026-04-17
 tags: ["finance", "atomicity", "portal", "migration", "testing", "concurrency"]
 files:
   - supabase/migrations/20260417180000_swap_cancel_race_hardening.sql
@@ -23,7 +24,8 @@ tests:
   - portal/src/app/api/swap/route.test.ts
   - tools/integration_tests.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "commit:a32a462"
 owner: unassigned
 runbook: null
 effort_points: 5
@@ -33,7 +35,7 @@ deferred_to_wave: null
 note: "Override manual Onda 1 → Onda 0: heurística de triage não capturou 'fundos transferidos em oferta cancelada' como perda financeira direta, mas trata-se de double-spend por race em operação financeira ativa. Ver TRIAGE.md seção 'Overrides manuais'."
 ---
 # [L05-01] Swap: race entre accept e cancel do dono da oferta
-> **Lente:** 5 — CPO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** in-progress
+> **Lente:** 5 — CPO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟢 fixed
 **Camada:** DB + PORTAL
 **Personas impactadas:** Assessoria (seller), Assessoria (buyer), Plataforma (CFO)
 
@@ -128,3 +130,4 @@ Contexto completo e motivação detalhada em [`docs/audit/parts/`](../parts/) �
 ## Histórico
 - `2026-04-17` — Descoberto na auditoria inicial (Lente 5 — CPO, item 5.1).
 - `2026-04-17` — Fix implementado: `cancel_swap_order` RPC race-safe + `execute_swap` com SQLSTATE distinguíveis + mapeamento HTTP semântico no portal.
+- `2026-04-17` — E2E green (`tools/validate-migrations.sh --run-tests` 165/165 + 146/146; teste `cancel_swap_order has search_path and lock_timeout configured` corrigido). Promovido a `fixed` (commit `a32a462`).

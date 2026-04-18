@@ -4,10 +4,11 @@ audit_ref: "18.3"
 lens: 18
 title: "SECURITY DEFINER sem SET search_path em funções antigas"
 severity: critical
-status: in-progress
+status: fixed
 wave: 0
 discovered_at: 2026-04-17
 fix_ready_at: 2026-04-17
+fixed_at: 2026-04-17
 tags: ["security", "hardening", "migration", "search-path"]
 files:
   - supabase/migrations/20260417150000_search_path_hardening.sql
@@ -17,7 +18,8 @@ test_required: true
 tests:
   - tools/integration_tests.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "commit:cd15b5d"
 owner: unassigned
 runbook: null
 effort_points: 3
@@ -27,7 +29,7 @@ deferred_to_wave: null
 note: null
 ---
 # [L18-03] SECURITY DEFINER sem SET search_path em funções antigas
-> **Lente:** 18 — Principal Eng · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** in-progress
+> **Lente:** 18 — Principal Eng · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟢 fixed
 **Camada:** BACKEND (Supabase — todas funções `public.*` SECURITY DEFINER)
 **Personas impactadas:** Toda a plataforma (indireto — defesa em profundidade)
 
@@ -173,3 +175,4 @@ anchor `[18.3]`.
 - `2026-04-17` — Correção implementada: 26 SECDEF hardenizadas em batch,
   view de auditoria contínua + 2 testes de regressão bloqueando
   reintrodução do problema.
+- `2026-04-17` — E2E green (`tools/validate-migrations.sh --run-tests` 165/165 + 146/146; view `security_definer_hardening_audit` confirma 0 funções vulneráveis). Promovido a `fixed` (commit `cd15b5d`).

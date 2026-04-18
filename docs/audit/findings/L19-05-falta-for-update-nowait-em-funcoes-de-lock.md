@@ -4,10 +4,11 @@ audit_ref: "19.5"
 lens: 19
 title: "Falta FOR UPDATE NOWAIT em funções de lock crítico"
 severity: critical
-status: in-progress
+status: fixed
 wave: 0
 discovered_at: 2026-04-17
 fix_ready_at: 2026-04-17
+fixed_at: 2026-04-17
 tags: ["finance", "atomicity", "locks", "sre", "observability"]
 files:
   - supabase/migrations/20260417160000_lock_timeout_financial_rpcs.sql
@@ -22,7 +23,8 @@ tests:
   - portal/src/app/api/distribute-coins/route.test.ts
   - tools/integration_tests.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "commit:bf1cd07"
 owner: unassigned
 runbook: null
 effort_points: 5
@@ -32,7 +34,7 @@ deferred_to_wave: null
 note: null
 ---
 # [L19-05] Falta FOR UPDATE NOWAIT em funções de lock crítico
-> **Lente:** 19 — DBA · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** in-progress
+> **Lente:** 19 — DBA · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟢 fixed
 **Camada:** BACKEND (Supabase RPC) + portal error mapping
 **Personas impactadas:** Toda operação financeira (emit, burn, swap, settlement, deposit)
 
@@ -183,3 +185,4 @@ anchor `[19.5]`.
 - `2026-04-17` — Descoberto na auditoria inicial (Lente 19 — DBA, item 19.5).
 - `2026-04-17` — Correção implementada: `SET lock_timeout = '2s'` em 9 RPCs
   financeiras críticas + route mapping 55P03→503 + 4 testes de regressão.
+- `2026-04-17` — E2E green (`tools/validate-migrations.sh --run-tests` 165/165 + 146/146; testes em `route.test.ts` + integração). Promovido a `fixed` (commit `bf1cd07`).

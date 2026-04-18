@@ -4,10 +4,11 @@ audit_ref: "14.3"
 lens: 14
 title: "/api/docs carrega Swagger-UI de unpkg sem SRI"
 severity: critical
-status: in-progress
+status: fixed
 wave: 0
 discovered_at: 2026-04-17
 fix_ready_at: 2026-04-17
+fixed_at: 2026-04-17
 tags: ["portal", "supply-chain"]
 files:
   - portal/src/app/api/docs/route.ts
@@ -20,7 +21,8 @@ test_required: true
 tests:
   - portal/src/app/api/docs/route.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "commit:e313c5c"
 owner: unassigned
 runbook: null
 effort_points: 3
@@ -30,7 +32,7 @@ deferred_to_wave: null
 note: null
 ---
 # [L14-03] /api/docs carrega Swagger-UI de unpkg sem SRI
-> **Lente:** 14 — Contracts · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** in-progress
+> **Lente:** 14 — Contracts · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟢 fixed
 **Camada:** portal (supply chain)
 **Personas impactadas:** admin_master, platform_admin (usuários autenticados que acessam /api/docs)
 
@@ -107,3 +109,4 @@ Contexto completo e motivação detalhada em [`docs/audit/parts/07-qa-dx.md`](..
 ## Histórico
 - `2026-04-17` — Descoberto na auditoria inicial (Lente 14 — Contracts, item 14.3).
 - `2026-04-17` — Correção implementada: self-host Swagger-UI, remove dependência de unpkg, 5 testes de regressão.
+- `2026-04-17` — E2E green (`tools/validate-migrations.sh --run-tests` 165/165 + 146/146; testes da rota docs em `route.test.ts`). Promovido a `fixed` (commit `e313c5c`).

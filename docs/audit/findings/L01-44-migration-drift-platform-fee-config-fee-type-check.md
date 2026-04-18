@@ -4,10 +4,11 @@ audit_ref: "1.44"
 lens: 1
 title: "Migration drift — platform_fee_config.fee_type CHECK + INSERT 'fx_spread'"
 severity: critical
-status: in-progress
+status: fixed
 wave: 0
 discovered_at: 2026-04-17
 fix_ready_at: 2026-04-17
+fixed_at: 2026-04-17
 tags: ["finance", "migration", "ux", "reliability"]
 files:
   - supabase/migrations/20260228170000_custody_gaps.sql
@@ -18,7 +19,8 @@ test_required: true
 tests:
   - tools/integration_tests.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "commit:f62de86"
 owner: unassigned
 runbook: null
 effort_points: 5
@@ -28,7 +30,7 @@ deferred_to_wave: null
 note: "Correção implementada em 2026-04-17: nova migration canônica + edição forward-compat em 170000 + 2 testes de integração. L01-13 corrigido junto (cross-ref; enum portal/fees atualizado)."
 ---
 # [L01-44] Migration drift — platform_fee_config.fee_type CHECK + INSERT 'fx_spread'
-> **Lente:** 1 — CISO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** in-progress (correção pronta, aguardando PR)
+> **Lente:** 1 — CISO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟢 fixed
 **Camada:** BACKEND
 **Personas impactadas:** DevOps, CFO (em fresh install)
 ## Achado
@@ -121,4 +123,5 @@ NODE_PATH=portal/node_modules npx tsx tools/integration_tests.ts
 
 ## Histórico
 - `2026-04-17` — Descoberto na auditoria inicial (Lente 1 — CISO, item 1.44).
-- `2026-04-17` — Correção implementada (2 migrations + 2 arquivos portal + testes). Status: `in-progress`.
+- `2026-04-17` — Correção implementada (2 migrations + 2 arquivos portal + testes).
+- `2026-04-17` — E2E green (`tools/validate-migrations.sh --run-tests` 165/165 + 146/146; o próprio harness valida que `fx_spread` aceito no CHECK em fresh install). Promovido a `fixed` (commit `f62de86`).

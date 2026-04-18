@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T13:56:52.284Z",
+  "generated_at": "2026-04-18T18:26:27.151Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -11,8 +11,8 @@
   },
   "by_status": {
     "fix-pending": 315,
-    "in-progress": 14,
-    "fixed": 19
+    "fixed": 32,
+    "in-progress": 1
   },
   "by_wave": {
     "0": 15,
@@ -87,10 +87,11 @@
       "lens": 1,
       "title": "POST /api/custody/withdraw — Criação e execução de saque em um único request",
       "severity": "critical",
-      "status": "in-progress",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "anti-cheat",
@@ -117,7 +118,9 @@
         "portal/src/app/api/custody/fx-quote/route.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:0e66852"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,
@@ -132,10 +135,11 @@
       "lens": 1,
       "title": "POST /api/distribute-coins — Distribuição de coins a atleta",
       "severity": "critical",
-      "status": "in-progress",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "atomicity",
@@ -155,7 +159,9 @@
         "portal/src/app/api/distribute-coins/route.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:affc69b"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,
@@ -581,10 +587,11 @@
       "lens": 1,
       "title": "POST /api/billing/asaas — Armazenamento de API Key",
       "severity": "critical",
-      "status": "in-progress",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "portal",
         "backend",
@@ -608,18 +615,12 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "L01-17: payment_provider_config não expõe colunas plaintext api_key/webhook_token",
-        "L01-17: fn_ppc_save_api_key + fn_ppc_get_api_key roundtrip (service_role)",
-        "L01-17: fn_ppc_save_api_key rotates existing secret (preserva config_id)",
-        "L01-17: fn_ppc_save_api_key rejeita api_key curta (< 8)",
-        "L01-17: fn_ppc_save_api_key rejeita environment inválido",
-        "L01-17: fn_ppc_get_api_key retorna NO_CONFIG para grupo sem configuração",
-        "L01-17: fn_ppc_has_api_key exposes metadata flags sem revelar secret",
-        "L01-17: fn_ppc_save_webhook_token cria + fn_ppc_get_webhook_token retorna valor",
-        "L01-17: payment_provider_secret_access_log registra operações"
+        "tools/integration_tests.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:35be23a"
+      ],
       "owner": "unassigned",
       "runbook": "docs/audit/runbooks/L01-17-asaas-vault-rotation.md",
       "effort_points": 5,
@@ -1395,10 +1396,11 @@
       "lens": 1,
       "title": "Migration drift — platform_fee_config.fee_type CHECK + INSERT 'fx_spread'",
       "severity": "critical",
-      "status": "in-progress",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "migration",
@@ -1416,7 +1418,9 @@
         "tools/integration_tests.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:f62de86"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,
@@ -1612,10 +1616,11 @@
       "lens": 2,
       "title": "distribute-coins — Orquestração não-atômica entre 4 RPCs (partial-failure silencioso)",
       "severity": "critical",
-      "status": "in-progress",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "atomicity",
@@ -1633,7 +1638,9 @@
         "portal/src/app/api/distribute-coins/route.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:affc69b"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,
@@ -1648,10 +1655,11 @@
       "lens": 2,
       "title": "execute_burn_atomic — Exceções engolidas em custody_release_committed e settle_clearing",
       "severity": "critical",
-      "status": "in-progress",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "atomicity",
@@ -1671,7 +1679,9 @@
         "tools/integration_tests.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:94f5cea"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,
@@ -2622,10 +2632,11 @@
       "lens": 4,
       "title": "fn_delete_user_data é incompleta — múltiplas tabelas com PII não cobertas",
       "severity": "critical",
-      "status": "in-progress",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "lgpd",
         "finance",
@@ -2645,12 +2656,12 @@
       "correction_type": "migration",
       "test_required": true,
       "tests": [
-        {
-          "tools/integration_tests.ts (6 tests L04-01": "strategy-populated, gaps-empty, null/zero-uuid rejection, happy path, search_path hardening)"
-        }
+        "tools/integration_tests.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:d1c0c26"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,
@@ -2696,10 +2707,11 @@
       "lens": 4,
       "title": "Não há registro de consentimento (opt-in explícito LGPD Art. 8)",
       "severity": "critical",
-      "status": "in-progress",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "lgpd",
         "integration",
@@ -2720,22 +2732,12 @@
       "correction_type": "process",
       "test_required": true,
       "tests": [
-        "integration/L04-03-consent-policy-seed",
-        "integration/L04-03-profiles-snapshot-cols",
-        "integration/L04-03-fn-consent-grant-happy-path",
-        "integration/L04-03-fn-consent-grant-version-too-old",
-        "integration/L04-03-fn-consent-grant-invalid-type",
-        "integration/L04-03-fn-consent-revoke-terms-blocked",
-        "integration/L04-03-marketing-grant-revoke-last-wins",
-        "integration/L04-03-has-required-athlete",
-        "integration/L04-03-status-returns-8-rows",
-        "integration/L04-03-status-cross-user-forbidden",
-        "integration/L04-03-append-only-update-blocked",
-        "integration/L04-03-anon-preserves-row-on-auth-delete",
-        "integration/L04-03-registered-in-lgpd-strategy"
+        "tools/integration_tests.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:b5d55a6"
+      ],
       "owner": "platform-privacy",
       "runbook": "docs/audit/runbooks/L04-03-lgpd-consent-management.md",
       "effort_points": 5,
@@ -3116,10 +3118,11 @@
       "lens": 5,
       "title": "Swap: race entre accept e cancel do dono da oferta",
       "severity": "critical",
-      "status": "in-progress",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "atomicity",
@@ -3144,7 +3147,9 @@
         "tools/integration_tests.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:a32a462"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,
@@ -6499,10 +6504,11 @@
       "lens": 14,
       "title": "/api/docs carrega Swagger-UI de unpkg sem SRI",
       "severity": "critical",
-      "status": "in-progress",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "portal",
         "supply-chain"
@@ -6520,7 +6526,9 @@
         "portal/src/app/api/docs/route.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:e313c5c"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
@@ -7523,10 +7531,11 @@
       "lens": 18,
       "title": "SECURITY DEFINER sem SET search_path em funções antigas",
       "severity": "critical",
-      "status": "in-progress",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "security",
         "hardening",
@@ -7543,7 +7552,9 @@
         "tools/integration_tests.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:cd15b5d"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
@@ -7759,10 +7770,11 @@
       "lens": 19,
       "title": "coin_ledger não é particionada — tabela crescendo sem controle",
       "severity": "critical",
-      "status": "in-progress",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "integration",
@@ -7780,14 +7792,12 @@
       "correction_type": "migration",
       "test_required": true,
       "tests": [
-        "tools/integration_tests.ts::L19-01: coin_ledger monthly partitions exist (structural proof)",
-        "tools/integration_tests.ts::L19-01: coin_ledger_ensure_partition is idempotent",
-        "tools/integration_tests.ts::L19-01: coin_ledger_idempotency enforces (ref_id, reason) uniqueness",
-        "tools/integration_tests.ts::L19-01: coin_ledger parent-table API works across partition ranges",
-        "tools/integration_tests.ts::L19-01: emit_coins_atomic idempotency via coin_ledger_idempotency"
+        "tools/integration_tests.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:911235f"
+      ],
       "owner": "unassigned",
       "runbook": "docs/audit/runbooks/L19-01-coin-ledger-partition-management.md",
       "effort_points": 5,
@@ -7893,10 +7903,11 @@
       "lens": 19,
       "title": "Falta FOR UPDATE NOWAIT em funções de lock crítico",
       "severity": "critical",
-      "status": "in-progress",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "atomicity",
@@ -7919,7 +7930,9 @@
         "tools/integration_tests.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:bf1cd07"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,
