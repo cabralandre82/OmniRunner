@@ -21,7 +21,7 @@ tests:
   - portal/src/lib/observability/sentryTuning.test.ts
 linked_issues: []
 linked_prs:
-  - "commit:HEAD"
+  - "commit:75e4a7f"
 owner: unassigned
 runbook: null
 effort_points: 3

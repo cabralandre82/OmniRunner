@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T18:53:30.808Z",
+  "generated_at": "2026-04-18T18:54:36.765Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -8143,7 +8143,7 @@
       ],
       "linked_issues": [],
       "linked_prs": [
-        "commit:HEAD"
+        "commit:75e4a7f"
       ],
       "owner": "unassigned",
       "runbook": null,
@@ -8181,7 +8181,7 @@
       ],
       "linked_issues": [],
       "linked_prs": [
-        "commit:HEAD"
+        "commit:75e4a7f"
       ],
       "owner": "unassigned",
       "runbook": null,
@@ -8253,7 +8253,7 @@
       ],
       "linked_issues": [],
       "linked_prs": [
-        "commit:HEAD"
+        "commit:75e4a7f"
       ],
       "owner": "unassigned",
       "runbook": null,
@@ -8293,7 +8293,7 @@
       ],
       "linked_issues": [],
       "linked_prs": [
-        "commit:HEAD"
+        "commit:75e4a7f"
       ],
       "owner": "unassigned",
       "runbook": null,
@@ -8352,7 +8352,7 @@
       ],
       "linked_issues": [],
       "linked_prs": [
-        "commit:HEAD"
+        "commit:75e4a7f"
       ],
       "owner": "unassigned",
       "runbook": "docs/runbooks/DR_PROCEDURE.md",
@@ -8388,7 +8388,7 @@
       ],
       "linked_issues": [],
       "linked_prs": [
-        "commit:HEAD"
+        "commit:75e4a7f"
       ],
       "owner": "unassigned",
       "runbook": null,
