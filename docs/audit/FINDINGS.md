@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 19:05:06 UTC.
+> Atualizado em 2026-04-18 19:25:26 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -134,7 +134,7 @@ Total: **348** findings.
 | 🟠 high | ⏳ fix-pending | [L06-03](./findings/L06-03-reconcile-wallets-cron-sem-alerta-em-drift-0.md) | 1 | L06 · COO | reconcile-wallets-cron sem alerta em drift > 0 | unassigned |
 | 🟠 high | ⏳ fix-pending | [L06-04](./findings/L06-04-pg-cron-jobs-sem-monitoramento-de-execucao.md) | 1 | L06 · COO | pg_cron jobs sem monitoramento de execução | unassigned |
 | 🟠 high | ⏳ fix-pending | [L06-05](./findings/L06-05-edge-functions-sem-retry-em-falha-de-pg.md) | 1 | L06 · COO | Edge Functions sem retry em falha de pg_net | unassigned |
-| 🟠 high | ⏳ fix-pending | [L06-06](./findings/L06-06-sem-feature-flags-para-desligar-subsistemas.md) | 1 | L06 · COO | Sem feature flags para desligar subsistemas | unassigned |
+| 🟠 high | ✅ fixed | [L06-06](./findings/L06-06-sem-feature-flags-para-desligar-subsistemas.md) | 1 | L06 · COO | Sem feature flags para desligar subsistemas | unassigned |
 | 🟠 high | ⏳ fix-pending | [L06-07](./findings/L06-07-global-error-do-next-js-nao-reporta-a.md) | 1 | L06 · COO | Global error do Next.js não reporta a Sentry | unassigned |
 | 🟠 high | ⏳ fix-pending | [L06-08](./findings/L06-08-delete-account-executa-deleteuser-sem-audit-log.md) | 1 | L06 · COO | delete-account executa deleteUser sem audit_log | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L06-09](./findings/L06-09-metricas-portal-src-lib-metrics-ts-so-geram.md) | 2 | L06 · COO | Métricas (portal/src/lib/metrics.ts) só geram log JSON, sem exporter real | unassigned |

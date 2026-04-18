@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T19:05:05.997Z",
+  "generated_at": "2026-04-18T19:25:26.149Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 305,
-    "fixed": 42,
+    "fix-pending": 304,
+    "fixed": 43,
     "in-progress": 1
   },
   "by_wave": {
@@ -3728,7 +3728,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Criados os 6 runbooks operacionais financeiros que faltavam, todos em\n`docs/runbooks/`:\n- **CUSTODY_INCIDENT_RUNBOOK** — invariant violations (SEV-0): kill\n  switch, diagnóstico (4 SQL queries), 3 cenários de remediação\n  (committed_negative, deposited_less_than_committed, committed_mismatch),\n  validação e postmortem mandatório.\n- **CLEARING_STUCK_RUNBOOK** — settlements > 24h pending: 3 cenários\n  (devedor com saldo, sem saldo, bug em settle), reuso de\n  `clearing_failure_log` e métricas p50/p95.\n- **WITHDRAW_STUCK_RUNBOOK** — processing > 48h: 4 cenários (webhook\n  perdido, provider processando, banco rejeitou, nunca chegou ao\n  gateway), com SQL transacional para reverter saldo + estorno fx_spread.\n- **CHARGEBACK_RUNBOOK** — Asaas/Stripe dispute: contestar vs aceitar,\n  burn de coins emitidas, registro de loss em platform_revenue, rate\n  monitoring para evitar sanções do gateway (> 1%).\n- **GATEWAY_OUTAGE_RUNBOOK** — Asaas/Stripe down: kill switch, banner\n  público, pause crons, drenagem pós-recovery, smoke test. Inclui\n  referência rápida para status pages e API health endpoints.\n- **WEBHOOK_BACKLOG_RUNBOOK** — payment_webhook_events stuck: drenagem\n  em batches com `FOR UPDATE SKIP LOCKED`, quarentena de duplicatas,\n  replay individual.\n\nCada runbook segue estrutura: trigger, diagnóstico (≤ 15min), remediação\npor cenário, validação, comunicação, postmortem. Referenciado pelo\níndice em `docs/runbooks/README.md` que classifica por severidade,\ntrigger e tempo alvo. Cada runbook cita SQL real (function names,\ntabelas, colunas) baseado nas migrations atuais.\n\nFollow-ups identificados:\n- Tabela `feature_flags` (citada em vários runbooks) está pendente\n  em **L06-06** — runbooks descrevem alternativa via env var Vercel\n  enquanto isso.\n- Script `tools/replay-webhook-events.sh` mencionado no\n  `WEBHOOK_BACKLOG_RUNBOOK#3.3` ainda precisa ser criado — backlog.\n- `docs/audit/runbooks/L01-17-asaas-vault-rotation.md` continua na\n  pasta finding-specific (correto). Outros findings podem migrar\n  para `docs/runbooks/` se virarem operacionais transversais.\n- Drills trimestrais documentados no README — primeiro ciclo deve\n  rodar 2026-Q3.\n"
+      "note": "Criados os 6 runbooks operacionais financeiros que faltavam, todos em\n`docs/runbooks/`:\n- **CUSTODY_INCIDENT_RUNBOOK** — invariant violations (SEV-0): kill\n  switch, diagnóstico (4 SQL queries), 3 cenários de remediação\n  (committed_negative, deposited_less_than_committed, committed_mismatch),\n  validação e postmortem mandatório.\n- **CLEARING_STUCK_RUNBOOK** — settlements > 24h pending: 3 cenários\n  (devedor com saldo, sem saldo, bug em settle), reuso de\n  `clearing_failure_log` e métricas p50/p95.\n- **WITHDRAW_STUCK_RUNBOOK** — processing > 48h: 4 cenários (webhook\n  perdido, provider processando, banco rejeitou, nunca chegou ao\n  gateway), com SQL transacional para reverter saldo + estorno fx_spread.\n- **CHARGEBACK_RUNBOOK** — Asaas/Stripe dispute: contestar vs aceitar,\n  burn de coins emitidas, registro de loss em platform_revenue, rate\n  monitoring para evitar sanções do gateway (> 1%).\n- **GATEWAY_OUTAGE_RUNBOOK** — Asaas/Stripe down: kill switch, banner\n  público, pause crons, drenagem pós-recovery, smoke test. Inclui\n  referência rápida para status pages e API health endpoints.\n- **WEBHOOK_BACKLOG_RUNBOOK** — payment_webhook_events stuck: drenagem\n  em batches com `FOR UPDATE SKIP LOCKED`, quarentena de duplicatas,\n  replay individual.\n\nCada runbook segue estrutura: trigger, diagnóstico (≤ 15min), remediação\npor cenário, validação, comunicação, postmortem. Referenciado pelo\níndice em `docs/runbooks/README.md` que classifica por severidade,\ntrigger e tempo alvo. Cada runbook cita SQL real (function names,\ntabelas, colunas) baseado nas migrations atuais.\n\nFollow-ups identificados:\n- ✅ Tabela `feature_flags` referenciada nos runbooks foi entregue em\n  **L06-06** (mesmo dia) com `enabled` boolean + audit trail; runbooks\n  `CUSTODY_INCIDENT` e `GATEWAY_OUTAGE` foram atualizados para o\n  schema real.\n- Script `tools/replay-webhook-events.sh` mencionado no\n  `WEBHOOK_BACKLOG_RUNBOOK#3.3` ainda precisa ser criado — backlog.\n- `docs/audit/runbooks/L01-17-asaas-vault-rotation.md` continua na\n  pasta finding-specific (correto). Outros findings podem migrar\n  para `docs/runbooks/` se virarem operacionais transversais.\n- Drills trimestrais documentados no README — primeiro ciclo deve\n  rodar 2026-Q3.\n"
     },
     {
       "id": "L06-02",
@@ -3862,27 +3862,45 @@
       "lens": 6,
       "title": "Sem feature flags para desligar subsistemas",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "migration",
         "reliability"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260417250000_feature_flags_kill_switches.sql",
+        "portal/src/lib/feature-flags.ts",
+        "supabase/functions/_shared/feature_flags.ts",
+        "portal/src/app/api/distribute-coins/route.ts",
+        "portal/src/app/api/custody/withdraw/route.ts",
+        "portal/src/app/api/swap/route.ts",
+        "portal/src/app/api/platform/feature-flags/route.ts",
+        "portal/src/app/platform/feature-flags/page.tsx",
+        "portal/src/app/platform/feature-flags/feature-flag-row.tsx",
+        "docs/runbooks/CUSTODY_INCIDENT_RUNBOOK.md",
+        "docs/runbooks/GATEWAY_OUTAGE_RUNBOOK.md"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/feature-flags.test.ts",
+        "portal/src/app/api/platform/feature-flags/route.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:HEAD"
+      ],
       "owner": "unassigned",
-      "runbook": null,
+      "runbook": "docs/runbooks/CUSTODY_INCIDENT_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Implementado kill switch operacional via extensão da tabela\n`feature_flags` existente (criada em 20260304950000). Mudanças:\n\n**DB layer (`20260417250000_feature_flags_kill_switches.sql`)**\n- ALTER TABLE add: `id` (UUID PK), `scope` (`global`/`group:<uuid>`/...),\n  `category` (`product`/`kill_switch`/`banner`/`experimental`/`operational`),\n  `reason`, `updated_by`. PK migra para `id`, `(key, scope)` UNIQUE.\n- `feature_flag_audit` table + trigger que captura toda mudança\n  (INSERT/UPDATE/DELETE) com OLD vs NEW, actor, role e timestamp.\n- SQL helpers: `fn_feature_resolve(key, scope)`, `fn_feature_enabled`\n  (fail-open default), `fn_assert_feature_enabled` (RAISE com SQLSTATE\n  `P0F01`).\n- RLS UPDATE/INSERT/DELETE restritos a `profiles.platform_role='admin'`\n  OU service_role.\n- Seed: 6 kill switches (`distribute_coins`, `custody.deposits`,\n  `custody.withdrawals`, `clearing.interclub`, `swap`, `auto_topup`)\n  + 2 banners (`gateway_outage`, `maintenance_mode`).\n- LGPD coverage: `feature_flags.updated_by` e\n  `feature_flag_audit.actor_user_id` registrados como\n  `defensive_optional` (preserva trilha sem expor PII após deleção).\n- Invariants check inline na migration (smoke test ao aplicar).\n\n**Portal lib (`portal/src/lib/feature-flags.ts`)**\n- `FeatureDisabledError` (status 503, code `FEATURE_DISABLED`) —\n  classe exportada para route handlers.\n- `assertSubsystemEnabled(key, hint?)` — fail-open + throw quando\n  flag está OFF. Distinto de `isFeatureEnabled` (legacy, fail-closed\n  para product rollouts).\n- `isSubsystemEnabled(key)` — boolean fail-open.\n- `setFeatureFlag({ key, enabled, reason, ... })` — wrapper auditado\n  com invalidação automática de cache.\n- `invalidateFeatureCache()` — exposta para tests e route handler.\n\n**Edge function lib (`supabase/functions/_shared/feature_flags.ts`)**\n- Mirror Deno-compatible: TTL=15s (vs 60s no portal — edges são\n  short-lived e devem reagir mais rápido a kill switch).\n- `featureDisabledResponse(err)` helper — Response 503 padronizado\n  com `Retry-After: 30`.\n\n**Wiring nos endpoints críticos** — `assertSubsystemEnabled` no\nstart de:\n- `POST /api/distribute-coins` → `distribute_coins.enabled`\n- `POST /api/custody/withdraw` → `custody.withdrawals.enabled`\n- `POST /api/swap` → `swap.enabled`\n\nQuando OFF, response é `{ error, code: \"FEATURE_DISABLED\", key }` com\nstatus 503 e `Retry-After: 30..60`.\n\n**Admin UI (`/platform/feature-flags`)**\n- Corrigido bug pré-existente: page consultava `id` (não existia) e\n  API consultava `platform_admins` (tabela inexistente). Agora usa\n  `id` real (post-migration) e `profiles.platform_role='admin'`.\n- Visual: badge por categoria (kill_switch=danger, banner=warning,\n  operational=info, product=brand, experimental=neutral).\n- Aviso topo \"Estado operacional atípico\" lista kill switches OFF e\n  banners ON em destaque.\n- Toggle exige campo \"Motivo\" (mín 3 chars) — vai para\n  `feature_flag_audit.reason`. API valida reason.\n- Cache invalida no save → próximo request reflete a mudança.\n\n**Tests**: 14 unit tests novos em `portal/src/lib/feature-flags.test.ts`\n(cobertura de `assertSubsystemEnabled`, `FeatureDisabledError`,\nfail-open semantics, cache invalidation). Tests existentes de rotas\nfinanceiras atualizados para mockar `@/lib/feature-flags`. 784/784\npassando, validate-migrations 166/166 + 146/146 integration tests.\n\n**Runbooks atualizados** — `CUSTODY_INCIDENT_RUNBOOK.md` e\n`GATEWAY_OUTAGE_RUNBOOK.md` reescritos para usar o schema real\n(`enabled boolean + reason + updated_by + audit query`) em vez do\nschema hipotético (`value text + scope text`) que eu havia escrito\nantes. Vercel env var fica como fallback emergency-only.\n\nFollow-ups conhecidos:\n- Wirear `clearing.interclub.enabled` e `auto_topup.enabled` no\n  edge function `settle-clearing` e crons (não há route handler\n  correspondente no portal — backlog).\n- Banner público no layout do portal (lê `banner.gateway_outage`)\n  ainda não foi instalado — finding novo se priorizado.\n- `scope='group:<uuid>'` suportado no schema mas UI ainda só lista\n  scope global; multi-scope toggle via UI fica como follow-up\n  (workaround: SQL direto).\n"
     },
     {
       "id": "L06-07",

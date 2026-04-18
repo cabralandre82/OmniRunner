@@ -6,6 +6,10 @@ import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
 import { distributeCoinsSchema } from "@/lib/schemas";
 import { assertInvariantsHealthy } from "@/lib/custody";
+import {
+  assertSubsystemEnabled,
+  FeatureDisabledError,
+} from "@/lib/feature-flags";
 import { logger } from "@/lib/logger";
 
 // L02-01: todas as mutações (custódia + inventário + wallet + ledger) são
@@ -22,6 +26,23 @@ export async function POST(request: Request) {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // L06-06 — kill switch (ver runbook CUSTODY_INCIDENT_RUNBOOK.md).
+    // Toggleable via /platform/feature-flags sem precisar redeploy.
+    try {
+      await assertSubsystemEnabled(
+        "distribute_coins.enabled",
+        "Distribuição de coins temporariamente suspensa pelo time de ops.",
+      );
+    } catch (e) {
+      if (e instanceof FeatureDisabledError) {
+        return NextResponse.json(
+          { error: e.hint, code: e.code, key: e.key },
+          { status: 503, headers: { "Retry-After": "30" } },
+        );
+      }
+      throw e;
     }
 
     const rl = await rateLimit(`distribute:${user.id}`, { maxRequests: 20, windowMs: 60_000 });

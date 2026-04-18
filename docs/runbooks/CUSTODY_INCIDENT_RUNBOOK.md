@@ -39,26 +39,42 @@ Decisão: pausar emissão de coins novas?
 
 ### 3.1 Kill switch — pausar distribute-coins
 
+L06-06 introduziu kill switches via `public.feature_flags` (categoria
+`kill_switch`). Para PARAR a emissão, set `enabled=false`:
+
+**Opção A — UI (preferido)**: `/platform/feature-flags` → procure
+`distribute_coins.enabled` → toggle → preencha "Motivo" (obrigatório) →
+Salvar. Cache invalida instantaneamente.
+
+**Opção B — SQL (off-hours, sem UI disponível)**:
 ```sql
--- Set feature flag (assume L06-06 implementado; senão usar env var)
-INSERT INTO public.feature_flags (key, value, scope, updated_by, reason)
-VALUES (
-  'kill_switch.distribute_coins', 'true', 'global',
-  auth.uid(),
-  'CUSTODY_INCIDENT_RUNBOOK — invariant violation detected'
-)
-ON CONFLICT (key, scope) DO UPDATE SET
-  value = EXCLUDED.value,
-  updated_at = now(),
-  reason = EXCLUDED.reason;
+UPDATE public.feature_flags
+SET enabled = false,
+    reason = 'CUSTODY_INCIDENT_RUNBOOK — invariant violation detected',
+    updated_by = auth.uid(),  -- NULL via service_role direto também ok
+    updated_at = now()
+WHERE key = 'distribute_coins.enabled' AND scope = 'global';
+
+-- Confirma
+SELECT key, enabled, reason, updated_at, updated_by
+FROM public.feature_flags
+WHERE key = 'distribute_coins.enabled';
+
+-- Audit trail completo (incluindo OLD vs NEW)
+SELECT changed_at, action, old_enabled, new_enabled, reason, actor_user_id, actor_role
+FROM public.feature_flag_audit
+WHERE flag_key = 'distribute_coins.enabled'
+ORDER BY changed_at DESC LIMIT 5;
 ```
 
-Edge function `distribute-coins` checa esta flag no entry-point. Se
-`true`, retorna `503` com mensagem "Sistema em manutenção".
+Route handler `/api/distribute-coins` checa via `assertSubsystemEnabled`
+e retorna `503` com `Retry-After: 30` quando bloqueado. Edge function
+shared lib em `supabase/functions/_shared/feature_flags.ts`.
 
-> **Se feature flag table não existir** (L06-06 ainda fix-pending):
-> Vercel UI → Project Settings → Environment Variables →
-> `KILL_SWITCH_DISTRIBUTE_COINS=true` → Redeploy. Tempo: 2-3min.
+> **Se a tabela ainda não tiver a flag** (setup novo): `isSubsystemEnabled`
+> faz **fail-open** (retorna `true`). Para fail-closed temporário usar
+> Vercel env var `KILL_SWITCH_DISTRIBUTE_COINS=true` + redeploy (2-3min)
+> e abrir incident em paralelo.
 
 ### 3.2 Isolamento de grupo (alternativa cirúrgica)
 
@@ -251,12 +267,17 @@ WHERE ca.group_id = '<GROUP_ID>';
 
 ## 7. Restart (se kill switch foi usado)
 
+UI: `/platform/feature-flags` → toggle `distribute_coins.enabled` para
+ON → motivo "incident resolved, smoke OK".
+
+OU SQL:
 ```sql
 UPDATE public.feature_flags
-SET value = 'false',
-    updated_at = now(),
-    reason = 'CUSTODY_INCIDENT_RUNBOOK — incident resolved, smoke OK'
-WHERE key = 'kill_switch.distribute_coins' AND scope = 'global';
+SET enabled = true,
+    reason = 'CUSTODY_INCIDENT_RUNBOOK — incident resolved, smoke OK',
+    updated_by = auth.uid(),
+    updated_at = now()
+WHERE key = 'distribute_coins.enabled' AND scope = 'global';
 ```
 
 OU Vercel env var → `KILL_SWITCH_DISTRIBUTE_COINS=false` → Redeploy.

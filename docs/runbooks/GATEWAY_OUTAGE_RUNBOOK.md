@@ -61,33 +61,50 @@ ORDER BY errors DESC;
 
 ### 3.1 Habilitar kill switch para evitar fila lixo
 
+UI (preferido): `/platform/feature-flags` → toggle `custody.deposits.enabled`
+e `custody.withdrawals.enabled` para OFF, motivo "Asaas down".
+
+SQL (off-hours):
 ```sql
--- Pausa NEW deposits/withdrawals — não toca em-flight
-INSERT INTO public.feature_flags (key, value, scope, updated_by, reason)
-VALUES
-  ('kill_switch.deposit_create', 'true', 'global', auth.uid(),
-   'GATEWAY_OUTAGE_RUNBOOK: Asaas down'),
-  ('kill_switch.withdraw_create', 'true', 'global', auth.uid(),
-   'GATEWAY_OUTAGE_RUNBOOK: Asaas down')
-ON CONFLICT (key, scope) DO UPDATE
-  SET value = EXCLUDED.value, updated_at = now(), reason = EXCLUDED.reason;
+UPDATE public.feature_flags
+SET enabled = false,
+    reason = 'GATEWAY_OUTAGE_RUNBOOK: Asaas down',
+    updated_by = auth.uid(),
+    updated_at = now()
+WHERE key IN ('custody.deposits.enabled', 'custody.withdrawals.enabled')
+  AND scope = 'global';
+
+-- Confirma estado + audit
+SELECT key, enabled, reason FROM public.feature_flags
+WHERE key LIKE 'custody.%' OR key = 'distribute_coins.enabled';
+
+SELECT changed_at, flag_key, action, old_enabled, new_enabled, reason
+FROM public.feature_flag_audit
+WHERE changed_at > now() - interval '15 minutes'
+ORDER BY changed_at DESC;
 ```
 
-> **Se feature_flags table não existir** (L06-06 fix-pending): Vercel
-> env vars `KILL_SWITCH_DEPOSIT_CREATE=true`,
-> `KILL_SWITCH_WITHDRAW_CREATE=true` → Redeploy (2-3min).
+Routes `/api/custody/withdraw` e `/api/custody/deposit` retornam 503
+com `Retry-After: 60` quando flag é false.
+
+> **Fail-open**: se a flag não existir (setup novo), `isSubsystemEnabled`
+> retorna `true` por design (sistema continua operando). Para fail-closed
+> imediato use Vercel env var `KILL_SWITCH_DEPOSIT_CREATE=true` +
+> redeploy (2-3min) em paralelo ao incident.
 
 ### 3.2 Banner público de degradação
 
-Portal: editar `portal/src/components/SystemBanner.tsx` ou ativar via
-feature flag:
 ```sql
-INSERT INTO public.feature_flags (key, value, scope, updated_by, reason)
-VALUES ('banner.gateway_outage', 'true', 'global', auth.uid(),
-        'GATEWAY_OUTAGE_RUNBOOK: showing degraded status banner')
-ON CONFLICT (key, scope) DO UPDATE
-  SET value = EXCLUDED.value, updated_at = now();
+UPDATE public.feature_flags
+SET enabled = true,
+    reason = 'GATEWAY_OUTAGE_RUNBOOK: gateway down, mostrar banner público',
+    updated_by = auth.uid(),
+    updated_at = now()
+WHERE key = 'banner.gateway_outage' AND scope = 'global';
 ```
+
+Portal lê via `isFeatureEnabled('banner.gateway_outage')` e renderiza
+mensagem do `metadata->>i18n_key`.
 
 Mensagem padrão (i18n key `banner.gateway_outage_message`):
 > "Estamos enfrentando intermitência no provedor de pagamentos.
@@ -139,12 +156,18 @@ WHERE created_at > '<OUTAGE_START_UTC>' AND processed = false;
 Ver `WEBHOOK_BACKLOG_RUNBOOK.md` para drenagem ordenada.
 
 ### 5.2 Reabrir kill switches
+UI: toggle `custody.deposits.enabled` e `custody.withdrawals.enabled`
+para ON com motivo "gateway recovered, smoke OK".
+
+SQL:
 ```sql
 UPDATE public.feature_flags
-SET value = 'false',
-    updated_at = now(),
-    reason = 'GATEWAY_OUTAGE_RUNBOOK: gateway recovered, smoke OK'
-WHERE key IN ('kill_switch.deposit_create', 'kill_switch.withdraw_create');
+SET enabled = true,
+    reason = 'GATEWAY_OUTAGE_RUNBOOK: gateway recovered, smoke OK',
+    updated_by = auth.uid(),
+    updated_at = now()
+WHERE key IN ('custody.deposits.enabled', 'custody.withdrawals.enabled')
+  AND scope = 'global';
 ```
 
 Smoke test:
@@ -161,8 +184,11 @@ SELECT cron.alter_job(<JOBID>, schedule => '<ORIGINAL_SCHEDULE>');
 ### 5.4 Remover banner
 ```sql
 UPDATE public.feature_flags
-SET value = 'false', updated_at = now()
-WHERE key = 'banner.gateway_outage';
+SET enabled = false,
+    reason = 'GATEWAY_OUTAGE_RUNBOOK: incident resolved, hide banner',
+    updated_by = auth.uid(),
+    updated_at = now()
+WHERE key = 'banner.gateway_outage' AND scope = 'global';
 ```
 
 ## 6. Validação pós-incident

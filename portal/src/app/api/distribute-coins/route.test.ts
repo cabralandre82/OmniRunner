@@ -23,6 +23,13 @@ vi.mock("@/lib/audit", () => ({
 vi.mock("@/lib/rate-limit", () => ({
   rateLimit: vi.fn().mockReturnValue({ allowed: true, remaining: 10 }),
 }));
+
+// L06-06 — kill switch lib mockada (cobertura em src/lib/feature-flags.test.ts).
+vi.mock("@/lib/feature-flags", () => ({
+  assertSubsystemEnabled: vi.fn().mockResolvedValue(undefined),
+  isSubsystemEnabled: vi.fn().mockResolvedValue(true),
+  FeatureDisabledError: class FeatureDisabledError extends Error {},
+}));
 vi.mock("@/lib/custody", () => ({
   assertInvariantsHealthy: vi.fn().mockResolvedValue(true),
 }));

@@ -17,6 +17,10 @@ import {
   FxQuoteMissingError,
   FxQuoteStaleError,
 } from "@/lib/fx/quote";
+import {
+  assertSubsystemEnabled,
+  FeatureDisabledError,
+} from "@/lib/feature-flags";
 import { z } from "zod";
 
 /**
@@ -82,6 +86,24 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdminMaster();
   if ("error" in auth) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  // L06-06 — kill switch operacional. Permite ops desligar withdrawals
+  // imediatamente via /platform/feature-flags ou SQL sem deploy.
+  // Ver docs/runbooks/WITHDRAW_STUCK_RUNBOOK.md, GATEWAY_OUTAGE_RUNBOOK.md.
+  try {
+    await assertSubsystemEnabled(
+      "custody.withdrawals.enabled",
+      "Saques temporariamente desabilitados pelo time de ops.",
+    );
+  } catch (e) {
+    if (e instanceof FeatureDisabledError) {
+      return NextResponse.json(
+        { error: e.hint, code: e.code, key: e.key },
+        { status: 503, headers: { "Retry-After": "60" } },
+      );
+    }
+    throw e;
   }
 
   const healthy = await assertInvariantsHealthy();

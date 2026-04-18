@@ -60,9 +60,10 @@ note: |
   tabelas, colunas) baseado nas migrations atuais.
 
   Follow-ups identificados:
-  - Tabela `feature_flags` (citada em vários runbooks) está pendente
-    em **L06-06** — runbooks descrevem alternativa via env var Vercel
-    enquanto isso.
+  - ✅ Tabela `feature_flags` referenciada nos runbooks foi entregue em
+    **L06-06** (mesmo dia) com `enabled` boolean + audit trail; runbooks
+    `CUSTODY_INCIDENT` e `GATEWAY_OUTAGE` foram atualizados para o
+    schema real.
   - Script `tools/replay-webhook-events.sh` mencionado no
     `WEBHOOK_BACKLOG_RUNBOOK#3.3` ainda precisa ser criado — backlog.
   - `docs/audit/runbooks/L01-17-asaas-vault-rotation.md` continua na

@@ -12,6 +12,10 @@ import {
 } from "@/lib/swap";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
+import {
+  assertSubsystemEnabled,
+  FeatureDisabledError,
+} from "@/lib/feature-flags";
 import { z } from "zod";
 
 const createSchema = z
@@ -124,6 +128,25 @@ export async function POST(req: NextRequest) {
   const rl = await rateLimit(`swap:${ip}`, { maxRequests: 10, windowMs: 60_000 });
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
+  // L06-06 — kill switch. POST cobre create/accept/cancel; quando desligado
+  // bloqueia tudo (cancel inclusive — caso ops queira congelar o estado).
+  // Para parar só create/accept mantendo cancel disponível, usar route
+  // separada (backlog).
+  try {
+    await assertSubsystemEnabled(
+      "swap.enabled",
+      "Swap marketplace temporariamente suspenso pelo time de ops.",
+    );
+  } catch (e) {
+    if (e instanceof FeatureDisabledError) {
+      return NextResponse.json(
+        { error: e.hint, code: e.code, key: e.key },
+        { status: 503, headers: { "Retry-After": "60" } },
+      );
+    }
+    throw e;
   }
 
   const auth = await requireAdminMaster();

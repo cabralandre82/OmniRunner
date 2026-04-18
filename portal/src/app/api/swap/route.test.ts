@@ -24,6 +24,15 @@ vi.mock("@/lib/rate-limit", () => ({
   rateLimit: () => ({ allowed: true, remaining: 10 }),
 }));
 
+// L06-06 — kill switch lib é mockada como sempre-permitido nestes testes
+// para isolar lógica de swap. Cobertura do assert vive em
+// src/lib/feature-flags.test.ts.
+vi.mock("@/lib/feature-flags", () => ({
+  assertSubsystemEnabled: vi.fn().mockResolvedValue(undefined),
+  isSubsystemEnabled: vi.fn().mockResolvedValue(true),
+  FeatureDisabledError: class FeatureDisabledError extends Error {},
+}));
+
 const mockCreateSwapOffer = vi.fn();
 const mockAcceptSwapOffer = vi.fn();
 const mockGetOpenSwapOffers = vi.fn();
