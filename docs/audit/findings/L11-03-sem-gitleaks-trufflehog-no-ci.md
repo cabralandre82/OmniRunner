@@ -20,7 +20,7 @@ tests:
   - .gitleaks.toml
 linked_issues: []
 linked_prs:
-  - "commit:HEAD"
+  - "commit:d14f667"
 owner: unassigned
 runbook: null
 effort_points: 5

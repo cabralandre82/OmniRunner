@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T18:36:05.074Z",
+  "generated_at": "2026-04-18T18:37:25.215Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -5529,7 +5529,7 @@
       ],
       "linked_issues": [],
       "linked_prs": [
-        "commit:HEAD"
+        "commit:d14f667"
       ],
       "owner": "unassigned",
       "runbook": null,
@@ -5566,7 +5566,7 @@
       ],
       "linked_issues": [],
       "linked_prs": [
-        "commit:HEAD"
+        "commit:d14f667"
       ],
       "owner": "unassigned",
       "runbook": null,
@@ -5605,7 +5605,7 @@
       ],
       "linked_issues": [],
       "linked_prs": [
-        "commit:HEAD"
+        "commit:d14f667"
       ],
       "owner": "unassigned",
       "runbook": null,
