@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T22:16:20.558Z",
+  "generated_at": "2026-04-18T22:32:48.945Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 298,
-    "fixed": 49,
+    "fix-pending": 297,
+    "fixed": 50,
     "in-progress": 1
   },
   "by_wave": {
@@ -648,30 +648,45 @@
       "lens": 1,
       "title": "Asaas Webhook — supabase/functions/asaas-webhook/index.ts",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "webhook",
         "security-headers",
         "edge-function",
-        "performance"
+        "performance",
+        "idempotency"
       ],
       "files": [
-        "supabase/functions/asaas-webhook/index.ts"
+        "supabase/functions/asaas-webhook/index.ts",
+        "supabase/functions/_shared/asaas_webhook_auth.ts",
+        "supabase/functions/_shared/asaas_webhook_auth.test.ts",
+        "supabase/migrations/20260417290000_billing_webhook_dead_letters.sql",
+        "tools/edge_function_smoke_tests.ts",
+        ".github/workflows/supabase.yml",
+        "docs/runbooks/ASAAS_WEBHOOK_RUNBOOK.md"
       ],
-      "correction_type": "process",
+      "correction_type": "feature",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "supabase/functions/_shared/asaas_webhook_auth.test.ts",
+        "tools/integration_tests.ts",
+        "tools/edge_function_smoke_tests.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "commit:HEAD"
+      ],
+      "owner": "backend-platform",
+      "runbook": "docs/runbooks/ASAAS_WEBHOOK_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Hardening completo do receiver `asaas-webhook` (Edge Function). Os\ntrês achados originais foram corrigidos + dois bugs colaterais\ndescobertos durante o trabalho.\n\n## Mudanças\n\n### 1. Auth — header-only (defense-in-depth)\nRemovido o path `payload.accessToken` que aceitava token via body.\nAgora apenas `asaas-access-token` (header) é considerado. Por que\nisso importa: um token leak via JSON dump (logs, DLQ, replicação\nlógica) é uma superfície de exposição DIFERENTE de um leak de\ncoluna DB. Tratar os dois caminhos como equivalentes diluía o\nganho do vault (L01-17).\n\n### 2. Constant-time comparison\n`safeEq()` em `_shared/asaas_webhook_auth.ts`. Mesmo que timing\nattacks sobre HTTPS sejam teóricos, é prática estabelecida e custo\nzero. Bonus: rejeita imediatamente em mismatch de length (length\nnão é segredo) e nunca short-circuita por byte divergente.\n\n### 3. HMAC-SHA256 forward-compat\nSe o request inclui header `asaas-signature`, validamos HMAC do raw\nbody usando o mesmo `webhook_token` de vault como key. Asaas hoje\n(2026-04) NÃO assina payloads — só envia bearer token. Mas:\n  - Quando ligar (eventual), zero código a mudar — opt-in\n    transparente. Resposta inclui `signatureVerified: true` no log.\n  - Outros gateways (Mercado Pago já usa, Stripe sempre usou) ficam\n    cobertos pelo mesmo padrão se replicado.\n  - Fail-closed: signature presente mas inválida → 401 mesmo que\n    o token esteja ok.\n\n### 4. Idempotency hash colidível → SHA-256\n`JSON.stringify(payload).slice(0, 64)` colidia trivialmente para\npayloads que compartilhassem 64 chars de prefixo (ex: dois\nPAYMENT_RECEIVED de pagamentos diferentes mas com mesma ordem de\ncampos JSON antes do `payment.id`). Substituído por\n`sha256Hex(rawBody)` — ordem de preferência:\n  1. `${event}_${paymentId}` (caso comum, ~99.5%)\n  2. `${event}_${subscriptionId}` (SUBSCRIPTION_INACTIVATED/DELETED)\n  3. `${event}_${sha256(rawBody)}` (fallback; só colide se SHA-256\n     quebrar)\n\n### 5. Bug fix: DLQ scope (event + payload em catch)\nNo código original, `event` e `payload` eram declarados DENTRO do\n`try { ... }` interno. O catch externo referenciava esses nomes\npara popular `billing_webhook_dead_letters`, causando\n`ReferenceError` em TODA exceção. Resultado: DLQ sempre falhava\nsilenciosamente (envolvido em try/catch best-effort). Movidos\npara escopo externo com defaults seguros.\n\n### 6. Tabela `billing_webhook_dead_letters` materializada\nTrês Edge Functions já INSERTavam nessa tabela mas ela não existia\nno schema (nenhuma migration a criava). Migration\n`20260417290000_billing_webhook_dead_letters.sql` cria a tabela\ncom:\n  - CHECK constraints em provider/status\n  - 4 índices (provider+created, status pending parcial, group_id\n    parcial, provider+event_type)\n  - RLS habilitada (service_role write, admin lê próprio grupo)\n  - Coluna `headers` para forensics (sanitizada antes de insert —\n    authorization, cookie, x-signature, x-request-id, asaas-access-token,\n    asaas-signature são strippados pelo handler)\n\n### 7. Logging estruturado\nSubstituído `console.error` por `_shared/logger` com JSON\nestruturado. Cada log de auth carrega `request_id, group_id,\nevent, reason, signature_verified` — pivot direto no Sentry/Logflare.\nResposta 401 NUNCA disclose qual reason específica falhou (anti\nenumeration: cliente vê só \"Unauthorized\").\n\n## Helpers extraídos para teste\n\nToda a lógica de auth + idempotency vive em\n`_shared/asaas_webhook_auth.ts` como funções puras (Web Crypto +\nTextEncoder, sem DB / sem network). Permite teste exaustivo:\n  - 33 testes Deno (RFC 4231 HMAC vector, SHA-256 known vectors,\n    collision-resistance, missing/weak/mismatched/empty token,\n    signature-tamper, body-tamper, idempotency fallback chain,\n    empty-string edge cases).\n\nWired em CI via novo job `edge-function-deno-tests` em\n`.github/workflows/supabase.yml` (Deno 2.x setup, roda contra\n`_shared/` recursivo — descobrirá testes futuros automaticamente).\n\n## Validação\n\n- **Deno typecheck**: `deno check supabase/functions/_shared/asaas_webhook_auth.ts\n  supabase/functions/asaas-webhook/index.ts` — clean.\n- **Deno test**: 33/33 verde (28 ms).\n- **DB migration**: aplicada local — `billing_webhook_dead_letters`\n  table + RLS verificadas via `pg_class.relrowsecurity`.\n- **Integration tests**: 155/155 verde (`tools/integration_tests.ts`)\n  — nenhuma regressão em RPCs financeiras.\n- **Smoke tests**: `tools/edge_function_smoke_tests.ts` reconhece\n  novo helper em `_shared/asaas_webhook_auth.ts` (8 exports\n  detected) e auth do `asaas-webhook` continua válida.\n\n## Runbook\n\n`docs/runbooks/ASAAS_WEBHOOK_RUNBOOK.md` cobre 5 cenários (token\nrotation, vault inacessível, atacante, signature opt-in, DLQ\nenchendo) + replay procedure + métricas SLO + queries quick-ref.\nLinkado em `docs/runbooks/README.md`.\n\n## Limitações conhecidas (next waves)\n\n- Sem rate limit por grupo no edge function (Asaas pode mandar\n  rajadas legítimas em billing batch). Cobertura via `_shared/rate_limit.ts`\n  quando virar problema.\n- Replay de DLQ é manual (sem retry com backoff automático). L06-05\n  rastreia.\n- Sem alarme automático para DLQ count > N — TODO em\n  `observability/alerts/` linkando ao novo runbook.\n"
     },
     {
       "id": "L01-19",

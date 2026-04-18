@@ -60,6 +60,7 @@ const FUNCTIONS_DIR = resolve(__dirname, "../supabase/functions");
 const FETCH_TIMEOUT_MS = 5_000;
 
 const SHARED_FILES = [
+  "asaas_webhook_auth.ts",
   "auth.ts",
   "cors.ts",
   "errors.ts",
@@ -72,6 +73,16 @@ const SHARED_FILES = [
 ];
 
 const SHARED_EXPORTS: Record<string, string[]> = {
+  "asaas_webhook_auth.ts": [
+    "verifyAsaasWebhookAuth",
+    "computeAsaasIdempotencyKey",
+    "safeEq",
+    "sha256Hex",
+    "hmacSha256Hex",
+    "ASAAS_TOKEN_HEADER",
+    "ASAAS_SIGNATURE_HEADER",
+    "MIN_TOKEN_LENGTH",
+  ],
   "auth.ts": ["requireUser", "AuthError", "getBearerToken", "AuthResult"],
   "cors.ts": ["CORS_HEADERS", "handleCors"],
   "http.ts": ["jsonOk", "jsonErr"],

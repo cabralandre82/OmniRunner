@@ -1,16 +1,16 @@
 # SCORECARD — Progresso da Auditoria
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 22:16:20 UTC.
+> Atualizado em 2026-04-18 22:32:48 UTC.
 
 ## Visão Geral
 
 | Métrica | Valor | Progresso |
 |---|---|---|
 | **Total de findings** | 348 | — |
-| **✅ Corrigidos** | 49 / 348 (14.1%) | `███░░░░░░░░░░░░░░░░░` |
+| **✅ Corrigidos** | 50 / 348 (14.4%) | `███░░░░░░░░░░░░░░░░░` |
 | **🚧 Em progresso** | 1 | — |
-| **⏳ Pendentes** | 298 | — |
+| **⏳ Pendentes** | 297 | — |
 | **⏭️ Adiados** | 0 | — |
 | **🚫 Won't fix** | 0 | — |
 
@@ -19,7 +19,7 @@
 | Severidade | Total | Corrigidos | % | Progresso |
 |---|---|---|---|---|
 | 🔴 Critical | 69 | 23 | 33.3% | `███████░░░░░░░░░░░░░` |
-| 🟠 High | 123 | 7 | 5.7% | `█░░░░░░░░░░░░░░░░░░░` |
+| 🟠 High | 123 | 8 | 6.5% | `█░░░░░░░░░░░░░░░░░░░` |
 | 🟡 Medium | 127 | 2 | 1.6% | `░░░░░░░░░░░░░░░░░░░░` |
 
 ## Por Onda
@@ -27,7 +27,7 @@
 | Onda | Total | Corrigidos | % | Progresso |
 |---|---|---|---|---|
 | Onda 0 | 15 | 15 | 100.0% | `████████████████████` |
-| Onda 1 | 179 | 17 | 9.5% | `██░░░░░░░░░░░░░░░░░░` |
+| Onda 1 | 179 | 18 | 10.1% | `██░░░░░░░░░░░░░░░░░░` |
 | Onda 2 | 125 | 0 | 0.0% | `░░░░░░░░░░░░░░░░░░░░` |
 | Onda 3 | 29 | 17 | 58.6% | `████████████░░░░░░░░` |
 
@@ -35,7 +35,7 @@
 
 | # | Lente | Total | Corrig. | Críticos | Crít. corrig. | Progresso |
 |---|---|---|---|---|---|---|
-| 1 | CISO | 50 | 15 | 4 | 4 | `███░░░░░░░` |
+| 1 | CISO | 50 | 16 | 4 | 4 | `███░░░░░░░` |
 | 2 | CTO | 15 | 5 | 3 | 2 | `███░░░░░░░` |
 | 3 | CFO | 20 | 4 | 3 | 0 | `██░░░░░░░░` |
 | 4 | CLO | 15 | 3 | 4 | 3 | `██░░░░░░░░` |

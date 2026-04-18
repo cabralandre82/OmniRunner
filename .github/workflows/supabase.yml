@@ -106,3 +106,16 @@ jobs:
         working-directory: portal
       - name: Run smoke tests
         run: NODE_PATH=portal/node_modules npx tsx tools/edge_function_smoke_tests.ts
+
+  edge-function-deno-tests:
+    name: Edge Function Deno Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.x
+      # L01-18 — pure helpers para asaas-webhook (verifyToken, HMAC, idempotency).
+      # Roda sem network (--no-prompt --allow-none): testes usam apenas Web Crypto + std/assert.
+      - name: Deno test (_shared helpers)
+        run: deno test --quiet --no-check --no-prompt supabase/functions/_shared/

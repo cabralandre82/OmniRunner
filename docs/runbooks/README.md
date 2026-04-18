@@ -20,6 +20,7 @@
 | [`CHARGEBACK_RUNBOOK.md`](./CHARGEBACK_RUNBOOK.md) | Asaas/Stripe abre dispute em depósito já creditado | P1 | 24 h (prazo legal Asaas: 7 dias) |
 | [`GATEWAY_OUTAGE_RUNBOOK.md`](./GATEWAY_OUTAGE_RUNBOOK.md) | Asaas/Stripe API down OU error rate > 50% por 5min | P1 | 15 min mitigation |
 | [`WEBHOOK_BACKLOG_RUNBOOK.md`](./WEBHOOK_BACKLOG_RUNBOOK.md) | `payment_webhook_events.processed=false` count > 100 sustained 10min | P1 | 1 h |
+| [`ASAAS_WEBHOOK_RUNBOOK.md`](./ASAAS_WEBHOOK_RUNBOOK.md) | 401 spike no `asaas-webhook` OU DLQ provider=asaas crescendo (L01-18) | P1/P2 | 4 h drenagem |
 
 ## Convenções
 

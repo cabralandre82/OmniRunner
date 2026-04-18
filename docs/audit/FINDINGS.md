@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 22:16:20 UTC.
+> Atualizado em 2026-04-18 22:32:48 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -26,7 +26,7 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L01-15](./findings/L01-15-jwt-expiry-window-logout-forcado.md) | 2 | L01 · CISO | JWT expiry window — Logout forçado | unassigned |
 | ⚪ na | ⏳ fix-pending | [L01-16](./findings/L01-16-upload-de-documentos-cnh-comprovantes-de-liga.md) | 3 | L01 · CISO | Upload de documentos — CNH, comprovantes de liga | unassigned |
 | 🔴 critical | ✅ fixed | [L01-17](./findings/L01-17-post-api-billing-asaas-armazenamento-de-api-key.md) | 0 | L01 · CISO | POST /api/billing/asaas — Armazenamento de API Key | unassigned |
-| 🟠 high | ⏳ fix-pending | [L01-18](./findings/L01-18-asaas-webhook-supabase-functions-asaas-webhook-index-ts.md) | 1 | L01 · CISO | Asaas Webhook — supabase/functions/asaas-webhook/index.ts | unassigned |
+| 🟠 high | ✅ fixed | [L01-18](./findings/L01-18-asaas-webhook-supabase-functions-asaas-webhook-index-ts.md) | 1 | L01 · CISO | Asaas Webhook — supabase/functions/asaas-webhook/index.ts | backend-platform |
 | 🟡 medium | ⏳ fix-pending | [L01-19](./findings/L01-19-edge-functions-verify-jwt-false-com-auth-manual.md) | 2 | L01 · CISO | Edge Functions — verify_jwt = false com auth manual | unassigned |
 | 🟢 safe | ✅ fixed | [L01-20](./findings/L01-20-checkratelimit-via-rpc-fail-closed.md) | 3 | L01 · CISO | checkRateLimit via RPC — Fail-closed | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L01-21](./findings/L01-21-ratelimit-no-portal-fail-open-para-memory.md) | 2 | L01 · CISO | rateLimit no portal — Fail-open para memory | unassigned |
