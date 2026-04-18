@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 13:10:23 UTC.
+> Atualizado em 2026-04-18 13:26:31 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -170,7 +170,7 @@ Total: **348** findings.
 | 🔴 critical | ⏳ fix-pending | [L09-01](./findings/L09-01-modelo-de-coin-us-1-pode-ser-classificado.md) | 1 | L09 · CRO | Modelo de "Coin = US$ 1" pode ser classificado como arranjo de pagamento (BCB Circ. 3.885/2018) | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L09-02](./findings/L09-02-ausencia-de-kyc-aml-para-grupos-com-custodia.md) | 1 | L09 · CRO | Ausência de KYC/AML para grupos com custódia | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L09-03](./findings/L09-03-relatorio-de-operacoes-sos-coaf-inexistente.md) | 1 | L09 · CRO | Relatório de Operações (SOS COAF) inexistente | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L09-04](./findings/L09-04-nota-fiscal-recibo-fiscal-nao-emitida-em-withdrawals.md) | 0 | L09 · CRO | Nota fiscal / recibo fiscal não emitida em withdrawals | unassigned |
+| 🔴 critical | 🚧 in-progress | [L09-04](./findings/L09-04-nota-fiscal-recibo-fiscal-nao-emitida-em-withdrawals.md) | 0 | L09 · CRO | Nota fiscal / recibo fiscal não emitida em withdrawals | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L09-05](./findings/L09-05-iof-nao-recolhido-em-swap-inter-cliente.md) | 1 | L09 · CRO | IOF não recolhido em swap inter-cliente | unassigned |
 | 🟠 high | ⏳ fix-pending | [L09-06](./findings/L09-06-gateway-de-pagamento-asaas-chave-armazenada-em-plaintext.md) | 1 | L09 · CRO | Gateway de pagamento Asaas: chave armazenada em plaintext na DB | unassigned |
 | 🟠 high | ⏳ fix-pending | [L09-07](./findings/L09-07-politica-de-reembolso-chargeback-sem-prazo-sla.md) | 1 | L09 · CRO | Política de reembolso/chargeback sem prazo SLA | unassigned |

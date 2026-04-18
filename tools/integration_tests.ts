@@ -2114,6 +2114,289 @@ async function testConstraints() {
       `L04-04: subject_id strategy esperado 'anonymize', got '${byCol.get("subject_id")}'`);
   });
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // L09-04: fiscal_receipts queue (NFS-e emission tracking)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  await test("L09-04: fiscal_receipts table + append-only events trigger installed", async () => {
+    const { data, error } = await db.rpc("fn_fiscal_receipt_reserve_batch" as any, {
+      p_limit: 1,
+      p_worker_id: "inttest-smoke",
+    });
+    assert(!error, `L09-04: RPC reserve_batch smoke falhou: ${error?.message}`);
+    assert(Array.isArray(data), "L09-04: reserve_batch deve retornar array");
+  });
+
+  await test("L09-04: platform_revenue INSERT enqueues fiscal_receipt (trigger)", async () => {
+    const srcRef = `l0904-${randomUUID()}`;
+    await db.from("billing_customers").upsert({
+      group_id: GROUP_A,
+      legal_name: "IntTest Assessoria LTDA",
+      tax_id: "12.345.678/0001-90",
+      email: "fin-inttest@test.local",
+      address_city: "São Paulo",
+      address_state: "SP",
+    }, { onConflict: "group_id" });
+
+    const { error: insErr } = await db.from("platform_revenue").insert({
+      fee_type: "clearing",
+      amount_usd: 200,
+      source_ref_id: srcRef,
+      group_id: GROUP_A,
+      description: "L09-04 inttest",
+    });
+    assert(!insErr, `L09-04: insert platform_revenue falhou: ${insErr?.message}`);
+
+    const { data: receipt, error: selErr } = await db
+      .from("fiscal_receipts")
+      .select("status, customer_document, fx_rate_used, gross_amount_usd, gross_amount_brl")
+      .eq("source_ref_id", srcRef)
+      .single();
+    assert(!selErr, `L09-04: select receipt falhou: ${selErr?.message}`);
+    const r = receipt as any;
+    assert(r.status === "pending", `L09-04: esperado status=pending, got ${r.status}`);
+    assert(r.customer_document === "12.345.678/0001-90",
+      `L09-04: customer_document snapshot incorreto: ${r.customer_document}`);
+    assert(typeof r.fx_rate_used === "number" && r.fx_rate_used > 0,
+      `L09-04: fx_rate_used deve ser numérico > 0, got ${r.fx_rate_used}`);
+    assert(Number(r.gross_amount_usd) === 200, `L09-04: gross_usd esperado 200, got ${r.gross_amount_usd}`);
+    assert(Number(r.gross_amount_brl) > 0, `L09-04: gross_brl deve ser > 0, got ${r.gross_amount_brl}`);
+
+    // Cleanup
+    await db.from("fiscal_receipts").delete().eq("source_ref_id", srcRef);
+    await db.from("platform_revenue").delete().eq("source_ref_id", srcRef);
+  });
+
+  await test("L09-04: sem billing_customers → status='blocked_missing_data'", async () => {
+    await db.from("billing_customers").delete().eq("group_id", GROUP_B);
+    const srcRef = `l0904-bmd-${randomUUID()}`;
+    const { error: insErr } = await db.from("platform_revenue").insert({
+      fee_type: "swap",
+      amount_usd: 50,
+      source_ref_id: srcRef,
+      group_id: GROUP_B,
+    });
+    assert(!insErr, `L09-04: insert falhou: ${insErr?.message}`);
+
+    const { data: receipt } = await db
+      .from("fiscal_receipts")
+      .select("status, customer_document, gross_amount_brl")
+      .eq("source_ref_id", srcRef)
+      .single();
+    const r = receipt as any;
+    assert(r.status === "blocked_missing_data",
+      `L09-04: esperado blocked_missing_data, got ${r.status}`);
+    assert(r.customer_document === null, "L09-04: customer_document deve ser null");
+
+    // Alert view deve listar
+    const { data: alerts } = await db
+      .from("v_fiscal_receipts_needing_attention")
+      .select("status, action_required")
+      .eq("source_ref_id", srcRef);
+    assert((alerts ?? []).length === 1, "L09-04: alert view deve conter o blocked");
+
+    await db.from("fiscal_receipts").delete().eq("source_ref_id", srcRef);
+    await db.from("platform_revenue").delete().eq("source_ref_id", srcRef);
+  });
+
+  await test("L09-04: UNIQUE(source_type, source_ref_id, fee_type) idempotente", async () => {
+    const srcRef = `l0904-idem-${randomUUID()}`;
+    await db.from("billing_customers").upsert({
+      group_id: GROUP_A,
+      legal_name: "IntTest LTDA",
+      tax_id: "11.111.111/0001-11",
+      email: "idem@test.local",
+    }, { onConflict: "group_id" });
+
+    await db.from("platform_revenue").insert({
+      fee_type: "maintenance",
+      amount_usd: 10,
+      source_ref_id: srcRef,
+      group_id: GROUP_A,
+    });
+    await db.from("platform_revenue").insert({
+      fee_type: "maintenance",
+      amount_usd: 10,
+      source_ref_id: srcRef,
+      group_id: GROUP_A,
+    });
+
+    const { data, error } = await db
+      .from("fiscal_receipts")
+      .select("id")
+      .eq("source_ref_id", srcRef);
+    assert(!error, `L09-04: select falhou: ${error?.message}`);
+    assert((data ?? []).length === 1,
+      `L09-04: esperado 1 receipt, got ${(data ?? []).length} (idempotência quebrada)`);
+
+    await db.from("fiscal_receipts").delete().eq("source_ref_id", srcRef);
+    await db.from("platform_revenue").delete().eq("source_ref_id", srcRef);
+  });
+
+  await test("L09-04: fn_fiscal_receipt_reserve_batch claim + mark_issued lifecycle", async () => {
+    const srcRef = `l0904-lf-${randomUUID()}`;
+    await db.from("billing_customers").upsert({
+      group_id: GROUP_A,
+      legal_name: "IntTest LTDA",
+      tax_id: "22.222.222/0001-22",
+      email: "lf@test.local",
+    }, { onConflict: "group_id" });
+    await db.from("platform_revenue").insert({
+      fee_type: "fx_spread",
+      amount_usd: 30,
+      source_ref_id: srcRef,
+      group_id: GROUP_A,
+    });
+
+    // Reserve
+    const { data: reserved, error: rErr } = await db.rpc(
+      "fn_fiscal_receipt_reserve_batch" as any,
+      { p_limit: 10, p_worker_id: "inttest-worker-1" },
+    );
+    assert(!rErr, `L09-04: reserve falhou: ${rErr?.message}`);
+    const claim = (reserved as any[]).find(r => r.source_ref_id === srcRef);
+    assert(claim, "L09-04: reserve_batch não reclamou o receipt pending");
+    assert(claim.status === "issuing", `L09-04: esperado issuing, got ${claim.status}`);
+    assert(claim.attempts === 1, `L09-04: attempts deve ser 1, got ${claim.attempts}`);
+
+    // Mark issued
+    const { data: issued, error: iErr } = await db.rpc(
+      "fn_fiscal_receipt_mark_issued" as any,
+      {
+        p_id: claim.id,
+        p_provider: "focus_nfe",
+        p_provider_ref: "NFS-TEST-001",
+        p_provider_response: { test: true },
+        p_nfs_pdf_url: "https://example/test.pdf",
+        p_nfs_xml_url: "https://example/test.xml",
+        p_taxes_brl: 5.25,
+        p_service_code: "17.01",
+      },
+    );
+    assert(!iErr, `L09-04: mark_issued falhou: ${iErr?.message}`);
+    const out = Array.isArray(issued) ? issued[0] : issued;
+    assert((out as any).status === "issued",
+      `L09-04: esperado issued, got ${(out as any).status}`);
+
+    // Event trail (3 transições: null→pending, pending→issuing, issuing→issued)
+    const { data: events } = await db
+      .from("fiscal_receipt_events")
+      .select("from_status, to_status")
+      .eq("receipt_id", claim.id)
+      .order("occurred_at", { ascending: true });
+    const trail = (events ?? []).map((e: any) => `${e.from_status ?? "∅"}→${e.to_status}`);
+    assert(
+      trail.join(",") === "∅→pending,pending→issuing,issuing→issued",
+      `L09-04: event trail inesperado: ${trail.join(",")}`,
+    );
+
+    await db.from("fiscal_receipts").delete().eq("id", claim.id);
+    await db.from("platform_revenue").delete().eq("source_ref_id", srcRef);
+  });
+
+  await test("L09-04: mark_error retryable volta para pending com backoff", async () => {
+    const srcRef = `l0904-err-${randomUUID()}`;
+    await db.from("billing_customers").upsert({
+      group_id: GROUP_A,
+      legal_name: "IntTest LTDA",
+      tax_id: "33.333.333/0001-33",
+      email: "err@test.local",
+    }, { onConflict: "group_id" });
+    await db.from("platform_revenue").insert({
+      fee_type: "clearing",
+      amount_usd: 80,
+      source_ref_id: srcRef,
+      group_id: GROUP_A,
+    });
+
+    const { data: reserved } = await db.rpc(
+      "fn_fiscal_receipt_reserve_batch" as any,
+      { p_limit: 10, p_worker_id: "inttest-worker-err" },
+    );
+    const claim = (reserved as any[]).find(r => r.source_ref_id === srcRef);
+    assert(claim, "L09-04: reserve falhou");
+
+    const { data: after, error: eErr } = await db.rpc(
+      "fn_fiscal_receipt_mark_error" as any,
+      {
+        p_id: claim.id,
+        p_error_code: "PROV_502",
+        p_error_message: "provider timeout",
+        p_retryable: true,
+      },
+    );
+    assert(!eErr, `L09-04: mark_error falhou: ${eErr?.message}`);
+    const out = Array.isArray(after) ? after[0] : after;
+    assert((out as any).status === "pending",
+      `L09-04: esperado pending após retryable, got ${(out as any).status}`);
+    assert((out as any).last_error_code === "PROV_502",
+      `L09-04: last_error_code não persistiu`);
+    assert((out as any).next_retry_at,
+      `L09-04: next_retry_at deve estar set após retryable`);
+
+    await db.from("fiscal_receipts").delete().eq("id", claim.id);
+    await db.from("platform_revenue").delete().eq("source_ref_id", srcRef);
+  });
+
+  await test("L09-04: fiscal_receipt_events é append-only (UPDATE bloqueado)", async () => {
+    const srcRef = `l0904-ao-${randomUUID()}`;
+    await db.from("billing_customers").upsert({
+      group_id: GROUP_A,
+      legal_name: "IntTest LTDA",
+      tax_id: "44.444.444/0001-44",
+      email: "ao@test.local",
+    }, { onConflict: "group_id" });
+    await db.from("platform_revenue").insert({
+      fee_type: "swap",
+      amount_usd: 20,
+      source_ref_id: srcRef,
+      group_id: GROUP_A,
+    });
+
+    const { data: r } = await db
+      .from("fiscal_receipts")
+      .select("id")
+      .eq("source_ref_id", srcRef)
+      .single();
+    const { data: evs } = await db
+      .from("fiscal_receipt_events")
+      .select("id")
+      .eq("receipt_id", (r as any).id)
+      .limit(1);
+    const evId = (evs as any[])[0]?.id;
+    assert(evId, "L09-04: evento não criado pelo trigger");
+
+    const { error: updErr } = await db
+      .from("fiscal_receipt_events")
+      .update({ notes: "TAMPERED" })
+      .eq("id", evId);
+    assert(updErr, "L09-04: UPDATE em fiscal_receipt_events deveria falhar");
+    assert(
+      /append-only/i.test(updErr?.message ?? ""),
+      `L09-04: erro esperado de append-only, got: ${updErr?.message}`,
+    );
+
+    await db.from("fiscal_receipts").delete().eq("id", (r as any).id);
+    await db.from("platform_revenue").delete().eq("source_ref_id", srcRef);
+  });
+
+  await test("L09-04: lgpd_deletion_strategy registra issued_by_actor + actor_id", async () => {
+    const { data, error } = await db
+      .from("lgpd_deletion_strategy")
+      .select("table_name, column_name, strategy")
+      .in("table_name", ["fiscal_receipts", "fiscal_receipt_events"]);
+    assert(!error, `L09-04: select strategy falhou: ${error?.message}`);
+    const key = (t: string, c: string) => (data ?? []).find(
+      (r: any) => r.table_name === t && r.column_name === c,
+    );
+    const a = key("fiscal_receipts", "issued_by_actor") as any;
+    const b = key("fiscal_receipt_events", "actor_id") as any;
+    assert(a?.strategy === "anonymize",
+      `L09-04: fiscal_receipts.issued_by_actor strategy esperada 'anonymize'`);
+    assert(b?.strategy === "anonymize",
+      `L09-04: fiscal_receipt_events.actor_id strategy esperada 'anonymize'`);
+  });
+
   // 3.20 L05-01: cancel_swap_order happy path retorna previous_status + new_status
   await test("L05-01: cancel_swap_order returns previous_status + new_status on success", async () => {
     const orderId = "a5a5a5a5-0000-4000-8000-000000000502";
@@ -2513,6 +2796,19 @@ async function cleanup() {
     .from("sensitive_data_access_log")
     .delete()
     .like("request_id", "l0404-%")
+    .then(() => void 0, () => void 0);
+
+  // L09-04: limpa fiscal_receipts + platform_revenue criados pelos testes
+  // (trigger ON INSERT cria receipts que referenciam platform_revenue_id).
+  await db
+    .from("fiscal_receipts")
+    .delete()
+    .like("source_ref_id", "l0904-%")
+    .then(() => void 0, () => void 0);
+  await db
+    .from("platform_revenue")
+    .delete()
+    .like("source_ref_id", "l0904-%")
     .then(() => void 0, () => void 0);
 
   // Delete in dependency order (children first)
