@@ -28,11 +28,12 @@ vi.mock("@/lib/custody", () => ({
 }));
 
 const { POST } = await import("./route");
+const { auditLog } = await import("@/lib/audit");
 
-function req(body: Record<string, unknown>) {
+function req(body: Record<string, unknown>, headers: Record<string, string> = {}) {
   return new Request("http://localhost/api/distribute-coins", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...headers },
     body: JSON.stringify(body),
   });
 }
@@ -53,7 +54,18 @@ function mockAthleteFound(found = true) {
   );
 }
 
-describe("POST /api/distribute-coins", () => {
+function mockEmitCoinsAtomic(
+  result:
+    | { ledger_id: string; new_balance: number; was_idempotent: boolean }
+    | null,
+  error: { code?: string; message?: string } | null = null,
+) {
+  serviceClient.rpc.mockReturnValueOnce(
+    queryChain({ data: result ? [result] : null, error }),
+  );
+}
+
+describe("POST /api/distribute-coins (L02-01: atomic RPC)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     authClient.auth.getSession.mockResolvedValue({ data: { session: TEST_SESSION } });
@@ -104,83 +116,138 @@ describe("POST /api/distribute-coins", () => {
     expect(res.status).toBe(404);
   });
 
-  it("returns 422 when custody backing is insufficient", async () => {
+  it("returns 422 when custody backing is insufficient (P0002)", async () => {
     mockAdminCheck();
     mockAthleteFound(true);
-    // custody_commit_coins fails with insufficient backing
-    serviceClient.rpc.mockReturnValueOnce(
-      queryChain({ data: null, error: { message: "Insufficient backing" } }),
-    );
+    mockEmitCoinsAtomic(null, {
+      code: "P0002",
+      message: "CUSTODY_FAILED: Insufficient backing: available=0, requested=50",
+    });
     const res = await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 50 }));
     expect(res.status).toBe(422);
     expect((await res.json()).error).toContain("Lastro insuficiente");
   });
 
-  it("returns 422 when decrement_token_inventory fails (insufficient inventory)", async () => {
+  it("returns 422 when inventory is insufficient (P0003)", async () => {
     mockAdminCheck();
     mockAthleteFound(true);
-    // custody_commit_coins succeeds (or is skipped)
-    serviceClient.rpc.mockReturnValueOnce(queryChain({ data: null, error: null }));
-    // decrement_token_inventory fails with CHECK constraint
-    serviceClient.rpc.mockReturnValueOnce(
-      queryChain({ data: null, error: { code: "23514", message: "CHECK constraint violated" } }),
-    );
+    mockEmitCoinsAtomic(null, {
+      code: "P0003",
+      message: "INVENTORY_INSUFFICIENT",
+    });
     const res = await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 50 }));
     expect(res.status).toBe(422);
     expect((await res.json()).error).toContain("Saldo insuficiente");
   });
 
-  it("returns 500 when wallet credit fails", async () => {
+  it("returns 500 when RPC fails with unexpected error", async () => {
     mockAdminCheck();
     mockAthleteFound(true);
-    // custody_commit_coins succeeds
-    serviceClient.rpc.mockReturnValueOnce(queryChain({ data: null, error: null }));
-    // decrement_token_inventory succeeds
-    serviceClient.rpc.mockReturnValueOnce(queryChain({ data: null, error: null }));
-    // increment_wallet_balance fails
-    serviceClient.rpc.mockReturnValueOnce(
-      queryChain({ data: null, error: { message: "wallet error" } }),
-    );
+    mockEmitCoinsAtomic(null, { message: "unexpected database error" });
 
     const res = await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 50 }));
     expect(res.status).toBe(500);
   });
 
-  it("returns 200 on successful distribution", async () => {
+  it("returns 200 on successful distribution (first call, not idempotent)", async () => {
     mockAdminCheck();
     mockAthleteFound(true);
-    // custody, decrement, wallet all succeed
-    serviceClient.rpc.mockReturnValue(queryChain({ data: null, error: null }));
-    // ledger insert
-    serviceClient.from.mockReturnValueOnce(queryChain({ data: null }));
+    mockEmitCoinsAtomic({
+      ledger_id: "ledger-uuid-1",
+      new_balance: 150,
+      was_idempotent: false,
+    });
 
-    const res = await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 50 }));
+    const res = await POST(
+      req({ athlete_user_id: ATHLETE_UUID, amount: 50 }, { "x-idempotency-key": "key-1" }),
+    );
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.ok).toBe(true);
     expect(json.amount).toBe(50);
+    expect(json.idempotent).toBe(false);
+    expect(json.new_balance).toBe(150);
+    // audit log é emitido apenas na primeira execução
+    expect(auditLog).toHaveBeenCalledTimes(1);
   });
 
-  it("passes issuer_group_id to coin_ledger insert", async () => {
+  it("returns 200 and idempotent=true on replay with same ref_id", async () => {
     mockAdminCheck();
     mockAthleteFound(true);
-    serviceClient.rpc.mockReturnValue(queryChain({ data: null, error: null }));
+    mockEmitCoinsAtomic({
+      ledger_id: "ledger-uuid-1",
+      new_balance: 150,
+      was_idempotent: true,
+    });
 
-    let insertedPayload: Record<string, unknown> | null = null;
-    const insertChain = queryChain({ data: null });
-    (insertChain.insert as ReturnType<typeof vi.fn>).mockImplementation(
-      (payload: Record<string, unknown>) => {
-        insertedPayload = payload;
-        return insertChain;
-      },
+    const res = await POST(
+      req({ athlete_user_id: ATHLETE_UUID, amount: 50 }, { "x-idempotency-key": "key-1" }),
     );
-    serviceClient.from.mockReturnValueOnce(insertChain);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.ok).toBe(true);
+    expect(json.idempotent).toBe(true);
+    expect(json.new_balance).toBe(150);
+    // audit log NÃO emitido em retry idempotente (evita duplicação)
+    expect(auditLog).not.toHaveBeenCalled();
+  });
+
+  it("calls emit_coins_atomic with correct parameters including ref_id", async () => {
+    mockAdminCheck();
+    mockAthleteFound(true);
+    mockEmitCoinsAtomic({
+      ledger_id: "ledger-uuid-1",
+      new_balance: 3,
+      was_idempotent: false,
+    });
+
+    await POST(
+      req(
+        { athlete_user_id: ATHLETE_UUID, amount: 3 },
+        { "x-idempotency-key": "idem-xyz" },
+      ),
+    );
+
+    expect(serviceClient.rpc).toHaveBeenCalledWith(
+      "emit_coins_atomic",
+      expect.objectContaining({
+        p_group_id: "group-1",
+        p_athlete_user_id: ATHLETE_UUID,
+        p_amount: 3,
+        p_ref_id: "idem-xyz",
+      }),
+    );
+  });
+
+  it("generates a ref_id when client does not provide x-idempotency-key", async () => {
+    mockAdminCheck();
+    mockAthleteFound(true);
+    mockEmitCoinsAtomic({
+      ledger_id: "ledger-uuid-1",
+      new_balance: 3,
+      was_idempotent: false,
+    });
 
     await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 3 }));
 
-    expect(insertedPayload).not.toBeNull();
-    expect((insertedPayload as Record<string, unknown>).issuer_group_id).toBe("group-1");
-    expect((insertedPayload as Record<string, unknown>).reason).toBe("institution_token_issue");
-    expect((insertedPayload as Record<string, unknown>).delta_coins).toBe(3);
+    const call = serviceClient.rpc.mock.calls[0];
+    expect(call[0]).toBe("emit_coins_atomic");
+    expect(call[1].p_ref_id).toMatch(/^portal_.*_\d+$/);
+  });
+
+  it("does NOT call audit log on idempotent retry (prevents duplicate audit entries)", async () => {
+    mockAdminCheck();
+    mockAthleteFound(true);
+    mockEmitCoinsAtomic({
+      ledger_id: "ledger-uuid-1",
+      new_balance: 100,
+      was_idempotent: true,
+    });
+
+    await POST(
+      req({ athlete_user_id: ATHLETE_UUID, amount: 50 }, { "x-idempotency-key": "replay-key" }),
+    );
+
+    expect(auditLog).not.toHaveBeenCalled();
   });
 });

@@ -4,28 +4,31 @@ audit_ref: "1.3"
 lens: 1
 title: "POST /api/distribute-coins — Distribuição de coins a atleta"
 severity: critical
-status: fix-pending
+status: in-progress
 wave: 0
 discovered_at: 2026-04-17
+fix_ready_at: 2026-04-17
 tags: ["finance", "atomicity", "mobile", "portal", "migration", "testing"]
 files:
   - portal/src/app/api/distribute-coins/route.ts
   - portal/src/app/api/distribute-coins/route.test.ts
-correction_type: process
+  - supabase/migrations/20260417120000_emit_coins_atomic.sql
+correction_type: code
 test_required: true
-tests: []
+tests:
+  - portal/src/app/api/distribute-coins/route.test.ts
 linked_issues: []
 linked_prs: []
 owner: unassigned
 runbook: null
 effort_points: 5
 blocked_by: []
-duplicate_of: null
+duplicate_of: L02-01
 deferred_to_wave: null
-note: null
+note: "Corrigido junto com L02-01 (mesma rota, mesmas mudanças). Ver detalhes em docs/audit/findings/L02-01-*.md. O fallback silencioso de custody_commit_coins é tratado via SQLSTATE P0002 (propagado como 422 'Lastro insuficiente' — não mais silencioso)."
 ---
 # [L01-03] POST /api/distribute-coins — Distribuição de coins a atleta
-> **Lente:** 1 — CISO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** fix-pending
+> **Lente:** 1 — CISO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** in-progress · **Duplicate of:** [L02-01](./L02-01-distribute-coins-orquestracao-nao-atomica-entre-4-rpcs.md)
 **Camada:** PORTAL
 **Personas impactadas:** Atleta, Assessoria, Plataforma
 ## Achado

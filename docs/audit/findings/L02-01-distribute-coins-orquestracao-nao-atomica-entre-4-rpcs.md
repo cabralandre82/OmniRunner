@@ -4,13 +4,14 @@ audit_ref: "2.1"
 lens: 2
 title: "distribute-coins — Orquestração não-atômica entre 4 RPCs (partial-failure silencioso)"
 severity: critical
-status: fix-pending
+status: in-progress
 wave: 0
 discovered_at: 2026-04-17
+fix_ready_at: 2026-04-17
 tags: ["finance", "atomicity", "idempotency", "ledger", "portal"]
 files:
   - portal/src/app/api/distribute-coins/route.ts
-  - supabase/migrations/20260415020000_coin_ledger_group_visibility.sql
+  - supabase/migrations/20260417120000_emit_coins_atomic.sql
 correction_type: code
 test_required: true
 tests:
@@ -23,12 +24,12 @@ effort_points: 5
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: "EXEMPLAR — referência de nível de detalhe para findings críticos da Onda 0"
+note: "EXEMPLAR — referência de nível de detalhe para findings críticos da Onda 0. Correção implementada em 2026-04-17 (migration emit_coins_atomic + refactor da rota + 15 casos de teste)."
 ---
 
 # [L02-01] distribute-coins — Orquestração não-atômica entre 4 RPCs (partial-failure silencioso)
 
-> **Lente:** 2 — CTO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** fix-pending
+> **Lente:** 2 — CTO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** in-progress (correção pronta, aguardando PR)
 
 **Camada:** PORTAL + BACKEND
 **Personas impactadas:** Atleta, Assessoria, Plataforma (CFO)
@@ -176,6 +177,69 @@ Casos obrigatórios:
 Contexto completo em `docs/audit/parts/02-cto-cfo.md` — anchor `[2.1]`.
 Também auditado pela Lente 1 (CISO) como `[1.3]` em `docs/audit/parts/01-ciso.md`.
 
+## Correção implementada
+
+**Data:** 2026-04-17 (mesma sessão da auditoria)
+
+### Arquivos alterados
+
+| Arquivo | Mudança |
+|---|---|
+| `supabase/migrations/20260417120000_emit_coins_atomic.sql` | **NOVO** — partial UNIQUE INDEX + função atômica `emit_coins_atomic` |
+| `portal/src/app/api/distribute-coins/route.ts` | Refatorado — 4 mutações sequenciais substituídas por 1 chamada RPC |
+| `portal/src/app/api/distribute-coins/route.test.ts` | Expandido — 11 → 15 casos, agora cobre idempotência + error codes específicos (P0001/P0002/P0003) |
+
+### Detalhes da migration
+
+1. `CREATE UNIQUE INDEX idx_coin_ledger_ref_id_institution_issue_unique ON coin_ledger (ref_id) WHERE reason = 'institution_token_issue'` — idempotência forte ao nível do banco. Índice parcial para não afetar outras `reason` que usam `ref_id` com semântica diferente (ex: `institution_switch_burn` usa `group_id` como `ref_id`).
+2. `emit_coins_atomic(p_group_id, p_athlete_user_id, p_amount, p_ref_id)` — função `SECURITY DEFINER` com `SET search_path = public, pg_temp` (L18-03 preventivo). Envolve todas as mutações em transação única:
+   - (A) `INSERT coin_ledger ... ON CONFLICT (ref_id) WHERE reason = 'institution_token_issue' DO NOTHING` — se `NULL` retornado, é retry idempotente; devolve estado atual sem reprocessar.
+   - (B) `custody_commit_coins` — `EXCEPTION WHEN undefined_function THEN NULL` para compat com ambientes sem custódia deployada; falhas reais viram `CUSTODY_FAILED` (SQLSTATE `P0002`).
+   - (C) `decrement_token_inventory` — `check_violation` ou `INVENTORY_NOT_FOUND` viram `INVENTORY_INSUFFICIENT` (`P0003`).
+   - (D) `increment_wallet_balance` — propaga exceções.
+3. Privilégios: `REVOKE ALL FROM PUBLIC, authenticated; GRANT EXECUTE TO service_role` — só o service role pode chamar (o endpoint usa `createServiceClient`).
+
+### Mapeamento de erros no route
+
+| SQLSTATE | Mensagem ao cliente | HTTP |
+|---|---|---|
+| `P0001` (INVALID_AMOUNT/MISSING_REF_ID) | "Parâmetros inválidos" | 400 |
+| `P0002` (CUSTODY_FAILED) | "Lastro insuficiente na custódia da assessoria..." | 422 |
+| `P0003` (INVENTORY_INSUFFICIENT) | "Saldo insuficiente de OmniCoins" | 422 |
+| outros | "Erro ao distribuir coins" (+ log estruturado) | 500 |
+
+### Testes (15/15 passando)
+
+1. 401 sem auth
+2. 403 se não admin_master
+3. 400 se `athlete_user_id` ausente
+4. 400 se `amount` não-inteiro
+5. 400 se `amount > 1000`
+6. 400 se `amount = 0`
+7. 404 se atleta não for membro da assessoria
+8. 422 (P0002) lastro insuficiente
+9. 422 (P0003) inventário insuficiente
+10. 500 erro inesperado do RPC
+11. 200 happy path (primeira chamada, `was_idempotent=false`, audit emitido)
+12. 200 idempotent retry (mesmo `ref_id`, `was_idempotent=true`, **audit NÃO emitido** — evita duplicação)
+13. RPC chamado com params corretos incluindo `p_ref_id`
+14. `ref_id` gerado automaticamente quando header ausente
+15. `auditLog` não chamado em retry idempotente
+
+### Propriedades garantidas pela correção
+
+- **Atomicidade**: qualquer falha após a primeira mutação reverte o bloco inteiro (uma única transação PostgreSQL).
+- **Idempotência forte**: DB rejeita duplicatas via partial unique index. Retry com mesmo `ref_id` retorna o estado sem reprocessar.
+- **Audit não-duplicado**: `auditLog` só é emitido quando `was_idempotent=false`.
+- **Error contracts explícitos**: SQLSTATE distintos para cada causa de falha → UX correta (422 vs 500) sem depender de string matching frágil.
+
+### O que falta fazer (fora do escopo do L02-01)
+
+- Cross-ref `L09-03` (idempotency-key previsível com `Date.now()`): trocar fallback por UUID v4.
+- Cross-ref `L19-04` (DBA): já contemplado pelo partial UNIQUE INDEX desta migration.
+- Cross-ref `L18-03` (SECURITY DEFINER search_path): preventivamente aplicado nesta função; resto do codebase tratado em finding dedicado.
+
 ## Histórico
 
 - `2026-04-17` — Descoberto na auditoria inicial (Lente 2 — CTO, item 2.1 + cross-ref Lente 1, item 1.3).
+- `2026-04-17` — Correção implementada (migration + route + tests). Status: `in-progress`, aguardando PR/merge.

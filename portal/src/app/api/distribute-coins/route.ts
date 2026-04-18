@@ -8,170 +8,146 @@ import { distributeCoinsSchema } from "@/lib/schemas";
 import { assertInvariantsHealthy } from "@/lib/custody";
 import { logger } from "@/lib/logger";
 
+// L02-01: todas as mutações (custódia + inventário + wallet + ledger) são
+// executadas por um único RPC SECURITY DEFINER em transação única. Qualquer
+// falha após a primeira mutação reverte o bloco inteiro. Idempotência é
+// garantida por UNIQUE INDEX parcial em coin_ledger(ref_id).
+// Ver: supabase/migrations/20260417120000_emit_coins_atomic.sql
 export async function POST(request: Request) {
   try {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  const rl = await rateLimit(`distribute:${user.id}`, { maxRequests: 20, windowMs: 60_000 });
-  if (!rl.allowed) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
-  }
+    const rl = await rateLimit(`distribute:${user.id}`, { maxRequests: 20, windowMs: 60_000 });
+    if (!rl.allowed) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
 
-  const groupId = cookies().get("portal_group_id")?.value;
-  if (!groupId) {
-    return NextResponse.json({ error: "No group selected" }, { status: 400 });
-  }
+    const groupId = cookies().get("portal_group_id")?.value;
+    if (!groupId) {
+      return NextResponse.json({ error: "No group selected" }, { status: 400 });
+    }
 
-  const db = createServiceClient();
+    const db = createServiceClient();
 
-  const { data: callerMembership } = await db
-    .from("coaching_members")
-    .select("role")
-    .eq("group_id", groupId)
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (!callerMembership || callerMembership.role !== "admin_master") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  const body = await request.json();
-  const parsed = distributeCoinsSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.issues[0].message },
-      { status: 400 },
-    );
-  }
-  const { athlete_user_id, amount } = parsed.data;
-
-  const idempotencyKey = request.headers.get("x-idempotency-key");
-  if (idempotencyKey) {
-    const { data: existing } = await db
-      .from("coin_ledger")
-      .select("user_id, delta_coins")
-      .eq("ref_id", idempotencyKey)
+    const { data: callerMembership } = await db
+      .from("coaching_members")
+      .select("role")
+      .eq("group_id", groupId)
+      .eq("user_id", user.id)
       .maybeSingle();
 
-    if (existing) {
-      return NextResponse.json({
-        ok: true,
-        athlete_user_id: existing.user_id,
-        amount: existing.delta_coins,
-        idempotent: true,
-      });
+    if (!callerMembership || callerMembership.role !== "admin_master") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-  }
 
-  const { data: member } = await db
-    .from("coaching_members")
-    .select("user_id, display_name")
-    .eq("group_id", groupId)
-    .eq("user_id", athlete_user_id)
-    .in("role", ["athlete", "atleta"])
-    .maybeSingle();
-
-  if (!member) {
-    return NextResponse.json(
-      { error: "Atleta não encontrado nesta assessoria" },
-      { status: 404 },
-    );
-  }
-
-  const healthy = await assertInvariantsHealthy();
-  if (!healthy) {
-    return NextResponse.json(
-      { error: "System invariant violation. Emission blocked." },
-      { status: 503 },
-    );
-  }
-
-  // Custody check (skip if custody system not deployed yet)
-  try {
-    const { error: custodyErr } = await db.rpc("custody_commit_coins", {
-      p_group_id: groupId,
-      p_coin_count: amount,
-    });
-    if (custodyErr && !custodyErr.message?.includes("could not find")) {
+    const body = await request.json();
+    const parsed = distributeCoinsSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Lastro insuficiente na custódia da assessoria. Deposite mais lastro antes de emitir coins." },
-        { status: 422 },
+        { error: parsed.error.issues[0].message },
+        { status: 400 },
       );
     }
-  } catch {
-    // custody_commit_coins RPC may not exist yet
-  }
+    const { athlete_user_id, amount } = parsed.data;
 
-  // Deduct from group inventory (atomic — CHECK >= 0 prevents overdraft)
-  const { error: decrErr } = await db.rpc("decrement_token_inventory", {
-    p_group_id: groupId,
-    p_amount: amount,
-  });
+    // ref_id obrigatório para idempotência. Se cliente não fornecer, geramos um.
+    // Observação: L09-03 (CRO) sugere trocar Date.now() por UUID v4; fica para
+    // correção separada para manter o escopo do L02-01 focado em atomicidade.
+    const idempotencyKey = request.headers.get("x-idempotency-key");
+    const refId = idempotencyKey ?? `portal_${user.id}_${Date.now()}`;
 
-  if (decrErr) {
-    const isInsufficient =
-      decrErr.code === "23514" || // CHECK constraint violation
-      decrErr.message?.includes("CHECK") ||
-      decrErr.message?.includes("INVENTORY");
-    return NextResponse.json(
-      { error: isInsufficient ? "Saldo insuficiente de OmniCoins" : "Erro ao debitar inventário" },
-      { status: isInsufficient ? 422 : 500 },
-    );
-  }
+    const { data: member } = await db
+      .from("coaching_members")
+      .select("user_id, display_name")
+      .eq("group_id", groupId)
+      .eq("user_id", athlete_user_id)
+      .in("role", ["athlete", "atleta"])
+      .maybeSingle();
 
-  const { error: walletErr } = await db.rpc("increment_wallet_balance", {
-    p_user_id: athlete_user_id,
-    p_delta: amount,
-  });
+    if (!member) {
+      return NextResponse.json(
+        { error: "Atleta não encontrado nesta assessoria" },
+        { status: 404 },
+      );
+    }
 
-  if (walletErr) {
-    return NextResponse.json(
-      { error: "Erro ao creditar wallet do atleta" },
-      { status: 500 },
-    );
-  }
+    const healthy = await assertInvariantsHealthy();
+    if (!healthy) {
+      return NextResponse.json(
+        { error: "System invariant violation. Emission blocked." },
+        { status: 503 },
+      );
+    }
 
-  const refId = idempotencyKey ?? `portal_${user.id}_${Date.now()}`;
-  const { error: ledgerErr } = await db.from("coin_ledger").insert({
-    user_id: athlete_user_id,
-    delta_coins: amount,
-    reason: "institution_token_issue",
-    ref_id: refId,
-    issuer_group_id: groupId,
-    created_at_ms: Date.now(),
-  });
+    const { data: rpcData, error: rpcErr } = await db.rpc("emit_coins_atomic", {
+      p_group_id: groupId,
+      p_athlete_user_id: athlete_user_id,
+      p_amount: amount,
+      p_ref_id: refId,
+    });
 
-  if (ledgerErr) {
-    logger.error("coin_ledger insert failed after successful distribution", ledgerErr, {
+    if (rpcErr) {
+      const msg = rpcErr.message ?? "";
+      // P0002 — CUSTODY_FAILED (lastro insuficiente ou falha no check de custódia)
+      if (msg.includes("CUSTODY_FAILED") || rpcErr.code === "P0002") {
+        return NextResponse.json(
+          { error: "Lastro insuficiente na custódia da assessoria. Deposite mais lastro antes de emitir coins." },
+          { status: 422 },
+        );
+      }
+      // P0003 — INVENTORY_INSUFFICIENT (saldo de tokens da assessoria)
+      if (msg.includes("INVENTORY_INSUFFICIENT") || rpcErr.code === "P0003") {
+        return NextResponse.json(
+          { error: "Saldo insuficiente de OmniCoins" },
+          { status: 422 },
+        );
+      }
+      // P0001 — INVALID_AMOUNT / MISSING_REF_ID (erro de contrato; não deveria ocorrer após validação acima)
+      if (msg.includes("INVALID_AMOUNT") || msg.includes("MISSING_REF_ID") || rpcErr.code === "P0001") {
+        return NextResponse.json(
+          { error: "Parâmetros inválidos" },
+          { status: 400 },
+        );
+      }
+      logger.error("emit_coins_atomic failed", rpcErr, {
+        athlete_user_id,
+        amount,
+        groupId,
+        refId,
+      });
+      return NextResponse.json({ error: "Erro ao distribuir coins" }, { status: 500 });
+    }
+
+    // rpcData é array com uma linha: { ledger_id, new_balance, was_idempotent }
+    const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+    const wasIdempotent = Boolean(row?.was_idempotent);
+
+    if (!wasIdempotent) {
+      await auditLog({
+        actorId: user.id,
+        groupId,
+        action: "coins.distribute",
+        targetType: "athlete",
+        targetId: athlete_user_id,
+        metadata: { amount, athlete_name: member.display_name, ref_id: refId },
+      });
+    }
+
+    return NextResponse.json({
+      ok: true,
       athlete_user_id,
       amount,
-      groupId,
-      refId,
+      athlete_name: member.display_name,
+      idempotent: wasIdempotent,
+      new_balance: row?.new_balance ?? null,
     });
-  }
-
-  await auditLog({
-    actorId: user.id,
-    groupId,
-    action: "coins.distribute",
-    targetType: "athlete",
-    targetId: athlete_user_id,
-    metadata: { amount, athlete_name: member.display_name },
-  });
-
-  return NextResponse.json({
-    ok: true,
-    athlete_user_id,
-    amount,
-    athlete_name: member.display_name,
-  });
   } catch (error) {
     logger.error("Failed to distribute coins", error);
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });

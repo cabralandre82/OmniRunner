@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-17T22:52:32.122Z",
+  "generated_at": "2026-04-18T02:43:21.704Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,7 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 331,
+    "fix-pending": 329,
+    "in-progress": 2,
     "fixed": 17
   },
   "by_wave": {
@@ -122,9 +123,10 @@
       "lens": 1,
       "title": "POST /api/distribute-coins — Distribuição de coins a atleta",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "in-progress",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "atomicity",
@@ -135,20 +137,23 @@
       ],
       "files": [
         "portal/src/app/api/distribute-coins/route.ts",
+        "portal/src/app/api/distribute-coins/route.test.ts",
+        "supabase/migrations/20260417120000_emit_coins_atomic.sql"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
         "portal/src/app/api/distribute-coins/route.test.ts"
       ],
-      "correction_type": "process",
-      "test_required": true,
-      "tests": [],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
-      "duplicate_of": null,
+      "duplicate_of": "L02-01",
       "deferred_to_wave": null,
-      "note": null
+      "note": "Corrigido junto com L02-01 (mesma rota, mesmas mudanças). Ver detalhes em docs/audit/findings/L02-01-*.md. O fallback silencioso de custody_commit_coins é tratado via SQLSTATE P0002 (propagado como 422 'Lastro insuficiente' — não mais silencioso)."
     },
     {
       "id": "L01-04",
@@ -1564,9 +1569,10 @@
       "lens": 2,
       "title": "distribute-coins — Orquestração não-atômica entre 4 RPCs (partial-failure silencioso)",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "in-progress",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "atomicity",
@@ -1576,7 +1582,7 @@
       ],
       "files": [
         "portal/src/app/api/distribute-coins/route.ts",
-        "supabase/migrations/20260415020000_coin_ledger_group_visibility.sql"
+        "supabase/migrations/20260417120000_emit_coins_atomic.sql"
       ],
       "correction_type": "code",
       "test_required": true,
@@ -1591,7 +1597,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "EXEMPLAR — referência de nível de detalhe para findings críticos da Onda 0"
+      "note": "EXEMPLAR — referência de nível de detalhe para findings críticos da Onda 0. Correção implementada em 2026-04-17 (migration emit_coins_atomic + refactor da rota + 15 casos de teste)."
     },
     {
       "id": "L02-02",
