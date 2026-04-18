@@ -4,9 +4,10 @@ audit_ref: "9.4"
 lens: 9
 title: "Nota fiscal / recibo fiscal não emitida em withdrawals"
 severity: critical
-status: in-progress
+status: fixed
 wave: 0
 discovered_at: 2026-04-17
+fixed_at: 2026-04-17
 tags: ["finance", "migration", "reliability", "fiscal", "lgpd"]
 files:
   - supabase/migrations/20260417240000_fiscal_receipts_queue.sql
@@ -14,19 +15,20 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - tools/integration_tests.ts::"L09-04:*"
+  - tools/integration_tests.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "commit:209f7b5"
 owner: unassigned
 runbook: docs/audit/runbooks/L09-04-fiscal-receipts.md
 effort_points: 5
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: "Queue + auto-enqueue trigger + RPC lifecycle entregues (stop-the-bleeding). Worker real (Nuvem Fiscal / Focus NFe / eNotas) fica como follow-up operacional — depende de contratação do emissor NFS-e e calibração ISS por município."
+note: "Queue + auto-enqueue trigger + RPC lifecycle entregues (stop-the-bleeding). Worker real (Nuvem Fiscal / Focus NFe / eNotas) fica como follow-up operacional — depende de contratação do emissor NFS-e e calibração ISS por município. E2E: 165/165 migrations + 146/146 tests verdes (2026-04-17)."
 ---
 # [L09-04] Nota fiscal / recibo fiscal não emitida em withdrawals
-> **Lente:** 9 — CRO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟡 in-progress
+> **Lente:** 9 — CRO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** 🟢 fixed
 **Camada:** Banco (PostgreSQL) · Fisco · B2B assessorias
 **Personas impactadas:** Platform Admin, Finance, Assessoria (CNPJ)
 
@@ -138,4 +140,6 @@ Contexto completo e motivação detalhada em [`docs/audit/parts/`](../parts/) �
 
 ## Histórico
 - `2026-04-17` — Descoberto na auditoria inicial (Lente 9 — CRO, item 9.4).
-- `2026-04-18` — Correção aplicada: fila canônica + trigger auto-enqueue + RPC lifecycle + append-only + RLS + backfill + LGPD registry + 8 testes. Worker real fica como follow-up operacional.
+- `2026-04-17` — Correção aplicada: fila canônica + trigger auto-enqueue + RPC lifecycle + append-only + RLS + backfill + LGPD registry + 8 testes. Worker real fica como follow-up operacional.
+- `2026-04-17` — Validação end-to-end (`tools/validate-migrations.sh`): fresh-install aplica 165/165 migrations; os 8 testes L09-04 rodam verdes dentro de suite completa (146/146).
+- `2026-04-17` — Promovido a `fixed`.

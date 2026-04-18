@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T13:26:31.850Z",
+  "generated_at": "2026-04-18T13:56:52.284Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -11,8 +11,8 @@
   },
   "by_status": {
     "fix-pending": 315,
-    "in-progress": 16,
-    "fixed": 17
+    "in-progress": 14,
+    "fixed": 19
   },
   "by_wave": {
     "0": 15,
@@ -2750,9 +2750,10 @@
       "lens": 4,
       "title": "Dados de saúde/biométricos (dados sensíveis, LGPD Art. 11) sem proteção reforçada",
       "severity": "critical",
-      "status": "in-progress",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "lgpd",
         "rls",
@@ -2771,17 +2772,19 @@
       "correction_type": "process",
       "test_required": true,
       "tests": [
-        "tools/integration_tests.ts::\"L04-04 ·*\""
+        "tools/integration_tests.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:2856670"
+      ],
       "owner": "unassigned",
       "runbook": "docs/audit/runbooks/L04-04-sensitive-health-access.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "RPCs fn_can_read_athlete_health / fn_log_sensitive_access / fn_read_athlete_health_snapshot entregues; service_role clients no Portal refatorados para `ensureCoachHealthAccess` antes de acessar sessions/runs/baselines/trends."
+      "note": "RPCs fn_can_read_athlete_health / fn_log_sensitive_access / fn_read_athlete_health_snapshot entregues; service_role clients no Portal refatorados para `ensureCoachHealthAccess` antes de acessar sessions/runs/baselines/trends. E2E: 165/165 migrations + 146/146 tests verdes (2026-04-17)."
     },
     {
       "id": "L04-05",
@@ -4859,9 +4862,10 @@
       "lens": 9,
       "title": "Nota fiscal / recibo fiscal não emitida em withdrawals",
       "severity": "critical",
-      "status": "in-progress",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "migration",
@@ -4876,17 +4880,19 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "tools/integration_tests.ts::\"L09-04:*\""
+        "tools/integration_tests.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:209f7b5"
+      ],
       "owner": "unassigned",
       "runbook": "docs/audit/runbooks/L09-04-fiscal-receipts.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Queue + auto-enqueue trigger + RPC lifecycle entregues (stop-the-bleeding). Worker real (Nuvem Fiscal / Focus NFe / eNotas) fica como follow-up operacional — depende de contratação do emissor NFS-e e calibração ISS por município."
+      "note": "Queue + auto-enqueue trigger + RPC lifecycle entregues (stop-the-bleeding). Worker real (Nuvem Fiscal / Focus NFe / eNotas) fica como follow-up operacional — depende de contratação do emissor NFS-e e calibração ISS por município. E2E: 165/165 migrations + 146/146 tests verdes (2026-04-17)."
     },
     {
       "id": "L09-05",

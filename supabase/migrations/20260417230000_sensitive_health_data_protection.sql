@@ -125,8 +125,6 @@ INSERT INTO public.sensitive_health_columns (table_name, column_name, sensitivit
   ('sessions',          'points_path',      'location',      'consent',  'Trajetória GPS precisa Art. 11'),
   ('sessions',          'total_distance_m', 'physical_perf', 'contract', 'Distância percorrida — inferível de fitness'),
   ('sessions',          'moving_ms',        'physical_perf', 'contract', 'Tempo de movimento — inferível de fitness'),
-  ('runs',              'distance_meters',  'physical_perf', 'contract', 'Distância — inferível de fitness'),
-  ('runs',              'duration_seconds', 'physical_perf', 'contract', 'Duração — inferível de fitness'),
   ('athlete_baselines', 'value',            'health',        'consent',  'Baseline biométrico (HR, pace) por métrica'),
   ('athlete_trends',    'current_value',    'health',        'consent',  'Trend biométrico — saúde Art. 11'),
   ('athlete_trends',    'baseline_value',   'health',        'consent',  'Baseline referência — saúde Art. 11')
@@ -135,22 +133,25 @@ ON CONFLICT (table_name, column_name) DO UPDATE
       legal_basis = EXCLUDED.legal_basis,
       rationale   = EXCLUDED.rationale;
 
--- Colunas de tabelas opcionais (existem conforme migrations aplicadas):
---   support_tickets.self_reported_injuries → registrar se a tabela existir.
---   coaching_athlete_kpis_daily.* — idem.
---   running_dna_profiles.* — idem.
--- Em CI todas as tabelas existem; localmente o registry toleraria drift via view.
+-- Colunas de tabelas opcionais (registradas apenas se a tabela/coluna existir,
+-- para não gerar falsos "table_missing" em v_sensitive_health_coverage_gaps):
+--   runs.*                          → tabela legada (alguns envs têm, outros só sessions).
+--   support_tickets.description     → registrar se a tabela existir.
+--   coaching_athlete_kpis_daily.*   → idem.
+--   running_dna_profiles.*          → idem.
 DO $bootstrap$
 DECLARE
   r record;
 BEGIN
   FOR r IN
     SELECT tbl, col, sensitivity, rationale FROM (VALUES
-      ('support_tickets',             'description',          'health',    'Descrição pode incluir lesão/queixa médica'),
-      ('coaching_athlete_kpis_daily', 'hr_avg_bpm',           'health',    'KPI diário HR — saúde Art. 11'),
-      ('coaching_athlete_kpis_daily', 'hr_max_bpm',           'health',    'KPI diário HR max — saúde Art. 11'),
+      ('runs',                        'distance_meters',      'physical_perf', 'Distância — inferível de fitness (tabela legada opcional)'),
+      ('runs',                        'duration_seconds',     'physical_perf', 'Duração — inferível de fitness (tabela legada opcional)'),
+      ('support_tickets',             'description',          'health',        'Descrição pode incluir lesão/queixa médica'),
+      ('coaching_athlete_kpis_daily', 'hr_avg_bpm',           'health',        'KPI diário HR — saúde Art. 11'),
+      ('coaching_athlete_kpis_daily', 'hr_max_bpm',           'health',        'KPI diário HR max — saúde Art. 11'),
       ('coaching_athlete_kpis_daily', 'avg_pace_sec_km',      'physical_perf', 'KPI diário pace — indicador fitness'),
-      ('running_dna_profiles',        'profile_json',         'biometric', 'DNA biométrico inferido (cadência, stride)')
+      ('running_dna_profiles',        'profile_json',         'biometric',     'DNA biométrico inferido (cadência, stride)')
     ) AS t(tbl, col, sensitivity, rationale)
   LOOP
     IF EXISTS (
@@ -566,14 +567,25 @@ CREATE POLICY trends_coach_consent_read ON public.athlete_trends
     AND public.fn_can_read_athlete_health(user_id)
   );
 
--- 6.4 runs: adiciona policy coach sob consent (antes coach não lia)
-DROP POLICY IF EXISTS runs_coach_consent_read ON public.runs;
-CREATE POLICY runs_coach_consent_read ON public.runs
-  FOR SELECT TO authenticated
-  USING (
-    auth.uid() <> user_id
-    AND public.fn_can_read_athlete_health(user_id)
-  );
+-- 6.4 runs: adiciona policy coach sob consent (se a tabela existir).
+--     `public.runs` é uma tabela legada/opcional — não existe em todos os
+--     ambientes (ex: fresh install a partir de 20260218000000_full_schema.sql
+--     só cria `public.sessions`). Defensive block para suportar ambos.
+DO $runs_rls$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables
+              WHERE table_schema = 'public' AND table_name = 'runs')
+     AND EXISTS (SELECT 1 FROM information_schema.columns
+                  WHERE table_schema = 'public' AND table_name = 'runs'
+                    AND column_name = 'user_id') THEN
+    EXECUTE 'ALTER TABLE public.runs ENABLE ROW LEVEL SECURITY';
+    EXECUTE 'DROP POLICY IF EXISTS runs_coach_consent_read ON public.runs';
+    EXECUTE $p$CREATE POLICY runs_coach_consent_read ON public.runs
+              FOR SELECT TO authenticated
+              USING (auth.uid() <> user_id
+                     AND public.fn_can_read_athlete_health(user_id))$p$;
+  END IF;
+END $runs_rls$;
 
 -- 6.5 Tabelas opcionais (criadas em migrations específicas — cobrem se
 --     existirem localmente/em CI).
@@ -753,9 +765,12 @@ DO $invariant$
 DECLARE
   v_count integer;
 BEGIN
+  -- Registry mínimo garantido: 9 colunas core (sessions×6 + athlete_baselines×1
+  -- + athlete_trends×2). Colunas de tabelas opcionais (runs, support_tickets,
+  -- coaching_athlete_kpis_daily, running_dna_profiles) só registram se existirem.
   SELECT count(*) INTO v_count FROM public.sensitive_health_columns;
-  IF v_count < 11 THEN
-    RAISE EXCEPTION 'L04-04 invariant: sensitive_health_columns registry has only % rows (expected >= 11)', v_count;
+  IF v_count < 9 THEN
+    RAISE EXCEPTION 'L04-04 invariant: sensitive_health_columns registry has only % rows (expected >= 9)', v_count;
   END IF;
 
   SELECT count(*) INTO v_count FROM public.consent_policy_versions
@@ -764,17 +779,29 @@ BEGIN
     RAISE EXCEPTION 'L04-04 invariant: consent_policy_versions must contain `coach_data_share` (L04-03 dependency)';
   END IF;
 
-  -- RLS policies instaladas nos 4 alvos principais
+  -- RLS policies instaladas nos alvos core (sessions/baselines/trends são
+  -- tabelas obrigatórias do schema base; runs é legada/opcional — conferida
+  -- condicionalmente).
   SELECT count(*) INTO v_count FROM pg_policies
    WHERE schemaname = 'public'
      AND (
        (tablename = 'sessions'           AND policyname = 'sessions_coach_consent_read') OR
        (tablename = 'athlete_baselines'  AND policyname = 'baselines_coach_consent_read') OR
-       (tablename = 'athlete_trends'     AND policyname = 'trends_coach_consent_read') OR
-       (tablename = 'runs'               AND policyname = 'runs_coach_consent_read')
+       (tablename = 'athlete_trends'     AND policyname = 'trends_coach_consent_read')
      );
-  IF v_count <> 4 THEN
-    RAISE EXCEPTION 'L04-04 invariant: expected 4 coach_consent_read policies, found %', v_count;
+  IF v_count <> 3 THEN
+    RAISE EXCEPTION 'L04-04 invariant: expected 3 core coach_consent_read policies, found %', v_count;
+  END IF;
+
+  -- Policy em public.runs apenas se a tabela existir (ver seção 6.4).
+  IF EXISTS (SELECT 1 FROM information_schema.tables
+              WHERE table_schema = 'public' AND table_name = 'runs') THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies
+                    WHERE schemaname = 'public'
+                      AND tablename = 'runs'
+                      AND policyname = 'runs_coach_consent_read') THEN
+      RAISE EXCEPTION 'L04-04 invariant: public.runs existe mas runs_coach_consent_read ausente';
+    END IF;
   END IF;
 END
 $invariant$;

@@ -1831,7 +1831,12 @@ async function testConstraints() {
       .select("table_name, column_name, sensitivity, legal_basis");
     assert(!error, `L04-04: select registry falhou: ${error?.message}`);
     const rows = (data ?? []) as any[];
-    assert(rows.length >= 11, `L04-04: esperado ≥11 colunas registradas, got ${rows.length}`);
+    // Core mínimo garantido = 9 rows (sessions × 6, athlete_baselines × 1,
+    // athlete_trends × 2). Colunas opcionais (runs.*, support_tickets.description,
+    // coaching_athlete_kpis_daily.*, running_dna_profiles.profile_json) só são
+    // registradas se a tabela/coluna existir no ambiente — ver section 1
+    // de supabase/migrations/20260417230000_sensitive_health_data_protection.sql.
+    assert(rows.length >= 9, `L04-04: esperado ≥9 colunas core registradas, got ${rows.length}`);
     const key = (t: string, c: string) => rows.some(r => r.table_name === t && r.column_name === c);
     assert(key("sessions", "avg_bpm"), "L04-04: sessions.avg_bpm ausente");
     assert(key("sessions", "max_bpm"), "L04-04: sessions.max_bpm ausente");
