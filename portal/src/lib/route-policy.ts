@@ -97,6 +97,23 @@ export const AUTH_ONLY_PREFIXES: readonly string[] = [
   "/api/platform/",
 ];
 
+/**
+ * Routes that require an authenticated user but explicitly do NOT
+ * require a portal group cookie. The group-selection page itself lives
+ * here (L13-04): without this carve-out, the middleware would loop on
+ * its own redirect-when-no-cookie branch.
+ *
+ * Add new routes here only if they are themselves part of the
+ * pre-group-selection flow (e.g. group invitation acceptance landing).
+ */
+export const AUTH_NO_GROUP_ROUTES: ReadonlySet<string> = new Set([
+  "/select-group",
+]);
+
+export function isAuthNoGroupRoute(pathname: string): boolean {
+  return AUTH_NO_GROUP_ROUTES.has(pathname);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Roles
 // ─────────────────────────────────────────────────────────────────────────────
@@ -117,6 +134,47 @@ const STAFF_ROLES: ReadonlySet<string> = new Set([
 
 export function isStaffRole(value: unknown): value is StaffRole {
   return typeof value === "string" && STAFF_ROLES.has(value);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cookie defaults (L13-05)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Default lifetime for portal session cookies (8 h business day).
+ * Exported so call-sites that need a custom value can multiply / divide
+ * this constant rather than guessing at the same magic number.
+ */
+export const PORTAL_COOKIE_MAX_AGE_SEC = 60 * 60 * 8;
+
+export interface PortalCookieOptions {
+  path: string;
+  httpOnly: boolean;
+  sameSite: "lax";
+  secure: boolean;
+  maxAge: number;
+}
+
+/**
+ * Build a cookie-options object for portal session cookies. Always sets
+ * `secure: true` in production (L13-05); honours an `overrideSecure`
+ * flag for local-dev parity (HTTPS via mkcert) and tests.
+ *
+ * `maxAge` defaults to PORTAL_COOKIE_MAX_AGE_SEC. Pass `0` to clear a
+ * cookie (the result is suitable for `cookies.set(name, "", opts)`).
+ */
+export function portalCookieOptions(opts?: {
+  maxAge?: number;
+  overrideSecure?: boolean;
+}): PortalCookieOptions {
+  return {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    secure:
+      opts?.overrideSecure ?? process.env.NODE_ENV === "production",
+    maxAge: opts?.maxAge ?? PORTAL_COOKIE_MAX_AGE_SEC,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -1,5 +1,12 @@
-import { describe, it, expect } from "vitest";
-import { resolveRouteAccess, isStaffRole } from "./route-policy";
+import { describe, it, expect, afterEach } from "vitest";
+import {
+  resolveRouteAccess,
+  isStaffRole,
+  isAuthNoGroupRoute,
+  portalCookieOptions,
+  AUTH_NO_GROUP_ROUTES,
+  PORTAL_COOKIE_MAX_AGE_SEC,
+} from "./route-policy";
 
 describe("resolveRouteAccess — L13-01 ordering regression", () => {
   describe("/settings/invite (admin OR coach) vs /settings (admin only)", () => {
@@ -117,5 +124,72 @@ describe("isStaffRole", () => {
     expect(isStaffRole(undefined)).toBe(false);
     expect(isStaffRole(42)).toBe(false);
     expect(isStaffRole({ role: "coach" })).toBe(false);
+  });
+});
+
+describe("isAuthNoGroupRoute (L13-04)", () => {
+  it("matches /select-group exactly", () => {
+    expect(isAuthNoGroupRoute("/select-group")).toBe(true);
+  });
+
+  it("does not match /select-group/ or sub-paths", () => {
+    expect(isAuthNoGroupRoute("/select-group/")).toBe(false);
+    expect(isAuthNoGroupRoute("/select-group/anything")).toBe(false);
+  });
+
+  it("does not match unrelated paths", () => {
+    expect(isAuthNoGroupRoute("/")).toBe(false);
+    expect(isAuthNoGroupRoute("/dashboard")).toBe(false);
+    expect(isAuthNoGroupRoute("/select-groups")).toBe(false);
+  });
+
+  it("AUTH_NO_GROUP_ROUTES contains /select-group", () => {
+    expect(AUTH_NO_GROUP_ROUTES.has("/select-group")).toBe(true);
+  });
+});
+
+describe("portalCookieOptions (L13-05)", () => {
+  const originalNodeEnv = process.env.NODE_ENV;
+  afterEach(() => {
+    if (originalNodeEnv === undefined) {
+      delete process.env.NODE_ENV;
+    } else {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
+  });
+
+  it("returns httpOnly + sameSite=lax + path=/ defaults", () => {
+    const opts = portalCookieOptions();
+    expect(opts.httpOnly).toBe(true);
+    expect(opts.sameSite).toBe("lax");
+    expect(opts.path).toBe("/");
+  });
+
+  it("defaults maxAge to the 8h business-day constant", () => {
+    expect(portalCookieOptions().maxAge).toBe(PORTAL_COOKIE_MAX_AGE_SEC);
+    expect(PORTAL_COOKIE_MAX_AGE_SEC).toBe(60 * 60 * 8);
+  });
+
+  it("flips secure=true in production", () => {
+    process.env.NODE_ENV = "production";
+    expect(portalCookieOptions().secure).toBe(true);
+  });
+
+  it("keeps secure=false in development / test", () => {
+    process.env.NODE_ENV = "development";
+    expect(portalCookieOptions().secure).toBe(false);
+    process.env.NODE_ENV = "test";
+    expect(portalCookieOptions().secure).toBe(false);
+  });
+
+  it("respects explicit maxAge=0 for cookie clearing", () => {
+    expect(portalCookieOptions({ maxAge: 0 }).maxAge).toBe(0);
+  });
+
+  it("honours overrideSecure for local-HTTPS dev parity", () => {
+    process.env.NODE_ENV = "development";
+    expect(portalCookieOptions({ overrideSecure: true }).secure).toBe(true);
+    process.env.NODE_ENV = "production";
+    expect(portalCookieOptions({ overrideSecure: false }).secure).toBe(false);
   });
 });

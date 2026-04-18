@@ -3,43 +3,85 @@ import { updateSession } from "@/lib/supabase/middleware";
 import {
   isPublicRoute,
   isAuthOnlyRoute,
+  isAuthNoGroupRoute,
   resolveRouteAccess,
   isStaffRole,
+  portalCookieOptions,
 } from "@/lib/route-policy";
 import {
   MEMBERSHIP_NONE,
   getCachedMembership,
   setCachedMembership,
 } from "@/lib/route-policy-cache";
+import { enforceWebhookIpAllowlist } from "@/lib/webhook-ip-allowlist";
 
 /**
- * Portal middleware (L13-01 / L13-02 / L13-03).
+ * Portal middleware (L13-01..L13-07).
  *
- * Route policy is delegated to `lib/route-policy.ts` so the precedence
- * rule "ADMIN_COACH_ROUTES win over ADMIN_ONLY_ROUTES on conflicting
- * prefixes" is verified by unit tests rather than re-implemented inline.
+ * Responsibilities, in order:
+ *
+ *   1. Generate / propagate `x-request-id` to the downstream request
+ *      headers (L13-06) so RSCs can read it via `headers()`.
+ *   2. Gate `/api/custody/webhook` behind an opt-in IP allow-list
+ *      (L13-07) — defence-in-depth on top of the HMAC signature check
+ *      that already lives in the route handler.
+ *   3. Pass public routes through unauthenticated.
+ *   4. Auth-only routes (`/platform`, `/api/platform/`) require a user
+ *      and platform-admin role.
+ *   5. `/select-group` (L13-04) requires a user but explicitly does
+ *      NOT require a portal-group cookie — the page is the entry point
+ *      to choosing one.
+ *   6. Everything else: require user + portal_group cookie + staff
+ *      membership; resolve the route's access verdict.
+ *
+ * Cookies set from this middleware go through `portalCookieOptions()`
+ * which now flips `secure: true` in production (L13-05).
  *
  * Membership lookups go through the LRU cache in
  * `lib/route-policy-cache.ts` (60 s TTL, negative-cached) so a single
  * page-load with N RSCs costs at most one Postgres round-trip per
- * `(user, group)` instead of one per RSC.
+ * `(user, group)` instead of one per RSC (L13-03).
  */
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // (L13-06) Compute / honour x-request-id once and propagate to BOTH
+  // the downstream request headers and the response.
+  const requestId =
+    request.headers.get("x-request-id") ?? crypto.randomUUID();
+  const extraRequestHeaders = { "x-request-id": requestId };
+
+  const tagResponse = (res: NextResponse) => {
+    res.headers.set("x-request-id", requestId);
+    return res;
+  };
+
+  // (L13-07) Webhook IP allow-list runs BEFORE any auth so that
+  // mis-configured callers cannot tickle session refresh logic.
+  if (pathname === "/api/custody/webhook") {
+    const denied = enforceWebhookIpAllowlist(request);
+    if (denied) return tagResponse(denied);
+  }
+
   if (isPublicRoute(pathname)) {
-    const { supabaseResponse } = await updateSession(request);
-    return supabaseResponse;
+    const { supabaseResponse } = await updateSession(
+      request,
+      extraRequestHeaders,
+    );
+    return tagResponse(supabaseResponse);
   }
 
   if (isAuthOnlyRoute(pathname)) {
-    const { user, supabaseResponse, supabase } = await updateSession(request);
+    const { user, supabaseResponse, supabase } = await updateSession(
+      request,
+      extraRequestHeaders,
+    );
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.searchParams.set("next", pathname);
-      return NextResponse.redirect(url);
+      return tagResponse(NextResponse.redirect(url));
     }
     if (
       pathname.startsWith("/platform") ||
@@ -52,48 +94,68 @@ export async function middleware(request: NextRequest) {
         .single();
       if (profile?.platform_role !== "admin") {
         if (pathname.startsWith("/api/")) {
-          return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+          return tagResponse(
+            NextResponse.json({ error: "Forbidden" }, { status: 403 }),
+          );
         }
         const url = request.nextUrl.clone();
         url.pathname = "/";
-        return NextResponse.redirect(url);
+        return tagResponse(NextResponse.redirect(url));
       }
     }
-    return supabaseResponse;
+    return tagResponse(supabaseResponse);
   }
 
-  const { user, supabaseResponse, supabase } = await updateSession(request);
+  // (L13-04) /select-group needs a logged-in user but explicitly does
+  // not require a portal-group cookie. Without this carve-out, the
+  // group-resolution branch below would either redirect into itself
+  // (multi-membership branch) or silently rely on the implicit
+  // pathname check at line 138 of the legacy middleware.
+  if (isAuthNoGroupRoute(pathname)) {
+    const { user, supabaseResponse } = await updateSession(
+      request,
+      extraRequestHeaders,
+    );
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("next", pathname);
+      return tagResponse(NextResponse.redirect(url));
+    }
+    return tagResponse(supabaseResponse);
+  }
+
+  const { user, supabaseResponse, supabase } = await updateSession(
+    request,
+    extraRequestHeaders,
+  );
 
   if (!user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+    return tagResponse(NextResponse.redirect(url));
   }
 
   let groupId = request.cookies.get("portal_group_id")?.value;
   let role = request.cookies.get("portal_role")?.value;
 
   if (groupId) {
-    // L13-03: try the LRU cache first. Cache stores both positive and
-    // negative results (MEMBERSHIP_NONE). Cache misses fall through to
-    // the existing Postgres query, which then populates the cache.
     const cached = getCachedMembership(user.id, groupId);
 
     if (cached === MEMBERSHIP_NONE) {
       groupId = undefined;
       role = undefined;
-      const clearOpts = { path: "/", maxAge: 0 };
+      const clearOpts = portalCookieOptions({ maxAge: 0 });
       supabaseResponse.cookies.set("portal_group_id", "", clearOpts);
       supabaseResponse.cookies.set("portal_role", "", clearOpts);
     } else if (cached) {
       role = cached.role;
-      supabaseResponse.cookies.set("portal_role", role, {
-        path: "/",
-        httpOnly: true,
-        sameSite: "lax",
-        maxAge: 60 * 60 * 8,
-      });
+      supabaseResponse.cookies.set(
+        "portal_role",
+        role,
+        portalCookieOptions(),
+      );
     } else {
       const { data: membership } = await supabase
         .from("coaching_members")
@@ -106,7 +168,7 @@ export async function middleware(request: NextRequest) {
         setCachedMembership(user.id, groupId, MEMBERSHIP_NONE);
         groupId = undefined;
         role = undefined;
-        const clearOpts = { path: "/", maxAge: 0 };
+        const clearOpts = portalCookieOptions({ maxAge: 0 });
         supabaseResponse.cookies.set("portal_group_id", "", clearOpts);
         supabaseResponse.cookies.set("portal_role", "", clearOpts);
       } else {
@@ -119,17 +181,16 @@ export async function middleware(request: NextRequest) {
           setCachedMembership(user.id, groupId, MEMBERSHIP_NONE);
           groupId = undefined;
           role = undefined;
-          const clearOpts = { path: "/", maxAge: 0 };
+          const clearOpts = portalCookieOptions({ maxAge: 0 });
           supabaseResponse.cookies.set("portal_group_id", "", clearOpts);
           supabaseResponse.cookies.set("portal_role", "", clearOpts);
         } else {
           setCachedMembership(user.id, groupId, { role });
-          supabaseResponse.cookies.set("portal_role", role, {
-            path: "/",
-            httpOnly: true,
-            sameSite: "lax",
-            maxAge: 60 * 60 * 8,
-          });
+          supabaseResponse.cookies.set(
+            "portal_role",
+            role,
+            portalCookieOptions(),
+          );
         }
       }
     }
@@ -145,54 +206,48 @@ export async function middleware(request: NextRequest) {
     if (!memberships || memberships.length === 0) {
       const url = request.nextUrl.clone();
       url.pathname = "/no-access";
-      return NextResponse.redirect(url);
+      return tagResponse(NextResponse.redirect(url));
     }
 
     if (memberships.length === 1) {
       groupId = memberships[0].group_id as string;
       role = memberships[0].role as string;
-      // Populate the cache with the resolved membership so the
-      // immediately-following navigation does not re-query.
       if (isStaffRole(role)) {
         setCachedMembership(user.id, groupId, { role });
       }
       const redirect = NextResponse.redirect(request.nextUrl);
-      redirect.cookies.set("portal_group_id", groupId, {
-        path: "/",
-        httpOnly: true,
-        sameSite: "lax",
-        maxAge: 60 * 60 * 8,
-      });
-      redirect.cookies.set("portal_role", role, {
-        path: "/",
-        httpOnly: true,
-        sameSite: "lax",
-        maxAge: 60 * 60 * 8,
-      });
-      return redirect;
+      redirect.cookies.set(
+        "portal_group_id",
+        groupId,
+        portalCookieOptions(),
+      );
+      redirect.cookies.set("portal_role", role, portalCookieOptions());
+      return tagResponse(redirect);
     } else {
-      if (pathname !== "/select-group") {
-        const url = request.nextUrl.clone();
-        url.pathname = "/select-group";
-        return NextResponse.redirect(url);
-      }
-      return supabaseResponse;
+      // Multi-membership: defer to /select-group. The redundant
+      // pathname-equality check that used to live here is no longer
+      // needed because /select-group is now an explicit
+      // AUTH_NO_GROUP_ROUTES match (L13-04) and never falls into
+      // this branch in the first place.
+      const url = request.nextUrl.clone();
+      url.pathname = "/select-group";
+      return tagResponse(NextResponse.redirect(url));
     }
   }
 
-  // L13-01: role-based protection delegated to a single, ordering-aware
-  // resolver. Admin-coach routes (e.g. /settings/invite) are checked
-  // BEFORE admin-only prefixes (e.g. /settings) so a coach is allowed
-  // through /settings/invite even though /settings is in ADMIN_ONLY_ROUTES.
+  // (L13-01) role-based protection delegated to a single,
+  // ordering-aware resolver. Admin-coach routes (e.g. /settings/invite)
+  // are checked BEFORE admin-only prefixes (e.g. /settings) so a coach
+  // is allowed through /settings/invite even though /settings is in
+  // ADMIN_ONLY_ROUTES.
   const verdict = resolveRouteAccess(pathname, role);
   if (verdict === "forbidden") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return tagResponse(
+      NextResponse.json({ error: "Forbidden" }, { status: 403 }),
+    );
   }
 
-  const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
-  supabaseResponse.headers.set("x-request-id", requestId);
-
-  return supabaseResponse;
+  return tagResponse(supabaseResponse);
 }
 
 export const config = {
