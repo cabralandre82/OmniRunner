@@ -88,17 +88,24 @@ serve(async (req: Request) => {
 
   const { data: config } = await db
     .from("payment_provider_config")
-    .select("api_key, environment")
+    .select("environment, api_key_secret_id")
     .eq("group_id", groupId)
     .eq("provider", "asaas")
     .eq("is_active", true)
     .maybeSingle();
 
-  if (!config) {
+  if (!config || !config.api_key_secret_id) {
     return jsonErr(404, "NO_CONFIG", "Asaas not active", rid, undefined, undefined, req);
   }
 
-  const apiKey = config.api_key as string;
+  // L01-17: API key decrypt via vault RPC (nunca trafega em SELECT)
+  const { data: apiKey, error: keyErr } = await db.rpc("fn_ppc_get_api_key", {
+    p_group_id: groupId,
+    p_request_id: rid,
+  });
+  if (keyErr || !apiKey) {
+    return jsonErr(500, "VAULT_ERROR", `Failed to decrypt API key: ${keyErr?.message ?? "null"}`, rid, undefined, undefined, req);
+  }
   const base = asaasBase(config.environment as string);
 
   const { data: feeRow } = await db

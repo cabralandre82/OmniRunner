@@ -45,10 +45,10 @@ describe("sanitizeCpf", () => {
 });
 
 describe("canActivateBilling", () => {
-  it("returns false when api_key is missing", () => {
+  it("returns false when api_key_secret_id is missing (L01-17)", () => {
     const result = canActivateBilling({
       is_active: false,
-      api_key: "",
+      api_key_secret_id: null,
       webhook_id: "wh_123",
     });
     expect(result.ok).toBe(false);
@@ -58,17 +58,17 @@ describe("canActivateBilling", () => {
   it("returns false when webhook_id is missing", () => {
     const result = canActivateBilling({
       is_active: false,
-      api_key: "key_123",
+      api_key_secret_id: "sec-uuid",
       webhook_id: null,
     });
     expect(result.ok).toBe(false);
     expect(result.reason).toBe("webhook_id is required");
   });
 
-  it("returns true when all present", () => {
+  it("returns true when vault secret_id + webhook_id present", () => {
     const result = canActivateBilling({
       is_active: false,
-      api_key: "key_123",
+      api_key_secret_id: "sec-uuid",
       webhook_id: "wh_456",
     });
     expect(result.ok).toBe(true);
@@ -78,7 +78,7 @@ describe("canActivateBilling", () => {
   it("returns true when is_active is false (activation check)", () => {
     const result = canActivateBilling({
       is_active: false,
-      api_key: "key_123",
+      api_key_secret_id: "sec-uuid",
       webhook_id: "wh_456",
     });
     expect(result.ok).toBe(true);

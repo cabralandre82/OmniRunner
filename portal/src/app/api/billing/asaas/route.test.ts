@@ -64,10 +64,10 @@ describe("POST /api/billing/asaas", () => {
     expect(res.status).toBe(403);
   });
 
-  it("save_config upserts payment_provider_config", async () => {
+  it("save_config delegates to fn_ppc_save_api_key RPC (L01-17)", async () => {
     mockStaff();
-    serviceClient.from.mockReturnValueOnce(
-      queryChain({ data: null, error: null }),
+    serviceClient.rpc.mockReturnValueOnce(
+      queryChain({ data: { rotated: false, secret_id: "uuid" }, error: null }),
     );
     const res = await POST(
       makeReq({
@@ -79,6 +79,14 @@ describe("POST /api/billing/asaas", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.ok).toBe(true);
+    expect(serviceClient.rpc).toHaveBeenCalledWith(
+      "fn_ppc_save_api_key",
+      expect.objectContaining({
+        p_group_id: "group-1",
+        p_api_key: "test-key",
+        p_environment: "sandbox",
+      }),
+    );
   });
 
   it("save_config requires api_key", async () => {

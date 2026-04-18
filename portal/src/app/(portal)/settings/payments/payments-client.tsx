@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 
 export interface PaymentsConfig {
   id: string;
-  api_key: string;
   environment: string;
   is_active: boolean;
   connected_at: string | null;

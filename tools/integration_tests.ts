@@ -1378,6 +1378,166 @@ async function testConstraints() {
     }
   });
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // L01-17: Asaas API Key via supabase_vault (no plaintext column)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  await test("L01-17: payment_provider_config não expõe colunas plaintext api_key/webhook_token", async () => {
+    const { data, error } = await db.rpc("sql_query" as any, {
+      query:
+        "SELECT column_name FROM information_schema.columns " +
+        "WHERE table_schema='public' AND table_name='payment_provider_config' " +
+        "AND column_name IN ('api_key','webhook_token')",
+    });
+    if (error) return; // sql_query not deployed; skip (covered by audit:check)
+    const rows = (data as Array<{ column_name: string }>) ?? [];
+    assert(
+      rows.length === 0,
+      `L01-17: colunas plaintext ainda existem: ${rows.map((r) => r.column_name).join(",")}`,
+    );
+  });
+
+  await test("L01-17: fn_ppc_save_api_key + fn_ppc_get_api_key roundtrip (service_role)", async () => {
+    // service_role é trusted → save passa direto, roundtrip deve funcionar.
+    const testKey = `l0117-rt-${Date.now()}-abcdef1234567890`;
+
+    const { data: saveData, error: saveErr } = await db.rpc("fn_ppc_save_api_key", {
+      p_group_id: GROUP_A,
+      p_api_key: testKey,
+      p_environment: "sandbox",
+      p_request_id: `l0117-test-${Date.now()}`,
+    });
+    assert(!saveErr, `L01-17: save falhou: ${saveErr?.message}`);
+    const saveRow = saveData as { secret_id: string; rotated: boolean; config_id: string } | null;
+    assert(!!saveRow, "L01-17: save retornou NULL");
+    assert(typeof saveRow!.secret_id === "string", "L01-17: secret_id ausente");
+
+    const { data: decrypted, error: getErr } = await db.rpc("fn_ppc_get_api_key", {
+      p_group_id: GROUP_A,
+      p_request_id: `l0117-test-get-${Date.now()}`,
+    });
+    assert(!getErr, `L01-17: get falhou: ${getErr?.message}`);
+    assert(decrypted === testKey, `L01-17: decrypted ≠ original: got '${String(decrypted).slice(0, 12)}...'`);
+  });
+
+  await test("L01-17: fn_ppc_save_api_key rotates existing secret (preserva config_id)", async () => {
+    const k1 = `l0117-rot1-${Date.now()}-aaaaaaaaaaaaaaaa`;
+    const k2 = `l0117-rot2-${Date.now()}-bbbbbbbbbbbbbbbb`;
+
+    const { data: r1, error: e1 } = await db.rpc("fn_ppc_save_api_key", {
+      p_group_id: GROUP_A,
+      p_api_key: k1,
+      p_environment: "sandbox",
+      p_request_id: "l0117-rot-1",
+    });
+    assert(!e1, `L01-17: save1 falhou: ${e1?.message}`);
+
+    const { data: r2, error: e2 } = await db.rpc("fn_ppc_save_api_key", {
+      p_group_id: GROUP_A,
+      p_api_key: k2,
+      p_environment: "production",
+      p_request_id: "l0117-rot-2",
+    });
+    assert(!e2, `L01-17: save2 falhou: ${e2?.message}`);
+
+    const row1 = r1 as { config_id: string; rotated: boolean; secret_id: string };
+    const row2 = r2 as { config_id: string; rotated: boolean; secret_id: string };
+    assert(row1.config_id === row2.config_id, "L01-17: config_id deveria ser estável entre saves");
+    assert(row1.secret_id === row2.secret_id, "L01-17: secret_id deveria ser estável (update, não create)");
+    assert(row2.rotated === true, "L01-17: segundo save deveria ter rotated=true");
+
+    const { data: decrypted } = await db.rpc("fn_ppc_get_api_key", {
+      p_group_id: GROUP_A,
+      p_request_id: "l0117-rot-get",
+    });
+    assert(decrypted === k2, "L01-17: após rotação decrypted deveria ser k2");
+  });
+
+  await test("L01-17: fn_ppc_save_api_key rejeita api_key curta (< 8)", async () => {
+    const { error } = await db.rpc("fn_ppc_save_api_key", {
+      p_group_id: GROUP_A,
+      p_api_key: "short",
+      p_environment: "sandbox",
+    });
+    assert(error !== null, "L01-17: deveria rejeitar api_key curta");
+    const e = error as { code?: string; message?: string };
+    assert(
+      (e.message ?? "").includes("INVALID_API_KEY") || e.code === "P0001",
+      `L01-17: esperado INVALID_API_KEY/P0001, got ${e.code}/${e.message}`,
+    );
+  });
+
+  await test("L01-17: fn_ppc_save_api_key rejeita environment inválido", async () => {
+    const { error } = await db.rpc("fn_ppc_save_api_key", {
+      p_group_id: GROUP_A,
+      p_api_key: "valid-long-enough-key",
+      p_environment: "staging",
+    });
+    assert(error !== null, "L01-17: deveria rejeitar environment='staging'");
+    const e = error as { code?: string; message?: string };
+    assert(
+      (e.message ?? "").includes("INVALID_ENVIRONMENT") || e.code === "P0001",
+      `L01-17: esperado INVALID_ENVIRONMENT, got ${e.message}`,
+    );
+  });
+
+  await test("L01-17: fn_ppc_get_api_key retorna NO_CONFIG para grupo sem configuração", async () => {
+    const unknownGroup = "99999999-9999-4999-8999-" + Date.now().toString(16).padStart(12, "0");
+    const { error } = await db.rpc("fn_ppc_get_api_key", {
+      p_group_id: unknownGroup,
+      p_request_id: "l0117-missing",
+    });
+    assert(error !== null, "L01-17: deveria falhar com NO_CONFIG");
+    const e = error as { code?: string; message?: string };
+    assert(
+      (e.message ?? "").includes("NO_CONFIG") || e.code === "P0002",
+      `L01-17: esperado NO_CONFIG/P0002, got ${e.code}/${e.message}`,
+    );
+  });
+
+  await test("L01-17: fn_ppc_has_api_key exposes metadata flags sem revelar secret", async () => {
+    const { data, error } = await db.rpc("fn_ppc_has_api_key", {
+      p_group_id: GROUP_A,
+    });
+    assert(!error, `L01-17: has_api_key falhou: ${error?.message}`);
+    const row = data as { has_key: boolean; environment: string | null; is_active: boolean };
+    assert(typeof row.has_key === "boolean", "L01-17: has_key deve ser boolean");
+    assert(!("api_key" in (row as Record<string, unknown>)), "L01-17: has_api_key vazou api_key");
+    assert(
+      !("secret" in (row as Record<string, unknown>)),
+      "L01-17: has_api_key vazou campo 'secret'",
+    );
+  });
+
+  await test("L01-17: fn_ppc_save_webhook_token cria + fn_ppc_get_webhook_token retorna valor", async () => {
+    const whToken = `l0117-wh-${Date.now()}-1234567890abcdef`;
+    const whId = `wh-id-${Date.now()}`;
+
+    const { error: saveErr } = await db.rpc("fn_ppc_save_webhook_token", {
+      p_group_id: GROUP_A,
+      p_webhook_id: whId,
+      p_token: whToken,
+      p_request_id: "l0117-wh-save",
+    });
+    assert(!saveErr, `L01-17: save webhook token falhou: ${saveErr?.message}`);
+
+    const { data: got, error: getErr } = await db.rpc("fn_ppc_get_webhook_token", {
+      p_group_id: GROUP_A,
+      p_request_id: "l0117-wh-get",
+    });
+    assert(!getErr, `L01-17: get webhook token falhou: ${getErr?.message}`);
+    assert(got === whToken, `L01-17: webhook token roundtrip falhou`);
+  });
+
+  await test("L01-17: payment_provider_secret_access_log registra operações", async () => {
+    const { count, error } = await db
+      .from("payment_provider_secret_access_log")
+      .select("*", { count: "exact", head: true })
+      .eq("group_id", GROUP_A);
+    assert(!error, `L01-17: select audit log falhou: ${error?.message}`);
+    assert((count ?? 0) > 0, `L01-17: audit log vazio para GROUP_A (esperado entries dos testes anteriores)`);
+  });
+
   // 3.20 L05-01: cancel_swap_order happy path retorna previous_status + new_status
   await test("L05-01: cancel_swap_order returns previous_status + new_status on success", async () => {
     const orderId = "a5a5a5a5-0000-4000-8000-000000000502";

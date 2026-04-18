@@ -78,10 +78,10 @@ serve(async (req: Request) => {
     return jsonErr(403, "FORBIDDEN", "Not authorized", rid, undefined, undefined, req);
   }
 
-  // Get provider config
+  // Get provider config (metadata only — secret via RPC L01-17)
   const { data: config } = await db
     .from("payment_provider_config")
-    .select("*")
+    .select("id, group_id, provider, wallet_id, environment, is_active, webhook_id, connected_at, api_key_secret_id, webhook_token_secret_id")
     .eq("group_id", groupId)
     .eq("provider", "asaas")
     .maybeSingle();
@@ -90,7 +90,19 @@ serve(async (req: Request) => {
     return jsonErr(404, "NO_CONFIG", "Asaas not configured for this group", rid, undefined, undefined, req);
   }
 
-  const apiKey = config?.api_key as string;
+  // Resolve API key via vault RPC (L01-17). test_connection may use a body-supplied
+  // key (for "save before connect" flow); other actions require the stored secret.
+  let apiKey = "";
+  if (config?.api_key_secret_id) {
+    const { data: keyData, error: keyErr } = await db.rpc("fn_ppc_get_api_key", {
+      p_group_id: groupId,
+      p_request_id: rid,
+    });
+    if (keyErr || !keyData) {
+      return jsonErr(500, "VAULT_ERROR", `Failed to decrypt API key: ${keyErr?.message ?? "null"}`, rid, undefined, undefined, req);
+    }
+    apiKey = keyData as string;
+  }
   const base = asaasBase(config?.environment as string ?? "sandbox");
 
   // Get platform fee config: billing_split (%) + maintenance (fixed USD/athlete)
@@ -328,20 +340,15 @@ serve(async (req: Request) => {
           return jsonErr(502, "ASAAS_ERROR", "Failed to create webhook", rid, whRes.data, undefined, req);
         }
 
-        const { error: whDbErr } = await db
-          .from("payment_provider_config")
-          .update({
-            webhook_id: whRes.data.id as string,
-            webhook_token: webhookToken,
-            is_active: true,
-            connected_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("group_id", groupId)
-          .eq("provider", "asaas");
+        const { error: whDbErr } = await db.rpc("fn_ppc_save_webhook_token", {
+          p_group_id: groupId,
+          p_webhook_id: whRes.data.id as string,
+          p_token: webhookToken,
+          p_request_id: rid,
+        });
 
         if (whDbErr) {
-          return jsonErr(500, "DB_ERROR", `Webhook created but DB update failed: ${whDbErr.message}`, rid, undefined, undefined, req);
+          return jsonErr(500, "DB_ERROR", `Webhook created but vault save failed: ${whDbErr.message}`, rid, undefined, undefined, req);
         }
 
         return jsonOk({ webhook_id: whRes.data.id, webhook_configured: true }, rid, req);

@@ -50,7 +50,6 @@ export default async function PaymentsPage() {
   const config = configRow
     ? {
         id: configRow.id,
-        api_key: "", // Never pass raw API key to client
         environment: configRow.environment,
         is_active: configRow.is_active ?? false,
         connected_at: configRow.connected_at,

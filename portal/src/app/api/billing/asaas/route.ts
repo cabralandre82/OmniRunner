@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { randomUUID } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -82,22 +83,17 @@ export async function POST(request: NextRequest) {
       if (!apiKey) {
         return NextResponse.json({ error: "api_key required" }, { status: 400 });
       }
-      const { error } = await db
-        .from("payment_provider_config")
-        .upsert(
-          {
-            group_id: groupId,
-            provider: "asaas",
-            api_key: apiKey,
-            environment: environment,
-            is_active: false,
-            updated_at: new Date().toISOString(),
-          },
-          {
-            onConflict: "group_id,provider",
-            ignoreDuplicates: false,
-          },
-        );
+      // L01-17: nunca persistir api_key em texto-puro. A RPC criptografa
+      // via supabase_vault e registra audit log. Caller (service_role) passa
+      // pela branch "trusted" da autorização; o portal já validou membership
+      // (admin_master/coach) acima.
+      const requestId = (cookies().get("__omni_rid__")?.value) ?? randomUUID();
+      const { error } = await db.rpc("fn_ppc_save_api_key", {
+        p_group_id: groupId,
+        p_api_key: apiKey,
+        p_environment: environment,
+        p_request_id: requestId,
+      });
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }

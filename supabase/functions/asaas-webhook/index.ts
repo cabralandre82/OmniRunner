@@ -110,18 +110,21 @@ serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Unknown subscription — cannot authenticate" }), { status: 400 });
   }
 
-  const { data: config } = await db
-    .from("payment_provider_config")
-    .select("webhook_token")
-    .eq("group_id", groupId)
-    .eq("provider", "asaas")
-    .maybeSingle();
+  // L01-17: webhook token via vault RPC (service_role only; auditado)
+  const rid = crypto.randomUUID();
+  const { data: storedToken, error: tokenErr } = await db.rpc("fn_ppc_get_webhook_token", {
+    p_group_id: groupId,
+    p_request_id: `asaas-webhook:${rid}`,
+  });
 
-  if (!config?.webhook_token) {
+  if (tokenErr) {
+    return new Response(JSON.stringify({ error: `Vault error: ${tokenErr.message}` }), { status: 500 });
+  }
+  if (!storedToken) {
     return new Response(JSON.stringify({ error: "Webhook token not configured for group" }), { status: 401 });
   }
 
-  if (incomingToken !== config.webhook_token) {
+  if (incomingToken !== storedToken) {
     return new Response(JSON.stringify({ error: "Invalid token" }), { status: 401 });
   }
 

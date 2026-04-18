@@ -109,9 +109,10 @@ serve(async (req: Request) => {
 
   try {
     // 1. Get all groups with payment_provider_config.is_active = true
+    // L01-17: api_key é resolvida via vault RPC (fn_ppc_get_api_key) no loop abaixo.
     const { data: configs, error: configErr } = await db
       .from("payment_provider_config")
-      .select("group_id, api_key, environment")
+      .select("group_id, environment, api_key_secret_id")
       .eq("provider", "asaas")
       .eq("is_active", true);
 
@@ -144,9 +145,23 @@ serve(async (req: Request) => {
 
     for (const config of configs) {
       const groupId = config.group_id as string;
-      const apiKey = config.api_key as string;
       const environment = (config.environment as string) ?? "sandbox";
       const base = asaasBase(environment);
+
+      if (!config.api_key_secret_id) {
+        errors.push(`${groupId}: api_key_secret_id missing (incomplete config)`);
+        continue;
+      }
+
+      // L01-17: decrypt via vault RPC, logged on every read
+      const { data: apiKey, error: keyErr } = await db.rpc("fn_ppc_get_api_key", {
+        p_group_id: groupId,
+        p_request_id: `billing-reconcile:${groupId}`,
+      });
+      if (keyErr || !apiKey) {
+        errors.push(`${groupId}: vault decrypt failed — ${keyErr?.message ?? "null"}`);
+        continue;
+      }
 
       groupsChecked++;
 

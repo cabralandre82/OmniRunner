@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T11:04:42.541Z",
+  "generated_at": "2026-04-18T11:25:50.037Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 319,
-    "in-progress": 12,
+    "fix-pending": 318,
+    "in-progress": 13,
     "fixed": 17
   },
   "by_wave": {
@@ -581,25 +581,47 @@
       "lens": 1,
       "title": "POST /api/billing/asaas — Armazenamento de API Key",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "in-progress",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
       "tags": [
-        "mobile",
         "portal",
+        "backend",
+        "security",
+        "vault",
         "migration",
-        "reliability"
+        "secrets"
       ],
       "files": [
-        "portal/src/app/api/billing/asaas/route.ts"
+        "portal/src/app/api/billing/asaas/route.ts",
+        "portal/src/app/(portal)/settings/payments/page.tsx",
+        "portal/src/app/(portal)/settings/payments/payments-client.tsx",
+        "portal/src/lib/billing/edge-cases.ts",
+        "supabase/functions/asaas-sync/index.ts",
+        "supabase/functions/asaas-batch/index.ts",
+        "supabase/functions/asaas-webhook/index.ts",
+        "supabase/functions/billing-reconcile/index.ts",
+        "supabase/migrations/20260417210000_asaas_vault_secrets.sql",
+        "tools/integration_tests.ts"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "L01-17: payment_provider_config não expõe colunas plaintext api_key/webhook_token",
+        "L01-17: fn_ppc_save_api_key + fn_ppc_get_api_key roundtrip (service_role)",
+        "L01-17: fn_ppc_save_api_key rotates existing secret (preserva config_id)",
+        "L01-17: fn_ppc_save_api_key rejeita api_key curta (< 8)",
+        "L01-17: fn_ppc_save_api_key rejeita environment inválido",
+        "L01-17: fn_ppc_get_api_key retorna NO_CONFIG para grupo sem configuração",
+        "L01-17: fn_ppc_has_api_key exposes metadata flags sem revelar secret",
+        "L01-17: fn_ppc_save_webhook_token cria + fn_ppc_get_webhook_token retorna valor",
+        "L01-17: payment_provider_secret_access_log registra operações"
+      ],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "unassigned",
-      "runbook": null,
+      "runbook": "docs/audit/runbooks/L01-17-asaas-vault-rotation.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,

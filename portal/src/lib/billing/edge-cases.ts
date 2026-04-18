@@ -23,12 +23,18 @@ export function validateCpf(cpf: string): boolean {
   return d2 === parseInt(digits[10], 10);
 }
 
+/**
+ * L01-17: canActivateBilling now inspects the vault secret reference
+ * (api_key_secret_id) instead of the plaintext api_key column.
+ * The column was dropped — server-side config rows carry only the UUID
+ * pointing into vault.secrets.
+ */
 export function canActivateBilling(config: {
   is_active: boolean;
-  api_key: string;
+  api_key_secret_id: string | null;
   webhook_id: string | null;
 }): { ok: boolean; reason?: string } {
-  if (!config.api_key || config.api_key.trim() === "") {
+  if (!config.api_key_secret_id) {
     return { ok: false, reason: "api_key is required" };
   }
   if (!config.webhook_id || config.webhook_id.trim() === "") {
