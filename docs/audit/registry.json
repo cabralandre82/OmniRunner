@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T19:41:00.914Z",
+  "generated_at": "2026-04-18T19:59:07.628Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 303,
-    "fixed": 44,
+    "fix-pending": 302,
+    "fixed": 45,
     "in-progress": 1
   },
   "by_wave": {
@@ -3177,21 +3177,36 @@
       "lens": 5,
       "title": "Swap não tem TTL/expiração — ofertas ficam para sempre",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "migration",
         "cron",
         "performance"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260417270000_swap_orders_expiration.sql",
+        "portal/src/lib/swap.ts",
+        "portal/src/lib/swap.test.ts",
+        "portal/src/app/api/swap/route.ts",
+        "portal/src/app/api/swap/route.test.ts",
+        "tools/integration_tests.ts"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/swap.test.ts",
+        "portal/src/app/api/swap/route.test.ts",
+        "tools/integration_tests.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:f8d4551"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,

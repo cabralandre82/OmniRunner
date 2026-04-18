@@ -24,7 +24,8 @@ tests:
   - portal/src/app/api/swap/route.test.ts
   - tools/integration_tests.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "commit:f8d4551"
 owner: unassigned
 runbook: null
 effort_points: 5
