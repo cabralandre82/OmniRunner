@@ -9,3 +9,13 @@ pre-commit:
       root: portal/
       glob: "*.{ts,tsx}"
       run: npx next lint --quiet
+    # L11-03 — block secrets from being committed locally (cheap defense in depth
+    # before CI pipeline catches them). Skipped if gitleaks is not installed.
+    gitleaks:
+      run: |
+        if command -v gitleaks >/dev/null 2>&1; then
+          gitleaks protect --staged --config .gitleaks.toml --no-banner --redact
+        else
+          echo "gitleaks not installed — skipping local pre-commit scan."
+          echo "Install: https://github.com/gitleaks/gitleaks#installing"
+        fi

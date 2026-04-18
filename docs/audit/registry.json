@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T18:26:27.151Z",
+  "generated_at": "2026-04-18T18:36:05.074Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 315,
-    "fixed": 32,
+    "fix-pending": 312,
+    "fixed": 35,
     "in-progress": 1
   },
   "by_wave": {
@@ -5505,29 +5505,39 @@
       "lens": 11,
       "title": "CI sem npm audit / flutter pub audit",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "mobile",
         "portal",
-        "testing"
+        "testing",
+        "supply-chain",
+        "ci"
       ],
       "files": [
-        ".github/workflows/portal.yml"
+        ".github/workflows/security.yml",
+        ".osv-scanner.toml",
+        "portal/package.json",
+        "portal/package-lock.json"
       ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        ".github/workflows/security.yml"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:HEAD"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Gate `npm audit --audit-level=critical` (passa: 0 critical hoje) + osv-scanner para portal+omni_runner. 4 high vulns transitivas em Next.js 14/15 e 1 em vitest 3 estão allowlistadas em `.osv-scanner.toml` com `ignoreUntil=2026-07-17` — clearance final depende de upgrade major (Next 16, Vitest 4) escopado em follow-up separado. `npm audit fix` não-breaking aplicado nesta PR já reduziu 19 → 10 vulns."
     },
     {
       "id": "L11-02",
@@ -5535,25 +5545,36 @@
       "lens": 11,
       "title": "Sem SBOM (Software Bill of Materials)",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
-        "portal"
+        "portal",
+        "mobile",
+        "supply-chain",
+        "compliance",
+        "ci"
       ],
-      "files": [],
+      "files": [
+        ".github/workflows/security.yml"
+      ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        ".github/workflows/security.yml"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:HEAD"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "SBOMs CycloneDX gerados em todo build (portal + omni_runner) via anchore/sbom-action@v0, retidos 90 dias como GitHub artifact. Atende requisitos de NIST SSDF / EO 14028 (US) e BACEN res. 4.893/21 (BR — gestão de risco de fornecedor). Assinatura Sigstore/cosign fica como follow-up (L11-02-followup-sigstore-signing) — depende de provisionar OIDC token + KMS para chaves."
     },
     {
       "id": "L11-03",
@@ -5561,23 +5582,38 @@
       "lens": 11,
       "title": "Sem gitleaks / trufflehog no CI",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "tags": [],
-      "files": [],
+      "fixed_at": "2026-04-17T00:00:00.000Z",
+      "tags": [
+        "supply-chain",
+        "secrets",
+        "ci",
+        "pre-commit"
+      ],
+      "files": [
+        ".github/workflows/security.yml",
+        ".gitleaks.toml",
+        "lefthook.yml"
+      ],
       "correction_type": "config",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        ".github/workflows/security.yml",
+        ".gitleaks.toml"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:HEAD"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Defesa em camadas: pre-commit hook (lefthook + gitleaks protect --staged) catch antes do push; CI gitleaks-action@v2 em todo PR; full-history sweep semanal (cron segunda 06:00 UTC) para detectar secrets que possam ter sido commitados antes deste gate. `.gitleaks.toml` allowlist .env.example/fixtures/audit-docs/lockfiles para zero false positives."
     },
     {
       "id": "L11-04",

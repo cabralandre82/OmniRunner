@@ -15,7 +15,9 @@
     "test:e2e:ui": "playwright test --ui",
     "qa:e2e": "bash scripts/qa-full.sh",
     "qa:no-money": "bash scripts/qa-no-money.sh ../omni_runner/lib",
-    "postinstall": "node scripts/copy-swagger-ui.mjs"
+    "postinstall": "node scripts/copy-swagger-ui.mjs",
+    "security:audit": "npm audit --audit-level=critical",
+    "security:audit:report": "npm audit --audit-level=high"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.40.0",

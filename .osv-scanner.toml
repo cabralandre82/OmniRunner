@@ -1,0 +1,47 @@
+# osv-scanner config for Omni Runner — scans portal/package-lock.json + omni_runner/pubspec.lock
+# Docs: https://google.github.io/osv-scanner/configuration/
+#
+# Allowlist policy: ONLY ignore advisories that:
+#   1. Have an open follow-up finding (e.g. L11-01-followup-next16-upgrade)
+#   2. Have a documented justification (transitive dev-only, mitigated, etc)
+#   3. Have an `expires` date forcing re-evaluation
+#
+# Adding entries here REQUIRES a PR comment from a security reviewer (CODEOWNERS).
+
+[[IgnoredVulns]]
+# Next.js 14/15 — multiple high-severity advisories cleared in 16.x.
+# Follow-up: L11-01-followup-next16-upgrade (separately scoped — major bump
+# requires regression test of all routes, middleware, and Sentry/Vercel
+# integration). Until then we accept the risk because:
+#   - Image Optimizer: not exposed (we don't use remotePatterns).
+#   - HTTP smuggling/rewrites: behind Vercel edge which strips ambiguous headers.
+#   - Server Components DoS: rate-limited at app layer (L01-20).
+id = "GHSA-9g9p-9gw9-jx7f"
+ignoreUntil = 2026-07-17
+reason = "Next.js Image Optimizer DoS — remotePatterns not used. Tracked in L11-01-followup-next16-upgrade."
+
+[[IgnoredVulns]]
+id = "GHSA-h25m-26qc-wcjf"
+ignoreUntil = 2026-07-17
+reason = "Next.js HTTP request deserialization DoS — RSC mitigation. Tracked in L11-01-followup-next16-upgrade."
+
+[[IgnoredVulns]]
+id = "GHSA-ggv3-7p47-pfv8"
+ignoreUntil = 2026-07-17
+reason = "Next.js HTTP smuggling in rewrites — Vercel edge mitigates. Tracked in L11-01-followup-next16-upgrade."
+
+[[IgnoredVulns]]
+id = "GHSA-3x4c-7xq6-9pq8"
+ignoreUntil = 2026-07-17
+reason = "Next.js next/image cache growth — disk monitoring in place. Tracked in L11-01-followup-next16-upgrade."
+
+[[IgnoredVulns]]
+id = "GHSA-q4gf-8mx6-v5v3"
+ignoreUntil = 2026-07-17
+reason = "Next.js Server Components DoS — rate-limited via L01-20 fn_check_rate_limit. Tracked in L11-01-followup-next16-upgrade."
+
+[[IgnoredVulns]]
+# Vitest 3 → 4 (esbuild/vite chain). Dev dependency only — never shipped.
+id = "GHSA-67mh-4wv8-2f99"
+ignoreUntil = 2026-07-17
+reason = "esbuild dev server SSRF — vitest dev dep only, never reaches production bundle. Tracked in L11-01-followup-vitest4-upgrade."

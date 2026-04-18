@@ -1,0 +1,182 @@
+name: Security & Supply Chain
+
+# Onda 1 hardening (audit findings L11-01, L11-02, L11-03):
+#   - L11-01: dependency vulnerability scanning (npm audit + osv-scanner)
+#   - L11-02: SBOM generation (CycloneDX) for portal + omni_runner
+#   - L11-03: secret scanning (gitleaks) on every PR + full history weekly
+#
+# Gate calibration: builds FAIL on `critical` severity (current state: 0).
+# `high`/`moderate` are surfaced as workflow logs + uploaded reports for
+# triage but do NOT block the merge — pinning Next.js 16 / Vitest 4 to
+# clear the remaining 4 high-severity findings is tracked as L11-01-followup.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    # Weekly full-history secret sweep (catches secrets committed pre-gitleaks).
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────
+  # L11-01 — Dependency vulnerability scanning
+  # ─────────────────────────────────────────────────────────────────────
+  npm-audit:
+    name: npm audit (portal)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: portal
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: portal/package-lock.json
+      - run: npm ci
+
+      - name: npm audit (gate — fail on critical)
+        run: npm audit --audit-level=critical
+
+      - name: npm audit (informational — high+)
+        if: always()
+        continue-on-error: true
+        run: |
+          set +e
+          npm audit --audit-level=high --json > npm-audit-high.json
+          STATUS=$?
+          npm audit --audit-level=high || true
+          if [ $STATUS -ne 0 ]; then
+            echo "::warning title=npm audit::High-severity vulnerabilities detected (see L11-01-followup)"
+          fi
+          exit 0
+
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-portal
+          path: portal/npm-audit-high.json
+          retention-days: 30
+          if-no-files-found: ignore
+
+  osv-scanner:
+    name: osv-scanner (portal + flutter)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run osv-scanner (block on critical)
+        uses: google/osv-scanner-action/osv-scanner-action@v2.0.0
+        with:
+          scan-args: |-
+            --lockfile=portal/package-lock.json
+            --lockfile=omni_runner/pubspec.lock
+            --config=.osv-scanner.toml
+            --format=table
+        continue-on-error: false
+
+      - name: Upload osv-scanner SARIF
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: osv-scanner-results
+          path: results.sarif
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # ─────────────────────────────────────────────────────────────────────
+  # L11-02 — SBOM (Software Bill of Materials)
+  # CycloneDX format: NIST SSDF compliant, BACEN res. 4.893/21 ready.
+  # ─────────────────────────────────────────────────────────────────────
+  sbom-portal:
+    name: SBOM portal (CycloneDX)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: portal/package-lock.json
+      - run: npm ci
+        working-directory: portal
+
+      - name: Generate SBOM (CycloneDX)
+        uses: anchore/sbom-action@v0
+        with:
+          path: ./portal
+          format: cyclonedx-json
+          output-file: sbom-portal.cdx.json
+          artifact-name: sbom-portal.cdx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-portal
+          path: sbom-portal.cdx.json
+          retention-days: 90
+
+  sbom-flutter:
+    name: SBOM omni_runner (CycloneDX)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.x'
+          channel: 'stable'
+          cache: true
+      - run: flutter pub get
+        working-directory: omni_runner
+
+      - name: Generate SBOM (CycloneDX)
+        uses: anchore/sbom-action@v0
+        with:
+          path: ./omni_runner
+          format: cyclonedx-json
+          output-file: sbom-omni-runner.cdx.json
+          artifact-name: sbom-omni-runner.cdx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-omni-runner
+          path: sbom-omni-runner.cdx.json
+          retention-days: 90
+
+  # ─────────────────────────────────────────────────────────────────────
+  # L11-03 — Secret scanning (gitleaks)
+  # ─────────────────────────────────────────────────────────────────────
+  gitleaks:
+    name: gitleaks (secret scan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Need full history for scheduled weekly full sweep.
+          # PR runs only scan the diff via gitleaks-action's auto-detection.
+          fetch-depth: ${{ github.event_name == 'schedule' && 0 || 1 }}
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          # GITHUB_TOKEN is auto-provided; GITLEAKS_LICENSE only needed for
+          # private orgs > 25 users (we are 1 user, free tier covers us).
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+          # Fail the build if leaks found (default behavior).
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: true
+          GITLEAKS_ENABLE_SUMMARY: true

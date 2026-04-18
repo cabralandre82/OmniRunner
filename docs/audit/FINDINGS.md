@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 18:26:27 UTC.
+> Atualizado em 2026-04-18 18:36:05 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -193,9 +193,9 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L10-12](./findings/L10-12-csrf-no-portal-confiando-apenas-em-samesite-lax.md) | 2 | L10 · CSO | CSRF no portal confiando apenas em SameSite=Lax | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L10-13](./findings/L10-13-sem-dpi-device-posture-no-flutter.md) | 2 | L10 · CSO | Sem DPI (Device Posture) no Flutter | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L10-14](./findings/L10-14-jwts-sem-rotacao-de-refresh-token.md) | 2 | L10 · CSO | JWTs sem rotação de refresh_token | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L11-01](./findings/L11-01-ci-sem-npm-audit-flutter-pub-audit.md) | 1 | L11 · Supply Chain | CI sem npm audit / flutter pub audit | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L11-02](./findings/L11-02-sem-sbom-software-bill-of-materials.md) | 1 | L11 · Supply Chain | Sem SBOM (Software Bill of Materials) | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L11-03](./findings/L11-03-sem-gitleaks-trufflehog-no-ci.md) | 1 | L11 · Supply Chain | Sem gitleaks / trufflehog no CI | unassigned |
+| 🔴 critical | ✅ fixed | [L11-01](./findings/L11-01-ci-sem-npm-audit-flutter-pub-audit.md) | 1 | L11 · Supply Chain | CI sem npm audit / flutter pub audit | unassigned |
+| 🔴 critical | ✅ fixed | [L11-02](./findings/L11-02-sem-sbom-software-bill-of-materials.md) | 1 | L11 · Supply Chain | Sem SBOM (Software Bill of Materials) | unassigned |
+| 🔴 critical | ✅ fixed | [L11-03](./findings/L11-03-sem-gitleaks-trufflehog-no-ci.md) | 1 | L11 · Supply Chain | Sem gitleaks / trufflehog no CI | unassigned |
 | 🟠 high | ⏳ fix-pending | [L11-04](./findings/L11-04-dependabot-agrupa-todas-as-minor-patch-pr-monstro.md) | 1 | L11 · Supply Chain | Dependabot agrupa todas as minor+patch — PR monstro | unassigned |
 | 🟠 high | ⏳ fix-pending | [L11-05](./findings/L11-05-flutter-secure-storage-10-0-0-mas-release.md) | 1 | L11 · Supply Chain | flutter_secure_storage: ^10.0.0 mas release inclui shared_preferences | unassigned |
 | 🟠 high | ⏳ fix-pending | [L11-06](./findings/L11-06-dependencias-com-permitem-breaking-minor.md) | 1 | L11 · Supply Chain | Dependências com ^ permitem breaking minor | unassigned |

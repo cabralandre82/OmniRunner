@@ -1,0 +1,60 @@
+# gitleaks config for Omni Runner
+# Docs: https://github.com/gitleaks/gitleaks#configuration
+#
+# Strategy: extend the default ruleset (which covers AWS, GCP, Stripe, JWTs,
+# Supabase, Sentry, etc) and add allowlist entries for known false-positives
+# that exist in the codebase (sample env files, fixtures, OpenAPI docs).
+#
+# To bypass a single commit (rare): `git commit -m "..." --allow-empty-message`
+# is NOT enough — you must add a `gitleaks:allow` annotation on the line:
+#   const stripeKey = "sk_live_REDACTED" // gitleaks:allow
+
+title = "Omni Runner gitleaks config"
+
+# Use community-maintained baseline rules (covers ~150 secret patterns).
+[extend]
+useDefault = true
+
+# ─────────────────────────────────────────────────────────────────────
+# Project-specific allowlists
+# ─────────────────────────────────────────────────────────────────────
+[allowlist]
+description = "Global allowlist for known fixtures, sample envs, and audit docs."
+
+paths = [
+  '''(?i)\.env\.example$''',
+  '''(?i)\.env\.sample$''',
+  '''(?i)\.env\.template$''',
+  '''(?i)/fixtures/''',
+  '''(?i)/__fixtures__/''',
+  '''(?i)/test/.*fixtures''',
+  '''(?i)/tests?/.*fixtures''',
+  # Audit findings cite redacted real-world examples (e.g. "sk_live_REDACTED").
+  '''^docs/audit/''',
+  # Generated SBOMs may include component hashes that look like secrets.
+  '''.*\.sbom\.json$''',
+  '''.*\.cdx\.json$''',
+  # Lockfiles contain integrity hashes that shouldn't trigger secret rules.
+  '''package-lock\.json$''',
+  '''pubspec\.lock$''',
+  '''yarn\.lock$''',
+  '''pnpm-lock\.yaml$''',
+]
+
+regexes = [
+  # Supabase anon keys are PUBLIC by design (NEXT_PUBLIC_* prefix). Allow them
+  # in env.example files and docs only (paths above already restrict scope).
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[A-Za-z0-9._-]+''',
+  # OpenAPI/swagger example tokens (always Bearer xxx-PLACEHOLDER).
+  '''(?i)Bearer\s+(your-token|<your-token>|placeholder|example|sample|<token>|YOUR_TOKEN)''',
+]
+
+stopwords = [
+  "example",
+  "placeholder",
+  "redacted",
+  "your-key-here",
+  "fake",
+  "dummy",
+  "sample",
+]

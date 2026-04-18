@@ -1,7 +1,7 @@
 # ROADMAP — Execução das Correções em Ondas
 
 > **Atualizado:** 2026-04-17
-> **Status do overall:** Onda 0 ✅ concluída (15/15 fixed, E2E verde) — Onda 1 desbloqueada
+> **Status do overall:** Onda 0 ✅ concluída (15/15 fixed, E2E verde) — Onda 1 iniciada (3/177 fixed: supply chain trinca L11)
 
 A auditoria identificou **348 findings** distribuídos em **23 lentes** (69 🔴 critical, 123 🟠 high, 127 🟡 medium, 17 🟢 safe, 12 ⚪ não-auditados). Corrigir todos em paralelo seria caótico. Esta estratégia distribui o trabalho em **4 ondas** com objetivos bem definidos e critérios de saída mensuráveis.
 
@@ -63,8 +63,11 @@ Detalhes completos + correções em `docs/audit/findings/LXX-YY-*.md`.
 **Duração alvo:** 3-5 sprints
 **Foco:** fundação que acelera as correções das demais ondas. Inclui 54 criticals que não sangram dinheiro diretamente mas estabelecem padrões (observability, idempotência unificada, runbooks, OpenAPI, tracing).
 
+**Progresso atual:** 3/177 fixed (L11-01 + L11-02 + L11-03 — supply chain trinca: dep vuln scan, SBOM CycloneDX, gitleaks).
+
 ### Escopo
 
+- ✅ **Supply chain (L11-01/02/03)** — npm audit + osv-scanner gate, SBOMs CycloneDX, gitleaks pre-commit + CI + weekly sweep.
 - Testes de regressão para **todos** os fluxos financeiros (portal + edge)
 - Observabilidade: Sentry, estruturar `logger.error`, correlation IDs em todas rotas
 - LGPD: endpoints de exportação/deleção, consentimento versionado
