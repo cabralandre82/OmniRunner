@@ -26,7 +26,7 @@ tests:
   - tools/edge_function_smoke_tests.ts
 linked_issues: []
 linked_prs:
-  - "commit:HEAD"
+  - "commit:d5ce336"
 owner: backend-platform
 runbook: docs/runbooks/ASAAS_WEBHOOK_RUNBOOK.md
 effort_points: 3
