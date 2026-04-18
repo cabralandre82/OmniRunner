@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T11:25:50.037Z",
+  "generated_at": "2026-04-18T12:32:02.784Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 318,
-    "in-progress": 13,
+    "fix-pending": 317,
+    "in-progress": 14,
     "fixed": 17
   },
   "by_wave": {
@@ -2696,25 +2696,48 @@
       "lens": 4,
       "title": "Não há registro de consentimento (opt-in explícito LGPD Art. 8)",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "in-progress",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "lgpd",
         "integration",
         "mobile",
         "portal",
         "migration",
-        "ux"
+        "backend",
+        "edge-function",
+        "audit-log"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260417220000_lgpd_consent_management.sql",
+        "supabase/functions/consent-record/index.ts",
+        "supabase/config.toml",
+        "portal/src/app/api/consent/route.ts",
+        "tools/integration_tests.ts"
+      ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "integration/L04-03-consent-policy-seed",
+        "integration/L04-03-profiles-snapshot-cols",
+        "integration/L04-03-fn-consent-grant-happy-path",
+        "integration/L04-03-fn-consent-grant-version-too-old",
+        "integration/L04-03-fn-consent-grant-invalid-type",
+        "integration/L04-03-fn-consent-revoke-terms-blocked",
+        "integration/L04-03-marketing-grant-revoke-last-wins",
+        "integration/L04-03-has-required-athlete",
+        "integration/L04-03-status-returns-8-rows",
+        "integration/L04-03-status-cross-user-forbidden",
+        "integration/L04-03-append-only-update-blocked",
+        "integration/L04-03-anon-preserves-row-on-auth-delete",
+        "integration/L04-03-registered-in-lgpd-strategy"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "platform-privacy",
+      "runbook": "docs/audit/runbooks/L04-03-lgpd-consent-management.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,

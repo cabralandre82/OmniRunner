@@ -30,7 +30,7 @@ A auditoria identificou **348 findings** distribuídos em **23 lentes** (69 🔴
 | 1 | `L09-04` | 125 | fix-pending | Nota fiscal não emitida em withdrawals (regulatório fiscal) |
 | 2 | `L01-02` | 100 | 🟡 in-progress | FX rate client-supplied em `/api/custody/withdraw` (fraude direta) |
 | 3 | `L01-17` | 100 | 🟡 in-progress | Asaas API Key armazenada em texto puro |
-| 4 | `L04-03` | 100 | fix-pending | Sem registro de consentimento (LGPD Art. 8) |
+| 4 | `L04-03` | 100 | 🟡 in-progress | Sem registro de consentimento (LGPD Art. 8) |
 | 5 | `L04-01` | 80 | 🟡 in-progress | `fn_delete_user_data` incompleta (LGPD Art. 48) |
 | 6 | `L18-03` | 80 | 🟡 in-progress | SECURITY DEFINER sem SET search_path |
 | 7 | `L04-04` | 64 | fix-pending | Dados de saúde/biométricos sem proteção reforçada (LGPD Art. 11) |
@@ -43,7 +43,7 @@ A auditoria identificou **348 findings** distribuídos em **23 lentes** (69 🔴
 | 14 | `L14-03` | 45 | 🟡 in-progress | Swagger-UI carregado de unpkg sem SRI |
 | 15 | `L05-01` | 40* | 🟡 in-progress | Swap race entre accept/cancel (*override manual — double-spend direto) |
 
-**Progresso Onda 0:** 12/15 em `in-progress` (L02-01, L01-03, L01-44, L14-03, L02-02, L18-03, L19-05, L01-02, L05-01, L04-01, L19-01, L01-17) — **80%** do escopo rumo ao fixed.
+**Progresso Onda 0:** 13/15 em `in-progress` (L02-01, L01-03, L01-44, L14-03, L02-02, L18-03, L19-05, L01-02, L05-01, L04-01, L19-01, L01-17, L04-03) — **~87%** do escopo rumo ao fixed.
 
 Detalhes completos + correções em `docs/audit/findings/LXX-YY-*.md`.
 

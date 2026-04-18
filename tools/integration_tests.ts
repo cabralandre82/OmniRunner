@@ -1538,6 +1538,292 @@ async function testConstraints() {
     assert((count ?? 0) > 0, `L01-17: audit log vazio para GROUP_A (esperado entries dos testes anteriores)`);
   });
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // L04-03: LGPD consent management (consent_events + RPCs)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  await test("L04-03: consent_policy_versions seed has 8 canonical types", async () => {
+    const { data, error } = await db
+      .from("consent_policy_versions")
+      .select("consent_type, current_version, minimum_version, is_required");
+    assert(!error, `L04-03: select policy versions falhou: ${error?.message}`);
+    const rows = data ?? [];
+    const types = new Set(rows.map((r: any) => r.consent_type));
+    for (const t of [
+      "terms", "privacy", "health_data", "location_tracking",
+      "marketing", "third_party_strava", "third_party_trainingpeaks",
+      "coach_data_share",
+    ]) {
+      assert(types.has(t), `L04-03: policy '${t}' ausente do seed`);
+    }
+    const required = rows.filter((r: any) => r.is_required).length;
+    assert(required >= 4, `L04-03: esperado ≥4 policies required, got ${required}`);
+  });
+
+  await test("L04-03: profiles ganhou colunas de snapshot de consentimento", async () => {
+    // information_schema.columns nem sempre é exposto via PostgREST;
+    // valida via SELECT direto das colunas em ATHLETE_A1.
+    const { error } = await db
+      .from("profiles")
+      .select(
+        "id, terms_accepted_at, terms_version, privacy_accepted_at, " +
+        "privacy_version, health_data_consent_at, location_consent_at, marketing_consent_at",
+      )
+      .eq("id", ATHLETE_A1)
+      .maybeSingle();
+    assert(!error,
+      `L04-03: SELECT das colunas snapshot falhou (provável coluna ausente): ${error?.message}`);
+  });
+
+  await test("L04-03: fn_consent_grant registra evento e atualiza snapshot (authenticated)", async () => {
+    // Limpa qualquer estado prévio + garante profile (trigger handle_new_user pode faltar)
+    await db.from("consent_events").delete().eq("user_id", ATHLETE_A1);
+    await db.from("profiles").upsert(
+      { id: ATHLETE_A1, display_name: "L04-03 Test" },
+      { onConflict: "id" },
+    );
+
+    const client = await createUserClient(ATHLETE_A1);
+    const { data, error } = await client.rpc("fn_consent_grant", {
+      p_consent_type: "terms",
+      p_version: "1.0",
+      p_source: "portal",
+      p_ip: "192.0.2.42",
+      p_user_agent: "IntTest/L04-03",
+      p_request_id: `l0403-${Date.now()}`,
+    });
+    assert(!error, `L04-03: grant falhou: ${error?.message}`);
+    const row = (data as any) ?? {};
+    assert(row.event_id && row.action === "granted",
+      `L04-03: retorno inesperado: ${JSON.stringify(row)}`);
+
+    // Evento está em consent_events
+    const { data: events, error: selErr } = await db
+      .from("consent_events")
+      .select("consent_type, action, version, source, ip_address")
+      .eq("user_id", ATHLETE_A1)
+      .eq("consent_type", "terms");
+    assert(!selErr, `L04-03: select events falhou: ${selErr?.message}`);
+    assert((events ?? []).length === 1, `L04-03: esperado 1 evento terms, got ${(events ?? []).length}`);
+    assert((events as any[])[0].action === "granted", "L04-03: evento deveria ter action=granted");
+
+    // Snapshot em profiles populado
+    const { data: prof, error: profErr } = await db
+      .from("profiles")
+      .select("terms_accepted_at, terms_version")
+      .eq("id", ATHLETE_A1)
+      .single();
+    assert(!profErr, `L04-03: select profile falhou: ${profErr?.message}`);
+    assert(!!(prof as any)?.terms_accepted_at,
+      `L04-03: profiles.terms_accepted_at não foi populado pelo grant`);
+    assert((prof as any)?.terms_version === "1.0",
+      `L04-03: profiles.terms_version esperado '1.0', got '${(prof as any)?.terms_version}'`);
+  });
+
+  await test("L04-03: fn_consent_grant rejeita version abaixo de minimum_version", async () => {
+    const client = await createUserClient(ATHLETE_A1);
+    const { error } = await client.rpc("fn_consent_grant", {
+      p_consent_type: "terms",
+      p_version: "0.9",
+      p_source: "portal",
+    });
+    assert(error !== null, "L04-03: deveria rejeitar version=0.9");
+    assert(
+      /VERSION_TOO_OLD/i.test(error!.message),
+      `L04-03: esperado VERSION_TOO_OLD, got: ${error!.message}`,
+    );
+  });
+
+  await test("L04-03: fn_consent_grant rejeita consent_type inválido", async () => {
+    const client = await createUserClient(ATHLETE_A1);
+    const { error } = await client.rpc("fn_consent_grant", {
+      p_consent_type: "bogus_type",
+      p_version: "1.0",
+      p_source: "portal",
+    });
+    assert(error !== null, "L04-03: deveria rejeitar consent_type inválido");
+    assert(
+      /INVALID_CONSENT_TYPE|check constraint/i.test(error!.message),
+      `L04-03: esperado INVALID_CONSENT_TYPE, got: ${error!.message}`,
+    );
+  });
+
+  await test("L04-03: fn_consent_revoke bloqueia terms (NOT_REVOCABLE_STANDALONE)", async () => {
+    const client = await createUserClient(ATHLETE_A1);
+    const { error } = await client.rpc("fn_consent_revoke", {
+      p_consent_type: "terms",
+      p_source: "portal",
+    });
+    assert(error !== null, "L04-03: terms revoke deveria falhar");
+    assert(
+      /NOT_REVOCABLE_STANDALONE/i.test(error!.message),
+      `L04-03: esperado NOT_REVOCABLE_STANDALONE, got: ${error!.message}`,
+    );
+  });
+
+  await test("L04-03: grant + revoke marketing — último estado = revoked", async () => {
+    const client = await createUserClient(ATHLETE_A1);
+    await client.rpc("fn_consent_grant", {
+      p_consent_type: "marketing",
+      p_version: "1.0",
+      p_source: "portal",
+    });
+    const { error: revErr } = await client.rpc("fn_consent_revoke", {
+      p_consent_type: "marketing",
+      p_source: "portal",
+    });
+    assert(!revErr, `L04-03: revoke marketing falhou: ${revErr?.message}`);
+
+    const { data } = await db
+      .from("v_user_consent_status")
+      .select("action, is_valid")
+      .eq("user_id", ATHLETE_A1)
+      .eq("consent_type", "marketing")
+      .single();
+    assert((data as any)?.action === "revoked",
+      `L04-03: último estado esperado revoked, got '${(data as any)?.action}'`);
+    assert((data as any)?.is_valid === false,
+      `L04-03: is_valid deveria ser false após revoke`);
+  });
+
+  await test("L04-03: fn_consent_has_required = false para atleta sem health_data/location", async () => {
+    // Limpa tudo para começar do zero
+    await db.from("consent_events").delete().eq("user_id", ATHLETE_A2);
+
+    const client = await createUserClient(ATHLETE_A2);
+    // Grant apenas terms+privacy
+    await client.rpc("fn_consent_grant", { p_consent_type: "terms", p_version: "1.0", p_source: "portal" });
+    await client.rpc("fn_consent_grant", { p_consent_type: "privacy", p_version: "1.0", p_source: "portal" });
+
+    const { data, error } = await client.rpc("fn_consent_has_required", { p_role: "athlete" });
+    assert(!error, `L04-03: has_required falhou: ${error?.message}`);
+    assert(data === false,
+      `L04-03: atleta sem health/location deveria ter has_required=false, got ${data}`);
+
+    // Agora grant dos required atleta-specific
+    await client.rpc("fn_consent_grant", { p_consent_type: "health_data", p_version: "1.0", p_source: "portal" });
+    await client.rpc("fn_consent_grant", { p_consent_type: "location_tracking", p_version: "1.0", p_source: "portal" });
+    const { data: d2 } = await client.rpc("fn_consent_has_required", { p_role: "athlete" });
+    assert(d2 === true, `L04-03: após grant completo, has_required=true esperado, got ${d2}`);
+  });
+
+  await test("L04-03: fn_consent_status retorna 8 linhas (uma por policy)", async () => {
+    const client = await createUserClient(ATHLETE_A1);
+    const { data, error } = await client.rpc("fn_consent_status");
+    assert(!error, `L04-03: status falhou: ${error?.message}`);
+    assert(Array.isArray(data), "L04-03: status deveria retornar array");
+    assert((data as any[]).length === 8,
+      `L04-03: esperado 8 linhas, got ${(data as any[]).length}`);
+  });
+
+  await test("L04-03: fn_consent_status proíbe ler consent de outro usuário", async () => {
+    const client = await createUserClient(ATHLETE_A1);
+    const { error } = await client.rpc("fn_consent_status", { p_user_id: ATHLETE_A2 });
+    assert(error !== null, "L04-03: deveria bloquear leitura cross-user");
+    assert(
+      /FORBIDDEN/i.test(error!.message),
+      `L04-03: esperado FORBIDDEN, got: ${error!.message}`,
+    );
+  });
+
+  await test("L04-03: consent_events é append-only (UPDATE bloqueado)", async () => {
+    // Pega um evento existente
+    const { data: evts } = await db
+      .from("consent_events")
+      .select("id, action")
+      .eq("user_id", ATHLETE_A1)
+      .limit(1);
+    assert((evts ?? []).length > 0, "L04-03: precisa de pelo menos 1 evento para testar");
+    const evt = (evts as any[])[0];
+    const { error } = await db
+      .from("consent_events")
+      .update({ action: evt.action === "granted" ? "revoked" : "granted" })
+      .eq("id", evt.id);
+    assert(error !== null, "L04-03: UPDATE deveria falhar (append-only)");
+    assert(
+      /CONSENT_APPEND_ONLY/i.test(error!.message),
+      `L04-03: esperado CONSENT_APPEND_ONLY, got: ${error!.message}`,
+    );
+  });
+
+  await test("L04-03: auth.users DELETE preserva consent_events anonimizado (Art. 16 + 18 VI)", async () => {
+    const tempUid = "77777777-0403-0403-0403-000000000003";
+    // createUserClient() expects email format `inttest-${uid.slice(0,8)}@test.local`
+    const tempEmail = `inttest-${tempUid.slice(0, 8)}@test.local`;
+    const rid = `l0403-scrub-${Date.now()}`;
+
+    // Pré-limpeza defensiva
+    await db.auth.admin.deleteUser(tempUid).catch(() => { /* ignore */ });
+    await db.from("consent_events").delete().eq("request_id", rid);
+
+    const { error: cErr } = await db.auth.admin.createUser({
+      id: tempUid, email: tempEmail, password: TEST_PASSWORD, email_confirm: true,
+    });
+    assert(!cErr, `L04-03: createUser falhou: ${cErr?.message}`);
+
+    try {
+      const client = await createUserClient(tempUid);
+      const { error: grantErr } = await client.rpc("fn_consent_grant", {
+        p_consent_type: "terms",
+        p_version: "1.0",
+        p_source: "portal",
+        p_ip: "198.51.100.42",
+        p_user_agent: "UA-scrub-test",
+        p_request_id: rid,
+      });
+      assert(!grantErr, `L04-03: grant (scrub) falhou: ${grantErr?.message}`);
+
+      // Antes: row existe com user_id = tempUid, ip + UA preenchidos
+      const { data: pre } = await db
+        .from("consent_events")
+        .select("user_id, ip_address, user_agent")
+        .eq("request_id", rid)
+        .single();
+      assert((pre as any)?.user_id === tempUid,
+        `L04-03: pre-delete user_id esperado ${tempUid}, got ${(pre as any)?.user_id}`);
+      assert(!!(pre as any)?.ip_address, "L04-03: ip_address deveria estar preenchido");
+
+      // DELETE auth user → FK SET DEFAULT + trigger zera PII
+      const { error: delErr } = await db.auth.admin.deleteUser(tempUid);
+      assert(!delErr, `L04-03: auth.admin.deleteUser falhou: ${delErr?.message}`);
+
+      // Depois: row persiste, user_id=zero, ip/ua=NULL
+      const { data: post, error: postErr } = await db
+        .from("consent_events")
+        .select("user_id, ip_address, user_agent, consent_type, action")
+        .eq("request_id", rid)
+        .single();
+      assert(!postErr, `L04-03: select pós-delete falhou: ${postErr?.message}`);
+      assert(!!post, "L04-03: row deveria ter sido PRESERVADA (anon), não deletada");
+      assert((post as any).user_id === "00000000-0000-0000-0000-000000000000",
+        `L04-03: user_id esperado zero UUID, got ${(post as any).user_id}`);
+      assert((post as any).ip_address === null,
+        `L04-03: ip_address deveria ser NULL após anon, got ${(post as any).ip_address}`);
+      assert((post as any).user_agent === null,
+        `L04-03: user_agent deveria ser NULL após anon, got ${(post as any).user_agent}`);
+      assert((post as any).consent_type === "terms" && (post as any).action === "granted",
+        `L04-03: consent_type/action deveriam permanecer imutáveis`);
+
+      // Cleanup final do row anonimizado (já que foi criado só para o teste)
+      await db.from("consent_events").delete().eq("request_id", rid);
+    } finally {
+      await db.auth.admin.deleteUser(tempUid).catch(() => { /* ignore */ });
+      await db.from("consent_events").delete().eq("request_id", rid);
+    }
+  });
+
+  await test("L04-03: consent_events.user_id registrado em lgpd_deletion_strategy", async () => {
+    const { data, error } = await db
+      .from("lgpd_deletion_strategy")
+      .select("strategy")
+      .eq("table_name", "consent_events")
+      .eq("column_name", "user_id")
+      .maybeSingle();
+    assert(!error, `L04-03: select strategy falhou: ${error?.message}`);
+    assert((data as any)?.strategy === "anonymize",
+      `L04-03: strategy esperado 'anonymize', got '${(data as any)?.strategy}'`);
+  });
+
   // 3.20 L05-01: cancel_swap_order happy path retorna previous_status + new_status
   await test("L05-01: cancel_swap_order returns previous_status + new_status on success", async () => {
     const orderId = "a5a5a5a5-0000-4000-8000-000000000502";
@@ -1911,6 +2197,21 @@ async function testIdempotency() {
 
 async function cleanup() {
   section("Cleanup");
+
+  // L04-03: remove consent_events dos test users antes do auth.admin.deleteUser
+  // (CASCADE da FK anonimiza, mas queremos limpar anon rows do run também).
+  await db
+    .from("consent_events")
+    .delete()
+    .in("user_id", ALL_USER_IDS)
+    .then(() => void 0, () => void 0);
+  // E também as rows anonimizadas de testes anteriores deste run
+  await db
+    .from("consent_events")
+    .delete()
+    .eq("user_id", "00000000-0000-0000-0000-000000000000")
+    .like("request_id", "l0403-%")
+    .then(() => void 0, () => void 0);
 
   // Delete in dependency order (children first)
   const deletions: [string, string, any[]][] = [
