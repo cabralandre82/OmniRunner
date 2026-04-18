@@ -11,14 +11,30 @@ import {
 } from "@/lib/custody";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
+import {
+  getAuthoritativeFxQuote,
+  FxQuoteError,
+  FxQuoteMissingError,
+  FxQuoteStaleError,
+} from "@/lib/fx/quote";
 import { z } from "zod";
 
-const withdrawSchema = z.object({
-  amount_usd: z.number().min(1).max(1_000_000),
-  target_currency: z.enum(["BRL", "EUR", "GBP"]).default("BRL"),
-  fx_rate: z.number().positive(),
-  provider_fee_usd: z.number().min(0).optional(),
-});
+/**
+ * L01-02 — fx_rate removido do body.
+ *
+ * O rate é buscado server-side em `public.platform_fx_quotes` via
+ * `getAuthoritativeFxQuote()`. Aceitar fx_rate do cliente permitia a um
+ * admin_master malicioso inflar artificialmente o payout local (ex: BRL=10 em
+ * vez de 5.25 → payout 2× em BRL). Schema `.strict()` rejeita campos
+ * desconhecidos com 400 para defesa em profundidade.
+ */
+const withdrawSchema = z
+  .object({
+    amount_usd: z.number().min(1).max(1_000_000),
+    target_currency: z.enum(["BRL", "EUR", "GBP"]).default("BRL"),
+    provider_fee_usd: z.number().min(0).optional(),
+  })
+  .strict();
 
 async function requireAdminMaster() {
   const supabase = createClient();
@@ -85,6 +101,41 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // L01-02: fetch do rate é SEMPRE server-side. Falha fechada (503) se
+  // não houver cotação ativa ou estiver stale — o operador precisa refrescar.
+  let fxQuote;
+  try {
+    fxQuote = await getAuthoritativeFxQuote(parsed.data.target_currency);
+  } catch (err) {
+    if (err instanceof FxQuoteStaleError) {
+      return NextResponse.json(
+        {
+          error: "FX quote stale",
+          detail: "Cotação expirada; platform_admin deve refrescar em /platform/fx.",
+          code: err.code,
+        },
+        { status: 503 },
+      );
+    }
+    if (err instanceof FxQuoteMissingError) {
+      return NextResponse.json(
+        {
+          error: "FX quote missing",
+          detail: "Moeda sem cotação ativa; contate platform_admin.",
+          code: err.code,
+        },
+        { status: 503 },
+      );
+    }
+    if (err instanceof FxQuoteError) {
+      return NextResponse.json(
+        { error: "FX quote unavailable", code: err.code },
+        { status: 503 },
+      );
+    }
+    throw err;
+  }
+
   const spreadPct = await getFxSpreadRate();
 
   try {
@@ -92,7 +143,7 @@ export async function POST(req: NextRequest) {
       groupId: auth.groupId,
       amountUsd: parsed.data.amount_usd,
       targetCurrency: parsed.data.target_currency,
-      fxRate: parsed.data.fx_rate,
+      fxRate: fxQuote.rate,
       spreadPct,
       providerFeeUsd: parsed.data.provider_fee_usd,
     });
@@ -111,7 +162,9 @@ export async function POST(req: NextRequest) {
       metadata: {
         amount_usd: parsed.data.amount_usd,
         target_currency: parsed.data.target_currency,
-        fx_rate: parsed.data.fx_rate,
+        fx_rate: fxQuote.rate,
+        fx_source: fxQuote.source,
+        fx_age_seconds: fxQuote.ageSeconds,
         spread_pct: spreadPct,
         net_local: withdrawal.net_local_amount,
       },

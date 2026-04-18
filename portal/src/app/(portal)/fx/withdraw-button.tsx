@@ -1,22 +1,67 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+/**
+ * L01-02 — O formulário NÃO aceita mais fx_rate do usuário. O rate é buscado
+ * server-side em `platform_fx_quotes` via GET /api/custody/fx-quote e exibido
+ * apenas como informação (read-only). Previne fraude de admin_master malicioso
+ * inflando rate no POST.
+ */
+
+interface FxQuoteDisplay {
+  rate: number;
+  source: string;
+  fetched_at: string;
+  age_seconds: number;
+}
 
 export function WithdrawButton({ available }: { available: number }) {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
-  const [fxRate, setFxRate] = useState("");
-  const [currency, setCurrency] = useState("BRL");
+  const [currency, setCurrency] = useState<"BRL" | "EUR" | "GBP">("BRL");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const [quote, setQuote] = useState<FxQuoteDisplay | null>(null);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    async function load() {
+      setQuoteLoading(true);
+      setQuoteError(null);
+      try {
+        const res = await fetch(`/api/custody/fx-quote?currency=${currency}`);
+        const data = await res.json();
+        if (!res.ok) {
+          if (active) {
+            setQuote(null);
+            setQuoteError(data.detail ?? data.error ?? "Cotação indisponível");
+          }
+          return;
+        }
+        if (active) setQuote(data as FxQuoteDisplay);
+      } catch {
+        if (active) setQuoteError("Falha ao buscar cotação");
+      } finally {
+        if (active) setQuoteLoading(false);
+      }
+    }
+    load();
+    return () => {
+      active = false;
+    };
+  }, [open, currency]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
     const amountNum = parseFloat(amount);
-    const rateNum = parseFloat(fxRate);
 
     if (!amountNum || amountNum <= 0) {
       setError("Valor deve ser positivo");
@@ -26,8 +71,8 @@ export function WithdrawButton({ available }: { available: number }) {
       setError(`Valor excede disponivel (${available.toFixed(2)})`);
       return;
     }
-    if (!rateNum || rateNum <= 0) {
-      setError("Cotacao deve ser positiva");
+    if (!quote) {
+      setError("Cotação indisponível. Solicite ao platform_admin refrescar.");
       return;
     }
 
@@ -39,13 +84,12 @@ export function WithdrawButton({ available }: { available: number }) {
         body: JSON.stringify({
           amount_usd: amountNum,
           target_currency: currency,
-          fx_rate: rateNum,
         }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error ?? "Erro ao processar retirada");
+        setError(data.detail ?? data.error ?? "Erro ao processar retirada");
         return;
       }
 
@@ -78,8 +122,22 @@ export function WithdrawButton({ available }: { available: number }) {
     );
   }
 
+  const quoteAgeLabel =
+    quote && quote.age_seconds != null
+      ? quote.age_seconds < 60
+        ? `${quote.age_seconds}s atrás`
+        : quote.age_seconds < 3600
+          ? `${Math.floor(quote.age_seconds / 60)} min atrás`
+          : `${Math.floor(quote.age_seconds / 3600)}h atrás`
+      : null;
+
+  const estimatedLocal =
+    quote && amount
+      ? (parseFloat(amount) || 0) * quote.rate
+      : null;
+
   return (
-    <form onSubmit={handleSubmit} className="flex items-end gap-3">
+    <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
       <div>
         <label className="block text-xs font-medium text-content-secondary">Valor (USD)</label>
         <input
@@ -94,22 +152,10 @@ export function WithdrawButton({ available }: { available: number }) {
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-content-secondary">Cotacao ({currency}/USD)</label>
-        <input
-          type="number"
-          step="0.0001"
-          min="0.01"
-          value={fxRate}
-          onChange={(e) => setFxRate(e.target.value)}
-          className="mt-1 w-28 rounded-lg border border-border px-3 py-2 text-sm"
-          placeholder="5.2500"
-        />
-      </div>
-      <div>
         <label className="block text-xs font-medium text-content-secondary">Moeda</label>
         <select
           value={currency}
-          onChange={(e) => setCurrency(e.target.value)}
+          onChange={(e) => setCurrency(e.target.value as "BRL" | "EUR" | "GBP")}
           className="mt-1 rounded-lg border border-border px-3 py-2 text-sm"
         >
           <option value="BRL">BRL</option>
@@ -117,9 +163,38 @@ export function WithdrawButton({ available }: { available: number }) {
           <option value="GBP">GBP</option>
         </select>
       </div>
+      <div className="min-w-[10rem]">
+        <label className="block text-xs font-medium text-content-secondary">
+          Cotação oficial ({currency}/USD)
+        </label>
+        <div className="mt-1 rounded-lg border border-border bg-surface-elevated px-3 py-2 text-sm">
+          {quoteLoading && <span className="text-content-muted">Buscando...</span>}
+          {quote && (
+            <>
+              <span className="font-mono text-content-primary">{quote.rate.toFixed(4)}</span>
+              <span className="ml-2 text-xs text-content-muted">
+                {quote.source}
+                {quoteAgeLabel ? ` · ${quoteAgeLabel}` : ""}
+              </span>
+            </>
+          )}
+          {quoteError && <span className="text-xs text-error">{quoteError}</span>}
+        </div>
+      </div>
+      {estimatedLocal != null && estimatedLocal > 0 && (
+        <div>
+          <label className="block text-xs font-medium text-content-secondary">
+            Estimativa bruta
+          </label>
+          <div className="mt-1 rounded-lg border border-border bg-surface-elevated px-3 py-2 text-sm text-content-secondary">
+            ~{estimatedLocal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}
+            <span className="ml-1 text-xs text-content-muted">(sem spread)</span>
+          </div>
+        </div>
+      )}
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || !quote}
         className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50"
       >
         {loading ? "..." : "Confirmar"}
@@ -131,7 +206,7 @@ export function WithdrawButton({ available }: { available: number }) {
       >
         Cancelar
       </button>
-      {error && <p className="text-sm text-error">{error}</p>}
+      {error && <p className="w-full text-sm text-error">{error}</p>}
     </form>
   );
 }

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T03:20:38.282Z",
+  "generated_at": "2026-04-18T09:55:14.293Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 323,
-    "in-progress": 8,
+    "fix-pending": 322,
+    "in-progress": 9,
     "fixed": 17
   },
   "by_wave": {
@@ -87,26 +87,35 @@
       "lens": 1,
       "title": "POST /api/custody/withdraw — Criação e execução de saque em um único request",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "in-progress",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "anti-cheat",
-        "mobile",
         "portal",
-        "testing",
-        "reliability"
+        "security",
+        "custody",
+        "fx"
       ],
       "files": [
-        "portal/src/app/api/custody/withdraw/route.ts",
-        "portal/src/lib/custody.ts",
+        "supabase/migrations/20260417170000_platform_fx_quotes.sql",
         "portal/src/lib/fx/quote.ts",
-        "portal/e2e/business-flow-financial.spec.ts"
+        "portal/src/lib/fx/quote.test.ts",
+        "portal/src/app/api/custody/withdraw/route.ts",
+        "portal/src/app/api/custody/withdraw/route.test.ts",
+        "portal/src/app/api/custody/fx-quote/route.ts",
+        "portal/src/app/api/custody/fx-quote/route.test.ts",
+        "portal/src/app/(portal)/fx/withdraw-button.tsx"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/fx/quote.test.ts",
+        "portal/src/app/api/custody/withdraw/route.test.ts",
+        "portal/src/app/api/custody/fx-quote/route.test.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "unassigned",
@@ -115,7 +124,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Core anti-fraud fix entregue. Follow-ups em wave-1: (a) 2-phase approval (platform_admin independente do admin_master), (b) limite diário por grupo em platform_fee_config, (c) refresh automático de platform_fx_quotes via cron PTAX/ECB."
     },
     {
       "id": "L01-03",

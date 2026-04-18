@@ -860,6 +860,64 @@ async function testConstraints() {
       );
     }
   });
+
+  // 3.13 L01-02: platform_fx_quotes existe e tem seed inicial para 3 moedas
+  await test("L01-02: platform_fx_quotes has active seed for BRL/EUR/GBP", async () => {
+    const { data, error } = await db
+      .from("platform_fx_quotes")
+      .select("currency_code, rate_per_usd, is_active, source")
+      .eq("is_active", true)
+      .order("currency_code");
+
+    assert(!error, `platform_fx_quotes not queryable: ${error?.message}`);
+    const rows = data ?? [];
+    const active = new Map<string, number>(
+      rows.map((r: { currency_code: string; rate_per_usd: number }) => [
+        r.currency_code,
+        Number(r.rate_per_usd),
+      ]),
+    );
+    for (const c of ["BRL", "EUR", "GBP"]) {
+      assert(active.has(c), `L01-02: sem cotação ativa para ${c} (seed faltando ou removido)`);
+      const rate = active.get(c) ?? 0;
+      assert(rate > 0 && Number.isFinite(rate), `L01-02: rate inválido para ${c}: ${rate}`);
+    }
+  });
+
+  // 3.14 L01-02: get_latest_fx_quote RPC retorna shape esperado
+  await test("L01-02: get_latest_fx_quote RPC returns rate + age_seconds", async () => {
+    const { data, error } = await db.rpc("get_latest_fx_quote", { p_currency: "BRL" });
+    assert(!error, `RPC failed: ${error?.message}`);
+    const row = Array.isArray(data) ? data[0] : data;
+    assert(row, "RPC deve retornar uma linha para BRL");
+    assert(typeof Number(row.rate_per_usd) === "number", "rate_per_usd ausente");
+    assert(row.source != null, "source ausente");
+    assert(row.fetched_at != null, "fetched_at ausente");
+    assert(Number.isInteger(Number(row.age_seconds)), "age_seconds deve ser inteiro");
+    assert(Number(row.age_seconds) >= 0, "age_seconds não pode ser negativo");
+  });
+
+  // 3.15 L01-02: bounds CHECK rejeita rates absurdos
+  await test("L01-02: fx_rate_reasonable_bounds rejects absurd rates", async () => {
+    const { error } = await db
+      .from("platform_fx_quotes")
+      .insert({ currency_code: "BRL", rate_per_usd: 99999.0, is_active: false, source: "manual" });
+    assert(
+      error && /check|bounds|constraint/i.test(error.message),
+      `L01-02: CHECK bounds deveria rejeitar rate BRL=99999, mas erro foi: ${error?.message ?? "nenhum"}`,
+    );
+  });
+
+  // 3.16 L01-02: UNIQUE parcial previne 2 cotações ativas para mesma moeda
+  await test("L01-02: partial UNIQUE index prevents 2 active quotes for same currency", async () => {
+    const { error } = await db
+      .from("platform_fx_quotes")
+      .insert({ currency_code: "BRL", rate_per_usd: 5.30, is_active: true, source: "manual" });
+    assert(
+      error && /duplicate key|unique|conflict/i.test(error.message),
+      `L01-02: UNIQUE parcial deveria rejeitar 2ª cotação ativa BRL, mas erro foi: ${error?.message ?? "nenhum"}`,
+    );
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

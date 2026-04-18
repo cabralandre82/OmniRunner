@@ -28,7 +28,7 @@ A auditoria identificou **348 findings** distribuídos em **23 lentes** (69 🔴
 | Pri | ID | Score | Status | Título |
 |---|---|---|---|---|
 | 1 | `L09-04` | 125 | fix-pending | Nota fiscal não emitida em withdrawals (regulatório fiscal) |
-| 2 | `L01-02` | 100 | fix-pending | FX rate client-supplied em `/api/custody/withdraw` (fraude direta) |
+| 2 | `L01-02` | 100 | 🟡 in-progress | FX rate client-supplied em `/api/custody/withdraw` (fraude direta) |
 | 3 | `L01-17` | 100 | fix-pending | Asaas API Key armazenada em texto puro |
 | 4 | `L04-03` | 100 | fix-pending | Sem registro de consentimento (LGPD Art. 8) |
 | 5 | `L04-01` | 80 | fix-pending | `fn_delete_user_data` incompleta (LGPD Art. 48) |
@@ -43,7 +43,7 @@ A auditoria identificou **348 findings** distribuídos em **23 lentes** (69 🔴
 | 14 | `L14-03` | 45 | 🟡 in-progress | Swagger-UI carregado de unpkg sem SRI |
 | 15 | `L05-01` | 40* | fix-pending | Swap race entre accept/cancel (*override manual — double-spend direto) |
 
-**Progresso Onda 0:** 7/15 em `in-progress` (L02-01, L01-03, L01-44, L14-03, L02-02, L18-03, L19-05) — ~47% do escopo rumo ao fixed.
+**Progresso Onda 0:** 8/15 em `in-progress` (L02-01, L01-03, L01-44, L14-03, L02-02, L18-03, L19-05, L01-02) — ~53% do escopo rumo ao fixed.
 
 Detalhes completos + correções em `docs/audit/findings/LXX-YY-*.md`.
 
@@ -163,4 +163,5 @@ Os seguintes findings já têm **correção proposta + testes de regressão + SQ
 - `L02-02` — `execute_burn_atomic` hardenizado (custody re-raise, settle log-and-continue + `clearing_failure_log`)
 - `L18-03` — 26 SECURITY DEFINER em `public` hardenizadas com `SET search_path` + invariante bloqueadora
 - `L19-05` — 9 RPCs financeiras com `SET lock_timeout = '2s'` + portal 55P03 → 503 retry-after
+- `L01-02` — FX rate server-side authoritative via `platform_fx_quotes` + `.strict()` schema + endpoint read-only para UI
 - Gradualmente, conforme o time converter outros findings da Onda 0 em PRs, estes também ganharão detalhamento similar.
