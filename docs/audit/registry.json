@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T18:54:36.765Z",
+  "generated_at": "2026-04-18T19:04:26.998Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 306,
-    "fixed": 41,
+    "fix-pending": 305,
+    "fixed": 42,
     "in-progress": 1
   },
   "by_wave": {
@@ -3693,9 +3693,10 @@
       "lens": 6,
       "title": "Zero runbook financeiro — custódia, clearing, swap, withdraw",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "webhook",
@@ -3703,19 +3704,31 @@
         "observability",
         "reliability"
       ],
-      "files": [],
+      "files": [
+        "docs/runbooks/README.md",
+        "docs/runbooks/CUSTODY_INCIDENT_RUNBOOK.md",
+        "docs/runbooks/CLEARING_STUCK_RUNBOOK.md",
+        "docs/runbooks/WITHDRAW_STUCK_RUNBOOK.md",
+        "docs/runbooks/CHARGEBACK_RUNBOOK.md",
+        "docs/runbooks/GATEWAY_OUTAGE_RUNBOOK.md",
+        "docs/runbooks/WEBHOOK_BACKLOG_RUNBOOK.md"
+      ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "docs/runbooks/README.md"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:HEAD"
+      ],
       "owner": "unassigned",
-      "runbook": null,
+      "runbook": "docs/runbooks/README.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Criados os 6 runbooks operacionais financeiros que faltavam, todos em\n`docs/runbooks/`:\n- **CUSTODY_INCIDENT_RUNBOOK** — invariant violations (SEV-0): kill\n  switch, diagnóstico (4 SQL queries), 3 cenários de remediação\n  (committed_negative, deposited_less_than_committed, committed_mismatch),\n  validação e postmortem mandatório.\n- **CLEARING_STUCK_RUNBOOK** — settlements > 24h pending: 3 cenários\n  (devedor com saldo, sem saldo, bug em settle), reuso de\n  `clearing_failure_log` e métricas p50/p95.\n- **WITHDRAW_STUCK_RUNBOOK** — processing > 48h: 4 cenários (webhook\n  perdido, provider processando, banco rejeitou, nunca chegou ao\n  gateway), com SQL transacional para reverter saldo + estorno fx_spread.\n- **CHARGEBACK_RUNBOOK** — Asaas/Stripe dispute: contestar vs aceitar,\n  burn de coins emitidas, registro de loss em platform_revenue, rate\n  monitoring para evitar sanções do gateway (> 1%).\n- **GATEWAY_OUTAGE_RUNBOOK** — Asaas/Stripe down: kill switch, banner\n  público, pause crons, drenagem pós-recovery, smoke test. Inclui\n  referência rápida para status pages e API health endpoints.\n- **WEBHOOK_BACKLOG_RUNBOOK** — payment_webhook_events stuck: drenagem\n  em batches com `FOR UPDATE SKIP LOCKED`, quarentena de duplicatas,\n  replay individual.\n\nCada runbook segue estrutura: trigger, diagnóstico (≤ 15min), remediação\npor cenário, validação, comunicação, postmortem. Referenciado pelo\níndice em `docs/runbooks/README.md` que classifica por severidade,\ntrigger e tempo alvo. Cada runbook cita SQL real (function names,\ntabelas, colunas) baseado nas migrations atuais.\n\nFollow-ups identificados:\n- Tabela `feature_flags` (citada em vários runbooks) está pendente\n  em **L06-06** — runbooks descrevem alternativa via env var Vercel\n  enquanto isso.\n- Script `tools/replay-webhook-events.sh` mencionado no\n  `WEBHOOK_BACKLOG_RUNBOOK#3.3` ainda precisa ser criado — backlog.\n- `docs/audit/runbooks/L01-17-asaas-vault-rotation.md` continua na\n  pasta finding-specific (correto). Outros findings podem migrar\n  para `docs/runbooks/` se virarem operacionais transversais.\n- Drills trimestrais documentados no README — primeiro ciclo deve\n  rodar 2026-Q3.\n"
     },
     {
       "id": "L06-02",
