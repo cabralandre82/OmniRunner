@@ -4,24 +4,40 @@ audit_ref: "14.4"
 lens: 14
 title: "Rate-limit por IP em swap/custody vs por user/group"
 severity: high
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
 tags: ["rate-limit", "mobile", "portal"]
 files:
+  - portal/src/lib/api/rate-limit-key.ts
+  - portal/src/lib/api/rate-limit-key.test.ts
   - portal/src/app/api/swap/route.ts
+  - portal/src/app/api/custody/route.ts
+  - portal/src/app/api/custody/withdraw/route.ts
+  - portal/src/app/api/clearing/route.ts
+  - portal/src/app/api/distribute-coins/route.ts
 correction_type: code
 test_required: true
-tests: []
+tests:
+  - portal/src/lib/api/rate-limit-key.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 3ac1496
 owner: unassigned
 runbook: null
 effort_points: 3
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Fixed in commit `3ac1496`. New `lib/api/rate-limit-key.ts` derives
+  identity in the order `group_id → user_id → SHA1-hashed IP →
+  anon`. Namespaces (`:g:` / `:u:` / `:ip:` / `:anon:`) prevent
+  collision between identity kinds. Raw IPs are never written to
+  keys (PII hygiene). Applied to swap, custody, custody/withdraw,
+  clearing and distribute-coins; in each route the cookie
+  `portal_group_id` is read pre-auth so even GET-with-rate-limit
+  buckets per-tenant when the user has a session.
 ---
 # [L14-04] Rate-limit por IP em swap/custody vs por user/group
 > **Lente:** 14 — Contracts · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fix-pending

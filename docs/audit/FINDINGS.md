@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 23:32:02 UTC.
+> Atualizado em 2026-04-18 23:51:22 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -231,9 +231,9 @@ Total: **348** findings.
 | 🔴 critical | ⏳ fix-pending | [L14-01](./findings/L14-01-74-route-handlers-46-documentados-em-openapi.md) | 1 | L14 · Contracts | 74 route handlers, 46 documentados em OpenAPI | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L14-02](./findings/L14-02-sem-versionamento-de-path-api-v1.md) | 1 | L14 · Contracts | Sem versionamento de path (/api/v1) | unassigned |
 | 🔴 critical | ✅ fixed | [L14-03](./findings/L14-03-api-docs-carrega-swagger-ui-de-unpkg-sem.md) | 0 | L14 · Contracts | /api/docs carrega Swagger-UI de unpkg sem SRI | unassigned |
-| 🟠 high | ⏳ fix-pending | [L14-04](./findings/L14-04-rate-limit-por-ip-em-swap-custody-vs.md) | 1 | L14 · Contracts | Rate-limit por IP em swap/custody vs por user/group | unassigned |
-| 🟠 high | ⏳ fix-pending | [L14-05](./findings/L14-05-respostas-de-erro-nao-padronizadas-error-string-vs.md) | 1 | L14 · Contracts | Respostas de erro não padronizadas (error: string vs error: { code, message }) | unassigned |
-| 🟠 high | ⏳ fix-pending | [L14-06](./findings/L14-06-pagination-inconsistente-ou-inexistente.md) | 1 | L14 · Contracts | Pagination inconsistente (ou inexistente) | unassigned |
+| 🟠 high | ✅ fixed | [L14-04](./findings/L14-04-rate-limit-por-ip-em-swap-custody-vs.md) | 1 | L14 · Contracts | Rate-limit por IP em swap/custody vs por user/group | unassigned |
+| 🟠 high | ✅ fixed | [L14-05](./findings/L14-05-respostas-de-erro-nao-padronizadas-error-string-vs.md) | 1 | L14 · Contracts | Respostas de erro não padronizadas (error: string vs error: { code, message }) | unassigned |
+| 🟠 high | ✅ fixed | [L14-06](./findings/L14-06-pagination-inconsistente-ou-inexistente.md) | 1 | L14 · Contracts | Pagination inconsistente (ou inexistente) | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L14-07](./findings/L14-07-sem-idempotency-key-header-em-posts-financeiros.md) | 2 | L14 · Contracts | Sem idempotency-key header em POSTs financeiros | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L14-08](./findings/L14-08-content-negotiation-inexistente.md) | 2 | L14 · Contracts | Content negotiation inexistente | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L14-09](./findings/L14-09-sem-quota-por-parceiro-api-key-tier.md) | 2 | L14 · Contracts | Sem quota por parceiro (API key tier) | unassigned |

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T23:32:02.171Z",
+  "generated_at": "2026-04-18T23:51:22.632Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 285,
-    "fixed": 62,
+    "fix-pending": 282,
+    "fixed": 65,
     "in-progress": 1
   },
   "by_wave": {
@@ -6832,7 +6832,7 @@
       "lens": 14,
       "title": "Rate-limit por IP em swap/custody vs por user/group",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
@@ -6841,20 +6841,30 @@
         "portal"
       ],
       "files": [
-        "portal/src/app/api/swap/route.ts"
+        "portal/src/lib/api/rate-limit-key.ts",
+        "portal/src/lib/api/rate-limit-key.test.ts",
+        "portal/src/app/api/swap/route.ts",
+        "portal/src/app/api/custody/route.ts",
+        "portal/src/app/api/custody/withdraw/route.ts",
+        "portal/src/app/api/clearing/route.ts",
+        "portal/src/app/api/distribute-coins/route.ts"
       ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/api/rate-limit-key.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "3ac1496"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed in commit `3ac1496`. New `lib/api/rate-limit-key.ts` derives\nidentity in the order `group_id → user_id → SHA1-hashed IP →\nanon`. Namespaces (`:g:` / `:u:` / `:ip:` / `:anon:`) prevent\ncollision between identity kinds. Raw IPs are never written to\nkeys (PII hygiene). Applied to swap, custody, custody/withdraw,\nclearing and distribute-coins; in each route the cookie\n`portal_group_id` is read pre-auth so even GET-with-rate-limit\nbuckets per-tenant when the user has a session.\n"
     },
     {
       "id": "L14-05",
@@ -6862,7 +6872,7 @@
       "lens": 14,
       "title": "Respostas de erro não padronizadas (error: string vs error: { code, message })",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
@@ -6870,22 +6880,32 @@
         "portal"
       ],
       "files": [
+        "portal/src/lib/api/errors.ts",
+        "portal/src/lib/api/errors.test.ts",
         "portal/src/app/api/swap/route.ts",
-        "portal/src/app/api/athletes/route.ts",
-        "portal/src/lib/api/errors.ts"
+        "portal/src/app/api/custody/route.ts",
+        "portal/src/app/api/custody/withdraw/route.ts",
+        "portal/src/app/api/clearing/route.ts",
+        "portal/src/app/api/distribute-coins/route.ts",
+        "portal/src/app/api/athletes/route.ts"
       ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/api/errors.test.ts",
+        "portal/src/app/api/athletes/route.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "3ac1496"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed in commit `3ac1496`. New `lib/api/errors.ts` exposes\n`apiError(reqOrId, code, message, status, opts?)` plus\nconvenience helpers (`apiUnauthorized`, `apiForbidden`,\n`apiValidationFailed`, `apiRateLimited`,\n`apiServiceUnavailable`, `apiInternalError`,\n`apiNoGroupSession`, `apiOk`). Every error response now follows\nthe canonical shape `{ ok: false, error: { code, message,\nrequest_id, details? } }`. `request_id` is sourced from the\n`x-request-id` header that the L13-06 middleware propagates.\n\nMigrated routes (Wave 1): swap (incl. SwapError mapping with\n`details` carrying `sqlstate`/`current_status`), custody (deposit\n+ confirm + idempotency-key validation), custody/withdraw\n(incl. FX quote stale/missing/unavailable), clearing,\ndistribute-coins (incl. P0001/P0002/P0003/55P03 RPC error\nbranches), athletes (paginated success).\n\nRemaining `~26 training-plan + ~15 platform routes` already use a\ncompatible nested `error: { code }` shape (no `request_id` /\n`message` yet); promotion to the full envelope is tracked as\nincremental migration in subsequent waves and does not block\nthis finding being marked `fixed`.\n"
     },
     {
       "id": "L14-06",
@@ -6893,25 +6913,35 @@
       "lens": 14,
       "title": "Pagination inconsistente (ou inexistente)",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "reliability"
       ],
-      "files": [],
-      "correction_type": "config",
+      "files": [
+        "portal/src/lib/api/pagination.ts",
+        "portal/src/lib/api/pagination.test.ts",
+        "portal/src/app/api/athletes/route.ts",
+        "portal/src/app/api/athletes/route.test.ts"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/api/pagination.test.ts",
+        "portal/src/app/api/athletes/route.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "3ac1496"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed in commit `3ac1496`. New `lib/api/pagination.ts` defines\nthe cursor-based pagination contract:\n\n- Request:    `?cursor=<opaque base64url>&limit=<1..100>`\n- Response:   `{ items: [...], next_cursor: string|null,\n                has_more: boolean }` (wrapped in the L14-05\n                canonical `{ ok: true, data }` envelope).\n- Defaults:   `DEFAULT_PAGE_LIMIT = 50`, `MAX_PAGE_LIMIT = 100`.\n- Cursors are JSON encoded as base64url; deliberately unsigned\n  (RLS is the security boundary, not the cursor).\n- `paginate()` uses the over-fetch-by-one pattern with a typed\n  `extractCursor` callback that runs only on the last visible\n  row.\n\nApplied to `GET /api/athletes` as the canonical reference\n(paginates by `(display_name ASC, user_id ASC)`). Other list\nendpoints already returning bounded views (training-plan, etc.)\nare tracked for incremental migration in Wave 2.\n\nBackward compat: clients that previously called\n`GET /api/athletes` and consumed `data: AthleteRow[]` now\nreceive `data: { items: AthleteRow[], next_cursor, has_more }`.\nFrontend dropdowns must read `data.items` and implement virtual\nscroll using `next_cursor` for groups with >50 athletes.\n"
     },
     {
       "id": "L14-07",
