@@ -2892,6 +2892,168 @@ async function testIdempotency() {
       `non-existent confirm should return generic error (anti-enumeration), got: ${error?.message ?? "no error"}`,
     );
   });
+
+  // ───────────────────────────────────────────────────────────────────────
+  // L05-02: swap_orders TTL/expiração + cron sweep
+  // ───────────────────────────────────────────────────────────────────────
+  await test("L05-02: fn_expire_swap_orders sweep marca expired e é idempotente", async () => {
+    // Garante seller account com saldo
+    await db.from("custody_accounts").upsert(
+      { group_id: GROUP_A, total_deposited_usd: 1000 },
+      { onConflict: "group_id" },
+    );
+
+    // Cria oferta JÁ expirada
+    const { data: created, error: createErr } = await db
+      .from("swap_orders")
+      .insert({
+        seller_group_id: GROUP_A,
+        amount_usd: 100,
+        fee_amount_usd: 1,
+        status: "open",
+        expires_at: new Date(Date.now() - 60_000).toISOString(),
+      })
+      .select("id")
+      .single();
+    assert(!createErr && !!created, `insert error: ${createErr?.message}`);
+    const orderId = created.id;
+
+    const { data: r1, error: e1 } = await db.rpc("fn_expire_swap_orders");
+    assert(!e1, `sweep error: ${e1?.message}`);
+    const row1 = (Array.isArray(r1) ? r1[0] : r1) as any;
+    assert(
+      row1.expired_count >= 1,
+      `expected at least 1 expired, got ${row1.expired_count}`,
+    );
+    assert(
+      (row1.expired_ids as string[]).includes(orderId),
+      `expected orderId ${orderId} in expired_ids ${row1.expired_ids}`,
+    );
+
+    // Idempotência: 2ª chamada não deve re-marcar o mesmo
+    const { data: r2 } = await db.rpc("fn_expire_swap_orders");
+    const row2 = (Array.isArray(r2) ? r2[0] : r2) as any;
+    assert(
+      !(row2.expired_ids as string[]).includes(orderId),
+      `2nd sweep should not re-mark already-expired order`,
+    );
+
+    // Confirma status
+    const { data: order } = await db
+      .from("swap_orders")
+      .select("status")
+      .eq("id", orderId)
+      .single();
+    assert(order?.status === "expired", `status=${order?.status}`);
+
+    // Cleanup
+    await db.from("swap_orders").delete().eq("id", orderId);
+  });
+
+  await test("L05-02: execute_swap rejeita oferta expirada com P0005 (cron sweep limpa)", async () => {
+    await db.from("custody_accounts").upsert(
+      [
+        { group_id: GROUP_A, total_deposited_usd: 1000 },
+        { group_id: GROUP_B, total_deposited_usd: 0 },
+      ],
+      { onConflict: "group_id" },
+    );
+
+    // Cria oferta com expires_at no passado mas STATUS ainda 'open'
+    // (simula janela entre cron runs)
+    const { data: created } = await db
+      .from("swap_orders")
+      .insert({
+        seller_group_id: GROUP_A,
+        amount_usd: 200,
+        fee_amount_usd: 2,
+        status: "open",
+        expires_at: new Date(Date.now() - 60_000).toISOString(),
+      })
+      .select("id")
+      .single();
+    const orderId = created!.id;
+
+    const { error } = await db.rpc("execute_swap", {
+      p_order_id: orderId,
+      p_buyer_group_id: GROUP_B,
+    });
+    assert(
+      !!error && (error.code === "P0005" || /SWAP_EXPIRED/.test(error.message ?? "")),
+      `expected P0005 SWAP_EXPIRED, got code=${error?.code} msg=${error?.message}`,
+    );
+
+    // Status permanece 'open' (RAISE EXCEPTION rollback de subtransação
+    // descarta qualquer UPDATE feito no corpo da função). Cron sweep
+    // (todo 10min em prod) é o único responsável por mover para 'expired'.
+    const { data: orderBefore } = await db
+      .from("swap_orders")
+      .select("status")
+      .eq("id", orderId)
+      .single();
+    assert(
+      orderBefore?.status === "open",
+      `expected status='open' pós-P0005 (sweep limpa depois); got ${orderBefore?.status}`,
+    );
+
+    // Sweep manual confirma cleanup
+    await db.rpc("fn_expire_swap_orders");
+    const { data: orderAfter } = await db
+      .from("swap_orders")
+      .select("status")
+      .eq("id", orderId)
+      .single();
+    assert(
+      orderAfter?.status === "expired",
+      `sweep deveria limpar para 'expired'; got ${orderAfter?.status}`,
+    );
+
+    // Cleanup
+    await db.from("swap_orders").delete().eq("id", orderId);
+  });
+
+  await test("L05-02: execute_swap em oferta válida (não expirada) executa normalmente", async () => {
+    await db.from("custody_accounts").upsert(
+      [
+        { group_id: GROUP_A, total_deposited_usd: 1000 },
+        { group_id: GROUP_B, total_deposited_usd: 0 },
+      ],
+      { onConflict: "group_id" },
+    );
+
+    const { data: created } = await db
+      .from("swap_orders")
+      .insert({
+        seller_group_id: GROUP_A,
+        amount_usd: 50,
+        fee_amount_usd: 0.5,
+        status: "open",
+        expires_at: new Date(Date.now() + 86_400_000).toISOString(), // +1 dia
+      })
+      .select("id")
+      .single();
+    const orderId = created!.id;
+
+    const { error } = await db.rpc("execute_swap", {
+      p_order_id: orderId,
+      p_buyer_group_id: GROUP_B,
+    });
+    assert(!error, `execute_swap should succeed, got: ${error?.message}`);
+
+    const { data: order } = await db
+      .from("swap_orders")
+      .select("status, settled_at")
+      .eq("id", orderId)
+      .single();
+    assert(order?.status === "settled", `status=${order?.status}`);
+    assert(!!order?.settled_at, "settled_at should be set");
+
+    // Cleanup financeiro: revert custody_accounts e remove order
+    await db.from("custody_accounts").update({ total_deposited_usd: 1000 }).eq("group_id", GROUP_A);
+    await db.from("custody_accounts").update({ total_deposited_usd: 0 }).eq("group_id", GROUP_B);
+    await db.from("platform_revenue").delete().eq("source_ref_id", orderId);
+    await db.from("swap_orders").delete().eq("id", orderId);
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

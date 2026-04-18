@@ -10,7 +10,19 @@ export interface SwapOrder {
   status: string;
   created_at: string;
   settled_at: string | null;
+  /** L05-02 — instante de expiração (UTC). NULL = legacy rows pré-migration. */
+  expires_at: string | null;
 }
+
+/**
+ * L05-02 — TTLs canônicos para swap orders. Cliente escolhe na criação.
+ * Default 7d cobre 95% dos casos. 1d para arbitragem rápida; 30/90d
+ * para hedging de longo prazo (ex.: posição de academia preparando
+ * temporada).
+ */
+export const SWAP_TTL_DAYS = [1, 7, 30, 90] as const;
+export type SwapTtlDays = (typeof SWAP_TTL_DAYS)[number];
+export const DEFAULT_SWAP_TTL_DAYS: SwapTtlDays = 7;
 
 /**
  * L05-01 — Erros tipados para RPCs de swap.
@@ -21,10 +33,11 @@ export interface SwapOrder {
  */
 export type SwapErrorCode =
   | "not_found"              // P0002 — order_id inexistente
-  | "not_open"               // P0001 — status ≠ 'open' (cancelled/settled/matched)
+  | "not_open"               // P0001 — status ≠ 'open' (cancelled/settled/matched/expired)
   | "not_owner"              // P0003 — caller não é seller_group_id
   | "self_buy"               // P0003 — buyer = seller
   | "insufficient_backing"   // P0004 — seller sem funds disponíveis
+  | "expired"                // P0005 — L05-02: oferta passou de expires_at
   | "lock_not_available"     // 55P03 — contenção prolongada, deve retry
   | "unknown";
 
@@ -69,6 +82,9 @@ function toSwapError(err: {
   if (sqlstate === "P0004" || /SWAP_INSUFFICIENT_BACKING|insufficient/i.test(msg)) {
     return new SwapError(msg, "insufficient_backing", sqlstate);
   }
+  if (sqlstate === "P0005" || /SWAP_EXPIRED/.test(msg)) {
+    return new SwapError(msg, "expired", sqlstate, { expired_at: hint });
+  }
 
   return new SwapError(msg || `Swap ${context} failed`, "unknown", sqlstate);
 }
@@ -90,11 +106,26 @@ async function getSwapFeeRate(): Promise<number> {
   return data?.rate_pct ?? 1.0;
 }
 
+/**
+ * L05-02 — cria swap_offer com TTL explícito.
+ *
+ * `expiresInDays` deve ser um dos valores em {@link SWAP_TTL_DAYS}.
+ * Default 7d. Cron job `swap-expire` (a cada 10min) marca status=expired
+ * após `expires_at`. `execute_swap` também rejeita ofertas expiradas
+ * (defesa entre runs do cron).
+ */
 export async function createSwapOffer(
   sellerGroupId: string,
   amountUsd: number,
+  expiresInDays: SwapTtlDays = DEFAULT_SWAP_TTL_DAYS,
 ): Promise<SwapOrder | null> {
   try {
+    if (!SWAP_TTL_DAYS.includes(expiresInDays)) {
+      throw new Error(
+        `Invalid expires_in_days=${expiresInDays}; must be one of ${SWAP_TTL_DAYS.join("/")}`,
+      );
+    }
+
     const db = createServiceClient();
 
     const { data: sellerAcct } = await db
@@ -115,6 +146,9 @@ export async function createSwapOffer(
 
     const feeRate = await getSwapFeeRate();
     const feeAmount = Math.round(amountUsd * feeRate) / 100;
+    const expiresAt = new Date(
+      Date.now() + expiresInDays * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
     const { data, error } = await db
       .from("swap_orders")
@@ -124,6 +158,7 @@ export async function createSwapOffer(
         fee_rate_pct: feeRate,
         fee_amount_usd: feeAmount,
         status: "open",
+        expires_at: expiresAt,
       })
       .select("*")
       .single();
@@ -165,6 +200,13 @@ export async function acceptSwapOffer(
   }
 }
 
+/**
+ * L05-02 — lista ofertas abertas E não expiradas.
+ *
+ * Filtra `expires_at >= now()` para defesa entre runs do cron sweep
+ * (oferta pode ainda estar com status='open' mas já passou da expiração).
+ * Cron `swap-expire` corrige o status; este filtro evita mostrar zumbis.
+ */
 export async function getOpenSwapOffers(
   excludeGroupId?: string,
 ): Promise<SwapOrder[]> {
@@ -175,6 +217,7 @@ export async function getOpenSwapOffers(
       .from("swap_orders")
       .select("*")
       .eq("status", "open")
+      .gte("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false });
 
     if (excludeGroupId) {
@@ -187,6 +230,28 @@ export async function getOpenSwapOffers(
     if (isTableMissing(err)) return [];
     throw err;
   }
+}
+
+/**
+ * L05-02 — invoca sweep de expiração manualmente (ex.: endpoint admin
+ * ou cron cliente). Em produção, pg_cron já roda a cada 10min via
+ * `swap-expire` job. Este wrapper é útil para forçar antes de relatórios
+ * ou em testes.
+ */
+export async function expireSwapOrders(): Promise<{
+  expiredCount: number;
+  expiredIds: string[];
+}> {
+  const db = createServiceClient();
+  const { data, error } = await db.rpc("fn_expire_swap_orders");
+  if (error) {
+    throw new Error(`fn_expire_swap_orders failed: ${error.message}`);
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  return {
+    expiredCount: row?.expired_count ?? 0,
+    expiredIds: row?.expired_ids ?? [],
+  };
 }
 
 export async function getSwapOrdersForGroup(

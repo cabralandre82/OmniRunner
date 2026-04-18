@@ -8,6 +8,7 @@ import {
   getOpenSwapOffers,
   cancelSwapOffer,
   SwapError,
+  DEFAULT_SWAP_TTL_DAYS,
   type SwapErrorCode,
 } from "@/lib/swap";
 import { auditLog } from "@/lib/audit";
@@ -22,6 +23,10 @@ const createSchema = z
   .object({
     action: z.literal("create"),
     amount_usd: z.number().min(100).max(500_000),
+    // L05-02 — TTL canônico (1/7/30/90 dias). Default 7d se omitido.
+    expires_in_days: z
+      .union([z.literal(1), z.literal(7), z.literal(30), z.literal(90)])
+      .optional(),
   })
   .strict();
 
@@ -97,6 +102,10 @@ function swapErrorToResponse(err: SwapError): NextResponse {
       return NextResponse.json(body, { status: 400 });
     case "insufficient_backing":
       return NextResponse.json(body, { status: 422 });
+    case "expired":
+      // L05-02 — 410 Gone: recurso existiu mas não está mais disponível.
+      // Cliente deve atualizar lista (oferta saiu do marketplace).
+      return NextResponse.json(body, { status: 410 });
     case "lock_not_available":
       return NextResponse.json(body, {
         status: 503,
@@ -167,7 +176,8 @@ export async function POST(req: NextRequest) {
 
   try {
     if (data.action === "create") {
-      const order = await createSwapOffer(auth.groupId, data.amount_usd);
+      const ttl = data.expires_in_days ?? DEFAULT_SWAP_TTL_DAYS;
+      const order = await createSwapOffer(auth.groupId, data.amount_usd, ttl);
 
       if (!order) {
         return NextResponse.json({ error: "Swap feature not available" }, { status: 503 });
@@ -178,7 +188,11 @@ export async function POST(req: NextRequest) {
         groupId: auth.groupId,
         action: "swap.offer.created",
         targetId: order.id,
-        metadata: { amount_usd: data.amount_usd },
+        metadata: {
+          amount_usd: data.amount_usd,
+          expires_in_days: ttl,
+          expires_at: order.expires_at,
+        },
       });
 
       return NextResponse.json({ order });

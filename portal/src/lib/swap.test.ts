@@ -45,7 +45,9 @@ const {
   createSwapOffer,
   acceptSwapOffer,
   cancelSwapOffer,
+  expireSwapOrders,
   SwapError,
+  SWAP_TTL_DAYS,
 } = await import("./swap");
 
 describe("swap service", () => {
@@ -95,6 +97,73 @@ describe("swap service", () => {
         "Insufficient available backing",
       );
     });
+
+    // ───── L05-02 ─────
+    it("L05-02: rejeita expires_in_days inválido", async () => {
+      await expect(
+        // @ts-expect-error — testing runtime validation
+        createSwapOffer("seller-1", 500, 14),
+      ).rejects.toThrow(/Invalid expires_in_days/);
+    });
+
+    it("L05-02: passa expires_at calculado para o INSERT (default 7d)", async () => {
+      const insertSpy = vi.fn().mockReturnValue({
+        select: () => ({
+          single: vi.fn().mockResolvedValue({
+            data: {
+              id: "o1",
+              seller_group_id: "s1",
+              amount_usd: 500,
+              fee_amount_usd: 5,
+              status: "open",
+              expires_at: "2026-04-24T00:00:00Z",
+            },
+          }),
+        }),
+      });
+
+      mockFrom
+        .mockReturnValueOnce(custodyAccountChain(1000))
+        .mockReturnValueOnce(feeConfigChain())
+        .mockReturnValueOnce({ insert: insertSpy });
+
+      const before = Date.now();
+      await createSwapOffer("s1", 500);
+      const after = Date.now();
+
+      expect(insertSpy).toHaveBeenCalledTimes(1);
+      const inserted = insertSpy.mock.calls[0][0];
+      expect(inserted.status).toBe("open");
+      const expiresAt = new Date(inserted.expires_at).getTime();
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+      expect(expiresAt).toBeGreaterThanOrEqual(before + sevenDaysMs - 100);
+      expect(expiresAt).toBeLessThanOrEqual(after + sevenDaysMs + 100);
+    });
+
+    it.each(SWAP_TTL_DAYS as readonly number[])(
+      "L05-02: TTL canônico %i é aceito",
+      async (ttl) => {
+        const insertSpy = vi.fn().mockReturnValue({
+          select: () => ({
+            single: vi
+              .fn()
+              .mockResolvedValue({ data: { id: "o", expires_at: "x" } }),
+          }),
+        });
+        mockFrom
+          .mockReturnValueOnce(custodyAccountChain(1000))
+          .mockReturnValueOnce(feeConfigChain())
+          .mockReturnValueOnce({ insert: insertSpy });
+
+        // @ts-expect-error — runtime test
+        await createSwapOffer("s1", 500, ttl);
+        const inserted = insertSpy.mock.calls[0][0];
+        const diffMs =
+          new Date(inserted.expires_at).getTime() - Date.now();
+        const ttlMs = ttl * 24 * 60 * 60 * 1000;
+        expect(Math.abs(diffMs - ttlMs)).toBeLessThan(1000);
+      },
+    );
   });
 
   describe("acceptSwapOffer — L05-01 SQLSTATE mapping", () => {
@@ -176,6 +245,58 @@ describe("swap service", () => {
       await expect(acceptSwapOffer("o", "b")).rejects.toMatchObject({
         code: "unknown",
       });
+    });
+
+    // ───── L05-02 ─────
+    it("L05-02: maps P0005 → SwapError code='expired' com expired_at", async () => {
+      mockRpc.mockResolvedValueOnce({
+        error: {
+          code: "P0005",
+          message: "SWAP_EXPIRED: order x expired at 2026-04-10T00:00:00Z",
+          hint: "2026-04-10T00:00:00Z",
+        },
+      });
+      try {
+        await acceptSwapOffer("o", "b");
+        expect.fail("deveria lançar");
+      } catch (err) {
+        expect(err).toBeInstanceOf(SwapError);
+        const e = err as InstanceType<typeof SwapError>;
+        expect(e.code).toBe("expired");
+        expect(e.detail?.expired_at).toBe("2026-04-10T00:00:00Z");
+      }
+    });
+  });
+
+  describe("expireSwapOrders — L05-02 sweep wrapper", () => {
+    it("chama fn_expire_swap_orders e retorna count + ids", async () => {
+      mockRpc.mockResolvedValueOnce({
+        data: [{ expired_count: 3, expired_ids: ["o1", "o2", "o3"] }],
+        error: null,
+      });
+
+      const result = await expireSwapOrders();
+      expect(mockRpc).toHaveBeenCalledWith("fn_expire_swap_orders");
+      expect(result.expiredCount).toBe(3);
+      expect(result.expiredIds).toEqual(["o1", "o2", "o3"]);
+    });
+
+    it("retorna 0 quando não há ofertas expiradas", async () => {
+      mockRpc.mockResolvedValueOnce({
+        data: [{ expired_count: 0, expired_ids: [] }],
+        error: null,
+      });
+      const result = await expireSwapOrders();
+      expect(result.expiredCount).toBe(0);
+      expect(result.expiredIds).toEqual([]);
+    });
+
+    it("propaga erro do Supabase", async () => {
+      mockRpc.mockResolvedValueOnce({
+        data: null,
+        error: { message: "permission denied" },
+      });
+      await expect(expireSwapOrders()).rejects.toThrow(/permission denied/);
     });
   });
 

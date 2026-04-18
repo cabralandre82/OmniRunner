@@ -161,6 +161,54 @@ describe("Swap API", () => {
       );
       expect(res.status).toBe(400);
     });
+
+    // ───── L05-02 ─────
+    it("L05-02: aceita expires_in_days canônico e propaga para createSwapOffer", async () => {
+      mockAdminCheck();
+      mockCreateSwapOffer.mockResolvedValue({
+        id: "o2",
+        amount_usd: 200,
+        status: "open",
+        expires_at: "2026-04-18T00:00:00Z",
+      });
+
+      const res = await POST(
+        req({ action: "create", amount_usd: 200, expires_in_days: 1 }),
+      );
+      expect(res.status).toBe(200);
+      expect(mockCreateSwapOffer).toHaveBeenCalledWith("group-1", 200, 1);
+      expect(auditLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "swap.offer.created",
+          metadata: expect.objectContaining({
+            expires_in_days: 1,
+            expires_at: "2026-04-18T00:00:00Z",
+          }),
+        }),
+      );
+    });
+
+    it("L05-02: usa default 7d quando expires_in_days omitido", async () => {
+      mockAdminCheck();
+      mockCreateSwapOffer.mockResolvedValue({
+        id: "o3",
+        amount_usd: 1000,
+        status: "open",
+        expires_at: "2026-04-24T00:00:00Z",
+      });
+
+      const res = await POST(req({ action: "create", amount_usd: 1000 }));
+      expect(res.status).toBe(200);
+      expect(mockCreateSwapOffer).toHaveBeenCalledWith("group-1", 1000, 7);
+    });
+
+    it("L05-02: rejeita expires_in_days fora dos canônicos (1/7/30/90)", async () => {
+      mockAdminCheck();
+      const res = await POST(
+        req({ action: "create", amount_usd: 1000, expires_in_days: 14 }),
+      );
+      expect(res.status).toBe(400);
+    });
   });
 
   describe("POST accept — L05-01 error mapping", () => {
@@ -232,6 +280,29 @@ describe("Swap API", () => {
       const res = await POST(req({ action: "accept", order_id: UUID1 }));
       expect(res.status).toBe(503);
       expect(res.headers.get("Retry-After")).toBe("2");
+    });
+
+    it("L05-02: 410 Gone quando oferta expirou (expired)", async () => {
+      mockAdminCheck();
+      mockAcceptSwapOffer.mockRejectedValueOnce(
+        new SwapError(
+          "SWAP_EXPIRED: order o expired at 2026-04-10",
+          "expired",
+          "P0005",
+          { expired_at: "2026-04-10T00:00:00Z" },
+        ),
+      );
+      const res = await POST(req({ action: "accept", order_id: UUID1 }));
+      expect(res.status).toBe(410);
+      const body = await res.json();
+      expect(body.code).toBe("expired");
+      expect(body.detail.expired_at).toBe("2026-04-10T00:00:00Z");
+      expect(auditLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "swap.offer.accept_failed",
+          metadata: expect.objectContaining({ code: "expired" }),
+        }),
+      );
     });
 
     it("returns 400 for invalid UUID", async () => {
