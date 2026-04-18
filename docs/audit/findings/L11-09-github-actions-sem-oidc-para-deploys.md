@@ -23,7 +23,8 @@ correction_type: code
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "commit:1c23dc8"
 owner: unassigned
 runbook: docs/security/CI_SECRETS_AND_OIDC.md
 effort_points: 2

@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 20:12:11 UTC.
+> Atualizado em 2026-04-18 21:47:15 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -201,7 +201,7 @@ Total: **348** findings.
 | 🟠 high | ⏳ fix-pending | [L11-06](./findings/L11-06-dependencias-com-permitem-breaking-minor.md) | 1 | L11 · Supply Chain | Dependências com ^ permitem breaking minor | unassigned |
 | 🟠 high | ⏳ fix-pending | [L11-07](./findings/L11-07-sqlcipher-flutter-libs-0-7-0-eol-eol.md) | 1 | L11 · Supply Chain | sqlcipher_flutter_libs: ^0.7.0+eol — "eol" = end of life | unassigned |
 | 🟠 high | ⏳ fix-pending | [L11-08](./findings/L11-08-flutter-sdk-3-8-0-4-0-0.md) | 1 | L11 · Supply Chain | Flutter sdk: '>=3.8.0 <4.0.0' — permite 3.9, 3.10… | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L11-09](./findings/L11-09-github-actions-sem-oidc-para-deploys.md) | 2 | L11 · Supply Chain | GitHub Actions sem OIDC para deploys | unassigned |
+| 🟡 medium | ✅ fixed | [L11-09](./findings/L11-09-github-actions-sem-oidc-para-deploys.md) | 1 | L11 · Supply Chain | GitHub Actions sem OIDC para deploys | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L11-10](./findings/L11-10-actions-checkout-v4-sha-nao-pinned.md) | 2 | L11 · Supply Chain | actions/checkout@v4 SHA não pinned | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L11-11](./findings/L11-11-sem-renovate-como-alternativa.md) | 2 | L11 · Supply Chain | Sem Renovate como alternativa | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L11-12](./findings/L11-12-npm-ci-sem-ignore-scripts.md) | 2 | L11 · Supply Chain | npm ci sem --ignore-scripts | unassigned |

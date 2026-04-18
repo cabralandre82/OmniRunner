@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T20:12:11.470Z",
+  "generated_at": "2026-04-18T21:47:15.440Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,14 +10,14 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 300,
-    "fixed": 47,
+    "fix-pending": 299,
+    "fixed": 48,
     "in-progress": 1
   },
   "by_wave": {
     "0": 15,
-    "1": 178,
-    "2": 126,
+    "1": 179,
+    "2": 125,
     "3": 29
   },
   "by_lens": {
@@ -5836,20 +5836,36 @@
       "lens": 11,
       "title": "GitHub Actions sem OIDC para deploys",
       "severity": "medium",
-      "status": "fix-pending",
-      "wave": 2,
+      "status": "fixed",
+      "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
-        "portal"
+        "portal",
+        "ci",
+        "supply-chain",
+        "security"
       ],
-      "files": [],
+      "files": [
+        ".github/workflows/portal.yml",
+        ".github/workflows/flutter.yml",
+        ".github/workflows/audit.yml",
+        ".github/workflows/security.yml",
+        ".github/workflows/supabase.yml",
+        ".github/workflows/release.yml",
+        ".github/workflows/update-snapshots.yml",
+        "docs/security/CI_SECRETS_AND_OIDC.md"
+      ],
       "correction_type": "code",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:1c23dc8"
+      ],
       "owner": "unassigned",
-      "runbook": null,
+      "runbook": "docs/security/CI_SECRETS_AND_OIDC.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
