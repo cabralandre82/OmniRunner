@@ -9,8 +9,11 @@ import {
   cancelSwapOffer,
   SwapError,
   DEFAULT_SWAP_TTL_DAYS,
+  SWAP_PAYMENT_REF_MIN_LEN,
+  SWAP_PAYMENT_REF_MAX_LEN,
   type SwapErrorCode,
 } from "@/lib/swap";
+import { logger } from "@/lib/logger";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
 import {
@@ -34,6 +37,15 @@ const acceptSchema = z
   .object({
     action: z.literal("accept"),
     order_id: z.string().uuid(),
+    // L02-07/ADR-008 — referência opcional ao pagamento off-platform.
+    // Validação dupla (tamanho + control chars). Quando ausente, route
+    // emite WARN log para revisão CFO.
+    external_payment_ref: z
+      .string()
+      .min(SWAP_PAYMENT_REF_MIN_LEN)
+      .max(SWAP_PAYMENT_REF_MAX_LEN)
+      .regex(/^[^\x00-\x1f]+$/, "must not contain control characters")
+      .optional(),
   })
   .strict();
 
@@ -106,6 +118,9 @@ function swapErrorToResponse(err: SwapError): NextResponse {
       // L05-02 — 410 Gone: recurso existiu mas não está mais disponível.
       // Cliente deve atualizar lista (oferta saiu do marketplace).
       return NextResponse.json(body, { status: 410 });
+    case "payment_ref_invalid":
+      // L02-07/ADR-008 — formato de external_payment_ref inválido.
+      return NextResponse.json(body, { status: 400 });
     case "lock_not_available":
       return NextResponse.json(body, {
         status: 503,
@@ -200,7 +215,11 @@ export async function POST(req: NextRequest) {
 
     if (data.action === "accept") {
       try {
-        await acceptSwapOffer(data.order_id, auth.groupId);
+        await acceptSwapOffer(
+          data.order_id,
+          auth.groupId,
+          data.external_payment_ref,
+        );
       } catch (err) {
         if (err instanceof SwapError) {
           // L05-01: erro semântico — NÃO emitir auditLog de sucesso.
@@ -217,11 +236,27 @@ export async function POST(req: NextRequest) {
         throw err;
       }
 
+      // L02-07/ADR-008 — WARN observability quando ref ausente.
+      // CFO usa essas linhas para amostragem de revisão semanal. Métrica
+      // futura `swap_accept_without_ref_total` virá daqui.
+      if (!data.external_payment_ref) {
+        logger.warn("swap.accept_without_external_payment_ref", {
+          order_id: data.order_id,
+          buyer_group_id: auth.groupId,
+          actor_id: auth.user.id,
+          adr: "ADR-008",
+        });
+      }
+
       await auditLog({
         actorId: auth.user.id,
         groupId: auth.groupId,
         action: "swap.offer.accepted",
         targetId: data.order_id,
+        metadata: {
+          external_payment_ref: data.external_payment_ref ?? null,
+          has_payment_ref: Boolean(data.external_payment_ref),
+        },
       });
 
       return NextResponse.json({ ok: true });

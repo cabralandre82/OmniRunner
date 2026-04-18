@@ -3012,6 +3012,115 @@ async function testIdempotency() {
     await db.from("swap_orders").delete().eq("id", orderId);
   });
 
+  // ───────────────────────────────────────────────────────────────────────
+  // L02-07/ADR-008: external_payment_ref persistence + validation
+  // ───────────────────────────────────────────────────────────────────────
+  await test("L02-07: execute_swap persiste external_payment_ref no settle", async () => {
+    await db.from("custody_accounts").upsert(
+      [
+        { group_id: GROUP_A, total_deposited_usd: 1000 },
+        { group_id: GROUP_B, total_deposited_usd: 0 },
+      ],
+      { onConflict: "group_id" },
+    );
+
+    const { data: created } = await db
+      .from("swap_orders")
+      .insert({
+        seller_group_id: GROUP_A,
+        amount_usd: 30,
+        fee_amount_usd: 0.3,
+        status: "open",
+        expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+      })
+      .select("id")
+      .single();
+    const orderId = created!.id;
+    const ref = "PIX-202604171535-INTEG-" + orderId.slice(0, 8);
+
+    const { error } = await db.rpc("execute_swap", {
+      p_order_id: orderId,
+      p_buyer_group_id: GROUP_B,
+      p_external_payment_ref: ref,
+    });
+    assert(!error, `execute_swap failed: ${error?.message}`);
+
+    const { data: row } = await db
+      .from("swap_orders")
+      .select("status, external_payment_ref")
+      .eq("id", orderId)
+      .single();
+    assert(row?.status === "settled", `status=${row?.status}`);
+    assert(
+      row?.external_payment_ref === ref,
+      `expected ref persisted; got ${row?.external_payment_ref}`,
+    );
+
+    // Cleanup
+    await db.from("custody_accounts").update({ total_deposited_usd: 1000 }).eq("group_id", GROUP_A);
+    await db.from("custody_accounts").update({ total_deposited_usd: 0 }).eq("group_id", GROUP_B);
+    await db.from("platform_revenue").delete().eq("source_ref_id", orderId);
+    await db.from("swap_orders").delete().eq("id", orderId);
+  });
+
+  await test("L02-07: execute_swap rejeita external_payment_ref com control chars (P0006)", async () => {
+    await db.from("custody_accounts").upsert(
+      [
+        { group_id: GROUP_A, total_deposited_usd: 1000 },
+        { group_id: GROUP_B, total_deposited_usd: 0 },
+      ],
+      { onConflict: "group_id" },
+    );
+
+    const { data: created } = await db
+      .from("swap_orders")
+      .insert({
+        seller_group_id: GROUP_A,
+        amount_usd: 20,
+        fee_amount_usd: 0.2,
+        status: "open",
+        expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+      })
+      .select("id")
+      .single();
+    const orderId = created!.id;
+
+    const { error } = await db.rpc("execute_swap", {
+      p_order_id: orderId,
+      p_buyer_group_id: GROUP_B,
+      p_external_payment_ref: "BAD\x07REF",
+    });
+    assert(
+      !!error && (error.code === "P0006" || /SWAP_PAYMENT_REF_INVALID/.test(error.message ?? "")),
+      `expected P0006, got code=${error?.code} msg=${error?.message}`,
+    );
+
+    // Order deve permanecer 'open' (rollback)
+    const { data: row } = await db
+      .from("swap_orders")
+      .select("status")
+      .eq("id", orderId)
+      .single();
+    assert(row?.status === "open", `status=${row?.status} (rollback esperado)`);
+
+    // Cleanup
+    await db.from("swap_orders").delete().eq("id", orderId);
+  });
+
+  await test("L02-07: CHECK constraint rejeita ref < 4 chars no INSERT direto", async () => {
+    const { error } = await db.from("swap_orders").insert({
+      seller_group_id: GROUP_A,
+      amount_usd: 50,
+      fee_amount_usd: 0.5,
+      status: "open",
+      external_payment_ref: "X",
+    });
+    assert(
+      !!error && /external_payment_ref|check/i.test(error.message ?? ""),
+      `expected check_violation, got: ${error?.message}`,
+    );
+  });
+
   await test("L05-02: execute_swap em oferta válida (não expirada) executa normalmente", async () => {
     await db.from("custody_accounts").upsert(
       [

@@ -282,6 +282,100 @@ describe("Swap API", () => {
       expect(res.headers.get("Retry-After")).toBe("2");
     });
 
+    // ───── L02-07/ADR-008 — external_payment_ref ─────
+    it("L02-07: aceita external_payment_ref válido e propaga + audit metadata", async () => {
+      mockAdminCheck();
+      mockAcceptSwapOffer.mockResolvedValue(undefined);
+
+      const res = await POST(
+        req({
+          action: "accept",
+          order_id: UUID1,
+          external_payment_ref: "PIX-202604171535-XYZ",
+        }),
+      );
+      expect(res.status).toBe(200);
+      expect(mockAcceptSwapOffer).toHaveBeenCalledWith(
+        UUID1,
+        "group-1",
+        "PIX-202604171535-XYZ",
+      );
+      expect(auditLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "swap.offer.accepted",
+          metadata: expect.objectContaining({
+            external_payment_ref: "PIX-202604171535-XYZ",
+            has_payment_ref: true,
+          }),
+        }),
+      );
+    });
+
+    it("L02-07: accept sem ref ainda funciona mas audit marca has_payment_ref=false", async () => {
+      mockAdminCheck();
+      mockAcceptSwapOffer.mockResolvedValue(undefined);
+
+      const res = await POST(req({ action: "accept", order_id: UUID1 }));
+      expect(res.status).toBe(200);
+      expect(mockAcceptSwapOffer).toHaveBeenCalledWith(
+        UUID1,
+        "group-1",
+        undefined,
+      );
+      expect(auditLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "swap.offer.accepted",
+          metadata: expect.objectContaining({
+            external_payment_ref: null,
+            has_payment_ref: false,
+          }),
+        }),
+      );
+    });
+
+    it("L02-07: rejeita external_payment_ref muito curto (Zod) — 400", async () => {
+      mockAdminCheck();
+      const res = await POST(
+        req({
+          action: "accept",
+          order_id: UUID1,
+          external_payment_ref: "ABC",
+        }),
+      );
+      expect(res.status).toBe(400);
+      expect(mockAcceptSwapOffer).not.toHaveBeenCalled();
+    });
+
+    it("L02-07: rejeita external_payment_ref com control char (Zod) — 400", async () => {
+      mockAdminCheck();
+      const res = await POST(
+        req({
+          action: "accept",
+          order_id: UUID1,
+          external_payment_ref: "BAD\u0007REF",
+        }),
+      );
+      expect(res.status).toBe(400);
+      expect(mockAcceptSwapOffer).not.toHaveBeenCalled();
+    });
+
+    it("L02-07: 400 quando server retorna payment_ref_invalid", async () => {
+      mockAdminCheck();
+      mockAcceptSwapOffer.mockRejectedValueOnce(
+        new SwapError("invalid", "payment_ref_invalid", "P0006"),
+      );
+      const res = await POST(
+        req({
+          action: "accept",
+          order_id: UUID1,
+          external_payment_ref: "VALID-REF-9876",
+        }),
+      );
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.code).toBe("payment_ref_invalid");
+    });
+
     it("L05-02: 410 Gone quando oferta expirou (expired)", async () => {
       mockAdminCheck();
       mockAcceptSwapOffer.mockRejectedValueOnce(

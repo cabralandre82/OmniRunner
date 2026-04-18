@@ -12,6 +12,12 @@ export interface SwapOrder {
   settled_at: string | null;
   /** L05-02 — instante de expiração (UTC). NULL = legacy rows pré-migration. */
   expires_at: string | null;
+  /**
+   * L02-07/ADR-008 — referência ao pagamento bilateral off-platform
+   * (PIX, wire, contrato). Opcional mas fortemente recomendada;
+   * audit/CFO usam para reconciliação. Vide ADR-008.
+   */
+  external_payment_ref: string | null;
 }
 
 /**
@@ -38,6 +44,7 @@ export type SwapErrorCode =
   | "self_buy"               // P0003 — buyer = seller
   | "insufficient_backing"   // P0004 — seller sem funds disponíveis
   | "expired"                // P0005 — L05-02: oferta passou de expires_at
+  | "payment_ref_invalid"    // P0006 — L02-07/ADR-008: external_payment_ref inválido
   | "lock_not_available"     // 55P03 — contenção prolongada, deve retry
   | "unknown";
 
@@ -84,6 +91,9 @@ function toSwapError(err: {
   }
   if (sqlstate === "P0005" || /SWAP_EXPIRED/.test(msg)) {
     return new SwapError(msg, "expired", sqlstate, { expired_at: hint });
+  }
+  if (sqlstate === "P0006" || /SWAP_PAYMENT_REF_INVALID/.test(msg)) {
+    return new SwapError(msg, "payment_ref_invalid", sqlstate);
   }
 
   return new SwapError(msg || `Swap ${context} failed`, "unknown", sqlstate);
@@ -184,15 +194,48 @@ export async function createSwapOffer(
  *   - `insufficient_backing` (HTTP 422)
  *   - `lock_not_available`   (HTTP 503, Retry-After)
  */
+/**
+ * L02-07/ADR-008 — limites do `external_payment_ref` espelham o CHECK
+ * constraint no banco. Validação dupla (TS + SQL) evita round-trip a Postgres
+ * para erros previsíveis e dá feedback rápido na UI.
+ */
+export const SWAP_PAYMENT_REF_MIN_LEN = 4;
+export const SWAP_PAYMENT_REF_MAX_LEN = 200;
+const CONTROL_CHARS_RE = /[\x00-\x1f]/;
+
+export function isValidSwapPaymentRef(ref: string): boolean {
+  return (
+    ref.length >= SWAP_PAYMENT_REF_MIN_LEN &&
+    ref.length <= SWAP_PAYMENT_REF_MAX_LEN &&
+    !CONTROL_CHARS_RE.test(ref)
+  );
+}
+
+/**
+ * L02-07/ADR-008 — `externalPaymentRef` opcional registra o pagamento
+ * bilateral feito off-platform (PIX/wire/contrato). Quando ausente:
+ *   • Audit/observability emitem WARN para revisão CFO.
+ *   • Métrica `swap_accept_without_ref_total` incrementa (futuro).
+ * Quando presente, persistido em `swap_orders.external_payment_ref`.
+ */
 export async function acceptSwapOffer(
   orderId: string,
   buyerGroupId: string,
+  externalPaymentRef?: string,
 ): Promise<void> {
   const db = createServiceClient();
+
+  if (externalPaymentRef !== undefined && !isValidSwapPaymentRef(externalPaymentRef)) {
+    throw new SwapError(
+      `external_payment_ref must be ${SWAP_PAYMENT_REF_MIN_LEN}-${SWAP_PAYMENT_REF_MAX_LEN} chars without control chars`,
+      "payment_ref_invalid",
+    );
+  }
 
   const { error } = await db.rpc("execute_swap", {
     p_order_id: orderId,
     p_buyer_group_id: buyerGroupId,
+    p_external_payment_ref: externalPaymentRef ?? null,
   });
 
   if (error) {

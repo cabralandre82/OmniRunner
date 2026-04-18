@@ -55,6 +55,64 @@ describe("swap service", () => {
     vi.clearAllMocks();
   });
 
+  describe("acceptSwapOffer — L02-07/ADR-008 external_payment_ref", () => {
+    it("passa p_external_payment_ref=null por default", async () => {
+      mockRpc.mockResolvedValueOnce({ error: null });
+      await acceptSwapOffer("order-1", "buyer-1");
+      expect(mockRpc).toHaveBeenCalledWith("execute_swap", {
+        p_order_id: "order-1",
+        p_buyer_group_id: "buyer-1",
+        p_external_payment_ref: null,
+      });
+    });
+
+    it("propaga external_payment_ref válido para o RPC", async () => {
+      mockRpc.mockResolvedValueOnce({ error: null });
+      await acceptSwapOffer("order-1", "buyer-1", "PIX-202604171535-XYZ");
+      expect(mockRpc).toHaveBeenCalledWith("execute_swap", {
+        p_order_id: "order-1",
+        p_buyer_group_id: "buyer-1",
+        p_external_payment_ref: "PIX-202604171535-XYZ",
+      });
+    });
+
+    it("rejeita ref muito curta antes de chamar RPC", async () => {
+      await expect(
+        acceptSwapOffer("o", "b", "ABC"),
+      ).rejects.toMatchObject({ code: "payment_ref_invalid" });
+      expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    it("rejeita ref com control char antes de chamar RPC", async () => {
+      await expect(
+        acceptSwapOffer("o", "b", "BAD\u0007REF"),
+      ).rejects.toMatchObject({ code: "payment_ref_invalid" });
+      expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    it("rejeita ref muito longa antes de chamar RPC", async () => {
+      const tooLong = "x".repeat(201);
+      await expect(
+        acceptSwapOffer("o", "b", tooLong),
+      ).rejects.toMatchObject({ code: "payment_ref_invalid" });
+      expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    it("maps P0006 vindo do banco para payment_ref_invalid", async () => {
+      mockRpc.mockResolvedValueOnce({
+        error: {
+          code: "P0006",
+          message: "SWAP_PAYMENT_REF_INVALID: ...",
+        },
+      });
+      // Usa ref válida no client p/ passar a validação local; então banco
+      // retorna P0006 (cenário de policy server-side mais estrita).
+      await expect(
+        acceptSwapOffer("o", "b", "VALID-REF-9876"),
+      ).rejects.toMatchObject({ code: "payment_ref_invalid", sqlstate: "P0006" });
+    });
+  });
+
   describe("createSwapOffer", () => {
     it("creates offer when seller has sufficient available", async () => {
       const mockOrder = {
@@ -167,12 +225,13 @@ describe("swap service", () => {
   });
 
   describe("acceptSwapOffer — L05-01 SQLSTATE mapping", () => {
-    it("calls execute_swap RPC with order_id and buyer_group_id", async () => {
+    it("calls execute_swap RPC with order_id, buyer_group_id e ref=null", async () => {
       mockRpc.mockResolvedValueOnce({ error: null });
       await acceptSwapOffer("order-1", "buyer-1");
       expect(mockRpc).toHaveBeenCalledWith("execute_swap", {
         p_order_id: "order-1",
         p_buyer_group_id: "buyer-1",
+        p_external_payment_ref: null,
       });
     });
 

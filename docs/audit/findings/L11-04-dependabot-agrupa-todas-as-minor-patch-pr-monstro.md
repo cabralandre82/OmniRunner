@@ -16,7 +16,8 @@ correction_type: code
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "commit:c702023"
 owner: unassigned
 runbook: null
 effort_points: 3
