@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 19:59:07 UTC.
+> Atualizado em 2026-04-18 20:12:11 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -65,7 +65,7 @@ Total: **348** findings.
 | 🟢 safe | ✅ fixed | [L02-04](./findings/L02-04-confirm-custody-deposit-for-update-upsert.md) | 3 | L02 · CTO | confirm_custody_deposit — FOR UPDATE + UPSERT | unassigned |
 | 🟢 safe | ✅ fixed | [L02-05](./findings/L02-05-execute-swap-deadlock-prevention-via-uuid-ordering.md) | 3 | L02 · CTO | execute_swap — Deadlock prevention via UUID ordering | unassigned |
 | 🟠 high | ⏳ fix-pending | [L02-06](./findings/L02-06-execute-withdrawal-estado-processing-sem-transicao-final.md) | 1 | L02 · CTO | execute_withdrawal — Estado 'processing' sem transição final | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L02-07](./findings/L02-07-execute-swap-buyer-funding-nao-e-lockado-corretamente.md) | 2 | L02 · CTO | execute_swap — Buyer funding não é lockado corretamente | unassigned |
+| 🟡 medium | ✅ fixed | [L02-07](./findings/L02-07-execute-swap-buyer-funding-nao-e-lockado-corretamente.md) | 1 | L02 · CTO | execute_swap — Buyer funding não é lockado corretamente | unassigned |
 | 🟠 high | ⏳ fix-pending | [L02-08](./findings/L02-08-realtime-websocket-cross-tenant-leak.md) | 1 | L02 · CTO | Realtime / Websocket — Cross-tenant leak | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L02-09](./findings/L02-09-migration-drift-check-platform-fee-config-fee-type.md) | 1 | L02 · CTO | Migration drift — CHECK platform_fee_config.fee_type (duplica 1.44) | unassigned |
 | 🟠 high | ⏳ fix-pending | [L02-10](./findings/L02-10-cold-start-timeout-vercel-em-operacoes-longas.md) | 1 | L02 · CTO | Cold start + timeout Vercel em operações longas | unassigned |
@@ -196,7 +196,7 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L11-01](./findings/L11-01-ci-sem-npm-audit-flutter-pub-audit.md) | 1 | L11 · Supply Chain | CI sem npm audit / flutter pub audit | unassigned |
 | 🔴 critical | ✅ fixed | [L11-02](./findings/L11-02-sem-sbom-software-bill-of-materials.md) | 1 | L11 · Supply Chain | Sem SBOM (Software Bill of Materials) | unassigned |
 | 🔴 critical | ✅ fixed | [L11-03](./findings/L11-03-sem-gitleaks-trufflehog-no-ci.md) | 1 | L11 · Supply Chain | Sem gitleaks / trufflehog no CI | unassigned |
-| 🟠 high | ⏳ fix-pending | [L11-04](./findings/L11-04-dependabot-agrupa-todas-as-minor-patch-pr-monstro.md) | 1 | L11 · Supply Chain | Dependabot agrupa todas as minor+patch — PR monstro | unassigned |
+| 🟠 high | ✅ fixed | [L11-04](./findings/L11-04-dependabot-agrupa-todas-as-minor-patch-pr-monstro.md) | 1 | L11 · Supply Chain | Dependabot agrupa todas as minor+patch — PR monstro | unassigned |
 | 🟠 high | ⏳ fix-pending | [L11-05](./findings/L11-05-flutter-secure-storage-10-0-0-mas-release.md) | 1 | L11 · Supply Chain | flutter_secure_storage: ^10.0.0 mas release inclui shared_preferences | unassigned |
 | 🟠 high | ⏳ fix-pending | [L11-06](./findings/L11-06-dependencias-com-permitem-breaking-minor.md) | 1 | L11 · Supply Chain | Dependências com ^ permitem breaking minor | unassigned |
 | 🟠 high | ⏳ fix-pending | [L11-07](./findings/L11-07-sqlcipher-flutter-libs-0-7-0-eol-eol.md) | 1 | L11 · Supply Chain | sqlcipher_flutter_libs: ^0.7.0+eol — "eol" = end of life | unassigned |

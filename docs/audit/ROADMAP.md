@@ -1,7 +1,7 @@
 # ROADMAP — Execução das Correções em Ondas
 
 > **Atualizado:** 2026-04-17
-> **Status do overall:** Onda 0 ✅ concluída (15/15 fixed, E2E verde) — Onda 1 em execução (13/177 fixed: supply chain trinca L11 + observabilidade SRE L20 + runbooks financeiros L06-01 + kill switches L06-06 + custody idempotency L01-04 + swap TTL L05-02)
+> **Status do overall:** Onda 0 ✅ concluída (15/15 fixed, E2E verde) — Onda 1 em execução (15/177 fixed: supply chain trinca L11-01/02/03 + dependabot semântico L11-04 + observabilidade SRE L20 + runbooks financeiros L06-01 + kill switches L06-06 + custody idempotency L01-04 + swap TTL L05-02 + swap ADR cessão de crédito L02-07/ADR-008)
 
 A auditoria identificou **348 findings** distribuídos em **23 lentes** (69 🔴 critical, 123 🟠 high, 127 🟡 medium, 17 🟢 safe, 12 ⚪ não-auditados). Corrigir todos em paralelo seria caótico. Esta estratégia distribui o trabalho em **4 ondas** com objetivos bem definidos e critérios de saída mensuráveis.
 
@@ -63,22 +63,25 @@ Detalhes completos + correções em `docs/audit/findings/LXX-YY-*.md`.
 **Duração alvo:** 3-5 sprints
 **Foco:** fundação que acelera as correções das demais ondas. Inclui 54 criticals que não sangram dinheiro diretamente mas estabelecem padrões (observability, idempotência unificada, runbooks, OpenAPI, tracing).
 
-**Progresso atual:** 13/177 fixed:
+**Progresso atual:** 15/177 fixed:
 - L11-01/02/03 — supply chain trinca (dep vuln scan, SBOM CycloneDX, gitleaks)
+- L11-04 — Dependabot reorganizado em 27 grupos semânticos (10 portal + 13 mobile + 4 actions), majors isolados, security-updates separados, commit messages padronizados
 - L20-01/02/04/05/07/08 — SRE foundation (financial-ops dashboard JSON, SLO catalog, Sentry adaptive sampler + severity tags, alert policy, DR runbook, postmortem template)
 - L06-01 — runbooks financeiros operacionais (custody incident, clearing stuck, withdraw stuck, chargeback, gateway outage, webhook backlog)
 - L06-06 — kill switches operacionais (feature_flags estendida com category/scope/audit, helpers SQL+TS+Deno, wiring em 3 routes financeiras, admin UI corrigida)
 - L01-04 — custody idempotency-key + cross-group ownership (UNIQUE composto, RPC `fn_create_custody_deposit_idempotent` com `was_idempotent`, `confirm_custody_deposit` agora exige `(deposit_id, group_id)`, header `x-idempotency-key` obrigatório no portal, defesa contra double-click/replay/cross-group enumeration)
 - L05-02 — swap TTL/expiração (coluna `expires_at`, RPC `fn_expire_swap_orders` + cron `*/10 * * * *`, `execute_swap` rejeita expirado com P0005, portal aceita `expires_in_days` 1/7/30/90, HTTP 410 Gone para offers expiradas)
+- L02-07/ADR-008 — swap formalizado como cessão de crédito off-platform (coluna `external_payment_ref` com CHECK constraint, `execute_swap` ganha 3º param + SQLSTATE P0006, validação tripla portal Zod+lib+DB, WARN log estruturado quando ref ausente, ADR documentando rejeição de gateway Stripe/MP)
 
 ### Escopo
 
-- ✅ **Supply chain (L11-01/02/03)** — npm audit + osv-scanner gate, SBOMs CycloneDX, gitleaks pre-commit + CI + weekly sweep.
+- ✅ **Supply chain (L11-01/02/03/04)** — npm audit + osv-scanner gate, SBOMs CycloneDX, gitleaks pre-commit + CI + weekly sweep, Dependabot agrupado por área semântica (27 grupos).
 - ✅ **SRE foundation (L20-01/02/04/05/07/08)** — dashboard versionado, SLO/SLI canônicos com burn-rate alerting, Sentry tuning adaptativo (P1=100% / P4=0%), severity-based alert routing, DR drill protocol, blameless postmortem template.
 - ✅ **Runbooks financeiros (L06-01)** — 6 runbooks operacionais (CUSTODY_INCIDENT, CLEARING_STUCK, WITHDRAW_STUCK, CHARGEBACK, GATEWAY_OUTAGE, WEBHOOK_BACKLOG) com SQL real, decisão por cenário, validação e postmortem mandatório. Indexados em `docs/runbooks/README.md` por severidade e tempo alvo.
 - ✅ **Kill switches (L06-06)** — `feature_flags` estendida com `id`/`scope`/`category`/`reason`/`updated_by` + audit trigger imutável + helpers SQL/TS/Deno (fail-open semantics) + wiring em `/api/distribute-coins`, `/api/custody/withdraw`, `/api/swap` + admin UI com badge por categoria, motivo obrigatório e cache invalidation. Runbooks atualizados para usar schema real.
 - ✅ **Custody idempotency (L01-04)** — `custody_deposits.idempotency_key` + UNIQUE parcial composto `(group_id, key)` + RPC `fn_create_custody_deposit_idempotent` (SELECT-first, race resolvido via `unique_violation`) + `confirm_custody_deposit(uuid, uuid)` exige match de ambos (mensagem genérica defende contra UUID enumeration) + header `x-idempotency-key` obrigatório no POST com formato UUIDv4/ULID validado + audit log skipa replays + 3 testes integration (replay/cross-group/non-existent).
 - ✅ **Swap TTL/expiração (L05-02)** — `swap_orders.expires_at` (default 7d) + index parcial `(expires_at) WHERE status='open'` + RPC `fn_expire_swap_orders` (RETURNING ids) + pg_cron `swap-expire` a cada 10min + `execute_swap` rejeita `expires_at<now()` com SQLSTATE P0005 (defesa entre runs do cron) + portal `createSwapOffer(seller, amount, expiresInDays?)` com TTLs canônicos 1/7/30/90 + HTTP 410 Gone para offers expiradas + audit log carrega `expires_in_days`/`expires_at`. 3 integration tests cobrindo sweep idempotency, P0005+sweep cleanup e happy path.
+- ✅ **Swap como cessão de crédito off-platform (L02-07/ADR-008)** — `swap_orders.external_payment_ref` opcional (4-200 chars, sem control chars, validado em CHECK constraint) + `execute_swap` ganha 3º param `p_external_payment_ref` + nova SQLSTATE P0006 (PAYMENT_REF_INVALID) + portal lib `acceptSwapOffer(orderId, buyer, ref?)` com validação client-side + Zod no route com triple-check (min/max/regex sem control chars) + WARN log estruturado quando accept ocorre sem ref (`logger.warn("swap.accept_without_external_payment_ref", { adr: "ADR-008" })`) + audit log enriquecido com `external_payment_ref`/`has_payment_ref`. ADR-008 formaliza modelo (cessão vs venda) + decisão de não migrar para gateway Stripe/MP. 13 novos tests (5 lib + 5 route + 3 integration).
 - Testes de regressão para **todos** os fluxos financeiros (portal + edge)
 - Observabilidade restante: OTel distributed tracing (L20-03), status page público (L20-06), structured logger correlation IDs em todas rotas
 - LGPD: endpoints de exportação/deleção, consentimento versionado

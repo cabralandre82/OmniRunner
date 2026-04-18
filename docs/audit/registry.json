@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T19:59:07.628Z",
+  "generated_at": "2026-04-18T20:12:11.470Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,14 +10,14 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 302,
-    "fixed": 45,
+    "fix-pending": 300,
+    "fixed": 47,
     "in-progress": 1
   },
   "by_wave": {
     "0": 15,
-    "1": 177,
-    "2": 127,
+    "1": 178,
+    "2": 126,
     "3": 29
   },
   "by_lens": {
@@ -1820,21 +1820,38 @@
       "lens": 2,
       "title": "execute_swap — Buyer funding não é lockado corretamente",
       "severity": "medium",
-      "status": "fix-pending",
-      "wave": 2,
+      "status": "fixed",
+      "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "migration",
         "ux",
-        "reliability"
+        "reliability",
+        "adr"
       ],
-      "files": [],
+      "files": [
+        "docs/adr/008-swap-as-off-platform-credit-cession.md",
+        "supabase/migrations/20260417280000_swap_external_payment_ref.sql",
+        "portal/src/lib/swap.ts",
+        "portal/src/app/api/swap/route.ts",
+        "portal/src/lib/swap.test.ts",
+        "portal/src/app/api/swap/route.test.ts",
+        "tools/integration_tests.ts"
+      ],
       "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "test_required": true,
+      "tests": [
+        "portal/src/lib/swap.test.ts",
+        "portal/src/app/api/swap/route.test.ts",
+        "tools/integration_tests.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:f889829"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 2,
@@ -5680,20 +5697,26 @@
       "lens": 11,
       "title": "Dependabot agrupa todas as minor+patch — PR monstro",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
-        "testing"
+        "testing",
+        "ci",
+        "supply-chain"
       ],
       "files": [
         ".github/dependabot.yml"
       ],
       "correction_type": "code",
-      "test_required": true,
+      "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:c702023"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
