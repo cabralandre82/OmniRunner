@@ -1,0 +1,317 @@
+{
+  "__comment": "Omni Runner — Financial Operations Dashboard (L20-01)",
+  "__source": "observability/grafana/dashboards/financial-ops.json (versionado, IaC)",
+  "__deploy": "Importar via Grafana UI (Settings > Dashboards > Import) ou API. Ver observability/README.md.",
+  "__datasource_required": "Prometheus-compatible (Prometheus, Datadog Prometheus API, Grafana Cloud, Mimir).",
+
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "enable": true,
+        "expr": "deploys_total{service=\"portal-api\"}",
+        "iconColor": "blue",
+        "name": "Deploys",
+        "step": "1m",
+        "tagKeys": "version,git_sha",
+        "titleFormat": "Deploy {{git_sha}}"
+      }
+    ]
+  },
+
+  "description": "Single-pane-of-glass for financial operations. Surfaces the 5 KPIs that matter for incident response: deposit rate, withdraw latency, invariant violations, webhook health, and wallet drift. Owner: platform team. Audit: L20-01.",
+
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "icon": "doc",
+      "tags": [],
+      "targetBlank": true,
+      "title": "SLO catalog",
+      "tooltip": "docs/observability/SLO.md",
+      "type": "link",
+      "url": "/docs/observability/SLO.md"
+    },
+    {
+      "icon": "bolt",
+      "tags": [],
+      "targetBlank": true,
+      "title": "Alert policy",
+      "tooltip": "docs/observability/ALERT_POLICY.md",
+      "type": "link",
+      "url": "/docs/observability/ALERT_POLICY.md"
+    },
+    {
+      "icon": "external link",
+      "tags": [],
+      "targetBlank": true,
+      "title": "DR runbook",
+      "type": "link",
+      "url": "/docs/runbooks/DR_PROCEDURE.md"
+    }
+  ],
+
+  "panels": [
+    {
+      "title": "Deposits/min (last 1h) — P1",
+      "description": "Custody deposit rate. Drop > 50% vs 1h-prior baseline triggers P1. Source: custody_deposits.created_at via Prometheus exporter.",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "targets": [
+        {
+          "expr": "sum(rate(custody_deposits_total[1m]))",
+          "legendFormat": "deposits/min",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+
+    {
+      "title": "p99 burn latency (execute_burn_atomic) — P1",
+      "description": "RPC duration p99. Target: < 500ms (SLO api_custody_withdraw_latency_p99). Threshold red at 500ms, yellow at 300ms.",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(rpc_duration_seconds_bucket{rpc=\"execute_burn_atomic\"}[5m])))",
+          "legendFormat": "p99",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(rpc_duration_seconds_bucket{rpc=\"execute_burn_atomic\"}[5m])))",
+          "legendFormat": "p50",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.3 },
+              { "color": "red", "value": 0.5 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+
+    {
+      "title": "Invariant violations (check_custody_invariants) — P1 SEV-0",
+      "description": "Should ALWAYS be 0. Any non-zero value pages on-call immediately (burn rate 14.4× over 5m). Lente 1-3 (ATOMIC + LEDGER).",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 8 },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "max_over_time(health_invariant_violations[5m])",
+          "legendFormat": "violations",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "✓ healthy", "color": "green" } } }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value_and_name"
+      }
+    },
+
+    {
+      "title": "Webhook success rate (gateway × status) — P1",
+      "description": "Asaas webhook ingest. Target ≥ 99% (SLO webhook_processing_p99). Heatmap by gateway helps isolate provider-side incidents.",
+      "type": "heatmap",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 8 },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "sum by (gateway, status) (rate(webhook_processed_total[5m]))",
+          "legendFormat": "{{gateway}} / {{status}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "color": { "mode": "spectrum", "scheme": "RdYlGn" } },
+        "overrides": []
+      }
+    },
+
+    {
+      "title": "Wallet drift (ledger sum − wallet balance) — P1 SEV-0",
+      "description": "MUST be 0. Drift = silent corruption. Calculated via SQL view `v_wallet_ledger_drift` exported by health endpoint.",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 16 },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "sum(wallet_ledger_drift_coins)",
+          "legendFormat": "drift (coins)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 0 },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value_and_name"
+      }
+    },
+
+    {
+      "title": "Queue backlog (Asaas webhook reprocessing) — P2",
+      "description": "Pending webhooks > 100 sustained 5m → P2 alert. Indicates downstream slowness.",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 6, "w": 9, "x": 6, "y": 16 },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "asaas_webhook_queue_depth",
+          "legendFormat": "queue depth",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 100 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+
+    {
+      "title": "Withdraw availability (rolling 30d) — P1 SLO 99.9%",
+      "description": "SLO `api_custody_withdraw_availability` real vs target. Bar shows budget remaining. Source: observability/slo.yaml.",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 6, "w": 9, "x": 15, "y": 16 },
+      "id": 7,
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{route=\"/api/custody/withdraw\",status!~\"5..\"}[30d])) / sum(rate(http_requests_total{route=\"/api/custody/withdraw\"}[30d]))",
+          "legendFormat": "availability",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0.99,
+          "max": 1.0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.998 },
+              { "color": "green", "value": 0.999 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    }
+  ],
+
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["financial-ops", "L20-01", "platform", "P1"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "default", "value": "default" },
+        "hide": 0,
+        "label": "Datasource",
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Omni Runner — Financial Operations (L20-01)",
+  "uid": "omni-runner-financial-ops",
+  "version": 1,
+  "weekStart": ""
+}

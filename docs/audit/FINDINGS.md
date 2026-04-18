@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 18:37:25 UTC.
+> Atualizado em 2026-04-18 18:53:30 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -284,14 +284,14 @@ Total: **348** findings.
 | 🟠 high | ⏳ fix-pending | [L19-08](./findings/L19-08-constraints-check-sem-name-padronizado.md) | 1 | L19 · DBA | Constraints CHECK sem name padronizado | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L19-09](./findings/L19-09-connection-pooling-nao-documentado.md) | 2 | L19 · DBA | Connection pooling não documentado | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L19-10](./findings/L19-10-sem-autovacuum-tuning-para-tabelas-hot.md) | 2 | L19 · DBA | Sem autovacuum tuning para tabelas hot | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L20-01](./findings/L20-01-sem-dashboard-consolidado-de-operacoes-financeiras.md) | 1 | L20 · SRE | Sem dashboard consolidado de operações financeiras | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L20-02](./findings/L20-02-sem-slo-sli-definidos-impossivel-ter-alert-policy.md) | 1 | L20 · SRE | Sem SLO/SLI definidos → impossível ter alert policy razoável | unassigned |
+| 🔴 critical | ✅ fixed | [L20-01](./findings/L20-01-sem-dashboard-consolidado-de-operacoes-financeiras.md) | 1 | L20 · SRE | Sem dashboard consolidado de operações financeiras | unassigned |
+| 🔴 critical | ✅ fixed | [L20-02](./findings/L20-02-sem-slo-sli-definidos-impossivel-ter-alert-policy.md) | 1 | L20 · SRE | Sem SLO/SLI definidos → impossível ter alert policy razoável | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L20-03](./findings/L20-03-sem-tracing-distribuido-opentelemetry.md) | 1 | L20 · SRE | Sem tracing distribuído (OpenTelemetry) | unassigned |
-| 🟠 high | ⏳ fix-pending | [L20-04](./findings/L20-04-sentry-sem-tracessamplerate-tuning-documentado.md) | 1 | L20 · SRE | Sentry sem tracesSampleRate tuning documentado | unassigned |
-| 🟠 high | ⏳ fix-pending | [L20-05](./findings/L20-05-alerts-sem-canal-de-severidade.md) | 1 | L20 · SRE | Alerts sem canal de severidade | unassigned |
+| 🟠 high | ✅ fixed | [L20-04](./findings/L20-04-sentry-sem-tracessamplerate-tuning-documentado.md) | 1 | L20 · SRE | Sentry sem tracesSampleRate tuning documentado | unassigned |
+| 🟠 high | ✅ fixed | [L20-05](./findings/L20-05-alerts-sem-canal-de-severidade.md) | 1 | L20 · SRE | Alerts sem canal de severidade | unassigned |
 | 🟠 high | ⏳ fix-pending | [L20-06](./findings/L20-06-status-page-publica-inexistente.md) | 1 | L20 · SRE | Status page pública inexistente | unassigned |
-| 🟠 high | ⏳ fix-pending | [L20-07](./findings/L20-07-backup-testado-zero-evidence.md) | 1 | L20 · SRE | Backup testado — zero evidence | unassigned |
-| 🟠 high | ⏳ fix-pending | [L20-08](./findings/L20-08-post-mortem-template-ausente.md) | 1 | L20 · SRE | Post-mortem template ausente | unassigned |
+| 🟠 high | ✅ fixed | [L20-07](./findings/L20-07-backup-testado-zero-evidence.md) | 1 | L20 · SRE | Backup testado — zero evidence | unassigned |
+| 🟠 high | ✅ fixed | [L20-08](./findings/L20-08-post-mortem-template-ausente.md) | 1 | L20 · SRE | Post-mortem template ausente | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L20-09](./findings/L20-09-chaos-engineering-inexistente.md) | 2 | L20 · SRE | Chaos engineering inexistente | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L20-10](./findings/L20-10-logs-de-producao-nao-searchable.md) | 2 | L20 · SRE | Logs de produção não-searchable | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L20-11](./findings/L20-11-cost-observability-inexistente.md) | 2 | L20 · SRE | Cost observability inexistente | unassigned |

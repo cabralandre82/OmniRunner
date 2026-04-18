@@ -1,7 +1,7 @@
 # ROADMAP — Execução das Correções em Ondas
 
 > **Atualizado:** 2026-04-17
-> **Status do overall:** Onda 0 ✅ concluída (15/15 fixed, E2E verde) — Onda 1 iniciada (3/177 fixed: supply chain trinca L11)
+> **Status do overall:** Onda 0 ✅ concluída (15/15 fixed, E2E verde) — Onda 1 em execução (9/177 fixed: supply chain trinca L11 + observabilidade SRE L20)
 
 A auditoria identificou **348 findings** distribuídos em **23 lentes** (69 🔴 critical, 123 🟠 high, 127 🟡 medium, 17 🟢 safe, 12 ⚪ não-auditados). Corrigir todos em paralelo seria caótico. Esta estratégia distribui o trabalho em **4 ondas** com objetivos bem definidos e critérios de saída mensuráveis.
 
@@ -63,13 +63,16 @@ Detalhes completos + correções em `docs/audit/findings/LXX-YY-*.md`.
 **Duração alvo:** 3-5 sprints
 **Foco:** fundação que acelera as correções das demais ondas. Inclui 54 criticals que não sangram dinheiro diretamente mas estabelecem padrões (observability, idempotência unificada, runbooks, OpenAPI, tracing).
 
-**Progresso atual:** 3/177 fixed (L11-01 + L11-02 + L11-03 — supply chain trinca: dep vuln scan, SBOM CycloneDX, gitleaks).
+**Progresso atual:** 9/177 fixed:
+- L11-01/02/03 — supply chain trinca (dep vuln scan, SBOM CycloneDX, gitleaks)
+- L20-01/02/04/05/07/08 — SRE foundation (financial-ops dashboard JSON, SLO catalog, Sentry adaptive sampler + severity tags, alert policy, DR runbook, postmortem template)
 
 ### Escopo
 
 - ✅ **Supply chain (L11-01/02/03)** — npm audit + osv-scanner gate, SBOMs CycloneDX, gitleaks pre-commit + CI + weekly sweep.
+- ✅ **SRE foundation (L20-01/02/04/05/07/08)** — dashboard versionado, SLO/SLI canônicos com burn-rate alerting, Sentry tuning adaptativo (P1=100% / P4=0%), severity-based alert routing, DR drill protocol, blameless postmortem template.
 - Testes de regressão para **todos** os fluxos financeiros (portal + edge)
-- Observabilidade: Sentry, estruturar `logger.error`, correlation IDs em todas rotas
+- Observabilidade restante: OTel distributed tracing (L20-03), status page público (L20-06), structured logger correlation IDs em todas rotas
 - LGPD: endpoints de exportação/deleção, consentimento versionado
 - Anti-cheat: ajuste de thresholds para atletas de elite (`MAX_SPEED_MS`, `MAX_HR_BPM`) — Lente 21
 - API versioning: `/api/v1/` formal + OpenAPI atualizado

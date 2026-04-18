@@ -1,0 +1,199 @@
+# Omni Runner — SLO/SLI definitions (L20-02)
+#
+# Schema: OpenSLO 1.0 (https://openslo.com) — pode ser consumido por
+# `slogen`, Sloth, Pyrra, ou Datadog SLO API. Sem dependência de SaaS:
+# este YAML é a fonte canônica e os alertas downstream consultam estes
+# valores.
+#
+# Categorias de SLO:
+#   1. Availability — taxa de respostas != 5xx
+#   2. Latency — p99 < threshold
+#   3. Correctness — invariants/business rules respeitadas
+#   4. Freshness — dados atualizados dentro de janela esperada
+#
+# Convenção de nomenclatura: `<surface>_<operation>_<dimension>`
+#
+# Burn-rate alerts (Google SRE workbook ch.5):
+#   - Multi-window multi-burn-rate. Alert quando:
+#     - 2% budget queimado em 1h  (burn 14.4× normal) → P1 page
+#     - 5% budget queimado em 6h  (burn 6× normal)    → P1 page
+#     - 10% budget queimado em 3d (burn 1× normal)    → P3 ticket
+#   Fórmulas: ver `docs/observability/SLO.md`.
+
+apiVersion: openslo/v1
+kind: SLOList
+metadata:
+  name: omni-runner-platform
+  displayName: Omni Runner — Platform SLOs
+  labels:
+    owner: platform
+    audit_finding: L20-02
+
+spec:
+  # ─────────────────────────────────────────────────────────────────────
+  # Money-touching APIs (P1) — financial correctness over availability.
+  # ─────────────────────────────────────────────────────────────────────
+  slos:
+    - name: api_custody_deposit_availability
+      displayName: Custody deposit endpoint availability
+      severity: P1
+      service: portal-api
+      objectives:
+        - target: 0.999    # 99.9% — 43m20s downtime/month
+          window: 30d
+      indicator:
+        ratio:
+          good: 'sum(rate(http_requests_total{route="/api/custody/deposit",status!~"5.."}[5m]))'
+          total: 'sum(rate(http_requests_total{route="/api/custody/deposit"}[5m]))'
+      alertWhen:
+        - burnRate: 14.4
+          windowShort: 5m
+          windowLong: 1h
+          severity: P1   # page on-call
+        - burnRate: 6
+          windowShort: 30m
+          windowLong: 6h
+          severity: P1
+        - burnRate: 1
+          windowShort: 6h
+          windowLong: 3d
+          severity: P3   # ticket only
+
+    - name: api_custody_withdraw_availability
+      displayName: Custody withdraw endpoint availability
+      severity: P1
+      service: portal-api
+      objectives:
+        - target: 0.999
+          window: 30d
+      indicator:
+        ratio:
+          good: 'sum(rate(http_requests_total{route="/api/custody/withdraw",status!~"5.."}[5m]))'
+          total: 'sum(rate(http_requests_total{route="/api/custody/withdraw"}[5m]))'
+
+    - name: api_custody_withdraw_latency_p99
+      displayName: Withdraw p99 latency under 500ms
+      severity: P1
+      service: portal-api
+      objectives:
+        - target: 0.95   # 95% das requisições < 500ms
+          window: 30d
+      indicator:
+        ratio:
+          good: 'sum(rate(http_request_duration_seconds_bucket{route="/api/custody/withdraw",le="0.5"}[5m]))'
+          total: 'sum(rate(http_request_duration_seconds_count{route="/api/custody/withdraw"}[5m]))'
+
+    - name: api_swap_availability
+      displayName: Swap endpoint availability
+      severity: P1
+      service: portal-api
+      objectives:
+        - target: 0.999
+          window: 30d
+      indicator:
+        ratio:
+          good: 'sum(rate(http_requests_total{route=~"/api/swap/.*",status!~"5.."}[5m]))'
+          total: 'sum(rate(http_requests_total{route=~"/api/swap/.*"}[5m]))'
+
+    - name: api_distribute_coins_availability
+      displayName: Coin distribution endpoint availability
+      severity: P1
+      service: portal-api
+      objectives:
+        - target: 0.999
+          window: 30d
+      indicator:
+        ratio:
+          good: 'sum(rate(http_requests_total{route="/api/distribute-coins",status!~"5.."}[5m]))'
+          total: 'sum(rate(http_requests_total{route="/api/distribute-coins"}[5m]))'
+
+    - name: webhook_processing_p99
+      displayName: Asaas webhook processing p99 under 30s
+      severity: P1
+      service: portal-api
+      objectives:
+        - target: 0.99   # 99% processados em <30s
+          window: 7d
+      indicator:
+        ratio:
+          good: 'sum(rate(webhook_processing_duration_seconds_bucket{gateway="asaas",le="30"}[5m]))'
+          total: 'sum(rate(webhook_processing_duration_seconds_count{gateway="asaas"}[5m]))'
+
+    # ─────────────────────────────────────────────────────────────────
+    # Correctness invariants — should always be 0 violations.
+    # Phrased as "fraction of health checks reporting zero violations".
+    # ─────────────────────────────────────────────────────────────────
+    - name: custody_invariants_correctness
+      displayName: Custody ledger invariants (zero violations)
+      severity: P1
+      service: portal-api
+      objectives:
+        - target: 0.9999  # ~3m/month tolerance
+          window: 30d
+      indicator:
+        ratio:
+          good: 'sum(rate(health_invariants_total{result="healthy"}[5m]))'
+          total: 'sum(rate(health_invariants_total[5m]))'
+      alertWhen:
+        - burnRate: 14.4
+          windowShort: 5m
+          windowLong: 1h
+          severity: P1   # ANY violation pages immediately
+
+    # ─────────────────────────────────────────────────────────────────
+    # Critical user paths (P2) — availability without strict SLO.
+    # ─────────────────────────────────────────────────────────────────
+    - name: api_sessions_upload_availability
+      displayName: Session upload endpoint availability
+      severity: P2
+      service: portal-api
+      objectives:
+        - target: 0.995  # 99.5% — 3h36m/month
+          window: 30d
+      indicator:
+        ratio:
+          good: 'sum(rate(http_requests_total{route=~"/api/sessions/.*",status!~"5.."}[5m]))'
+          total: 'sum(rate(http_requests_total{route=~"/api/sessions/.*"}[5m]))'
+
+    - name: api_coaching_availability
+      displayName: Coaching/membership endpoints availability
+      severity: P2
+      service: portal-api
+      objectives:
+        - target: 0.995
+          window: 30d
+      indicator:
+        ratio:
+          good: 'sum(rate(http_requests_total{route=~"/api/coaching/.*",status!~"5.."}[5m]))'
+          total: 'sum(rate(http_requests_total{route=~"/api/coaching/.*"}[5m]))'
+
+    # ─────────────────────────────────────────────────────────────────
+    # Auth (P1 — when down, no one can log in)
+    # ─────────────────────────────────────────────────────────────────
+    - name: api_auth_callback_availability
+      displayName: OAuth callback availability
+      severity: P1
+      service: portal-api
+      objectives:
+        - target: 0.999
+          window: 30d
+      indicator:
+        ratio:
+          good: 'sum(rate(http_requests_total{route="/api/auth/callback",status!~"5.."}[5m]))'
+          total: 'sum(rate(http_requests_total{route="/api/auth/callback"}[5m]))'
+
+    # ─────────────────────────────────────────────────────────────────
+    # Mobile sync freshness (Lente 21 — atletas profissionais).
+    # SLO: lag entre device clock e ingest server clock fica < 60s p99.
+    # ─────────────────────────────────────────────────────────────────
+    - name: mobile_session_ingest_freshness
+      displayName: Session ingest freshness (device-to-server lag p99 < 60s)
+      severity: P2
+      service: mobile-app
+      objectives:
+        - target: 0.99
+          window: 7d
+      indicator:
+        ratio:
+          good: 'sum(rate(session_ingest_lag_seconds_bucket{le="60"}[5m]))'
+          total: 'sum(rate(session_ingest_lag_seconds_count[5m]))'

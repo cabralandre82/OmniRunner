@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T18:37:25.215Z",
+  "generated_at": "2026-04-18T18:53:30.808Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 312,
-    "fixed": 35,
+    "fix-pending": 306,
+    "fixed": 41,
     "in-progress": 1
   },
   "by_wave": {
@@ -8119,9 +8119,10 @@
       "lens": 20,
       "title": "Sem dashboard consolidado de operações financeiras",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "atomicity",
@@ -8130,19 +8131,27 @@
         "observability",
         "reliability"
       ],
-      "files": [],
+      "files": [
+        "observability/grafana/dashboards/financial-ops.json",
+        "observability/README.md"
+      ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "observability/grafana/dashboards/financial-ops.json",
+        "observability/README.md"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:HEAD"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Dashboard Grafana versionado em IaC (observability/grafana/dashboards/financial-ops.json) com 7 painéis cobrindo os KPIs canônicos para resposta a incidente: deposits/min, p99 burn latency, invariant violations (SEV-0), webhook success heatmap, wallet drift (SEV-0), queue backlog, withdraw availability gauge vs SLO. README.md documenta deploy via UI/Terraform/API. Stack Prometheus/Grafana ainda não provisionada — JSON é importable hoje."
     },
     {
       "id": "L20-02",
@@ -8150,28 +8159,37 @@
       "lens": 20,
       "title": "Sem SLO/SLI definidos → impossível ter alert policy razoável",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "webhook",
         "observability",
         "reliability"
       ],
-      "files": [],
+      "files": [
+        "observability/slo.yaml",
+        "docs/observability/SLO.md"
+      ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "observability/slo.yaml",
+        "docs/observability/SLO.md"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:HEAD"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "11 SLOs canônicos em observability/slo.yaml (OpenSLO 1.0). SLO.md companion documenta filosofia, burn-rate alerting (multi-window multi-burn-rate Google SRE workbook ch.5), tabela de calibração, fórmula PromQL canônica, ratchet policy. Geração de regras Prometheus via Pyrra/Sloth quando stack for provisionada — YAML é fonte canônica HOJE."
     },
     {
       "id": "L20-03",
@@ -8212,27 +8230,38 @@
       "lens": 20,
       "title": "Sentry sem tracesSampleRate tuning documentado",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "observability",
         "reliability"
       ],
-      "files": [],
+      "files": [
+        "portal/src/lib/observability/sentryTuning.ts",
+        "portal/src/lib/observability/sentryTuning.test.ts",
+        "portal/sentry.client.config.ts",
+        "portal/sentry.server.config.ts",
+        "portal/sentry.edge.config.ts"
+      ],
       "correction_type": "config",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/observability/sentryTuning.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:HEAD"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "tracesSampler adaptativo (P1=1.0, P2=0.5, P3=0.1, P4=0.0) compartilhado pelos 3 runtimes (client/server/edge) via portal/src/lib/observability/sentryTuning.ts. Honra parentSampled para não quebrar trace contiguity. Calibração documentada em comments + 20 testes unitários."
     },
     {
       "id": "L20-05",
@@ -8240,26 +8269,39 @@
       "lens": 20,
       "title": "Alerts sem canal de severidade",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "webhook",
         "observability"
       ],
-      "files": [],
+      "files": [
+        "portal/src/lib/observability/sentryTuning.ts",
+        "portal/src/lib/observability/sentryTuning.test.ts",
+        "portal/sentry.client.config.ts",
+        "portal/sentry.server.config.ts",
+        "portal/sentry.edge.config.ts",
+        "docs/observability/ALERT_POLICY.md"
+      ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/observability/sentryTuning.test.ts",
+        "docs/observability/ALERT_POLICY.md"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:HEAD"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Helper enrichWithSeverity (beforeSend + beforeSendTransaction) tagga todo evento Sentry com severity P1..P4 derivada da rota. ALERT_POLICY.md documenta routing target: P1=PagerDuty, P2=Slack #incidents, P3=daily digest, P4=silent. Sentry alert rules são config-as-doc (não IaC) — checklist trimestral em ALERT_POLICY.md valida sincronização."
     },
     {
       "id": "L20-06",
@@ -8291,27 +8333,34 @@
       "lens": 20,
       "title": "Backup testado — zero evidence",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "testing",
         "reliability"
       ],
-      "files": [],
+      "files": [
+        "docs/runbooks/DR_PROCEDURE.md"
+      ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "docs/runbooks/DR_PROCEDURE.md"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:HEAD"
+      ],
       "owner": "unassigned",
-      "runbook": null,
+      "runbook": "docs/runbooks/DR_PROCEDURE.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "DR_PROCEDURE.md cobre 2 modos: Modo A (drill trimestral planejado, RTO target < 60min) com 6 fases (pre-flight, execution, validation smoke, go/no-go, cleanup, métricas) + Modo B (DR real com aprovação 4-eye, Asaas suspension, restore strategy decision matrix). Apêndices: PITR config audit + contatos de incidente. Free tier Supabase NÃO tem PITR — follow-up L20-07-followup-pitr-upgrade documentado."
     },
     {
       "id": "L20-08",
@@ -8319,25 +8368,35 @@
       "lens": 20,
       "title": "Post-mortem template ausente",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "tags": [],
+      "fixed_at": "2026-04-17T00:00:00.000Z",
+      "tags": [
+        "sre",
+        "process"
+      ],
       "files": [
-        "docs/postmortems/TEMPLATE.md"
+        "docs/postmortems/TEMPLATE.md",
+        "docs/postmortems/README.md"
       ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "docs/postmortems/TEMPLATE.md",
+        "docs/postmortems/README.md"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "commit:HEAD"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "TEMPLATE.md modela Google SRE blameless postmortem (resumo executivo, metadados, impacto, timeline, causa raiz por 5-whys, what worked/didn't, action items SMART com owner+deadline, lessons learned, findings auditoria gerados, apêndice de evidências). README.md cobre filosofia, gatilhos obrigatórios/recomendados, workflow T+24h/T+48h/T+5d/T+7d/T+30d, naming convention, privacidade LGPD."
     },
     {
       "id": "L20-09",
