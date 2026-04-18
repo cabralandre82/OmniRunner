@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T02:50:03.569Z",
+  "generated_at": "2026-04-18T02:56:28.943Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 327,
-    "in-progress": 4,
+    "fix-pending": 326,
+    "in-progress": 5,
     "fixed": 17
   },
   "by_wave": {
@@ -6398,24 +6398,31 @@
       "lens": 14,
       "title": "/api/docs carrega Swagger-UI de unpkg sem SRI",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "in-progress",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
       "tags": [
-        "mobile",
-        "portal"
+        "portal",
+        "supply-chain"
       ],
       "files": [
-        "portal/src/app/api/docs/route.ts"
+        "portal/src/app/api/docs/route.ts",
+        "portal/src/app/api/docs/route.test.ts",
+        "portal/scripts/copy-swagger-ui.mjs",
+        "portal/package.json",
+        "portal/.gitignore"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/app/api/docs/route.test.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "unassigned",
       "runbook": null,
-      "effort_points": 5,
+      "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,

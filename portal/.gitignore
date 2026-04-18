@@ -34,3 +34,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# L14-03: swagger-ui assets are generated via scripts/copy-swagger-ui.mjs
+# (postinstall / prebuild). Não comitamos os artefatos minificados.
+/public/vendor/swagger-ui/

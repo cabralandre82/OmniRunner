@@ -4,7 +4,17 @@ import { NextResponse } from "next/server";
  * GET /api/docs
  *
  * Serves Swagger UI HTML page for the Omni Runner Portal API documentation.
- * Uses swagger-ui-dist CDN. Points to /openapi.json.
+ *
+ * L14-03 (supply chain): assets de Swagger-UI são self-hosted em
+ * `/vendor/swagger-ui/*` — copiados de `node_modules/swagger-ui-dist` via
+ * `scripts/copy-swagger-ui.mjs` (roda em `prebuild`, `predev`, `postinstall`).
+ * Elimina a dependência de unpkg/CDN e remove o risco de RCE em admin
+ * autenticado caso o CDN seja comprometido.
+ *
+ * Política de cache (Cache-Control: no-store) aplicada ao HTML para que
+ * atualizações no openapi.json e nos assets sejam observadas imediatamente.
+ * Os assets em /vendor/swagger-ui/* são servidos pelo Next com cache longo
+ * (controlado via headers globais, não-inline aqui).
  */
 export async function GET() {
   const html = `<!DOCTYPE html>
@@ -13,7 +23,9 @@ export async function GET() {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Omni Runner Portal API - Documentação</title>
-  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css">
+  <link rel="icon" type="image/png" sizes="32x32" href="/vendor/swagger-ui/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/vendor/swagger-ui/favicon-16x16.png">
+  <link rel="stylesheet" href="/vendor/swagger-ui/swagger-ui.css">
   <style>
     :root {
       --omni-primary: #2563eb;
@@ -26,8 +38,8 @@ export async function GET() {
 </head>
 <body>
   <div id="swagger-ui"></div>
-  <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js" crossorigin></script>
-  <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js" crossorigin></script>
+  <script src="/vendor/swagger-ui/swagger-ui-bundle.js"></script>
+  <script src="/vendor/swagger-ui/swagger-ui-standalone-preset.js"></script>
   <script>
     window.onload = function() {
       window.ui = SwaggerUIBundle({
@@ -55,7 +67,9 @@ export async function GET() {
   return new NextResponse(html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "public, max-age=3600",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "no-referrer",
     },
   });
 }

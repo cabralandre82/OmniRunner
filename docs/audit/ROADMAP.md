@@ -25,23 +25,25 @@ A auditoria identificou **348 findings** distribuídos em **23 lentes** (69 🔴
 
 ### Escopo (ordem de priorização por score do TRIAGE)
 
-| Pri | ID | Score | Título |
-|---|---|---|---|
-| 1 | `L09-04` | 125 | Nota fiscal não emitida em withdrawals (regulatório fiscal) |
-| 2 | `L01-02` | 100 | FX rate client-supplied em `/api/custody/withdraw` (fraude direta) |
-| 3 | `L01-17` | 100 | Asaas API Key armazenada em texto puro |
-| 4 | `L04-03` | 100 | Sem registro de consentimento (LGPD Art. 8) |
-| 5 | `L04-01` | 80 | `fn_delete_user_data` incompleta (LGPD Art. 48) |
-| 6 | `L18-03` | 80 | SECURITY DEFINER sem SET search_path |
-| 7 | `L04-04` | 64 | Dados de saúde/biométricos sem proteção reforçada (LGPD Art. 11) |
-| 8 | `L01-44` | 60 | Migration drift em `platform_fee_config.fee_type` CHECK |
-| 9 | `L02-01` | 60 | `distribute-coins` não-atômico ⭐ (exemplar, correção pronta) |
-| 10 | `L19-01` | 60 | `coin_ledger` não particionada |
-| 11 | `L19-05` | 60 | Falta `FOR UPDATE NOWAIT` em locks críticos |
-| 12 | `L01-03` | 50 | `/api/distribute-coins` fallback silencioso (cross-ref L02-01) |
-| 13 | `L02-02` | 50 | `execute_burn_atomic` exceções engolidas |
-| 14 | `L14-03` | 45 | Swagger-UI carregado de unpkg sem SRI |
-| 15 | `L05-01` | 40* | Swap race entre accept/cancel (*override manual — double-spend direto) |
+| Pri | ID | Score | Status | Título |
+|---|---|---|---|---|
+| 1 | `L09-04` | 125 | fix-pending | Nota fiscal não emitida em withdrawals (regulatório fiscal) |
+| 2 | `L01-02` | 100 | fix-pending | FX rate client-supplied em `/api/custody/withdraw` (fraude direta) |
+| 3 | `L01-17` | 100 | fix-pending | Asaas API Key armazenada em texto puro |
+| 4 | `L04-03` | 100 | fix-pending | Sem registro de consentimento (LGPD Art. 8) |
+| 5 | `L04-01` | 80 | fix-pending | `fn_delete_user_data` incompleta (LGPD Art. 48) |
+| 6 | `L18-03` | 80 | fix-pending | SECURITY DEFINER sem SET search_path |
+| 7 | `L04-04` | 64 | fix-pending | Dados de saúde/biométricos sem proteção reforçada (LGPD Art. 11) |
+| 8 | `L01-44` | 60 | 🟡 in-progress | Migration drift em `platform_fee_config.fee_type` CHECK |
+| 9 | `L02-01` | 60 | 🟡 in-progress | `distribute-coins` não-atômico ⭐ (exemplar, correção pronta) |
+| 10 | `L19-01` | 60 | fix-pending | `coin_ledger` não particionada |
+| 11 | `L19-05` | 60 | fix-pending | Falta `FOR UPDATE NOWAIT` em locks críticos |
+| 12 | `L01-03` | 50 | 🟡 in-progress | `/api/distribute-coins` fallback silencioso (cross-ref L02-01) |
+| 13 | `L02-02` | 50 | fix-pending | `execute_burn_atomic` exceções engolidas |
+| 14 | `L14-03` | 45 | 🟡 in-progress | Swagger-UI carregado de unpkg sem SRI |
+| 15 | `L05-01` | 40* | fix-pending | Swap race entre accept/cancel (*override manual — double-spend direto) |
+
+**Progresso Onda 0:** 4/15 em `in-progress` (L02-01, L01-03, L01-44, L14-03) — ~27% do escopo rumo ao fixed.
 
 Detalhes completos + correções em `docs/audit/findings/LXX-YY-*.md`.
 
@@ -154,4 +156,8 @@ Dos 29 findings "Onda 3": 17 🟢 safe (já verificados OK) e 12 ⚪ não-audita
 Os seguintes findings já têm **correção proposta + testes de regressão + SQL** prontos para consumo direto de PR (úteis como ponto de partida):
 
 - `L02-01` — `distribute-coins` atomic (CTO) — **gold standard** de detalhe
+- `L01-03` — `/api/distribute-coins` fallback silencioso — resolvido junto com L02-01 (`duplicate_of`)
+- `L01-44` — migration drift em `platform_fee_config` — correção canônica + patch retroativo na histórica
+- `L01-13` — `/api/platform/fees` sem suporte a `fx_spread` — resolvido junto com L01-44 (`duplicate_of`)
+- `L14-03` — Swagger-UI self-host (remove dependência de unpkg)
 - Gradualmente, conforme o time converter outros findings da Onda 0 em PRs, estes também ganharão detalhamento similar.
