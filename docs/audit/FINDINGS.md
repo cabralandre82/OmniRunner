@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 02:56:28 UTC.
+> Atualizado em 2026-04-18 03:03:42 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -60,7 +60,7 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L01-49](./findings/L01-49-processburnforclearing-audit-actor-id-system.md) | 2 | L01 · CISO | processBurnForClearing — Audit actor_id = "system" | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L01-50](./findings/L01-50-getswapordersforgroup-query-string-interpolation.md) | 2 | L01 · CISO | getSwapOrdersForGroup — Query string interpolation | unassigned |
 | 🔴 critical | 🚧 in-progress | [L02-01](./findings/L02-01-distribute-coins-orquestracao-nao-atomica-entre-4-rpcs.md) | 0 | L02 · CTO | distribute-coins — Orquestração não-atômica entre 4 RPCs (partial-failure silencioso) | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L02-02](./findings/L02-02-execute-burn-atomic-excecoes-engolidas-em-custody-release.md) | 0 | L02 · CTO | execute_burn_atomic — Exceções engolidas em custody_release_committed e settle_clearing | unassigned |
+| 🔴 critical | 🚧 in-progress | [L02-02](./findings/L02-02-execute-burn-atomic-excecoes-engolidas-em-custody-release.md) | 0 | L02 · CTO | execute_burn_atomic — Exceções engolidas em custody_release_committed e settle_clearing | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L02-03](./findings/L02-03-execute-burn-atomic-function-language-plpgsql-sem-security.md) | 2 | L02 · CTO | execute_burn_atomic — Function LANGUAGE plpgsql sem SECURITY DEFINER vs. chamadas a funções SECURITY DEFINER | unassigned |
 | 🟢 safe | ✅ fixed | [L02-04](./findings/L02-04-confirm-custody-deposit-for-update-upsert.md) | 3 | L02 · CTO | confirm_custody_deposit — FOR UPDATE + UPSERT | unassigned |
 | 🟢 safe | ✅ fixed | [L02-05](./findings/L02-05-execute-swap-deadlock-prevention-via-uuid-ordering.md) | 3 | L02 · CTO | execute_swap — Deadlock prevention via UUID ordering | unassigned |

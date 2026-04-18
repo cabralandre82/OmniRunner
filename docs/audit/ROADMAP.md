@@ -39,11 +39,11 @@ A auditoria identificou **348 findings** distribuídos em **23 lentes** (69 🔴
 | 10 | `L19-01` | 60 | fix-pending | `coin_ledger` não particionada |
 | 11 | `L19-05` | 60 | fix-pending | Falta `FOR UPDATE NOWAIT` em locks críticos |
 | 12 | `L01-03` | 50 | 🟡 in-progress | `/api/distribute-coins` fallback silencioso (cross-ref L02-01) |
-| 13 | `L02-02` | 50 | fix-pending | `execute_burn_atomic` exceções engolidas |
+| 13 | `L02-02` | 50 | 🟡 in-progress | `execute_burn_atomic` exceções engolidas |
 | 14 | `L14-03` | 45 | 🟡 in-progress | Swagger-UI carregado de unpkg sem SRI |
 | 15 | `L05-01` | 40* | fix-pending | Swap race entre accept/cancel (*override manual — double-spend direto) |
 
-**Progresso Onda 0:** 4/15 em `in-progress` (L02-01, L01-03, L01-44, L14-03) — ~27% do escopo rumo ao fixed.
+**Progresso Onda 0:** 5/15 em `in-progress` (L02-01, L01-03, L01-44, L14-03, L02-02) — ~33% do escopo rumo ao fixed.
 
 Detalhes completos + correções em `docs/audit/findings/LXX-YY-*.md`.
 
@@ -160,4 +160,5 @@ Os seguintes findings já têm **correção proposta + testes de regressão + SQ
 - `L01-44` — migration drift em `platform_fee_config` — correção canônica + patch retroativo na histórica
 - `L01-13` — `/api/platform/fees` sem suporte a `fx_spread` — resolvido junto com L01-44 (`duplicate_of`)
 - `L14-03` — Swagger-UI self-host (remove dependência de unpkg)
+- `L02-02` — `execute_burn_atomic` hardenizado (custody re-raise, settle log-and-continue + `clearing_failure_log`)
 - Gradualmente, conforme o time converter outros findings da Onda 0 em PRs, estes também ganharão detalhamento similar.

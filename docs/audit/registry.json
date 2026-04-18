@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T02:56:28.943Z",
+  "generated_at": "2026-04-18T03:03:42.908Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 326,
-    "in-progress": 5,
+    "fix-pending": 325,
+    "in-progress": 6,
     "fixed": 17
   },
   "by_wave": {
@@ -1617,22 +1617,28 @@
       "lens": 2,
       "title": "execute_burn_atomic — Exceções engolidas em custody_release_committed e settle_clearing",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "in-progress",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "atomicity",
         "migration",
         "cron",
-        "testing"
+        "observability"
       ],
       "files": [
-        "supabase/migrations/20260228160001_burn_plan_atomic.sql"
+        "supabase/migrations/20260228160001_burn_plan_atomic.sql",
+        "supabase/migrations/20260322300000_clearing_exception_logging.sql",
+        "supabase/migrations/20260417140000_execute_burn_atomic_hardening.sql",
+        "tools/integration_tests.ts"
       ],
       "correction_type": "migration",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/integration_tests.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "unassigned",

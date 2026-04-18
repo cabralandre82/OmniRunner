@@ -750,6 +750,48 @@ async function testConstraints() {
       `Expected check violation, got: ${error!.message}`
     );
   });
+
+  // 3.9 L02-02: clearing_failure_log table + view exist for swallowed exception audit
+  await test("L02-02: clearing_failure_log table exists with expected columns", async () => {
+    const exists = await tableExists("clearing_failure_log");
+    assert(exists, "clearing_failure_log table not found (migration 20260417140000)");
+
+    const expectedCols = [
+      "failure_type",
+      "burn_ref_id",
+      "clearing_event_id",
+      "settlement_id",
+      "sqlstate",
+      "sqlerrm",
+      "context",
+      "resolved",
+      "retry_count",
+    ];
+    for (const col of expectedCols) {
+      const { error } = await db.from("clearing_failure_log").select(col).limit(0);
+      assert(!error, `Column clearing_failure_log.${col} missing: ${error?.message}`);
+    }
+  });
+
+  await test("L02-02: clearing_failure_log.failure_type CHECK rejects invalid values", async () => {
+    const { error } = await db.from("clearing_failure_log").insert({
+      failure_type: "not_a_real_failure",
+      sqlstate: "P0001",
+      sqlerrm: "test",
+    });
+    assert(!!error, "Expected CHECK constraint violation on failure_type");
+    assert(
+      error!.message.includes("check") ||
+        error!.message.includes("violates") ||
+        error!.code === "23514",
+      `Expected check violation, got: ${error!.message}`
+    );
+  });
+
+  await test("L02-02: clearing_failures_unresolved view exists and is queryable", async () => {
+    const { error } = await db.from("clearing_failures_unresolved").select("*").limit(1);
+    assert(!error, `clearing_failures_unresolved view not queryable: ${error?.message}`);
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
