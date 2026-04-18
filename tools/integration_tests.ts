@@ -918,6 +918,142 @@ async function testConstraints() {
       `L01-02: UNIQUE parcial deveria rejeitar 2ª cotação ativa BRL, mas erro foi: ${error?.message ?? "nenhum"}`,
     );
   });
+
+  // 3.17 L05-01: cancel_swap_order RPC exists and has expected config
+  await test("L05-01: cancel_swap_order has search_path and lock_timeout configured", async () => {
+    const { data, error } = await db.rpc("__sql_noop__").catch(() => ({
+      data: null,
+      error: null,
+    })) as { data: unknown; error: unknown };
+    // Use raw SQL via pg_proc lookup through a view we trust
+    const { data: audit, error: auditErr } = await db
+      .from("security_definer_hardening_audit")
+      .select("function_name, proconfig, has_search_path")
+      .in("function_name", ["cancel_swap_order", "execute_swap"]);
+
+    assert(!auditErr, `audit view query failed: ${(auditErr as { message?: string })?.message}`);
+    const rows = (audit ?? []) as Array<{
+      function_name: string;
+      proconfig: string[];
+      has_search_path: boolean;
+    }>;
+    const cancel = rows.find((r) => r.function_name === "cancel_swap_order");
+    const exec = rows.find((r) => r.function_name === "execute_swap");
+
+    assert(cancel, "L05-01: cancel_swap_order não deployada");
+    assert(exec, "L05-01: execute_swap não deployada");
+    assert(cancel!.has_search_path, "L05-01: cancel_swap_order sem search_path");
+    assert(exec!.has_search_path, "L05-01: execute_swap sem search_path");
+    assert(
+      (cancel!.proconfig ?? []).some((c: string) => c.startsWith("lock_timeout=")),
+      "L05-01: cancel_swap_order sem lock_timeout",
+    );
+    assert(
+      (exec!.proconfig ?? []).some((c: string) => c.startsWith("lock_timeout=")),
+      "L05-01: execute_swap sem lock_timeout",
+    );
+    void data; void error; // silence unused
+  });
+
+  // 3.18 L05-01: cancel_swap_order P0002 on unknown order
+  await test("L05-01: cancel_swap_order raises SWAP_NOT_FOUND for unknown id", async () => {
+    const { error } = await db.rpc("cancel_swap_order", {
+      p_order_id: "00000000-0000-0000-0000-ffffffffffff",
+      p_seller_group_id: GROUP_A,
+    });
+    assert(error, "L05-01: deveria falhar com P0002 para order inexistente");
+    const e = error as { code?: string; message?: string };
+    assert(
+      e.code === "P0002" || /SWAP_NOT_FOUND|does not exist/.test(e.message ?? ""),
+      `L05-01: esperado P0002 / SWAP_NOT_FOUND, mas: code=${e.code} msg=${e.message}`,
+    );
+  });
+
+  // 3.19 L05-01: cancel_swap_order P0003 quando caller não é o seller
+  await test("L05-01: cancel_swap_order raises SWAP_NOT_OWNER for non-seller", async () => {
+    // Cria uma oferta real em GROUP_A e tenta cancelar como GROUP_B
+    const orderId = "a5a5a5a5-0000-4000-8000-000000000501";
+    // cleanup if any previous row
+    await db.from("swap_orders").delete().eq("id", orderId);
+    // need custody_accounts for GROUP_A with backing
+    await db
+      .from("custody_accounts")
+      .upsert(
+        { group_id: GROUP_A, total_deposited_usd: 1000, total_committed: 0 },
+        { onConflict: "group_id" },
+      );
+    const { error: insertErr } = await db.from("swap_orders").insert({
+      id: orderId,
+      seller_group_id: GROUP_A,
+      amount_usd: 100,
+      fee_rate_pct: 1.0,
+      fee_amount_usd: 1,
+      status: "open",
+    });
+    assert(!insertErr, `L05-01 setup: insert swap_orders failed: ${insertErr?.message}`);
+
+    try {
+      const { error } = await db.rpc("cancel_swap_order", {
+        p_order_id: orderId,
+        p_seller_group_id: GROUP_B, // not the seller!
+      });
+      assert(error, "L05-01: deveria falhar com P0003 (not owner)");
+      const e = error as { code?: string; message?: string };
+      assert(
+        e.code === "P0003" || /SWAP_NOT_OWNER/.test(e.message ?? ""),
+        `L05-01: esperado P0003 SWAP_NOT_OWNER, mas: code=${e.code} msg=${e.message}`,
+      );
+    } finally {
+      await db.from("swap_orders").delete().eq("id", orderId);
+    }
+  });
+
+  // 3.20 L05-01: cancel_swap_order happy path retorna previous_status + new_status
+  await test("L05-01: cancel_swap_order returns previous_status + new_status on success", async () => {
+    const orderId = "a5a5a5a5-0000-4000-8000-000000000502";
+    await db.from("swap_orders").delete().eq("id", orderId);
+    await db
+      .from("custody_accounts")
+      .upsert(
+        { group_id: GROUP_A, total_deposited_usd: 1000, total_committed: 0 },
+        { onConflict: "group_id" },
+      );
+    const { error: insertErr } = await db.from("swap_orders").insert({
+      id: orderId,
+      seller_group_id: GROUP_A,
+      amount_usd: 100,
+      fee_rate_pct: 1.0,
+      fee_amount_usd: 1,
+      status: "open",
+    });
+    assert(!insertErr, `setup failed: ${insertErr?.message}`);
+
+    try {
+      const { data, error } = await db.rpc("cancel_swap_order", {
+        p_order_id: orderId,
+        p_seller_group_id: GROUP_A,
+      });
+      assert(!error, `L05-01: cancel falhou: ${error?.message}`);
+      const row = Array.isArray(data) ? data[0] : data;
+      assert(row, "L05-01: RPC não retornou linha");
+      assert(row.previous_status === "open", `L05-01: previous_status esperado 'open', got '${row.previous_status}'`);
+      assert(row.new_status === "cancelled", `L05-01: new_status esperado 'cancelled', got '${row.new_status}'`);
+
+      // 2ª chamada deve falhar com P0001 (já cancelled)
+      const { error: err2 } = await db.rpc("cancel_swap_order", {
+        p_order_id: orderId,
+        p_seller_group_id: GROUP_A,
+      });
+      assert(err2, "L05-01: 2ª cancel deveria falhar com P0001");
+      const e2 = err2 as { code?: string; message?: string };
+      assert(
+        e2.code === "P0001" || /SWAP_NOT_OPEN/.test(e2.message ?? ""),
+        `L05-01: 2ª cancel esperava P0001 SWAP_NOT_OPEN, mas: code=${e2.code} msg=${e2.message}`,
+      );
+    } finally {
+      await db.from("swap_orders").delete().eq("id", orderId);
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

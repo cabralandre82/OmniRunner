@@ -7,25 +7,33 @@ import {
   acceptSwapOffer,
   getOpenSwapOffers,
   cancelSwapOffer,
+  SwapError,
+  type SwapErrorCode,
 } from "@/lib/swap";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
-const createSchema = z.object({
-  action: z.literal("create"),
-  amount_usd: z.number().min(100).max(500_000),
-});
+const createSchema = z
+  .object({
+    action: z.literal("create"),
+    amount_usd: z.number().min(100).max(500_000),
+  })
+  .strict();
 
-const acceptSchema = z.object({
-  action: z.literal("accept"),
-  order_id: z.string().uuid(),
-});
+const acceptSchema = z
+  .object({
+    action: z.literal("accept"),
+    order_id: z.string().uuid(),
+  })
+  .strict();
 
-const cancelSchema = z.object({
-  action: z.literal("cancel"),
-  order_id: z.string().uuid(),
-});
+const cancelSchema = z
+  .object({
+    action: z.literal("cancel"),
+    order_id: z.string().uuid(),
+  })
+  .strict();
 
 const bodySchema = z.union([createSchema, acceptSchema, cancelSchema]);
 
@@ -53,6 +61,46 @@ async function requireAdminMaster() {
   }
 
   return { user, groupId } as const;
+}
+
+/**
+ * L05-01 — Mapeamento SwapErrorCode → HTTP status + body estruturado.
+ *
+ * Permite clientes reagir semanticamente (mostrar "oferta já aceita",
+ * acionar retry com backoff, etc) sem parsing de message.
+ */
+function swapErrorToResponse(err: SwapError): NextResponse {
+  const body: {
+    error: string;
+    code: SwapErrorCode;
+    sqlstate?: string;
+    detail?: Record<string, unknown>;
+  } = {
+    error: err.message,
+    code: err.code,
+  };
+  if (err.sqlstate) body.sqlstate = err.sqlstate;
+  if (err.detail) body.detail = err.detail;
+
+  switch (err.code) {
+    case "not_found":
+      return NextResponse.json(body, { status: 404 });
+    case "not_open":
+      return NextResponse.json(body, { status: 409 });
+    case "not_owner":
+      return NextResponse.json(body, { status: 403 });
+    case "self_buy":
+      return NextResponse.json(body, { status: 400 });
+    case "insufficient_backing":
+      return NextResponse.json(body, { status: 422 });
+    case "lock_not_available":
+      return NextResponse.json(body, {
+        status: 503,
+        headers: { "Retry-After": "2" },
+      });
+    default:
+      return NextResponse.json(body, { status: 422 });
+  }
 }
 
 export async function GET(req: NextRequest) {
@@ -114,7 +162,23 @@ export async function POST(req: NextRequest) {
     }
 
     if (data.action === "accept") {
-      await acceptSwapOffer(data.order_id, auth.groupId);
+      try {
+        await acceptSwapOffer(data.order_id, auth.groupId);
+      } catch (err) {
+        if (err instanceof SwapError) {
+          // L05-01: erro semântico — NÃO emitir auditLog de sucesso.
+          // Logamos a tentativa para forense.
+          await auditLog({
+            actorId: auth.user.id,
+            groupId: auth.groupId,
+            action: "swap.offer.accept_failed",
+            targetId: data.order_id,
+            metadata: { code: err.code, sqlstate: err.sqlstate ?? null },
+          });
+          return swapErrorToResponse(err);
+        }
+        throw err;
+      }
 
       await auditLog({
         actorId: auth.user.id,
@@ -127,16 +191,39 @@ export async function POST(req: NextRequest) {
     }
 
     if (data.action === "cancel") {
-      await cancelSwapOffer(data.order_id, auth.groupId);
+      let result;
+      try {
+        result = await cancelSwapOffer(data.order_id, auth.groupId);
+      } catch (err) {
+        if (err instanceof SwapError) {
+          await auditLog({
+            actorId: auth.user.id,
+            groupId: auth.groupId,
+            action: "swap.offer.cancel_failed",
+            targetId: data.order_id,
+            metadata: { code: err.code, sqlstate: err.sqlstate ?? null },
+          });
+          return swapErrorToResponse(err);
+        }
+        throw err;
+      }
 
       await auditLog({
         actorId: auth.user.id,
         groupId: auth.groupId,
         action: "swap.offer.cancelled",
         targetId: data.order_id,
+        metadata: {
+          previous_status: result.previousStatus,
+          new_status: result.newStatus,
+        },
       });
 
-      return NextResponse.json({ ok: true });
+      return NextResponse.json({
+        ok: true,
+        previous_status: result.previousStatus,
+        new_status: result.newStatus,
+      });
     }
   } catch (e: unknown) {
     console.error("[swap] operation failed:", e);

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T09:55:14.293Z",
+  "generated_at": "2026-04-18T10:31:23.449Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 322,
-    "in-progress": 9,
+    "fix-pending": 321,
+    "in-progress": 10,
     "fixed": 17
   },
   "by_wave": {
@@ -3050,23 +3050,33 @@
       "lens": 5,
       "title": "Swap: race entre accept e cancel do dono da oferta",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "in-progress",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "atomicity",
-        "mobile",
         "portal",
         "migration",
-        "testing"
+        "testing",
+        "concurrency"
       ],
       "files": [
-        "portal/src/app/api/swap/route.ts"
+        "supabase/migrations/20260417180000_swap_cancel_race_hardening.sql",
+        "portal/src/lib/swap.ts",
+        "portal/src/lib/swap.test.ts",
+        "portal/src/app/api/swap/route.ts",
+        "portal/src/app/api/swap/route.test.ts",
+        "tools/integration_tests.ts"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/swap.test.ts",
+        "portal/src/app/api/swap/route.test.ts",
+        "tools/integration_tests.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "unassigned",
