@@ -1,6 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { auditLog } from "@/lib/audit";
 import { assertInvariantsHealthy } from "@/lib/custody";
+import { calcPercentFee, subtractMoney } from "@/lib/money";
 
 export interface ClearingEvent {
   id: string;
@@ -52,7 +53,12 @@ async function getClearingFeeRate(): Promise<number> {
  * - Intra-club burn: R_i -= b, A_i += b (freed backing stays with issuer)
  * - Interclub burn:  R_i -= b, D_i -= b, D_k += (1-α)·b (backing transferred)
  *
- * Called automatically when a burn is completed in the app backend.
+ * @deprecated Production traffic uses `executeBurnAtomic` (single
+ * Postgres transaction via `execute_burn_atomic` RPC). This helper is
+ * retained only for legacy tests (`qa-e2e`, `concurrency`,
+ * `clearing.test`) that exercise the partial-failure model. The fee
+ * arithmetic was hardened in L03-01 to match the SQL helper exactly,
+ * but new code should call `executeBurnAtomic` instead.
  */
 export async function processBurnForClearing(params: {
   burnRefId: string;
@@ -112,8 +118,12 @@ export async function processBurnForClearing(params: {
 
   for (const entry of interclubEntries) {
     const grossUsd = entry.amount * 1.0; // 1 coin = US$ 1.00
-    const feeUsd = Math.round(grossUsd * feeRate) / 100;
-    const netUsd = grossUsd - feeUsd;
+    // L03-01 — must match `execute_burn_atomic` SQL formula
+    // `ROUND(v_gross * v_fee_rate / 100, 2)` exactly, including
+    // banker's rounding on exact half-cent boundaries. See
+    // `portal/src/lib/money.ts` for the rationale.
+    const feeUsd = calcPercentFee(grossUsd, feeRate);
+    const netUsd = subtractMoney(grossUsd, feeUsd);
 
     const { error: settErr } = await db
       .from("clearing_settlements")

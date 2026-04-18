@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/service";
+import { calcPercentFee } from "@/lib/money";
 
 export interface SwapOrder {
   id: string;
@@ -155,7 +156,10 @@ export async function createSwapOffer(
     }
 
     const feeRate = await getSwapFeeRate();
-    const feeAmount = Math.round(amountUsd * feeRate) / 100;
+    // L03-01 — banker's rounding to match Postgres `numeric(14,2)` semantics
+    // and the SQL helper `execute_swap` (which trusts whatever we persist
+    // here in `swap_orders.fee_amount_usd`).
+    const feeAmount = calcPercentFee(amountUsd, feeRate);
     const expiresAt = new Date(
       Date.now() + expiresInDays * 24 * 60 * 60 * 1000,
     ).toISOString();

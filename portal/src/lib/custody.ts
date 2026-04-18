@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/service";
+import { roundToCents } from "@/lib/money";
 
 export interface CustodyAccount {
   id: string;
@@ -258,9 +259,11 @@ export function convertToUsdWithSpread(
   const rawUsd = localAmount / fxRate;
   const spreadUsd = rawUsd * (spreadPct / 100);
   const amountUsd = rawUsd - spreadUsd;
+  // L03-01 — quantise to cents with banker's rounding so the value
+  // round-trips through `numeric(14,2)` without surprise drift.
   return {
-    amountUsd: Math.round(amountUsd * 100) / 100,
-    spreadUsd: Math.round(spreadUsd * 100) / 100,
+    amountUsd: roundToCents(amountUsd),
+    spreadUsd: roundToCents(spreadUsd),
   };
 }
 
@@ -275,9 +278,10 @@ export function convertFromUsdWithSpread(
   const spreadUsd = amountUsd * (spreadPct / 100);
   const netUsd = amountUsd - spreadUsd;
   const localAmount = netUsd * fxRate;
+  // L03-01 — quantise via banker's rounding to match Postgres `numeric`.
   return {
-    localAmount: Math.round(localAmount * 100) / 100,
-    spreadUsd: Math.round(spreadUsd * 100) / 100,
+    localAmount: roundToCents(localAmount),
+    spreadUsd: roundToCents(spreadUsd),
   };
 }
 

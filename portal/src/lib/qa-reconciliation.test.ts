@@ -9,6 +9,7 @@
  *   - no negative balances
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { calcPercentFee } from "./money";
 
 const mockRpc = vi.fn();
 
@@ -112,10 +113,15 @@ describe("6. Reconciliation — invariant auditor", () => {
   });
 
   describe("6.3 Platform fee reconciliation", () => {
+    // L03-01 — uses the canonical money helper to mirror the SQL formula
+    // `ROUND((gross * rate / 100)::numeric, 2)` exactly, instead of the
+    // legacy `Math.round(gross * rate) / 100` that diverged on
+    // exact-half boundaries (banker's rounding vs round-half-away).
+
     it("validates fee calculation: 3% of 60 = 1.80", () => {
       const grossUsd = 60;
       const feeRate = 3.0;
-      const feeUsd = Math.round(grossUsd * feeRate) / 100;
+      const feeUsd = calcPercentFee(grossUsd, feeRate);
       const netUsd = grossUsd - feeUsd;
 
       expect(feeUsd).toBe(1.80);
@@ -124,31 +130,19 @@ describe("6. Reconciliation — invariant auditor", () => {
     });
 
     it("validates fee calculation: 3% of 100 = 3.00", () => {
-      const grossUsd = 100;
-      const feeRate = 3.0;
-      const feeUsd = Math.round(grossUsd * feeRate) / 100;
-      expect(feeUsd).toBe(3.00);
+      expect(calcPercentFee(100, 3.0)).toBe(3.0);
     });
 
     it("validates fee calculation: 3% of 1 = 0.03", () => {
-      const grossUsd = 1;
-      const feeRate = 3.0;
-      const feeUsd = Math.round(grossUsd * feeRate) / 100;
-      expect(feeUsd).toBe(0.03);
+      expect(calcPercentFee(1, 3.0)).toBe(0.03);
     });
 
     it("validates swap fee: 1% of 500 = 5.00", () => {
-      const amount = 500;
-      const feeRate = 1.0;
-      const feeUsd = Math.round(amount * feeRate) / 100;
-      expect(feeUsd).toBe(5.00);
+      expect(calcPercentFee(500, 1.0)).toBe(5.0);
     });
 
     it("validates FX spread: 0.75% of 200 = 1.50", () => {
-      const rawUsd = 200;
-      const spreadPct = 0.75;
-      const spreadUsd = Math.round(rawUsd * spreadPct) / 100;
-      expect(spreadUsd).toBe(1.50);
+      expect(calcPercentFee(200, 0.75)).toBe(1.5);
     });
 
     it("sum of settlement fees = total platform clearing revenue (model check)", () => {
@@ -159,7 +153,7 @@ describe("6. Reconciliation — invariant auditor", () => {
       ];
 
       const totalFees = settlements.reduce(
-        (sum, s) => sum + Math.round(s.gross * s.fee_rate) / 100,
+        (sum, s) => sum + calcPercentFee(s.gross, s.fee_rate),
         0,
       );
 

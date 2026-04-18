@@ -2,6 +2,8 @@
  * Pure functions for billing business logic edge cases.
  */
 
+import { calcSplit } from "@/lib/money";
+
 export function sanitizeCpf(cpf: string): string {
   return cpf.replace(/\D/g, "");
 }
@@ -56,7 +58,9 @@ export function calculateSplitValue(
   totalValue: number,
   splitPct: number
 ): { assessoriaValue: number; platformValue: number } {
-  const assessoriaValue = Math.round((totalValue * splitPct) / 100 * 100) / 100;
-  const platformValue = Math.round((totalValue - assessoriaValue) * 100) / 100;
-  return { assessoriaValue, platformValue };
+  // L03-01 — banker's rounding via the canonical money helper. Both
+  // halves sum exactly to `totalValue`; the platform absorbs any
+  // rounding residue.
+  const split = calcSplit(totalValue, splitPct);
+  return { assessoriaValue: split.counterparty, platformValue: split.platform };
 }
