@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T23:20:15.551Z",
+  "generated_at": "2026-04-18T23:32:02.171Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 289,
-    "fixed": 58,
+    "fix-pending": 285,
+    "fixed": 62,
     "in-progress": 1
   },
   "by_wave": {
@@ -6530,25 +6530,35 @@
       "lens": 13,
       "title": "/select-group não está em AUTH_ONLY_PREFIXES nem PUBLIC → comportamento indefinido",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
-        "portal"
+        "portal",
+        "middleware"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "portal/src/lib/route-policy.ts",
+        "portal/src/middleware.ts"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/route-policy.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "6908546"
+      ],
+      "owner": "platform",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed in commit 6908546. /select-group is now an explicit member of\nthe new `AUTH_NO_GROUP_ROUTES` set in `route-policy.ts` and gets a\ndedicated branch in `middleware.ts` that only requires an\nauthenticated user — never a portal_group cookie. The previous\nimplicit \"fall through and bail at line 139\" behaviour is gone, so\nany future change to the multi-membership branch can no longer break\nthe group-selection page.\n\n4 unit tests cover the new helper (`isAuthNoGroupRoute` matches only\n`/select-group`, rejects `/select-group/`, sub-paths, and unrelated\nroutes; the constant is asserted to contain `/select-group`).\n"
     },
     {
       "id": "L13-05",
@@ -6556,23 +6566,36 @@
       "lens": 13,
       "title": "Cookies sem Secure explícito",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "tags": [],
-      "files": [],
-      "correction_type": "config",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
+      "tags": [
+        "portal",
+        "middleware",
+        "security-headers"
+      ],
+      "files": [
+        "portal/src/lib/route-policy.ts",
+        "portal/src/middleware.ts"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/route-policy.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "6908546"
+      ],
+      "owner": "platform",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed in commit 6908546. New `portalCookieOptions()` helper in\n`route-policy.ts` returns a fully-typed `PortalCookieOptions` with\n`secure: process.env.NODE_ENV === \"production\"` (overridable via\n`overrideSecure` for local-HTTPS dev parity). All five cookie writes\nin `middleware.ts` (set portal_role, set portal_group_id, clear both\non missing/legacy membership, and the multi-membership single-pick\nredirect) now go through this helper, eliminating the inline\n`{ path, httpOnly, sameSite, maxAge }` literals that lacked Secure.\n\n6 unit tests pin the contract: defaults (httpOnly+lax+path), maxAge\ndefaults to the exported `PORTAL_COOKIE_MAX_AGE_SEC` (8 h), Secure\nflips with NODE_ENV (production/development/test), `maxAge: 0` is\npreserved (cookie clearing), and `overrideSecure` works in both\ndirections.\n"
     },
     {
       "id": "L13-06",
@@ -6580,25 +6603,37 @@
       "lens": 13,
       "title": "x-request-id não propagado ao supabase/lib downstream",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
-        "security-headers"
+        "security-headers",
+        "portal",
+        "middleware",
+        "observability"
       ],
-      "files": [],
+      "files": [
+        "portal/src/lib/supabase/middleware.ts",
+        "portal/src/middleware.ts"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/route-policy.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "6908546"
+      ],
+      "owner": "platform",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed in commit 6908546. `lib/supabase/middleware.ts:updateSession`\nnow accepts an optional `extraRequestHeaders` map and threads it\nthrough `NextResponse.next({ request: { headers: requestHeaders } })`,\nso the value reaches downstream RSCs and route handlers via\n`headers().get(\"x-request-id\")` — not just the response headers as\nbefore.\n\n`middleware.ts` computes the request id once (`request.headers.get\n(\"x-request-id\") ?? crypto.randomUUID()`) at the very top, passes\n`{ \"x-request-id\": requestId }` into every `updateSession()` call\n(public, auth-only, auth-no-group, and the staff branch), and tags\nevery response (including 403 JSON, redirects, and `tagResponse`\nhelper-wrapped error paths) with the same id. Existing observability\npipelines that already index this header now see end-to-end\nrequest-id continuity from edge → middleware → RSC → Supabase.\n"
     },
     {
       "id": "L13-07",
@@ -6606,28 +6641,38 @@
       "lens": 13,
       "title": "PUBLIC_ROUTES contém /api/custody/webhook sem IP allow-list",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "webhook",
         "security-headers",
-        "portal"
+        "portal",
+        "middleware"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "portal/src/lib/webhook-ip-allowlist.ts",
+        "portal/src/middleware.ts"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/webhook-ip-allowlist.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "6908546"
+      ],
+      "owner": "platform",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed in commit 6908546. New module\n`portal/src/lib/webhook-ip-allowlist.ts` implements an opt-in IP\nallow-list controlled by env `PAYMENT_GATEWAY_IPS_ALLOWLIST` (CSV of\nliteral IPv4/IPv6 or v4 CIDR ranges). The middleware calls\n`enforceWebhookIpAllowlist()` for `/api/custody/webhook` BEFORE any\nauth/session work; mismatch returns a tagged 403, otherwise the\nrequest continues into the existing HMAC-verifying route handler.\n\nDefence-in-depth posture: when the env var is unset, the module\npasses through (HMAC at the route handler is already the primary\ndefence) and logs a single warning per process in production. We\ndeliberately do NOT fail-closed on missing config — that would turn\nan env-var typo into a payments incident.\n\n24 unit tests cover: parsing (literal v4, CIDR, IPv6 case-insensitive,\nmalformed entries dropped), CIDR network/mask math (incl. /0 and /32\nedges), match algorithm (literal, CIDR, IPv6 canonical form, mixed v4\nallow-list vs v6 request), source-IP extraction (`request.ip` >\n`x-forwarded-for[0]` > `x-real-ip`, with port stripping for both v4\nand bracketed v6), and `enforceWebhookIpAllowlist` end-to-end\n(unset → null, empty → null, no-match → 403, CIDR/literal/XFF match\n→ null, no-IP → 403).\n"
     },
     {
       "id": "L13-08",

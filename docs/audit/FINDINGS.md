@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 23:20:15 UTC.
+> Atualizado em 2026-04-18 23:32:02 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -222,10 +222,10 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L13-01](./findings/L13-01-admin-only-routes-admin-professor-routes-ordem-importa.md) | 1 | L13 · Middleware | ADMIN_ONLY_ROUTES + ADMIN_PROFESSOR_ROUTES — ordem importa, e está errada | portal |
 | 🔴 critical | ✅ fixed | [L13-02](./findings/L13-02-nome-da-constante-ainda-em-portugues-admin-professor.md) | 1 | L13 · Middleware | Nome da constante ainda em português (ADMIN_PROFESSOR_ROUTES) | portal |
 | 🔴 critical | ✅ fixed | [L13-03](./findings/L13-03-middleware-executa-query-db-a-cada-request-autenticado.md) | 1 | L13 · Middleware | Middleware executa query DB a cada request autenticado | portal |
-| 🟠 high | ⏳ fix-pending | [L13-04](./findings/L13-04-select-group-nao-esta-em-auth-only-prefixes.md) | 1 | L13 · Middleware | /select-group não está em AUTH_ONLY_PREFIXES nem PUBLIC → comportamento indefinido | unassigned |
-| 🟠 high | ⏳ fix-pending | [L13-05](./findings/L13-05-cookies-sem-secure-explicito.md) | 1 | L13 · Middleware | Cookies sem Secure explícito | unassigned |
-| 🟠 high | ⏳ fix-pending | [L13-06](./findings/L13-06-x-request-id-nao-propagado-ao-supabase-lib.md) | 1 | L13 · Middleware | x-request-id não propagado ao supabase/lib downstream | unassigned |
-| 🟠 high | ⏳ fix-pending | [L13-07](./findings/L13-07-public-routes-contem-api-custody-webhook-sem-ip.md) | 1 | L13 · Middleware | PUBLIC_ROUTES contém /api/custody/webhook sem IP allow-list | unassigned |
+| 🟠 high | ✅ fixed | [L13-04](./findings/L13-04-select-group-nao-esta-em-auth-only-prefixes.md) | 1 | L13 · Middleware | /select-group não está em AUTH_ONLY_PREFIXES nem PUBLIC → comportamento indefinido | platform |
+| 🟠 high | ✅ fixed | [L13-05](./findings/L13-05-cookies-sem-secure-explicito.md) | 1 | L13 · Middleware | Cookies sem Secure explícito | platform |
+| 🟠 high | ✅ fixed | [L13-06](./findings/L13-06-x-request-id-nao-propagado-ao-supabase-lib.md) | 1 | L13 · Middleware | x-request-id não propagado ao supabase/lib downstream | platform |
+| 🟠 high | ✅ fixed | [L13-07](./findings/L13-07-public-routes-contem-api-custody-webhook-sem-ip.md) | 1 | L13 · Middleware | PUBLIC_ROUTES contém /api/custody/webhook sem IP allow-list | platform |
 | 🟡 medium | ⏳ fix-pending | [L13-08](./findings/L13-08-public-prefixes-challenge-invite-podem-colidir-com-api.md) | 2 | L13 · Middleware | PUBLIC_PREFIXES /challenge/, /invite/ podem colidir com /api/challenge/ | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L13-09](./findings/L13-09-middleware-redirect-chain-em-single-membership-causa-duplo.md) | 2 | L13 · Middleware | Middleware redirect chain em single-membership causa duplo round-trip | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L14-01](./findings/L14-01-74-route-handlers-46-documentados-em-openapi.md) | 1 | L14 · Contracts | 74 route handlers, 46 documentados em OpenAPI | unassigned |

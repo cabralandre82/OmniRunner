@@ -4,23 +4,40 @@ audit_ref: "13.4"
 lens: 13
 title: "/select-group não está em AUTH_ONLY_PREFIXES nem PUBLIC → comportamento indefinido"
 severity: high
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
-tags: ["portal"]
-files: []
-correction_type: process
+fix_ready_at: 2026-04-17
+fixed_at: 2026-04-17
+tags: ["portal", "middleware"]
+files:
+  - portal/src/lib/route-policy.ts
+  - portal/src/middleware.ts
+correction_type: code
 test_required: true
-tests: []
+tests:
+  - portal/src/lib/route-policy.test.ts
 linked_issues: []
-linked_prs: []
-owner: unassigned
+linked_prs:
+  - "6908546"
+owner: platform
 runbook: null
 effort_points: 3
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Fixed in commit 6908546. /select-group is now an explicit member of
+  the new `AUTH_NO_GROUP_ROUTES` set in `route-policy.ts` and gets a
+  dedicated branch in `middleware.ts` that only requires an
+  authenticated user — never a portal_group cookie. The previous
+  implicit "fall through and bail at line 139" behaviour is gone, so
+  any future change to the multi-membership branch can no longer break
+  the group-selection page.
+
+  4 unit tests cover the new helper (`isAuthNoGroupRoute` matches only
+  `/select-group`, rejects `/select-group/`, sub-paths, and unrelated
+  routes; the constant is asserted to contain `/select-group`).
 ---
 # [L13-04] /select-group não está em AUTH_ONLY_PREFIXES nem PUBLIC → comportamento indefinido
 > **Lente:** 13 — Middleware · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fix-pending
