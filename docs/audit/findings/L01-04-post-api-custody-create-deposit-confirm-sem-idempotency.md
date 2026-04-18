@@ -25,7 +25,7 @@ tests:
   - portal/src/app/api/custody/route.test.ts
   - tools/integration_tests.ts
 linked_issues: []
-linked_prs: ["commit:pending"]
+linked_prs: ["commit:b0dd775"]
 owner: platform
 runbook: null
 effort_points: 3

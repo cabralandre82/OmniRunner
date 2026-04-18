@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T19:39:25.319Z",
+  "generated_at": "2026-04-18T19:41:00.914Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -207,7 +207,7 @@
       ],
       "linked_issues": [],
       "linked_prs": [
-        "commit:pending"
+        "commit:b0dd775"
       ],
       "owner": "platform",
       "runbook": null,
