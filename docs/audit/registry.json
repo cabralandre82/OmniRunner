@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T10:31:23.449Z",
+  "generated_at": "2026-04-18T10:50:58.686Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 321,
-    "in-progress": 10,
+    "fix-pending": 320,
+    "in-progress": 11,
     "fixed": 17
   },
   "by_wave": {
@@ -2600,23 +2600,33 @@
       "lens": 4,
       "title": "fn_delete_user_data é incompleta — múltiplas tabelas com PII não cobertas",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "in-progress",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "lgpd",
         "finance",
         "mobile",
         "edge-function",
         "migration",
-        "testing"
+        "testing",
+        "pii",
+        "privacy"
       ],
       "files": [
-        "supabase/migrations/20260312000000_fix_broken_functions.sql"
+        "supabase/migrations/20260312000000_fix_broken_functions.sql",
+        "supabase/migrations/20260417190000_fn_delete_user_data_lgpd_complete.sql",
+        "supabase/functions/delete-account/index.ts",
+        "tools/integration_tests.ts"
       ],
       "correction_type": "migration",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        {
+          "tools/integration_tests.ts (6 tests L04-01": "strategy-populated, gaps-empty, null/zero-uuid rejection, happy path, search_path hardening)"
+        }
+      ],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "unassigned",

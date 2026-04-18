@@ -1008,6 +1008,221 @@ async function testConstraints() {
     }
   });
 
+  // 3.21 L04-01: lgpd_deletion_strategy tabela existe e está populada
+  await test("L04-01: lgpd_deletion_strategy registry is populated", async () => {
+    const { data, error } = await db
+      .from("lgpd_deletion_strategy")
+      .select("strategy");
+    assert(!error, `lgpd_deletion_strategy not queryable: ${error?.message}`);
+    const rows = data ?? [];
+    assert(rows.length >= 50, `L04-01: esperado ≥50 linhas na strategy registry, got ${rows.length}`);
+    const strategies = new Set(rows.map((r: { strategy: string }) => r.strategy));
+    for (const s of ["delete", "anonymize", "nullify", "defensive_optional"]) {
+      assert(strategies.has(s), `L04-01: strategy '${s}' ausente`);
+    }
+  });
+
+  // 3.22 L04-01: coverage gaps view deve estar vazia (regressão blocker)
+  await test("L04-01: lgpd_user_data_coverage_gaps view is empty (no new untracked columns)", async () => {
+    const { data, error } = await db
+      .from("lgpd_user_data_coverage_gaps")
+      .select("table_name, column_name");
+    assert(!error, `gaps view query failed: ${error?.message}`);
+    const gaps = data ?? [];
+    if (gaps.length > 0) {
+      const list = gaps
+        .map((g: { table_name: string; column_name: string }) => `${g.table_name}.${g.column_name}`)
+        .join(", ");
+      throw new Error(
+        `L04-01: ${gaps.length} user-referencing column(s) sem estratégia LGPD: ${list}. ` +
+          `Adicione em supabase/migrations/*fn_delete_user_data*.sql ou atualize lgpd_deletion_strategy.`,
+      );
+    }
+  });
+
+  // 3.23 L04-01: fn_delete_user_data rejeita NULL / zero UUID
+  await test("L04-01: fn_delete_user_data rejects NULL user_id", async () => {
+    const { error } = await db.rpc("fn_delete_user_data", { p_user_id: null });
+    assert(error, "L04-01: deveria rejeitar p_user_id=NULL");
+    assert(
+      /LGPD_INVALID_USER_ID|not-null|null value/i.test(error.message),
+      `L04-01: erro inesperado para NULL user_id: ${error.message}`,
+    );
+  });
+
+  await test("L04-01: fn_delete_user_data rejects zero UUID (anon sentinel)", async () => {
+    const { error } = await db.rpc("fn_delete_user_data", {
+      p_user_id: "00000000-0000-0000-0000-000000000000",
+    });
+    assert(error, "L04-01: deveria rejeitar p_user_id=zero UUID");
+    assert(
+      /LGPD_INVALID_USER_ID|anon/i.test(error.message),
+      `L04-01: erro inesperado para zero UUID: ${error.message}`,
+    );
+  });
+
+  // 3.24 L04-01: happy path — insere PII e valida cleanup completo
+  await test("L04-01: fn_delete_user_data cobre todas as categorias (insert → delete → assert)", async () => {
+    const testUserId = "aaaa0404-0000-4000-8000-000000000001";
+    const ledgerRef = "aaaa0404-0000-4000-8000-00000000feee";
+    const LEDGER_REASON = "admin_adjustment"; // check-constraint-valid reason
+
+    // Cleanup any leftover from previous runs (run even if user doesn't exist)
+    await db.from("coin_ledger").delete().eq("ref_id", ledgerRef);
+    await db.auth.admin.deleteUser(testUserId).catch(() => {});
+
+    try {
+      // ── Seed: auth user (triggers auto-create of profile/wallet/progress) ──
+      const { error: createErr } = await db.auth.admin.createUser({
+        id: testUserId,
+        email: `lgpd-test-${testUserId.slice(0, 8)}@test.local`,
+        password: TEST_PASSWORD,
+        email_confirm: true,
+      });
+      if (createErr && !createErr.message.includes("already")) {
+        throw new Error(`L04-01: auth.admin.createUser failed: ${createErr.message}`);
+      }
+
+      // Seed profile explicitly (some envs não têm trigger handle_new_user_gamification)
+      await db.from("profiles").upsert(
+        { id: testUserId, display_name: "LGPD Test User" },
+        { onConflict: "id" },
+      );
+
+      // Category A — DELETE rows seed
+      await db.from("coaching_members").upsert(
+        {
+          user_id: testUserId,
+          group_id: GROUP_A,
+          display_name: "LGPD Test Member",
+          role: "athlete",
+          joined_at_ms: NOW_MS,
+        },
+        { onConflict: "user_id,group_id" },
+      );
+
+      await db.from("wallets").upsert(
+        { user_id: testUserId, balance_coins: 100 },
+        { onConflict: "user_id" },
+      );
+
+      await db.from("profile_progress").upsert(
+        { user_id: testUserId, xp: 500, level: 5 },
+        { onConflict: "user_id" },
+      );
+
+      // Category B — ANONYMIZE: add coin_ledger entry (created_at_ms NOT NULL,
+      // reason restrito a enum via check constraint)
+      await db.from("coin_ledger").insert({
+        user_id: testUserId,
+        delta_coins: 100,
+        reason: LEDGER_REASON,
+        ref_id: ledgerRef,
+        created_at_ms: NOW_MS,
+      });
+
+      // Snapshot before — verify our seed landed
+      const { count: walletBefore } = await db
+        .from("wallets")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", testUserId);
+      assert(
+        walletBefore !== null && walletBefore >= 1,
+        `L04-01: wallet precondition falhou (expected ≥1, got ${walletBefore})`,
+      );
+
+      // Act — call fn_delete_user_data and validate the report
+      const { data: reportData, error: rpcErr } = await db.rpc("fn_delete_user_data", {
+        p_user_id: testUserId,
+      });
+      assert(!rpcErr, `L04-01: fn_delete_user_data failed: ${rpcErr?.message}`);
+      const report = reportData as Record<string, unknown>;
+      assert(report && typeof report === "object", "L04-01: report deve ser jsonb object");
+      assert(report.user_id === testUserId, `L04-01: report.user_id mismatch`);
+      assert(
+        report.function_version === "2.0.0",
+        `L04-01: report.function_version esperado '2.0.0' got ${JSON.stringify(report.function_version)}`,
+      );
+
+      // Category A assertions
+      assert(
+        typeof report.coaching_members === "number" && (report.coaching_members as number) >= 1,
+        `L04-01: coaching_members deveria reportar count ≥1, got ${JSON.stringify(report.coaching_members)}`,
+      );
+      const { count: cmCount } = await db
+        .from("coaching_members")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", testUserId);
+      assert(cmCount === 0, `L04-01: coaching_members ainda tem ${cmCount} rows após delete`);
+
+      const { count: walletCount } = await db
+        .from("wallets")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", testUserId);
+      assert(walletCount === 0, `L04-01: wallets ainda tem ${walletCount} rows`);
+
+      const { count: ppCount } = await db
+        .from("profile_progress")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", testUserId);
+      assert(ppCount === 0, `L04-01: profile_progress ainda tem ${ppCount} rows`);
+
+      // Category B assertions — user_id foi anonimizado (zero UUID)
+      const { data: ledgerRows } = await db
+        .from("coin_ledger")
+        .select("user_id")
+        .eq("ref_id", ledgerRef);
+      const anonUuid = "00000000-0000-0000-0000-000000000000";
+      assert(
+        ledgerRows !== null && ledgerRows.length >= 1,
+        `L04-01: coin_ledger row foi deletada (deveria anonimizar)`,
+      );
+      for (const r of ledgerRows ?? []) {
+        assert(
+          (r as { user_id: string }).user_id === anonUuid,
+          `L04-01: coin_ledger.user_id não anonimizado: ${(r as { user_id: string }).user_id}`,
+        );
+      }
+
+      // Profile assertions — display_name anonimizado, avatar NULL
+      const { data: profile } = await db
+        .from("profiles")
+        .select("display_name, avatar_url")
+        .eq("id", testUserId)
+        .maybeSingle();
+      assert(
+        profile?.display_name === "Conta Removida",
+        `L04-01: profile.display_name não anonimizado: ${JSON.stringify(profile?.display_name)}`,
+      );
+      assert(
+        profile?.avatar_url === null,
+        `L04-01: profile.avatar_url deveria ser NULL, got ${JSON.stringify(profile?.avatar_url)}`,
+      );
+    } finally {
+      // Cleanup anonimizado ledger (user_id = zero UUID) via ref_id estável
+      await db.from("coin_ledger").delete().eq("ref_id", ledgerRef);
+      // Hard-delete auth user (cascade remove residuals)
+      await db.auth.admin.deleteUser(testUserId).catch(() => {});
+    }
+  });
+
+  // 3.25 L04-01: fn_delete_user_data é SECURITY DEFINER com search_path e lock_timeout
+  await test("L04-01: fn_delete_user_data has search_path + lock_timeout configured", async () => {
+    const { data, error } = await db
+      .from("security_definer_hardening_audit")
+      .select("function_name, proconfig, has_search_path")
+      .eq("function_name", "fn_delete_user_data")
+      .maybeSingle();
+    assert(!error, `audit view query failed: ${error?.message}`);
+    assert(data, "L04-01: fn_delete_user_data não encontrada no audit view");
+    assert(data!.has_search_path, "L04-01: fn_delete_user_data sem search_path");
+    const cfg = (data!.proconfig ?? []) as string[];
+    assert(
+      cfg.some((c) => c.startsWith("lock_timeout=")),
+      `L04-01: fn_delete_user_data sem lock_timeout (cfg=${JSON.stringify(cfg)})`,
+    );
+  });
+
   // 3.20 L05-01: cancel_swap_order happy path retorna previous_status + new_status
   await test("L05-01: cancel_swap_order returns previous_status + new_status on success", async () => {
     const orderId = "a5a5a5a5-0000-4000-8000-000000000502";

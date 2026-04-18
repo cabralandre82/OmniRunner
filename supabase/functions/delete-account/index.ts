@@ -56,13 +56,30 @@ serve(async (req: Request) => {
       .in("status", ["pending", "accepted"]);
 
     // 2. Comprehensive data cleanup via SECURITY DEFINER RPC (UZ-013)
-    const { error: cleanupErr } = await adminDb.rpc("fn_delete_user_data", { p_user_id: uid });
+    //
+    // L04-01: fn_delete_user_data v2.0.0 retorna jsonb com contagem por
+    // tabela (evidência LGPD Art. 18, VI). Logamos o report completo para
+    // que um operador possa responder a subject-access-requests ("me prove
+    // que apagou meus dados"). O report contém apenas user_id + contagens,
+    // sem PII dos dados removidos.
+    const { data: cleanupReport, error: cleanupErr } = await adminDb.rpc(
+      "fn_delete_user_data",
+      { p_user_id: uid },
+    );
     if (cleanupErr) {
       console.error(JSON.stringify({
         request_id: requestId,
         fn: FN,
         error_code: "DATA_CLEANUP_FAILED",
         detail: cleanupErr.message,
+      }));
+    } else if (cleanupReport) {
+      console.log(JSON.stringify({
+        request_id: requestId,
+        fn: FN,
+        event: "LGPD_DATA_CLEANUP_COMPLETED",
+        user_id: uid,
+        report: cleanupReport,
       }));
     }
 
