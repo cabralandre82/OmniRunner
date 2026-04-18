@@ -151,7 +151,10 @@ describe("Swap API", () => {
       );
       expect(res.status).toBe(422);
       const body = await res.json();
-      expect(body.error).toBe("Operação falhou. Tente novamente.");
+      // L14-05 — canonical envelope: error.message
+      expect(body.error.message).toBe("Operação falhou. Tente novamente.");
+      expect(body.error.code).toBe("SWAP_OPERATION_FAILED");
+      expect(body.ok).toBe(false);
     });
 
     it("rejeita campos extras (strict schema) — 400", async () => {
@@ -231,7 +234,7 @@ describe("Swap API", () => {
       const res = await POST(req({ action: "accept", order_id: UUID1 }));
       expect(res.status).toBe(404);
       const body = await res.json();
-      expect(body.code).toBe("not_found");
+      expect(body.error.code).toBe("not_found");
       expect(auditLog).toHaveBeenCalledWith(
         expect.objectContaining({ action: "swap.offer.accept_failed" }),
       );
@@ -247,8 +250,8 @@ describe("Swap API", () => {
       const res = await POST(req({ action: "accept", order_id: UUID1 }));
       expect(res.status).toBe(409);
       const body = await res.json();
-      expect(body.code).toBe("not_open");
-      expect(body.detail.current_status).toBe("cancelled");
+      expect(body.error.code).toBe("not_open");
+      expect(body.error.details.current_status).toBe("cancelled");
       expect(auditLog).not.toHaveBeenCalledWith(
         expect.objectContaining({ action: "swap.offer.accepted" }),
       );
@@ -373,7 +376,7 @@ describe("Swap API", () => {
       );
       expect(res.status).toBe(400);
       const body = await res.json();
-      expect(body.code).toBe("payment_ref_invalid");
+      expect(body.error.code).toBe("payment_ref_invalid");
     });
 
     it("L05-02: 410 Gone quando oferta expirou (expired)", async () => {
@@ -389,8 +392,8 @@ describe("Swap API", () => {
       const res = await POST(req({ action: "accept", order_id: UUID1 }));
       expect(res.status).toBe(410);
       const body = await res.json();
-      expect(body.code).toBe("expired");
-      expect(body.detail.expired_at).toBe("2026-04-10T00:00:00Z");
+      expect(body.error.code).toBe("expired");
+      expect(body.error.details.expired_at).toBe("2026-04-10T00:00:00Z");
       expect(auditLog).toHaveBeenCalledWith(
         expect.objectContaining({
           action: "swap.offer.accept_failed",
@@ -442,7 +445,7 @@ describe("Swap API", () => {
       const res = await POST(req({ action: "cancel", order_id: UUID1 }));
       expect(res.status).toBe(409);
       const body = await res.json();
-      expect(body.detail.current_status).toBe("settled");
+      expect(body.error.details.current_status).toBe("settled");
     });
 
     it("403 quando caller não é seller (not_owner)", async () => {

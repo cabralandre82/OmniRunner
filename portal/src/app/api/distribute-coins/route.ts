@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { cookies } from "next/headers";
@@ -12,22 +12,32 @@ import {
 } from "@/lib/feature-flags";
 import { logger } from "@/lib/logger";
 import { withSpan, currentTraceId } from "@/lib/observability/tracing";
+import {
+  apiError,
+  apiUnauthorized,
+  apiForbidden,
+  apiNotFound,
+  apiValidationFailed,
+  apiRateLimited,
+  apiServiceUnavailable,
+  apiInternalError,
+  apiNoGroupSession,
+} from "@/lib/api/errors";
+import { rateLimitKey } from "@/lib/api/rate-limit-key";
 
 // L02-01: todas as mutações (custódia + inventário + wallet + ledger) são
 // executadas por um único RPC SECURITY DEFINER em transação única. Qualquer
 // falha após a primeira mutação reverte o bloco inteiro. Idempotência é
 // garantida por UNIQUE INDEX parcial em coin_ledger(ref_id).
 // Ver: supabase/migrations/20260417120000_emit_coins_atomic.sql
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!user) return apiUnauthorized(request);
 
     // L06-06 — kill switch (ver runbook CUSTODY_INCIDENT_RUNBOOK.md).
     // Toggleable via /platform/feature-flags sem precisar redeploy.
@@ -38,23 +48,34 @@ export async function POST(request: Request) {
       );
     } catch (e) {
       if (e instanceof FeatureDisabledError) {
-        return NextResponse.json(
-          { error: e.hint, code: e.code, key: e.key },
-          { status: 503, headers: { "Retry-After": "30" } },
-        );
+        return apiError(request, e.code, e.hint ?? e.message, 503, {
+          details: { key: e.key },
+          headers: { "Retry-After": "30" },
+        });
       }
       throw e;
     }
 
-    const rl = await rateLimit(`distribute:${user.id}`, { maxRequests: 20, windowMs: 60_000 });
+    // L14-04 — keying por group preferido a user (proteção do
+    // throughput da assessoria); fallback para user.id quando o cookie
+    // ainda não foi resolvido.
+    const cookieGroupId = cookies().get("portal_group_id")?.value ?? null;
+    const rl = await rateLimit(
+      rateLimitKey({
+        prefix: "distribute",
+        groupId: cookieGroupId,
+        userId: user.id,
+        request,
+      }),
+      { maxRequests: 20, windowMs: 60_000 },
+    );
     if (!rl.allowed) {
-      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+      const retryAfter = Math.ceil((rl.resetAt - Date.now()) / 1000);
+      return apiRateLimited(request, retryAfter);
     }
 
     const groupId = cookies().get("portal_group_id")?.value;
-    if (!groupId) {
-      return NextResponse.json({ error: "No group selected" }, { status: 400 });
-    }
+    if (!groupId) return apiNoGroupSession(request);
 
     const db = createServiceClient();
 
@@ -66,16 +87,13 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (!callerMembership || callerMembership.role !== "admin_master") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return apiForbidden(request);
     }
 
     const body = await request.json();
     const parsed = distributeCoinsSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.issues[0].message },
-        { status: 400 },
-      );
+      return apiValidationFailed(request, parsed.error.issues[0].message, parsed.error.flatten());
     }
     const { athlete_user_id, amount } = parsed.data;
 
@@ -94,17 +112,14 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (!member) {
-      return NextResponse.json(
-        { error: "Atleta não encontrado nesta assessoria" },
-        { status: 404 },
-      );
+      return apiNotFound(request, "Atleta não encontrado nesta assessoria");
     }
 
     const healthy = await assertInvariantsHealthy();
     if (!healthy) {
-      return NextResponse.json(
-        { error: "System invariant violation. Emission blocked." },
-        { status: 503 },
+      return apiServiceUnavailable(
+        request,
+        "System invariant violation. Emission blocked.",
       );
     }
 
@@ -148,31 +163,35 @@ export async function POST(request: Request) {
       // está sob contenção, falha rápido em vez de segurar conexão. Cliente
       // deve fazer backoff e retry.
       if (rpcErr.code === "55P03" || msg.includes("lock_not_available")) {
-        return new NextResponse(
-          JSON.stringify({ error: "Recurso em uso, tente novamente em instantes." }),
-          { status: 503, headers: { "Content-Type": "application/json", "Retry-After": "2" } },
+        return apiError(
+          request,
+          "LOCK_NOT_AVAILABLE",
+          "Recurso em uso, tente novamente em instantes.",
+          503,
+          { headers: { "Retry-After": "2" } },
         );
       }
       // P0002 — CUSTODY_FAILED (lastro insuficiente ou falha no check de custódia)
       if (msg.includes("CUSTODY_FAILED") || rpcErr.code === "P0002") {
-        return NextResponse.json(
-          { error: "Lastro insuficiente na custódia da assessoria. Deposite mais lastro antes de emitir coins." },
-          { status: 422 },
+        return apiError(
+          request,
+          "CUSTODY_FAILED",
+          "Lastro insuficiente na custódia da assessoria. Deposite mais lastro antes de emitir coins.",
+          422,
         );
       }
       // P0003 — INVENTORY_INSUFFICIENT (saldo de tokens da assessoria)
       if (msg.includes("INVENTORY_INSUFFICIENT") || rpcErr.code === "P0003") {
-        return NextResponse.json(
-          { error: "Saldo insuficiente de OmniCoins" },
-          { status: 422 },
+        return apiError(
+          request,
+          "INVENTORY_INSUFFICIENT",
+          "Saldo insuficiente de OmniCoins",
+          422,
         );
       }
       // P0001 — INVALID_AMOUNT / MISSING_REF_ID (erro de contrato; não deveria ocorrer após validação acima)
       if (msg.includes("INVALID_AMOUNT") || msg.includes("MISSING_REF_ID") || rpcErr.code === "P0001") {
-        return NextResponse.json(
-          { error: "Parâmetros inválidos" },
-          { status: 400 },
-        );
+        return apiValidationFailed(request, "Parâmetros inválidos");
       }
       logger.error("emit_coins_atomic failed", rpcErr, {
         athlete_user_id,
@@ -180,7 +199,7 @@ export async function POST(request: Request) {
         groupId,
         refId,
       });
-      return NextResponse.json({ error: "Erro ao distribuir coins" }, { status: 500 });
+      return apiInternalError(request, "Erro ao distribuir coins");
     }
 
     // rpcData é array com uma linha: { ledger_id, new_balance, was_idempotent }
@@ -217,6 +236,6 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     logger.error("Failed to distribute coins", error);
-    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
+    return apiInternalError(request, "Erro interno");
   }
 }

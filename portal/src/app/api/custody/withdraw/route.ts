@@ -21,6 +21,15 @@ import {
   assertSubsystemEnabled,
   FeatureDisabledError,
 } from "@/lib/feature-flags";
+import {
+  apiError,
+  apiUnauthorized,
+  apiForbidden,
+  apiValidationFailed,
+  apiRateLimited,
+  apiServiceUnavailable,
+} from "@/lib/api/errors";
+import { rateLimitKey } from "@/lib/api/rate-limit-key";
 import { z } from "zod";
 
 /**
@@ -40,7 +49,14 @@ const withdrawSchema = z
   })
   .strict();
 
-async function requireAdminMaster() {
+type WithdrawAuthError =
+  | { error: "Unauthorized"; status: 401 }
+  | { error: "No group"; status: 400 }
+  | { error: "Forbidden"; status: 403 };
+
+async function requireAdminMaster(): Promise<
+  WithdrawAuthError | { user: { id: string }; groupId: string }
+> {
   const supabase = createClient();
   const {
     data: { user },
@@ -66,27 +82,43 @@ async function requireAdminMaster() {
   return { user, groupId } as const;
 }
 
-export async function GET() {
-  const auth = await requireAdminMaster();
-  if ("error" in auth) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
+function authErrorResponse(
+  req: NextRequest | null,
+  err: WithdrawAuthError,
+): NextResponse {
+  switch (err.status) {
+    case 401:
+      return apiUnauthorized(req);
+    case 400:
+      return apiError(req, "NO_GROUP_SESSION", "No portal group selected", 400);
+    case 403:
+      return apiForbidden(req);
   }
+}
+
+export async function GET(req: NextRequest) {
+  const auth = await requireAdminMaster();
+  if ("error" in auth) return authErrorResponse(req, auth);
 
   const withdrawals = await getWithdrawals(auth.groupId);
   return NextResponse.json({ withdrawals });
 }
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
-  const rl = await rateLimit(`withdraw:${ip}`, { maxRequests: 5, windowMs: 60_000 });
+  // L14-04 — bucket por grupo (cookie) para que um grupo ativo não
+  // bloqueie withdrawals de outros grupos atrás do mesmo NAT.
+  const cookieGroupId = cookies().get("portal_group_id")?.value ?? null;
+  const rl = await rateLimit(
+    rateLimitKey({ prefix: "withdraw", groupId: cookieGroupId, request: req }),
+    { maxRequests: 5, windowMs: 60_000 },
+  );
   if (!rl.allowed) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    const retryAfter = Math.ceil((rl.resetAt - Date.now()) / 1000);
+    return apiRateLimited(req, retryAfter);
   }
 
   const auth = await requireAdminMaster();
-  if ("error" in auth) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  if ("error" in auth) return authErrorResponse(req, auth);
 
   // L06-06 — kill switch operacional. Permite ops desligar withdrawals
   // imediatamente via /platform/feature-flags ou SQL sem deploy.
@@ -98,29 +130,26 @@ export async function POST(req: NextRequest) {
     );
   } catch (e) {
     if (e instanceof FeatureDisabledError) {
-      return NextResponse.json(
-        { error: e.hint, code: e.code, key: e.key },
-        { status: 503, headers: { "Retry-After": "60" } },
-      );
+      return apiError(req, e.code, e.hint ?? e.message, 503, {
+        details: { key: e.key },
+        headers: { "Retry-After": "60" },
+      });
     }
     throw e;
   }
 
   const healthy = await assertInvariantsHealthy();
   if (!healthy) {
-    return NextResponse.json(
-      { error: "System invariant violation detected. Operations suspended." },
-      { status: 503 },
+    return apiServiceUnavailable(
+      req,
+      "System invariant violation detected. Operations suspended.",
     );
   }
 
   const body = await req.json();
   const parsed = withdrawSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Invalid input", details: parsed.error.flatten() },
-      { status: 400 },
-    );
+    return apiValidationFailed(req, "Invalid input", parsed.error.flatten());
   }
 
   // L01-02: fetch do rate é SEMPRE server-side. Falha fechada (503) se
@@ -130,30 +159,21 @@ export async function POST(req: NextRequest) {
     fxQuote = await getAuthoritativeFxQuote(parsed.data.target_currency);
   } catch (err) {
     if (err instanceof FxQuoteStaleError) {
-      return NextResponse.json(
-        {
-          error: "FX quote stale",
-          detail: "Cotação expirada; platform_admin deve refrescar em /platform/fx.",
-          code: err.code,
+      return apiError(req, err.code, "FX quote stale", 503, {
+        details: {
+          hint: "Cotação expirada; platform_admin deve refrescar em /platform/fx.",
         },
-        { status: 503 },
-      );
+      });
     }
     if (err instanceof FxQuoteMissingError) {
-      return NextResponse.json(
-        {
-          error: "FX quote missing",
-          detail: "Moeda sem cotação ativa; contate platform_admin.",
-          code: err.code,
+      return apiError(req, err.code, "FX quote missing", 503, {
+        details: {
+          hint: "Moeda sem cotação ativa; contate platform_admin.",
         },
-        { status: 503 },
-      );
+      });
     }
     if (err instanceof FxQuoteError) {
-      return NextResponse.json(
-        { error: "FX quote unavailable", code: err.code },
-        { status: 503 },
-      );
+      return apiError(req, err.code, "FX quote unavailable", 503);
     }
     throw err;
   }
@@ -171,7 +191,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!withdrawal) {
-      return NextResponse.json({ error: "Custody feature not available" }, { status: 503 });
+      return apiServiceUnavailable(req, "Custody feature not available");
     }
 
     await executeWithdrawal(withdrawal.id);
@@ -195,6 +215,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ withdrawal });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Withdrawal failed";
-    return NextResponse.json({ error: msg }, { status: 422 });
+    return apiError(req, "WITHDRAWAL_FAILED", msg, 422);
   }
 }

@@ -101,7 +101,8 @@ describe("POST /api/distribute-coins (L02-01: atomic RPC)", () => {
     mockAdminCheck();
     const res = await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 10.5 }));
     expect(res.status).toBe(400);
-    expect((await res.json()).error).toContain("inteiro");
+    // L14-05 — canonical envelope: error.message
+    expect((await res.json()).error.message).toContain("inteiro");
   });
 
   it("returns 400 when amount exceeds 1000", async () => {
@@ -132,7 +133,7 @@ describe("POST /api/distribute-coins (L02-01: atomic RPC)", () => {
     });
     const res = await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 50 }));
     expect(res.status).toBe(422);
-    expect((await res.json()).error).toContain("Lastro insuficiente");
+    expect((await res.json()).error.message).toContain("Lastro insuficiente");
   });
 
   it("returns 422 when inventory is insufficient (P0003)", async () => {
@@ -144,7 +145,7 @@ describe("POST /api/distribute-coins (L02-01: atomic RPC)", () => {
     });
     const res = await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 50 }));
     expect(res.status).toBe(422);
-    expect((await res.json()).error).toContain("Saldo insuficiente");
+    expect((await res.json()).error.message).toContain("Saldo insuficiente");
   });
 
   it("returns 500 when RPC fails with unexpected error", async () => {
@@ -166,7 +167,7 @@ describe("POST /api/distribute-coins (L02-01: atomic RPC)", () => {
     const res = await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 50 }));
     expect(res.status).toBe(503);
     expect(res.headers.get("Retry-After")).toBe("2");
-    expect((await res.json()).error).toMatch(/em uso.*tente novamente/i);
+    expect((await res.json()).error.message).toMatch(/em uso.*tente novamente/i);
     // audit log NÃO deve ser chamado em 503 (operação não committada)
     expect(auditLog).not.toHaveBeenCalled();
   });

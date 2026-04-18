@@ -115,7 +115,9 @@ describe("POST /api/custody/withdraw — L01-02 server-side FX rate", () => {
     );
     expect(res.status).toBe(400);
     const body = await res.json();
-    expect(body.error).toBe("Invalid input");
+    // L14-05 — canonical envelope: error.message + error.code
+    expect(body.error.message).toBe("Invalid input");
+    expect(body.error.code).toBe("VALIDATION_FAILED");
     expect(createWithdrawal).not.toHaveBeenCalled();
     expect(auditLog).not.toHaveBeenCalled();
   });
@@ -159,7 +161,7 @@ describe("POST /api/custody/withdraw — L01-02 server-side FX rate", () => {
     );
     expect(res.status).toBe(503);
     const body = await res.json();
-    expect(body.code).toBe("stale");
+    expect(body.error.code).toBe("stale");
     expect(createWithdrawal).not.toHaveBeenCalled();
     expect(auditLog).not.toHaveBeenCalled();
   });
@@ -176,7 +178,7 @@ describe("POST /api/custody/withdraw — L01-02 server-side FX rate", () => {
     );
     expect(res.status).toBe(503);
     const body = await res.json();
-    expect(body.code).toBe("missing");
+    expect(body.error.code).toBe("missing");
   });
 
   it("aceita operação válida com target_currency default BRL", async () => {

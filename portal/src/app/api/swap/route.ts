@@ -20,6 +20,17 @@ import {
   assertSubsystemEnabled,
   FeatureDisabledError,
 } from "@/lib/feature-flags";
+import {
+  apiError,
+  apiUnauthorized,
+  apiForbidden,
+  apiValidationFailed,
+  apiRateLimited,
+  apiServiceUnavailable,
+  apiInternalError,
+  resolveRequestId,
+} from "@/lib/api/errors";
+import { rateLimitKey } from "@/lib/api/rate-limit-key";
 import { z } from "zod";
 
 const createSchema = z
@@ -58,7 +69,14 @@ const cancelSchema = z
 
 const bodySchema = z.union([createSchema, acceptSchema, cancelSchema]);
 
-async function requireAdminMaster() {
+type SwapAuthError =
+  | { error: "Unauthorized"; status: 401 }
+  | { error: "No group"; status: 400 }
+  | { error: "Forbidden"; status: 403 };
+
+async function requireAdminMaster(): Promise<
+  SwapAuthError | { user: { id: string }; groupId: string }
+> {
   const supabase = createClient();
   const {
     data: { user },
@@ -84,74 +102,99 @@ async function requireAdminMaster() {
   return { user, groupId } as const;
 }
 
-/**
- * L05-01 — Mapeamento SwapErrorCode → HTTP status + body estruturado.
- *
- * Permite clientes reagir semanticamente (mostrar "oferta já aceita",
- * acionar retry com backoff, etc) sem parsing de message.
- */
-function swapErrorToResponse(err: SwapError): NextResponse {
-  const body: {
-    error: string;
-    code: SwapErrorCode;
-    sqlstate?: string;
-    detail?: Record<string, unknown>;
-  } = {
-    error: err.message,
-    code: err.code,
-  };
-  if (err.sqlstate) body.sqlstate = err.sqlstate;
-  if (err.detail) body.detail = err.detail;
-
-  switch (err.code) {
-    case "not_found":
-      return NextResponse.json(body, { status: 404 });
-    case "not_open":
-      return NextResponse.json(body, { status: 409 });
-    case "not_owner":
-      return NextResponse.json(body, { status: 403 });
-    case "self_buy":
-      return NextResponse.json(body, { status: 400 });
-    case "insufficient_backing":
-      return NextResponse.json(body, { status: 422 });
-    case "expired":
-      // L05-02 — 410 Gone: recurso existiu mas não está mais disponível.
-      // Cliente deve atualizar lista (oferta saiu do marketplace).
-      return NextResponse.json(body, { status: 410 });
-    case "payment_ref_invalid":
-      // L02-07/ADR-008 — formato de external_payment_ref inválido.
-      return NextResponse.json(body, { status: 400 });
-    case "lock_not_available":
-      return NextResponse.json(body, {
-        status: 503,
-        headers: { "Retry-After": "2" },
-      });
-    default:
-      return NextResponse.json(body, { status: 422 });
+function authErrorResponse(
+  req: NextRequest,
+  err: SwapAuthError,
+): NextResponse {
+  switch (err.status) {
+    case 401:
+      return apiUnauthorized(req);
+    case 400:
+      return apiError(req, "NO_GROUP_SESSION", "No portal group selected", 400);
+    case 403:
+      return apiForbidden(req);
   }
 }
 
+/**
+ * L05-01 — Mapeamento SwapErrorCode → HTTP status + body estruturado.
+ * L14-05 — Wrap em envelope canônico `{ ok, error: { code, message,
+ * request_id, details } }` mantendo `code` (e `sqlstate`/`detail` em
+ * `details`) para clientes que reagem semanticamente.
+ */
+function swapErrorToResponse(req: NextRequest, err: SwapError): NextResponse {
+  const details: Record<string, unknown> = {};
+  if (err.sqlstate) details.sqlstate = err.sqlstate;
+  if (err.detail) Object.assign(details, err.detail);
+  const detailsArg = Object.keys(details).length > 0 ? details : undefined;
+  const requestId = resolveRequestId(req);
+
+  const status: number = (() => {
+    switch (err.code) {
+      case "not_found":
+        return 404;
+      case "not_open":
+        return 409;
+      case "not_owner":
+        return 403;
+      case "self_buy":
+      case "payment_ref_invalid":
+        return 400;
+      case "insufficient_backing":
+        return 422;
+      case "expired":
+        // L05-02 — 410 Gone: recurso existiu mas não está mais disponível.
+        return 410;
+      case "lock_not_available":
+        return 503;
+      default:
+        return 422;
+    }
+  })();
+
+  const headers =
+    err.code === "lock_not_available" ? { "Retry-After": "2" } : undefined;
+
+  return apiError(requestId, err.code as SwapErrorCode, err.message, status, {
+    details: detailsArg,
+    headers,
+  });
+}
+
+// L14-04 — Rate-limit keys são derivadas com `rateLimitKey()` (group →
+// user → hashed-IP). O legado keyed-by-IP (`swap:${ip}`) misturava
+// milhares de grupos atrás de NAT móvel num único bucket.
+
 export async function GET(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
-  const rl = await rateLimit(`swap:${ip}`, { maxRequests: 30, windowMs: 60_000 });
+  // GET é pré-auth, mas tentamos derivar groupId do cookie para já
+  // bucketar por grupo quando o user tiver sessão. Sem cookie: cai
+  // para hashed-IP, que ainda assim é melhor que IP plaintext.
+  const cookieGroupId = cookies().get("portal_group_id")?.value ?? null;
+  const rl = await rateLimit(
+    rateLimitKey({ prefix: "swap", groupId: cookieGroupId, request: req }),
+    { maxRequests: 30, windowMs: 60_000 },
+  );
   if (!rl.allowed) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    const retryAfter = Math.ceil((rl.resetAt - Date.now()) / 1000);
+    return apiRateLimited(req, retryAfter);
   }
 
   const auth = await requireAdminMaster();
-  if ("error" in auth) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  if ("error" in auth) return authErrorResponse(req, auth);
 
   const offers = await getOpenSwapOffers(auth.groupId);
   return NextResponse.json({ offers });
 }
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
-  const rl = await rateLimit(`swap:${ip}`, { maxRequests: 10, windowMs: 60_000 });
+  const cookieGroupId = cookies().get("portal_group_id")?.value ?? null;
+  const rl = await rateLimit(
+    rateLimitKey({ prefix: "swap", groupId: cookieGroupId, request: req }),
+    { maxRequests: 10, windowMs: 60_000 },
+  );
   if (!rl.allowed) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    const retryAfter = Math.ceil((rl.resetAt - Date.now()) / 1000);
+    return apiRateLimited(req, retryAfter);
   }
 
   // L06-06 — kill switch. POST cobre create/accept/cancel; quando desligado
@@ -165,26 +208,21 @@ export async function POST(req: NextRequest) {
     );
   } catch (e) {
     if (e instanceof FeatureDisabledError) {
-      return NextResponse.json(
-        { error: e.hint, code: e.code, key: e.key },
-        { status: 503, headers: { "Retry-After": "60" } },
-      );
+      return apiError(req, e.code, e.hint ?? e.message, 503, {
+        details: { key: e.key },
+        headers: { "Retry-After": "60" },
+      });
     }
     throw e;
   }
 
   const auth = await requireAdminMaster();
-  if ("error" in auth) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  if ("error" in auth) return authErrorResponse(req, auth);
 
   const body = await req.json();
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Invalid input", details: parsed.error.flatten() },
-      { status: 400 },
-    );
+    return apiValidationFailed(req, "Invalid input", parsed.error.flatten());
   }
 
   const data = parsed.data;
@@ -195,7 +233,7 @@ export async function POST(req: NextRequest) {
       const order = await createSwapOffer(auth.groupId, data.amount_usd, ttl);
 
       if (!order) {
-        return NextResponse.json({ error: "Swap feature not available" }, { status: 503 });
+        return apiServiceUnavailable(req, "Swap feature not available");
       }
 
       await auditLog({
@@ -231,7 +269,7 @@ export async function POST(req: NextRequest) {
             targetId: data.order_id,
             metadata: { code: err.code, sqlstate: err.sqlstate ?? null },
           });
-          return swapErrorToResponse(err);
+          return swapErrorToResponse(req, err);
         }
         throw err;
       }
@@ -275,7 +313,7 @@ export async function POST(req: NextRequest) {
             targetId: data.order_id,
             metadata: { code: err.code, sqlstate: err.sqlstate ?? null },
           });
-          return swapErrorToResponse(err);
+          return swapErrorToResponse(req, err);
         }
         throw err;
       }
@@ -298,9 +336,9 @@ export async function POST(req: NextRequest) {
       });
     }
   } catch (e: unknown) {
-    console.error("[swap] operation failed:", e);
-    return NextResponse.json({ error: "Operação falhou. Tente novamente." }, { status: 422 });
+    logger.error("[swap] operation failed", e);
+    return apiError(req, "SWAP_OPERATION_FAILED", "Operação falhou. Tente novamente.", 422);
   }
 
-  return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+  return apiValidationFailed(req, "Unknown action");
 }

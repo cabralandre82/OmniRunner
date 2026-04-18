@@ -10,6 +10,16 @@ import {
 } from "@/lib/custody";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
+import {
+  apiError,
+  apiUnauthorized,
+  apiForbidden,
+  apiValidationFailed,
+  apiRateLimited,
+  apiServiceUnavailable,
+  apiInternalError,
+} from "@/lib/api/errors";
+import { rateLimitKey } from "@/lib/api/rate-limit-key";
 import { z } from "zod";
 
 const depositSchema = z
@@ -33,7 +43,14 @@ const confirmSchema = z
 const IDEMPOTENCY_KEY_RE =
   /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[A-Za-z0-9_-]{16,128})$/i;
 
-async function requireAdminMaster() {
+type CustodyAuthError =
+  | { error: "Unauthorized"; status: 401 }
+  | { error: "No group"; status: 400 }
+  | { error: "Forbidden"; status: 403 };
+
+async function requireAdminMaster(): Promise<
+  CustodyAuthError | { user: { id: string }; groupId: string }
+> {
   const supabase = createClient();
   const {
     data: { user },
@@ -59,27 +76,42 @@ async function requireAdminMaster() {
   return { user, groupId } as const;
 }
 
-export async function GET() {
-  const auth = await requireAdminMaster();
-  if ("error" in auth) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
+function authErrorResponse(
+  req: NextRequest | null,
+  err: CustodyAuthError,
+): NextResponse {
+  switch (err.status) {
+    case 401:
+      return apiUnauthorized(req);
+    case 400:
+      return apiError(req, "NO_GROUP_SESSION", "No portal group selected", 400);
+    case 403:
+      return apiForbidden(req);
   }
+}
+
+export async function GET(req: NextRequest) {
+  const auth = await requireAdminMaster();
+  if ("error" in auth) return authErrorResponse(req, auth);
 
   const account = await getCustodyAccount(auth.groupId);
   return NextResponse.json({ account });
 }
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
-  const rl = await rateLimit(`custody:${ip}`, { maxRequests: 10, windowMs: 60_000 });
+  // L14-04 — bucket por grupo (cookie) com fallback para hashed-IP.
+  const cookieGroupId = cookies().get("portal_group_id")?.value ?? null;
+  const rl = await rateLimit(
+    rateLimitKey({ prefix: "custody", groupId: cookieGroupId, request: req }),
+    { maxRequests: 10, windowMs: 60_000 },
+  );
   if (!rl.allowed) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    const retryAfter = Math.ceil((rl.resetAt - Date.now()) / 1000);
+    return apiRateLimited(req, retryAfter);
   }
 
   const auth = await requireAdminMaster();
-  if ("error" in auth) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  if ("error" in auth) return authErrorResponse(req, auth);
 
   const body = await req.json();
 
@@ -87,10 +119,7 @@ export async function POST(req: NextRequest) {
   if (body.deposit_id) {
     const parsed = confirmSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Invalid input", details: parsed.error.flatten() },
-        { status: 400 },
-      );
+      return apiValidationFailed(req, "Invalid input", parsed.error.flatten());
     }
 
     try {
@@ -101,7 +130,7 @@ export async function POST(req: NextRequest) {
       await confirmDeposit(parsed.data.deposit_id, auth.groupId);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Confirm failed";
-      return NextResponse.json({ error: msg }, { status: 422 });
+      return apiError(req, "CUSTODY_CONFIRM_FAILED", msg, 422);
     }
 
     await auditLog({
@@ -120,32 +149,35 @@ export async function POST(req: NextRequest) {
   // deposit (idempotent hit).
   const idempotencyKey = req.headers.get("x-idempotency-key")?.trim();
   if (!idempotencyKey) {
-    return NextResponse.json(
+    return apiError(
+      req,
+      "IDEMPOTENCY_KEY_REQUIRED",
+      "Missing x-idempotency-key header",
+      400,
       {
-        error: "Missing x-idempotency-key header",
-        hint: "Send a UUID v4 in the x-idempotency-key header to make this request safely retryable.",
-        code: "IDEMPOTENCY_KEY_REQUIRED",
+        details: {
+          hint: "Send a UUID v4 in the x-idempotency-key header to make this request safely retryable.",
+        },
       },
-      { status: 400 },
     );
   }
   if (!IDEMPOTENCY_KEY_RE.test(idempotencyKey)) {
-    return NextResponse.json(
+    return apiError(
+      req,
+      "IDEMPOTENCY_KEY_INVALID",
+      "Invalid x-idempotency-key format",
+      400,
       {
-        error: "Invalid x-idempotency-key format",
-        hint: "Expected UUID v4 or opaque 16-128 char [A-Za-z0-9_-] string.",
-        code: "IDEMPOTENCY_KEY_INVALID",
+        details: {
+          hint: "Expected UUID v4 or opaque 16-128 char [A-Za-z0-9_-] string.",
+        },
       },
-      { status: 400 },
     );
   }
 
   const parsed = depositSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Invalid input", details: parsed.error.flatten() },
-      { status: 400 },
-    );
+    return apiValidationFailed(req, "Invalid input", parsed.error.flatten());
   }
 
   await getOrCreateCustodyAccount(auth.groupId);
@@ -159,9 +191,9 @@ export async function POST(req: NextRequest) {
     );
 
     if (!result) {
-      return NextResponse.json(
-        { error: "Funcionalidade de custódia não disponível ainda" },
-        { status: 503 },
+      return apiServiceUnavailable(
+        req,
+        "Funcionalidade de custódia não disponível ainda",
       );
     }
 
@@ -194,6 +226,6 @@ export async function POST(req: NextRequest) {
     );
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Deposit failed";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return apiInternalError(req, msg);
   }
 }

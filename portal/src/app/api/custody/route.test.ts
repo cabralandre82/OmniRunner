@@ -128,7 +128,8 @@ describe("Custody API", () => {
       const res = await POST(req({ amount_usd: 1000, gateway: "stripe" }));
       expect(res.status).toBe(400);
       const body = await res.json();
-      expect(body.code).toBe("IDEMPOTENCY_KEY_REQUIRED");
+      // L14-05 — canonical envelope: error.code
+      expect(body.error.code).toBe("IDEMPOTENCY_KEY_REQUIRED");
     });
 
     it("returns 400 when x-idempotency-key is too short", async () => {
@@ -141,7 +142,7 @@ describe("Custody API", () => {
       );
       expect(res.status).toBe(400);
       const body = await res.json();
-      expect(body.code).toBe("IDEMPOTENCY_KEY_INVALID");
+      expect(body.error.code).toBe("IDEMPOTENCY_KEY_INVALID");
     });
 
     it("returns 400 when x-idempotency-key has invalid chars", async () => {
@@ -154,7 +155,7 @@ describe("Custody API", () => {
       );
       expect(res.status).toBe(400);
       const body = await res.json();
-      expect(body.code).toBe("IDEMPOTENCY_KEY_INVALID");
+      expect(body.error.code).toBe("IDEMPOTENCY_KEY_INVALID");
     });
 
     it("accepts opaque 16+ char keys (ULID, nanoid)", async () => {
@@ -240,7 +241,10 @@ describe("Custody API", () => {
       );
       expect(res.status).toBe(422);
       const body = await res.json();
-      expect(body.error).toMatch(/wrong group/);
+      // L14-05 — canonical envelope wraps the message under error.message;
+      // the error code becomes a stable token for clients.
+      expect(body.error.message).toMatch(/wrong group/);
+      expect(body.error.code).toBe("CUSTODY_CONFIRM_FAILED");
     });
   });
 });

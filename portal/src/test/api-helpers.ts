@@ -12,7 +12,7 @@ export function queryChain(result: { data?: unknown; error?: unknown } = { data:
   const methods = [
     "select", "insert", "update", "upsert", "delete",
     "eq", "neq", "in", "gte", "lte", "gt", "lt",
-    "order", "limit", "range", "is",
+    "order", "limit", "range", "is", "or", "filter", "not",
   ];
   for (const m of methods) {
     self[m] = vi.fn().mockReturnValue(self);
