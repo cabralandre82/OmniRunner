@@ -28,7 +28,7 @@ tests:
   - "portal/src/app/api/platform/feature-flags/route.test.ts"
 linked_issues: []
 linked_prs:
-  - "commit:HEAD"
+  - "commit:a3a35ff"
 owner: unassigned
 runbook: docs/runbooks/CUSTODY_INCIDENT_RUNBOOK.md
 effort_points: 3

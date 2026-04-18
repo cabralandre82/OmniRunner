@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T19:25:26.149Z",
+  "generated_at": "2026-04-18T19:27:10.083Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -3892,7 +3892,7 @@
       ],
       "linked_issues": [],
       "linked_prs": [
-        "commit:HEAD"
+        "commit:a3a35ff"
       ],
       "owner": "unassigned",
       "runbook": "docs/runbooks/CUSTODY_INCIDENT_RUNBOOK.md",
