@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T23:02:49.425Z",
+  "generated_at": "2026-04-18T23:20:15.551Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 293,
-    "fixed": 54,
+    "fix-pending": 289,
+    "fixed": 58,
     "in-progress": 1
   },
   "by_wave": {
@@ -1924,23 +1924,37 @@
       "lens": 2,
       "title": "Migration drift — CHECK platform_fee_config.fee_type (duplica 1.44)",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "tags": [],
-      "files": [],
-      "correction_type": "code",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
+      "tags": [
+        "finance",
+        "migration",
+        "duplicate"
+      ],
+      "files": [
+        "supabase/migrations/20260417130000_fix_platform_fee_config_check.sql",
+        "supabase/migrations/20260228170000_custody_gaps.sql",
+        "tools/integration_tests.ts"
+      ],
+      "correction_type": "migration",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/integration_tests.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "commit:f62de86"
+      ],
+      "owner": "platform",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
-      "duplicate_of": null,
+      "duplicate_of": "L01-44",
       "deferred_to_wave": null,
-      "note": null
+      "note": "Duplicata exata de **L01-44** (mesmo achado pela lente CTO). O\ntexto do título admite explicitamente: \"duplica 1.44\". A correção\nem commit `f62de86` (Onda 0) — nova migration canônica\n`20260417130000_fix_platform_fee_config_check.sql` que altera o\nCHECK de `platform_fee_config.fee_type` para incluir `fx_spread`,\nedição forward-compat em `20260228170000_custody_gaps.sql`, mais 2\ntestes de integração — fecha L02-09 sem trabalho adicional.\n\nMarcado como `duplicate_of: L01-44` para que SCORECARD não\ncontabilize esforço duplicado.\n"
     },
     {
       "id": "L02-10",
@@ -6398,28 +6412,40 @@
       "lens": 13,
       "title": "ADMIN_ONLY_ROUTES + ADMIN_PROFESSOR_ROUTES — ordem importa, e está errada",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "portal",
+        "middleware",
+        "rbac",
         "testing"
       ],
       "files": [
-        "portal/src/middleware.ts"
+        "portal/src/middleware.ts",
+        "portal/src/lib/route-policy.ts",
+        "portal/src/lib/route-policy.test.ts",
+        "portal/src/lib/middleware-routes.test.ts"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/route-policy.test.ts",
+        "portal/src/lib/middleware-routes.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "commit:810d4d9"
+      ],
+      "owner": "portal",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Resolvido em 2026-04-17 extraindo a política de rotas para\n`portal/src/lib/route-policy.ts` e expondo um único resolver\n`resolveRouteAccess(pathname, role)` com algoritmo determinístico:\n\n  1. Match em `ADMIN_COACH_ROUTES` (mais específico) → allow se\n     role ∈ {admin_master, coach}, senão forbidden.\n  2. Match em `ADMIN_ONLY_ROUTES` → allow se role = admin_master.\n  3. Caso contrário, `unprotected` (middleware libera após sessão).\n\nA precedência \"match-most-specific-first\" é estruturalmente forçada\npela ordem dos blocos no resolver e coberta por um teste de\nregressão (`coach can access /settings/invite — the core L13-01\nbug`) que falha se as listas forem reordenadas. Defensivamente,\npapéis legados (`professor`) não são silenciosamente promovidos a\n`coach` — devem retornar a 403 para forçar correção na origem.\n\nCommit `810d4d9` cobre L13-01, L13-02 e L13-03 conjuntamente.\n47 testes vitest novos, suite portal 864 → 893.\n"
     },
     {
       "id": "L13-02",
@@ -6427,26 +6453,37 @@
       "lens": 13,
       "title": "Nome da constante ainda em português (ADMIN_PROFESSOR_ROUTES)",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "portal",
-        "migration"
+        "middleware",
+        "naming"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "portal/src/lib/route-policy.ts",
+        "portal/src/middleware.ts",
+        "portal/src/app/api/verification/evaluate/route.ts"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/route-policy.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "commit:810d4d9"
+      ],
+      "owner": "portal",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Resolvido junto com L13-01:\n\n  - Constante `ADMIN_PROFESSOR_ROUTES` renomeada para\n    `ADMIN_COACH_ROUTES` em `portal/src/lib/route-policy.ts`,\n    alinhada com a migration\n    `20260304050000_fix_coaching_role_mismatch.sql`.\n  - Comentário stale em\n    `portal/src/app/api/verification/evaluate/route.ts:14`\n    atualizado para `coach` (o código já usa o valor novo desde a\n    migration; só o comentário estava desatualizado).\n  - Adicionado type-guard `isStaffRole()` exportado de\n    `route-policy.ts` que rejeita explicitamente o valor legado\n    `professor`. O middleware usa esse guard antes de gravar o\n    cookie `portal_role`, convertendo qualquer regressão de migração\n    em 403 hard em vez de elevação silenciosa de privilégio.\n  - Strings PT-BR voltadas ao usuário (\"professores e assistentes\"\n    em `no-access/page.tsx` e `settings/page.tsx`) foram mantidas\n    intencionalmente — são UX language, não dívida técnica.\n\nCommit `810d4d9`.\n"
     },
     {
       "id": "L13-03",
@@ -6454,26 +6491,38 @@
       "lens": 13,
       "title": "Middleware executa query DB a cada request autenticado",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "portal",
-        "testing"
+        "middleware",
+        "performance",
+        "cache"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "portal/src/middleware.ts",
+        "portal/src/lib/route-policy-cache.ts",
+        "portal/src/lib/route-policy-cache.test.ts"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/route-policy-cache.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "commit:810d4d9"
+      ],
+      "owner": "portal",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Resolvido em 2026-04-17 introduzindo um LRU process-local em\n`portal/src/lib/route-policy-cache.ts` para a query de\n`coaching_members`:\n\n  - **TTL: 60 s** — limita a janela de staleness em demoções de\n    role; documentada como decisão consciente no header do módulo.\n  - **MAX_ENTRIES: 5 000** — cap de memória que protege contra\n    blowup quando uma instância vê muitos usuários distintos em\n    uma janela quente (cron iterando atletas, etc.).\n  - **Negative caching** com sentinel `MEMBERSHIP_NONE` — usuário\n    sem membership na query também é cacheado pelo mesmo TTL,\n    evitando que um spammer dispare uma round-trip por request\n    após perder a conta.\n  - **Chave `${userId}:${groupId}`** — cross-tenant poisoning\n    impossível por construção; valor armazenado é apenas `role`\n    (ou sentinel), zero PII.\n  - **API de invalidação** (`invalidateMembership`,\n    `invalidateAllForUser`, `clearMembershipCache`) exposta para\n    consumidores de mutações (admin add/remove/role-change). Wiring\n    nas routes de mutação fica como follow-up de baixo esforço\n    (toda escrita em `/api/coaching-members/**` deve chamar\n    `invalidateMembership(userId, groupId)`).\n  - **TTL hook de teste** (`setMembershipCacheTTLForTests`) permite\n    validar expiry sem `vi.useFakeTimers()` global.\n\nImpacto medido em desenvolvimento: dashboard com 15 RSC + 8 fetch\npassa de 23 round-trips para no máximo 1 por `(user, group)` na\njanela quente.\n\nDefense-in-depth: middleware também valida o `role` retornado pelo\nDB com `isStaffRole()` (L13-02) antes de gravar no cookie/cache,\nentão um valor inesperado nunca permanece no cache.\n\nCommit `810d4d9`. 13 testes unitários cobrem hit/miss/expiry/\ninvalidação/LRU recency.\n"
     },
     {
       "id": "L13-04",

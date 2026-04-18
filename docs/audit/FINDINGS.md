@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 23:02:49 UTC.
+> Atualizado em 2026-04-18 23:20:15 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -67,7 +67,7 @@ Total: **348** findings.
 | 🟠 high | ⏳ fix-pending | [L02-06](./findings/L02-06-execute-withdrawal-estado-processing-sem-transicao-final.md) | 1 | L02 · CTO | execute_withdrawal — Estado 'processing' sem transição final | unassigned |
 | 🟡 medium | ✅ fixed | [L02-07](./findings/L02-07-execute-swap-buyer-funding-nao-e-lockado-corretamente.md) | 1 | L02 · CTO | execute_swap — Buyer funding não é lockado corretamente | unassigned |
 | 🟠 high | ⏳ fix-pending | [L02-08](./findings/L02-08-realtime-websocket-cross-tenant-leak.md) | 1 | L02 · CTO | Realtime / Websocket — Cross-tenant leak | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L02-09](./findings/L02-09-migration-drift-check-platform-fee-config-fee-type.md) | 1 | L02 · CTO | Migration drift — CHECK platform_fee_config.fee_type (duplica 1.44) | unassigned |
+| 🔴 critical | ✅ fixed | [L02-09](./findings/L02-09-migration-drift-check-platform-fee-config-fee-type.md) | 1 | L02 · CTO | Migration drift — CHECK platform_fee_config.fee_type (duplica 1.44) | platform |
 | 🟠 high | ⏳ fix-pending | [L02-10](./findings/L02-10-cold-start-timeout-vercel-em-operacoes-longas.md) | 1 | L02 · CTO | Cold start + timeout Vercel em operações longas | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L02-11](./findings/L02-11-pool-de-conexoes-createserviceclient-per-request.md) | 2 | L02 · CTO | Pool de conexões createServiceClient per-request | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L02-12](./findings/L02-12-zod-v4-upgrade-uuid-strict-validation.md) | 2 | L02 · CTO | Zod v4 upgrade — UUID strict validation | unassigned |
@@ -219,9 +219,9 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L12-10](./findings/L12-10-jobs-pg-cron-executam-como-superuser-padrao.md) | 2 | L12 · Cron/Scheduler | Jobs pg_cron executam como superuser (padrão) | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L12-11](./findings/L12-11-cron-schedule-em-migration-duplicada-corre-risco.md) | 2 | L12 · Cron/Scheduler | cron.schedule em migration duplicada corre risco | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L12-12](./findings/L12-12-timezone-do-cron-utc-ok-mas-horario-dst.md) | 2 | L12 · Cron/Scheduler | Timezone do cron = UTC ok, mas horário DST? | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L13-01](./findings/L13-01-admin-only-routes-admin-professor-routes-ordem-importa.md) | 1 | L13 · Middleware | ADMIN_ONLY_ROUTES + ADMIN_PROFESSOR_ROUTES — ordem importa, e está errada | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L13-02](./findings/L13-02-nome-da-constante-ainda-em-portugues-admin-professor.md) | 1 | L13 · Middleware | Nome da constante ainda em português (ADMIN_PROFESSOR_ROUTES) | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L13-03](./findings/L13-03-middleware-executa-query-db-a-cada-request-autenticado.md) | 1 | L13 · Middleware | Middleware executa query DB a cada request autenticado | unassigned |
+| 🔴 critical | ✅ fixed | [L13-01](./findings/L13-01-admin-only-routes-admin-professor-routes-ordem-importa.md) | 1 | L13 · Middleware | ADMIN_ONLY_ROUTES + ADMIN_PROFESSOR_ROUTES — ordem importa, e está errada | portal |
+| 🔴 critical | ✅ fixed | [L13-02](./findings/L13-02-nome-da-constante-ainda-em-portugues-admin-professor.md) | 1 | L13 · Middleware | Nome da constante ainda em português (ADMIN_PROFESSOR_ROUTES) | portal |
+| 🔴 critical | ✅ fixed | [L13-03](./findings/L13-03-middleware-executa-query-db-a-cada-request-autenticado.md) | 1 | L13 · Middleware | Middleware executa query DB a cada request autenticado | portal |
 | 🟠 high | ⏳ fix-pending | [L13-04](./findings/L13-04-select-group-nao-esta-em-auth-only-prefixes.md) | 1 | L13 · Middleware | /select-group não está em AUTH_ONLY_PREFIXES nem PUBLIC → comportamento indefinido | unassigned |
 | 🟠 high | ⏳ fix-pending | [L13-05](./findings/L13-05-cookies-sem-secure-explicito.md) | 1 | L13 · Middleware | Cookies sem Secure explícito | unassigned |
 | 🟠 high | ⏳ fix-pending | [L13-06](./findings/L13-06-x-request-id-nao-propagado-ao-supabase-lib.md) | 1 | L13 · Middleware | x-request-id não propagado ao supabase/lib downstream | unassigned |

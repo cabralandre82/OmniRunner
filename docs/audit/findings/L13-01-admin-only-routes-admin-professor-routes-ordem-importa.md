@@ -4,24 +4,50 @@ audit_ref: "13.1"
 lens: 13
 title: "ADMIN_ONLY_ROUTES + ADMIN_PROFESSOR_ROUTES — ordem importa, e está errada"
 severity: critical
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
-tags: ["portal", "testing"]
+fix_ready_at: 2026-04-17
+fixed_at: 2026-04-17
+tags: ["portal", "middleware", "rbac", "testing"]
 files:
   - portal/src/middleware.ts
-correction_type: process
+  - portal/src/lib/route-policy.ts
+  - portal/src/lib/route-policy.test.ts
+  - portal/src/lib/middleware-routes.test.ts
+correction_type: code
 test_required: true
-tests: []
+tests:
+  - portal/src/lib/route-policy.test.ts
+  - portal/src/lib/middleware-routes.test.ts
 linked_issues: []
-linked_prs: []
-owner: unassigned
+linked_prs:
+  - "commit:810d4d9"
+owner: portal
 runbook: null
 effort_points: 5
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Resolvido em 2026-04-17 extraindo a política de rotas para
+  `portal/src/lib/route-policy.ts` e expondo um único resolver
+  `resolveRouteAccess(pathname, role)` com algoritmo determinístico:
+
+    1. Match em `ADMIN_COACH_ROUTES` (mais específico) → allow se
+       role ∈ {admin_master, coach}, senão forbidden.
+    2. Match em `ADMIN_ONLY_ROUTES` → allow se role = admin_master.
+    3. Caso contrário, `unprotected` (middleware libera após sessão).
+
+  A precedência "match-most-specific-first" é estruturalmente forçada
+  pela ordem dos blocos no resolver e coberta por um teste de
+  regressão (`coach can access /settings/invite — the core L13-01
+  bug`) que falha se as listas forem reordenadas. Defensivamente,
+  papéis legados (`professor`) não são silenciosamente promovidos a
+  `coach` — devem retornar a 403 para forçar correção na origem.
+
+  Commit `810d4d9` cobre L13-01, L13-02 e L13-03 conjuntamente.
+  47 testes vitest novos, suite portal 864 → 893.
 ---
 # [L13-01] ADMIN_ONLY_ROUTES + ADMIN_PROFESSOR_ROUTES — ordem importa, e está errada
 > **Lente:** 13 — Middleware · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** fix-pending

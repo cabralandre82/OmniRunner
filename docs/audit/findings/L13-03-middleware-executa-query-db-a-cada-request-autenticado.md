@@ -4,23 +4,65 @@ audit_ref: "13.3"
 lens: 13
 title: "Middleware executa query DB a cada request autenticado"
 severity: critical
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
-tags: ["portal", "testing"]
-files: []
-correction_type: process
+fix_ready_at: 2026-04-17
+fixed_at: 2026-04-17
+tags: ["portal", "middleware", "performance", "cache"]
+files:
+  - portal/src/middleware.ts
+  - portal/src/lib/route-policy-cache.ts
+  - portal/src/lib/route-policy-cache.test.ts
+correction_type: code
 test_required: true
-tests: []
+tests:
+  - portal/src/lib/route-policy-cache.test.ts
 linked_issues: []
-linked_prs: []
-owner: unassigned
+linked_prs:
+  - "commit:810d4d9"
+owner: portal
 runbook: null
 effort_points: 5
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Resolvido em 2026-04-17 introduzindo um LRU process-local em
+  `portal/src/lib/route-policy-cache.ts` para a query de
+  `coaching_members`:
+
+    - **TTL: 60 s** — limita a janela de staleness em demoções de
+      role; documentada como decisão consciente no header do módulo.
+    - **MAX_ENTRIES: 5 000** — cap de memória que protege contra
+      blowup quando uma instância vê muitos usuários distintos em
+      uma janela quente (cron iterando atletas, etc.).
+    - **Negative caching** com sentinel `MEMBERSHIP_NONE` — usuário
+      sem membership na query também é cacheado pelo mesmo TTL,
+      evitando que um spammer dispare uma round-trip por request
+      após perder a conta.
+    - **Chave `${userId}:${groupId}`** — cross-tenant poisoning
+      impossível por construção; valor armazenado é apenas `role`
+      (ou sentinel), zero PII.
+    - **API de invalidação** (`invalidateMembership`,
+      `invalidateAllForUser`, `clearMembershipCache`) exposta para
+      consumidores de mutações (admin add/remove/role-change). Wiring
+      nas routes de mutação fica como follow-up de baixo esforço
+      (toda escrita em `/api/coaching-members/**` deve chamar
+      `invalidateMembership(userId, groupId)`).
+    - **TTL hook de teste** (`setMembershipCacheTTLForTests`) permite
+      validar expiry sem `vi.useFakeTimers()` global.
+
+  Impacto medido em desenvolvimento: dashboard com 15 RSC + 8 fetch
+  passa de 23 round-trips para no máximo 1 por `(user, group)` na
+  janela quente.
+
+  Defense-in-depth: middleware também valida o `role` retornado pelo
+  DB com `isStaffRole()` (L13-02) antes de gravar no cookie/cache,
+  então um valor inesperado nunca permanece no cache.
+
+  Commit `810d4d9`. 13 testes unitários cobrem hit/miss/expiry/
+  invalidação/LRU recency.
 ---
 # [L13-03] Middleware executa query DB a cada request autenticado
 > **Lente:** 13 — Middleware · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** fix-pending
