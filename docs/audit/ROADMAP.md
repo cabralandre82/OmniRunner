@@ -36,14 +36,14 @@ A auditoria identificou **348 findings** distribuídos em **23 lentes** (69 🔴
 | 7 | `L04-04` | 64 | fix-pending | Dados de saúde/biométricos sem proteção reforçada (LGPD Art. 11) |
 | 8 | `L01-44` | 60 | 🟡 in-progress | Migration drift em `platform_fee_config.fee_type` CHECK |
 | 9 | `L02-01` | 60 | 🟡 in-progress | `distribute-coins` não-atômico ⭐ (exemplar, correção pronta) |
-| 10 | `L19-01` | 60 | fix-pending | `coin_ledger` não particionada |
+| 10 | `L19-01` | 60 | 🟡 in-progress | `coin_ledger` não particionada |
 | 11 | `L19-05` | 60 | 🟡 in-progress | Falta `FOR UPDATE NOWAIT` em locks críticos |
 | 12 | `L01-03` | 50 | 🟡 in-progress | `/api/distribute-coins` fallback silencioso (cross-ref L02-01) |
 | 13 | `L02-02` | 50 | 🟡 in-progress | `execute_burn_atomic` exceções engolidas |
 | 14 | `L14-03` | 45 | 🟡 in-progress | Swagger-UI carregado de unpkg sem SRI |
 | 15 | `L05-01` | 40* | 🟡 in-progress | Swap race entre accept/cancel (*override manual — double-spend direto) |
 
-**Progresso Onda 0:** 10/15 em `in-progress` (L02-01, L01-03, L01-44, L14-03, L02-02, L18-03, L19-05, L01-02, L05-01, L04-01) — ~67% do escopo rumo ao fixed.
+**Progresso Onda 0:** 11/15 em `in-progress` (L02-01, L01-03, L01-44, L14-03, L02-02, L18-03, L19-05, L01-02, L05-01, L04-01, L19-01) — ~73% do escopo rumo ao fixed.
 
 Detalhes completos + correções em `docs/audit/findings/LXX-YY-*.md`.
 

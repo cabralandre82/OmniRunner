@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 10:50:58 UTC.
+> Atualizado em 2026-04-18 11:04:42 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -274,7 +274,7 @@ Total: **348** findings.
 | 🟠 high | ⏳ fix-pending | [L18-08](./findings/L18-08-edge-functions-vs-route-handlers-responsabilidade-duplicada.md) | 1 | L18 · Principal Eng | Edge Functions vs Route Handlers — responsabilidade duplicada | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L18-09](./findings/L18-09-sem-domain-events-em-audit-log.md) | 2 | L18 · Principal Eng | Sem domain events em audit_log | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L18-10](./findings/L18-10-sem-health-check-de-business-logic-vs-infra.md) | 2 | L18 · Principal Eng | Sem health-check de business logic (vs infra) | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L19-01](./findings/L19-01-coin-ledger-nao-e-particionada-tabela-crescendo-sem.md) | 0 | L19 · DBA | coin_ledger não é particionada — tabela crescendo sem controle | unassigned |
+| 🔴 critical | 🚧 in-progress | [L19-01](./findings/L19-01-coin-ledger-nao-e-particionada-tabela-crescendo-sem.md) | 0 | L19 · DBA | coin_ledger não é particionada — tabela crescendo sem controle | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L19-02](./findings/L19-02-delete-em-archive-cron-gera-table-bloat-massivo.md) | 1 | L19 · DBA | DELETE em archive cron gera table bloat massivo | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L19-03](./findings/L19-03-indexes-redundantes-em-sessions.md) | 1 | L19 · DBA | Indexes redundantes em sessions | unassigned |
 | 🟠 high | ⏳ fix-pending | [L19-04](./findings/L19-04-idx-ledger-user-vs-idx-coin-ledger-user.md) | 1 | L19 · DBA | idx_ledger_user vs idx_coin_ledger_user_created — evoluções sem limpeza | unassigned |

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T10:50:58.686Z",
+  "generated_at": "2026-04-18T11:04:42.541Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 320,
-    "in-progress": 11,
+    "fix-pending": 319,
+    "in-progress": 12,
     "fixed": 17
   },
   "by_wave": {
@@ -7693,27 +7693,37 @@
       "lens": 19,
       "title": "coin_ledger não é particionada — tabela crescendo sem controle",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "in-progress",
       "wave": 0,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "integration",
         "mobile",
         "migration",
         "cron",
-        "performance"
+        "performance",
+        "partitioning"
       ],
       "files": [
-        "supabase/migrations/20260218000000_full_schema.sql"
+        "supabase/migrations/20260218000000_full_schema.sql",
+        "supabase/migrations/20260417200000_coin_ledger_partitioning.sql",
+        "tools/integration_tests.ts"
       ],
       "correction_type": "migration",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/integration_tests.ts::L19-01: coin_ledger monthly partitions exist (structural proof)",
+        "tools/integration_tests.ts::L19-01: coin_ledger_ensure_partition is idempotent",
+        "tools/integration_tests.ts::L19-01: coin_ledger_idempotency enforces (ref_id, reason) uniqueness",
+        "tools/integration_tests.ts::L19-01: coin_ledger parent-table API works across partition ranges",
+        "tools/integration_tests.ts::L19-01: emit_coins_atomic idempotency via coin_ledger_idempotency"
+      ],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "unassigned",
-      "runbook": null,
+      "runbook": "docs/audit/runbooks/L19-01-coin-ledger-partition-management.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
