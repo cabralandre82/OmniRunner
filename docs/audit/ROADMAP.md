@@ -1,7 +1,7 @@
 # ROADMAP — Execução das Correções em Ondas
 
 > **Atualizado:** 2026-04-17
-> **Status do overall:** Onda 0 ✅ concluída (15/15 fixed, E2E verde) — Onda 1 em execução (16/177 fixed: supply chain quinteto L11-01/02/03/04/09 + observabilidade SRE L20 + runbooks financeiros L06-01 + kill switches L06-06 + custody idempotency L01-04 + swap TTL L05-02 + swap ADR cessão de crédito L02-07/ADR-008)
+> **Status do overall:** Onda 0 ✅ concluída (15/15 fixed, E2E verde) — Onda 1 em execução (17/177 fixed: supply chain quinteto L11-01/02/03/04/09 + observabilidade SRE L20-01/02/03/04/05/07/08 + runbooks financeiros L06-01 + kill switches L06-06 + custody idempotency L01-04 + swap TTL L05-02 + swap ADR cessão de crédito L02-07/ADR-008)
 
 A auditoria identificou **348 findings** distribuídos em **23 lentes** (69 🔴 critical, 123 🟠 high, 127 🟡 medium, 17 🟢 safe, 12 ⚪ não-auditados). Corrigir todos em paralelo seria caótico. Esta estratégia distribui o trabalho em **4 ondas** com objetivos bem definidos e critérios de saída mensuráveis.
 
@@ -63,11 +63,12 @@ Detalhes completos + correções em `docs/audit/findings/LXX-YY-*.md`.
 **Duração alvo:** 3-5 sprints
 **Foco:** fundação que acelera as correções das demais ondas. Inclui 54 criticals que não sangram dinheiro diretamente mas estabelecem padrões (observability, idempotência unificada, runbooks, OpenAPI, tracing).
 
-**Progresso atual:** 16/177 fixed:
+**Progresso atual:** 17/177 fixed:
 - L11-01/02/03 — supply chain trinca (dep vuln scan, SBOM CycloneDX, gitleaks)
 - L11-04 — Dependabot reorganizado em 27 grupos semânticos (10 portal + 13 mobile + 4 actions), majors isolados, security-updates separados, commit messages padronizados
 - L11-09 — Least-privilege `permissions:` em 7 workflows + WIF opt-in (Firebase/Play OIDC) em release.yml + assert anti-prod Supabase em portal.yml + runbook canônico CI_SECRETS_AND_OIDC.md
 - L20-01/02/04/05/07/08 — SRE foundation (financial-ops dashboard JSON, SLO catalog, Sentry adaptive sampler + severity tags, alert policy, DR runbook, postmortem template)
+- L20-03 — Tracing distribuído end-to-end via Sentry/OTel: `portal/src/instrumentation.ts` + façade `lib/observability/tracing.ts` (`withSpan`/`currentTraceId`/`traceparent`/`continueTraceFromRequest`), auto-injeção de `trace_id`+`span_id` em `audit.ts` e `logger.ts`, exemplo wired em `/api/distribute-coins` (atributos OTel + `X-Trace-Id` echo), Flutter `TracedHttpClient` wrapper sobre `SentryHttpClient` com allowlist defensivo (`*.supabase.co`, `omnirunner.app/com.br`) garantindo zero leakage para Strava/Asaas/Google, runbook canônico `docs/observability/TRACING.md` (~400 linhas) — 25 novos testes verdes
 - L06-01 — runbooks financeiros operacionais (custody incident, clearing stuck, withdraw stuck, chargeback, gateway outage, webhook backlog)
 - L06-06 — kill switches operacionais (feature_flags estendida com category/scope/audit, helpers SQL+TS+Deno, wiring em 3 routes financeiras, admin UI corrigida)
 - L01-04 — custody idempotency-key + cross-group ownership (UNIQUE composto, RPC `fn_create_custody_deposit_idempotent` com `was_idempotent`, `confirm_custody_deposit` agora exige `(deposit_id, group_id)`, header `x-idempotency-key` obrigatório no portal, defesa contra double-click/replay/cross-group enumeration)

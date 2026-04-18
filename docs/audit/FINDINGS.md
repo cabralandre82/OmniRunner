@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 21:47:15 UTC.
+> Atualizado em 2026-04-18 22:16:20 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -286,7 +286,7 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L19-10](./findings/L19-10-sem-autovacuum-tuning-para-tabelas-hot.md) | 2 | L19 · DBA | Sem autovacuum tuning para tabelas hot | unassigned |
 | 🔴 critical | ✅ fixed | [L20-01](./findings/L20-01-sem-dashboard-consolidado-de-operacoes-financeiras.md) | 1 | L20 · SRE | Sem dashboard consolidado de operações financeiras | unassigned |
 | 🔴 critical | ✅ fixed | [L20-02](./findings/L20-02-sem-slo-sli-definidos-impossivel-ter-alert-policy.md) | 1 | L20 · SRE | Sem SLO/SLI definidos → impossível ter alert policy razoável | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L20-03](./findings/L20-03-sem-tracing-distribuido-opentelemetry.md) | 1 | L20 · SRE | Sem tracing distribuído (OpenTelemetry) | unassigned |
+| 🔴 critical | ✅ fixed | [L20-03](./findings/L20-03-sem-tracing-distribuido-opentelemetry.md) | 1 | L20 · SRE | Sem tracing distribuído (OpenTelemetry) | sre |
 | 🟠 high | ✅ fixed | [L20-04](./findings/L20-04-sentry-sem-tracessamplerate-tuning-documentado.md) | 1 | L20 · SRE | Sentry sem tracesSampleRate tuning documentado | unassigned |
 | 🟠 high | ✅ fixed | [L20-05](./findings/L20-05-alerts-sem-canal-de-severidade.md) | 1 | L20 · SRE | Alerts sem canal de severidade | unassigned |
 | 🟠 high | ⏳ fix-pending | [L20-06](./findings/L20-06-status-page-publica-inexistente.md) | 1 | L20 · SRE | Status page pública inexistente | unassigned |

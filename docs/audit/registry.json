@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T21:47:15.440Z",
+  "generated_at": "2026-04-18T22:16:20.558Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 299,
-    "fixed": 48,
+    "fix-pending": 298,
+    "fixed": 49,
     "in-progress": 1
   },
   "by_wave": {
@@ -8295,32 +8295,51 @@
       "lens": 20,
       "title": "Sem tracing distribuído (OpenTelemetry)",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
-        "finance",
-        "webhook",
-        "security-headers",
+        "sre",
+        "observability",
         "mobile",
         "portal",
-        "edge-function"
+        "tracing"
       ],
       "files": [
-        "portal/src/instrumentation.ts"
+        "portal/src/instrumentation.ts",
+        "portal/src/lib/observability/tracing.ts",
+        "portal/src/lib/observability/tracing.test.ts",
+        "portal/src/lib/audit.ts",
+        "portal/src/lib/audit.test.ts",
+        "portal/src/lib/logger.ts",
+        "portal/src/lib/logger.test.ts",
+        "portal/src/app/api/distribute-coins/route.ts",
+        "omni_runner/lib/main.dart",
+        "omni_runner/lib/core/http/traced_http_client.dart",
+        "omni_runner/test/core/http/traced_http_client_test.dart",
+        "docs/observability/TRACING.md"
       ],
-      "correction_type": "process",
+      "correction_type": "feature",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/observability/tracing.test.ts",
+        "portal/src/lib/audit.test.ts",
+        "portal/src/lib/logger.test.ts",
+        "omni_runner/test/core/http/traced_http_client_test.dart"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "commit:0050d00"
+      ],
+      "owner": "sre",
+      "runbook": "docs/observability/TRACING.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Corrigido em commit `0050d00`. Estratégia: \"OpenTelemetry-compatible tracing\nvia Sentry\" — em vez de adicionar `@opentelemetry/sdk-node` + um exportador\nOTLP separado (Tempo/Honeycomb/etc), aproveita a integração Sentry/Next.js\nque fala OTel semconv internamente (Sentry SDK 10+ usa `@opentelemetry/api`).\nSingle trace pipeline, sem custo dobrado, sem risco de divergência entre\ndois SDKs. Mesmas garantias end-to-end de propagação W3C/Sentry-trace +\nmesma UI de trace tree.\n\n## O que foi feito\n\n### Portal (Next.js)\n\n- **`portal/src/instrumentation.ts`** (novo): bootstrap entrypoint do\n  Next.js. Roda ANTES da primeira request, registrando o Sentry SDK no\n  runtime correto (`nodejs` vs `edge`) e fornece `onRequestError` hook\n  que correlaciona erros 5xx → trace_id em logs estruturados.\n\n- **`portal/src/lib/observability/tracing.ts`** (novo): façade fina sobre\n  `@sentry/nextjs` (que re-exporta `@sentry/core` via `@sentry/node`).\n  API pública:\n    * `withSpan(name, op, fn, attrs?)` — wrap async fn em span Sentry/OTel\n    * `currentTraceId()` / `currentSpanId()` — leitura via `Sentry.spanToJSON()`\n    * `traceparent()` — gera headers `sentry-trace` + `baggage` para\n      outbound fetch a serviços first-party\n    * `continueTraceFromRequest(headers, cb)` — resume trace inbound\n  Convenções de atributos OTel semconv-aligned (`db.system`,\n  `db.operation`, `http.method`) + domain attrs (`omni.actor_id`,\n  `omni.group_id`). Tipo literal `SpanOp` enumera operações suportadas\n  para discover queries consistentes. **17 testes unitários verdes**.\n\n- **`portal/src/lib/audit.ts`**: `auditLog()` agora auto-injeta\n  `trace_id` + `span_id` em `metadata` quando há span ativo. Caller pode\n  sobrescrever (cenário replay/backfill de webhook que quer preservar o\n  trace_id original). Toda escrita também passa por `withSpan(\"audit\n  ${action}\", \"audit.write\", ...)` para aparecer na trace tree. **+4\n  testes** cobrindo: auto-injeção, respect a caller-provided trace_id,\n  ausência de trace_id quando sem span, metadata ausente.\n\n- **`portal/src/lib/logger.ts`**: cada log line auto-carrega `trace_id`\n  + `span_id` via `Sentry.spanToJSON()`. Logger nunca falha quando\n  Sentry não está inicializado (try/catch defensivo). **+4 testes**.\n\n- **`portal/src/app/api/distribute-coins/route.ts`**: rota crítica\n  (financeira) wired com `withSpan(\"rpc emit_coins_atomic\", \"db.rpc\",\n  ...)` cobrindo `db.system=postgresql`, `db.operation=rpc:...`,\n  `db.row_count`, `omni.was_idempotent`, `db.error_code`. Route handler\n  agora ecoa `X-Trace-Id` no response — suporte/cliente pode quotar\n  para incident response. Padrão a ser replicado nas demais rotas\n  financeiras conforme priorização.\n\n### Mobile (Flutter)\n\n- **`omni_runner/lib/core/http/traced_http_client.dart`** (novo): thin\n  wrapper sobre Sentry `SentryHttpClient` (que compõe `TracingClient` +\n  `BreadcrumbClient` + `FailedRequestClient`). API pública:\n    * `TracedHttpClient()` — substitui `http.Client()` em first-party calls\n    * `TracedHttpClient.currentTraceHeaders()` — `Map<String, String>`\n      para uso em `SupabaseClient.functions.invoke(headers: ...)` e\n      outros code paths que não usam `http.Client`\n    * `defaultFirstPartyAllowlist` — regex de hosts auth (`*.supabase.co`,\n      `omnirunner.app`, `*.omnirunner.app`, `omnirunner.com.br`,\n      `localhost`, `127.0.0.1`).\n  Allowlist é aplicada em `main.dart` via `options.tracePropagationTargets`.\n  **Defesa-em-profundidade**: trace headers NUNCA vão para Strava,\n  Asaas ou Google APIs (data hygiene + zero benefício pois ignoram o\n  header). **+5 testes** verdes.\n\n- **`omni_runner/lib/main.dart`**: `SentryFlutter.init` agora restringe\n  `tracePropagationTargets` ao allowlist defensivo (sem essa mudança,\n  Sentry default era `['.*']` = TUDO).\n\n### Documentação\n\n- **`docs/observability/TRACING.md`** (novo, ~400 linhas): runbook\n  canônico cobrindo:\n    * **TL;DR** — tabela de qual camada propaga o quê\n    * **Por que existe** — métrica antes/depois (~25 min → < 2 min para\n      triagem de \"pagamento lento\")\n    * **Como achar trace_id** — 4 caminhos: header `X-Trace-Id`,\n      log structured, audit_log SQL, Sentry → log pivot\n    * **Como instrumentar novo código** — exemplos `withSpan` +\n      atributos OTel + outbound fetch + Flutter `TracedHttpClient`\n    * **Limites e custo** — sampling table (P1=100%, P4=0%),\n      cardinalidade de atributos (NUNCA em `name`), regras PII\n    * **Operação durante incidente** — runbooks para 3 cenários\n    * **Limitações conhecidas** — edge functions sem auto-instrum\n      ainda, Asaas webhooks chegam sem `sentry-trace`, pg_cron\n      invisível, P4 sample 0% → trace ausente\n    * **Checklist de PR** — gate para route handlers críticos\n\n## Validação\n\n- **portal**: `tsc --noEmit` clean, `next lint` clean, `vitest` 842/842\n  verde (50 dos quais novos para L20-03).\n- **omni_runner**: `flutter analyze` clean (0 issues), `flutter test\n  test/core/http test/core/logging` 11/11 verde.\n\n## Próximas ondas\n\nWave 2: instrumentar edge functions Supabase (Sentry Deno SDK ou OTLP\nexporter manual). Hoje, chamadas portal → edge function aparecem como\nspan único `http.client POST` sem visibilidade dentro da função.\n"
     },
     {
       "id": "L20-04",
