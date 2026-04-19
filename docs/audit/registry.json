@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-19T00:50:24.363Z",
+  "generated_at": "2026-04-19T01:30:42.040Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 275,
-    "fixed": 72,
+    "fix-pending": 274,
+    "fixed": 73,
     "in-progress": 1
   },
   "by_wave": {
@@ -7866,9 +7866,10 @@
       "lens": 18,
       "title": "Idempotência ad-hoc em cada RPC — padrão não unificado",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-19T00:00:00.000Z",
       "tags": [
         "finance",
         "idempotency",
@@ -7877,19 +7878,32 @@
         "migration",
         "performance"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260419120000_l18_idempotency_keys_unified.sql",
+        "portal/src/lib/api/idempotency.ts",
+        "portal/src/lib/api/idempotency.test.ts",
+        "portal/src/app/api/custody/withdraw/route.ts",
+        "portal/src/app/api/distribute-coins/route.ts"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/api/idempotency.test.ts",
+        "portal/src/app/api/custody/withdraw/route.test.ts",
+        "portal/src/app/api/distribute-coins/route.test.ts",
+        "tools/test_l18_idempotency.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "commit:1f14fbd..HEAD"
+      ],
+      "owner": "backend",
+      "runbook": "docs/runbooks/IDEMPOTENCY_RUNBOOK.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed by introducing `public.idempotency_keys` (PK `(namespace,\nactor_id, key)`) plus three RPCs `fn_idem_begin / fn_idem_finalize\n/ fn_idem_release` and a GC sweep `fn_idem_gc_safe` cron'd hourly\nvia the L12-03 cron-health pattern (`cron_run_state` observability,\nadvisory-lock guarded, `lock_timeout`).\n\nThe portal-side wrapper `withIdempotency` (`portal/src/lib/api/\nidempotency.ts`) layers this in front of route handlers: it\nvalidates `x-idempotency-key`, hashes the canonicalised request\nbody (key-sorted JSON), claims the slot, executes the handler at\nmost once, finalises or releases on completion/failure, and replays\nthe byte-identical cached response on retry. Mismatched body for\nthe same key returns `409 IDEMPOTENCY_KEY_CONFLICT` BEFORE any\nmutation runs.\n\nRetrofitted high-risk endpoints:\n - `/api/custody/withdraw` — `required: true` (header mandatory;\n   `400 IDEMPOTENCY_KEY_REQUIRED` otherwise). Highest-risk money-\n   out path; closes the gap audited in 18.2.\n - `/api/distribute-coins` — defense-in-depth: keeps the existing\n   `coin_ledger.ref_id` UNIQUE for at-most-once mutation AND adds\n   RESPONSE replay so a network blip on the response no longer\n   re-fires `auditLog` / RPC roundtrips.\n - Swap (`/api/swap`) deferred to a follow-up because each branch\n   (create/accept/cancel) carries its own audit trail; tracked in\n   ROADMAP but not blocking 18.2 closure.\n\nLatent bug discovered while writing the integration tests: the\nprior `confirm_custody_deposit` pattern (UNIQUE on resource table)\ncould not replay the original HTTP response — only the resource\nid. The new wrapper closes that gap.\n\nTests: 22 integration assertions in `tools/test_l18_idempotency.ts`\n(schema, begin lifecycle, finalize, release, GC, cron seed) +\n24 unit tests in `portal/src/lib/api/idempotency.test.ts` (regex,\ncanonicalisation, replay/mismatch/release wrapper behaviour) +\n4 new regression tests across the two retrofitted route suites.\nFull portal suite: 1078 passed, 0 failed.\n"
     },
     {
       "id": "L18-03",

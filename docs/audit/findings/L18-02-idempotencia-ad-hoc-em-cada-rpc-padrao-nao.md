@@ -4,26 +4,75 @@ audit_ref: "18.2"
 lens: 18
 title: "Idempotência ad-hoc em cada RPC — padrão não unificado"
 severity: critical
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
+fixed_at: 2026-04-19
 tags: ["finance", "idempotency", "atomicity", "portal", "migration", "performance"]
-files: []
+files:
+  - supabase/migrations/20260419120000_l18_idempotency_keys_unified.sql
+  - portal/src/lib/api/idempotency.ts
+  - portal/src/lib/api/idempotency.test.ts
+  - portal/src/app/api/custody/withdraw/route.ts
+  - portal/src/app/api/distribute-coins/route.ts
 correction_type: code
 test_required: true
-tests: []
+tests:
+  - portal/src/lib/api/idempotency.test.ts
+  - portal/src/app/api/custody/withdraw/route.test.ts
+  - portal/src/app/api/distribute-coins/route.test.ts
+  - tools/test_l18_idempotency.ts
 linked_issues: []
-linked_prs: []
-owner: unassigned
-runbook: null
+linked_prs:
+  - "commit:1f14fbd..HEAD"
+owner: backend
+runbook: docs/runbooks/IDEMPOTENCY_RUNBOOK.md
 effort_points: 5
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Fixed by introducing `public.idempotency_keys` (PK `(namespace,
+  actor_id, key)`) plus three RPCs `fn_idem_begin / fn_idem_finalize
+  / fn_idem_release` and a GC sweep `fn_idem_gc_safe` cron'd hourly
+  via the L12-03 cron-health pattern (`cron_run_state` observability,
+  advisory-lock guarded, `lock_timeout`).
+
+  The portal-side wrapper `withIdempotency` (`portal/src/lib/api/
+  idempotency.ts`) layers this in front of route handlers: it
+  validates `x-idempotency-key`, hashes the canonicalised request
+  body (key-sorted JSON), claims the slot, executes the handler at
+  most once, finalises or releases on completion/failure, and replays
+  the byte-identical cached response on retry. Mismatched body for
+  the same key returns `409 IDEMPOTENCY_KEY_CONFLICT` BEFORE any
+  mutation runs.
+
+  Retrofitted high-risk endpoints:
+   - `/api/custody/withdraw` — `required: true` (header mandatory;
+     `400 IDEMPOTENCY_KEY_REQUIRED` otherwise). Highest-risk money-
+     out path; closes the gap audited in 18.2.
+   - `/api/distribute-coins` — defense-in-depth: keeps the existing
+     `coin_ledger.ref_id` UNIQUE for at-most-once mutation AND adds
+     RESPONSE replay so a network blip on the response no longer
+     re-fires `auditLog` / RPC roundtrips.
+   - Swap (`/api/swap`) deferred to a follow-up because each branch
+     (create/accept/cancel) carries its own audit trail; tracked in
+     ROADMAP but not blocking 18.2 closure.
+
+  Latent bug discovered while writing the integration tests: the
+  prior `confirm_custody_deposit` pattern (UNIQUE on resource table)
+  could not replay the original HTTP response — only the resource
+  id. The new wrapper closes that gap.
+
+  Tests: 22 integration assertions in `tools/test_l18_idempotency.ts`
+  (schema, begin lifecycle, finalize, release, GC, cron seed) +
+  24 unit tests in `portal/src/lib/api/idempotency.test.ts` (regex,
+  canonicalisation, replay/mismatch/release wrapper behaviour) +
+  4 new regression tests across the two retrofitted route suites.
+  Full portal suite: 1078 passed, 0 failed.
 ---
 # [L18-02] Idempotência ad-hoc em cada RPC — padrão não unificado
-> **Lente:** 18 — Principal Eng · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** fix-pending
+> **Lente:** 18 — Principal Eng · **Severidade:** 🔴 Critical · **Onda:** 1 · **Status:** fixed
 **Camada:** —
 **Personas impactadas:** —
 ## Achado
