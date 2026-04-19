@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-19 01:48:34 UTC.
+> Atualizado em 2026-04-19 01:59:26 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -269,8 +269,8 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L18-03](./findings/L18-03-security-definer-sem-set-search-path-em-funcoes.md) | 0 | L18 · Principal Eng | SECURITY DEFINER sem SET search_path em funções antigas | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L18-04](./findings/L18-04-architecture-flutter-viola-clean-arch-em-varios-pontos.md) | 1 | L18 · Principal Eng | Architecture: Flutter viola Clean Arch em vários pontos | unassigned |
 | 🟠 high | ⏳ fix-pending | [L18-05](./findings/L18-05-event-bus-inexistente-cascatas-de-efeitos-em-codigo.md) | 1 | L18 · Principal Eng | Event bus inexistente — cascatas de efeitos em código imperativo | unassigned |
-| 🟠 high | ⏳ fix-pending | [L18-06](./findings/L18-06-cachedflags-em-feature-flags-ts-cache-de-modulo.md) | 1 | L18 · Principal Eng | cachedFlags em feature-flags.ts — cache de módulo com TTL racional | unassigned |
-| 🟠 high | ⏳ fix-pending | [L18-07](./findings/L18-07-userbucket-em-feature-flags-usa-hash-java-style.md) | 1 | L18 · Principal Eng | userBucket em feature-flags usa hash Java-style (inseguro, colisões) | unassigned |
+| 🟠 high | ✅ fixed | [L18-06](./findings/L18-06-cachedflags-em-feature-flags-ts-cache-de-modulo.md) | 1 | L18 · Principal Eng | cachedFlags em feature-flags.ts — cache de módulo com TTL racional | backend |
+| 🟠 high | ✅ fixed | [L18-07](./findings/L18-07-userbucket-em-feature-flags-usa-hash-java-style.md) | 1 | L18 · Principal Eng | userBucket em feature-flags usa hash Java-style (inseguro, colisões) | backend |
 | 🟠 high | ⏳ fix-pending | [L18-08](./findings/L18-08-edge-functions-vs-route-handlers-responsabilidade-duplicada.md) | 1 | L18 · Principal Eng | Edge Functions vs Route Handlers — responsabilidade duplicada | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L18-09](./findings/L18-09-sem-domain-events-em-audit-log.md) | 2 | L18 · Principal Eng | Sem domain events em audit_log | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L18-10](./findings/L18-10-sem-health-check-de-business-logic-vs-infra.md) | 2 | L18 · Principal Eng | Sem health-check de business logic (vs infra) | unassigned |

@@ -42,6 +42,7 @@
 |---|---|---|---|
 | [`IDEMPOTENCY_RUNBOOK.md`](./IDEMPOTENCY_RUNBOOK.md) | Duplicate-mutation report, `idempotency-keys-gc` cron failing, `idempotency_keys` > 1M rows, `409 IDEMPOTENCY_KEY_CONFLICT` rate spike (L18-02) | P2 (gc backlog / 409 spike); P1 (confirmed duplicate financial mutation) | ack < 1 h, mitig < 4 h |
 | [`WALLET_MUTATION_GUARD_RUNBOOK.md`](./WALLET_MUTATION_GUARD_RUNBOOK.md) | New RPC blocked by `WALLET_MUTATION_FORBIDDEN` (P0007), wallet drift alert (`balance_coins ≠ SUM(coin_ledger)`), or onboarding a new credit/debit code-path (L18-01) | P2 (CI block / new-code question); P1 (confirmed drift in production) | ack < 1 h, mitig < 4 h |
+| [`FEATURE_FLAGS_RUNBOOK.md`](./FEATURE_FLAGS_RUNBOOK.md) | Kill switch toggle slow to propagate (> 5s), A/B experiment shows lopsided populations after L18-07 deploy, `feature_flags` DB load spike, or onboarding a new kill switch / A/B flag (L18-06 / L18-07) | P3 (recategorisation / A/B audit); P2 (sustained slow propagation) | ack < 4 h, mitig < 24 h |
 
 ## Convenções
 

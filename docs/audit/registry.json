@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-19T01:48:34.627Z",
+  "generated_at": "2026-04-19T01:59:26.358Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 273,
-    "fixed": 74,
+    "fix-pending": 271,
+    "fixed": 76,
     "in-progress": 1
   },
   "by_wave": {
@@ -8013,9 +8013,10 @@
       "lens": 18,
       "title": "cachedFlags em feature-flags.ts — cache de módulo com TTL racional",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-19T00:00:00.000Z",
       "tags": [
         "finance",
         "portal",
@@ -8023,20 +8024,25 @@
         "migration"
       ],
       "files": [
-        "portal/src/lib/feature-flags.ts"
+        "portal/src/lib/feature-flags.ts",
+        "portal/src/lib/feature-flags.test.ts"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/feature-flags.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "commit:34d9018"
+      ],
+      "owner": "backend",
+      "runbook": "docs/runbooks/FEATURE_FLAGS_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Implementada estratificação de TTL por categoria de flag em\n`portal/src/lib/feature-flags.ts`. A função `loadFlags()` agora calcula\no TTL efetivo via `effectiveTtlMs(cache)` — se qualquer flag em cache\ntiver `category='kill_switch'`, o TTL passa de 60s (`TTL_MS`) para 5s\n(`KILL_SWITCH_TTL_MS`). Solução de cache único evita race entre dois\ncaches paralelos e preserva a invalidação local existente em\n`setFeatureFlag()` (writer instance vê efeito imediato).\n\nResultado operacional: um flip de kill switch (e.g.\n`custody.withdrawals.enabled = false`) propaga em ≤5s pelo fleet de\nserverless instances, contra os ≤60s anteriores. O custo é ~12x mais\nreads na tabela `feature_flags`, que tem dígito único de linhas — DB\npressure desprezível. Para flags não-críticas (`product`,\n`experimental`, `banner`, `operational`), nada muda: TTL permanece em\n60s.\n\nCobertura de testes: 3 novos casos em `feature-flags.test.ts` validam\n(a) presença de kill switch força TTL de 5s, (b) ausência preserva\n60s, e (c) propagação end-to-end de um toggle de kill switch dentro de\n~5s. Suite portal: 1078 → 1085 passando.\n"
     },
     {
       "id": "L18-07",
@@ -8044,25 +8050,33 @@
       "lens": 18,
       "title": "userBucket em feature-flags usa hash Java-style (inseguro, colisões)",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-19T00:00:00.000Z",
       "tags": [
         "cron"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "portal/src/lib/feature-flags.ts",
+        "portal/src/lib/feature-flags.test.ts"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/feature-flags.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "commit:34d9018"
+      ],
+      "owner": "backend",
+      "runbook": "docs/runbooks/FEATURE_FLAGS_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Substituído o accumulator DJB2-style por SHA-256 (`node:crypto.createHash`)\nem `userBucket()`:\n\n    const digest = createHash(\"sha256\").update(`${userId}:${key}`).digest();\n    return digest.readUInt32BE(0) % 100;\n\nAPI permanece síncrona — o custo é alguns microssegundos por chamada\n(irrelevante perto da latência de DB). A motivação é distribuição\nestatística: a versão antiga `(hash<<5) - hash + charCodeAt(i)` produz\nbuckets enviesados em inputs com prefixos longos compartilhados, o que\né exatamente a forma de UUIDs v4 emitidos pelo `auth.users`. Para\nrollouts 50/50 o viés era invisível; para rollouts skewed (90/10,\n99/1) a distribuição podia ser visivelmente desigual.\n\nSide-effect documentado no runbook: trocar a hash function é uma\nre-randomização one-time de TODOS os experimentos A/B em curso —\nusuários no bucket \"in\" podem ir para \"out\" e vice-versa. Para 50/50\né invisível; para splits skewed é o preço de ganhar buckets unbiased\ndaqui pra frente.\n\nCobertura: 4 novos testes em `feature-flags.test.ts` validam (a)\ndeterminismo + range [0,100), (b) decorrelação cruzada entre keys\npara o mesmo userId, (c) distribuição ~uniforme em 1000 UUIDs com\nrollout 10% (banda 70-130 in-bucket), e (d) que sibling UUIDs\ndiferindo apenas nos últimos 4 chars produzem ≥30 buckets distintos\nem 100 amostras — eliminando o prefix-bias do hash anterior.\n"
     },
     {
       "id": "L18-08",
