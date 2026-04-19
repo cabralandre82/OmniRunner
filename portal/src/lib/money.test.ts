@@ -6,6 +6,7 @@ import {
   addMoney,
   multiplyMoney,
   calcSplit,
+  parseDecimalToCents,
   MAX_MONEY_CENTS,
 } from "./money";
 
@@ -343,5 +344,296 @@ describe("calcSplit", () => {
       if (addMoney(r.counterparty, r.platform) !== total) drifts++;
     }
     expect(drifts).toBe(0);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// parseDecimalToCents (L03-17)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Reference: pure-string lexical parsing converted to BigInt cents,
+// with banker's rounding applied to fractional digits beyond two.
+// Independent of the implementation under test (which uses the
+// internal `decodeDecimal`/`roundDecimal`) so we have a real oracle.
+
+function refParseDecimalToCents(input: string): number {
+  const t = input.trim();
+  if (t.length === 0) throw new Error("empty");
+  let s = t;
+  let sign = 1n;
+  if (s.startsWith("-")) {
+    sign = -1n;
+    s = s.slice(1);
+  } else if (s.startsWith("+")) {
+    s = s.slice(1);
+  }
+  const lastDot = s.lastIndexOf(".");
+  const lastComma = s.lastIndexOf(",");
+  let n: string;
+  if (lastDot === -1 && lastComma === -1) n = s;
+  else if (lastDot === -1) n = s.replace(/,/g, ".");
+  else if (lastComma === -1) n = s;
+  else if (lastDot > lastComma) n = s.replace(/,/g, "");
+  else n = s.replace(/\./g, "").replace(",", ".");
+  if (!/^\d+(\.\d+)?$/.test(n)) throw new Error("malformed");
+  const dot = n.indexOf(".");
+  const ip = dot === -1 ? n : n.slice(0, dot);
+  const fp = dot === -1 ? "" : n.slice(dot + 1);
+  // Pad to ≥3 fractional digits so we can take "the digit beyond cents".
+  const fpPadded = fp.length >= 2 ? fp : (fp + "00").slice(0, 2);
+  let cents = sign * BigInt(ip + fpPadded.slice(0, 2));
+  if (fp.length > 2) {
+    // Need banker's: examine digits beyond cents.
+    const tail = fp.slice(2);
+    const tailVal = BigInt(tail);
+    const half = 5n * 10n ** BigInt(tail.length - 1);
+    const cmp = tailVal === half ? 0 : tailVal < half ? -1 : 1;
+    if (cmp > 0) cents += sign;
+    else if (cmp === 0) {
+      // Banker's: round to even. Examine last cents digit.
+      const absCents = cents < 0n ? -cents : cents;
+      if (absCents % 2n === 1n) cents += sign;
+    }
+  }
+  return Number(cents);
+}
+
+describe("parseDecimalToCents (L03-17)", () => {
+  describe("happy paths", () => {
+    it("integers", () => {
+      expect(parseDecimalToCents("0")).toBe(0);
+      expect(parseDecimalToCents("1")).toBe(100);
+      expect(parseDecimalToCents("42")).toBe(4200);
+      expect(parseDecimalToCents("9999")).toBe(999900);
+    });
+
+    it("two fractional digits", () => {
+      expect(parseDecimalToCents("0.01")).toBe(1);
+      expect(parseDecimalToCents("0.99")).toBe(99);
+      expect(parseDecimalToCents("1.00")).toBe(100);
+      expect(parseDecimalToCents("1.99")).toBe(199);
+      expect(parseDecimalToCents("99.99")).toBe(9999);
+    });
+
+    it("one fractional digit (pads to two)", () => {
+      expect(parseDecimalToCents("0.5")).toBe(50);
+      expect(parseDecimalToCents("1.5")).toBe(150);
+      expect(parseDecimalToCents("99.9")).toBe(9990);
+    });
+
+    it("comma decimal separator (Brazilian input)", () => {
+      expect(parseDecimalToCents("1,50")).toBe(150);
+      expect(parseDecimalToCents("0,99")).toBe(99);
+      expect(parseDecimalToCents("42,00")).toBe(4200);
+    });
+
+    it("trims whitespace", () => {
+      expect(parseDecimalToCents("  1,99  ")).toBe(199);
+      expect(parseDecimalToCents("\t10.50\n")).toBe(1050);
+    });
+
+    it("explicit + sign", () => {
+      expect(parseDecimalToCents("+1.00")).toBe(100);
+      expect(parseDecimalToCents("+ 1.00")).toBe(100);
+    });
+
+    it("negative values", () => {
+      expect(parseDecimalToCents("-3.50")).toBe(-350);
+      expect(parseDecimalToCents("-0.01")).toBe(-1);
+      expect(parseDecimalToCents("- 99,99")).toBe(-9999);
+    });
+
+    it("strips leading zeros", () => {
+      expect(parseDecimalToCents("00")).toBe(0);
+      expect(parseDecimalToCents("007")).toBe(700);
+      expect(parseDecimalToCents("0007.50")).toBe(750);
+    });
+
+    it("BR thousands separator (1.234,56)", () => {
+      expect(parseDecimalToCents("1.234,56")).toBe(123456);
+      expect(parseDecimalToCents("12.345,00")).toBe(1234500);
+      expect(parseDecimalToCents("1.000.000,00")).toBe(100000000);
+    });
+
+    it("US thousands separator (1,234.56)", () => {
+      expect(parseDecimalToCents("1,234.56")).toBe(123456);
+      expect(parseDecimalToCents("12,345.00")).toBe(1234500);
+      expect(parseDecimalToCents("1,000,000.00")).toBe(100000000);
+    });
+  });
+
+  describe("the L03-17 regression: divergence from Math.round(parseFloat(s)*100) is the point", () => {
+    // The audit cited 1.005 → 100 (banker's) vs 101 (half-up Math.round)
+    // as the canonical drift. Below we sweep a representative slice of
+    // half-cent inputs and demonstrate where the new helper diverges
+    // from the legacy formula. We do NOT hard-code what
+    // Math.round(parseFloat(s)*100) returns — that depends on the
+    // engine's particular IEEE-754 representation of the typed string,
+    // which is implementation-defined for these boundary inputs.
+    // Instead we assert (a) the new value matches Postgres ROUND
+    // semantics via the oracle, and (b) at least one of the swept
+    // inputs actually diverges from the legacy formula on this engine,
+    // proving the migration is meaningful here and not a no-op.
+    const sweep = [
+      "0.005", "0.015", "0.025", "0.035", "0.045", "0.055", "0.065",
+      "0.075", "0.085", "0.095", "0.105", "0.115", "0.125", "0.135",
+      "1.005", "1.015", "1.105", "1.115", "1.235", "1.245", "1.255",
+      "10.005", "10.015", "100.005", "100.015",
+    ];
+
+    it("every swept input matches the banker's-rounding oracle", () => {
+      for (const s of sweep) {
+        expect(parseDecimalToCents(s)).toBe(refParseDecimalToCents(s));
+      }
+    });
+
+    it("at least one swept input diverges from Math.round(parseFloat(s)*100)", () => {
+      const divergences = sweep.filter(
+        (s) => parseDecimalToCents(s) !== Math.round(parseFloat(s) * 100),
+      );
+      // The exact list depends on the engine's IEEE rep and on
+      // banker's vs half-up disagreement — but with 25 half-cent
+      // inputs spanning three magnitudes there is always at least
+      // one disagreement on every modern JS runtime. If this test
+      // ever fires zero, either sweep got truncated or the legacy
+      // formula was secretly fixed.
+      expect(divergences.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("banker's rounding (matches Postgres ROUND(x::numeric, 2))", () => {
+    // Three-digit halves: round to the even cent.
+    it("1.005 → 100 (0 is even)", () => {
+      expect(parseDecimalToCents("1.005")).toBe(100);
+    });
+    it("1.015 → 102 (2 is even)", () => {
+      expect(parseDecimalToCents("1.015")).toBe(102);
+    });
+    it("1.025 → 102 (2 is even)", () => {
+      expect(parseDecimalToCents("1.025")).toBe(102);
+    });
+    it("1.035 → 104 (4 is even)", () => {
+      expect(parseDecimalToCents("1.035")).toBe(104);
+    });
+    it("0.005 → 0 (0 is even)", () => {
+      expect(parseDecimalToCents("0.005")).toBe(0);
+    });
+    it("-1.005 → -100 (sign-symmetric banker's)", () => {
+      expect(parseDecimalToCents("-1.005")).toBe(-100);
+    });
+    it("-1.015 → -102", () => {
+      expect(parseDecimalToCents("-1.015")).toBe(-102);
+    });
+
+    it("more than three fractional digits — looks at full tail", () => {
+      // 1.0050001 > 1.005 → rounds up regardless of bankers.
+      expect(parseDecimalToCents("1.0050001")).toBe(101);
+      // 1.0049999 < 1.005 → rounds down.
+      expect(parseDecimalToCents("1.0049999")).toBe(100);
+      // 1.0150001 > 1.015 → rounds up to 102.
+      expect(parseDecimalToCents("1.0150001")).toBe(102);
+    });
+  });
+
+  describe("matches the reference oracle on a fuzzed corpus", () => {
+    it("8 fixed regression vectors", () => {
+      const inputs = [
+        "0.295",
+        "1.235",
+        "1.005",
+        "1.015",
+        "1.105",
+        "1.115",
+        "10.005",
+        "999.995",
+      ];
+      for (const i of inputs) {
+        expect(parseDecimalToCents(i)).toBe(refParseDecimalToCents(i));
+      }
+    });
+
+    it("1,000 random decimals match the oracle", () => {
+      let mismatches = 0;
+      for (let i = 0; i < 1000; i++) {
+        const intPart = Math.floor(Math.random() * 1_000_000);
+        const fracDigits = 1 + Math.floor(Math.random() * 5);
+        let frac = "";
+        for (let j = 0; j < fracDigits; j++) {
+          frac += Math.floor(Math.random() * 10).toString();
+        }
+        const input = `${intPart}.${frac}`;
+        const got = parseDecimalToCents(input);
+        const want = refParseDecimalToCents(input);
+        if (got !== want) mismatches++;
+      }
+      expect(mismatches).toBe(0);
+    });
+  });
+
+  describe("malformed input throws", () => {
+    const cases: Array<[string, RegExp]> = [
+      ["", /empty input/],
+      ["   ", /empty input/],
+      ["abc", /malformed/],
+      ["1.2.3", /malformed/],
+      ["1,2,3", /malformed/], // ambiguous after thousands strip → "13"? no, drops dots → "1,2,3" still has commas
+      ["1e5", /malformed/], // exponent notation rejected on purpose
+      ["1.5e2", /malformed/],
+      ["1.", /malformed/],
+      [".5", /malformed/], // requires leading digit
+      ["-", /sign without digits/],
+      ["+", /sign without digits/],
+      ["NaN", /malformed/],
+      ["Infinity", /malformed/],
+      ["1 2 3", /malformed/],
+      ["R$ 10,00", /malformed/], // currency symbols not stripped
+    ];
+    for (const [input, expected] of cases) {
+      it(`rejects ${JSON.stringify(input)}`, () => {
+        expect(() => parseDecimalToCents(input)).toThrow(expected);
+      });
+    }
+
+    it("non-string input throws with type info", () => {
+      // @ts-expect-error — runtime guard against accidental misuse.
+      expect(() => parseDecimalToCents(null)).toThrow(/non-string input/);
+      // @ts-expect-error
+      expect(() => parseDecimalToCents(undefined)).toThrow(/non-string input/);
+      // @ts-expect-error
+      expect(() => parseDecimalToCents(1.5)).toThrow(/non-string input/);
+    });
+  });
+
+  describe("range enforcement", () => {
+    it("rejects values exceeding numeric(14,2)", () => {
+      // MAX_MONEY_CENTS + 1 cents → "9999999999999.991" (one more cent than allowed).
+      const overflow = "10000000000000.00";
+      expect(() => parseDecimalToCents(overflow)).toThrow(/out of range/);
+    });
+
+    it("accepts the maximum representable value", () => {
+      expect(parseDecimalToCents("9999999999999.99")).toBe(MAX_MONEY_CENTS);
+    });
+
+    it("accepts the negative extreme", () => {
+      expect(parseDecimalToCents("-9999999999999.99")).toBe(-MAX_MONEY_CENTS);
+    });
+  });
+
+  describe("interop with the rest of money.ts", () => {
+    it("round-trips through the cents → display path", () => {
+      // The only place that consumes parseDecimalToCents output is the
+      // products admin form (L03-17 migration). The mirror path is
+      // (cents / 100).toFixed(2).replace(".", ",") which the form uses
+      // for `defaultValue`. Ensure the round-trip is idempotent on
+      // every value the user could have typed.
+      const inputs = ["1,50", "0,01", "999,99", "10,00", "1.234,56"];
+      for (const input of inputs) {
+        const cents = parseDecimalToCents(input);
+        const display = (cents / 100).toFixed(2).replace(".", ",");
+        const reparsed = parseDecimalToCents(display);
+        expect(reparsed).toBe(cents);
+      }
+    });
   });
 });

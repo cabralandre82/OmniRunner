@@ -9,6 +9,7 @@ import {
   updateProduct,
   createProduct,
 } from "./mutations";
+import { parseDecimalToCents } from "@/lib/money";
 
 function fmt(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", {
@@ -149,8 +150,16 @@ function EditForm({
     const name = form.get("name") as string;
     const description = form.get("description") as string;
     const credits_amount = parseInt(form.get("credits_amount") as string, 10);
-    const priceStr = (form.get("price") as string).replace(",", ".");
-    const price_cents = Math.round(parseFloat(priceStr) * 100);
+    const priceStr = (form.get("price") as string) ?? "";
+    let price_cents: number;
+    try {
+      // L03-17: parse the typed string directly (avoids Math.round(parseFloat(s)*100)
+      // dropping a centavo on values like "1.235" → 123 instead of 124).
+      price_cents = parseDecimalToCents(priceStr);
+    } catch {
+      toast.error("Preço inválido");
+      return;
+    }
     const sort_order = parseInt(form.get("sort_order") as string, 10) || 0;
 
     if (!name || !credits_amount || !price_cents) {
@@ -268,12 +277,22 @@ export function ProductForm() {
     const name = form.get("name") as string;
     const description = form.get("description") as string;
     const credits_amount = parseInt(form.get("credits_amount") as string, 10);
-    const price_reais = parseFloat(
-      (form.get("price") as string).replace(",", "."),
-    );
+    const priceStr = (form.get("price") as string) ?? "";
+    let price_cents: number;
+    try {
+      // L03-17: see EditForm above. parseDecimalToCents quantises the
+      // typed string with banker's rounding (matches Postgres ROUND);
+      // the previous Math.round(parseFloat(s)*100) silently dropped a
+      // centavo on inputs whose canonical IEEE-754 representation
+      // landed just below the cent boundary (e.g. "1.235", "0.295").
+      price_cents = parseDecimalToCents(priceStr);
+    } catch {
+      toast.error("Preço inválido");
+      return;
+    }
     const sort_order = parseInt(form.get("sort_order") as string, 10) || 0;
 
-    if (!name || !credits_amount || !price_reais) {
+    if (!name || !credits_amount || !price_cents) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
@@ -286,7 +305,7 @@ export function ProductForm() {
         name,
         description: description || "",
         credits_amount,
-        price_cents: Math.round(price_reais * 100),
+        price_cents,
         sort_order,
         product_type,
       });

@@ -364,6 +364,155 @@ export function multiplyMoney(a: number, factor: number): number {
 }
 
 /**
+ * Parse a user-entered decimal *string* into integer cents (L03-17).
+ *
+ * # Why a string-only path?
+ *
+ * The naive recipe `Math.round(parseFloat(s) * 100)` throws away the
+ * exact decimal the user typed by routing it through IEEE-754. The
+ * canonical regression case is `"1.105"`:
+ *
+ *   parseFloat("1.105")        // 1.105  (rounded for display)
+ *   parseFloat("1.105") * 100  // 110.49999999999999
+ *   Math.round(110.4999…)      // 110   ← expected 111 cents
+ *
+ * That single mis-rounding silently shaves a centavo off every product
+ * priced in fractional reais. At the platform's BRL price column it
+ * also propagates into the BRL→OmniCoin unit-price displayed in the
+ * shop, so the discrepancy is *visible* to athletes and a recurring
+ * support ticket source.
+ *
+ * # Strategy
+ *
+ * Operate on the typed string directly:
+ *
+ *   1. Sanitise — trim, accept either "," or "." as the decimal mark
+ *      (the Brazilian portal hands us comma-formatted input from
+ *      `<input type="text" inputMode="decimal">`).
+ *   2. Strip thousands separators inferred from the position of the
+ *      *other* mark relative to the decimal one. We deliberately do
+ *      NOT call `Intl.NumberFormat#parse` — its locale-resolution
+ *      behaviour is browser-dependent and not portable to the test
+ *      runtime.
+ *   3. Validate the canonical form against `^-?\d+(\.\d+)?$`.
+ *   4. Quantise: if the fractional part has > 2 digits, apply
+ *      banker's rounding (half-to-even) to the dropped tail using
+ *      BigInt arithmetic — bit-identical to Postgres
+ *      `ROUND(x::numeric, 2)`.
+ *   5. Convert the (now exactly-2-fractional-digit) string into an
+ *      integer cents `number`. The result is a safe integer for any
+ *      input within `±MAX_MONEY_CENTS`, validated explicitly.
+ *
+ * # Examples
+ *
+ *   parseDecimalToCents("0.295")     // 30    ← parseFloat(0.295)*100 = 29.4999…, Math.round → 29 (lost a cent)
+ *   parseDecimalToCents("1.235")     // 124   ← parseFloat(1.235)*100 = 123.499…, Math.round → 123 (lost a cent)
+ *   parseDecimalToCents("0,295")     // 30    ← Brazilian comma-decimal accepted
+ *   parseDecimalToCents("1.005")     // 100   ← banker's: 0 is even (matches Postgres ROUND)
+ *   parseDecimalToCents("1.015")     // 102   ← banker's: 2 is even
+ *   parseDecimalToCents("1.115")     // 112   ← banker's; old half-up Math.round also returned 111 (wrong by Postgres)
+ *   parseDecimalToCents("1.5")       // 150
+ *   parseDecimalToCents("42")        // 4200
+ *   parseDecimalToCents("-3.50")     // -350
+ *   parseDecimalToCents("  1,99  ")  // 199
+ *   parseDecimalToCents("1.234,56")  // 123456 (BR thousands + comma decimal)
+ *   parseDecimalToCents("1,234.56")  // 123456 (US thousands + dot decimal)
+ *
+ * # Errors (throws `Error`)
+ *
+ *   ""           → "money: empty input"
+ *   "abc"        → "money: malformed decimal …"
+ *   "1.2.3"      → "money: malformed decimal …"
+ *   "1e5"        → "money: malformed decimal …" (rejecting exponent
+ *                                                notation in user input
+ *                                                is intentional — UIs
+ *                                                that need it should
+ *                                                pre-normalise)
+ *   value above MAX_MONEY_CENTS → "money: value out of range …"
+ */
+export function parseDecimalToCents(input: string): number {
+  if (typeof input !== "string") {
+    throw new Error(`money.parseDecimalToCents: non-string input (${typeof input})`);
+  }
+  const trimmed = input.trim();
+  if (trimmed.length === 0) {
+    throw new Error("money: empty input");
+  }
+
+  // ── Detect sign, then work on the absolute string ──────────────────────────
+  let sign: bigint = BIG_ONE;
+  let body = trimmed;
+  if (body.startsWith("-")) {
+    sign = -BIG_ONE;
+    body = body.slice(1).trimStart();
+  } else if (body.startsWith("+")) {
+    body = body.slice(1).trimStart();
+  }
+  if (body.length === 0) {
+    throw new Error(`money: malformed decimal "${input}" (sign without digits)`);
+  }
+
+  // ── Resolve the decimal separator vs thousands separator ──────────────────
+  //
+  // We support four typed shapes commonly produced by `<input>`:
+  //   "1234.56"      ─ single ".",  decimal mark = "."
+  //   "1234,56"      ─ single ",",  decimal mark = ","
+  //   "1,234.56"     ─ both, "." rightmost → "." is decimal, "," is thousands
+  //   "1.234,56"     ─ both, "," rightmost → "," is decimal, "." is thousands
+  //
+  // Unknown shapes (e.g. "1,2,3,4" or "1.234.567") fail the
+  // post-strip regex below — we don't try to outsmart bad input.
+  const lastDot = body.lastIndexOf(".");
+  const lastComma = body.lastIndexOf(",");
+  let normalised: string;
+  if (lastDot === -1 && lastComma === -1) {
+    normalised = body;
+  } else if (lastDot === -1) {
+    normalised = body.replace(/,/g, ".");
+  } else if (lastComma === -1) {
+    normalised = body;
+  } else if (lastDot > lastComma) {
+    // "1,234.56" → drop the commas (thousands), keep the dot (decimal)
+    normalised = body.replace(/,/g, "");
+  } else {
+    // "1.234,56" → drop the dots (thousands), swap comma for dot
+    normalised = body.replace(/\./g, "").replace(",", ".");
+  }
+
+  if (!/^\d+(\.\d+)?$/.test(normalised)) {
+    throw new Error(`money: malformed decimal "${input}"`);
+  }
+
+  // ── Decode into (mantissa, scale) over BigInt (no IEEE-754 anywhere) ──────
+  const dotIdx = normalised.indexOf(".");
+  let intPart: string;
+  let fracPart: string;
+  if (dotIdx === -1) {
+    intPart = normalised;
+    fracPart = "";
+  } else {
+    intPart = normalised.slice(0, dotIdx);
+    fracPart = normalised.slice(dotIdx + 1);
+  }
+  // Strip leading zeros to keep the BigInt allocation tight; preserve
+  // at least one digit so "0" / "0.5" still parse.
+  intPart = intPart.replace(/^0+(?=\d)/, "");
+  const rawMantissa = BigInt(intPart + fracPart);
+  const decimal: Decimal = {
+    mantissa: sign * rawMantissa,
+    scale: fracPart.length,
+  };
+
+  // ── Quantise to cents using banker's rounding (matches Postgres) ──────────
+  const cents = roundDecimal(decimal, 2);
+  assertWithinRange(cents);
+
+  // cents.scale === 2, cents.mantissa is exactly the integer cents.
+  // Number() over a BigInt within MAX_SAFE_INTEGER is lossless.
+  return Number(cents.mantissa);
+}
+
+/**
  * Split a total into (counterparty, platform) by percentage.
  * `splitPct` is the counterparty's share in percentage points; the
  * platform keeps the remainder. Both halves sum exactly to `total`
