@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-19 01:30:42 UTC.
+> Atualizado em 2026-04-19 01:48:34 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -264,7 +264,7 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L17-07](./findings/L17-07-nao-ha-docs-adr-ativo-para-decisoes-arquiteturais.md) | 2 | L17 · VP Eng | Não há docs/adr/ ativo para decisões arquiteturais | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L17-08](./findings/L17-08-ausencia-de-monorepo-tooling-turbo-nx-pnpm-workspaces.md) | 2 | L17 · VP Eng | Ausência de monorepo tooling (turbo, nx, pnpm-workspaces) | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L17-09](./findings/L17-09-sem-shared-types-ts-dart-entre-portal-e.md) | 2 | L17 · VP Eng | Sem shared types TS/Dart entre portal e mobile | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L18-01](./findings/L18-01-duas-fontes-da-verdade-para-balance-de-wallet.md) | 1 | L18 · Principal Eng | Duas fontes da verdade para balance de wallet (wallets.balance_coins vs SUM(coin_ledger)) | unassigned |
+| 🔴 critical | ✅ fixed | [L18-01](./findings/L18-01-duas-fontes-da-verdade-para-balance-de-wallet.md) | 1 | L18 · Principal Eng | Duas fontes da verdade para balance de wallet (wallets.balance_coins vs SUM(coin_ledger)) | principal-eng |
 | 🔴 critical | ✅ fixed | [L18-02](./findings/L18-02-idempotencia-ad-hoc-em-cada-rpc-padrao-nao.md) | 1 | L18 · Principal Eng | Idempotência ad-hoc em cada RPC — padrão não unificado | backend |
 | 🔴 critical | ✅ fixed | [L18-03](./findings/L18-03-security-definer-sem-set-search-path-em-funcoes.md) | 0 | L18 · Principal Eng | SECURITY DEFINER sem SET search_path em funções antigas | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L18-04](./findings/L18-04-architecture-flutter-viola-clean-arch-em-varios-pontos.md) | 1 | L18 · Principal Eng | Architecture: Flutter viola Clean Arch em vários pontos | unassigned |

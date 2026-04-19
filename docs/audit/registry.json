@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-19T01:30:42.040Z",
+  "generated_at": "2026-04-19T01:48:34.627Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 274,
-    "fixed": 73,
+    "fix-pending": 273,
+    "fixed": 74,
     "in-progress": 1
   },
   "by_wave": {
@@ -7836,9 +7836,10 @@
       "lens": 18,
       "title": "Duas fontes da verdade para balance de wallet (wallets.balance_coins vs SUM(coin_ledger))",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-19T00:00:00.000Z",
       "tags": [
         "finance",
         "atomicity",
@@ -7846,19 +7847,25 @@
         "performance",
         "reliability"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260419130000_l18_wallet_mutation_guard.sql"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l18_wallet_guard.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "dee5791"
+      ],
+      "owner": "principal-eng",
+      "runbook": "docs/runbooks/WALLET_MUTATION_GUARD_RUNBOOK.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Arquitetura \"guard + gateway\" implementada em\n`supabase/migrations/20260419130000_l18_wallet_mutation_guard.sql`.\n\n• Trigger `trg_wallet_mutation_guard_{insert,update}` em `public.wallets`\n  bloqueia qualquer INSERT/UPDATE de balance_coins / pending_coins /\n  lifetime_* a menos que a transação tenha definido o GUC de sessão\n  `app.wallet_mutation_authorized = 'yes'` (LOCAL, rolled back em commit).\n  Bypass tentado direto via REST/SQL retorna `P0007` com mensagem clara.\n\n• Toda RPC mutadora existente foi re-criada com o `set_config(...,true)`\n  como primeira instrução: `increment_wallet_balance`,\n  `increment_wallet_pending`, `release_pending_to_balance`,\n  `debit_wallet_checked`, `fn_increment_wallets_batch`, `reconcile_wallet`,\n  `reconcile_all_wallets`, `execute_burn_atomic`, `fn_switch_assessoria`.\n  Surface de comportamento inalterado; tests existentes (1078 portal +\n  36 L19 DBA + 22 L18-02 idem + 16 cron-health) continuam verdes.\n\n• Novo gateway `fn_mutate_wallet(user_id, delta_coins, reason, ref_id,\n  issuer_group_id) RETURNS TABLE(ledger_id, new_balance)` é o caminho\n  preferencial para código novo: insere ledger row, aplica delta no\n  wallet (com lifetime_* derivado do sinal), tudo em uma transação\n  atômica atrás do guard. Validações: INVALID_USER_ID, INVALID_DELTA,\n  MISSING_REASON (P0001) + check_violation se debit > balance.\n\n• Coverage: 21 testes em `tools/test_l18_wallet_guard.ts` cobrindo:\n  direct UPDATE blocked (3 colunas), INSERT de signup permitido (zero\n  counters), todos os 8 RPCs autorizados, gateway happy-path/edge-cases,\n  paridade `SUM(ledger) == balance` após N operações.\n\n• Observação: o `note` column foi removido pela migração L19-01\n  (partitioning); o gateway codifica context em `ref_id` (text). Reason\n  de reconciliação usa `admin_adjustment` (no allowlist atual).\n\n• Runbook: `docs/runbooks/WALLET_MUTATION_GUARD_RUNBOOK.md`.\n"
     },
     {
       "id": "L18-02",

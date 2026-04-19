@@ -37,10 +37,11 @@
 |---|---|---|---|
 | [`DBA_BLOAT_AND_INDEX_RUNBOOK.md`](./DBA_BLOAT_AND_INDEX_RUNBOOK.md) | Bloat > 30% em `coin_ledger`/`sessions`, archive cron falhando, novo índice redundante introduzido (L19-02 / L19-03) | P3 base; P2 se latência financeira p95 > 500ms; P1 se disk > 80% | ack < 4 h, mitig < 24 h |
 
-### Idempotency (L18)
+### Idempotency / Wallet integrity (L18)
 | Runbook | Trigger | Severidade | Tempo alvo |
 |---|---|---|---|
 | [`IDEMPOTENCY_RUNBOOK.md`](./IDEMPOTENCY_RUNBOOK.md) | Duplicate-mutation report, `idempotency-keys-gc` cron failing, `idempotency_keys` > 1M rows, `409 IDEMPOTENCY_KEY_CONFLICT` rate spike (L18-02) | P2 (gc backlog / 409 spike); P1 (confirmed duplicate financial mutation) | ack < 1 h, mitig < 4 h |
+| [`WALLET_MUTATION_GUARD_RUNBOOK.md`](./WALLET_MUTATION_GUARD_RUNBOOK.md) | New RPC blocked by `WALLET_MUTATION_FORBIDDEN` (P0007), wallet drift alert (`balance_coins ≠ SUM(coin_ledger)`), or onboarding a new credit/debit code-path (L18-01) | P2 (CI block / new-code question); P1 (confirmed drift in production) | ack < 1 h, mitig < 4 h |
 
 ## Convenções
 
