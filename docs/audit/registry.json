@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-19T09:42:42.807Z",
+  "generated_at": "2026-04-19T09:53:20.407Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 264,
-    "fixed": 83,
+    "fix-pending": 263,
+    "fixed": 84,
     "in-progress": 1
   },
   "by_wave": {
@@ -1060,32 +1060,42 @@
       "lens": 1,
       "title": "Android — Falta de ProGuard/R8",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "anti-cheat",
         "mobile",
-        "edge-function",
-        "observability",
-        "reliability"
+        "android",
+        "obfuscation",
+        "release-pipeline",
+        "reverse-engineering"
       ],
       "files": [
-        "supabase/functions/_shared/anti_cheat.ts",
-        "omni_runner/android/app/build.gradle"
+        "omni_runner/android/app/build.gradle",
+        "omni_runner/android/app/proguard-rules.pro",
+        ".github/workflows/release.yml",
+        "tools/test_l01_30_android_minify.sh",
+        "docs/runbooks/ANDROID_RELEASE_SIGNING_RUNBOOK.md",
+        "docs/runbooks/README.md"
       ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l01_30_android_minify.sh"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "fb62982"
+      ],
+      "owner": "app-team",
+      "runbook": "docs/runbooks/ANDROID_RELEASE_SIGNING_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Defesa em três camadas, alinhada com L01-31 (mesmo build.gradle / mesmo runbook):\n\n1. **Gradle release block** (`omni_runner/android/app/build.gradle`):\n   adiciona `minifyEnabled true`, `shrinkResources true` e\n   `proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'`.\n   Comentário explicando o threat-model fica colado ao bloco L01-31 — as\n   duas defesas de release travel juntas.\n\n2. **`proguard-rules.pro`** (novo): nove seções nomeadas, alinhadas com\n   o grafo de dependências real do `pubspec.yaml`:\n     §1 toggles globais (`-keepattributes` para Sentry symbolication,\n        `-dontobfuscate` comentado como escape-hatch);\n     §2 Flutter framework + `GeneratedPluginRegistrant`;\n     §3 plugins JNI/reflection (flutter_secure_storage,\n        flutter_blue_plus, mobile_scanner+ML Kit, health/Health Connect,\n        flutter_foreground_task, geolocator, permission_handler,\n        flutter_web_auth_2, google_sign_in, sign_in_with_apple,\n        image_picker, share_plus, GMS Wearable);\n     §4 Sentry;\n     §5 Firebase + Google Play Services + Gson;\n     §6 Supabase / Realtime / GoTrue;\n     §7 Drift + SQLCipher;\n     §8 noise: kotlinx coroutines, OkHttp, Okio, Conscrypt,\n        BouncyCastle, OpenJSSE, Kotlin Metadata, enums, Parcelable,\n        native methods;\n     §9 **anti-keep banner**: deliberadamente NÃO lista keeps para\n        `lib.domain.usecases.integrity_detect_*`. R8 mangleia os nomes\n        de classe e *inlining* das constantes de threshold para os\n        call-sites, movendo o anti-cheat de \"trivial em jadx\" para\n        \"exige correlação multi-sessão\". Adicionar um keep aqui\n        re-abre L01-30 — o lint estrutural rejeita.\n\n3. **CI + structural lint**:\n   - `.github/workflows/release.yml`: novo step \"Verify gradle\n     release-minify invariants (L01-30)\" rodando logo após o lint\n     L01-31 e antes do `fastlane build_apk` — falha rápido se alguém\n     desativar minify/shrink ou remover o `proguard-rules.pro`.\n   - `tools/test_l01_30_android_minify.sh`: seis invariantes\n     grep-based (sub-second, roda sem SDK Android):\n       (i) `minifyEnabled true` presente;\n       (ii) sem `minifyEnabled false` explícito;\n       (iii) `shrinkResources true` presente;\n       (iv) `proguardFiles ... 'proguard-rules.pro'` corretamente\n            encadeado;\n       (v) `proguard-rules.pro` referencia `integrity_detect` e\n           `L01-30` (banner §9 vivo);\n       (vi) NENHUM `-keep` aponta para `integrity_detect`;\n       (vii) `-dontobfuscate` está presente apenas comentado.\n\nValidação local: criamos a regressão (`minifyEnabled true → false`),\no script falhou com exit-code 1 reportando `(i)` e `(ii)`. Restaurado\ne o script volta a passar (commit `fb62982`).\n\nDecisão deliberada de escopo:\n- **Não** refatoramos os detectores de integridade para esconder mais\n  metadata (e.g. mover thresholds para `gen-l10n`-style assets\n  cifrados): isso aumentaria a barra mas não muda a classe de\n  vulnerabilidade — um atacante motivado lendo dump de RAM ainda\n  recupera. R8+inlining é o sweet-spot de custo/benefício para High\n  sem virar projeto épico.\n- **Não** habilitamos ainda `enableR8.fullMode` (R8 in \"full mode\") —\n  requer sweep de `-dontwarn` adicionais e validação caso-a-caso de\n  plugins Kotlin. Roteado para Wave 2 se telemetria de crash em\n  release pedir.\n- O runbook ANDROID_RELEASE_SIGNING_RUNBOOK ganhou uma seção R8\n  completa (Symptoms F + G, \"Adding a keep rule when a new plugin\n  breaks\", \"Validating R8 output without the production keystore\",\n  escape-hatch). README do diretório de runbooks atualizado.\n"
     },
     {
       "id": "L01-31",

@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-19 09:42:42 UTC.
+> Atualizado em 2026-04-19 09:53:20 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -38,7 +38,7 @@ Total: **348** findings.
 | 🟢 safe | ✅ fixed | [L01-27](./findings/L01-27-requireadminmaster-em-rotas-de-custody-service-client-sem.md) | 3 | L01 · CISO | requireAdminMaster em rotas de custody — Service client sem RLS | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L01-28](./findings/L01-28-deep-link-handler-extractinvitecode-aceita-qualquer-string.md) | 2 | L01 · CISO | Deep link handler — extractInviteCode aceita qualquer string | unassigned |
 | 🟠 high | ✅ fixed | [L01-29](./findings/L01-29-deep-link-strava-callback-sem-state-csrf.md) | 1 | L01 · CISO | Deep link — Strava callback sem state/CSRF | app-team |
-| 🟠 high | ⏳ fix-pending | [L01-30](./findings/L01-30-android-falta-de-proguard-r8.md) | 1 | L01 · CISO | Android — Falta de ProGuard/R8 | unassigned |
+| 🟠 high | ✅ fixed | [L01-30](./findings/L01-30-android-falta-de-proguard-r8.md) | 1 | L01 · CISO | Android — Falta de ProGuard/R8 | app-team |
 | 🟠 high | ✅ fixed | [L01-31](./findings/L01-31-android-release-assina-com-debug-key-se-key.md) | 1 | L01 · CISO | Android — Release assina com debug key se key.properties não existir | app-team |
 | 🟡 medium | ⏳ fix-pending | [L01-32](./findings/L01-32-flutter-flutter-secure-storage-sem-setsharedpreferences.md) | 2 | L01 · CISO | Flutter — flutter_secure_storage sem setSharedPreferences | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L01-33](./findings/L01-33-flutter-db-key-storage-fallback-ausente.md) | 2 | L01 · CISO | Flutter — DB key storage fallback ausente | unassigned |
