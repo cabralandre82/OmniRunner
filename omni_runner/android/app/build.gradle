@@ -24,6 +24,87 @@ if (keystorePropertiesFile.exists()) {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// L01-31 — Android release signing safety net
+//
+// The previous behaviour of this file was to silently fall back to
+// `signingConfigs.debug` whenever `key.properties` was missing. That
+// produced two failure modes that both ship a broken artifact without
+// raising an alarm:
+//
+//   1. CI loses (or never restored) the keystore secret  →  Fastlane
+//      pushes a debug-signed APK to Firebase App Distribution and an
+//      AAB to Google Play. Play Store rejects the bundle (different
+//      upload key); Firebase happily serves the debug-signed APK to
+//      every beta tester.
+//
+//   2. Worse: an operator manually drags the resulting APK into the
+//      Play Console assuming it is release-signed. Play binds the
+//      debug key as the upload key for the application, locking out
+//      every future legitimate release until Play Support intervenes
+//      (multi-week recovery).
+//
+// Mitigation strategy:
+//
+//   • At configuration time, detect whether the requested Gradle task
+//     graph implies a release variant (`assembleRelease`,
+//     `bundleRelease`, `assembleProdRelease`, etc.).
+//   • If so AND `key.properties` is missing AND the explicit override
+//     flag is not set, abort the build with `GradleException` carrying
+//     a runbook reference. Loud failure beats silent corruption.
+//   • Provide an opt-in escape hatch (`-PallowReleaseDebugSigning=true`)
+//     for the rare local case where a developer wants a debug-signed
+//     release APK to test ProGuard/R8 output without producing the
+//     real keystore. CI MUST NOT set this flag.
+//
+// See `docs/runbooks/ANDROID_RELEASE_SIGNING_RUNBOOK.md` and
+// `docs/audit/findings/L01-31-...md` for the full threat model.
+// ─────────────────────────────────────────────────────────────────────────────
+
+def isReleaseTaskRequested = gradle.startParameter.taskNames.any { taskName ->
+    def lower = taskName.toLowerCase()
+    // Cover assembleRelease, assembleProdRelease, bundleRelease,
+    // bundleDevRelease, etc. Exclude `:assembleDebug`, `:bundleDebug`.
+    lower.contains('release') && !lower.contains('releasetest')
+}
+
+def allowReleaseDebugSigning = project.hasProperty('allowReleaseDebugSigning') &&
+        project.property('allowReleaseDebugSigning').toString().toLowerCase() == 'true'
+
+if (isReleaseTaskRequested && !keystorePropertiesFile.exists() && !allowReleaseDebugSigning) {
+    throw new GradleException(
+        '\n\n' +
+        '╭─────────────────────────────────────────────────────────────────────────╮\n' +
+        '│ L01-31 — Release build aborted: android/key.properties is missing.      │\n' +
+        '╰─────────────────────────────────────────────────────────────────────────╯\n' +
+        '\n' +
+        'The current Gradle task graph implies a release variant, but the\n' +
+        'release signing config cannot be loaded. Falling back to the debug\n' +
+        'keystore would produce an artifact that Play Store rejects (or worse,\n' +
+        'binds as the wrong upload key). Refusing to build.\n' +
+        '\n' +
+        'Local fix:\n' +
+        '  1. Copy android/key.properties.example → android/key.properties\n' +
+        '  2. Generate the keystore (instructions in the example file).\n' +
+        '  3. Re-run the build.\n' +
+        '\n' +
+        'CI fix:\n' +
+        '  Restore key.properties + the .keystore file from CI secrets BEFORE\n' +
+        '  invoking flutter build. See docs/runbooks/ANDROID_RELEASE_SIGNING_RUNBOOK.md\n' +
+        '  for the canonical workflow snippet.\n' +
+        '\n' +
+        'Local override (NOT for CI — produces a debug-signed APK):\n' +
+        '  flutter build apk --release -PallowReleaseDebugSigning=true\n'
+    )
+}
+
+if (isReleaseTaskRequested && !keystorePropertiesFile.exists() && allowReleaseDebugSigning) {
+    logger.warn(
+        '\n[L01-31] ⚠ allowReleaseDebugSigning=true — release artifact will be DEBUG-SIGNED.\n' +
+        '         This APK MUST NOT be uploaded to Play Store / Firebase App Distribution.\n'
+    )
+}
+
 def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
 if (flutterVersionCode == null) {
     flutterVersionCode = '1'
@@ -86,9 +167,15 @@ android {
 
     buildTypes {
         release {
-            signingConfig keystorePropertiesFile.exists()
-                ? signingConfigs.release
-                : signingConfigs.debug
+            // L01-31: silent fallback to debug signing removed — see the
+            // pre-config block above for the threat model + override flag.
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            } else if (allowReleaseDebugSigning) {
+                // Explicit local override — debug-signed artifact, do NOT ship.
+                signingConfig signingConfigs.debug
+            }
+            // Else: configuration fails earlier with the L01-31 GradleException.
         }
     }
 }

@@ -125,9 +125,65 @@ jobs:
           bundler-cache: true
           working-directory: omni_runner
 
+      # ─────────────────────────────────────────────────────────────────
+      # L01-31 — Restore Android release signing material from secrets.
+      #
+      # Without this step `flutter build apk --release` would either:
+      #   • fail loudly with the L01-31 GradleException (post-fix, the
+      #     desired behaviour for any *misconfigured* release run); or
+      #   • silently produce a debug-signed APK (pre-fix; this is the
+      #     vulnerability the audit flagged).
+      #
+      # Required repo secrets:
+      #   ANDROID_KEYSTORE_BASE64       — base64-encoded .keystore file
+      #                                   (`base64 -w0 omnirunner-release.keystore`)
+      #   ANDROID_KEY_PROPERTIES        — full text of key.properties
+      #                                   (storePassword=…\nkeyPassword=…\n…)
+      #
+      # If either secret is missing, fail-fast with a pointer to the
+      # runbook — the build would fail anyway downstream, but failing
+      # here gives a clearer signal than a Gradle stack trace.
+      # See docs/runbooks/ANDROID_RELEASE_SIGNING_RUNBOOK.md.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Restore Android release signing (L01-31)
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_PROPERTIES: ${{ secrets.ANDROID_KEY_PROPERTIES }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ANDROID_KEYSTORE_BASE64:-}" ] || [ -z "${ANDROID_KEY_PROPERTIES:-}" ]; then
+            echo "::error title=L01-31::Missing ANDROID_KEYSTORE_BASE64 or ANDROID_KEY_PROPERTIES secret. See docs/runbooks/ANDROID_RELEASE_SIGNING_RUNBOOK.md."
+            exit 1
+          fi
+          echo "${ANDROID_KEYSTORE_BASE64}" | base64 -d > omni_runner/android/app/omnirunner-release.keystore
+          printf '%s' "${ANDROID_KEY_PROPERTIES}" > omni_runner/android/key.properties
+          # Sanity: never echo the secrets, but confirm the files landed
+          # with non-zero size and the expected key.properties keys.
+          test -s omni_runner/android/app/omnirunner-release.keystore
+          test -s omni_runner/android/key.properties
+          for required in storePassword keyPassword keyAlias storeFile; do
+            grep -q "^${required}=" omni_runner/android/key.properties \
+              || { echo "::error title=L01-31::ANDROID_KEY_PROPERTIES missing key '${required}'"; exit 1; }
+          done
+          chmod 600 omni_runner/android/key.properties omni_runner/android/app/omnirunner-release.keystore
+          echo "L01-31: keystore + key.properties restored ($(stat -c '%s' omni_runner/android/app/omnirunner-release.keystore) bytes)."
+
+      - name: Verify gradle release-signing invariants (L01-31)
+        run: bash tools/test_l01_31_android_signing.sh
+
       - name: Build release APK
         working-directory: omni_runner
         run: bundle exec fastlane build_apk
+
+      # ─────────────────────────────────────────────────────────────────
+      # L01-31 — Always wipe signing material from the runner, even on
+      # build failure. The runner is ephemeral but defence-in-depth.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Cleanup signing material
+        if: always()
+        run: |
+          rm -f omni_runner/android/key.properties
+          rm -f omni_runner/android/app/omnirunner-release.keystore
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

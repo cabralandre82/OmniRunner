@@ -37,6 +37,11 @@
 |---|---|---|---|
 | [`DBA_BLOAT_AND_INDEX_RUNBOOK.md`](./DBA_BLOAT_AND_INDEX_RUNBOOK.md) | Bloat > 30% em `coin_ledger`/`sessions`, archive cron falhando, novo índice redundante introduzido (L19-02 / L19-03) | P3 base; P2 se latência financeira p95 > 500ms; P1 se disk > 80% | ack < 4 h, mitig < 24 h |
 
+### Mobile release pipeline (L01)
+| Runbook | Trigger | Severidade | Tempo alvo |
+|---|---|---|---|
+| [`ANDROID_RELEASE_SIGNING_RUNBOOK.md`](./ANDROID_RELEASE_SIGNING_RUNBOOK.md) | `release` workflow falha em "Restore Android release signing", Gradle aborta com `L01-31`, ou Play Console rejeita upload por mismatch de upload key (L01-31) | P2 (workflow falha pré-deploy); P1 (debug-signed APK detectado em store/Firebase) | ack < 1 h, mitig < 4 h |
+
 ### Idempotency / Wallet integrity (L18)
 | Runbook | Trigger | Severidade | Tempo alvo |
 |---|---|---|---|
