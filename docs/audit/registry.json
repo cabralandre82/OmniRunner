@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-19T00:35:14.078Z",
+  "generated_at": "2026-04-19T00:50:24.363Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 277,
-    "fixed": 70,
+    "fix-pending": 275,
+    "fixed": 72,
     "in-progress": 1
   },
   "by_wave": {
@@ -8178,9 +8178,10 @@
       "lens": 19,
       "title": "DELETE em archive cron gera table bloat massivo",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-19T00:00:00.000Z",
       "tags": [
         "finance",
         "integration",
@@ -8188,20 +8189,25 @@
         "performance"
       ],
       "files": [
-        "supabase/migrations/20260320000000_strava_time_index_and_partitioning.sql"
+        "supabase/migrations/20260320000000_strava_time_index_and_partitioning.sql",
+        "supabase/migrations/20260419110000_l19_archive_via_partition_detach.sql"
       ],
       "correction_type": "migration",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l19_dba_health.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        893093
+      ],
+      "owner": "platform-data-eng",
+      "runbook": "docs/runbooks/DBA_BLOAT_AND_INDEX_RUNBOOK.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Resolvido em 2026-04-19 via migration `20260419110000_l19_archive_via_partition_detach.sql`.\n\nImplementação:\n- `fn_archive_old_ledger` reescrito para iterar partições mensais de\n  `coin_ledger` (criadas em L19-01) e fazer\n  `ALTER TABLE ... DETACH PARTITION` →\n  `INSERT INTO coin_ledger_archive` →\n  `DROP TABLE`. Zero dead tuples na tabela viva, zero VACUUM pressure.\n  `lock_timeout=5s`; partições com lock contention são puladas e\n  retentadas no próximo ciclo semanal.\n- `fn_archive_old_sessions` reescrito para chunked DELETE (BATCH=250,\n  MAX_BATCHES=200, `lock_timeout=2s`, `FOR UPDATE SKIP LOCKED`).\n  Sessions ainda não é particionada — eliminação total de bloat\n  requer mirror do trabalho L19-01 (partition por `start_time_ms`),\n  rastreado como follow-up Wave 2. Por ora o bloat é mitigado por\n  tuning agressivo de autovacuum em `sessions`\n  (`autovacuum_vacuum_scale_factor=0.05`, `fillfactor=90`).\n- Pre-flight `ALTER TABLE sessions_archive ADD COLUMN IF NOT EXISTS\n  total_elevation_m` corrige bug latente introduzido em\n  `20260322000000_p0_critical_fixes.sql` (coluna adicionada em\n  `sessions` mas não propagada para `sessions_archive` — o archive\n  teria explodido em prod no primeiro ciclo com dados elegíveis).\n\nCobertura de teste (`tools/test_l19_dba_health.ts`): chamada das\nduas funções idempotente, retorno int, e regression guard de\nschema drift entre `sessions` e `sessions_archive` (via\n`pg_table_columns()` helper).\n\nRunbook operacional: `docs/runbooks/DBA_BLOAT_AND_INDEX_RUNBOOK.md`.\n"
     },
     {
       "id": "L19-03",
@@ -8209,9 +8215,10 @@
       "lens": 19,
       "title": "Indexes redundantes em sessions",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-19T00:00:00.000Z",
       "tags": [
         "portal",
         "migration",
@@ -8219,20 +8226,25 @@
         "reliability"
       ],
       "files": [
-        "supabase/migrations/20260218000000_full_schema.sql"
+        "supabase/migrations/20260218000000_full_schema.sql",
+        "supabase/migrations/20260419110001_l19_drop_redundant_indexes.sql"
       ],
       "correction_type": "migration",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l19_dba_health.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        893093
+      ],
+      "owner": "platform-data-eng",
+      "runbook": "docs/runbooks/DBA_BLOAT_AND_INDEX_RUNBOOK.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Resolvido em 2026-04-19 via migration `20260419110001_l19_drop_redundant_indexes.sql`.\n\nA auditoria flagou `idx_sessions_user_start` (duplicata de\n`idx_sessions_user`). Ampliando a investigação com a query proposta\nno finding, encontramos 16 índices redundantes no schema `public`\n(14 tabelas). Categorizados em 6 grupos:\n\n- **(a) UNIQUE-constraint shadow** (4 índices): `asaas_customer_map`,\n  `coaching_device_links`, `coaching_workout_assignments`,\n  `training_plan_weeks`.\n- **(b) PK shadow** (2 índices): `coaching_announcement_reads`,\n  `strava_connections`.\n- **(c) UNIQUE single-column shadow** (3 índices): `running_dna`,\n  `session_journal_entries`, `token_intents`.\n- **(d) Sibling overlap com mesmas colunas** (4 índices):\n  `coaching_member_status`, `coaching_members`,\n  `challenge_participants`, `workout_delivery_items`.\n- **(e) `LIKE INCLUDING ALL` clone duplication** (1):\n  `coin_ledger_archive_issuer_group_id_idx1`.\n- **(f) Audit-flagged exato** (2): `idx_sessions_user_start`,\n  `idx_sessions_strava_dedup`.\n\nPara evitar regressão, a migration também cria\n`pg_indexes_redundant_pairs()` (helper SQL service-role-only) que\nretorna qualquer par de índices com mesma coluna+predicado após\nnormalizar nome+whitespace. O test\n`tools/test_l19_dba_health.ts` chama esse helper e falha CI se\nqualquer migration futura introduzir nova duplicata.\n\nCobertura de teste: 33 assertions (16 DROPPED + 16 KEPT + 1\nredundant-pair audit) — todas passam após `supabase migration up`.\n\nRunbook operacional: `docs/runbooks/DBA_BLOAT_AND_INDEX_RUNBOOK.md`.\n"
     },
     {
       "id": "L19-04",

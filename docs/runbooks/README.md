@@ -32,6 +32,11 @@
 |---|---|---|---|
 | [`CRON_HEALTH_RUNBOOK.md`](./CRON_HEALTH_RUNBOOK.md) | Cron ausente, `last_status='failed'` por > 1 ciclo, `skip_count` crescendo, ou herd 03:00 UTC voltou (L12-01 / L12-02 / L12-03) | P1 (reconcile) / P2 (lifecycle/matchmaking/releases) / P3 (archive/partition) | ack < 1 h, mitig < 4 h |
 
+### DBA / Storage (L19)
+| Runbook | Trigger | Severidade | Tempo alvo |
+|---|---|---|---|
+| [`DBA_BLOAT_AND_INDEX_RUNBOOK.md`](./DBA_BLOAT_AND_INDEX_RUNBOOK.md) | Bloat > 30% em `coin_ledger`/`sessions`, archive cron falhando, novo índice redundante introduzido (L19-02 / L19-03) | P3 base; P2 se latência financeira p95 > 500ms; P1 se disk > 80% | ack < 4 h, mitig < 24 h |
+
 ## Convenções
 
 - **Nome**: `<DOMÍNIO>_<NATUREZA>_RUNBOOK.md` (UPPERCASE para destaque vs.
