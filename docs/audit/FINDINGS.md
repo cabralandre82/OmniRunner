@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-19 02:36:10 UTC.
+> Atualizado em 2026-04-19 08:27:15 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -14,7 +14,7 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L01-03](./findings/L01-03-post-api-distribute-coins-distribuicao-de-coins-a.md) | 0 | L01 · CISO | POST /api/distribute-coins — Distribuição de coins a atleta | unassigned |
 | 🟠 high | ✅ fixed | [L01-04](./findings/L01-04-post-api-custody-create-deposit-confirm-sem-idempotency.md) | 1 | L01 · CISO | POST /api/custody (create deposit / confirm) — Sem idempotency-key | platform |
 | 🟡 medium | ⏳ fix-pending | [L01-05](./findings/L01-05-post-api-swap-criacao-aceite-cancelamento.md) | 2 | L01 · CISO | POST /api/swap — Criação/aceite/cancelamento | unassigned |
-| 🟠 high | ⏳ fix-pending | [L01-06](./findings/L01-06-get-api-swap-get-api-clearing-get-api.md) | 1 | L01 · CISO | GET /api/swap, GET /api/clearing, GET /api/custody — Autorização por cookie | unassigned |
+| 🟠 high | ✅ fixed | [L01-06](./findings/L01-06-get-api-swap-get-api-clearing-get-api.md) | 1 | L01 · CISO | GET /api/swap, GET /api/clearing, GET /api/custody — Autorização por cookie | portal-team |
 | 🟡 medium | ⏳ fix-pending | [L01-07](./findings/L01-07-get-api-health-information-disclosure.md) | 2 | L01 · CISO | GET /api/health — Information disclosure | unassigned |
 | 🟢 safe | ✅ fixed | [L01-08](./findings/L01-08-get-api-liveness-ok.md) | 3 | L01 · CISO | GET /api/liveness — OK | unassigned |
 | 🟠 high | ⏳ fix-pending | [L01-09](./findings/L01-09-post-api-checkout-gateway-proxy.md) | 1 | L01 · CISO | POST /api/checkout — Gateway proxy | unassigned |

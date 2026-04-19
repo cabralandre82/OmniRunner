@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-19T02:36:10.601Z",
+  "generated_at": "2026-04-19T08:27:15.975Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 269,
-    "fixed": 78,
+    "fix-pending": 268,
+    "fixed": 79,
     "in-progress": 1
   },
   "by_wave": {
@@ -255,9 +255,10 @@
       "lens": 1,
       "title": "GET /api/swap, GET /api/clearing, GET /api/custody — Autorização por cookie",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "security-headers",
@@ -265,20 +266,38 @@
         "reliability"
       ],
       "files": [
-        "portal/src/middleware.ts"
+        "portal/src/middleware.ts",
+        "portal/src/lib/route-policy.ts",
+        "portal/src/lib/actions.ts",
+        "portal/src/app/api/set-group/route.ts",
+        "portal/src/lib/api/csrf.ts",
+        "portal/src/lib/api/csrf-fetch.ts",
+        "portal/src/app/(portal)/fx/withdraw-button.tsx",
+        "portal/src/app/(portal)/athletes/distribute-button.tsx",
+        "portal/src/app/(portal)/custody/deposit-button.tsx",
+        "portal/src/app/(portal)/swap/swap-actions.tsx",
+        "portal/src/app/platform/feature-flags/feature-flag-row.tsx",
+        "portal/src/app/platform/fees/fee-row.tsx",
+        "portal/src/app/platform/reembolsos/actions.tsx"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/api/csrf.test.ts",
+        "portal/src/lib/api/csrf-fetch.test.ts",
+        "portal/src/lib/route-policy.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "commit:7fbc4ec"
+      ],
+      "owner": "portal-team",
+      "runbook": "docs/runbooks/CSRF_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Mitigated with two layers of defence so a single regression in either\nlayer does not re-open the CSRF surface:\n\n1. **`sameSite: \"strict\"` on session cookies.** `portalCookieOptions()`\n   in `lib/route-policy.ts` flips `portal_group_id` and `portal_role`\n   from `lax` → `strict`. Lax cookies were sent on top-level GET\n   navigation from any origin, which combined with the cookie-driven\n   `requireAdminMaster()` flow created a CSRF vector on the financial\n   GET endpoints called out by the finding. Strict eliminates that\n   path entirely. The two divergent inline cookie-opts blocks\n   (`api/set-group/route.ts` and `lib/actions.ts`) were refactored\n   to use `portalCookieOptions()` so the policy can never drift\n   again.\n\n2. **Double-submit CSRF token.** New `lib/api/csrf.ts` implements an\n   OWASP-Cheat-Sheet-2024 §3.2 stateless double-submit token:\n   - `portal_csrf` cookie (32 bytes hex, `sameSite: \"strict\"`,\n     `httpOnly: false` so client JS can mirror it as a header) is\n     issued by middleware on every authenticated response.\n   - `verifyCsrf` constant-time-compares the cookie against the\n     `x-csrf-token` request header on `(POST|PUT|PATCH|DELETE)` to\n     the financial allow-list (custody/withdraw/swap/clearing/\n     distribute-coins + platform custody/feature-flags/fees/\n     refunds). Mismatch returns 403 `CSRF_TOKEN_INVALID` *before*\n     auth (cheap pure check, no Postgres round-trip on attacker\n     traffic).\n   - Exempt: `/api/custody/webhook`, `/api/billing/asaas` (HMAC),\n     `/api/auth/callback` (OAuth `state`).\n\n3. **Browser wrapper `csrfFetch`** mirrors the cookie into the header\n   automatically. The 7 financial UI components were migrated to it,\n   and the withdraw button additionally generates a fresh\n   `x-idempotency-key` per submit (a latent L18-02 regression\n   uncovered during this fix).\n\n4. **`signOut`** now deletes `portal_csrf` so the next session gets\n   a fresh token rather than inheriting the previous user's value.\n\nOut of scope for L01-06 (tracked separately):\n- Removing `'unsafe-inline'` from CSP — Lente 20.x.\n- Promoting `/api/announcements`, `/api/team/*`, etc. to the CSRF\n  allow-list — not in the financial surface called out by this\n  finding; future hardening can extend `CSRF_PROTECTED_PREFIXES`.\n"
     },
     {
       "id": "L01-07",
