@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-18T23:51:22.632Z",
+  "generated_at": "2026-04-19T00:13:46.309Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 282,
-    "fixed": 65,
+    "fix-pending": 280,
+    "fixed": 67,
     "in-progress": 1
   },
   "by_wave": {
@@ -6731,7 +6731,7 @@
       "lens": 14,
       "title": "74 route handlers, 46 documentados em OpenAPI",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
@@ -6742,20 +6742,32 @@
         "reliability"
       ],
       "files": [
-        "portal/src/lib/openapi.ts"
+        "portal/src/lib/openapi/registry.ts",
+        "portal/src/lib/openapi/build.ts",
+        "portal/src/lib/openapi/routes/v1-financial.ts",
+        "portal/tools/openapi/build.ts",
+        "portal/tools/openapi/check-coverage.ts",
+        "portal/tools/openapi/refresh-baseline.ts",
+        "portal/tools/openapi/coverage-baseline.json",
+        "portal/public/openapi-v1.json",
+        "portal/src/app/api/docs/route.ts"
       ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/openapi/build.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "88ba7e0"
+      ],
+      "owner": "backend-platform",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Adotada estratégia contract-first com `@asteasolutions/zod-to-openapi`:\n- `lib/openapi/registry.ts` — registry compartilhado + schemas\n  centrais (`ApiErrorBody`, `ApiOkMarker`, `DecimalAmount`,\n  `IdempotencyKey`, `STD_ERROR_RESPONSES`, `STD_API_HEADERS`).\n- `lib/openapi/build.ts` — gera OpenAPI 3.1 determinístico a partir\n  dos Zod schemas (mesma entrada → JSON byte-idêntico, pré-requisito\n  do drift gate).\n- `lib/openapi/routes/v1-financial.ts` — registra os 5 endpoints v1\n  financeiros como exemplares contract-first (swap, custody,\n  custody/withdraw, distribute-coins, clearing).\n- `tools/openapi/build.ts` (npm run openapi:build) — regenera\n  `public/openapi-v1.json` a partir do registry.\n- `tools/openapi/check-coverage.ts` (npm run openapi:check) — DOIS\n  gates em um:\n    (a) DRIFT — falha se o arquivo committado ≠ output do registry;\n    (b) COVERAGE — falha se uma rota nova existe sem documentação e\n        fora do baseline grandfathered.\n- `tools/openapi/coverage-baseline.json` — snapshot dos 30 routes\n  atualmente sem documentação (mostly /api/training-plan/*),\n  grandfathered. A lista pode encolher; o gate impede que cresça.\n- `/api/docs` (Swagger UI) agora expõe ambos os specs via dropdown\n  (\"v1 (generated)\" default; \"v0 (legacy)\" alternate).\n\nEntregue: framework + drift gate + 5 exemplares v1 + baseline\ncongelado. A migração das 30 rotas grandfathered é decremento\ncontínuo PR-a-PR — o gate impede regressão.\n\nCommits:\n  - 88ba7e0 (feat OpenAPI registry + drift gate + v1 exemplars)\n"
     },
     {
       "id": "L14-02",
@@ -6763,7 +6775,7 @@
       "lens": 14,
       "title": "Sem versionamento de path (/api/v1)",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
@@ -6773,19 +6785,32 @@
         "migration",
         "reliability"
       ],
-      "files": [],
+      "files": [
+        "portal/src/lib/api/versioning.ts",
+        "portal/src/middleware.ts",
+        "portal/src/app/api/v1/swap/route.ts",
+        "portal/src/app/api/v1/custody/route.ts",
+        "portal/src/app/api/v1/custody/withdraw/route.ts",
+        "portal/src/app/api/v1/distribute-coins/route.ts",
+        "portal/src/app/api/v1/clearing/route.ts"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/api/versioning.test.ts",
+        "portal/src/app/api/v1/v1-aliases.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "cc6b3e1"
+      ],
+      "owner": "backend-platform",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Migração path-versioning concluída para os 5 endpoints financeiros\ndo escopo da auditoria:\n  - /api/v1/swap, /api/v1/custody, /api/v1/custody/withdraw,\n    /api/v1/distribute-coins, /api/v1/clearing.\nCada alias é um arquivo de 5-10 linhas que delega para o handler\nlegacy via `wrapV1Handler(legacy)` — handler legacy permanece como\nsource-of-truth do business logic; só transport headers diferem.\n\nHeaders emitidos pelo middleware (L14-02):\n  - todo `/api/*` recebe `X-Api-Version: 1`;\n  - rotas legacy financeiras adicionalmente recebem\n    `Deprecation: true`,\n    `Sunset: <DEFAULT_FINANCIAL_SUNSET>` (RFC 8594, atualmente\n    2027-01-01 UTC), e\n    `Link: </api/v1/...>; rel=\"successor-version\"` apontando para\n    o successor v1.\n\nCamada se compõe corretamente com:\n  - L13-06 (`x-request-id`) — preservado,\n  - L14-04/05/06 — handlers já usam envelope canônico, identity\n    rate-limit e cursor pagination; aliases v1 herdam por construção,\n  - L14-01 — paths v1 documentados como exemplares contract-first.\n\nOut-of-scope:\n  - /api/custody/webhook (contrato Stripe inbound — não consumer-facing),\n  - /api/custody/fx-quote (não listado no escopo da auditoria).\n  - Migração efetiva dos clientes (mobile + B2B) ao v1: o header\n    `Sunset` sinaliza intenção; flips são atividades de release\n    coordenadas fora deste PR.\n\nCommits:\n  - cc6b3e1 (feat /api/v1 path versioning + Sunset headers)\n"
     },
     {
       "id": "L14-03",

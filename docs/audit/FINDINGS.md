@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-18 23:51:22 UTC.
+> Atualizado em 2026-04-19 00:13:46 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -228,8 +228,8 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L13-07](./findings/L13-07-public-routes-contem-api-custody-webhook-sem-ip.md) | 1 | L13 · Middleware | PUBLIC_ROUTES contém /api/custody/webhook sem IP allow-list | platform |
 | 🟡 medium | ⏳ fix-pending | [L13-08](./findings/L13-08-public-prefixes-challenge-invite-podem-colidir-com-api.md) | 2 | L13 · Middleware | PUBLIC_PREFIXES /challenge/, /invite/ podem colidir com /api/challenge/ | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L13-09](./findings/L13-09-middleware-redirect-chain-em-single-membership-causa-duplo.md) | 2 | L13 · Middleware | Middleware redirect chain em single-membership causa duplo round-trip | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L14-01](./findings/L14-01-74-route-handlers-46-documentados-em-openapi.md) | 1 | L14 · Contracts | 74 route handlers, 46 documentados em OpenAPI | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L14-02](./findings/L14-02-sem-versionamento-de-path-api-v1.md) | 1 | L14 · Contracts | Sem versionamento de path (/api/v1) | unassigned |
+| 🔴 critical | ✅ fixed | [L14-01](./findings/L14-01-74-route-handlers-46-documentados-em-openapi.md) | 1 | L14 · Contracts | 74 route handlers, 46 documentados em OpenAPI | backend-platform |
+| 🔴 critical | ✅ fixed | [L14-02](./findings/L14-02-sem-versionamento-de-path-api-v1.md) | 1 | L14 · Contracts | Sem versionamento de path (/api/v1) | backend-platform |
 | 🔴 critical | ✅ fixed | [L14-03](./findings/L14-03-api-docs-carrega-swagger-ui-de-unpkg-sem.md) | 0 | L14 · Contracts | /api/docs carrega Swagger-UI de unpkg sem SRI | unassigned |
 | 🟠 high | ✅ fixed | [L14-04](./findings/L14-04-rate-limit-por-ip-em-swap-custody-vs.md) | 1 | L14 · Contracts | Rate-limit por IP em swap/custody vs por user/group | unassigned |
 | 🟠 high | ✅ fixed | [L14-05](./findings/L14-05-respostas-de-erro-nao-padronizadas-error-string-vs.md) | 1 | L14 · Contracts | Respostas de erro não padronizadas (error: string vs error: { code, message }) | unassigned |
