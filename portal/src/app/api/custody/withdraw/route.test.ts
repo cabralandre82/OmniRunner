@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { randomUUID } from "node:crypto";
 import { queryChain, makeMockClient } from "@/test/api-helpers";
 
 const authClient = makeMockClient();
@@ -58,13 +59,26 @@ vi.mock("@/lib/custody", () => ({
 
 const { POST, GET } = await import("./route");
 
-function req(body: unknown) {
+/**
+ * Default request helper. Sends a fresh `x-idempotency-key` (UUID v4)
+ * per call so each request gets a unique key, simulating real client
+ * behaviour. Pass `idempotencyKey: false` to opt out of the header
+ * (e.g. to test the "missing header" 400 path).
+ */
+function req(
+  body: unknown,
+  opts: { idempotencyKey?: string | false } = {},
+) {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "x-forwarded-for": "127.0.0.1",
+  };
+  if (opts.idempotencyKey !== false) {
+    headers["x-idempotency-key"] = opts.idempotencyKey ?? randomUUID();
+  }
   return new Request("http://localhost/api/custody/withdraw", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-forwarded-for": "127.0.0.1",
-    },
+    headers,
     body: JSON.stringify(body),
   }) as unknown as import("next/server").NextRequest;
 }
@@ -77,6 +91,34 @@ function mockAdmin() {
 
 function mockNonAdmin(role = "coach") {
   serviceClient.from.mockReturnValueOnce(queryChain({ data: { role } }));
+}
+
+/**
+ * L18-02 — `withIdempotency` calls fn_idem_begin BEFORE the handler.
+ * Tests that exercise the success / mutation path must enqueue a
+ * begin response (action=execute) and a finalize ack so the wrapper
+ * lifecycle completes cleanly.
+ */
+function mockIdemBeginExecute() {
+  serviceClient.rpc.mockReturnValueOnce(
+    queryChain({
+      data: [
+        {
+          action: "execute",
+          replay_status: null,
+          replay_body: null,
+          stale_recovered: false,
+        },
+      ],
+      error: null,
+    }),
+  );
+}
+
+function mockIdemFinalize() {
+  serviceClient.rpc.mockReturnValueOnce(
+    queryChain({ data: true, error: null }),
+  );
 }
 
 describe("POST /api/custody/withdraw — L01-02 server-side FX rate", () => {
@@ -124,6 +166,8 @@ describe("POST /api/custody/withdraw — L01-02 server-side FX rate", () => {
 
   it("usa rate server-side, nunca rate fornecido pelo cliente", async () => {
     mockAdmin();
+    mockIdemBeginExecute();
+    mockIdemFinalize();
     const res = await POST(
       req({ amount_usd: 100, target_currency: "BRL" }),
     );
@@ -183,9 +227,97 @@ describe("POST /api/custody/withdraw — L01-02 server-side FX rate", () => {
 
   it("aceita operação válida com target_currency default BRL", async () => {
     mockAdmin();
+    mockIdemBeginExecute();
+    mockIdemFinalize();
     const res = await POST(req({ amount_usd: 50 }));
     expect(res.status).toBe(200);
     expect(getAuthoritativeFxQuote).toHaveBeenCalledWith("BRL");
+  });
+
+  it("L18-02 — exige x-idempotency-key (400 IDEMPOTENCY_KEY_REQUIRED)", async () => {
+    mockAdmin();
+    const res = await POST(
+      req(
+        { amount_usd: 100, target_currency: "BRL" },
+        { idempotencyKey: false },
+      ),
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe("IDEMPOTENCY_KEY_REQUIRED");
+    expect(createWithdrawal).not.toHaveBeenCalled();
+    expect(executeWithdrawal).not.toHaveBeenCalled();
+    expect(auditLog).not.toHaveBeenCalled();
+  });
+
+  it("L18-02 — replay retorna response cacheada sem chamar createWithdrawal", async () => {
+    mockAdmin();
+    serviceClient.rpc.mockReturnValueOnce(
+      queryChain({
+        data: [
+          {
+            action: "replay",
+            replay_status: 200,
+            replay_body: {
+              withdrawal: {
+                id: "wd-replayed",
+                group_id: "group-1",
+                amount_usd: 100,
+                target_currency: "BRL",
+                fx_rate: 5.25,
+                net_local_amount: 521.6,
+                status: "executed",
+              },
+            },
+            stale_recovered: false,
+          },
+        ],
+        error: null,
+      }),
+    );
+
+    const res = await POST(
+      req(
+        { amount_usd: 100, target_currency: "BRL" },
+        { idempotencyKey: "replay-key-original" },
+      ),
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get("x-idempotent-replay")).toBe("true");
+    const body = await res.json();
+    expect(body.withdrawal.id).toBe("wd-replayed");
+    expect(createWithdrawal).not.toHaveBeenCalled();
+    expect(executeWithdrawal).not.toHaveBeenCalled();
+    expect(auditLog).not.toHaveBeenCalled();
+  });
+
+  it("L18-02 — mismatch retorna 409 quando key reutilizada com body diferente", async () => {
+    mockAdmin();
+    serviceClient.rpc.mockReturnValueOnce(
+      queryChain({
+        data: [
+          {
+            action: "mismatch",
+            replay_status: null,
+            replay_body: null,
+            stale_recovered: false,
+          },
+        ],
+        error: null,
+      }),
+    );
+
+    const res = await POST(
+      req(
+        { amount_usd: 999, target_currency: "BRL" },
+        { idempotencyKey: "reused-key" },
+      ),
+    );
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.error.code).toBe("IDEMPOTENCY_KEY_CONFLICT");
+    expect(createWithdrawal).not.toHaveBeenCalled();
+    expect(auditLog).not.toHaveBeenCalled();
   });
 
   it("rejeita target_currency inválido (zod enum) — 400", async () => {

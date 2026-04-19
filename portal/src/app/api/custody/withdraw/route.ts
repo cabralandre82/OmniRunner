@@ -30,6 +30,7 @@ import {
   apiServiceUnavailable,
 } from "@/lib/api/errors";
 import { rateLimitKey } from "@/lib/api/rate-limit-key";
+import { withIdempotency } from "@/lib/api/idempotency";
 import { z } from "zod";
 
 /**
@@ -180,41 +181,77 @@ export async function POST(req: NextRequest) {
 
   const spreadPct = await getFxSpreadRate();
 
-  try {
-    const withdrawal = await createWithdrawal({
-      groupId: auth.groupId,
-      amountUsd: parsed.data.amount_usd,
-      targetCurrency: parsed.data.target_currency,
-      fxRate: fxQuote.rate,
-      spreadPct,
-      providerFeeUsd: parsed.data.provider_fee_usd,
-    });
+  // L18-02 — wrap the mutation in the unified idempotency layer.
+  // Highest-risk money-out endpoint: a retried request that double-fires
+  // would create two withdrawals against the same authoritative intent.
+  // We require the header (`required: true`) so mobile / partner clients
+  // cannot opt out of the safety net. The hash includes the parsed
+  // body + groupId; same key + different body returns 409 from the
+  // wrapper before any mutation runs.
+  return withIdempotency({
+    request: req,
+    namespace: "custody.withdraw",
+    actorId: auth.user.id,
+    requestBody: { ...parsed.data, group_id: auth.groupId },
+    required: true,
+    handler: async () => {
+      try {
+        const withdrawal = await createWithdrawal({
+          groupId: auth.groupId,
+          amountUsd: parsed.data.amount_usd,
+          targetCurrency: parsed.data.target_currency,
+          fxRate: fxQuote.rate,
+          spreadPct,
+          providerFeeUsd: parsed.data.provider_fee_usd,
+        });
 
-    if (!withdrawal) {
-      return apiServiceUnavailable(req, "Custody feature not available");
-    }
+        if (!withdrawal) {
+          return {
+            status: 503,
+            body: {
+              ok: false,
+              error: {
+                code: "SERVICE_UNAVAILABLE",
+                message: "Custody feature not available",
+                request_id: req.headers.get("x-request-id"),
+              },
+            },
+          };
+        }
 
-    await executeWithdrawal(withdrawal.id);
+        await executeWithdrawal(withdrawal.id);
 
-    await auditLog({
-      actorId: auth.user.id,
-      groupId: auth.groupId,
-      action: "custody.withdrawal.executed",
-      targetId: withdrawal.id,
-      metadata: {
-        amount_usd: parsed.data.amount_usd,
-        target_currency: parsed.data.target_currency,
-        fx_rate: fxQuote.rate,
-        fx_source: fxQuote.source,
-        fx_age_seconds: fxQuote.ageSeconds,
-        spread_pct: spreadPct,
-        net_local: withdrawal.net_local_amount,
-      },
-    });
+        await auditLog({
+          actorId: auth.user.id,
+          groupId: auth.groupId,
+          action: "custody.withdrawal.executed",
+          targetId: withdrawal.id,
+          metadata: {
+            amount_usd: parsed.data.amount_usd,
+            target_currency: parsed.data.target_currency,
+            fx_rate: fxQuote.rate,
+            fx_source: fxQuote.source,
+            fx_age_seconds: fxQuote.ageSeconds,
+            spread_pct: spreadPct,
+            net_local: withdrawal.net_local_amount,
+          },
+        });
 
-    return NextResponse.json({ withdrawal });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Withdrawal failed";
-    return apiError(req, "WITHDRAWAL_FAILED", msg, 422);
-  }
+        return { status: 200, body: { withdrawal } };
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Withdrawal failed";
+        return {
+          status: 422,
+          body: {
+            ok: false,
+            error: {
+              code: "WITHDRAWAL_FAILED",
+              message: msg,
+              request_id: req.headers.get("x-request-id"),
+            },
+          },
+        };
+      }
+    },
+  });
 }

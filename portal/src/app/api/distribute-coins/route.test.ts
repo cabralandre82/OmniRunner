@@ -72,6 +72,36 @@ function mockEmitCoinsAtomic(
   );
 }
 
+/**
+ * L18-02 — when the caller sends `x-idempotency-key`, the
+ * `withIdempotency` wrapper calls fn_idem_begin BEFORE the
+ * handler. Tests must enqueue the begin response (action=execute)
+ * and the post-handler finalize ack so the mock RPC queue is
+ * consumed in the right order. For action=replay tests use
+ * `mockIdemBeginReplay` instead.
+ */
+function mockIdemBeginExecute() {
+  serviceClient.rpc.mockReturnValueOnce(
+    queryChain({
+      data: [
+        {
+          action: "execute",
+          replay_status: null,
+          replay_body: null,
+          stale_recovered: false,
+        },
+      ],
+      error: null,
+    }),
+  );
+}
+
+function mockIdemFinalize() {
+  serviceClient.rpc.mockReturnValueOnce(
+    queryChain({ data: true, error: null }),
+  );
+}
+
 describe("POST /api/distribute-coins (L02-01: atomic RPC)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -186,14 +216,19 @@ describe("POST /api/distribute-coins (L02-01: atomic RPC)", () => {
   it("returns 200 on successful distribution (first call, not idempotent)", async () => {
     mockAdminCheck();
     mockAthleteFound(true);
+    mockIdemBeginExecute();
     mockEmitCoinsAtomic({
       ledger_id: "ledger-uuid-1",
       new_balance: 150,
       was_idempotent: false,
     });
+    mockIdemFinalize();
 
     const res = await POST(
-      req({ athlete_user_id: ATHLETE_UUID, amount: 50 }, { "x-idempotency-key": "key-1" }),
+      req(
+        { athlete_user_id: ATHLETE_UUID, amount: 50 },
+        { "x-idempotency-key": "key-12345678" },
+      ),
     );
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -201,56 +236,60 @@ describe("POST /api/distribute-coins (L02-01: atomic RPC)", () => {
     expect(json.amount).toBe(50);
     expect(json.idempotent).toBe(false);
     expect(json.new_balance).toBe(150);
-    // audit log é emitido apenas na primeira execução
     expect(auditLog).toHaveBeenCalledTimes(1);
   });
 
   it("returns 200 and idempotent=true on replay with same ref_id", async () => {
     mockAdminCheck();
     mockAthleteFound(true);
+    mockIdemBeginExecute();
     mockEmitCoinsAtomic({
       ledger_id: "ledger-uuid-1",
       new_balance: 150,
       was_idempotent: true,
     });
+    mockIdemFinalize();
 
     const res = await POST(
-      req({ athlete_user_id: ATHLETE_UUID, amount: 50 }, { "x-idempotency-key": "key-1" }),
+      req(
+        { athlete_user_id: ATHLETE_UUID, amount: 50 },
+        { "x-idempotency-key": "key-12345678" },
+      ),
     );
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.ok).toBe(true);
     expect(json.idempotent).toBe(true);
     expect(json.new_balance).toBe(150);
-    // audit log NÃO emitido em retry idempotente (evita duplicação)
     expect(auditLog).not.toHaveBeenCalled();
   });
 
   it("calls emit_coins_atomic with correct parameters including ref_id", async () => {
     mockAdminCheck();
     mockAthleteFound(true);
+    mockIdemBeginExecute();
     mockEmitCoinsAtomic({
       ledger_id: "ledger-uuid-1",
       new_balance: 3,
       was_idempotent: false,
     });
+    mockIdemFinalize();
 
     await POST(
       req(
         { athlete_user_id: ATHLETE_UUID, amount: 3 },
-        { "x-idempotency-key": "idem-xyz" },
+        { "x-idempotency-key": "idem-xyz1" },
       ),
     );
 
-    expect(serviceClient.rpc).toHaveBeenCalledWith(
-      "emit_coins_atomic",
-      expect.objectContaining({
-        p_group_id: "group-1",
-        p_athlete_user_id: ATHLETE_UUID,
-        p_amount: 3,
-        p_ref_id: "idem-xyz",
-      }),
-    );
+    // L18-02 — RPC sequence: fn_idem_begin → emit_coins_atomic → fn_idem_finalize.
+    expect(serviceClient.rpc.mock.calls[1][0]).toBe("emit_coins_atomic");
+    expect(serviceClient.rpc.mock.calls[1][1]).toMatchObject({
+      p_group_id: "group-1",
+      p_athlete_user_id: ATHLETE_UUID,
+      p_amount: 3,
+      p_ref_id: "idem-xyz1",
+    });
   });
 
   it("generates a ref_id when client does not provide x-idempotency-key", async () => {
@@ -264,6 +303,8 @@ describe("POST /api/distribute-coins (L02-01: atomic RPC)", () => {
 
     await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 3 }));
 
+    // L18-02 — without x-idempotency-key the wrapper degrades gracefully:
+    // no fn_idem_begin/finalize calls; the RPC queue starts at emit_coins_atomic.
     const call = serviceClient.rpc.mock.calls[0];
     expect(call[0]).toBe("emit_coins_atomic");
     expect(call[1].p_ref_id).toMatch(/^portal_.*_\d+$/);
@@ -272,16 +313,91 @@ describe("POST /api/distribute-coins (L02-01: atomic RPC)", () => {
   it("does NOT call audit log on idempotent retry (prevents duplicate audit entries)", async () => {
     mockAdminCheck();
     mockAthleteFound(true);
+    mockIdemBeginExecute();
     mockEmitCoinsAtomic({
       ledger_id: "ledger-uuid-1",
       new_balance: 100,
       was_idempotent: true,
     });
+    mockIdemFinalize();
 
     await POST(
-      req({ athlete_user_id: ATHLETE_UUID, amount: 50 }, { "x-idempotency-key": "replay-key" }),
+      req(
+        { athlete_user_id: ATHLETE_UUID, amount: 50 },
+        { "x-idempotency-key": "replay-key-1" },
+      ),
     );
 
+    expect(auditLog).not.toHaveBeenCalled();
+  });
+
+  it("L18-02 — wrapper replays cached response without re-running emit_coins_atomic", async () => {
+    mockAdminCheck();
+    mockAthleteFound(true);
+    serviceClient.rpc.mockReturnValueOnce(
+      queryChain({
+        data: [
+          {
+            action: "replay",
+            replay_status: 200,
+            replay_body: {
+              ok: true,
+              athlete_user_id: ATHLETE_UUID,
+              amount: 50,
+              athlete_name: "João",
+              idempotent: true,
+              new_balance: 150,
+            },
+            stale_recovered: false,
+          },
+        ],
+        error: null,
+      }),
+    );
+
+    const res = await POST(
+      req(
+        { athlete_user_id: ATHLETE_UUID, amount: 50 },
+        { "x-idempotency-key": "replay-original" },
+      ),
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get("x-idempotent-replay")).toBe("true");
+    const json = await res.json();
+    expect(json.idempotent).toBe(true);
+    expect(json.new_balance).toBe(150);
+    // emit_coins_atomic NEVER called on replay path.
+    const calls = serviceClient.rpc.mock.calls.map((c: unknown[]) => c[0]);
+    expect(calls).toEqual(["fn_idem_begin"]);
+    expect(auditLog).not.toHaveBeenCalled();
+  });
+
+  it("L18-02 — wrapper returns 409 when same key is reused with different body", async () => {
+    mockAdminCheck();
+    mockAthleteFound(true);
+    serviceClient.rpc.mockReturnValueOnce(
+      queryChain({
+        data: [
+          {
+            action: "mismatch",
+            replay_status: null,
+            replay_body: null,
+            stale_recovered: false,
+          },
+        ],
+        error: null,
+      }),
+    );
+
+    const res = await POST(
+      req(
+        { athlete_user_id: ATHLETE_UUID, amount: 99 },
+        { "x-idempotency-key": "reused-key-1" },
+      ),
+    );
+    expect(res.status).toBe(409);
+    const json = await res.json();
+    expect(json.error.code).toBe("IDEMPOTENCY_KEY_CONFLICT");
     expect(auditLog).not.toHaveBeenCalled();
   });
 });

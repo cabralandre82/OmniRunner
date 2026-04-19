@@ -24,6 +24,7 @@ import {
   apiNoGroupSession,
 } from "@/lib/api/errors";
 import { rateLimitKey } from "@/lib/api/rate-limit-key";
+import { withIdempotency } from "@/lib/api/idempotency";
 
 // L02-01: todas as mutações (custódia + inventário + wallet + ledger) são
 // executadas por um único RPC SECURITY DEFINER em transação única. Qualquer
@@ -123,117 +124,135 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // L20-03 — wrap RPC in span so the DB call appears as a child of the
-    // request transaction in Sentry. Attributes follow OTel semantic conv:
-    // db.system + db.operation + omni.* domain identifiers.
-    const { data: rpcData, error: rpcErr } = await withSpan(
-      "rpc emit_coins_atomic",
-      "db.rpc",
-      async (setAttr) => {
-        const result = await db.rpc("emit_coins_atomic", {
-          p_group_id: groupId,
-          p_athlete_user_id: athlete_user_id,
-          p_amount: amount,
-          p_ref_id: refId,
-        });
-        if (result.data) {
-          const row = Array.isArray(result.data) ? result.data[0] : result.data;
-          setAttr("db.row_count", Array.isArray(result.data) ? result.data.length : 1);
-          setAttr("omni.was_idempotent", Boolean(row?.was_idempotent));
-        }
-        if (result.error) {
-          setAttr("db.error_code", result.error.code);
-        }
-        return result;
+    // L18-02 — defense-in-depth idempotency. The underlying RPC
+    // (emit_coins_atomic) already guarantees at-most-once mutation
+    // via UNIQUE INDEX on `coin_ledger.ref_id`. The wrapper layered
+    // here adds RESPONSE replay: a network blip on the response
+    // path is now safe because the second call with the same key
+    // returns the byte-identical first response (and skips re-running
+    // even the cheap auditLog/RPC roundtrips).
+    const actorId = user.id;
+    const athleteName = member.display_name;
+    const errorBody = (code: string, message: string) => ({
+      ok: false,
+      error: {
+        code,
+        message,
+        request_id: request.headers.get("x-request-id"),
       },
-      {
-        "db.system": "postgresql",
-        "db.operation": "rpc:emit_coins_atomic",
-        "omni.group_id": groupId,
-        "omni.athlete_user_id": athlete_user_id,
-        "omni.amount": amount,
-        "omni.ref_id": refId,
-      },
-    );
+    });
 
-    if (rpcErr) {
-      const msg = rpcErr.message ?? "";
-      // L19-05 — 55P03 lock_not_available: emit_coins_atomic tem
-      // SET lock_timeout = '2s' → se custódia/wallet/inventário do grupo
-      // está sob contenção, falha rápido em vez de segurar conexão. Cliente
-      // deve fazer backoff e retry.
-      if (rpcErr.code === "55P03" || msg.includes("lock_not_available")) {
-        return apiError(
-          request,
-          "LOCK_NOT_AVAILABLE",
-          "Recurso em uso, tente novamente em instantes.",
-          503,
-          { headers: { "Retry-After": "2" } },
-        );
-      }
-      // P0002 — CUSTODY_FAILED (lastro insuficiente ou falha no check de custódia)
-      if (msg.includes("CUSTODY_FAILED") || rpcErr.code === "P0002") {
-        return apiError(
-          request,
-          "CUSTODY_FAILED",
-          "Lastro insuficiente na custódia da assessoria. Deposite mais lastro antes de emitir coins.",
-          422,
-        );
-      }
-      // P0003 — INVENTORY_INSUFFICIENT (saldo de tokens da assessoria)
-      if (msg.includes("INVENTORY_INSUFFICIENT") || rpcErr.code === "P0003") {
-        return apiError(
-          request,
-          "INVENTORY_INSUFFICIENT",
-          "Saldo insuficiente de OmniCoins",
-          422,
-        );
-      }
-      // P0001 — INVALID_AMOUNT / MISSING_REF_ID (erro de contrato; não deveria ocorrer após validação acima)
-      if (msg.includes("INVALID_AMOUNT") || msg.includes("MISSING_REF_ID") || rpcErr.code === "P0001") {
-        return apiValidationFailed(request, "Parâmetros inválidos");
-      }
-      logger.error("emit_coins_atomic failed", rpcErr, {
+    return withIdempotency({
+      request,
+      namespace: "coins.distribute",
+      actorId,
+      requestBody: {
         athlete_user_id,
         amount,
-        groupId,
-        refId,
-      });
-      return apiInternalError(request, "Erro ao distribuir coins");
-    }
-
-    // rpcData é array com uma linha: { ledger_id, new_balance, was_idempotent }
-    const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
-    const wasIdempotent = Boolean(row?.was_idempotent);
-
-    if (!wasIdempotent) {
-      await auditLog({
-        actorId: user.id,
-        groupId,
-        action: "coins.distribute",
-        targetType: "athlete",
-        targetId: athlete_user_id,
-        metadata: { amount, athlete_name: member.display_name, ref_id: refId },
-      });
-    }
-
-    // L20-03 — echo trace_id to client so support/users can quote it when
-    // reporting incidents ("trace_id 1234 took 15s") and we can pivot
-    // straight to the Sentry trace tree.
-    const traceId = currentTraceId();
-    const responseHeaders: Record<string, string> = {};
-    if (traceId) responseHeaders["x-trace-id"] = traceId;
-    return NextResponse.json(
-      {
-        ok: true,
-        athlete_user_id,
-        amount,
-        athlete_name: member.display_name,
-        idempotent: wasIdempotent,
-        new_balance: row?.new_balance ?? null,
+        group_id: groupId,
+        ref_id: refId,
       },
-      { headers: responseHeaders },
-    );
+      handler: async () => {
+        const { data: rpcData, error: rpcErr } = await withSpan(
+          "rpc emit_coins_atomic",
+          "db.rpc",
+          async (setAttr) => {
+            const result = await db.rpc("emit_coins_atomic", {
+              p_group_id: groupId,
+              p_athlete_user_id: athlete_user_id,
+              p_amount: amount,
+              p_ref_id: refId,
+            });
+            if (result.data) {
+              const row = Array.isArray(result.data) ? result.data[0] : result.data;
+              setAttr("db.row_count", Array.isArray(result.data) ? result.data.length : 1);
+              setAttr("omni.was_idempotent", Boolean(row?.was_idempotent));
+            }
+            if (result.error) {
+              setAttr("db.error_code", result.error.code);
+            }
+            return result;
+          },
+          {
+            "db.system": "postgresql",
+            "db.operation": "rpc:emit_coins_atomic",
+            "omni.group_id": groupId,
+            "omni.athlete_user_id": athlete_user_id,
+            "omni.amount": amount,
+            "omni.ref_id": refId,
+          },
+        );
+
+        if (rpcErr) {
+          const msg = rpcErr.message ?? "";
+          if (rpcErr.code === "55P03" || msg.includes("lock_not_available")) {
+            return {
+              status: 503,
+              body: errorBody("LOCK_NOT_AVAILABLE", "Recurso em uso, tente novamente em instantes."),
+              headers: { "Retry-After": "2" },
+            };
+          }
+          if (msg.includes("CUSTODY_FAILED") || rpcErr.code === "P0002") {
+            return {
+              status: 422,
+              body: errorBody("CUSTODY_FAILED", "Lastro insuficiente na custódia da assessoria. Deposite mais lastro antes de emitir coins."),
+            };
+          }
+          if (msg.includes("INVENTORY_INSUFFICIENT") || rpcErr.code === "P0003") {
+            return {
+              status: 422,
+              body: errorBody("INVENTORY_INSUFFICIENT", "Saldo insuficiente de OmniCoins"),
+            };
+          }
+          if (msg.includes("INVALID_AMOUNT") || msg.includes("MISSING_REF_ID") || rpcErr.code === "P0001") {
+            return {
+              status: 400,
+              body: errorBody("VALIDATION_FAILED", "Parâmetros inválidos"),
+            };
+          }
+          logger.error("emit_coins_atomic failed", rpcErr, {
+            athlete_user_id,
+            amount,
+            groupId,
+            refId,
+          });
+          return {
+            status: 500,
+            body: errorBody("INTERNAL_ERROR", "Erro ao distribuir coins"),
+          };
+        }
+
+        const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+        const wasIdempotent = Boolean(row?.was_idempotent);
+
+        if (!wasIdempotent) {
+          await auditLog({
+            actorId,
+            groupId,
+            action: "coins.distribute",
+            targetType: "athlete",
+            targetId: athlete_user_id,
+            metadata: { amount, athlete_name: athleteName, ref_id: refId },
+          });
+        }
+
+        const traceId = currentTraceId();
+        const responseHeaders: Record<string, string> = {};
+        if (traceId) responseHeaders["x-trace-id"] = traceId;
+        return {
+          status: 200,
+          headers: responseHeaders,
+          body: {
+            ok: true,
+            athlete_user_id,
+            amount,
+            athlete_name: athleteName,
+            idempotent: wasIdempotent,
+            new_balance: row?.new_balance ?? null,
+          },
+        };
+      },
+    });
   } catch (error) {
     logger.error("Failed to distribute coins", error);
     return apiInternalError(request, "Erro interno");
