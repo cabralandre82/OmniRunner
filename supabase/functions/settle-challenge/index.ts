@@ -6,6 +6,7 @@ import { checkRateLimit } from "../_shared/rate_limit.ts";
 import { startTimer, logRequest, logError } from "../_shared/obs.ts";
 import { requireJson, requireFields, ValidationError } from "../_shared/validate.ts";
 import { classifyError } from "../_shared/errors.ts";
+import { creditWallets, type WalletCreditEntry } from "../_shared/wallet_credit.ts";
 
 /**
  * settle-challenge — Supabase Edge Function
@@ -413,15 +414,20 @@ serve(async (req: Request) => {
         // Skip ranking — go straight to write
         await db.from("challenge_results").upsert(results, { onConflict: "challenge_id,user_id" });
         if (ledgerEntries.length > 0) {
-          await adminDb.rpc("fn_increment_wallets_batch", {
-            p_entries: ledgerEntries.map((entry) => ({
-              user_id: entry.user_id,
-              delta: entry.delta_coins,
-              reason: entry.reason,
-              ref_id: entry.ref_id,
-              group_id: entry.issuer_group_id ?? null,
-            })),
-          });
+          // L18-08: canonical wallet-credit helper (same RPC, validated
+          // entries, structured log, typed result).
+          const refundEntries: WalletCreditEntry[] = ledgerEntries.map((entry) => ({
+            user_id: entry.user_id as string,
+            delta: entry.delta_coins as number,
+            reason: entry.reason as string,
+            ref_id: (entry.ref_id ?? null) as string | null,
+            issuer_group_id: (entry.issuer_group_id ?? null) as string | null,
+          }));
+          await creditWallets(
+            adminDb,
+            refundEntries,
+            { request_id: requestId, fn: FN, meta: { challenge_id: ch.id, phase: "cooperative_no_runners_refund" } },
+          );
         }
         await db.from("challenges").update({ status: "completed" }).eq("id", ch.id);
         settled++;
@@ -536,15 +542,23 @@ serve(async (req: Request) => {
     await db.from("challenge_results").upsert(results, { onConflict: "challenge_id,user_id" });
 
     if (ledgerEntries.length > 0) {
-      await adminDb.rpc("fn_increment_wallets_batch", {
-        p_entries: ledgerEntries.map((entry) => ({
-          user_id: entry.user_id,
-          delta: entry.delta_coins,
-          reason: entry.reason,
-          ref_id: entry.ref_id,
-          group_id: entry.issuer_group_id ?? null,
-        })),
-      });
+      // L18-08: canonical wallet-credit helper. The RPC sets the L18-01
+      // wallet-mutation guard once and pairs ledger insert + wallet
+      // update inside a single PG transaction, eliminating the
+      // double-write risk flagged in DISASTER_CONCURRENCY.md C1 (no
+      // separate `coin_ledger.insert()` here — the helper RPC owns it).
+      const settlementEntries: WalletCreditEntry[] = ledgerEntries.map((entry) => ({
+        user_id: entry.user_id as string,
+        delta: entry.delta_coins as number,
+        reason: entry.reason as string,
+        ref_id: (entry.ref_id ?? null) as string | null,
+        issuer_group_id: (entry.issuer_group_id ?? null) as string | null,
+      }));
+      await creditWallets(
+        adminDb,
+        settlementEntries,
+        { request_id: requestId, fn: FN, meta: { challenge_id: ch.id, phase: "settlement", entry_count: settlementEntries.length } },
+      );
     }
 
     await db.from("challenges").update({ status: "completed" }).eq("id", ch.id);

@@ -7,6 +7,7 @@ import { startTimer, logRequest, logError } from "../_shared/obs.ts";
 import { requireJson, requireFields, ValidationError } from "../_shared/validate.ts";
 import { classifyError } from "../_shared/errors.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { creditWallets } from "../_shared/wallet_credit.ts";
 
 /**
  * challenge-withdraw — Supabase Edge Function
@@ -156,24 +157,29 @@ serve(async (req: Request) => {
       return jsonErr(classified.httpStatus, classified.code, classified.message, requestId);
     }
 
-    // Refund entry fee if applicable
+    // Refund entry fee if applicable. Goes through the canonical
+    // wallet-credit helper (L18-08) which validates the entry shape,
+    // emits a structured log line, and forwards to fn_increment_
+    // wallets_batch (which sets the L18-01 wallet-mutation guard +
+    // pairs ledger insert in a single transaction).
     let refunded = 0;
     if (challenge.entry_fee_coins > 0 && participation.status === "accepted") {
       const svcUrl = Deno.env.get("SUPABASE_URL");
       const svcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SERVICE_ROLE_KEY");
       if (svcUrl && svcKey) {
         const adminDb = createClient(svcUrl, svcKey);
-        const { error: refundErr } = await adminDb.rpc("fn_increment_wallets_batch", {
-          p_entries: [{
+        const result = await creditWallets(
+          adminDb,
+          [{
             user_id: user.id,
             delta: challenge.entry_fee_coins,
             reason: "challenge_withdrawal_refund",
             ref_id: challenge_id,
-            group_id: null,
           }],
-        });
+          { request_id: requestId, fn: FN, meta: { challenge_id } },
+        );
 
-        if (refundErr) {
+        if (!result.ok) {
           errorCode = "REFUND_FAILED";
           httpStatus = 500;
           return jsonErr(500, "REFUND_FAILED",
