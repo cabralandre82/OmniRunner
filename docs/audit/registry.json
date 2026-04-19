@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-19T09:25:16.167Z",
+  "generated_at": "2026-04-19T09:42:42.807Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 265,
-    "fixed": 82,
+    "fix-pending": 264,
+    "fixed": 83,
     "in-progress": 1
   },
   "by_wave": {
@@ -2657,29 +2657,34 @@
       "lens": 3,
       "title": "Arredondamento IEEE 754 em TypeScript",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
-        "mobile",
         "portal"
       ],
       "files": [
-        "portal/src/lib/custody.ts"
+        "portal/src/lib/money.ts",
+        "portal/src/app/platform/produtos/actions.tsx"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/money.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "c851be0"
+      ],
+      "owner": "portal-team",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Resolved as the natural follow-up to L03-01 (which already shipped\nthe BigInt + half-to-even `money.ts` helpers — `roundToCents`,\n`calcPercentFee`, `addMoney`, `subtractMoney`, `multiplyMoney`,\n`calcSplit`). The remaining `Math.round(parseFloat(s) * 100)` path\nin `portal/src/app/platform/produtos/actions.tsx` (CreateForm +\nEditForm) was the last money-impacting site silently dropping\ncentavos via IEEE-754 — for inputs whose closest double lands just\nbelow the cent boundary (canonical: `parseFloat(\"1.235\") * 100 ===\n123.49999…`, `Math.round → 123` instead of 124).\n\n**Approach.** Avoid the floating-point intermediate entirely.\n`parseDecimalToCents(input: string)` lexes the typed string into\n`(integer, fractional)` strings, normalises BR (`1.234,56`) and US\n(`1,234.56`) thousands/decimal marks, validates against\n`/^-?\\d+(\\.\\d+)?$/`, then quantises over BigInt with banker's\nrounding (half-to-even) — bit-identical to Postgres\n`ROUND(x::numeric, 2)`. Result is exactly an integer cents value\nwithin `MAX_MONEY_CENTS` (or throws). UI failure mode: a malformed\npaste shows the existing \"Preço inválido\" toast instead of\nsilently storing 0 cents.\n\n**Scope decision.** The audit's original file list cited\n`portal/src/lib/custody.ts:223,224,240,241`, `clearing.ts:115` and\n`swap.ts:56`, but those call-sites were already cleaned by L03-01\nvia the BigInt helpers (verified by `rg \"Math\\.round\" portal/src/lib`).\nThe remaining `Math.round` usages elsewhere in the portal\n(engagement %, dashboard %, training plan progress, cron timing,\nedge-function `change_percent`, `total_km` displays) are not money\npaths — they round percentages or kilometers for display, where\nbanker's vs half-up rounding has no financial impact and\nintroducing the helper would be over-engineering. Those are\nintentionally left alone.\n\n**Tests.** 32 new vitest cases in `money.test.ts` covering\nintegers, one/two/3+ fractional digits, BR comma decimal, BR/US\nthousands separators, explicit + sign, negatives, leading zeros,\nbanker's rounding (1.005 → 100, 1.015 → 102, 1.025 → 102,\nsign-symmetric -1.005 → -100), digits-beyond-3 tail, malformed-\ninput rejection (empty, abc, 1.2.3, 1e5, \".5\", \"1.\", NaN,\nInfinity, currency symbols, sign-only), range enforcement\n(MAX_MONEY_CENTS ± 1), parity against an independent BigInt\nreference oracle on 1,000 fuzzed inputs, and round-trip via the\n`(cents/100).toFixed(2)` display path. A sweep test asserts that\nat least one half-cent input *actually diverges* from\n`Math.round(parseFloat(s) * 100)` on the test runtime — proves\nthe migration is not a no-op on this engine.\n\nPortal suite: 1180/0 (was 1138 pre-L03-17, +42 from money.test.ts\nadditions). Audit verify: 348/348.\n"
     },
     {
       "id": "L03-18",

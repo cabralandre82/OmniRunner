@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-19 09:25:16 UTC.
+> Atualizado em 2026-04-19 09:42:42 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -90,7 +90,7 @@ Total: **348** findings.
 | ⚪ na | ⏳ fix-pending | [L03-14](./findings/L03-14-cancelamento-apos-payment-confirmed.md) | 3 | L03 · CFO | Cancelamento após PAYMENT_CONFIRMED | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L03-15](./findings/L03-15-pedido-eternamente-pendente.md) | 2 | L03 · CFO | Pedido eternamente pendente | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L03-16](./findings/L03-16-consistencia-entrada-saida-de-fx.md) | 2 | L03 · CFO | Consistência entrada–saída de FX | unassigned |
-| 🟠 high | ⏳ fix-pending | [L03-17](./findings/L03-17-arredondamento-ieee-754-em-typescript.md) | 1 | L03 · CFO | Arredondamento IEEE 754 em TypeScript | unassigned |
+| 🟠 high | ✅ fixed | [L03-17](./findings/L03-17-arredondamento-ieee-754-em-typescript.md) | 1 | L03 · CFO | Arredondamento IEEE 754 em TypeScript | portal-team |
 | 🟢 safe | ✅ fixed | [L03-18](./findings/L03-18-coin-ledger-delta-coins-tipo-integer.md) | 3 | L03 · CFO | coin_ledger.delta_coins — Tipo integer | unassigned |
 | ⚪ na | ⏳ fix-pending | [L03-19](./findings/L03-19-nfs-e-fiscal-nao-observado.md) | 3 | L03 · CFO | NFS-e / fiscal — Não observado | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L03-20](./findings/L03-20-disputa-chargeback-stripe.md) | 1 | L03 · CFO | Disputa / chargeback Stripe | unassigned |
