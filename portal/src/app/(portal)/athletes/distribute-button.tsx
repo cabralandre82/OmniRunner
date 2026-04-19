@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { csrfFetch } from "@/lib/api/csrf-fetch";
 
 export function DistributeButton({
   athleteId,
@@ -31,7 +32,7 @@ export function DistributeButton({
     setResult(null);
 
     try {
-      const res = await fetch("/api/distribute-coins", {
+      const res = await csrfFetch("/api/distribute-coins", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ athlete_user_id: athleteId, amount: num }),

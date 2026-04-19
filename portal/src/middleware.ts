@@ -20,6 +20,11 @@ import {
   v1SuccessorFor,
   LEGACY_FINANCIAL_PATHS,
 } from "@/lib/api/versioning";
+import {
+  ensureCsrfCookie,
+  shouldEnforceCsrf,
+  verifyCsrf,
+} from "@/lib/api/csrf";
 
 /**
  * Portal middleware (L13-01..L13-07).
@@ -57,6 +62,17 @@ import {
  *     `Sunset: <DEFAULT_FINANCIAL_SUNSET>` and
  *     `Link: </api/v1/...>; rel="successor-version"` so callers
  *     know they have a fixed window to migrate to the v1 path.
+ *
+ * (L01-06) CSRF defence-in-depth on top of `sameSite: "strict"`:
+ *   - Every authenticated response that doesn't already carry a
+ *     `portal_csrf` cookie gets one minted via `ensureCsrfCookie`.
+ *   - `(POST|PUT|PATCH|DELETE)` requests on the financial mutation
+ *     surface (see `CSRF_PROTECTED_PREFIXES`) are gated on a valid
+ *     `x-csrf-token` header that matches the cookie. Mismatch returns
+ *     403 `CSRF_TOKEN_INVALID` *before* the route handler runs.
+ *   - Webhook + OAuth callback paths are explicitly exempt
+ *     (`CSRF_EXEMPT_PREFIXES`) — they're authenticated by HMAC /
+ *     OAuth `state`, not by browser cookies.
  */
 
 export async function middleware(request: NextRequest) {
@@ -99,6 +115,32 @@ export async function middleware(request: NextRequest) {
     }
     return res;
   };
+
+  // (L01-06) CSRF enforcement runs AFTER the IP allow-list (so
+  // webhook 403s aren't swallowed) but BEFORE auth — a CSRF check
+  // that comes only after auth would still pay the Postgres round-
+  // trip cost on attacker requests, which is wasteful at best and a
+  // DoS amplifier at worst. The check is pure-function (cookie vs
+  // header on the request) so doing it early is free.
+  if (shouldEnforceCsrf(request.method, pathname)) {
+    const verdict = verifyCsrf(request);
+    if (!verdict.ok) {
+      return tagResponse(
+        NextResponse.json(
+          {
+            ok: false,
+            error: {
+              code: "CSRF_TOKEN_INVALID",
+              message: verdict.message,
+              request_id: requestId,
+              details: { reason: verdict.code },
+            },
+          },
+          { status: 403 },
+        ),
+      );
+    }
+  }
 
   // (L13-07) Webhook IP allow-list runs BEFORE any auth so that
   // mis-configured callers cannot tickle session refresh logic.
@@ -146,6 +188,7 @@ export async function middleware(request: NextRequest) {
         return tagResponse(NextResponse.redirect(url));
       }
     }
+    ensureCsrfCookie(request, supabaseResponse);
     return tagResponse(supabaseResponse);
   }
 
@@ -165,6 +208,7 @@ export async function middleware(request: NextRequest) {
       url.searchParams.set("next", pathname);
       return tagResponse(NextResponse.redirect(url));
     }
+    ensureCsrfCookie(request, supabaseResponse);
     return tagResponse(supabaseResponse);
   }
 
@@ -290,6 +334,7 @@ export async function middleware(request: NextRequest) {
     );
   }
 
+  ensureCsrfCookie(request, supabaseResponse);
   return tagResponse(supabaseResponse);
 }
 

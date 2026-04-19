@@ -150,7 +150,7 @@ export const PORTAL_COOKIE_MAX_AGE_SEC = 60 * 60 * 8;
 export interface PortalCookieOptions {
   path: string;
   httpOnly: boolean;
-  sameSite: "lax";
+  sameSite: "strict";
   secure: boolean;
   maxAge: number;
 }
@@ -159,6 +159,19 @@ export interface PortalCookieOptions {
  * Build a cookie-options object for portal session cookies. Always sets
  * `secure: true` in production (L13-05); honours an `overrideSecure`
  * flag for local-dev parity (HTTPS via mkcert) and tests.
+ *
+ * `sameSite: "strict"` (L01-06): the previous `lax` value let an
+ * attacker who could inject a cross-site link (XSS in another origin
+ * the user trusts, or a Slack/email link from an attacker-controlled
+ * source) trigger top-level GET navigation that carried the
+ * `portal_group_id` cookie along — combined with the legacy CSP
+ * `'unsafe-inline'` (tracked in Lente 20) and the cookie-driven group
+ * resolution in `requireAdminMaster()`, this opened a CSRF surface on
+ * the financial GET endpoints (`/api/swap`, `/api/clearing`,
+ * `/api/custody`). Strict closes that vector entirely. The UX cost is
+ * one extra click on external deep-links into the portal: arriving
+ * without the cookie, the middleware bounces through `/select-group`
+ * to re-establish.
  *
  * `maxAge` defaults to PORTAL_COOKIE_MAX_AGE_SEC. Pass `0` to clear a
  * cookie (the result is suitable for `cookies.set(name, "", opts)`).
@@ -170,7 +183,7 @@ export function portalCookieOptions(opts?: {
   return {
     path: "/",
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "strict",
     secure:
       opts?.overrideSecure ?? process.env.NODE_ENV === "production",
     maxAge: opts?.maxAge ?? PORTAL_COOKIE_MAX_AGE_SEC,

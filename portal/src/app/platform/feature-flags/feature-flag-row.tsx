@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { csrfFetch } from "@/lib/api/csrf-fetch";
 
 interface Flag {
   id: string;
@@ -57,7 +58,7 @@ export function FeatureFlagRow({ flag }: { flag: Flag }) {
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/platform/feature-flags", {
+      const res = await csrfFetch("/api/platform/feature-flags", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

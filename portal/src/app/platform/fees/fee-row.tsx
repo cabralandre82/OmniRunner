@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { csrfFetch } from "@/lib/api/csrf-fetch";
 
 interface Fee {
   id: string;
@@ -45,7 +46,7 @@ export function FeeRow({
         payload.rate_pct = ratePct;
       }
 
-      const res = await fetch("/api/platform/fees", {
+      const res = await csrfFetch("/api/platform/fees", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

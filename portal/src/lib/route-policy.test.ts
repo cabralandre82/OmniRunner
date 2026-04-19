@@ -158,10 +158,13 @@ describe("portalCookieOptions (L13-05)", () => {
     }
   });
 
-  it("returns httpOnly + sameSite=lax + path=/ defaults", () => {
+  it("returns httpOnly + sameSite=strict + path=/ defaults (L01-06)", () => {
+    // L01-06: tightened from lax → strict to close the cross-origin
+    // top-level GET CSRF vector on /api/swap, /api/clearing,
+    // /api/custody. See portalCookieOptions JSDoc for context.
     const opts = portalCookieOptions();
     expect(opts.httpOnly).toBe(true);
-    expect(opts.sameSite).toBe("lax");
+    expect(opts.sameSite).toBe("strict");
     expect(opts.path).toBe("/");
   });
 

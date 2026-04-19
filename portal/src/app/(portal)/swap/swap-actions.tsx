@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { csrfFetch } from "@/lib/api/csrf-fetch";
 
 export function SwapActions({
   acceptOrderId,
@@ -18,7 +19,7 @@ export function SwapActions({
     setLoading(true);
 
     try {
-      const res = await fetch("/api/swap", {
+      const res = await csrfFetch("/api/swap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "accept", order_id: acceptOrderId }),
@@ -49,7 +50,7 @@ export function SwapActions({
     setMessage("");
 
     try {
-      const res = await fetch("/api/swap", {
+      const res = await csrfFetch("/api/swap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "create", amount_usd: val }),

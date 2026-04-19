@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-
-const COOKIE_OPTS = {
-  path: "/",
-  httpOnly: true,
-  sameSite: "lax" as const,
-  maxAge: 60 * 60 * 8,
-};
+import { portalCookieOptions } from "@/lib/route-policy";
 
 export async function GET(req: NextRequest) {
   const groupId = req.nextUrl.searchParams.get("groupId");
@@ -34,7 +28,8 @@ export async function GET(req: NextRequest) {
   }
 
   const res = NextResponse.redirect(new URL("/dashboard", req.url));
-  res.cookies.set("portal_group_id", groupId, COOKIE_OPTS);
-  res.cookies.set("portal_role", membership.role, COOKIE_OPTS);
+  const opts = portalCookieOptions();
+  res.cookies.set("portal_group_id", groupId, opts);
+  res.cookies.set("portal_role", membership.role, opts);
   return res;
 }

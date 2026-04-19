@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { csrfFetch } from "@/lib/api/csrf-fetch";
 
 /**
  * L01-02 — O formulário NÃO aceita mais fx_rate do usuário. O rate é buscado
@@ -78,9 +79,17 @@ export function WithdrawButton({ available }: { available: number }) {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/custody/withdraw", {
+      // L01-06 csrfFetch attaches x-csrf-token; L18-02 requires
+      // x-idempotency-key on /api/custody/withdraw — generate fresh
+      // per submission so accidental double-clicks share the key
+      // and replay the same response (the form state guarantees one
+      // submit per visible button click).
+      const res = await csrfFetch("/api/custody/withdraw", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-idempotency-key": crypto.randomUUID(),
+        },
         body: JSON.stringify({
           amount_usd: amountNum,
           target_currency: currency,

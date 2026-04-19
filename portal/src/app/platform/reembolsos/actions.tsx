@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { csrfFetch } from "@/lib/api/csrf-fetch";
 
 export function RefundActions({
   refundId,
@@ -37,7 +38,7 @@ export function RefundActions({
 
     setLoading(true);
     try {
-      const res = await fetch("/api/platform/refunds", {
+      const res = await csrfFetch("/api/platform/refunds", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, refund_id: refundId, notes }),

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { csrfFetch } from "@/lib/api/csrf-fetch";
 
 export function DepositButton() {
   const [open, setOpen] = useState(false);
@@ -20,7 +21,7 @@ export function DepositButton() {
     setMessage("");
 
     try {
-      const res = await fetch("/api/custody", {
+      const res = await csrfFetch("/api/custody", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount_usd: val, gateway }),
