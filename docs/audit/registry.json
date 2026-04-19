@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-19T11:04:51.897Z",
+  "generated_at": "2026-04-19T11:16:48.263Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 88,
-    "fix-pending": 259,
+    "fixed": 89,
+    "fix-pending": 258,
     "in-progress": 1
   },
   "by_wave": {
@@ -372,32 +372,39 @@
       "lens": 1,
       "title": "POST /api/checkout — Gateway proxy",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "rate-limit",
-        "mobile",
         "portal",
         "edge-function",
-        "migration"
+        "idempotency",
+        "fail-fast"
       ],
       "files": [
-        "portal/src/app/api/checkout/route.ts"
+        "portal/src/app/api/checkout/route.ts",
+        "portal/src/lib/schemas.ts"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/app/api/checkout/route.test.ts",
+        "portal/src/lib/schemas.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "644ed89"
+      ],
+      "owner": "backend-platform",
+      "runbook": "docs/runbooks/GATEWAY_OUTAGE_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Hardening do proxy `POST /api/checkout` em sete camadas — todas\ndefensivas (Edge Functions `create-checkout-{session,mercadopago}`\njá validam tudo internamente e ficaram intocadas).\n\n## Context: o que estava errado\n\nO portal aceitava qualquer `product_id` `min(1)` string (incluindo\n`\"prod-1\"`, `\"../../etc/passwd\"`, ou UUIDs aleatórios) e encaminhava\nblindly à Edge Function. Mesmo com rate limit de 5/60s por usuário,\nisso permitia: (a) probe de IDs/format válidos sem custo na vítima\nporque o erro só aparece após cross-region invocation; (b) abuso\neconômico — cada call à Edge Function consome quota Supabase + uma\ncall eventual à Stripe/MP API; (c) sem idempotency, double-click no\nbotão \"Comprar\" cria 2 `billing_purchases` rows + 2 sessões Stripe\npendentes (UX ruim, contabilidade poluída); (d) o atacante não-admin\nconsegue forçar Edge calls (Edge rejeita com 403, mas só após o\ninvocation cost).\n\n## 1. Schema `.strict()` + UUID\n- `checkoutSchema` agora exige `product_id.uuid()` (era `min(1)`),\n  `gateway` whitelist (`mercadopago | stripe`), e `.strict()` rejeita\n  campos extras. 5 novos casos em `schemas.test.ts`.\n\n## 2. Body cap (4 KiB)\n- Schema é só duas strings curtas, 4 KiB dá 100x headroom. Reject\n  via 413 PAYLOAD_TOO_LARGE em DUAS gates: `content-length` declarado\n  e `Buffer.byteLength` real (atacante mente no header).\n\n## 3. Pre-validate produto (fail-fast)\n- Service-role query: `select id, is_active, currency, price_cents\n  from billing_products where id = ?`.\n  - missing → **404 NOT_FOUND**\n  - `is_active=false` → **410 GONE** (semantic > 400 — produto\n    *existiu*, sumiu agora; ajuda CDN cache decisions e UX).\n  - DB error → 500 INTERNAL_ERROR + métrica\n    `checkout.proxy.blocked{reason=product_lookup_error}`.\n- Resultado: zero Edge invocations gastas em produto inválido.\n\n## 4. Pre-validate role (fail-fast)\n- Service-role query: `select role from coaching_members where\n  group_id = cookie AND user_id = caller`. Não-`admin_master` →\n  **403 FORBIDDEN** + métrica\n  `checkout.proxy.blocked{reason=not_admin_master}`.\n- Edge Function continua fazendo a mesma validação (defense-in-depth,\n  NÃO foi substituída — só adiantada para o portal).\n\n## 5. Idempotency (`withIdempotency` wrapper, L18-02)\n- Toda dispatch agora roda dentro de `withIdempotency` com\n  namespace `checkout.proxy`, `actorId = user.id`, e\n  `requestBody = { product_id, group_id, gateway }` canonicalizado.\n- Cliente envia `x-idempotency-key` (UUID v4 ou opaque\n  `[A-Za-z0-9_-]{8,128}`); replay → cache hit retorna a mesma\n  `checkout_url` + `purchase_id`. Sem duplicação de\n  `billing_purchases`.\n- Header NÃO é obrigatório (back-compat com clientes legacy); rate\n  limit 5/60s é o piso de proteção quando `x-idempotency-key`\n  ausente.\n\n## 6. Envelope canônico\n- `apiError`/`apiOk` com `request_id` propagado (L13-06/L14-05).\n  Resposta de sucesso: `{ ok: true, data: { checkout_url,\n  purchase_id, gateway } }`.\n- Resposta de erro: `{ ok: false, error: { code, message,\n  request_id, details? } }`.\n- Edge responses (`{ ok: false, error: { code, message } }` E\n  legacy `{ message }`) são dobradas para o envelope canônico — o\n  cliente não precisa mais switchar shape.\n\n## 7. Edge call hardening\n- **AbortController + 15s timeout** — antes era unbounded fetch (Edge\n  travado = request portal travado). Timeout → **504 GATEWAY_TIMEOUT**\n  + métrica `checkout.proxy.gateway_error{reason=timeout}`.\n- **Network error** → **504 GATEWAY_UNREACHABLE** +\n  `gateway_error{reason=network}`.\n- **Non-JSON response** (Edge crashado ou WAF intercepting) → **502\n  GATEWAY_BAD_RESPONSE** com excerpt dos primeiros 200 chars do body\n  para triagem.\n- **Edge 4xx error envelope** → status preservado, `code`\n  preservado, `message` preservada — cliente final vê erro idêntico\n  ao que a Edge Function emitiu.\n- **`x-request-id` propagado** ao Edge para tracing end-to-end.\n\n## 8. Métricas observáveis (gateway dimension em todas)\n- `checkout.proxy.validated{gateway}` — passou pré-validações,\n  chegou no idempotency wrapper.\n- `checkout.proxy.blocked{reason}` — rejeitado pré-Edge.\n  Reasons: `rate_limit | no_group | body_too_large | invalid_json\n  | schema | membership_error | not_admin_master |\n  product_lookup_error | product_not_found | product_inactive`.\n- `checkout.proxy.gateway_called{gateway}` — Edge respondeu 2xx.\n- `checkout.proxy.gateway_error{gateway, reason}` — Edge falhou.\n  Reasons: `timeout | network | non_json | <edge_code> | http_<status>`.\n\n## 9. Tests\n- **`schemas.test.ts`** (+5 = 23 total no describe checkout):\n  UUID, gateway override, rejeição de UUID inválido,\n  `.strict()`, gateway desconhecido.\n- **`route.test.ts`** (+17 = 23 total): auth 401, rate-limit 429\n  com Retry-After, schema 400 missing/non-UUID/extra-fields/JSON\n  inválido/body grande, cookie missing 400, role 403/no-membership\n  403/membership-error 500, product 404/410/lookup-error 500,\n  happy paths Stripe e MP, x-request-id propagation, withIdempotency\n  invocation contract, Edge timeout 504, Edge network 504, Edge\n  non-JSON 502, Edge 4xx propagation, Edge legacy `{message}`\n  fallback.\n\n## 10. Resultado\nSuite portal **1295/0 (4 todos)**, lint clean. Sem mudança em Edge\nFunctions, sem migração SQL. Risco residual: rate limit ainda no\nin-process LRU (L13-03 cobriu sharding p/ portal multi-instance);\nupgrade para Redis token bucket é trabalho de Onda 2.\n"
     },
     {
       "id": "L01-10",

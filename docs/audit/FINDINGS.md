@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-19 11:04:51 UTC.
+> Atualizado em 2026-04-19 11:16:48 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -17,7 +17,7 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L01-06](./findings/L01-06-get-api-swap-get-api-clearing-get-api.md) | 1 | L01 · CISO | GET /api/swap, GET /api/clearing, GET /api/custody — Autorização por cookie | portal-team |
 | 🟡 medium | ⏳ fix-pending | [L01-07](./findings/L01-07-get-api-health-information-disclosure.md) | 2 | L01 · CISO | GET /api/health — Information disclosure | unassigned |
 | 🟢 safe | ✅ fixed | [L01-08](./findings/L01-08-get-api-liveness-ok.md) | 3 | L01 · CISO | GET /api/liveness — OK | unassigned |
-| 🟠 high | ⏳ fix-pending | [L01-09](./findings/L01-09-post-api-checkout-gateway-proxy.md) | 1 | L01 · CISO | POST /api/checkout — Gateway proxy | unassigned |
+| 🟠 high | ✅ fixed | [L01-09](./findings/L01-09-post-api-checkout-gateway-proxy.md) | 1 | L01 · CISO | POST /api/checkout — Gateway proxy | backend-platform |
 | 🟡 medium | ⏳ fix-pending | [L01-10](./findings/L01-10-get-api-auth-callback-open-redirect-candidato.md) | 2 | L01 · CISO | GET /api/auth/callback — Open redirect candidato | unassigned |
 | ⚪ na | ⏳ fix-pending | [L01-11](./findings/L01-11-post-api-workouts-assign-api-workouts-templates-autorizacao.md) | 3 | L01 · CISO | POST /api/workouts/assign, /api/workouts/templates — Autorização cross-athlete | unassigned |
 | 🟢 safe | ✅ fixed | [L01-12](./findings/L01-12-post-api-verification-evaluate-ownership.md) | 3 | L01 · CISO | POST /api/verification/evaluate — Ownership | unassigned |

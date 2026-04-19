@@ -6,7 +6,8 @@
 > seguro).
 > **Tempo alvo**: ack < 10min, mitigação < 15min.
 > **Linked findings**: L06-01, L06-05 (edge functions sem retry), L06-06
-> (kill switches), **L01-01 (custody webhook receiver hardening)**.
+> (kill switches), **L01-01 (custody webhook receiver hardening)**,
+> **L01-09 (`POST /api/checkout` proxy hardening)**.
 > **Última revisão**: 2026-04-17
 
 ---
@@ -313,3 +314,67 @@ o commit do receiver — **NÃO** desativar dedup ou tolerance em produção.
 A migration `20260419170000_l01_custody_webhook_dedup.sql` é seguro
 manter mesmo após revert do código (a tabela vira write-only do código
 antigo; sem prejuízo).
+
+## 9. Checkout proxy — `/api/checkout` (L01-09)
+
+> Quick reference para o caminho `Portal → Edge `create-checkout-*` →
+> Stripe/MP`. Edge Functions ficaram intocadas; toda a defesa nova está
+> na route handler.
+
+### 9.1 Camadas de defesa (em ordem, fail-fast)
+
+| # | Gate                       | Resposta na falha          | Métrica                                            |
+|---|----------------------------|----------------------------|----------------------------------------------------|
+| 1 | Auth                       | 401 UNAUTHORIZED           | —                                                  |
+| 2 | Rate limit (5/60s/user)    | 429 + `Retry-After: 60`    | `checkout.proxy.blocked{reason=rate_limit}`        |
+| 3 | Group cookie               | 400 BAD_REQUEST            | `…{reason=no_group}`                               |
+| 4 | Body cap 4 KiB             | 413 PAYLOAD_TOO_LARGE      | `…{reason=body_too_large}`                         |
+| 5 | JSON parse                 | 400 VALIDATION_FAILED      | `…{reason=invalid_json}`                           |
+| 6 | Schema (UUID, .strict)     | 400 VALIDATION_FAILED      | `…{reason=schema}`                                 |
+| 7 | Role = admin_master        | 403 FORBIDDEN              | `…{reason=not_admin_master\|membership_error}`     |
+| 8 | Produto exists + active    | 404 NOT_FOUND \| 410 GONE  | `…{reason=product_not_found\|product_inactive\|product_lookup_error}` |
+| 9 | Idempotency (L18-02)       | 400 IDEMPOTENCY_KEY_INVALID \| 409 CONFLICT | (replay → `x-idempotent-replay: true`) |
+| 10| Edge dispatch (15s timeout)| 504 GATEWAY_TIMEOUT        | `checkout.proxy.gateway_error{reason=timeout}`     |
+| 11| Edge response shape        | 502 GATEWAY_BAD_RESPONSE   | `…{reason=non_json}`                               |
+| 12| Edge 4xx envelope          | propagated (status + code) | `…{reason=<edge_code>\|http_<status>}`             |
+
+Sucesso: **200 OK** com `{ ok: true, data: { checkout_url, purchase_id,
+gateway } }` + métrica `checkout.proxy.gateway_called{gateway}`.
+
+### 9.2 Symptom → fix matrix
+
+| Sintoma                                                | Diagnóstico                                                    | Mitigação |
+|--------------------------------------------------------|----------------------------------------------------------------|-----------|
+| Spike de 410 GONE                                      | admin_master está clicando produto recém-desativado            | UI deveria desabilitar produto inactive — abrir bug |
+| Spike de 504 GATEWAY_TIMEOUT (gateway=stripe)          | Stripe API lenta OU Edge function travada                      | Confirmar via §2.1 + Stripe status; se Edge travada, redeploy |
+| Spike de 502 GATEWAY_BAD_RESPONSE                      | Edge crashado / WAF intercepting                               | Ver `excerpt` no log estruturado; conferir Edge logs |
+| Spike de `checkout.proxy.blocked{reason=schema}`       | Cliente desatualizado mandando product_id legacy (não-UUID)    | Verificar versão de Portal/mobile; coordenar release |
+| Spike de `checkout.proxy.blocked{reason=not_admin_master}` | Tentativa de abuse OU bug em UI mostrando botão para não-admin | Auditar `coaching_members` por user_id; revisar UI gating |
+| `checkout.proxy.gateway_called` baixo + `validated` alto | Idempotency replays — usuários clicando demais                | Sem ação; é o comportamento desejado, fechar incident |
+
+### 9.3 Idempotency cheatsheet
+
+Cliente DEVE enviar `x-idempotency-key: <UUID v4 ou opaque
+[A-Za-z0-9_-]{8,128}>` no `POST /api/checkout`. O wrapper armazena a
+resposta por **24h** (TTL default do `withIdempotency`). Replays no
+window:
+
+```bash
+curl -X POST https://portal.omnirunner.app/api/checkout \
+  -H "Content-Type: application/json" \
+  -H "x-idempotency-key: $(uuidgen)" \
+  -H "Cookie: …" \
+  -d '{"product_id":"<uuid>","gateway":"stripe"}'
+# → 200 OK com checkout_url
+# Repetir EXATAMENTE o mesmo body + mesma key → mesma checkout_url,
+#   header `x-idempotent-replay: true`
+# Repetir mesma key com body diferente → 409 IDEMPOTENCY_KEY_CONFLICT
+```
+
+### 9.4 Rollback (last resort)
+
+Reverter o commit `644ed89` é seguro a qualquer momento — não há
+migration nova nem mudança em Edge Functions. Após revert, o portal
+volta ao comportamento legacy (sem pre-validação, sem idempotency
+proxy-side, sem timeout de 15s). Edge Functions continuam validando,
+então não há risco financeiro — só volta o desperdício de invocations.
