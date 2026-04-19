@@ -136,6 +136,7 @@ import 'package:omni_runner/features/integrations_export/data/export_service_imp
 import 'package:omni_runner/features/integrations_export/presentation/export_sheet_controller.dart';
 import 'package:omni_runner/features/strava/data/strava_auth_repository_impl.dart';
 import 'package:omni_runner/features/strava/data/strava_http_client.dart';
+import 'package:omni_runner/features/strava/data/strava_oauth_state.dart';
 import 'package:omni_runner/features/strava/data/strava_secure_store.dart';
 import 'package:omni_runner/features/strava/data/strava_upload_repository_impl.dart';
 import 'package:omni_runner/features/strava/domain/i_strava_auth_repository.dart';
@@ -412,10 +413,12 @@ Future<void> registerDataModule(GetIt sl) async {
 
   sl.registerLazySingleton<StravaSecureStore>(() => const StravaSecureStore());
   sl.registerLazySingleton<StravaHttpClient>(StravaHttpClient.new);
+  sl.registerLazySingleton<StravaOAuthStateGuard>(StravaOAuthStateGuard.new);
   sl.registerLazySingleton<IStravaAuthRepository>(
     () => StravaAuthRepositoryImpl(
       store: sl<StravaSecureStore>(),
       httpClient: sl<StravaHttpClient>(),
+      stateGuard: sl<StravaOAuthStateGuard>(),
       clientId: stravaClientId,
       clientSecret: stravaClientSecret,
     ),

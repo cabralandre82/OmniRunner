@@ -129,6 +129,7 @@ final class _FakeHttpClient implements StravaHttpClient {
     required String clientId,
     String redirectUri = 'omnirunner://strava/callback',
     String scope = 'activity:write',
+    String? state,
   }) =>
       Uri.parse('https://strava.com/test');
 

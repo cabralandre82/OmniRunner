@@ -52,6 +52,7 @@ class StravaHttpClient {
     required String clientId,
     String redirectUri = defaultRedirectUri,
     String scope = 'activity:read_all,activity:write',
+    String? state,
   }) {
     return Uri.parse('$_oauthBase/mobile/authorize').replace(
       queryParameters: {
@@ -60,6 +61,7 @@ class StravaHttpClient {
         'response_type': 'code',
         'approval_prompt': 'auto',
         'scope': scope,
+        if (state != null && state.isNotEmpty) 'state': state,
       },
     );
   }

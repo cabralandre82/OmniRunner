@@ -36,7 +36,22 @@ class ReferralAction extends DeepLinkAction {
   const ReferralAction(this.referrerId);
 }
 
-/// Strava OAuth callback: `omnirunner://strava/callback?code=XXX`
+/// **Deprecated** Strava OAuth callback action.
+///
+/// Production OAuth runs through `flutter_web_auth_2` with the dedicated
+/// `omnirunnerauth://localhost/exchange_token` callback scheme handled
+/// inside `StravaAuthRepositoryImpl.authenticate`. The deep-link parser
+/// no longer emits this action — see L01-29 fix.
+///
+/// Kept in the type hierarchy so any external listener (e.g. the
+/// observability log in `auth_gate._onDeepLink`) keeps compiling, but
+/// a forged `omnirunner://strava/callback?code=XXX` link from outside
+/// the app is now classified as [UnknownLinkAction] and ignored.
+@Deprecated(
+  'Strava OAuth no longer flows through this deep-link path. '
+  'Production uses flutter_web_auth_2 with state CSRF validation. '
+  'See docs/audit/findings/L01-29-...md.',
+)
 class StravaCallbackAction extends DeepLinkAction {
   final String code;
   const StravaCallbackAction(this.code);
@@ -131,21 +146,17 @@ class DeepLinkHandler {
       return AuthCallbackAction(uri);
     }
 
-    // Strava OAuth callback:
-    //   current: omnirunner://localhost/exchange_token?code=XXX
-    //   legacy:  omnirunner://strava/callback?code=XXX
-    if (uri.scheme == 'omnirunner') {
-      final isExchangeToken =
-          uri.host == 'localhost' && uri.path.contains('exchange_token');
-      final isLegacy =
-          uri.host == 'strava' && uri.path.contains('callback');
-      if (isExchangeToken || isLegacy) {
-        final code = uri.queryParameters['code'];
-        if (code != null && code.isNotEmpty) {
-          return StravaCallbackAction(code);
-        }
-      }
-    }
+    // L01-29: the legacy Strava OAuth callback paths
+    //   omnirunner://localhost/exchange_token?code=XXX
+    //   omnirunner://strava/callback?code=XXX
+    // are intentionally NOT parsed here. Production OAuth runs through
+    // `flutter_web_auth_2` on a dedicated `omnirunnerauth://` scheme
+    // and validates an OAuth 2.0 §10.12 `state` parameter inside
+    // `StravaAuthRepositoryImpl`. Any `omnirunner://` link pretending
+    // to be a Strava callback is therefore an unsolicited inbound
+    // deep link with an attacker-controlled `code` — we treat it as
+    // unknown so no consumer can mistakenly act on it. See
+    // `docs/audit/findings/L01-29-...md` for the threat model.
 
     return UnknownLinkAction(uri);
   }

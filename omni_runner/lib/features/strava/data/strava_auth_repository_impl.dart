@@ -3,6 +3,7 @@ import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:omni_runner/core/errors/strava_failures.dart';
 import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/features/strava/data/strava_http_client.dart';
+import 'package:omni_runner/features/strava/data/strava_oauth_state.dart';
 import 'package:omni_runner/features/strava/data/strava_secure_store.dart';
 import 'package:omni_runner/features/strava/domain/i_strava_auth_repository.dart';
 import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
@@ -16,9 +17,29 @@ import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
 /// - Deauthorization (disconnect)
 ///
 /// Client ID and Secret are injected — never hardcoded.
+/// Signature for the OS-mediated browser auth call. Default
+/// implementation goes through `FlutterWebAuth2.authenticate`; tests
+/// inject a fake to drive the success / cancel / error branches
+/// without binding to a real platform channel.
+typedef WebAuthLauncher = Future<String> Function({
+  required String url,
+  required String callbackUrlScheme,
+});
+
+Future<String> _defaultWebAuthLauncher({
+  required String url,
+  required String callbackUrlScheme,
+}) =>
+    FlutterWebAuth2.authenticate(
+      url: url,
+      callbackUrlScheme: callbackUrlScheme,
+    );
+
 final class StravaAuthRepositoryImpl implements IStravaAuthRepository {
   final StravaSecureStore _store;
   final StravaHttpClient _httpClient;
+  final StravaOAuthStateGuard _stateGuard;
+  final WebAuthLauncher _webAuth;
   final String _clientId;
   final String _clientSecret;
 
@@ -32,8 +53,12 @@ final class StravaAuthRepositoryImpl implements IStravaAuthRepository {
     required StravaHttpClient httpClient,
     required String clientId,
     required String clientSecret,
+    StravaOAuthStateGuard? stateGuard,
+    WebAuthLauncher? webAuth,
   })  : _store = store,
         _httpClient = httpClient,
+        _stateGuard = stateGuard ?? StravaOAuthStateGuard(),
+        _webAuth = webAuth ?? _defaultWebAuthLauncher,
         _clientId = clientId,
         _clientSecret = clientSecret;
 
@@ -83,16 +108,36 @@ final class StravaAuthRepositoryImpl implements IStravaAuthRepository {
     _cachedState = const StravaConnecting();
     AppLogger.info('OAuth flow started', tag: _tag);
 
-    final url = _httpClient.buildAuthorizationUrl(clientId: _clientId);
+    // L01-29: mint a CSPRNG `state` and embed it in the auth URL.
+    // The callback handler below MUST validate the returned `state`
+    // against the persisted value before accepting the `code`. Any
+    // mismatch indicates a forged callback (login CSRF) and aborts
+    // the flow without a token exchange.
+    final state = await _stateGuard.beginFlow();
+    final url = _httpClient.buildAuthorizationUrl(
+      clientId: _clientId,
+      state: state,
+    );
 
     try {
-      final resultUrl = await FlutterWebAuth2.authenticate(
+      final resultUrl = await _webAuth(
         url: url.toString(),
         callbackUrlScheme: 'omnirunnerauth',
       );
 
       final resultUri = Uri.parse(resultUrl);
       final code = resultUri.queryParameters['code'];
+      final returnedState = resultUri.queryParameters['state'];
+
+      // Validate state BEFORE inspecting `code` so we never log nor
+      // exchange a forged authorisation code. `validateAndConsume`
+      // also clears the persisted state on every path (pass or fail)
+      // so a replay of the callback URL is impossible.
+      final stateOk = await _stateGuard.validateAndConsume(returnedState);
+      if (!stateOk) {
+        _cachedState = const StravaDisconnected();
+        throw const AuthFailed('OAuth state mismatch — flow aborted');
+      }
 
       if (code == null || code.isEmpty) {
         final error = resultUri.queryParameters['error'];
@@ -104,12 +149,15 @@ final class StravaAuthRepositoryImpl implements IStravaAuthRepository {
       AppLogger.info('Authorization code received, exchanging', tag: _tag);
       return await exchangeCode(code);
     } on AuthCancelled {
+      await _stateGuard.clear();
       _cachedState = const StravaDisconnected();
       rethrow;
     } on IntegrationFailure {
+      await _stateGuard.clear();
       _cachedState = const StravaDisconnected();
       rethrow;
     } on PlatformException catch (e) {
+      await _stateGuard.clear();
       if (e.code == 'CANCELED') {
         _cachedState = const StravaDisconnected();
         throw const AuthCancelled();
@@ -117,6 +165,7 @@ final class StravaAuthRepositoryImpl implements IStravaAuthRepository {
       _cachedState = const StravaDisconnected();
       throw AuthFailed('OAuth flow failed: ${e.message}');
     } on Exception catch (e) {
+      await _stateGuard.clear();
       _cachedState = const StravaDisconnected();
       throw AuthFailed('OAuth flow failed: $e');
     }

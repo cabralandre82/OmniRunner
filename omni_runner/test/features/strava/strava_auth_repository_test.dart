@@ -3,8 +3,28 @@ import 'package:http/http.dart' as http;
 import 'package:omni_runner/core/errors/strava_failures.dart';
 import 'package:omni_runner/features/strava/data/strava_auth_repository_impl.dart';
 import 'package:omni_runner/features/strava/data/strava_http_client.dart';
+import 'package:omni_runner/features/strava/data/strava_oauth_state.dart';
 import 'package:omni_runner/features/strava/data/strava_secure_store.dart';
 import 'package:omni_runner/features/strava/domain/strava_auth_state.dart';
+
+// ── Fake OAuth State Storage ────────────────────────────────────
+
+class _FakeOAuthStateStorage implements OAuthStateStorage {
+  final Map<String, String> data = {};
+
+  @override
+  Future<String?> read(String key) async => data[key];
+
+  @override
+  Future<void> write(String key, String value) async {
+    data[key] = value;
+  }
+
+  @override
+  Future<void> delete(String key) async {
+    data.remove(key);
+  }
+}
 
 // ── Fake Secure Store ───────────────────────────────────────────
 
@@ -89,13 +109,26 @@ final class _FakeHttpClient implements StravaHttpClient {
   IntegrationFailure? exchangeError;
   IntegrationFailure? refreshError;
 
+  /// Captures the last authorisation URL built so tests can assert the
+  /// `state` parameter (L01-29) is propagated.
+  Uri? lastAuthorizationUrl;
+
   @override
   Uri buildAuthorizationUrl({
     required String clientId,
     String redirectUri = 'omnirunner://strava/callback',
     String scope = 'activity:write',
-  }) =>
-      Uri.parse('https://strava.com/test');
+    String? state,
+  }) {
+    final url = Uri.parse('https://strava.com/test').replace(
+      queryParameters: {
+        'client_id': clientId,
+        if (state != null && state.isNotEmpty) 'state': state,
+      },
+    );
+    lastAuthorizationUrl = url;
+    return url;
+  }
 
   @override
   Future<Map<String, dynamic>> exchangeToken({
@@ -187,14 +220,20 @@ void main() {
   late _FakeHttpClient httpClient;
   late StravaAuthRepositoryImpl repo;
 
+  late StravaOAuthStateGuard stateGuard;
+  late _FakeOAuthStateStorage stateStorage;
+
   setUp(() {
     store = _FakeStore();
     httpClient = _FakeHttpClient();
+    stateStorage = _FakeOAuthStateStorage();
+    stateGuard = StravaOAuthStateGuard(storage: stateStorage);
     repo = StravaAuthRepositoryImpl(
       store: store,
       httpClient: httpClient,
       clientId: 'test_client_id',
       clientSecret: 'test_client_secret',
+      stateGuard: stateGuard,
     );
   });
 
@@ -225,6 +264,201 @@ void main() {
       store._data.clear(); // wipe storage to prove caching
       final s2 = await repo.getAuthState();
       expect(identical(s1, s2), isTrue);
+    });
+  });
+
+  group('authenticate (L01-29: OAuth state CSRF defence)', () {
+    /// Helper: build a repo wired to scripted state + scripted web-auth.
+    StravaAuthRepositoryImpl buildRepoWith({
+      required String returnedCallback,
+    }) {
+      stateStorage = _FakeOAuthStateStorage();
+      stateGuard = StravaOAuthStateGuard(storage: stateStorage);
+      return StravaAuthRepositoryImpl(
+        store: store,
+        httpClient: httpClient,
+        clientId: 'test_client_id',
+        clientSecret: 'test_client_secret',
+        stateGuard: stateGuard,
+        webAuth: ({required url, required callbackUrlScheme}) async {
+          // Strava echoes the `state` param the client originally sent.
+          // The launcher proxy rewrites the redirect to use the scripted
+          // callback so we control what the repo sees.
+          return returnedCallback;
+        },
+      );
+    }
+
+    test('happy path: state matches, code is exchanged', () async {
+      // Pre-mint a state by calling the guard directly so we know the
+      // value to embed in the scripted callback.
+      final preMinted = await stateGuard.beginFlow();
+      // Reset so beginFlow inside authenticate() runs fresh; capture
+      // what it produces by inspecting storage after the call.
+      stateStorage.data.clear();
+
+      String? capturedAuthorizeState;
+      final repo = StravaAuthRepositoryImpl(
+        store: store,
+        httpClient: httpClient,
+        clientId: 'test_client_id',
+        clientSecret: 'test_client_secret',
+        stateGuard: stateGuard,
+        webAuth: ({required url, required callbackUrlScheme}) async {
+          // Pull the state the repo just minted (it is in storage now).
+          capturedAuthorizeState =
+              await stateStorage.read('strava_oauth_state');
+          return Uri.parse('omnirunnerauth://localhost/exchange_token').replace(
+            queryParameters: {
+              'code': 'AUTH_CODE',
+              'state': capturedAuthorizeState!,
+            },
+          ).toString();
+        },
+      );
+
+      final connected = await repo.authenticate();
+      expect(connected, isA<StravaConnected>());
+      expect(connected.athleteId, 42);
+      // Storage has been cleared by validateAndConsume.
+      expect(stateStorage.data, isEmpty);
+      // Sanity: the state captured at launch time was different from
+      // the one we manually pre-minted (i.e. authenticate() rotates).
+      expect(capturedAuthorizeState, isNotNull);
+      expect(capturedAuthorizeState, isNot(equals(preMinted)));
+    });
+
+    test(
+      'state mismatch: rejects forged callback before token exchange',
+      () async {
+        final repo = buildRepoWith(
+          returnedCallback:
+              'omnirunnerauth://localhost/exchange_token?code=ATTACKER&state=WRONG',
+        );
+
+        await expectLater(
+          repo.authenticate(),
+          throwsA(
+            isA<AuthFailed>().having(
+              (e) => e.reason,
+              'reason',
+              contains('OAuth state mismatch'),
+            ),
+          ),
+        );
+        // No tokens were saved → token exchange did NOT happen.
+        expect(await store.hasTokens, isFalse);
+        // State storage cleared (validateAndConsume always wipes).
+        expect(stateStorage.data, isEmpty);
+        // Cached state reverts to disconnected.
+        expect(await repo.getAuthState(), isA<StravaDisconnected>());
+      },
+    );
+
+    test('missing state in callback is rejected', () async {
+      final repo = buildRepoWith(
+        returnedCallback:
+            'omnirunnerauth://localhost/exchange_token?code=ATTACKER',
+      );
+
+      await expectLater(
+        repo.authenticate(),
+        throwsA(
+          isA<AuthFailed>().having(
+            (e) => e.reason,
+            'reason',
+            contains('OAuth state mismatch'),
+          ),
+        ),
+      );
+      expect(await store.hasTokens, isFalse);
+    });
+
+    test('replay: same state cannot be consumed twice', () async {
+      // First flow — record the minted state for later replay.
+      String? mintedState;
+      final repo = StravaAuthRepositoryImpl(
+        store: store,
+        httpClient: httpClient,
+        clientId: 'test_client_id',
+        clientSecret: 'test_client_secret',
+        stateGuard: stateGuard,
+        webAuth: ({required url, required callbackUrlScheme}) async {
+          mintedState = await stateStorage.read('strava_oauth_state');
+          return Uri.parse('omnirunnerauth://localhost/exchange_token').replace(
+            queryParameters: {
+              'code': 'AUTH_CODE',
+              'state': mintedState!,
+            },
+          ).toString();
+        },
+      );
+      await repo.authenticate();
+      expect(mintedState, isNotNull);
+      expect(stateStorage.data, isEmpty); // consumed
+
+      // Second flow — start fresh, then try replaying the OLD state in
+      // the callback. Should reject (storage holds a NEW state value).
+      final replayRepo = StravaAuthRepositoryImpl(
+        store: store,
+        httpClient: httpClient,
+        clientId: 'test_client_id',
+        clientSecret: 'test_client_secret',
+        stateGuard: stateGuard,
+        webAuth: ({required url, required callbackUrlScheme}) async {
+          return Uri.parse('omnirunnerauth://localhost/exchange_token').replace(
+            queryParameters: {
+              'code': 'ATTACKER_CODE',
+              'state': mintedState!,
+            },
+          ).toString();
+        },
+      );
+      await expectLater(
+        replayRepo.authenticate(),
+        throwsA(isA<AuthFailed>()),
+      );
+    });
+
+    test('authorize URL embeds the freshly minted state', () async {
+      final repo = StravaAuthRepositoryImpl(
+        store: store,
+        httpClient: httpClient,
+        clientId: 'test_client_id',
+        clientSecret: 'test_client_secret',
+        stateGuard: stateGuard,
+        webAuth: ({required url, required callbackUrlScheme}) async {
+          final stored = await stateStorage.read('strava_oauth_state');
+          return Uri.parse('omnirunnerauth://localhost/exchange_token').replace(
+            queryParameters: {'code': 'OK', 'state': stored!},
+          ).toString();
+        },
+      );
+      await repo.authenticate();
+      // The fake HTTP client captured the URL; assert the state param.
+      expect(
+        httpClient.lastAuthorizationUrl?.queryParameters['state'],
+        isNotNull,
+      );
+      expect(
+        httpClient.lastAuthorizationUrl!.queryParameters['state']!.length,
+        greaterThanOrEqualTo(43),
+      );
+    });
+
+    test('state is cleared even when web auth throws (cancelled)', () async {
+      final repo = StravaAuthRepositoryImpl(
+        store: store,
+        httpClient: httpClient,
+        clientId: 'test_client_id',
+        clientSecret: 'test_client_secret',
+        stateGuard: stateGuard,
+        webAuth: ({required url, required callbackUrlScheme}) async {
+          throw const AuthCancelled();
+        },
+      );
+      await expectLater(repo.authenticate(), throwsA(isA<AuthCancelled>()));
+      expect(stateStorage.data, isEmpty);
     });
   });
 

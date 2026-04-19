@@ -81,10 +81,18 @@ class _AuthGateState extends State<AuthGate> {
       return;
     }
 
+    // L01-29: legacy `omnirunner://strava/...` deep links no longer
+    // emit StravaCallbackAction (the parser classifies them as
+    // UnknownLinkAction). The branch below is kept defensively in
+    // case any future code path reintroduces the action — without
+    // this guard, a forged inbound link could resurrect the CSRF.
+    // ignore: deprecated_member_use_from_same_package
     if (action is StravaCallbackAction) {
-      // Strava OAuth is now handled by FlutterWebAuth2 in the settings screen.
-      // Deep link may still fire as a duplicate — ignore silently.
-      AppLogger.info('Strava deep-link ignored (handled by FlutterWebAuth2)', tag: _tag);
+      AppLogger.warn(
+        'Strava deep-link rejected (CSRF — see L01-29). Production OAuth '
+        'flows through FlutterWebAuth2 with state validation.',
+        tag: _tag,
+      );
       return;
     }
 

@@ -52,21 +52,35 @@ void main() {
       expect((a as ReferralAction).referrerId, 'user-uuid-1');
     });
 
-    test('Strava exchange_token with code', () {
+    // L01-29: legacy `omnirunner://strava/...` and
+    // `omnirunner://localhost/exchange_token` paths now classify as
+    // UnknownLinkAction. Production OAuth runs via flutter_web_auth_2
+    // on the dedicated `omnirunnerauth://` scheme, validated by
+    // StravaOAuthStateGuard inside the auth repository.
+    test('Strava exchange_token deep-link is now UnknownLinkAction (L01-29)', () {
       final u = Uri.parse(
-        'omnirunner://localhost/exchange_token?code=SECRET&scope=read',
+        'omnirunner://localhost/exchange_token?code=ATTACKER_CODE&scope=read',
       );
-      final a = handler.parseUri(u);
-      expect(a, isA<StravaCallbackAction>());
-      expect((a as StravaCallbackAction).code, 'SECRET');
+      expect(handler.parseUri(u), isA<UnknownLinkAction>());
     });
 
-    test('Strava legacy callback', () {
-      final u = Uri.parse('omnirunner://strava/callback?code=LEGACY');
-      final a = handler.parseUri(u);
-      expect(a, isA<StravaCallbackAction>());
-      expect((a as StravaCallbackAction).code, 'LEGACY');
+    test('Strava legacy callback deep-link is now UnknownLinkAction (L01-29)', () {
+      final u = Uri.parse('omnirunner://strava/callback?code=ATTACKER_CODE');
+      expect(handler.parseUri(u), isA<UnknownLinkAction>());
     });
+
+    test(
+      'Strava callback with code + state is still UnknownLinkAction (L01-29)',
+      () {
+        // Even with a valid-looking state, the deep-link handler is no
+        // longer the OAuth callback path. The state guard lives behind
+        // FlutterWebAuth2 and is unreachable from here.
+        final u = Uri.parse(
+          'omnirunner://localhost/exchange_token?code=X&state=Y',
+        );
+        expect(handler.parseUri(u), isA<UnknownLinkAction>());
+      },
+    );
 
     test('unknown https host', () {
       final u = Uri.parse('https://evil.example/invite/x');
