@@ -176,6 +176,36 @@ android {
                 signingConfig signingConfigs.debug
             }
             // Else: configuration fails earlier with the L01-31 GradleException.
+
+            // ─────────────────────────────────────────────────────────────
+            // L01-30 — R8/ProGuard for release builds
+            //
+            // Pre-fix the release APK shipped with `minifyEnabled false`,
+            // which means the dex was fully readable: classes, method
+            // names, string constants and the entire anti-cheat threshold
+            // logic in `lib/domain/usecases/integrity_detect_*.dart` (via
+            // the Dart-to-Kotlin bridge classes Flutter generates) were
+            // trivially recoverable with `apktool d` / `jadx`.
+            //
+            // Defence:
+            //   • `minifyEnabled true`     — R8 strips unreachable code
+            //                                and renames classes/methods.
+            //   • `shrinkResources true`   — drops drawables/strings only
+            //                                referenced by stripped code
+            //                                (saves ~6-10 % APK size).
+            //   • `proguardFiles ...`      — start from the AGP-shipped
+            //                                optimisation defaults, then
+            //                                layer our keeps for Flutter,
+            //                                Sentry, Firebase, Supabase,
+            //                                Drift, health, plugins, etc.
+            //
+            // The `-dontobfuscate` toggle in `proguard-rules.pro` would
+            // disable renaming if a future plugin breaks under R8 — leave
+            // it commented as the recovery escape-hatch.
+            // ─────────────────────────────────────────────────────────────
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }

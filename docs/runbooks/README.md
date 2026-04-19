@@ -40,7 +40,7 @@
 ### Mobile release pipeline (L01)
 | Runbook | Trigger | Severidade | Tempo alvo |
 |---|---|---|---|
-| [`ANDROID_RELEASE_SIGNING_RUNBOOK.md`](./ANDROID_RELEASE_SIGNING_RUNBOOK.md) | `release` workflow falha em "Restore Android release signing", Gradle aborta com `L01-31`, ou Play Console rejeita upload por mismatch de upload key (L01-31) | P2 (workflow falha pré-deploy); P1 (debug-signed APK detectado em store/Firebase) | ack < 1 h, mitig < 4 h |
+| [`ANDROID_RELEASE_SIGNING_RUNBOOK.md`](./ANDROID_RELEASE_SIGNING_RUNBOOK.md) | `release` workflow falha em "Restore Android release signing"/"Verify gradle release-minify", Gradle aborta com `L01-30`/`L01-31`, Play Console rejeita upload por mismatch de upload key (L01-31), ou crash release-only por falta de keep R8 (L01-30) | P2 (workflow falha pré-deploy / crash recém-detectado); P1 (debug-signed APK detectado em store/Firebase OU `minifyEnabled false` em produção) | ack < 1 h, mitig < 4 h |
 
 ### Idempotency / Wallet integrity (L18)
 | Runbook | Trigger | Severidade | Tempo alvo |

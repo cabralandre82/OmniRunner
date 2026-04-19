@@ -171,6 +171,12 @@ jobs:
       - name: Verify gradle release-signing invariants (L01-31)
         run: bash tools/test_l01_31_android_signing.sh
 
+      # L01-30 — Block release builds that ship without R8/ProGuard. Runs
+      # immediately after L01-31 so the two structural defences fail fast
+      # before Fastlane wastes minutes on a doomed build.
+      - name: Verify gradle release-minify invariants (L01-30)
+        run: bash tools/test_l01_30_android_minify.sh
+
       - name: Build release APK
         working-directory: omni_runner
         run: bundle exec fastlane build_apk
