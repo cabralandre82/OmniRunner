@@ -14,6 +14,12 @@ import {
   setCachedMembership,
 } from "@/lib/route-policy-cache";
 import { enforceWebhookIpAllowlist } from "@/lib/webhook-ip-allowlist";
+import {
+  applyApiVersion,
+  applyDeprecation,
+  v1SuccessorFor,
+  LEGACY_FINANCIAL_PATHS,
+} from "@/lib/api/versioning";
 
 /**
  * Portal middleware (L13-01..L13-07).
@@ -41,6 +47,16 @@ import { enforceWebhookIpAllowlist } from "@/lib/webhook-ip-allowlist";
  * `lib/route-policy-cache.ts` (60 s TTL, negative-cached) so a single
  * page-load with N RSCs costs at most one Postgres round-trip per
  * `(user, group)` instead of one per RSC (L13-03).
+ *
+ * Layered on top of all of the above (L14-02):
+ *
+ *   - every `/api/*` response gets `X-Api-Version: 1` so consumers
+ *     can positively identify which contract served them, and
+ *   - every legacy financial path (`/api/{custody,custody/withdraw,
+ *     swap,distribute-coins,clearing}`) gets `Deprecation: true`,
+ *     `Sunset: <DEFAULT_FINANCIAL_SUNSET>` and
+ *     `Link: </api/v1/...>; rel="successor-version"` so callers
+ *     know they have a fixed window to migrate to the v1 path.
  */
 
 export async function middleware(request: NextRequest) {
@@ -52,8 +68,35 @@ export async function middleware(request: NextRequest) {
     request.headers.get("x-request-id") ?? crypto.randomUUID();
   const extraRequestHeaders = { "x-request-id": requestId };
 
+  // (L14-02) Pre-compute version-header policy once per request.
+  // Path-dependent only, so we lift the work out of tagResponse:
+  //
+  //   - every /api/* response gets X-Api-Version
+  //   - every legacy financial path additionally gets Sunset/
+  //     Deprecation/Link
+  //   - everything else gets neither (RSC pages, static assets, etc.)
+  const isApiPath = pathname.startsWith("/api/") || pathname === "/api";
+  let isLegacyFinancialPath = false;
+  if (isApiPath && !pathname.startsWith("/api/v1/")) {
+    for (const p of Array.from(LEGACY_FINANCIAL_PATHS)) {
+      if (pathname === p || pathname.startsWith(`${p}/`)) {
+        isLegacyFinancialPath = true;
+        break;
+      }
+    }
+  }
+  const v1Successor = isLegacyFinancialPath ? v1SuccessorFor(pathname) : null;
+
   const tagResponse = (res: NextResponse) => {
     res.headers.set("x-request-id", requestId);
+    if (isApiPath) {
+      applyApiVersion(res);
+      if (isLegacyFinancialPath) {
+        applyDeprecation(res, {
+          successor: v1Successor ?? undefined,
+        });
+      }
+    }
     return res;
   };
 
