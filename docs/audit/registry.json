@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-19T02:15:58.681Z",
+  "generated_at": "2026-04-19T02:36:10.601Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 270,
-    "fixed": 77,
+    "fix-pending": 269,
+    "fixed": 78,
     "in-progress": 1
   },
   "by_wave": {
@@ -1815,9 +1815,10 @@
       "lens": 2,
       "title": "execute_withdrawal — Estado 'processing' sem transição final",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-19T00:00:00.000Z",
       "tags": [
         "finance",
         "mobile",
@@ -1827,20 +1828,28 @@
         "ux"
       ],
       "files": [
-        "portal/src/app/api/custody/withdraw/route.ts"
+        "portal/src/app/api/custody/withdraw/route.ts",
+        "portal/src/app/api/platform/custody/withdrawals/[id]/complete/route.ts",
+        "portal/src/app/api/platform/custody/withdrawals/[id]/fail/route.ts",
+        "supabase/migrations/20260419150000_l02_withdrawal_lifecycle_completion.sql"
       ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/app/api/platform/custody/withdrawals/[id]/complete/route.test.ts",
+        "portal/src/app/api/platform/custody/withdrawals/[id]/fail/route.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "commit:fd8fd1a"
+      ],
+      "owner": "backend",
+      "runbook": "docs/runbooks/WITHDRAW_STUCK_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fechado em três camadas:\n\n1. **Database** (`20260419150000_l02_withdrawal_lifecycle_completion.sql`):\n   - `complete_withdrawal(p_id, p_payout_reference, p_actor, p_note)`\n     — `processing → completed` idempotente (re-clique devolve\n     `was_terminal=true`). Escreve `portal_audit_log` com a\n     `payout_reference` antiga preservada.\n   - `fail_withdrawal(p_id, p_reason, p_actor)` — `processing →\n     failed` atômico: refunda `total_deposited_usd`, deleta a linha\n     `platform_revenue` de `fee_type='fx_spread'` ligada à\n     withdrawal, e re-valida `check_custody_invariants()` na MESMA\n     transação (aborta P0008 se o estorno desbalancearia a custody).\n   - `fn_stale_withdrawals(p_threshold_hours int default 168)` —\n     diagnóstico read-only usado pelo runbook e pelo cron de alerta.\n   - `fn_alert_stale_withdrawals_safe()` + cron pg `stale-withdrawals-alert`\n     em `45 6 * * *` UTC, encapsulado no padrão L12-03\n     (`fn_cron_should_run` / `fn_cron_mark_*` + advisory lock).\n     Emite `RAISE NOTICE '[L02-06.alert] ...'` quando há ≥1 saque\n     `processing` há > 7 dias — log-shipper roteia para Sentry/Slack\n     conforme `docs/runbooks/ALERT_POLICY.md`.\n\n2. **Portal** (`/api/platform/custody/withdrawals/[id]/{complete,fail}`):\n   - Auth: `profiles.platform_role = 'admin'` (padrão canônico do\n     projeto, não a tabela hipotética `platform_admins` ainda\n     presente em duas rotas legadas).\n   - Idempotência ponta-a-ponta: `withIdempotency()` (L18-02)\n     embrulha o RPC para que retries de rede / double-click não\n     criem dois eventos no `portal_audit_log` mesmo nos casos onde\n     o RPC subjacente já é idempotente.\n   - Mapeamento de erros:\n     - `P0002 / WITHDRAWAL_NOT_FOUND` → 404 NOT_FOUND\n     - `P0008 / INVALID_TRANSITION` → 409 INVALID_TRANSITION\n     - `P0008 / INVARIANT_VIOLATION` → 409 INVARIANT_VIOLATION (com\n       hint para `WITHDRAW_STUCK_RUNBOOK §3.3` fallback manual)\n     - `P0001` (validação) → 400 VALIDATION_FAILED\n   - `auditLog()` só dispara quando `was_terminal=false` para evitar\n     duplicar trilha em re-cliques.\n\n3. **Runbook**: `WITHDRAW_STUCK_RUNBOOK.md` ganhou §3.0 (apontando\n   para o endpoint canônico) preservando o SQL bruto como fallback\n   last-resort para incidentes onde o portal está fora.\n\nCobertura: 23 testes vitest (12 complete + 11 fail) cobrindo auth,\nvalidação, idempotência, mapping de erros do RPC, audit log\ncondicional. Suite portal: 1108 testes verdes (de 1085). Audit\nverifier: 348/348 OK.\n"
     },
     {
       "id": "L02-07",

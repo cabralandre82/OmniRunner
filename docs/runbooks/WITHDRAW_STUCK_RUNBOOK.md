@@ -1,11 +1,14 @@
 # WITHDRAW_STUCK_RUNBOOK
 
-> **Trigger**: `custody_withdrawals.status = 'processing'` há > 48h.
+> **Trigger**: `custody_withdrawals.status = 'processing'` há > 48h
+> (alerta automático cron `stale-withdrawals-alert` dispara em 7d via
+> L02-06).
 > **Severidade**: P1 (admin_master percebe e abre ticket; risco
 > reputacional alto).
 > **Tempo alvo**: ack < 1h, mitigação < 4h.
-> **Linked findings**: L06-01, L01-02 (withdraw atomic), L02-01.
-> **Última revisão**: 2026-04-17
+> **Linked findings**: L06-01, L01-02 (withdraw atomic), L02-01,
+> L02-06 (lifecycle completion).
+> **Última revisão**: 2026-04-19
 
 ---
 
@@ -70,7 +73,76 @@ Status no provider:
 
 ## 3. Remediação
 
-### 3.1 Webhook perdido — finalizar manualmente
+### 3.0 Caminho canônico (L02-06) — endpoints de plataforma
+
+> **Use estes endpoints sempre que o portal estiver online.** Eles
+> embrulham as RPCs `complete_withdrawal` / `fail_withdrawal` (atômicas
+> + idempotentes) com `withIdempotency()` (L18-02), `portal_audit_log`,
+> e re-validação automática de `check_custody_invariants()`. As seções
+> 3.1 / 3.3 abaixo permanecem como **fallback last-resort** quando o
+> portal está fora.
+
+**3.0.1 — Marcar como concluído** (substitui §3.1 manual):
+
+```bash
+curl -X POST "$PORTAL_URL/api/platform/custody/withdrawals/<WITHDRAW_ID>/complete" \
+  -H "Authorization: Bearer $PORTAL_PLATFORM_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "x-idempotency-key: $(uuidgen)" \
+  -d '{
+    "payout_reference": "<gateway transfer id, e.g. asaas_transfer_xyz>",
+    "note": "Confirmado em painel.asaas.com — webhook perdido"
+  }'
+```
+
+Respostas esperadas:
+- `200 { ok: true, data: { status: "completed", was_terminal: false } }` — transição feita.
+- `200 { ok: true, data: { was_terminal: true } }` — já estava completed (re-clique seguro).
+- `404 NOT_FOUND` — id inexistente.
+- `409 INVALID_TRANSITION` — withdrawal não está em `processing` (ex: já `cancelled`).
+
+**3.0.2 — Marcar como falhou + estornar** (substitui §3.3 manual):
+
+```bash
+curl -X POST "$PORTAL_URL/api/platform/custody/withdrawals/<WITHDRAW_ID>/fail" \
+  -H "Authorization: Bearer $PORTAL_PLATFORM_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "x-idempotency-key: $(uuidgen)" \
+  -d '{
+    "reason": "Banco rejeitou: dados de conta inválidos"
+  }'
+```
+
+O endpoint executa em uma única transação:
+1. Reverte `total_deposited_usd += amount_usd` no `custody_accounts`.
+2. Deleta a linha `platform_revenue` de `fee_type='fx_spread'` ligada à withdrawal.
+3. Re-valida `check_custody_invariants()` para o grupo; aborta com
+   `409 INVARIANT_VIOLATION` se o estorno desbalancearia a custody —
+   nesse caso aplique §3.3 manual.
+4. Marca a withdrawal como `failed` e prefixa `payout_reference` com
+   `| reverted: <reason> @ <ts>` para forense.
+5. Escreve `portal_audit_log` com `action='custody.withdrawal.fail'`.
+
+Resposta de sucesso:
+```json
+{
+  "ok": true,
+  "data": {
+    "status": "failed",
+    "was_terminal": false,
+    "refunded_usd": 250.00,
+    "revenue_reversed_usd": 1.88
+  }
+}
+```
+
+> ⚠️ **Antes de chamar `/complete`**: confirme no painel do gateway
+> (passo 2.3) que o dinheiro saiu de fato. Marcar `completed` sem o
+> banco ter pago gera ticket pior.
+
+### 3.1 Webhook perdido — finalizar manualmente (FALLBACK)
+
+> Use somente se o portal estiver fora ou o endpoint §3.0.1 falhar.
 
 ```sql
 BEGIN;
