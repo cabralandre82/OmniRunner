@@ -4,23 +4,43 @@ audit_ref: "12.1"
 lens: 12
 title: "reconcile-wallets-cron existe mas NÃO está agendado"
 severity: critical
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
+fixed_at: 2026-04-19
 tags: ["finance", "security-headers", "mobile", "edge-function", "migration", "cron"]
-files: []
+files: ["supabase/migrations/20260419100002_l12_reconcile_wallets_schedule.sql", "supabase/functions/reconcile-wallets-cron/index.ts"]
 correction_type: process
 test_required: true
-tests: []
+tests: ["tools/test_cron_health.ts"]
 linked_issues: []
-linked_prs: []
-owner: unassigned
-runbook: null
+linked_prs:
+  - be1c9e4
+owner: platform
+runbook: docs/runbooks/CRON_HEALTH_RUNBOOK.md
 effort_points: 5
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Corrigido em 2026-04-19. Migration `20260419100002_l12_reconcile_wallets_schedule.sql`
+  registra `cron.schedule('reconcile-wallets-daily', '30 4 * * *', ...)` que dispara
+  a Edge Function `reconcile-wallets-cron` via `extensions.http(...)` com bearer
+  service-role. Horário (04:30 UTC diário) escolhido para não colidir com a janela
+  redistribuída em L12-02 (clearing 02:00, eval-verification 03:15, archive-old-sessions
+  03:45-Sun, archive-old-ledger 05:15-Sun, partition-monthly 05:30-day-1).
+
+  A migration também faz seed de `public.cron_run_state` (introduzida em L12-03) com
+  `last_status='never_run'` para o job, dando visibilidade imediata em queries de
+  inventário ops. A EF não chama `fn_cron_mark_started/completed` ainda — follow-up
+  rastreável: instrumentar `reconcile-wallets-cron/index.ts` e os demais EFs para
+  reportar lifecycle. Não é blocker porque o job é diário e idempotente (drift
+  correction converge para o mesmo resultado em N execuções).
+
+  Validação: `SELECT * FROM cron.job WHERE jobname='reconcile-wallets-daily'` retorna
+  1 row pós-migration (verificado local). Tests em `tools/test_cron_health.ts`
+  garantem o seed de `cron_run_state`. Runbook: `docs/runbooks/CRON_HEALTH_RUNBOOK.md`
+  §2.1 (inventário) e §3.4 (drift residual / disparo manual).
 ---
 # [L12-01] reconcile-wallets-cron existe mas NÃO está agendado
 > **Lente:** 12 — Cron/Scheduler · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** fix-pending

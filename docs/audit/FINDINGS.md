@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-19 00:13:46 UTC.
+> Atualizado em 2026-04-19 00:35:14 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -207,9 +207,9 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L11-12](./findings/L11-12-npm-ci-sem-ignore-scripts.md) | 2 | L11 · Supply Chain | npm ci sem --ignore-scripts | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L11-13](./findings/L11-13-lockfile-drift-nao-validado.md) | 2 | L11 · Supply Chain | Lockfile drift não validado | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L11-14](./findings/L11-14-omni-runner-pubspec-lock-commitado.md) | 2 | L11 · Supply Chain | omni_runner/pubspec.lock commitado? | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L12-01](./findings/L12-01-reconcile-wallets-cron-existe-mas-nao-esta-agendado.md) | 1 | L12 · Cron/Scheduler | reconcile-wallets-cron existe mas NÃO está agendado | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L12-02](./findings/L12-02-thundering-herd-em-02-00-04-00-utc.md) | 1 | L12 · Cron/Scheduler | Thundering herd em 02:00–04:00 UTC | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L12-03](./findings/L12-03-5-crons-sem-lock-overlap-risk.md) | 1 | L12 · Cron/Scheduler | */5 * * * * crons sem lock — overlap risk | unassigned |
+| 🔴 critical | ✅ fixed | [L12-01](./findings/L12-01-reconcile-wallets-cron-existe-mas-nao-esta-agendado.md) | 1 | L12 · Cron/Scheduler | reconcile-wallets-cron existe mas NÃO está agendado | platform |
+| 🔴 critical | ✅ fixed | [L12-02](./findings/L12-02-thundering-herd-em-02-00-04-00-utc.md) | 1 | L12 · Cron/Scheduler | Thundering herd em 02:00–04:00 UTC | platform |
+| 🔴 critical | ✅ fixed | [L12-03](./findings/L12-03-5-crons-sem-lock-overlap-risk.md) | 1 | L12 · Cron/Scheduler | */5 * * * * crons sem lock — overlap risk | platform |
 | 🟠 high | ⏳ fix-pending | [L12-04](./findings/L12-04-pg-cron-nao-monitora-sla-de-execucao.md) | 1 | L12 · Cron/Scheduler | pg_cron não monitora SLA de execução | unassigned |
 | 🟠 high | ⏳ fix-pending | [L12-05](./findings/L12-05-auto-topup-hourly-cobranca-automatica-sem-cap-diario.md) | 1 | L12 · Cron/Scheduler | auto-topup-hourly — cobrança automática sem cap diário | unassigned |
 | 🟠 high | ⏳ fix-pending | [L12-06](./findings/L12-06-archive-old-sessions-roda-como-funcao-pesada-sem.md) | 1 | L12 · Cron/Scheduler | archive-old-sessions roda como função pesada sem batch | unassigned |
