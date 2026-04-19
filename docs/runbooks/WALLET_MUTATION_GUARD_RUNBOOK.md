@@ -217,6 +217,77 @@ CI gates: `tools/test_l18_wallet_guard.ts` will catch any new direct
 `UPDATE wallets SET balance_coins ...` that lacks the GUC, because the
 trigger will refuse the test write.
 
+### Edge Functions — go through `creditWallets` (L18-08)
+
+Edge Functions never speak SQL directly. The canonical pattern for
+crediting (or debiting, with negative deltas) wallets from a Deno
+`serve()` handler is the typed shared helper at
+`supabase/functions/_shared/wallet_credit.ts`:
+
+```typescript
+import { creditWallets } from "../_shared/wallet_credit.ts";
+
+const result = await creditWallets(
+  adminDb,                 // service-role SupabaseClient
+  [{
+    user_id: user.id,
+    delta: 100,
+    reason: "challenge_one_vs_one_won",
+    ref_id: `challenge:${challengeId}`,
+    issuer_group_id: groupId ?? null,   // optional
+  }],
+  { request_id: requestId, fn: FN_NAME, meta: { challenge_id: challengeId } },
+);
+
+if (!result.ok) {
+  // typed code: EMPTY_BATCH | INVALID_USER_ID | INVALID_DELTA |
+  //             INVALID_REASON | INVALID_REF_ID |
+  //             INVALID_ISSUER_GROUP | INVALID_ENTRY | RPC_ERROR
+  return jsonErr(500, "REFUND_FAILED", result.message, requestId);
+}
+// result.processed === number of ledger rows written
+```
+
+Properties of the helper:
+
+- **Pre-flight validation** — every entry is checked client-side
+  (UUID shape, non-zero integer delta, reason ∈ `ALLOWED_REASONS`,
+  ref_id text 1–200 chars, optional issuer_group_id UUID) BEFORE any
+  RPC round-trip. A typo in `reason` returns `INVALID_REASON` in
+  microseconds, not after a network hop.
+
+- **Reason allowlist** — the helper's `ALLOWED_REASONS` mirrors the
+  SQL-side `coin_ledger_reason_check` constraint. Adding a new reason
+  is a two-line change: append to the helper's `Set` AND extend the
+  CHECK constraint in the next migration.
+
+- **Atomic via RPC** — the helper forwards to
+  `fn_increment_wallets_batch`, which sets the
+  `app.wallet_mutation_authorized` GUC once per call and pairs every
+  wallet UPSERT with a `coin_ledger` INSERT inside a single PG
+  transaction. There is no separate `coin_ledger.insert(...)` on the
+  Deno side — that pattern (used historically by an older
+  settle-challenge revision) caused the double-write bug documented
+  in `docs/DISASTER_CONCURRENCY.md` C1 and is now structurally
+  impossible.
+
+- **Structured log line per call** — one JSON line on either path:
+
+  ```json
+  {"request_id":"...","fn":"settle-challenge","event":"wallet_credit.ok",
+   "entry_count":3,"processed":3,"total_delta":1500,"challenge_id":"abc"}
+  ```
+
+  On RPC failure, the line carries `event:"wallet_credit.rpc_failed"`
+  with `pg_code` (e.g. `55P03` for lock_not_available) so on-call can
+  branch retry-vs-fail-closed without reading the function source.
+
+CI gate: any new `adminDb.rpc("fn_increment_wallets_batch", ...)`
+landing in `supabase/functions/**` should be flagged in code review —
+the helper is mandatory. The 29-test Deno suite at
+`supabase/functions/_shared/wallet_credit.test.ts` covers every typed
+error branch and the RPC happy/error paths.
+
 ## Suggested observability
 
 | Metric                                                    | Source                                | Alert threshold           |

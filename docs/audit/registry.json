@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-19T01:59:26.358Z",
+  "generated_at": "2026-04-19T02:15:58.681Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 271,
-    "fixed": 76,
+    "fix-pending": 270,
+    "fixed": 77,
     "in-progress": 1
   },
   "by_wave": {
@@ -8084,9 +8084,10 @@
       "lens": 18,
       "title": "Edge Functions vs Route Handlers — responsabilidade duplicada",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-19T00:00:00.000Z",
       "tags": [
         "finance",
         "mobile",
@@ -8094,20 +8095,29 @@
         "edge-function"
       ],
       "files": [
-        "portal/src/app/api/distribute-coins/route.ts"
+        "portal/src/app/api/distribute-coins/route.ts",
+        "supabase/functions/_shared/wallet_credit.ts",
+        "supabase/functions/_shared/wallet_credit.test.ts",
+        "supabase/functions/challenge-withdraw/index.ts",
+        "supabase/functions/settle-challenge/index.ts",
+        "supabase/migrations/20260419140000_l18_canonical_wallet_credit.sql"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "supabase/functions/_shared/wallet_credit.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "commit:38f9c72"
+      ],
+      "owner": "backend",
+      "runbook": "docs/runbooks/WALLET_MUTATION_GUARD_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Solução em três camadas atacando o achado original (\"dois caminhos\nque fazem coisas parecidas, mantidos separadamente\") e desentupindo\ndois bugs latentes que estavam escondidos no caminho Edge.\n\n(1) **Migration `20260419140000_l18_canonical_wallet_credit.sql`** —\nre-cria `fn_increment_wallets_batch` corrigindo dois bugs introduzidos\npor L18-01 ao re-deployar o RPC sem alinhar com o schema de L19-01:\n\n    • INSERT em `coin_ledger` escrevia apenas `created_at`\n      (timestamptz, legado), mas L19-01 fez `created_at_ms` (bigint)\n      `NOT NULL` sem default. Qualquer caller em schema fresh ou\n      após restore de pg_dump teria falhado com `null value in column\n      \"created_at_ms\"` na primeira liquidação de challenge — bug que\n      nunca disparou em prod só porque migrations rodaram em ordem\n      com dados pré-existentes.\n\n    • `(v_entry->>'ref_id')::uuid` assumia a coluna uuid legada;\n      L19-01 mudou para text. Cast funciona hoje (callers passam UUIDs\n      de challenge.id) mas FAIL-CLOSED no momento que algum caller\n      passa composite key `idem:user:nonce` (padrão L18-02). Removido.\n\nNova RPC aceita ref_id como text, escreve `created_at_ms`, encaminha\n`issuer_group_id` opcional, valida user_id+delta upfront com\n`INVALID_USER_ID`/`INVALID_DELTA` (P0001), e mantém `set_config(\n'app.wallet_mutation_authorized', 'yes', true)` na entrada (L18-01\nguard preservado). Surface das callers existentes inalterada.\n\n(2) **`supabase/functions/_shared/wallet_credit.ts`** — entry point\núnico `creditWallets(adminDb, entries, ctx)` para toda mutação de\nwallet em Edge Function:\n\n    • Pré-flight valida shape (UUID v4 regex em user_id e\n      issuer_group_id, delta inteiro non-zero, reason no allowlist\n      que espelha `coin_ledger_reason_check`, ref_id text 1-200\n      chars opcional) — falha-rápido SEM round-trip de rede,\n      retornando discriminated-union `{ ok: true, processed }` |\n      `{ ok: false, code, message, details }` com 8 códigos típados.\n\n    • Loga linha estruturada JSON com `request_id`/`fn`/\n      `entry_count`/`total_delta`/`outcome`+`pg_code` em falha —\n      parseável pelo log-shipper existente, grep-by-request-id\n      trivial em postmortem.\n\n    • Transport-agnostic — caller mapeia `result.ok=false` para\n      seu HTTP shape (REFUND_FAILED 500, etc).\n\n(3) **Migração de 3 call-sites**: `challenge-withdraw` (refund),\n`settle-challenge` (refund cooperativo no-runners + settlement\ncompetitivo) — substituem `.rpc(\"fn_increment_wallets_batch\", ...)`\nraw por `creditWallets(adminDb, entries, ctx)`. Comportamento\npreservado.\n\nCobertura: 29 Deno tests em `wallet_credit.test.ts` — toda branch\nde erro typed (8 INVALID_*), validation short-circuit (zero RPC\ncall), RPC happy-path payload shape, RPC error path com pg_code\npropagation, log line structure, `ALLOWED_REASONS` parity. Todos\npassam com `deno test`. Suite portal **1085/0** sem regressão.\n\nO guard L18-01 continua sendo a fronteira de segurança no DB — toda\ntentativa de UPDATE direto a `wallets.balance_coins` é rejeitada\ncom `WALLET_MUTATION_FORBIDDEN` (P0007). Esta camada apenas torna\nóbvio (e tipado) o caminho correto na borda Edge.\n"
     },
     {
       "id": "L18-09",
