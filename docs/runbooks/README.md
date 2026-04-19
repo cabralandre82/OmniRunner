@@ -27,6 +27,11 @@
 |---|---|---|---|
 | [`ACCOUNT_DELETION_RUNBOOK.md`](./ACCOUNT_DELETION_RUNBOOK.md) | `account_deletion_log.outcome` em estado de falha (L04-02 / L01-36 / L06-08) OU reclamação ANPD | P1 (`auth_delete_failed`) / P2 (`cleanup_failed`) | resolução < 24 h |
 
+### Cron / Scheduler (L12)
+| Runbook | Trigger | Severidade | Tempo alvo |
+|---|---|---|---|
+| [`CRON_HEALTH_RUNBOOK.md`](./CRON_HEALTH_RUNBOOK.md) | Cron ausente, `last_status='failed'` por > 1 ciclo, `skip_count` crescendo, ou herd 03:00 UTC voltou (L12-01 / L12-02 / L12-03) | P1 (reconcile) / P2 (lifecycle/matchmaking/releases) / P3 (archive/partition) | ack < 1 h, mitig < 4 h |
+
 ## Convenções
 
 - **Nome**: `<DOMÍNIO>_<NATUREZA>_RUNBOOK.md` (UPPERCASE para destaque vs.
