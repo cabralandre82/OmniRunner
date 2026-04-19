@@ -42,6 +42,11 @@
 |---|---|---|---|
 | [`ANDROID_RELEASE_SIGNING_RUNBOOK.md`](./ANDROID_RELEASE_SIGNING_RUNBOOK.md) | `release` workflow falha em "Restore Android release signing"/"Verify gradle release-minify", Gradle aborta com `L01-30`/`L01-31`, Play Console rejeita upload por mismatch de upload key (L01-31), ou crash release-only por falta de keep R8 (L01-30) | P2 (workflow falha pré-deploy / crash recém-detectado); P1 (debug-signed APK detectado em store/Firebase OU `minifyEnabled false` em produção) | ack < 1 h, mitig < 4 h |
 
+### Portal security headers (L01-38 / L10-05)
+| Runbook | Trigger | Severidade | Tempo alvo |
+|---|---|---|---|
+| [`CSP_RUNBOOK.md`](./CSP_RUNBOOK.md) | Página em branco com "Refused to execute inline script" (L01-38), Sentry alerta `csp.violation.script_src` em volume sustentado, `/api/csp-report` retornando 4xx/5xx, ou nova adição de inline `<script>` durante code review | P2 (CSP bloqueia fluxo legítimo / dev tooling), P1 (evidência de exploração XSS em produção, Sentry queue floodada) | ack < 1 h, mitig < 4 h |
+
 ### Idempotency / Wallet integrity (L18)
 | Runbook | Trigger | Severidade | Tempo alvo |
 |---|---|---|---|

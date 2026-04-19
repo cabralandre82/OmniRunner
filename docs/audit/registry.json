@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-19T09:53:20.407Z",
+  "generated_at": "2026-04-19T10:17:16.994Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 263,
-    "fixed": 84,
+    "fix-pending": 261,
+    "fixed": 86,
     "in-progress": 1
   },
   "by_wave": {
@@ -1320,27 +1320,46 @@
       "lens": 1,
       "title": "CSP 'unsafe-inline' + 'unsafe-eval' em script-src",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "security-headers",
         "portal",
-        "observability"
+        "observability",
+        "xss",
+        "csp"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "portal/src/lib/security/csp.ts",
+        "portal/src/lib/security/csp.test.ts",
+        "portal/src/middleware.ts",
+        "portal/next.config.mjs",
+        "portal/src/app/api/docs/route.ts",
+        "portal/src/app/api/docs/route.test.ts",
+        "portal/scripts/swagger-init.js",
+        "portal/scripts/copy-swagger-ui.mjs",
+        "portal/src/test/setup.ts"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/security/csp.test.ts",
+        "portal/src/app/api/csp-report/route.test.ts",
+        "portal/src/app/api/docs/route.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "c41fef7"
+      ],
+      "owner": "portal-team",
+      "runbook": "docs/runbooks/CSP_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Defesa em três camadas substituiu o CSP estático fraco por uma\npolítica nonce-based moderna sem nenhum `'unsafe-inline'` ou\n`'unsafe-eval'` em `script-src` na produção:\n\n1. **Builder puro** (`portal/src/lib/security/csp.ts`) —\n   `buildCsp({ nonce, isDev, reportEndpoint })` é a única fonte da\n   verdade do header. Assertions positivas + negativas em\n   `csp.test.ts` (24 casos) garantem que produção nunca volte a\n   carregar `'unsafe-inline'` / `'unsafe-eval'`. Em dev, apenas\n   `'unsafe-eval'` é re-adicionado (Next.js Fast Refresh / React\n   Refresh dependem dele); o nonce continua presente em ambos os\n   ambientes. `style-src 'unsafe-inline'` é mantido por decisão\n   explícita (Tailwind/shadcn/next-font emitem `<style>` inline e\n   XSS via inline-CSS é primitivo de exfiltração muito mais\n   fraco que via inline-JS — trade-off documentado no JSDoc).\n\n2. **Middleware per-request nonce** (`portal/src/middleware.ts`) —\n   `generateNonce()` produz 16 bytes de CSPRNG por request,\n   propagados via `x-nonce` no header da request downstream (RSCs\n   leem com `headers().get(\"x-nonce\")` para emitir\n   `<Script nonce={…}>`) e no header de response. `tagResponse`\n   garante que o CSP acompanha TODA resposta — incluindo\n   redirects, JSON error envelopes e 403 — então páginas de erro\n   (que historicamente são as mais XSS-prone) não escapam à\n   política. CSP estático em `next.config.mjs` foi removido\n   (middleware é a fonte única).\n\n3. **Sink de violações** (`portal/src/app/api/csp-report/route.ts`,\n   L10-05) — endpoint público (`PUBLIC_ROUTES`) que aceita as\n   duas formas de payload (`report-uri` legado +\n   `report-to`/`reports+json` moderno do Chromium), normaliza\n   campos, classifica severidade (`script-src*` → warn + Sentry\n   `captureMessage`; resto → info-only) e protege o pipeline com\n   cap de 8 KiB de body + rate limit per-process de 60 reports /\n   60 s. 13 testes cobrem parser, severidade e proteções.\n\nMigração de inline `<script>`:\n  - `app/api/docs` era o único lugar com `<script>…body…</script>`\n    no portal (bootstrap do Swagger-UI). Externalizado para\n    `scripts/swagger-init.js` (tracked) e copiado para\n    `public/vendor/swagger-ui/swagger-init.js` no build via\n    `copy-swagger-ui.mjs`. O HTML agora só carrega\n    `<script src=\"…\"></script>`, totalmente coberto por\n    `script-src 'self'` sem precisar de relaxamento.\n  - Test `route.test.ts` tem invariante negativa\n    (`<script\\b(?![^>]*\\bsrc=)[^>]*>`) que falha se algum\n    contributor reintroduzir inline script no futuro.\n\nDecisões de escopo deliberadas:\n  - `style-src 'unsafe-inline'` — mantido (ver acima). Migração\n    tracked separadamente.\n  - `'strict-dynamic'` adotado: chunks dinâmicos do Next.js\n    (lazy-loaded routes) carregam sem precisar de allow-list por\n    hash.\n  - `connect-src https://*.sentry.io` mantido como fallback\n    defensivo: o `tunnelRoute: \"/monitoring\"` proxy para Sentry,\n    mas se a tunnel falhar a SDK volta para ingest direto.\n  - Fallback de entropia em test env: `globalThis.crypto` não é\n    auto-populado em Node 18 ESM (vitest 2 default). Polyfill em\n    `src/test/setup.ts` ponteia para `node:crypto.webcrypto`.\n    Edge runtime e Node 19+ usam `globalThis.crypto` nativo —\n    `csp.ts` não carrega `node:crypto` estaticamente para\n    preservar compatibilidade Edge.\n"
     },
     {
       "id": "L01-39",
@@ -5458,27 +5477,41 @@
       "lens": 10,
       "title": "CSP hardened ([1.31]) mas sem report-uri",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
-        "rls",
         "security-headers",
-        "portal"
+        "portal",
+        "observability",
+        "csp",
+        "rls"
       ],
-      "files": [],
-      "correction_type": "config",
+      "files": [
+        "portal/src/lib/security/csp.ts",
+        "portal/src/app/api/csp-report/route.ts",
+        "portal/src/app/api/csp-report/route.test.ts",
+        "portal/src/middleware.ts",
+        "portal/src/lib/route-policy.ts"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/app/api/csp-report/route.test.ts",
+        "portal/src/lib/security/csp.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "c41fef7"
+      ],
+      "owner": "portal-team",
+      "runbook": "docs/runbooks/CSP_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Implementado em conjunto com L01-38 (CSP nonce-based hardening).\n\n- **Builder** (`lib/security/csp.ts`) emite ambas as formas de\n  diretiva de reporting:\n    ; report-uri /api/csp-report\n    ; report-to csp-endpoint\n  Firefox/Safari só honram a primeira; Chromium 73+ prefere a\n  segunda. Browsers podem mandar para as duas — o handler dedup\n  por shape antes de logar.\n- **`Report-To` header** é construído por\n  `buildReportToHeader(\"/api/csp-report\")` e setado no\n  `tagResponse` da middleware (mesma response que carrega o CSP),\n  ligando o group-name `csp-endpoint` ao endpoint.\n- **Sink** (`app/api/csp-report/route.ts`) suporta os dois\n  payload shapes:\n    • Legacy `application/csp-report`: `{ \"csp-report\": {...} }`\n    • Modern `application/reports+json`: `[{ type, body: {...} }]`\n  Normaliza em uma única struct `NormalisedViolation` e classifica:\n    • `script-src*` (script-src, script-src-elem, script-src-attr)\n      → `logger.warn` + `Sentry.captureMessage` (warning) com\n      tags `csp_directive` e `csp_blocked_uri` para roteamento\n      em alert rules.\n    • Demais directives → `logger.info` (sem Sentry, evita ruído\n      de tightening false positives).\n  Sempre responde 204 (mesmo em parse error) para não vazar\n  estado interno para um payload potencialmente atacante.\n  Cap de 8 KiB no body + rate limit per-process de 60/60 s\n  protegem o pipeline de log/Sentry contra browser mal-configurado\n  em loop.\n- **Roteamento público**: `/api/csp-report` está em\n  `PUBLIC_ROUTES` (`lib/route-policy.ts`). Browsers enviam reports\n  sem cookie de sessão; gating em auth derrubaria silenciosamente\n  todo report de página de login, OAuth callback, e os primeiros\n  milissegundos de qualquer page load.\n\nCobertura: 13 testes em `csp-report/route.test.ts` cobrindo\nparser dos dois shapes, severidade routing, rate limiter e\noversize handling. Veja `docs/runbooks/CSP_RUNBOOK.md` para\nsymptom→fix matrix (Symptom D específico para flooding de\nSentry com `csp.violation.script_src`).\n"
     },
     {
       "id": "L10-06",

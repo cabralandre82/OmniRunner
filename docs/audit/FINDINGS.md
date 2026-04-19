@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-19 09:53:20 UTC.
+> Atualizado em 2026-04-19 10:17:16 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -46,7 +46,7 @@ Total: **348** findings.
 | 🟢 safe | ✅ fixed | [L01-35](./findings/L01-35-supabase-functions-delete-account-admin-master-nao-pode.md) | 3 | L01 · CISO | supabase/functions/delete-account — Admin master não pode se auto-deletar | unassigned |
 | 🟠 high | ✅ fixed | [L01-36](./findings/L01-36-delete-account-fn-delete-user-data-nao-aborta.md) | 1 | L01 · CISO | delete-account — fn_delete_user_data não-aborta no erro | platform |
 | 🟢 safe | ✅ fixed | [L01-37](./findings/L01-37-set-user-role-aceita-so-strings-explicitas.md) | 3 | L01 · CISO | set-user-role — Aceita só strings explícitas | unassigned |
-| 🟠 high | ⏳ fix-pending | [L01-38](./findings/L01-38-csp-unsafe-inline-unsafe-eval-em-script-src.md) | 1 | L01 · CISO | CSP 'unsafe-inline' + 'unsafe-eval' em script-src | unassigned |
+| 🟠 high | ✅ fixed | [L01-38](./findings/L01-38-csp-unsafe-inline-unsafe-eval-em-script-src.md) | 1 | L01 · CISO | CSP 'unsafe-inline' + 'unsafe-eval' em script-src | portal-team |
 | 🟡 medium | ⏳ fix-pending | [L01-39](./findings/L01-39-csp-style-src-unsafe-inline.md) | 2 | L01 · CISO | CSP — style-src 'unsafe-inline' | unassigned |
 | 🟢 safe | ✅ fixed | [L01-40](./findings/L01-40-google-services-google-services-json-commitado.md) | 3 | L01 · CISO | Google services — google-services.json commitado | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L01-41](./findings/L01-41-coin-ledger-sem-assinatura-criptografica.md) | 2 | L01 · CISO | coin_ledger — Sem assinatura criptográfica | unassigned |
@@ -183,7 +183,7 @@ Total: **348** findings.
 | 🔴 critical | ⏳ fix-pending | [L10-02](./findings/L10-02-threat-model-formal-nao-documentado.md) | 1 | L10 · CSO | Threat model formal não documentado | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L10-03](./findings/L10-03-service-role-key-distribuida-amplamente.md) | 1 | L10 · CSO | Service-role key distribuída amplamente | unassigned |
 | 🟠 high | ⏳ fix-pending | [L10-04](./findings/L10-04-sem-waf-explicito.md) | 1 | L10 · CSO | Sem WAF explícito | unassigned |
-| 🟠 high | ⏳ fix-pending | [L10-05](./findings/L10-05-csp-hardened-1-31-mas-sem-report-uri.md) | 1 | L10 · CSO | CSP hardened ([1.31]) mas sem report-uri | unassigned |
+| 🟠 high | ✅ fixed | [L10-05](./findings/L10-05-csp-hardened-1-31-mas-sem-report-uri.md) | 1 | L10 · CSO | CSP hardened ([1.31]) mas sem report-uri | portal-team |
 | 🟠 high | ⏳ fix-pending | [L10-06](./findings/L10-06-segregacao-de-funcao-sod-ausente-em-platform-admin.md) | 1 | L10 · CSO | Segregação de função (SoD) ausente em platform_admin | unassigned |
 | 🟠 high | ⏳ fix-pending | [L10-07](./findings/L10-07-zero-trust-entre-microservicos-edge-functions-confiam-no.md) | 1 | L10 · CSO | Zero-trust entre microserviços — Edge Functions confiam no JWT sem validar audience | unassigned |
 | 🟠 high | ⏳ fix-pending | [L10-08](./findings/L10-08-logs-de-acesso-sensiveis-sem-imutabilidade.md) | 1 | L10 · CSO | Logs de acesso sensíveis sem imutabilidade | unassigned |
