@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-19T09:08:27.857Z",
+  "generated_at": "2026-04-19T09:25:16.167Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 266,
-    "fixed": 81,
+    "fix-pending": 265,
+    "fixed": 82,
     "in-progress": 1
   },
   "by_wave": {
@@ -1093,26 +1093,38 @@
       "lens": 1,
       "title": "Android — Release assina com debug key se key.properties não existir",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "mobile",
-        "reliability"
+        "reliability",
+        "ci"
       ],
-      "files": [],
+      "files": [
+        "omni_runner/android/app/build.gradle",
+        "omni_runner/android/key.properties.example",
+        ".github/workflows/release.yml",
+        "tools/test_l01_31_android_signing.sh",
+        "docs/runbooks/ANDROID_RELEASE_SIGNING_RUNBOOK.md"
+      ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l01_31_android_signing.sh"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "fcd4dc8"
+      ],
+      "owner": "app-team",
+      "runbook": "docs/runbooks/ANDROID_RELEASE_SIGNING_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed via three-layer defence:\n\n1. **Gradle fail-loud** (`omni_runner/android/app/build.gradle`):\n   The silent `signingConfigs.debug` ternary fallback is gone.\n   Configuration-time detection inspects\n   `gradle.startParameter.taskNames` for any `release` task; when one\n   is requested without `key.properties`, a `GradleException` aborts\n   the build with a runbook reference. An opt-in flag\n   `-PallowReleaseDebugSigning=true` exists for local ProGuard/R8\n   testing and emits a loud warning; CI is structurally forbidden\n   from setting it.\n\n2. **CI restores the keystore from secrets**\n   (`.github/workflows/release.yml`): a new \"Restore Android release\n   signing (L01-31)\" step decodes `ANDROID_KEYSTORE_BASE64` →\n   `omni_runner/android/app/omnirunner-release.keystore` and writes\n   `ANDROID_KEY_PROPERTIES` → `omni_runner/android/key.properties`,\n   verifies all four required keys (`storePassword`, `keyPassword`,\n   `keyAlias`, `storeFile`), `chmod 600`s both files, then runs the\n   structural lint *before* invoking fastlane. An always-on cleanup\n   step wipes both files at the end, even on build failure.\n\n3. **Structural lint** (`tools/test_l01_31_android_signing.sh`):\n   six invariants over `build.gradle` + `release.yml` —\n   (a) no ternary debug fallback, (b) GradleException + L01-31\n   reference present, (c) startParameter.taskNames detection wired,\n   (d) override flag wired, (e) release.yml does NOT enable the\n   override, (f) release.yml restores both secrets. Runs in <1s as a\n   dedicated CI step; sub-second negative test confirmed it catches\n   a re-introduced ternary fallback.\n\nOperational guide:\n[`docs/runbooks/ANDROID_RELEASE_SIGNING_RUNBOOK.md`](../../runbooks/ANDROID_RELEASE_SIGNING_RUNBOOK.md)\ncovers symptom→fix matrix for the five canonical failure modes\n(missing secret, gradle abort, Play upload-key mismatch, debug\noverride warning, lint failure) plus the upload-key rotation\nprocedure.\n"
     },
     {
       "id": "L01-32",
