@@ -11,6 +11,14 @@ import { NextResponse } from "next/server";
  * Elimina a dependência de unpkg/CDN e remove o risco de RCE em admin
  * autenticado caso o CDN seja comprometido.
  *
+ * L01-38: o bootstrap do Swagger-UI vivia inline neste handler num
+ * `<script>…</script>`, o que forçava `script-src 'unsafe-inline'` no
+ * CSP da rota inteira (e por extensão, do portal). Migrado para
+ * `/vendor/swagger-ui/swagger-init.js` — a referência cabe sob
+ * `script-src 'self'` e nada mais precisa de relaxamento. O `<style>`
+ * inline permanece (CSP `style-src 'self' 'unsafe-inline'`, decisão
+ * documentada em `lib/security/csp.ts`).
+ *
  * Política de cache (Cache-Control: no-store) aplicada ao HTML para que
  * atualizações no openapi.json e nos assets sejam observadas imediatamente.
  * Os assets em /vendor/swagger-ui/* são servidos pelo Next com cache longo
@@ -40,36 +48,7 @@ export async function GET() {
   <div id="swagger-ui"></div>
   <script src="/vendor/swagger-ui/swagger-ui-bundle.js"></script>
   <script src="/vendor/swagger-ui/swagger-ui-standalone-preset.js"></script>
-  <script>
-    window.onload = function() {
-      window.ui = SwaggerUIBundle({
-        // L14-01 — two specs are exposed: the legacy hand-maintained
-        // /openapi.json (v0 surface) and the generated
-        // /openapi-v1.json (v1 contract — single source of truth via
-        // Zod schemas). The dropdown lets API consumers switch between
-        // them; v1 is loaded by default.
-        urls: [
-          { name: "v1 (generated)", url: "/openapi-v1.json" },
-          { name: "v0 (legacy)",    url: "/openapi.json" }
-        ],
-        "urls.primaryName": "v1 (generated)",
-        dom_id: "#swagger-ui",
-        deepLinking: true,
-        presets: [
-          SwaggerUIBundle.presets.apis,
-          SwaggerUIStandalonePreset
-        ],
-        plugins: [
-          SwaggerUIBundle.plugins.DownloadUrl
-        ],
-        layout: "StandaloneLayout",
-        persistAuthorization: true,
-        displayRequestDuration: true,
-        filter: true,
-        tryItOutEnabled: true
-      });
-    };
-  </script>
+  <script src="/vendor/swagger-ui/swagger-init.js"></script>
 </body>
 </html>`;
 

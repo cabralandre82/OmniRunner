@@ -81,6 +81,12 @@ export const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
   "/api/health",
   "/api/custody/webhook",
   "/api/liveness",
+  // L10-05 — CSP violation reports are sent by the browser without a
+  // session cookie. Gating them on auth would silently drop every
+  // report from logged-out pages (login, OAuth callback) and from the
+  // earliest milliseconds of every page load (before session cookies
+  // are read). The handler itself rate-limits and caps body size.
+  "/api/csp-report",
 ]);
 
 /**

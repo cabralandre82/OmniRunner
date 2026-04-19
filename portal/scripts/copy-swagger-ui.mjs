@@ -24,6 +24,14 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORTAL_ROOT = resolve(__dirname, "..");
 const SRC_DIR = join(PORTAL_ROOT, "node_modules", "swagger-ui-dist");
 const DEST_DIR = join(PORTAL_ROOT, "public", "vendor", "swagger-ui");
+// L01-38 — bootstrap inline foi externalizado para
+// `scripts/swagger-init.js` (tracked source) e copiado para o mesmo
+// diretório dos assets de swagger-ui no build. O ranch antigo de
+// inline `<script>` no route handler exigia `script-src
+// 'unsafe-inline'`, anulando a defesa contra XSS. Agora o handler só
+// referencia `<script src="…"></script>` e o CSP `script-src 'self'
+// 'nonce-…' 'strict-dynamic'` cobre tudo.
+const LOCAL_ASSETS_DIR = __dirname;
 
 const ASSETS = [
   "swagger-ui.css",
@@ -32,6 +40,8 @@ const ASSETS = [
   "favicon-16x16.png",
   "favicon-32x32.png",
 ];
+
+const LOCAL_ASSETS = ["swagger-init.js"];
 
 async function fileExists(p) {
   try {
@@ -59,6 +69,19 @@ async function copyAsset(name) {
   return { name, bytes: buf.length, sha384: await sha384Base64(buf) };
 }
 
+async function copyLocalAsset(name) {
+  const src = join(LOCAL_ASSETS_DIR, name);
+  const dest = join(DEST_DIR, name);
+  if (!(await fileExists(src))) {
+    throw new Error(
+      `Local swagger asset ausente em ${src}. Conferir scripts/${name}.`
+    );
+  }
+  await copyFile(src, dest);
+  const buf = await readFile(src);
+  return { name, bytes: buf.length, sha384: await sha384Base64(buf) };
+}
+
 async function main() {
   if (!(await fileExists(SRC_DIR))) {
     console.warn(
@@ -73,6 +96,10 @@ async function main() {
   for (const asset of ASSETS) {
     const { name, bytes, sha384 } = await copyAsset(asset);
     manifest.assets[name] = { bytes, sha384: `sha384-${sha384}` };
+  }
+  for (const asset of LOCAL_ASSETS) {
+    const { name, bytes, sha384 } = await copyLocalAsset(asset);
+    manifest.assets[name] = { bytes, sha384: `sha384-${sha384}`, source: "local" };
   }
 
   let pkgVersion = "unknown";
@@ -93,7 +120,7 @@ async function main() {
   );
 
   console.log(
-    `[copy-swagger-ui] ${ASSETS.length} assets copiados para public/vendor/swagger-ui/ (v${pkgVersion}).`
+    `[copy-swagger-ui] ${ASSETS.length + LOCAL_ASSETS.length} assets copiados para public/vendor/swagger-ui/ (swagger-ui-dist v${pkgVersion}, ${LOCAL_ASSETS.length} local).`
   );
 }
 

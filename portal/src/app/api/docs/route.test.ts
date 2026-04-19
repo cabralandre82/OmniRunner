@@ -55,10 +55,20 @@ describe("GET /api/docs — L14-03 supply chain hardening", () => {
     expect(html).toContain('href="/vendor/swagger-ui/swagger-ui.css"');
   });
 
-  it("aponta Swagger-UI para o openapi.json correto", async () => {
+  it("L01-38 — bootstrap do Swagger-UI é externalizado (sem inline <script>)", async () => {
+    // O bootstrap (chamada SwaggerUIBundle({...})) vivia inline no
+    // handler até L01-38. Agora reside em
+    // /vendor/swagger-ui/swagger-init.js para que o CSP da rota possa
+    // omitir 'unsafe-inline' em script-src.
     const res = await GET();
     const html = await res.text();
-    expect(html).toContain('url: "/openapi.json"');
+
+    expect(html).toContain('src="/vendor/swagger-ui/swagger-init.js"');
+    // Toda tag <script> precisa carregar o atributo `src=` — caso
+    // contrário ela é uma execução inline e o CSP `script-src 'self'
+    // 'nonce-…' 'strict-dynamic'` a bloquearia em runtime. Negative
+    // lookahead casa qualquer `<script ...>` que NÃO contenha `src=`.
+    expect(html).not.toMatch(/<script\b(?![^>]*\bsrc=)[^>]*>/i);
   });
 
   it("não expõe tokens/secrets inline", async () => {

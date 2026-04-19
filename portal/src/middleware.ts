@@ -25,6 +25,11 @@ import {
   shouldEnforceCsrf,
   verifyCsrf,
 } from "@/lib/api/csrf";
+import {
+  buildCsp,
+  buildReportToHeader,
+  generateNonce,
+} from "@/lib/security/csp";
 
 /**
  * Portal middleware (L13-01..L13-07).
@@ -82,7 +87,24 @@ export async function middleware(request: NextRequest) {
   // the downstream request headers and the response.
   const requestId =
     request.headers.get("x-request-id") ?? crypto.randomUUID();
-  const extraRequestHeaders = { "x-request-id": requestId };
+
+  // (L01-38, L10-05) Per-request CSP nonce. Generated once, threaded
+  // into the downstream request headers as `x-nonce` so RSCs can read
+  // it via `headers().get("x-nonce")` and emit `<Script nonce={...}>`,
+  // and emitted on the response via `Content-Security-Policy:
+  // script-src 'nonce-…' 'strict-dynamic'`. The `tagResponse` helper
+  // guarantees the header lands on EVERY response (auth redirects,
+  // 403s, error envelopes) — a CSP that ships only on 200s leaks
+  // protection on the most XSS-prone surfaces (login error pages,
+  // OAuth callback failures, etc.).
+  const cspNonce = generateNonce();
+  const extraRequestHeaders = {
+    "x-request-id": requestId,
+    "x-nonce": cspNonce,
+  };
+  const isDev = process.env.NODE_ENV !== "production";
+  const cspHeaderValue = buildCsp({ nonce: cspNonce, isDev });
+  const reportToHeader = buildReportToHeader("/api/csp-report");
 
   // (L14-02) Pre-compute version-header policy once per request.
   // Path-dependent only, so we lift the work out of tagResponse:
@@ -105,6 +127,13 @@ export async function middleware(request: NextRequest) {
 
   const tagResponse = (res: NextResponse) => {
     res.headers.set("x-request-id", requestId);
+    // (L01-38) CSP is emitted on every response — including redirects
+    // and JSON error envelopes — so attacker-controllable error pages
+    // can't bypass the policy.
+    res.headers.set("Content-Security-Policy", cspHeaderValue);
+    if (reportToHeader) {
+      res.headers.set("Report-To", reportToHeader);
+    }
     if (isApiPath) {
       applyApiVersion(res);
       if (isLegacyFinancialPath) {
