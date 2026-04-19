@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { createServiceClient } from "@/lib/supabase/service";
 
 export type FlagCategory =
@@ -35,7 +37,24 @@ export class FeatureDisabledError extends Error {
 
 let cachedFlags: Map<string, Flag> | null = null;
 let lastFetchMs = 0;
+
+// L18-06: TTL stratification.
+//
+//   • Default flags (product/experimental/banner/operational) cache for 60s
+//     — admin tweaks are not time-critical and the load on `feature_flags`
+//     is cheap, so we keep the original throughput.
+//   • Kill switches cache for 5s — when an operator flips a critical
+//     subsystem off (e.g. `custody.withdrawals.enabled`) we want every
+//     serverless instance to honor it within ~5s, not within ~60s.
+//
+// `loadFlags()` chooses the effective TTL by inspecting the cached payload:
+// if any cached flag has `category='kill_switch'`, the short TTL applies to
+// the WHOLE refresh cycle (cheaper than two separate caches and avoids
+// races between them). The same `setFeatureFlag()` call still
+// `invalidateFeatureCache()`s on the writer instance, so a manual
+// invalidation is always immediate locally.
 const TTL_MS = 60_000;
+const KILL_SWITCH_TTL_MS = 5_000;
 
 /**
  * Limpa o cache. Chamado por testes e pelo route handler de mutação
@@ -46,9 +65,16 @@ export function invalidateFeatureCache(): void {
   lastFetchMs = 0;
 }
 
+function effectiveTtlMs(flags: Map<string, Flag>): number {
+  for (const flag of flags.values()) {
+    if (flag.category === "kill_switch") return KILL_SWITCH_TTL_MS;
+  }
+  return TTL_MS;
+}
+
 async function loadFlags(): Promise<Map<string, Flag>> {
   const now = Date.now();
-  if (cachedFlags && now - lastFetchMs < TTL_MS) {
+  if (cachedFlags && now - lastFetchMs < effectiveTtlMs(cachedFlags)) {
     return cachedFlags;
   }
 
@@ -83,15 +109,30 @@ async function loadFlags(): Promise<Map<string, Flag>> {
   }
 }
 
+// L18-07: SHA-256-based bucketing.
+//
+// The previous implementation used a DJB2-style hash
+// `(hash << 5) - hash + charCodeAt(i)` which is fast but not
+// statistically uniform across short inputs (UUID prefix overlap creates
+// visible bias when rollout_pct is far from 50). SHA-256 over
+// `userId:key` is overkill cryptographically but produces an excellent
+// uniform distribution for free; we read the first 4 bytes as an
+// unsigned 32-bit integer and modulo 100.
+//
+// Caveat (documented for the runbook): switching the hash function is a
+// one-time **re-randomisation** of every running A/B experiment — users
+// previously in the "in" bucket may flip to "out" and vice-versa. For
+// 50/50 splits this is invisible; for 90/10 it's a deliberate cost we
+// accept in exchange for unbiased buckets going forward.
 function userBucket(userId: string, key: string): number {
-  const str = `${userId}:${key}`;
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash) % 100;
+  const digest = createHash("sha256").update(`${userId}:${key}`).digest();
+  return digest.readUInt32BE(0) % 100;
 }
+
+// Exported only for tests; internal helper.
+export const __test_userBucket = userBucket;
+export const __test_KILL_SWITCH_TTL_MS = KILL_SWITCH_TTL_MS;
+export const __test_TTL_MS = TTL_MS;
 
 /**
  * Boolean check com semântica de rollout por user. Mantém assinatura
