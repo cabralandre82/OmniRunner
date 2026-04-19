@@ -6,7 +6,7 @@
 > seguro).
 > **Tempo alvo**: ack < 10min, mitigação < 15min.
 > **Linked findings**: L06-01, L06-05 (edge functions sem retry), L06-06
-> (kill switches).
+> (kill switches), **L01-01 (custody webhook receiver hardening)**.
 > **Última revisão**: 2026-04-17
 
 ---
@@ -224,3 +224,92 @@ Atenção especial no postmortem:
 | Gateway error rate | > 50% por 5min | Sentry / Grafana panel withdraw availability |
 | Webhook delivery lag | > 10min | `MAX(now() - created_at) WHERE processed=false` |
 | In-flight withdraws | > 30 | `COUNT(*) WHERE status='processing'` |
+
+## 8. Custody webhook receiver — `/api/custody/webhook` (L01-01)
+
+> Quick reference para o caminho `Stripe + MercadoPago → custody deposit
+> confirm`. Para o caminho Asaas billing, ver `ASAAS_WEBHOOK_RUNBOOK.md`.
+
+### 8.1 Como o receiver decide qual gateway é
+
+| Headers presentes                    | Decisão                                  |
+|--------------------------------------|------------------------------------------|
+| `stripe-signature` apenas            | gateway = `stripe`                       |
+| `x-signature` apenas                 | gateway = `mercadopago`                  |
+| ambos                                | **400 BAD_REQUEST** (anti header smuggling) |
+| nenhum                               | **400 BAD_REQUEST**                      |
+
+`x-gateway` enviado pelo cliente é **ignorado** — herança removida em
+L01-01 porque permitia forçar o caminho de verificação mais fraco.
+
+### 8.2 Replay window
+
+| Gateway     | Tolerância | Cabeçalho     | Manifest assinado                                    |
+|-------------|-----------|---------------|------------------------------------------------------|
+| Stripe      | 300 s     | `t=…,v1=…`    | `<ts>.<raw body>`                                    |
+| MercadoPago | 300 s     | `ts=…,v1=…`   | `id:<data.id>;request-id:<x-request-id>;ts:<ts>;` (v2)<br>fallback `<ts>.<raw body>` |
+
+Webhook fora da janela → **401 UNAUTHORIZED** + `metric
+custody.webhook.rejected{reason=signature}`. Bom indicador de:
+- relógio do servidor / VPC drift > 5 min — verificar NTP via
+  `chronyc tracking` no host.
+- gateway está retentando um webhook muito antigo (> 5 min) que vinha
+  travado em backlog — neste caso a assinatura antiga está expirada e o
+  gateway deveria reassinar; reportar ao support do gateway.
+
+Para emergência onde precisamos aceitar um webhook fora da janela
+(forensics ou recuperação de incident), **não** alargar `tolerance` em
+produção — preferir reproduzir manualmente o `confirmDepositByReference`
+via console:
+```typescript
+import { confirmDepositByReference } from "@/lib/custody";
+await confirmDepositByReference("<payment_reference>");
+```
+
+### 8.3 Receiver-side dedup (`custody_webhook_events`)
+
+Toda chamada ao receiver bem-sucedida insere uma row em
+`public.custody_webhook_events (gateway, event_id) PRIMARY KEY`. Replays
+de mesma (gateway, event_id) **não invocam** `confirmDepositByReference`
+nem auditam — apenas tickam a métrica `custody.webhook.replayed`.
+
+Queries operacionais úteis:
+```sql
+-- Webhooks recebidos nas últimas 24h por gateway
+SELECT gateway, count(*) AS received,
+       count(*) FILTER (WHERE processed_at IS NOT NULL) AS processed
+  FROM public.custody_webhook_events
+  WHERE received_at > now() - interval '24 hours'
+  GROUP BY gateway;
+
+-- Eventos recebidos mas nunca marcados como processados
+-- (indica que confirmDepositByReference falhou após dedup) — investigar
+SELECT gateway, event_id, payment_reference, received_at
+  FROM public.custody_webhook_events
+  WHERE processed_at IS NULL
+    AND received_at < now() - interval '5 minutes'
+  ORDER BY received_at;
+
+-- Suspeita de replay flood (mesmo event_id chegando muito): NÃO existe
+-- — o PK garante 1 row por (gateway, event_id). O contador de replays
+-- vive só na métrica.
+```
+
+### 8.4 Symptom → fix matrix
+
+| Sintoma                                                  | Diagnóstico                                       | Mitigação |
+|----------------------------------------------------------|---------------------------------------------------|-----------|
+| Spike de 401 em `/api/custody/webhook`                    | Verificar relógio do host + ts dos payloads recentes | Se NTP drifting, reiniciar `chronyd`; se gateway atrasado, esperar |
+| Spike de 400 com `BAD_REQUEST: Both stripe-signature…`    | Proxy mal configurado encaminhando ambos os headers | Auditar L7 LB / WAF; remover header parasita |
+| Spike de `custody.webhook.replayed{gateway=stripe}`       | Stripe está retentando porque algum webhook anterior recebeu não-2xx | Conferir 5xx do receiver; estabilizar dependências |
+| 413 PAYLOAD_TOO_LARGE                                     | Provedor mandou payload > 64 KiB (incomum)        | Investigar se é teste/prober ou body real anormal — se real, considerar elevar `MAX_WEBHOOK_BODY_BYTES` |
+| `processed_at IS NULL` para event antigo                  | `confirmDepositByReference` falhou após dedup     | Reprocessar via shell com `confirmDepositByReference("<ref>")` |
+| `metric custody.webhook.error{reason=dedup}` aparecendo   | `fn_record_custody_webhook_event` indisponível ou timeout | Verificar lock_timeout em PG; verificar saúde do schema |
+
+### 8.5 Rollback do hardening (last resort)
+
+Se uma regressão grave aparece, o caminho seguro de rollback é reverter
+o commit do receiver — **NÃO** desativar dedup ou tolerance em produção.
+A migration `20260419170000_l01_custody_webhook_dedup.sql` é seguro
+manter mesmo após revert do código (a tabela vira write-only do código
+antigo; sem prejuízo).

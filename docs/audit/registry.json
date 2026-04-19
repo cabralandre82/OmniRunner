@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-19T10:32:08.307Z",
+  "generated_at": "2026-04-19T11:04:51.897Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 260,
-    "fixed": 87,
+    "fixed": 88,
+    "fix-pending": 259,
     "in-progress": 1
   },
   "by_wave": {
@@ -52,34 +52,40 @@
       "lens": 1,
       "title": "POST /api/custody/webhook — Webhook de custódia (Stripe + MercadoPago)",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "idempotency",
         "webhook",
         "security-headers",
-        "mobile",
-        "portal"
+        "portal",
+        "replay-attack"
       ],
       "files": [
         "portal/src/app/api/custody/webhook/route.ts",
         "portal/src/lib/webhook.ts",
-        "portal/e2e/api-security.spec.ts"
+        "supabase/migrations/20260419170000_l01_custody_webhook_dedup.sql"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/webhook.test.ts",
+        "portal/src/app/api/custody/webhook/route.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "3818b17"
+      ],
+      "owner": "backend-platform",
+      "runbook": "docs/runbooks/GATEWAY_OUTAGE_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Hardening completo do receiver `POST /api/custody/webhook` em três\ncamadas independentes — qualquer uma sozinha já reduz superfície de\nataque, juntas dão defesa em profundidade.\n\n## 1. Detecção autoritativa de gateway\n- O cabeçalho `x-gateway` enviado pelo cliente é **ignorado**\n  completamente. Antes ele influenciava qual secret seria usado para\n  verificar a assinatura, criando vetor de \"header smuggling\": atacante\n  com proxy mal configurado que conseguisse injetar `x-gateway:\n  mercadopago` numa request originalmente Stripe forçava o caminho de\n  verificação MP (mais fraco).\n- Gateway agora vem APENAS de qual cabeçalho de assinatura está\n  presente: `stripe-signature` → Stripe; `x-signature` → MercadoPago;\n  ambos OU nenhum → **400 BAD_REQUEST** com `metric\n  custody.webhook.rejected{reason=ambiguous_gateway}`.\n- Teste positivo: requisição assinada por Stripe com `x-gateway:\n  mercadopago` ainda é validada como Stripe e prossegue (não é\n  rejeitada — ignorando, não confiando).\n\n## 2. MercadoPago — janela de timestamp + manifest v2\n- Novo `verifyMercadoPagoSignature` em `portal/src/lib/webhook.ts`\n  parseia `x-signature: ts=<unix>,v1=<hex>`, valida janela de tolerância\n  de 300 s (alinhado com Stripe), e assina o manifest v2 oficial:\n  `id:<data.id>;request-id:<x-request-id>;ts:<ts>;`\n- Quando `x-request-id` ou `data.id` faltam (test panel da MP, alguns\n  eventos administrativos), faz fallback para `<ts>.<raw body>` —\n  ainda timestamp-bound (replay > 5 min é rejeitado).\n- Auto-converte timestamps em milissegundos para segundos\n  (>= 1e12 → divide por 1000) — a doc da MP é inconsistente histori-\n  camente, ficamos pragmáticos.\n- Tolerante a whitespace e ordem dos componentes do header.\n- Substituiu o uso anterior do `verifyHmacSignature` genérico (que\n  não tinha proteção de replay alguma — flat HMAC do body).\n\n## 3. Receiver-side dedup por (gateway, event_id)\n- Nova migration `20260419170000_l01_custody_webhook_dedup.sql`:\n  - `public.custody_webhook_events` com PK composite `(gateway,\n    event_id)` (PK = primitivo de dedup; segundo arrival = unique\n    violation = replay).\n  - `fn_record_custody_webhook_event(p_gateway, p_event_id,\n    p_payment_reference, p_payload)` SECURITY DEFINER com\n    search_path travado e `lock_timeout=2s` — INSERT … ON CONFLICT\n    DO NOTHING + RETURNING decide replay vs nova em uma roundtrip.\n  - `fn_mark_custody_webhook_event_processed(gateway, event_id)`\n    atualiza `processed_at` após `confirmDepositByReference` ter\n    sucesso — permite query forense\n    `WHERE processed_at IS NULL AND received_at < now() - 5min`.\n  - `fn_prune_custody_webhook_events(p_keep_days int default 30)`\n    manual / future cron (Stripe retenta até 3d, MP até 72h, 30d dá\n    headroom forense).\n  - RLS forced + service-role only.\n  - Indexes: `received_at DESC` para triagem; partial\n    `(gateway, received_at) WHERE processed_at IS NULL` para o\n    backlog query.\n  - Self-test em 5 etapas dentro do `BEGIN`/`COMMIT` da migration.\n- Route handler: replay → 200 OK com `replayed: true, event_id` e\n  métrica `custody.webhook.replayed{gateway}`. **Não invoca**\n  `confirmDepositByReference`, **não** escreve audit log, **não**\n  incrementa `custody.webhook.confirmed`. Dedup table missing\n  (legacy install sem a migration aplicada) → degrada com warn log\n  e prossegue (não 500-a webhooks de clientes pagantes).\n- Complementa (não substitui) a UNIQUE em\n  `custody_deposits.payment_reference`: o dedup do receiver fecha\n  a janela onde o reference ainda não é conhecido (gateway pode\n  enviar o `evt_…` antes do `pi_…` aparecer no payload de\n  follow-ups).\n\n## 4. Defense-in-depth bonuses\n- **Body cap de 64 KiB**: rejeita via 413 PAYLOAD_TOO_LARGE tanto via\n  `content-length` declarado quanto via `Buffer.byteLength` real\n  (defesa contra atacante que mente no header e contra\n  `request.text()` sem limite do framework).\n- **Envelope canônico** `apiError` com `request_id` propagado\n  (L13-06/L14-05).\n- **Logs estruturados** com tags `gateway`, `event_id`,\n  `payment_reference`, `request_id` para queries em log aggregator.\n- **Métricas categorizadas** por reason (`signature`,\n  `body_too_large`, `ambiguous_gateway`, `invalid_json`,\n  `no_event_id`, `no_payment_reference`, `dedup`).\n- **503 quando secret missing** — antes era 400 vazio quando o env\n  var estava unset, o que mascarava config drift como \"cliente\n  mandou request errada\".\n\n## 5. Tests\n- **`webhook.test.ts`** (+14 = 25 total): MP v2 happy path, fallback\n  com x-request-id missing, fallback com data.id missing, mismatch\n  com dataId/xRequestId errados (verificador detecta substituição),\n  replay > 300s rejeitado, tolerância custom, secret errado, ts/v1\n  components missing, v1 vazio, ts não-numérico, ms→s auto-convert,\n  whitespace/ordem tolerantes, fallback com payload tamperado.\n- **`route.test.ts`** (novo, 18 cases): rejeição sem signature\n  headers, rejeição com ambos (header smuggling), `x-gateway`\n  ignorado, Stripe end-to-end, Stripe assinatura errada → 401,\n  Stripe ts stale → 401, MP v2 end-to-end, MP replay 401, MP\n  assinatura errada 401, dedup replay short-circuit, dedup RPC\n  error → 500, dedup table missing → degrada, 413 com\n  content-length forjado, 413 com body real grande, missing\n  event_id, JSON inválido, already_confirmed sem audit log,\n  Stripe secret missing → 503.\n\n## 6. Resultado\n- Suite portal **1275/0 (4 todos)**, lint clean, audit verify\n  348/348.\n- Migration self-test confirma dedup primitive.\n- Runbook canônico: `docs/runbooks/GATEWAY_OUTAGE_RUNBOOK.md` §8\n  (gateway detection table, replay window matrix, queries\n  operacionais para `custody_webhook_events`, symptom→fix matrix\n  de 6 entries, rollback strategy).\n"
     },
     {
       "id": "L01-02",

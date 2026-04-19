@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-19 10:32:08 UTC.
+> Atualizado em 2026-04-19 11:04:51 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -9,7 +9,7 @@ Total: **348** findings.
 
 | Sev | Status | ID | Onda | Lente | Título | Owner |
 |-----|--------|----|------|-------|--------|-------|
-| 🟠 high | ⏳ fix-pending | [L01-01](./findings/L01-01-post-api-custody-webhook-webhook-de-custodia-stripe.md) | 1 | L01 · CISO | POST /api/custody/webhook — Webhook de custódia (Stripe + MercadoPago) | unassigned |
+| 🟠 high | ✅ fixed | [L01-01](./findings/L01-01-post-api-custody-webhook-webhook-de-custodia-stripe.md) | 1 | L01 · CISO | POST /api/custody/webhook — Webhook de custódia (Stripe + MercadoPago) | backend-platform |
 | 🔴 critical | ✅ fixed | [L01-02](./findings/L01-02-post-api-custody-withdraw-criacao-e-execucao-de.md) | 0 | L01 · CISO | POST /api/custody/withdraw — Criação e execução de saque em um único request | unassigned |
 | 🔴 critical | ✅ fixed | [L01-03](./findings/L01-03-post-api-distribute-coins-distribuicao-de-coins-a.md) | 0 | L01 · CISO | POST /api/distribute-coins — Distribuição de coins a atleta | unassigned |
 | 🟠 high | ✅ fixed | [L01-04](./findings/L01-04-post-api-custody-create-deposit-confirm-sem-idempotency.md) | 1 | L01 · CISO | POST /api/custody (create deposit / confirm) — Sem idempotency-key | platform |
