@@ -1,0 +1,1278 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Runner Portal API (v1)",
+    "version": "1.0.0",
+    "description": "Contract-first OpenAPI specification for the v1 portal API. Generated from Zod schemas via @asteasolutions/zod-to-openapi. DO NOT EDIT BY HAND — regenerate via `npm run openapi:build`.",
+    "contact": {
+      "name": "Omni Runner"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://portal.omnirunner.app",
+      "description": "Production"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development"
+    }
+  ],
+  "tags": [
+    {
+      "name": "OmniCoins",
+      "description": "Custody, swap, distribution and clearing of coins."
+    }
+  ],
+  "components": {
+    "schemas": {
+      "ApiErrorBody": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              false
+            ],
+            "description": "Discriminator. `false` for error responses; success responses use `true`."
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Machine-readable error code. See `lib/api/errors.ts` → `COMMON_ERROR_CODES` for the canonical set.",
+                "example": "VALIDATION_FAILED"
+              },
+              "message": {
+                "type": "string",
+                "description": "Human-readable error message (Portuguese).",
+                "example": "Body inválido."
+              },
+              "request_id": {
+                "type": "string",
+                "description": "Request correlation ID. Same value as the `x-request-id` response header (L13-06). Echo this when reporting bugs.",
+                "example": "9b7f3c5a-1f6d-4e0a-9d3a-1d2c0c8a7e9f"
+              },
+              "details": {
+                "type": "object",
+                "additionalProperties": {},
+                "description": "Optional structured detail (e.g. Zod issue list, FX-quote diagnostic, withdrawal lock status)."
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "request_id"
+            ],
+            "description": "Error envelope. The discriminator pair (`ok=false`, `error`) is enforced by `apiError()`; clients can switch on `error.code`."
+          }
+        },
+        "required": [
+          "ok",
+          "error"
+        ]
+      },
+      "ApiOkMarker": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              true
+            ],
+            "description": "Discriminator. `true` for success responses; error responses use `false`."
+          }
+        },
+        "required": [
+          "ok"
+        ]
+      },
+      "DecimalAmount": {
+        "type": "string",
+        "pattern": "^-?\\d{1,12}\\.\\d{2}$",
+        "description": "Money amount serialised as a fixed-2 decimal string (e.g. `'1234.56'`). Never a JS `number` — see L01-04 for rationale.",
+        "example": "1500.00"
+      },
+      "IdempotencyKey": {
+        "type": "string",
+        "minLength": 8,
+        "maxLength": 128,
+        "pattern": "^[A-Za-z0-9._:-]+$",
+        "description": "Client-generated idempotency key (8-128 chars, alphanumeric plus `._:-`). When the same key is replayed, the original response is returned with `Idempotent-Replayed: true`.",
+        "example": "swap-accept-2026-04-17-001"
+      },
+      "SwapListResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiOkMarker"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "offers": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SwapOffer"
+                }
+              }
+            },
+            "required": [
+              "offers"
+            ]
+          }
+        ]
+      },
+      "SwapOffer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amount_usd": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "accepted",
+              "cancelled",
+              "expired"
+            ]
+          },
+          "creator_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "amount_usd",
+          "status",
+          "creator_user_id",
+          "expires_at"
+        ]
+      },
+      "SwapBody": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/SwapCreateBody"
+          },
+          {
+            "$ref": "#/components/schemas/SwapAcceptBody"
+          },
+          {
+            "$ref": "#/components/schemas/SwapCancelBody"
+          }
+        ],
+        "description": "Discriminated union over `action`. Each variant has its own required fields."
+      },
+      "SwapCreateBody": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "create"
+            ]
+          },
+          "amount_usd": {
+            "type": "number",
+            "minimum": 100,
+            "maximum": 500000,
+            "description": "Amount of USD to offer for swap.",
+            "example": 1500
+          },
+          "expires_in_days": {
+            "anyOf": [
+              {
+                "type": "number",
+                "enum": [
+                  1
+                ]
+              },
+              {
+                "type": "number",
+                "enum": [
+                  7
+                ]
+              },
+              {
+                "type": "number",
+                "enum": [
+                  30
+                ]
+              },
+              {
+                "type": "number",
+                "enum": [
+                  90
+                ]
+              }
+            ],
+            "description": "TTL in days (1, 7, 30, or 90). Defaults to 7 if omitted."
+          }
+        },
+        "required": [
+          "action",
+          "amount_usd"
+        ]
+      },
+      "SwapAcceptBody": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "accept"
+            ]
+          },
+          "order_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID of the swap offer to accept."
+          },
+          "external_payment_ref": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128,
+            "description": "Optional reference to off-platform payment (e.g. PIX transaction ID). Logged for CFO review when present."
+          }
+        },
+        "required": [
+          "action",
+          "order_id"
+        ]
+      },
+      "SwapCancelBody": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "cancel"
+            ]
+          },
+          "order_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "action",
+          "order_id"
+        ]
+      },
+      "CustodyAccountResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiOkMarker"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "account": {
+                "$ref": "#/components/schemas/CustodyAccount"
+              }
+            },
+            "required": [
+              "account"
+            ]
+          }
+        ]
+      },
+      "CustodyAccount": {
+        "type": "object",
+        "properties": {
+          "group_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "balance_usd": {
+            "type": "string",
+            "example": "1500.00"
+          },
+          "backing_usd": {
+            "type": "string",
+            "example": "1500.00"
+          }
+        },
+        "required": [
+          "group_id",
+          "balance_usd",
+          "backing_usd"
+        ]
+      },
+      "CustodyConfirmBody": {
+        "type": "object",
+        "properties": {
+          "deposit_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "deposit_id"
+        ]
+      },
+      "WithdrawalListResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiOkMarker"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "withdrawals": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Withdrawal"
+                }
+              }
+            },
+            "required": [
+              "withdrawals"
+            ]
+          }
+        ]
+      },
+      "Withdrawal": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amount_usd": {
+            "type": "number"
+          },
+          "target_currency": {
+            "type": "string",
+            "enum": [
+              "BRL",
+              "EUR",
+              "GBP"
+            ]
+          },
+          "fx_rate": {
+            "type": "string"
+          },
+          "payout_local": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "executed",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "amount_usd",
+          "target_currency",
+          "fx_rate",
+          "payout_local",
+          "status",
+          "created_at"
+        ]
+      },
+      "WithdrawBody": {
+        "type": "object",
+        "properties": {
+          "amount_usd": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "target_currency": {
+            "type": "string",
+            "enum": [
+              "BRL",
+              "EUR",
+              "GBP"
+            ],
+            "default": "BRL",
+            "description": "Local currency for the payout. Determines which FX quote is fetched server-side."
+          },
+          "provider_fee_usd": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Optional provider fee in USD (e.g. wire fee from the BaaS)."
+          }
+        },
+        "required": [
+          "amount_usd"
+        ]
+      },
+      "DistributeCoinsResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiOkMarker"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "ledger_entry_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "athlete_user_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "amount": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "ledger_entry_id",
+              "athlete_user_id",
+              "amount"
+            ]
+          }
+        ]
+      },
+      "DistributeCoinsBody": {
+        "type": "object",
+        "properties": {
+          "athlete_user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Athlete (auth.users.id) receiving the coins."
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "description": "Amount of coins to mint (integer, 1-1000)."
+          }
+        },
+        "required": [
+          "athlete_user_id",
+          "amount"
+        ]
+      },
+      "ClearingResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiOkMarker"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "settlements": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Settlement"
+                }
+              }
+            },
+            "required": [
+              "settlements"
+            ]
+          }
+        ]
+      },
+      "Settlement": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "creditor_group_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "debtor_group_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amount_usd": {
+            "type": "string"
+          },
+          "settled_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "creditor_group_id",
+          "debtor_group_id",
+          "amount_usd",
+          "settled_at"
+        ]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/api/v1/swap": {
+      "get": {
+        "tags": [
+          "OmniCoins"
+        ],
+        "summary": "List open swap offers for the current group",
+        "description": "Lists all swap offers for the current portal group. Requires `admin_master` role on the group. Rate-limited at 30 req/min per group (L14-04).",
+        "responses": {
+          "200": {
+            "description": "Open offers for the current group.",
+            "headers": {
+              "x-request-id": {
+                "description": "Request correlation ID (L13-06). Echoed by error envelopes as `error.request_id`.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "x-api-version": {
+                "description": "API contract major version (L14-02).",
+                "schema": {
+                  "type": "string",
+                  "example": "1"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No portal group selected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — no valid session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — authenticated but not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (L14-04 — keyed by group/user, not raw IP). Honour the `Retry-After` header.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the next attempt is permitted.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "OmniCoins"
+        ],
+        "summary": "Create, accept, or cancel a swap offer",
+        "description": "Discriminated by the `action` field. `create` opens a new offer; `accept` settles an existing offer; `cancel` closes one the caller owns. Rate-limited at 10 req/min per group.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Action succeeded; updated offer returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapOffer"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed or no group selected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — no valid session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — authenticated but not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Swap not in `open` state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Swap expired (TTL past, see L05-02).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (L14-04 — keyed by group/user, not raw IP). Honour the `Retry-After` header.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the next attempt is permitted.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable (e.g. feature flag off).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/custody": {
+      "get": {
+        "tags": [
+          "OmniCoins"
+        ],
+        "summary": "Read the custody account for the current group",
+        "description": "Returns the custody account snapshot (balance + backing). Used by the dashboard to render the funds widget.",
+        "responses": {
+          "200": {
+            "description": "Custody account snapshot.",
+            "headers": {
+              "x-request-id": {
+                "description": "Request correlation ID (L13-06). Echoed by error envelopes as `error.request_id`.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "x-api-version": {
+                "description": "API contract major version (L14-02).",
+                "schema": {
+                  "type": "string",
+                  "example": "1"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustodyAccountResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — no valid session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — authenticated but not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "OmniCoins"
+        ],
+        "summary": "Confirm a custody deposit",
+        "description": "Confirms a deposit by ID. The `Idempotency-Key` header is REQUIRED — replays return the original response with `Idempotent-Replayed: true`.",
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/components/schemas/IdempotencyKey"
+            },
+            "required": true,
+            "description": "Client-generated idempotency key (8-128 chars, alphanumeric plus `._:-`). When the same key is replayed, the original response is returned with `Idempotent-Replayed: true`.",
+            "name": "idempotency-key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustodyConfirmBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Deposit confirmed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiOkMarker"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed — see `error.details`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — no valid session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — authenticated but not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (L14-04 — keyed by group/user, not raw IP). Honour the `Retry-After` header.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the next attempt is permitted.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/custody/withdraw": {
+      "get": {
+        "tags": [
+          "OmniCoins"
+        ],
+        "summary": "List withdrawals for the current group",
+        "responses": {
+          "200": {
+            "description": "Withdrawal history.",
+            "headers": {
+              "x-request-id": {
+                "description": "Request correlation ID (L13-06). Echoed by error envelopes as `error.request_id`.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "x-api-version": {
+                "description": "API contract major version (L14-02).",
+                "schema": {
+                  "type": "string",
+                  "example": "1"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WithdrawalListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — no valid session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — authenticated but not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "OmniCoins"
+        ],
+        "summary": "Initiate a custody withdrawal (USD → local currency)",
+        "description": "FX rate is resolved server-side from `platform_fx_quotes` (L01-02 — never accepted from the client). On stale quote, 503 with retry guidance.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Withdrawal created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Withdrawal"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — no valid session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — authenticated but not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (L14-04 — keyed by group/user, not raw IP). Honour the `Retry-After` header.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the next attempt is permitted.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable (e.g. feature flag off).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/distribute-coins": {
+      "post": {
+        "tags": [
+          "OmniCoins"
+        ],
+        "summary": "Mint coins to an athlete wallet",
+        "description": "Atomic mint: custody → inventory → wallet → ledger in a single RPC (see migration `20260417120000_emit_coins_atomic.sql`). Idempotent by `coin_ledger.ref_id` UNIQUE constraint.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DistributeCoinsBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Coins minted; ledger entry returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistributeCoinsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — no valid session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — authenticated but not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Athlete not found in this group.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (L14-04 — keyed by group/user, not raw IP). Honour the `Retry-After` header.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the next attempt is permitted.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable (e.g. feature flag off).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clearing": {
+      "get": {
+        "tags": [
+          "OmniCoins"
+        ],
+        "summary": "List clearing settlements involving the current group",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "creditor",
+                "debtor",
+                "both"
+              ],
+              "default": "both",
+              "description": "Filter to settlements where the current group is the creditor, debtor, or either (default)."
+            },
+            "required": false,
+            "description": "Filter to settlements where the current group is the creditor, debtor, or either (default).",
+            "name": "role",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Settlements list.",
+            "headers": {
+              "x-request-id": {
+                "description": "Request correlation ID (L13-06). Echoed by error envelopes as `error.request_id`.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "x-api-version": {
+                "description": "API contract major version (L14-02).",
+                "schema": {
+                  "type": "string",
+                  "example": "1"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClearingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — no valid session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — authenticated but not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}

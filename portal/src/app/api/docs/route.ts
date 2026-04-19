@@ -43,7 +43,16 @@ export async function GET() {
   <script>
     window.onload = function() {
       window.ui = SwaggerUIBundle({
-        url: "/openapi.json",
+        // L14-01 — two specs are exposed: the legacy hand-maintained
+        // /openapi.json (v0 surface) and the generated
+        // /openapi-v1.json (v1 contract — single source of truth via
+        // Zod schemas). The dropdown lets API consumers switch between
+        // them; v1 is loaded by default.
+        urls: [
+          { name: "v1 (generated)", url: "/openapi-v1.json" },
+          { name: "v0 (legacy)",    url: "/openapi.json" }
+        ],
+        "urls.primaryName": "v1 (generated)",
         dom_id: "#swagger-ui",
         deepLinking: true,
         presets: [

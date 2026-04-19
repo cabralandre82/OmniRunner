@@ -17,9 +17,13 @@
     "qa:no-money": "bash scripts/qa-no-money.sh ../omni_runner/lib",
     "postinstall": "node scripts/copy-swagger-ui.mjs",
     "security:audit": "npm audit --audit-level=critical",
-    "security:audit:report": "npm audit --audit-level=high"
+    "security:audit:report": "npm audit --audit-level=high",
+    "openapi:build": "tsx tools/openapi/build.ts",
+    "openapi:check": "tsx tools/openapi/check-coverage.ts",
+    "openapi:baseline": "tsx tools/openapi/refresh-baseline.ts"
   },
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^8.5.0",
     "@sentry/nextjs": "^10.40.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.97.0",
