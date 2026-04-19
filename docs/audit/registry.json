@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-19T08:40:57.694Z",
+  "generated_at": "2026-04-19T09:08:27.857Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fix-pending": 267,
-    "fixed": 80,
+    "fix-pending": 266,
+    "fixed": 81,
     "in-progress": 1
   },
   "by_wave": {
@@ -1016,9 +1016,10 @@
       "lens": 1,
       "title": "Deep link — Strava callback sem state/CSRF",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "security-headers",
         "integration",
@@ -1026,19 +1027,32 @@
         "seo",
         "reliability"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "omni_runner/lib/features/strava/data/strava_oauth_state.dart",
+        "omni_runner/lib/features/strava/data/strava_auth_repository_impl.dart",
+        "omni_runner/lib/features/strava/data/strava_http_client.dart",
+        "omni_runner/lib/core/deep_links/deep_link_handler.dart",
+        "omni_runner/lib/core/di/data_module.dart",
+        "omni_runner/lib/presentation/screens/auth_gate.dart"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "omni_runner/test/features/strava/strava_oauth_state_test.dart",
+        "omni_runner/test/features/strava/strava_auth_repository_test.dart",
+        "omni_runner/test/core/deep_links/deep_link_handler_test.dart"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "commit:396340c"
+      ],
+      "owner": "app-team",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed by a three-layer defence (commit `396340c`):\n\n1. **`StravaOAuthStateGuard`** (new) mints a 32-byte CSPRNG token\n   base64url-encoded per OAuth flow, persists it to secure_storage\n   with a 10-minute TTL and absolute expiry timestamp. The guard is\n   decoupled from `FlutterSecureStorage` via a small\n   `OAuthStateStorage` interface so unit tests run without the\n   platform channel. `validateAndConsume()` compares the returned\n   value in constant time, clears storage on every path\n   (success/mismatch/expired/missing), and enforces consume-once\n   semantics — replaying the same `state` on a second callback\n   fails by design.\n\n2. **`StravaAuthRepositoryImpl.authenticate()`** now calls\n   `beginFlow()` BEFORE building the auth URL, threads the token\n   into the `state=` query param via the updated\n   `StravaHttpClient.buildAuthorizationUrl`, and runs\n   `validateAndConsume(returnedState)` BEFORE inspecting the\n   `code` parameter. A mismatch raises\n   `AuthFailed(\"OAuth state mismatch — flow aborted\")` and the\n   token exchange never happens. State is cleared on every\n   cancel/error branch (PlatformException, IntegrationFailure,\n   AuthCancelled, generic Exception). The `FlutterWebAuth2.authenticate`\n   call was extracted behind a `WebAuthLauncher` typedef so the\n   happy/mismatch/replay/cancel branches are testable end-to-end\n   without binding to the real platform channel.\n\n3. **`DeepLinkHandler`** legacy Strava callback parsing branches\n   (`omnirunner://strava/callback?code=X` and\n   `omnirunner://localhost/exchange_token?code=X`) were REMOVED.\n   Production OAuth runs only through `flutter_web_auth_2` on the\n   dedicated `omnirunnerauth://` scheme — these `omnirunner://`\n   branches were dead code that any future consumer could\n   accidentally re-enable to inherit the original CSRF. Inbound\n   forged links now classify as `UnknownLinkAction` and are\n   ignored. The `StravaCallbackAction` class itself is kept as\n   `@deprecated` to preserve the defensive guard in\n   `auth_gate._onDeepLink` that warns if any code path reintroduces\n   the action.\n\nTests (56 cases passing across three suites):\n- `strava_oauth_state_test.dart` — 16 cases covering token\n  minting, CSPRNG uniqueness, single-in-flight overwrite, TTL\n  expiry, mismatch, replay, missing/empty/null returned state,\n  storage corruption, and clear semantics.\n- `strava_auth_repository_test.dart` — 6 new cases for the\n  `authenticate()` flow: happy path with state match + token\n  exchange, forged callback rejection, missing state in callback,\n  replay across two flows, URL embeds the minted state, and state\n  cleared on cancellation.\n- `deep_link_handler_test.dart` — 3 updated cases asserting the\n  legacy paths now return `UnknownLinkAction` (with and without a\n  state param).\n"
     },
     {
       "id": "L01-30",
