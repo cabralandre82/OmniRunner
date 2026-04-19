@@ -51,10 +51,12 @@ export const brandingSchema = z
   })
   .strict();
 
-export const checkoutSchema = z.object({
-  product_id: z.string().min(1, "product_id is required"),
-  gateway: z.enum(["mercadopago", "stripe"]).optional().default("mercadopago"),
-});
+export const checkoutSchema = z
+  .object({
+    product_id: z.string().uuid("product_id deve ser UUID válido"),
+    gateway: z.enum(["mercadopago", "stripe"]).optional().default("mercadopago"),
+  })
+  .strict();
 
 export const gatewayPreferenceSchema = z.object({
   preferred_gateway: z.enum(["mercadopago", "stripe"], {

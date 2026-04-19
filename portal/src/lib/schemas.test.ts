@@ -117,16 +117,44 @@ describe("brandingSchema", () => {
 });
 
 describe("checkoutSchema", () => {
-  it("accepts with default gateway", () => {
-    const result = checkoutSchema.safeParse({ product_id: "prod-1" });
+  const VALID_UUID = "550e8400-e29b-41d4-a716-446655440000";
+
+  it("accepts with default gateway (mercadopago)", () => {
+    const result = checkoutSchema.safeParse({ product_id: VALID_UUID });
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.gateway).toBe("mercadopago");
     }
   });
 
-  it("rejects empty product_id", () => {
-    const result = checkoutSchema.safeParse({ product_id: "" });
+  it("accepts explicit gateway override", () => {
+    const result = checkoutSchema.safeParse({
+      product_id: VALID_UUID,
+      gateway: "stripe",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.gateway).toBe("stripe");
+  });
+
+  it("rejects non-UUID product_id (L01-09 hardening)", () => {
+    expect(checkoutSchema.safeParse({ product_id: "prod-1" }).success).toBe(false);
+    expect(checkoutSchema.safeParse({ product_id: "" }).success).toBe(false);
+    expect(checkoutSchema.safeParse({ product_id: "../../etc/passwd" }).success).toBe(false);
+  });
+
+  it("rejects unknown extra fields (.strict)", () => {
+    const result = checkoutSchema.safeParse({
+      product_id: VALID_UUID,
+      malicious: "<script>",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects unknown gateway", () => {
+    const result = checkoutSchema.safeParse({
+      product_id: VALID_UUID,
+      gateway: "paypal",
+    });
     expect(result.success).toBe(false);
   });
 });
