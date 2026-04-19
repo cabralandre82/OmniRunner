@@ -2,6 +2,17 @@
 
 import { useEffect } from "react";
 
+import { reportClientError } from "@/lib/observability/reportClientError";
+
+/**
+ * L06-07 — Root layout subtree error boundary.
+ *
+ * Catches anything that escapes a nested route group's own `error.tsx`
+ * (i.e. a crash that happened while rendering the root `layout.tsx`'s
+ * children but before any `(portal)` / `platform` boundary could catch it).
+ * Treated as P1: at this depth the surrounding chrome is barely available
+ * and the user is one click away from leaving — page on-call.
+ */
 export default function RootError({
   error,
   reset,
@@ -10,7 +21,7 @@ export default function RootError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("Root error:", error);
+    reportClientError({ error, boundary: "root" });
   }, [error]);
 
   return (
@@ -25,6 +36,11 @@ export default function RootError({
         <p className="mt-2 text-sm text-content-secondary">
           Ocorreu um erro inesperado. Tente novamente.
         </p>
+        {error.digest && (
+          <p className="mt-1 font-mono text-xs text-content-muted">
+            Ref: {error.digest}
+          </p>
+        )}
         <button
           onClick={reset}
           className="mt-6 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:brightness-110"

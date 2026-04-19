@@ -1,9 +1,19 @@
 "use client";
 
 import { useEffect } from "react";
-import * as Sentry from "@sentry/nextjs";
 import { useTranslations } from "next-intl";
 
+import { reportClientError } from "@/lib/observability/reportClientError";
+
+/**
+ * L06-07 — Platform admin area error boundary.
+ *
+ * Routed through the central `reportClientError` helper so this file picks
+ * up the same `error_boundary=platform` + `severity=P2` tags every other
+ * boundary uses. Previously this file called `Sentry.captureException`
+ * directly without tags, which made on-call unable to filter by surface
+ * area in Sentry.
+ */
 export default function PlatformError({
   error,
   reset,
@@ -14,7 +24,7 @@ export default function PlatformError({
   const te = useTranslations("error");
   const tc = useTranslations("common");
   useEffect(() => {
-    Sentry.captureException(error);
+    reportClientError({ error, boundary: "platform" });
   }, [error]);
   return (
     <div className="flex flex-col items-center justify-center px-6 py-24 text-center">

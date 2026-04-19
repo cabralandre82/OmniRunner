@@ -1,5 +1,18 @@
 'use client';
 
+import { useEffect } from 'react';
+
+import { reportClientError } from '@/lib/observability/reportClientError';
+
+/**
+ * L06-07 — Root document error boundary.
+ *
+ * Next.js renders this when even the root `layout.tsx` throws (so it owns
+ * the entire `<html>` document — no shared chrome). Anything caught here is
+ * by definition catastrophic: the user is staring at a blank fallback and
+ * no nested boundary will catch retries. We forward to Sentry as P1 via
+ * `reportClientError({ boundary: "global" })` so on-call gets paged.
+ */
 export default function GlobalError({
   error,
   reset,
@@ -7,6 +20,10 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    reportClientError({ error, boundary: 'global' });
+  }, [error]);
+
   return (
     <html lang="pt-BR">
       <body>
@@ -30,6 +47,17 @@ export default function GlobalError({
             Ocorreu um erro inesperado. Por favor, tente novamente ou entre em
             contato com o suporte se o problema persistir.
           </p>
+          {error.digest && (
+            <p
+              style={{
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                fontSize: '0.75rem',
+                color: '#9ca3af',
+              }}
+            >
+              Ref: {error.digest}
+            </p>
+          )}
           <button
             onClick={reset}
             style={{
