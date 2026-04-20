@@ -91,8 +91,17 @@ export const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
 
 /**
  * Public path prefixes (deep links shareable without authentication).
+ *
+ * `/api/cron/` is included here so external schedulers (Vercel Cron,
+ * GitHub Actions) can call the cron endpoints without a portal session
+ * cookie. Each route inside the prefix authenticates the caller via a
+ * `CRON_SECRET` bearer token (constant-time compare); see L02-10.
  */
-export const PUBLIC_PREFIXES: readonly string[] = ["/challenge/", "/invite/"];
+export const PUBLIC_PREFIXES: readonly string[] = [
+  "/challenge/",
+  "/invite/",
+  "/api/cron/",
+];
 
 /**
  * Path prefixes that require a session but no group membership

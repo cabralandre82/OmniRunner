@@ -80,6 +80,7 @@ const {
   processBurnForClearing,
   aggregateClearingWindow,
   settleWindowForDebtor,
+  settleClearingChunk,
   executeBurnAtomic,
   computeBurnPlan,
 } = await import("./clearing");
@@ -254,6 +255,130 @@ describe("settleWindowForDebtor", () => {
     );
 
     expect(result.failed).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("settleClearingChunk (L02-10)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const WINDOW_START = new Date("2026-04-13T00:00:00Z");
+  const WINDOW_END = new Date("2026-04-20T00:00:00Z");
+
+  it("calls fn_settle_clearing_chunk RPC with normalised params", async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: [{ processed: 0, settled: 0, insufficient: 0, failed: 0, remaining: 0 }],
+      error: null,
+    });
+
+    await settleClearingChunk({
+      windowStart: WINDOW_START,
+      windowEnd: WINDOW_END,
+    });
+
+    expect(mockRpc).toHaveBeenCalledWith("fn_settle_clearing_chunk", {
+      p_window_start: WINDOW_START.toISOString(),
+      p_window_end: WINDOW_END.toISOString(),
+      p_limit: 50,
+      p_debtor_group_id: null,
+    });
+  });
+
+  it("forwards optional limit + debtorGroupId", async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: [{ processed: 0, settled: 0, insufficient: 0, failed: 0, remaining: 0 }],
+      error: null,
+    });
+
+    await settleClearingChunk({
+      windowStart: WINDOW_START,
+      windowEnd: WINDOW_END,
+      limit: 200,
+      debtorGroupId: "11111111-2222-4333-8444-555555555555",
+    });
+
+    expect(mockRpc).toHaveBeenCalledWith(
+      "fn_settle_clearing_chunk",
+      expect.objectContaining({
+        p_limit: 200,
+        p_debtor_group_id: "11111111-2222-4333-8444-555555555555",
+      }),
+    );
+  });
+
+  it("returns numeric counts when RPC succeeds", async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: [
+        {
+          processed: 50,
+          settled: 47,
+          insufficient: 2,
+          failed: 1,
+          remaining: 23,
+        },
+      ],
+      error: null,
+    });
+
+    const result = await settleClearingChunk({
+      windowStart: WINDOW_START,
+      windowEnd: WINDOW_END,
+    });
+
+    expect(result).toEqual({
+      processed: 50,
+      settled: 47,
+      insufficient: 2,
+      failed: 1,
+      remaining: 23,
+    });
+  });
+
+  it("handles single-object response (non-array)", async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: { processed: 1, settled: 1, insufficient: 0, failed: 0, remaining: 0 },
+      error: null,
+    });
+
+    const result = await settleClearingChunk({
+      windowStart: WINDOW_START,
+      windowEnd: WINDOW_END,
+    });
+
+    expect(result.settled).toBe(1);
+    expect(result.remaining).toBe(0);
+  });
+
+  it("coerces missing fields to zero (defensive)", async () => {
+    mockRpc.mockResolvedValueOnce({ data: [{}], error: null });
+
+    const result = await settleClearingChunk({
+      windowStart: WINDOW_START,
+      windowEnd: WINDOW_END,
+    });
+
+    expect(result).toEqual({
+      processed: 0,
+      settled: 0,
+      insufficient: 0,
+      failed: 0,
+      remaining: 0,
+    });
+  });
+
+  it("throws when RPC returns an error", async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: "lock_timeout exhausted" },
+    });
+
+    await expect(
+      settleClearingChunk({
+        windowStart: WINDOW_START,
+        windowEnd: WINDOW_END,
+      }),
+    ).rejects.toThrow("lock_timeout exhausted");
   });
 });
 

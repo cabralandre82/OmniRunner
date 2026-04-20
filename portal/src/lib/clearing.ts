@@ -302,6 +302,18 @@ export async function aggregateClearingWindow(
  * Batch-settle all pending settlements for a given debtor within a time window.
  * This is the netting execution step: instead of settling per-burn,
  * we settle the aggregated result per (debtor, creditor) pair.
+ *
+ * @deprecated **L02-10**: this helper issues an unbounded `for-of` loop
+ * of `settle_clearing` RPC calls inside a single Vercel function
+ * invocation. With ~300+ pending settlements it exceeds the Vercel Pro
+ * 60s budget and dies silently mid-flight, leaving the ledger in a
+ * partially-settled state. Use {@link settleClearingChunk} instead
+ * (bounded, restartable, `FOR UPDATE SKIP LOCKED`-safe) and rely on the
+ * `settle-clearing-batch` pg_cron job to drain the backlog.
+ *
+ * Kept exported only for back-compat with the legacy tests in
+ * `clearing.test.ts`. **Do not call from any new API route or
+ * server-action.**
  */
 export async function settleWindowForDebtor(
   debtorGroupId: string,
@@ -337,4 +349,57 @@ export async function settleWindowForDebtor(
   }
 
   return { settled, failed };
+}
+
+/**
+ * L02-10 — Bounded chunk-processor for clearing settlements.
+ *
+ * Wraps the `fn_settle_clearing_chunk` SQL function which:
+ *   1. Picks up to `limit` pending settlements with
+ *      `FOR UPDATE SKIP LOCKED` (so concurrent workers don't block).
+ *   2. Calls `settle_clearing(id)` per row inside its own EXCEPTION
+ *      block so one bad row does not poison the rest of the chunk.
+ *   3. Returns counts including `remaining` (how many pending rows
+ *      still match the window) so the caller can decide whether to
+ *      issue another chunk or wait for the next cron tick.
+ *
+ * The cron `settle-clearing-batch` (`* * * * *`) drives this in-DB
+ * via `fn_settle_clearing_batch_safe` — the route handler at
+ * `/api/cron/settle-clearing-batch` exists as an operator-callable
+ * replay surface (and as the documented manual escape from the
+ * runbook) but the normal flow is fully cron-managed.
+ *
+ * `limit` is clamped server-side to `(0, 500]`.
+ */
+export async function settleClearingChunk(params: {
+  windowStart: Date;
+  windowEnd: Date;
+  limit?: number;
+  debtorGroupId?: string;
+}): Promise<{
+  processed: number;
+  settled: number;
+  insufficient: number;
+  failed: number;
+  remaining: number;
+}> {
+  const db = createServiceClient();
+
+  const { data, error } = await db.rpc("fn_settle_clearing_chunk", {
+    p_window_start: params.windowStart.toISOString(),
+    p_window_end: params.windowEnd.toISOString(),
+    p_limit: params.limit ?? 50,
+    p_debtor_group_id: params.debtorGroupId ?? null,
+  });
+
+  if (error) throw new Error(error.message);
+
+  const row = Array.isArray(data) ? data[0] : data;
+  return {
+    processed: Number(row?.processed ?? 0),
+    settled: Number(row?.settled ?? 0),
+    insufficient: Number(row?.insufficient ?? 0),
+    failed: Number(row?.failed ?? 0),
+    remaining: Number(row?.remaining ?? 0),
+  };
 }

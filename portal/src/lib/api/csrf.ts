@@ -109,6 +109,11 @@ export const CSRF_EXEMPT_PREFIXES: readonly string[] = [
   // and the security model is the OAuth `state` parameter, not a
   // browser-issued CSRF token.
   "/api/auth/callback",
+  // Cron endpoints (L02-10): authenticated by `Authorization: Bearer
+  // ${CRON_SECRET}` constant-time compare inside each route handler.
+  // External schedulers (Vercel Cron, GitHub Actions, in-DB pg_cron
+  // via pg_net) have no browser cookie store.
+  "/api/cron",
   // CSP violation reports (L01-38, L10-05): browsers POST these
   // WITHOUT cookies, often with `Origin: null` (sandboxed contexts) or
   // `application/csp-report`/`application/reports+json` content-types.
