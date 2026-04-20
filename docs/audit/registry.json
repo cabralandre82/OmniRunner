@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-20T01:29:01.139Z",
+  "generated_at": "2026-04-20T01:58:42.446Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 104,
-    "fix-pending": 243,
+    "fixed": 105,
+    "fix-pending": 242,
     "in-progress": 1
   },
   "by_wave": {
@@ -3453,30 +3453,47 @@
       "lens": 5,
       "title": "POST /api/distribute-coins: amount max 1000 — conflita com grandes clubes",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "atomicity",
         "portal",
-        "ux"
+        "ux",
+        "scalability"
       ],
       "files": [
-        "portal/src/lib/schemas.ts"
+        "portal/src/lib/schemas.ts",
+        "supabase/migrations/20260421120000_l05_distribute_coins_batch.sql",
+        "portal/src/app/api/distribute-coins/batch/route.ts",
+        "portal/src/app/api/v1/distribute-coins/batch/route.ts",
+        "portal/src/app/api/distribute-coins/route.ts",
+        "portal/src/lib/openapi/routes/v1-financial.ts",
+        "portal/public/openapi.json",
+        "portal/public/openapi-v1.json",
+        "docs/PORTAL_API.md"
       ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/schemas.test.ts",
+        "portal/src/app/api/distribute-coins/route.test.ts",
+        "portal/src/app/api/distribute-coins/batch/route.test.ts",
+        "portal/src/app/api/v1/v1-aliases.test.ts",
+        "tools/test_l05_03_distribute_coins_batch.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "3f350e5"
+      ],
       "owner": "unassigned",
-      "runbook": null,
+      "runbook": "docs/runbooks/CUSTODY_INCIDENT_RUNBOOK.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Two-front fix:\n(1) Per-call cap of /api/distribute-coins raised 1.000 → 100.000 (Zod\n    DISTRIBUTE_COINS_AMOUNT_MAX). The custódia + inventory CHECKs at the\n    DB layer remain the source of truth for \"can we afford?\". This alone\n    removes the artificial chunking pressure for medium clubs.\n(2) New POST /api/distribute-coins/batch (and v1 alias) accepts up to 200\n    atletas in a single SQL transaction via distribute_coins_batch_atomic\n    (migration 20260421120000_l05_distribute_coins_batch.sql). Total\n    capped at 1MM coins/batch, per-item at 100k, deterministic ref_id\n    derivation `<batch>__<idx>` for safe replays. Any item failure\n    (CUSTODY_FAILED, INVENTORY_INSUFFICIENT, INVALID_ITEM) rolls back\n    the entire batch — closes the residual atomicity surface still\n    visible to clients that previously looped /api/distribute-coins.\n\nDrive-by fix bundled in the same migration: L19-01 had introduced a\nlatent ambiguity bug in emit_coins_atomic (`SELECT ledger_id FROM\ncoin_ledger_idempotency` collided with the OUT parameter named\n`ledger_id`), causing 42702 on every PG-context invocation. The column\nis now qualified `cli.ledger_id` so SQL contexts (including the new\nbatch loop) work correctly.\n"
     },
     {
       "id": "L05-04",

@@ -122,7 +122,7 @@ All fields optional. Colors must be hex `#RRGGBB`. `logo_url` max 512 chars.
 
 ### `POST /api/distribute-coins`
 
-Distributes coins from group inventory to an athlete's wallet.
+Distributes coins from group inventory to a single athlete's wallet.
 
 **Auth:** `admin_master` role required. Rate limited: 20 req/min.
 
@@ -134,21 +134,93 @@ Distributes coins from group inventory to an athlete's wallet.
 }
 ```
 
-- `amount`: integer 1–1000
+- `amount`: integer 1–100 000 (L05-03 — raised from the legacy 1 000 cap to
+  fit weekly bonus distributions for medium clubs without artificial chunking)
 - `athlete_user_id`: must be UUID, must be `athlete` in the group
 
-**Flow:**
-1. Decrements group token inventory (`decrement_token_inventory` RPC)
-2. Credits athlete wallet (`increment_wallet_balance` RPC)
-3. Records ledger entry
-4. Audit log
+**Flow (atomic, L02-01):** all four mutations run inside a single SQL
+transaction via `emit_coins_atomic`:
+1. Claim idempotency slot in `coin_ledger_idempotency`
+2. Insert ledger row with the reserved `ledger_id`
+3. Commit coins against custódia USD (`custody_commit_coins`)
+4. Decrement group token inventory (`decrement_token_inventory`)
+5. Credit athlete wallet (`increment_wallet_balance`)
 
-**Rollback:** If wallet credit fails, inventory is rolled back.
+Any failure rolls back the whole transaction. Idempotent retries via
+`x-idempotency-key` (or generated `ref_id`) replay the same response
+without mutating state.
 
 **Response:**
 ```json
-{ "ok": true, "athlete_user_id": "...", "amount": 50, "athlete_name": "João" }
+{ "ok": true, "athlete_user_id": "...", "amount": 50, "athlete_name": "João",
+  "idempotent": false, "new_balance": 150 }
 ```
+
+### `POST /api/distribute-coins/batch` (L05-03)
+
+Distributes coins to **up to 200 athletes in a single SQL transaction**.
+Replaces the client-side pattern of N sequential calls to
+`/api/distribute-coins`, which multiplied the atomicity risk already
+addressed by L02-01 and degraded UX for clubs with 200+ atletas.
+
+**Auth:** `admin_master` role required. Rate limited: 5 req/min/group
+(tighter than the single-athlete endpoint — each call may move up to
+200 atletas at once).
+
+**Body (Zod: `distributeCoinsBatchSchema`):**
+```json
+{
+  "items": [
+    { "athlete_user_id": "uuid-1", "amount": 50 },
+    { "athlete_user_id": "uuid-2", "amount": 75 }
+  ],
+  "ref_id": "weekly-bonus-2026-w17"
+}
+```
+
+| Field | Constraint |
+|-------|------------|
+| `items.length` | 1 – 200 |
+| `items[i].amount` | integer 1 – 100 000 |
+| Σ `items[i].amount` | ≤ 1 000 000 per batch |
+| `items[i].athlete_user_id` | unique within the batch (no duplicates) |
+| `ref_id` | optional, 8 – 128 chars; defaults to `x-idempotency-key` or a derived `portal_batch_<actor>_<ts>` |
+
+**Atomicity:** the whole batch is a single transaction in
+`distribute_coins_batch_atomic`. If ANY item fails (`CUSTODY_FAILED`,
+`INVENTORY_INSUFFICIENT`, `INVALID_ITEM`), zero athletes are credited.
+
+**Idempotency:** each item gets a deterministic `ref_id = <batch_ref>__<idx>`,
+so replaying the same batch (same `ref_id`) returns the existing balances
+without mutating anything (`batch_was_idempotent: true`). Mixing new + replayed
+items in a single call is allowed and the audit log only records the new
+distributions.
+
+**Response (200):**
+```json
+{
+  "ok": true,
+  "batch_ref_id": "weekly-bonus-2026-w17",
+  "total_amount": 125,
+  "total_distributions": 2,
+  "batch_was_idempotent": false,
+  "items": [
+    { "athlete_user_id": "uuid-1", "amount": 50, "new_balance": 200,
+      "was_idempotent": false, "ledger_id": "..." },
+    { "athlete_user_id": "uuid-2", "amount": 75, "new_balance": 275,
+      "was_idempotent": false, "ledger_id": "..." }
+  ]
+}
+```
+
+**Common error codes:**
+- `403 FORBIDDEN` — caller is not `admin_master` of the group
+- `400 VALIDATION_FAILED` — payload violated Zod / RPC sanity caps
+- `422 CUSTODY_FAILED` — lastro USD insuficiente para o lote inteiro
+- `422 INVENTORY_INSUFFICIENT` — inventário insuficiente para o lote inteiro
+- `503 LOCK_NOT_AVAILABLE` (`Retry-After: 2`) — lock contention; retry
+- `503 SERVICE_UNAVAILABLE` — invariants check failed
+- `503 FEATURE_DISABLED` — `distribute_coins.enabled` kill switch off
 
 ### `POST /api/checkout`
 
@@ -354,6 +426,7 @@ In-memory rate limiter per user ID per endpoint. Resets on deploy.
 | Endpoint | Max requests | Window |
 |----------|:----------:|:------:|
 | `/api/distribute-coins` | 20 | 60s |
+| `/api/distribute-coins/batch` (L05-03) | 5 | 60s |
 | `/api/checkout` | 5 | 60s |
 | `/api/team/invite` | 10 | 60s |
 | `/api/team/remove` | 10 | 60s |

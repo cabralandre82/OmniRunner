@@ -4,24 +4,58 @@ audit_ref: "5.3"
 lens: 5
 title: "POST /api/distribute-coins: amount max 1000 — conflita com grandes clubes"
 severity: critical
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
-tags: ["finance", "atomicity", "portal", "ux"]
+tags: ["finance", "atomicity", "portal", "ux", "scalability"]
 files:
   - portal/src/lib/schemas.ts
+  - supabase/migrations/20260421120000_l05_distribute_coins_batch.sql
+  - portal/src/app/api/distribute-coins/batch/route.ts
+  - portal/src/app/api/v1/distribute-coins/batch/route.ts
+  - portal/src/app/api/distribute-coins/route.ts
+  - portal/src/lib/openapi/routes/v1-financial.ts
+  - portal/public/openapi.json
+  - portal/public/openapi-v1.json
+  - docs/PORTAL_API.md
 correction_type: process
 test_required: true
-tests: []
+tests:
+  - portal/src/lib/schemas.test.ts
+  - portal/src/app/api/distribute-coins/route.test.ts
+  - portal/src/app/api/distribute-coins/batch/route.test.ts
+  - portal/src/app/api/v1/v1-aliases.test.ts
+  - tools/test_l05_03_distribute_coins_batch.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "3f350e5"
 owner: unassigned
-runbook: null
+runbook: docs/runbooks/CUSTODY_INCIDENT_RUNBOOK.md
 effort_points: 5
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Two-front fix:
+  (1) Per-call cap of /api/distribute-coins raised 1.000 → 100.000 (Zod
+      DISTRIBUTE_COINS_AMOUNT_MAX). The custódia + inventory CHECKs at the
+      DB layer remain the source of truth for "can we afford?". This alone
+      removes the artificial chunking pressure for medium clubs.
+  (2) New POST /api/distribute-coins/batch (and v1 alias) accepts up to 200
+      atletas in a single SQL transaction via distribute_coins_batch_atomic
+      (migration 20260421120000_l05_distribute_coins_batch.sql). Total
+      capped at 1MM coins/batch, per-item at 100k, deterministic ref_id
+      derivation `<batch>__<idx>` for safe replays. Any item failure
+      (CUSTODY_FAILED, INVENTORY_INSUFFICIENT, INVALID_ITEM) rolls back
+      the entire batch — closes the residual atomicity surface still
+      visible to clients that previously looped /api/distribute-coins.
+
+  Drive-by fix bundled in the same migration: L19-01 had introduced a
+  latent ambiguity bug in emit_coins_atomic (`SELECT ledger_id FROM
+  coin_ledger_idempotency` collided with the OUT parameter named
+  `ledger_id`), causing 42702 on every PG-context invocation. The column
+  is now qualified `cli.ledger_id` so SQL contexts (including the new
+  batch loop) work correctly.
 ---
 # [L05-03] POST /api/distribute-coins: amount max 1000 — conflita com grandes clubes
 > **Lente:** 5 — CPO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** fix-pending
