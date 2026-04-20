@@ -2,7 +2,12 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { jsonOk, jsonErr } from "../_shared/http.ts";
 import { startTimer, logRequest, logError } from "../_shared/obs.ts";
-import { runAntiCheatPipeline, normalizeStravaActivity, haversine } from "../_shared/anti_cheat.ts";
+import {
+  runAntiCheatPipeline,
+  normalizeStravaActivity,
+  loadAntiCheatThresholds,
+  haversine,
+} from "../_shared/anti_cheat.ts";
 import { withCircuitBreaker } from "../_shared/circuit_breaker.ts";
 
 /**
@@ -289,7 +294,9 @@ export async function processStravaEvent(
     velocity: velocity ?? undefined,
     cadence: cadence ?? undefined,
   });
-  const antiCheatResult = runAntiCheatPipeline(antiCheatInput);
+  // L21-01/02: load profile-aware thresholds for the connected athlete.
+  const antiCheatThresholds = await loadAntiCheatThresholds(db, conn.user_id);
+  const antiCheatResult = runAntiCheatPipeline(antiCheatInput, antiCheatThresholds);
   const uniqueFlags = antiCheatResult.flags;
   const hasCritical = antiCheatResult.has_critical;
 

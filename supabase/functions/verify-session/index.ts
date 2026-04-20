@@ -6,7 +6,11 @@ import { checkRateLimit } from "../_shared/rate_limit.ts";
 import { startTimer, logRequest, logError } from "../_shared/obs.ts";
 import { requireJson, ValidationError } from "../_shared/validate.ts";
 import { classifyError } from "../_shared/errors.ts";
-import { runAntiCheatPipeline, normalizeAppSession } from "../_shared/anti_cheat.ts";
+import {
+  runAntiCheatPipeline,
+  normalizeAppSession,
+  loadAntiCheatThresholds,
+} from "../_shared/anti_cheat.ts";
 
 /**
  * verify-session — Supabase Edge Function
@@ -117,10 +121,11 @@ serve(async (req: Request) => {
       }, requestId);
     }
 
-    // ── 4. Run unified anti-cheat pipeline ───────────────────────────
+    // ── 4. Run unified anti-cheat pipeline (L21-01/02: profile-aware) ─
     const p = body as VerifyPayload;
     const input = normalizeAppSession(p);
-    const result = runAntiCheatPipeline(input);
+    const thresholds = await loadAntiCheatThresholds(db, user.id);
+    const result = runAntiCheatPipeline(input, thresholds);
 
     // ── 5. Persist (service_role bypasses RLS) ───────────────────────
     const { error } = await db
