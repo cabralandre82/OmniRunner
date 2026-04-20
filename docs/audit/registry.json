@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-20T00:45:10.532Z",
+  "generated_at": "2026-04-20T00:51:47.094Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 95,
-    "fix-pending": 252,
+    "fixed": 96,
+    "fix-pending": 251,
     "in-progress": 1
   },
   "by_wave": {
@@ -2076,9 +2076,10 @@
       "lens": 2,
       "title": "Cold start + timeout Vercel em operações longas",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-20T00:00:00.000Z",
       "tags": [
         "finance",
         "mobile",
@@ -2087,20 +2088,31 @@
         "cron"
       ],
       "files": [
-        "portal/src/lib/supabase/service.ts"
+        "portal/src/lib/supabase/service.ts",
+        "portal/src/lib/clearing.ts",
+        "portal/src/app/api/cron/settle-clearing-batch/route.ts",
+        "portal/src/lib/route-policy.ts",
+        "portal/src/lib/api/csrf.ts",
+        "supabase/migrations/20260420100000_l02_clearing_settle_chunked.sql"
       ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l02_10_clearing_settle_chunked.ts",
+        "portal/src/lib/clearing.test.ts",
+        "portal/src/app/api/cron/settle-clearing-batch/route.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "88deb25"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/CRON_HEALTH_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Solução em 4 camadas: (1) `fn_settle_clearing_chunk(window_start,\nwindow_end, limit, debtor_group_id)` em PL/pgSQL processa até `limit`\n(default 50, máx 500) settlements pendentes usando\n`FOR UPDATE SKIP LOCKED` + `EXCEPTION` por linha — single-row failure\nnão aborta o chunk; (2) `fn_settle_clearing_batch_safe(limit,\nwindow_hours)` é o cron-safe wrapper que reusa `cron_run_state` +\n`pg_try_advisory_xact_lock` (L12-03) para overlap protection e grava\nmetadados em `last_meta`; (3) `pg_cron` agenda `settle-clearing-batch`\na cada minuto in-DB (`* * * * *`), eliminando dependência do runtime\nserverless para o caminho primário; (4) `POST /api/cron/settle-clearing-batch`\nfica como surface de replay manual com `CRON_SECRET` (constant-time\ncompare), `maxDuration=60`, soft-time-budget de 50s, e drain loop\nbounded por `max_chunks` + `remaining=0` + `processed=0`. Verificação:\n9/9 integration tests verdes (chunk size, debtor scoping, insufficient\nvs failed, validação de input, cron-state lifecycle), 40/40 vitest\n(lib helper + route handler), `audit verify` 348/348. Backlog drena\nem ≤ N+1 minutos para qualquer N atual de pendings.\n"
     },
     {
       "id": "L02-11",

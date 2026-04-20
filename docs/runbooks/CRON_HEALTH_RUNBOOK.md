@@ -48,6 +48,7 @@ Esperado pós-L12-01/02/03 (windows em UTC):
 | `lifecycle-cron` | `*/5 * * * *` | wrapped em `fn_invoke_lifecycle_cron_safe()` |
 | `expire-matchmaking-queue` | `*/5 * * * *` | wrapped em `fn_expire_queue_entries_safe()` |
 | `process-scheduled-workout-releases` | `*/5 * * * *` | wrapped em `fn_process_scheduled_releases_safe()` |
+| `settle-clearing-batch` | `* * * * *` | adicionado por L02-10 — drena `clearing_settlements` em chunks de 50 dentro do banco (sem Vercel) |
 | `swap-expire` | `*/10 * * * *` | unchanged |
 | `onboarding-nudge-daily` | `0 10 * * *` | unchanged |
 
@@ -219,7 +220,85 @@ P1 — drift entre `wallets.balance_coins` e ledger acumula a cada dia.
 
 4. Se drift > 0 ainda: abrir CUSTODY_INCIDENT_RUNBOOK.
 
-### 3.5 Thundering herd voltou (regressão de L12-02)
+### 3.5 Settle-clearing batch parado / backlog crescendo (L02-10)
+
+Sinal: `cron_run_state` para `settle-clearing-batch` com
+`last_status='failed'` ou `last_meta.remaining` crescendo a cada
+ciclo (deveria sempre cair para 0).
+
+1. **Estado atual e tamanho do backlog**:
+
+   ```sql
+   SELECT name, last_status, run_count, skip_count,
+          last_meta, last_error,
+          age(now(), finished_at) AS since_finish
+   FROM   public.cron_run_state
+   WHERE  name = 'settle-clearing-batch';
+
+   SELECT count(*)
+   FROM   public.clearing_settlements
+   WHERE  status = 'pending';
+   ```
+
+2. **Disparo manual de um chunk** (via Edge endpoint, útil quando
+   pg_cron está parado mas Postgres está saudável):
+
+   ```bash
+   curl -X POST "$PORTAL_URL/api/cron/settle-clearing-batch" \
+     -H "Authorization: Bearer $CRON_SECRET" \
+     -H "Content-Type: application/json" \
+     -d '{"limit":50,"max_chunks":4,"window_hours":168}'
+   ```
+
+   Resposta esperada:
+
+   ```json
+   { "ok": true,
+     "chunks_processed": 4,
+     "total_processed": 200,
+     "total_settled":   195,
+     "remaining":       312,
+     "stop_reason":     "max_chunks" }
+   ```
+
+3. **Disparo manual via SQL** (não depende do portal Vercel — preferir
+   este caminho quando o serverless estiver indisponível):
+
+   ```sql
+   -- Reset da safety window e força um ciclo:
+   UPDATE public.cron_run_state
+   SET    last_status='never_run', started_at=NULL, finished_at=NULL,
+          updated_at=now()
+   WHERE  name = 'settle-clearing-batch';
+
+   SELECT public.fn_settle_clearing_batch_safe(50, 168);
+   ```
+
+4. **Drenar manualmente um chunk** (sem cron-state — útil para
+   investigar uma janela suspeita):
+
+   ```sql
+   SELECT * FROM public.fn_settle_clearing_chunk(
+     p_window_start => now() - interval '24 hours',
+     p_window_end   => now(),
+     p_limit        => 100,
+     p_debtor_group_id => NULL
+   );
+   ```
+
+5. **Causas comuns**
+   - Backlog real (campanha de novos pagadores) — `remaining` cai a
+     cada ciclo, mas devagar. Aumentar temporariamente o
+     `max_chunks` no `/api/cron/settle-clearing-batch` ou rodar o
+     SQL acima em loop manual.
+   - Linhas individuais falhando (`last_meta.failed > 0`) — checar
+     `RAISE NOTICE '[L02-10.chunk_row_failed]'` em
+     `pg_stat_statements` ou nos logs do Postgres; abrir
+     CUSTODY_INCIDENT_RUNBOOK.
+   - `lock_timeout` (`SQLSTATE 55P03`) recorrente — outro processo
+     segura linhas de `clearing_settlements`; ver §2.3.
+
+### 3.6 Thundering herd voltou (regressão de L12-02)
 
 Sinal: portal lento aos domingos 03:00 UTC, `pg_stat_activity` mostra
 ≥ 3 jobs concorrentes na mesma janela.
