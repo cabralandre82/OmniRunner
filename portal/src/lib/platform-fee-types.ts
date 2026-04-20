@@ -130,3 +130,84 @@ export function isPlatformFeeType(value: unknown): value is PlatformFeeType {
     (PLATFORM_FEE_TYPES as readonly string[]).includes(value)
   );
 }
+
+/**
+ * Pass-through fee types that appear in `platform_revenue` but are NOT
+ * configurable by platform admins (no row in `platform_fee_config`).
+ *
+ * Pass-through means: the platform records the line for accounting trail
+ * but does not keep the money — it forwards it to a third party (e.g.
+ * gateway, bank, custodian). Brazilian tax law: pass-through fees are
+ * NOT service revenue, so the L09-04 fiscal-receipts trigger
+ * (`_enqueue_fiscal_receipt`) explicitly skips them.
+ *
+ * Why a separate constant?
+ * ────────────────────────
+ * The CFO ledger (`platform_revenue`) needs to record EVERY USD that
+ * leaves custody, including the slice the gateway pockets. But the
+ * platform-admin UI only configures rates the platform itself charges
+ * (the `PLATFORM_FEE_TYPES` set). Mixing them in the same configurable
+ * list would let an admin "edit" the provider fee — which is meaningless
+ * because each gateway quotes its own per-transaction fee at withdraw
+ * time.
+ *
+ * History
+ * ───────
+ *   • L03-03 — `execute_withdrawal` was decrementing custody by the GROSS
+ *     `amount_usd` but only recording `fx_spread` in `platform_revenue`.
+ *     The provider fee just disappeared from the ledger, breaking the
+ *     custody invariant `deposits_in = withdrawals_out + revenue + held`.
+ *     Fix: insert a `provider_fee` row in the same TX as the existing
+ *     `fx_spread` insert, AND skip the fiscal-receipts trigger for it.
+ */
+export const PLATFORM_PASSTHROUGH_FEE_TYPES = [
+  "provider_fee",
+] as const;
+
+export type PlatformPassthroughFeeType =
+  (typeof PLATFORM_PASSTHROUGH_FEE_TYPES)[number];
+
+/**
+ * Superset of every `fee_type` that may appear in `platform_revenue`:
+ * configurable platform fees + pass-through fees. This is the value
+ * the `platform_revenue.fee_type` Postgres CHECK constraint mirrors.
+ *
+ * The contract test in `platform-fee-types.test.ts` asserts:
+ *
+ *   - `PLATFORM_REVENUE_FEE_TYPES` ⊃ `PLATFORM_FEE_TYPES`
+ *   - `PLATFORM_REVENUE_FEE_TYPES` = `PLATFORM_FEE_TYPES` ∪
+ *     `PLATFORM_PASSTHROUGH_FEE_TYPES`
+ *   - The Postgres CHECK in
+ *     `supabase/migrations/20260420090000_l03_provider_fee_revenue_track.sql`
+ *     contains exactly these literals.
+ */
+export const PLATFORM_REVENUE_FEE_TYPES = [
+  ...PLATFORM_FEE_TYPES,
+  ...PLATFORM_PASSTHROUGH_FEE_TYPES,
+] as const;
+
+export type PlatformRevenueFeeType =
+  (typeof PLATFORM_REVENUE_FEE_TYPES)[number];
+
+/**
+ * Pre-built Zod enum for code that filters/validates against the full
+ * revenue-side fee type list (e.g. CFO reporting tools, ledger
+ * reconciliation jobs). DO NOT use this in `POST /api/platform/fees` —
+ * that endpoint configures rates and must reject pass-through types.
+ */
+export const platformRevenueFeeTypeSchema = z.enum(
+  PLATFORM_REVENUE_FEE_TYPES,
+);
+
+/**
+ * Type guard companion to `isPlatformFeeType`, scoped to the broader
+ * revenue-side fee type set.
+ */
+export function isPlatformRevenueFeeType(
+  value: unknown,
+): value is PlatformRevenueFeeType {
+  return (
+    typeof value === "string" &&
+    (PLATFORM_REVENUE_FEE_TYPES as readonly string[]).includes(value)
+  );
+}
