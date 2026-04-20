@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-20T00:40:38.455Z",
+  "generated_at": "2026-04-20T00:45:10.532Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 94,
-    "fix-pending": 253,
+    "fixed": 95,
+    "fix-pending": 252,
     "in-progress": 1
   },
   "by_wave": {
@@ -4915,28 +4915,42 @@
       "lens": 8,
       "title": "Drift potencial entre coin_ledger e wallets fora do horário do cron",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-20T00:00:00.000Z",
       "tags": [
         "finance",
         "migration",
         "cron",
-        "reliability"
+        "reliability",
+        "observability"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260420120000_l08_wallet_ledger_drift_check.sql",
+        "portal/src/lib/wallet-invariants.ts",
+        "portal/src/app/api/platform/invariants/route.ts",
+        "portal/src/app/api/platform/invariants/wallets/route.ts"
+      ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/wallet-invariants.test.ts",
+        "portal/src/app/api/platform/invariants/route.test.ts",
+        "portal/src/app/api/platform/invariants/wallets/route.test.ts",
+        "tools/test_l08_07_wallet_ledger_drift_check.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "176745d"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/WALLET_RECONCILIATION_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "L08-07 fechado em 4 camadas — observação real-time **read-only** que\nreusa a infra de alerta de L06-03. Solução completa:\n\n1. **Camada DB** (`supabase/migrations/20260420120000_l08_wallet_ledger_drift_check.sql`):\n   - `public.fn_check_wallet_ledger_drift(p_max_users int=5000, p_recent_hours int=24)`:\n     SECURITY DEFINER + locked search_path; `lock_timeout=2s` +\n     `statement_timeout=10s` para garantir bounded execution.\n     p_max_users ∈ [1, 100000], p_recent_hours ∈ [0, 720].\n   - Sampling priority: wallets com atividade no `coin_ledger` nas\n     últimas `p_recent_hours` aparecem PRIMEIRO (drift novo só pode\n     ter formado ali); resto cai em deterministic user_id order.\n   - Retorna `(user_id, balance_coins, ledger_sum, drift,\n     last_reconciled_at_ms, recent_activity)`.\n   - Self-test in-transaction: validação de input (22023), drift\n     sintético detectado com magnitude correta, cleanup completo.\n\n2. **Camada TS helper** (`portal/src/lib/wallet-invariants.ts`):\n   - `checkWalletLedgerDrift(opts)` — wrapper tipado, normaliza\n     campos bigint (string→number) e last_reconciled_at_ms (null-safe).\n   - `checkAndRecordWalletDrift({runId, ...})` — combina detecção +\n     classificação (`fn_classify_wallet_drift_severity` de L06-03) +\n     persistência (`fn_record_wallet_drift_event` de L06-03) →\n     reusa o pipeline Slack/PagerDuty existente.\n\n3. **Camada de endpoint admin**:\n   - `GET /api/platform/invariants` (composto):\n     custody invariants + wallet_drift sample (cap 50) + drift_event_id.\n     Falha do drift check NÃO mascara resultado de custody.\n   - `GET /api/platform/invariants/wallets?max_users=&recent_hours=&warn_threshold=`\n     (wallet-only, full rows, knobs validados via Zod com `.strict()`):\n     endpoint dedicado para CSV-export durante triagem de incidente.\n   - Métricas: `invariants.wallet_drift_count` (gauge),\n     `invariants.wallet_drift_healthy` (0/1),\n     `invariants.wallet_drift_check_ms` (timing),\n     `invariants.wallet_drift_check_error` (counter).\n\n4. **Camada de documentação**:\n   - `docs/runbooks/WALLET_RECONCILIATION_RUNBOOK.md` §3.0 reescrita:\n     como rodar o check real-time pelos 3 caminhos (composto, dedicado,\n     SQL direto), quando usar real-time vs. cron, exemplos de SQL para\n     triagem (drift por activity status, ad-hoc full audit).\n\nVerificação:\n- `vitest run` — 55 tests passed (5 files, incluindo\n  src/lib/wallet-invariants.test.ts: 11/11,\n  src/app/api/platform/invariants/route.test.ts: 8/8,\n  src/app/api/platform/invariants/wallets/route.test.ts: 8/8).\n- Integration test (`tools/test_l08_07_wallet_ledger_drift_check.ts`):\n  8/8 passed — input validation, row shape, drift detection com\n  magnitude, reconcile_wallet limpa drift de subsequent scans,\n  p_max_users clampa working set.\n- Migration self-test passou (NOTICE \"[L08-07] migration self-test\n  PASSED\") com cleanup de toda state sintética.\n- L06-03 integration test (`tools/test_l06_03_wallet_drift_events.ts`)\n  continua passando (14/14) — pipeline de alerta L06-03 não regrediu.\n- `tools/audit/verify.ts` — 348 findings validados.\n- `tsc --noEmit` — zero novos erros nos arquivos criados (pre-existente\n  `feature-flags.ts` MapIterator unrelated).\n\nImpacto:\n- Operadores agora detectam drift wallet↔ledger em segundos via\n  `/api/platform/invariants` (antes: esperar até 24h pela próxima\n  execução do reconcile-cron diário).\n- Ad-hoc detections fanout para o mesmo Slack channel que cron-detected\n  drifts (via `wallet_drift_events` + `fn_record_wallet_drift_event` de\n  L06-03), unificando alert pipeline.\n- Função é puramente read-only — não altera comportamento do cron\n  diário; correção continua sob `reconcile_wallet`.\n"
     },
     {
       "id": "L08-08",
