@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-20T00:51:47.094Z",
+  "generated_at": "2026-04-20T00:57:41.910Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 96,
-    "fix-pending": 251,
+    "fixed": 97,
+    "fix-pending": 250,
     "in-progress": 1
   },
   "by_wave": {
@@ -4058,28 +4058,42 @@
       "lens": 6,
       "title": "pg_cron jobs sem monitoramento de execução",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-20T00:00:00.000Z",
       "tags": [
         "finance",
         "migration",
         "cron",
-        "reliability"
+        "reliability",
+        "observability"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260420130000_l06_cron_health_monitor.sql",
+        "portal/src/lib/cron-health.ts",
+        "portal/src/app/api/platform/cron-health/route.ts",
+        "docs/runbooks/CRON_HEALTH_RUNBOOK.md",
+        "docs/runbooks/README.md"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l06_04_cron_health_monitor.ts",
+        "portal/src/lib/cron-health.test.ts",
+        "portal/src/app/api/platform/cron-health/route.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "0eb0317"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/CRON_HEALTH_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Solved with a four-layer pipeline that builds on the L12-03\ncron_run_state substrate (no duplicate state) and the L06-03\nalert-row pattern (no duplicate ergonomics):\n\n  1. Read-only health view: `public.fn_check_cron_health()` UNIONs\n     `cron.job` (scheduler-side truth) with `public.cron_run_state`\n     (application-side truth), parses the cron expression to derive\n     `expected_interval_seconds`, and emits a single severity enum\n     per job (ok | warn | critical | unknown). Mirror in TS at\n     `portal/src/lib/cron-health.ts::classifyCronSeverity` with\n     byte-equivalent boundary tests. Severity is the same algorithm\n     SQL- and TS-side: drifts of either implementation are caught\n     by the integration test that exercises the SAME numeric vectors\n     on both surfaces.\n\n  2. Append-only dedup table `public.cron_health_alerts` —\n     FORCE-RLS, service-role only, partial index on active rows.\n     `fn_record_cron_health_alert(p_name, p_severity, p_details,\n     p_cooldown_minutes)` does the dedup so a stuck job pages once\n     per hour, not 4×/h. Severity upgrades (warn → critical) are\n     NOT deduped — the page must fire.\n\n  3. Scheduled wrapper `fn_alert_unhealthy_crons_safe` (every\n     15 min, wrapped in the L12-03 _safe pattern) iterates the\n     unhealthy rows from (1), calls (2) per offender, and\n     RAISES NOTICE '[L06-04.alert] severity=... job=... ...' so\n     the existing log aggregator picks each new alert up\n     structurally.\n\n  4. Admin endpoint `GET /api/platform/cron-health` — auth-gated\n     (platform_admins only), wraps the read-only RPC, ships a\n     counts-by-severity summary plus the full job grid. Backed by\n     `gauge` metrics (`cron_health.total_jobs`,\n     `cron_health.unhealthy_jobs`, `cron_health.critical_jobs`,\n     `cron_health.healthy`) so the same data feeds dashboards.\n\nThe runbook (CRON_HEALTH_RUNBOOK.md) was extended with §2.4\n(consolidated view), §3.6 (alert pipeline regression), §3.7\n(alert dedup forensics), and an additional verification query.\n\nVerification:\n  • Migration self-test (in BEGIN/COMMIT) covers the 10\n    cron-shape parser vectors, 9 severity classifier vectors,\n    record-alert dedup, severity upgrade, and bad-input rejection.\n  • Integration tests (`tools/test_l06_04_cron_health_monitor.ts`)\n    add 19 black-box assertions including end-to-end \"synthetic\n    failed job → alert row created\" and the schedule wiring.\n  • Vitest covers TS helper (18 tests) + admin endpoint (7 tests).\n  • All tests pass: 25 vitest + 19 integration + 1 SQL self-test.\n  • `npx tsc --noEmit` produces no NEW errors (only the\n    pre-existing `lib/feature-flags.ts(69,22)` MapIterator note).\n  • `npm run lint` clean.\n\nTracked progress: 64/179 fixed after this finding.\n"
     },
     {
       "id": "L06-05",
