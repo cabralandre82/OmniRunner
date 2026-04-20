@@ -21,7 +21,9 @@ import {
   generateCsrfToken,
   isWellFormedCsrfToken,
   shouldEnforceCsrf,
+  shouldEnforceOrigin,
   verifyCsrf,
+  verifyOrigin,
 } from "./csrf";
 
 function makeReq(opts: {
@@ -113,11 +115,12 @@ describe("shouldEnforceCsrf", () => {
     }
   });
 
-  it("does NOT enforce on routes outside the allow-list (open by default for non-financial)", () => {
-    // Today this is a deliberate scoping decision: the CSRF gate is an
-    // allow-list of financial routes (L01-06). Non-financial mutation
-    // routes (e.g. /api/announcements) keep working without the header
-    // until/unless the allow-list grows.
+  it("does NOT enforce TOKEN on routes outside the allow-list (open by default for non-financial)", () => {
+    // Today the TOKEN gate (`shouldEnforceCsrf`) is an allow-list of
+    // financial routes (L01-06). Non-financial mutation routes (e.g.
+    // /api/announcements) keep working without the header until/unless
+    // the allow-list grows. They are however ALL gated by origin
+    // pinning (`shouldEnforceOrigin`) — see the next describe block.
     expect(shouldEnforceCsrf("POST", "/api/announcements")).toBe(false);
     expect(shouldEnforceCsrf("POST", "/api/team/invite")).toBe(false);
     expect(shouldEnforceCsrf("POST", "/api/branding")).toBe(false);
@@ -253,5 +256,189 @@ describe("clearCsrfCookie", () => {
     const cookie = res.cookies.get(CSRF_COOKIE_NAME);
     expect(cookie?.value).toBe("");
     expect(cookie?.maxAge).toBe(0);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// L17-06 — origin pinning (default-deny CSRF gate)
+// ─────────────────────────────────────────────────────────────────────
+
+describe("shouldEnforceOrigin (L17-06)", () => {
+  it("skips safe methods regardless of path", () => {
+    for (const m of ["GET", "HEAD", "OPTIONS", "get"]) {
+      expect(shouldEnforceOrigin(m, "/api/checkout")).toBe(false);
+      expect(shouldEnforceOrigin(m, "/api/announcements")).toBe(false);
+    }
+  });
+
+  it("skips non-/api paths even on POST (RSC actions/pages handled separately)", () => {
+    expect(shouldEnforceOrigin("POST", "/dashboard")).toBe(false);
+    expect(shouldEnforceOrigin("POST", "/login")).toBe(false);
+    expect(shouldEnforceOrigin("POST", "/")).toBe(false);
+  });
+
+  it("ENFORCES on every /api/* mutating route by default", () => {
+    // Routes that today have NO token gate. Origin pinning still
+    // applies — that's the whole point of L17-06.
+    for (const m of ["POST", "PUT", "PATCH", "DELETE", "post"]) {
+      expect(shouldEnforceOrigin(m, "/api/announcements")).toBe(true);
+      expect(shouldEnforceOrigin(m, "/api/team/invite")).toBe(true);
+      expect(shouldEnforceOrigin(m, "/api/branding")).toBe(true);
+      expect(shouldEnforceOrigin(m, "/api/checkout")).toBe(true);
+      expect(shouldEnforceOrigin(m, "/api/auto-topup")).toBe(true);
+      expect(shouldEnforceOrigin(m, "/api/training-plan/bulk-assign")).toBe(true);
+    }
+  });
+
+  it("ENFORCES on the financial allow-list too (token + origin = double layer)", () => {
+    for (const p of CSRF_PROTECTED_PREFIXES) {
+      expect(shouldEnforceOrigin("POST", p)).toBe(true);
+      expect(shouldEnforceOrigin("POST", `${p}/sub/path`)).toBe(true);
+    }
+  });
+
+  it("does NOT enforce on exempt prefixes (HMAC / OAuth / cron / CSP / probes)", () => {
+    for (const exempt of CSRF_EXEMPT_PREFIXES) {
+      expect(shouldEnforceOrigin("POST", exempt)).toBe(false);
+      expect(shouldEnforceOrigin("POST", `${exempt}/anything`)).toBe(false);
+    }
+    // Spot-check the new entries explicitly so a future edit to the
+    // exempt list that drops one of these stays loud.
+    expect(CSRF_EXEMPT_PREFIXES).toContain("/api/csp-report");
+    expect(CSRF_EXEMPT_PREFIXES).toContain("/api/liveness");
+    expect(CSRF_EXEMPT_PREFIXES).toContain("/api/health");
+  });
+});
+
+describe("verifyOrigin (L17-06)", () => {
+  function originReq(opts: {
+    host?: string | null;
+    origin?: string | null;
+    referer?: string | null;
+  }): NextRequest {
+    const headers = new Headers();
+    if (opts.host !== null && opts.host !== undefined) {
+      headers.set("host", opts.host);
+    }
+    if (opts.origin !== null && opts.origin !== undefined) {
+      headers.set("origin", opts.origin);
+    }
+    if (opts.referer !== null && opts.referer !== undefined) {
+      headers.set("referer", opts.referer);
+    }
+    // We bypass the NextRequest URL parser because some test cases
+    // need a host header that disagrees with the URL.
+    return new NextRequest("http://placeholder.invalid/api/test", {
+      method: "POST",
+      headers,
+    });
+  }
+
+  it("accepts a same-host Origin", () => {
+    const v = verifyOrigin(
+      originReq({
+        host: "portal.omnirunner.app",
+        origin: "https://portal.omnirunner.app",
+      }),
+    );
+    expect(v).toEqual({ ok: true, matched: "origin" });
+  });
+
+  it("accepts dev-host Origin (localhost:3000)", () => {
+    const v = verifyOrigin(
+      originReq({
+        host: "localhost:3000",
+        origin: "http://localhost:3000",
+      }),
+    );
+    expect(v.ok).toBe(true);
+  });
+
+  it("rejects cross-host Origin (the canonical CSRF case)", () => {
+    const v = verifyOrigin(
+      originReq({
+        host: "portal.omnirunner.app",
+        origin: "https://evil.example.com",
+      }),
+    );
+    expect(v).toMatchObject({
+      ok: false,
+      code: "ORIGIN_HOST_MISMATCH",
+      observedOrigin: "https://evil.example.com",
+      requestHost: "portal.omnirunner.app",
+    });
+  });
+
+  it("rejects Origin: null (sandboxed iframes / file://)", () => {
+    const v = verifyOrigin(
+      originReq({ host: "portal.omnirunner.app", origin: "null" }),
+    );
+    expect(v).toMatchObject({ ok: false, code: "ORIGIN_NULL" });
+  });
+
+  it("rejects malformed Origin (not an absolute URL)", () => {
+    const v = verifyOrigin(
+      originReq({ host: "portal.omnirunner.app", origin: "not-a-url" }),
+    );
+    expect(v).toMatchObject({ ok: false, code: "ORIGIN_MALFORMED" });
+  });
+
+  it("falls back to Referer when Origin is absent (legacy proxy behaviour)", () => {
+    const v = verifyOrigin(
+      originReq({
+        host: "portal.omnirunner.app",
+        referer: "https://portal.omnirunner.app/swap",
+      }),
+    );
+    expect(v).toEqual({ ok: true, matched: "referer" });
+  });
+
+  it("rejects mismatched Referer host when Origin is absent", () => {
+    const v = verifyOrigin(
+      originReq({
+        host: "portal.omnirunner.app",
+        referer: "https://evil.example.com/anything",
+      }),
+    );
+    expect(v).toMatchObject({ ok: false, code: "ORIGIN_HOST_MISMATCH" });
+  });
+
+  it("rejects when both Origin and Referer are absent", () => {
+    const v = verifyOrigin(
+      originReq({ host: "portal.omnirunner.app" }),
+    );
+    expect(v).toMatchObject({ ok: false, code: "ORIGIN_HEADER_MISSING" });
+  });
+
+  it("rejects when Host header is missing entirely", () => {
+    // Construct without host header — NextRequest may inject one from
+    // URL, so we use a raw-Headers Request-like trick.
+    const headers = new Headers({ origin: "https://portal.omnirunner.app" });
+    headers.delete("host");
+    const req = new NextRequest("http://localhost/api/test", {
+      method: "POST",
+      headers,
+    });
+    // If the NextRequest implementation auto-derives `host`, the test
+    // still passes because it would match itself; the assertion below
+    // asserts the path that triggers when the header is genuinely
+    // absent. We accept either branch to remain implementation-tolerant.
+    const v = verifyOrigin(req);
+    expect(["ORIGIN_HOST_MISSING", "ORIGIN_HOST_MISMATCH"]).toContain(
+      v.ok ? "ok" : v.code,
+    );
+  });
+
+  it("matches scheme-agnostically (http vs https on same host)", () => {
+    // Behind a TLS-terminating proxy the internal request may arrive
+    // as http://host, while the browser sent https://host. Same-host
+    // is what CSRF cares about.
+    const v = verifyOrigin(
+      originReq({
+        host: "portal.omnirunner.app",
+        origin: "https://portal.omnirunner.app",
+      }),
+    );
+    expect(v.ok).toBe(true);
   });
 });

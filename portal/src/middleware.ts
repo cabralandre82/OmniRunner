@@ -23,8 +23,11 @@ import {
 import {
   ensureCsrfCookie,
   shouldEnforceCsrf,
+  shouldEnforceOrigin,
   verifyCsrf,
+  verifyOrigin,
 } from "@/lib/api/csrf";
+import { metrics } from "@/lib/metrics";
 import {
   buildCsp,
   buildReportToHeader,
@@ -78,6 +81,14 @@ import {
  *   - Webhook + OAuth callback paths are explicitly exempt
  *     (`CSRF_EXEMPT_PREFIXES`) — they're authenticated by HMAC /
  *     OAuth `state`, not by browser cookies.
+ *
+ * (L17-06) Origin pinning runs BEFORE the token check on EVERY
+ * `/api/*` mutating request that's not in `CSRF_EXEMPT_PREFIXES`.
+ * It rejects 403 `CSRF_ORIGIN_INVALID` whenever the `Origin` (or
+ * fallback `Referer`) host disagrees with the request host. This
+ * closes the gap "non-financial mutations had zero CSRF protection"
+ * without forcing every `fetch()` callsite in the portal to migrate
+ * to `csrfFetch` — modern browsers always send `Origin` on POST.
  */
 
 export async function middleware(request: NextRequest) {
@@ -145,8 +156,36 @@ export async function middleware(request: NextRequest) {
     return res;
   };
 
-  // (L01-06) CSRF enforcement runs AFTER the IP allow-list (so
-  // webhook 403s aren't swallowed) but BEFORE auth — a CSRF check
+  // (L17-06) Origin pinning runs FIRST — the cheapest and broadest
+  // CSRF gate. Every `/api/*` mutating request that isn't in
+  // `CSRF_EXEMPT_PREFIXES` must carry an Origin (or Referer) whose
+  // host equals the request host. Modern browsers always send Origin
+  // on POST/PUT/PATCH/DELETE so legitimate same-origin clients pass
+  // without code changes; cross-origin attacker pages structurally
+  // cannot pass. Pure function on incoming headers — zero I/O.
+  if (shouldEnforceOrigin(request.method, pathname)) {
+    const originVerdict = verifyOrigin(request);
+    if (!originVerdict.ok) {
+      metrics.increment("csrf.origin_blocked", { reason: originVerdict.code });
+      return tagResponse(
+        NextResponse.json(
+          {
+            ok: false,
+            error: {
+              code: "CSRF_ORIGIN_INVALID",
+              message: originVerdict.message,
+              request_id: requestId,
+              details: { reason: originVerdict.code },
+            },
+          },
+          { status: 403 },
+        ),
+      );
+    }
+  }
+
+  // (L01-06) Token check runs AFTER origin pinning (origin is faster
+  // and rejects more attacker traffic) but BEFORE auth — a CSRF check
   // that comes only after auth would still pay the Postgres round-
   // trip cost on attacker requests, which is wasteful at best and a
   // DoS amplifier at worst. The check is pure-function (cookie vs
@@ -154,6 +193,7 @@ export async function middleware(request: NextRequest) {
   if (shouldEnforceCsrf(request.method, pathname)) {
     const verdict = verifyCsrf(request);
     if (!verdict.ok) {
+      metrics.increment("csrf.token_blocked", { reason: verdict.code });
       return tagResponse(
         NextResponse.json(
           {

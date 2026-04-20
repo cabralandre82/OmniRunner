@@ -1,7 +1,7 @@
 /**
- * CSRF double-submit token (L01-06).
+ * CSRF double-submit token (L01-06) + origin pinning (L17-06).
  *
- * Why double-submit + sameSite=strict together?
+ * Why double-submit + sameSite=strict + origin-pinning together?
  *
  *   `portalCookieOptions()` already sets `sameSite: "strict"` for
  *   `portal_group_id` / `portal_role` (L01-06 first layer), which kills
@@ -15,6 +15,19 @@
  *   and it's bound to the user's session lifetime — rotating on
  *   sign-out and on every fresh middleware-issued response that
  *   doesn't see one.
+ *
+ *   L17-06 closed the audit gap "csrfCheck not invoked from middleware"
+ *   by adding a THIRD, complementary layer that protects EVERY
+ *   `/api/*` mutating route by default (allow-list-by-exception):
+ *   `verifyOrigin` requires that the `Origin` header (or, fallback,
+ *   `Referer`) matches the request's own host. Modern browsers always
+ *   send `Origin` on POST/PUT/PATCH/DELETE — including from `fetch()`
+ *   and form submission — so this check requires zero client changes
+ *   while making cross-origin POSTs from attacker pages structurally
+ *   impossible. Servers and external schedulers (webhooks, OAuth
+ *   callback, cron) don't send a browser Origin and live in
+ *   `CSRF_EXEMPT_PREFIXES` where authentication is HMAC / OAuth
+ *   `state` / bearer token instead.
  *
  *   The combination matches the OWASP "double-submit cookie" pattern
  *   (Cheat Sheet 2024, §3.2) — cheap, stateless, and proves the
@@ -96,6 +109,17 @@ export const CSRF_EXEMPT_PREFIXES: readonly string[] = [
   // and the security model is the OAuth `state` parameter, not a
   // browser-issued CSRF token.
   "/api/auth/callback",
+  // CSP violation reports (L01-38, L10-05): browsers POST these
+  // WITHOUT cookies, often with `Origin: null` (sandboxed contexts) or
+  // `application/csp-report`/`application/reports+json` content-types.
+  // The endpoint is rate-limited and capped at 8 KiB inside the route;
+  // it cannot mutate state.
+  "/api/csp-report",
+  // Liveness/health probes hit by external uptime monitors (BetterUp,
+  // Vercel pings, k8s probes). They do not mutate state and the
+  // handlers reject anything but GET.
+  "/api/liveness",
+  "/api/health",
 ];
 
 /**
@@ -151,6 +175,158 @@ export function shouldEnforceCsrf(method: string, pathname: string): boolean {
     }
   }
   return false;
+}
+
+/**
+ * Decide whether origin pinning runs (L17-06).
+ *
+ * Default-deny posture: every `/api/*` non-safe request gets the
+ * origin check unless its prefix is in `CSRF_EXEMPT_PREFIXES`. This
+ * is broader than `shouldEnforceCsrf`: the token check runs only on
+ * the financial allow-list (because we control those clients and
+ * they call `csrfFetch`), but origin pinning is free for every
+ * client (modern browsers always send `Origin` on POST/PUT/PATCH/
+ * DELETE) so we apply it everywhere it can possibly help.
+ *
+ * Pure function — no I/O — so the routing decision can be unit
+ * tested without constructing full requests.
+ */
+export function shouldEnforceOrigin(method: string, pathname: string): boolean {
+  const upper = method.toUpperCase();
+  if (SAFE_METHODS.has(upper)) return false;
+  if (!pathname.startsWith("/api/") && pathname !== "/api") return false;
+  for (const exempt of CSRF_EXEMPT_PREFIXES) {
+    if (pathname === exempt || pathname.startsWith(`${exempt}/`)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export type OriginVerifyResult =
+  | { ok: true; matched: "origin" | "referer" }
+  | {
+      ok: false;
+      code:
+        | "ORIGIN_HOST_MISSING"
+        | "ORIGIN_HEADER_MISSING"
+        | "ORIGIN_NULL"
+        | "ORIGIN_MALFORMED"
+        | "ORIGIN_HOST_MISMATCH";
+      message: string;
+      observedOrigin?: string;
+      requestHost?: string;
+    };
+
+/**
+ * Verify that the request's `Origin` (or, fallback, `Referer`) host
+ * equals the request's own host (L17-06). This is the SCHEME-AGNOSTIC
+ * "is this same-origin" gate.
+ *
+ *   - `Origin: null` (sandbox iframes, file://) is rejected with
+ *     `ORIGIN_NULL` — legitimate browser POSTs from our portal never
+ *     produce this, so accepting `null` would be a tighter client
+ *     fingerprint than rejecting and a wider attack surface than
+ *     rejecting; the trade-off lands on rejection.
+ *   - Both `Origin` AND `Referer` missing is rejected — modern
+ *     browsers always send at least one on a non-safe request, so
+ *     the absence of both indicates either a server-to-server caller
+ *     (which should live in `CSRF_EXEMPT_PREFIXES`) or a deliberate
+ *     header-strip attempt.
+ *   - The request's own host comes from the `Host` header on the
+ *     incoming request — Next.js Edge runtime sets this from the
+ *     authoritative URL after Vercel/proxy normalisation, so it's
+ *     the same host an attacker's `Origin` would have to spoof to
+ *     pass.
+ *   - SCHEME is intentionally NOT compared — TLS termination at the
+ *     edge means the request can arrive as `http://` internally even
+ *     when it left the browser as `https://`, and the audit's threat
+ *     model is "attacker page in a different origin", which is a
+ *     host distinction not a scheme distinction. HSTS + the `secure`
+ *     cookie flag own the scheme guarantee.
+ */
+export function verifyOrigin(request: NextRequest): OriginVerifyResult {
+  const requestHost = request.headers.get("host");
+  if (!requestHost) {
+    return {
+      ok: false,
+      code: "ORIGIN_HOST_MISSING",
+      message: "Host header missing on incoming request",
+    };
+  }
+
+  const origin = request.headers.get("origin");
+  if (origin !== null) {
+    if (origin === "null" || origin.trim() === "") {
+      return {
+        ok: false,
+        code: "ORIGIN_NULL",
+        message: "Origin: null is not allowed for state-changing requests",
+        observedOrigin: origin,
+        requestHost,
+      };
+    }
+    let originHost: string;
+    try {
+      originHost = new URL(origin).host;
+    } catch {
+      return {
+        ok: false,
+        code: "ORIGIN_MALFORMED",
+        message: "Origin header is not a valid absolute URL",
+        observedOrigin: origin,
+        requestHost,
+      };
+    }
+    if (originHost !== requestHost) {
+      return {
+        ok: false,
+        code: "ORIGIN_HOST_MISMATCH",
+        message: `Origin host '${originHost}' does not match request host '${requestHost}'`,
+        observedOrigin: origin,
+        requestHost,
+      };
+    }
+    return { ok: true, matched: "origin" };
+  }
+
+  // Origin absent — fall back to Referer for legacy clients that
+  // strip Origin (e.g. some corporate proxies). Same host equality
+  // applies. NOTE: a request that arrives with NEITHER header set is
+  // either a server-to-server caller (must be in
+  // `CSRF_EXEMPT_PREFIXES`) or a stripped attacker request — both
+  // are correctly rejected.
+  const referer = request.headers.get("referer");
+  if (!referer) {
+    return {
+      ok: false,
+      code: "ORIGIN_HEADER_MISSING",
+      message: "Neither Origin nor Referer header present on state-changing request",
+      requestHost,
+    };
+  }
+  let refererHost: string;
+  try {
+    refererHost = new URL(referer).host;
+  } catch {
+    return {
+      ok: false,
+      code: "ORIGIN_MALFORMED",
+      message: "Referer header is not a valid absolute URL",
+      observedOrigin: referer,
+      requestHost,
+    };
+  }
+  if (refererHost !== requestHost) {
+    return {
+      ok: false,
+      code: "ORIGIN_HOST_MISMATCH",
+      message: `Referer host '${refererHost}' does not match request host '${requestHost}'`,
+      observedOrigin: referer,
+      requestHost,
+    };
+  }
+  return { ok: true, matched: "referer" };
 }
 
 export type CsrfVerifyResult =
