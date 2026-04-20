@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-20T00:13:14.815Z",
+  "generated_at": "2026-04-20T00:24:38.046Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 90,
-    "fix-pending": 257,
+    "fixed": 91,
+    "fix-pending": 256,
     "in-progress": 1
   },
   "by_wave": {
@@ -7897,33 +7897,39 @@
       "lens": 17,
       "title": "csrfCheck não é chamado no middleware central",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-20T00:00:00.000Z",
       "tags": [
         "finance",
         "webhook",
         "security-headers",
         "integration",
         "portal",
-        "migration"
+        "middleware"
       ],
       "files": [
-        "portal/src/lib/csrf.ts",
-        "portal/src/middleware.ts"
+        "portal/src/lib/api/csrf.ts",
+        "portal/src/middleware.ts",
+        "docs/runbooks/CSRF_RUNBOOK.md"
       ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/api/csrf.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "c415f82"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/CSRF_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Resolvido com **dois ganhos** sobrepostos sobre L01-06 (que já tinha\nfeito o token double-submit em `lib/api/csrf.ts` e o wire em\nmiddleware para o allow-list financeiro):\n\n1. **Origin pinning default-deny (novo)** em\n   `portal/src/lib/api/csrf.ts`:\n   - `shouldEnforceOrigin(method, path)` — retorna `true` para\n     qualquer `(POST|PUT|PATCH|DELETE)` em `/api/*` que NÃO esteja\n     em `CSRF_EXEMPT_PREFIXES`.\n   - `verifyOrigin(req)` — exige `Origin` (ou fallback `Referer`)\n     cujo host bata exatamente com o `Host` da requisição. Rejeita\n     `Origin: null` (sandbox iframes / `file://`), Origin\n     malformado, e ausência simultânea de `Origin` + `Referer`.\n   - Wired em `portal/src/middleware.ts` ANTES do token gate e\n     ANTES da auth: chamada pura, ~5 µs, nega tráfego de atacante\n     sem Postgres round-trip.\n   - `CSRF_EXEMPT_PREFIXES` ampliado com justificativa por entrada\n     para incluir `/api/csp-report` (browsers enviam\n     `Origin: null`), `/api/liveness`, `/api/health` (probes\n     externos sem cookie).\n   - Métricas: `csrf.origin_blocked{reason=...}` por sub-código\n     para discernir spike pós-deploy (rota nova esquecida) vs\n     attack pattern (mesmo IP).\n\n2. **Limpeza do código morto**:\n   - Deletados `portal/src/lib/csrf.ts` (origin/referer simples,\n     nunca foi importado por middleware) e\n   `portal/src/lib/csrf.test.ts`. Single source of truth: tudo\n     vive em `lib/api/csrf.ts`.\n\n3. **Runbook atualizado**:\n   - `docs/runbooks/CSRF_RUNBOOK.md` reescrito com o novo gate\n     de Origin (§§ 1.0, 2.1, 3.0, 4.0, 6.0) e tabela de\n     sub-códigos `ORIGIN_*` para triagem.\n   - `docs/runbooks/README.md` indexa o runbook sob \"Portal\n     security headers\".\n\nVerification:\n- `npx vitest run` — 1378 testes verdes (36 em `csrf.test.ts`,\n  cobrindo `shouldEnforceOrigin`, `verifyOrigin` em todas as\n  branches, e regressão de todos os helpers de L01-06).\n- `npm run lint` — limpo.\n- `tsc --noEmit` — sem erros novos (o erro pré-existente em\n  `lib/feature-flags.ts:69` segue tracked separadamente).\n- `tools/audit/verify.ts` — 348 findings validados.\n\n**Backwards compatibility**: nenhum cliente quebra. Todos os\n`fetch()` do portal já enviam `Origin` automaticamente (browser\ndefault em POST). O Flutter app (`omni_runner`) chama Supabase\ndireto, não `/api/*` do portal — confirmado em\n`omni_runner/lib/core/config/app_config.dart`.\n"
     },
     {
       "id": "L17-07",
