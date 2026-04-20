@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-20 01:06:54 UTC.
+> Atualizado em 2026-04-20 01:09:51 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -15,7 +15,7 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L01-04](./findings/L01-04-post-api-custody-create-deposit-confirm-sem-idempotency.md) | 1 | L01 · CISO | POST /api/custody (create deposit / confirm) — Sem idempotency-key | platform |
 | 🟡 medium | ⏳ fix-pending | [L01-05](./findings/L01-05-post-api-swap-criacao-aceite-cancelamento.md) | 2 | L01 · CISO | POST /api/swap — Criação/aceite/cancelamento | unassigned |
 | 🟠 high | ✅ fixed | [L01-06](./findings/L01-06-get-api-swap-get-api-clearing-get-api.md) | 1 | L01 · CISO | GET /api/swap, GET /api/clearing, GET /api/custody — Autorização por cookie | portal-team |
-| 🟡 medium | ⏳ fix-pending | [L01-07](./findings/L01-07-get-api-health-information-disclosure.md) | 2 | L01 · CISO | GET /api/health — Information disclosure | unassigned |
+| 🟡 medium | ✅ fixed | [L01-07](./findings/L01-07-get-api-health-information-disclosure.md) | 2 | L01 · CISO | GET /api/health — Information disclosure | platform |
 | 🟢 safe | ✅ fixed | [L01-08](./findings/L01-08-get-api-liveness-ok.md) | 3 | L01 · CISO | GET /api/liveness — OK | unassigned |
 | 🟠 high | ✅ fixed | [L01-09](./findings/L01-09-post-api-checkout-gateway-proxy.md) | 1 | L01 · CISO | POST /api/checkout — Gateway proxy | backend-platform |
 | 🟡 medium | ⏳ fix-pending | [L01-10](./findings/L01-10-get-api-auth-callback-open-redirect-candidato.md) | 2 | L01 · CISO | GET /api/auth/callback — Open redirect candidato | unassigned |
@@ -130,7 +130,7 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L05-19](./findings/L05-19-offline-first-flutter-sessoes-ficam-em-drift-ate.md) | 2 | L05 · CPO | Offline-first Flutter: sessões ficam em drift até sincronizar | unassigned |
 | 🟢 safe | ✅ fixed | [L05-20](./findings/L05-20-delete-account-bloqueia-admin-master-boa-pratica.md) | 3 | L05 · CPO | delete-account bloqueia admin_master (boa prática) | unassigned |
 | 🔴 critical | ✅ fixed | [L06-01](./findings/L06-01-zero-runbook-financeiro-custodia-clearing-swap-withdraw.md) | 1 | L06 · COO | Zero runbook financeiro — custódia, clearing, swap, withdraw | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L06-02](./findings/L06-02-health-check-exibe-contagem-exata-de-violacoes-info.md) | 1 | L06 · COO | Health check exibe contagem exata de violações (info leak operacional) | unassigned |
+| 🔴 critical | ✅ fixed | [L06-02](./findings/L06-02-health-check-exibe-contagem-exata-de-violacoes-info.md) | 1 | L06 · COO | Health check exibe contagem exata de violações (info leak operacional) | platform |
 | 🟠 high | ✅ fixed | [L06-03](./findings/L06-03-reconcile-wallets-cron-sem-alerta-em-drift-0.md) | 1 | L06 · COO | reconcile-wallets-cron sem alerta em drift > 0 | platform |
 | 🟠 high | ✅ fixed | [L06-04](./findings/L06-04-pg-cron-jobs-sem-monitoramento-de-execucao.md) | 1 | L06 · COO | pg_cron jobs sem monitoramento de execução | platform |
 | 🟠 high | ⏳ fix-pending | [L06-05](./findings/L06-05-edge-functions-sem-retry-em-falha-de-pg.md) | 1 | L06 · COO | Edge Functions sem retry em falha de pg_net | unassigned |

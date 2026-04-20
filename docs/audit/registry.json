@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-20T01:06:54.505Z",
+  "generated_at": "2026-04-20T01:09:51.953Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 100,
-    "fix-pending": 247,
+    "fixed": 102,
+    "fix-pending": 245,
     "in-progress": 1
   },
   "by_wave": {
@@ -311,31 +311,41 @@
       "lens": 1,
       "title": "GET /api/health — Information disclosure",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "mobile",
         "portal",
-        "migration"
+        "migration",
+        "ciso",
+        "observability"
       ],
       "files": [
         "portal/src/app/api/health/route.ts",
+        "portal/src/app/api/platform/health/route.ts",
         "portal/src/middleware.ts"
       ],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "portal/src/app/api/health/route.test.ts",
+        "portal/src/app/api/platform/health/route.test.ts",
+        "portal/e2e/health.spec.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "810b1fc"
+      ],
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Closed by the same change that fixed L06-02. Public `/api/health`\nnow returns ONLY `{ status, ts }` — no `latencyMs`, no `checks`,\nno invariant count. Admin detail moved to `/api/platform/health`\ngated by `platform_admins` membership. See\n`docs/audit/findings/L06-02-health-check-exibe-contagem-exata-de-violacoes-info.md`\nfor the full write-up; this Medium sibling flagged the same leak\nfrom the reconnaissance-risk angle and is closed by the same commit.\n"
     },
     {
       "id": "L01-08",
@@ -3986,30 +3996,43 @@
       "lens": 6,
       "title": "Health check exibe contagem exata de violações (info leak operacional)",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "portal",
         "migration",
-        "testing"
+        "testing",
+        "ciso",
+        "observability"
       ],
       "files": [
-        "portal/src/app/api/health/route.ts"
+        "portal/src/app/api/health/route.ts",
+        "portal/src/app/api/platform/health/route.ts",
+        "portal/public/openapi.json",
+        "docs/PORTAL_API.md",
+        "portal/e2e/health.spec.ts"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/app/api/health/route.test.ts",
+        "portal/src/app/api/platform/health/route.test.ts",
+        "portal/e2e/health.spec.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "810b1fc"
+      ],
+      "owner": "platform",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed with a clean split between the PUBLIC uptime probe and the\nADMIN detailed snapshot — no information leak, no regression for\nexternal monitors, no duplication of logic:\n\n  1. Public `GET /api/health` is now intentionally opaque.\n     Response is locked to `{ status, ts }` only. Uptime probes\n     (Vercel, k6 smoke at `tools/load-tests/scenarios/api-health.js`,\n     any external pinger) still read the HTTP status code (200 vs\n     503) as their primary signal and the `status` string\n     (\"ok\" | \"degraded\" | \"down\") for human-readable severity.\n     ALL other fields were removed:\n       • `latencyMs`     — fingerprinting + DB-capacity signal.\n       • `checks.db`     — \"unreachable\" string = DB outage oracle.\n       • `checks.invariants: \"N violation(s)\"` — THE core leak.\n         Let an attacker monitor clearing/reconcile activity\n         without ever authenticating, and time follow-up attacks\n         to known-unstable moments (e.g. during a reconcile-wallets\n         run, or mid-custody failure).\n     The underlying checks still run server-side so the HTTP\n     status code differentiates ok/degraded/down; their results\n     are emitted to our own telemetry pipeline (`metrics.gauge`\n     on `health.db`, `health.invariants`, `health.invariant_violations`)\n     but NEVER to the HTTP body of the public endpoint.\n\n  2. Admin `GET /api/platform/health` is the authenticated\n     counterpart. Returns the previously-public payload (minus\n     the \"N violation(s)\" string form) gated behind\n     `platform_admins` membership — same pattern as\n     `/api/platform/cron-health` (L06-04) and\n     `/api/platform/cron-sla` (L12-04), so operators have muscle\n     memory. Response shape:\n       { ok, status, ts, latency_ms,\n         checks: { db: \"connected\"|\"unreachable\",\n                   invariants: \"healthy\"|\"violations\" },\n         invariant_count, request_id, checked_at }\n     The violation COUNT is still exposed — but only to\n     platform admins who could already enumerate the full\n     per-row detail via `GET /api/platform/invariants` anyway,\n     so there is no net disclosure widening.\n\n  3. Tests lock the leak shut:\n     • `src/app/api/health/route.test.ts` — 8 cases asserting\n       `Object.keys(body)` is EXACTLY `[\"status\",\"ts\"]` under\n       healthy, degraded (violations), and down conditions, plus\n       regex guards against the literal strings `violation` /\n       `violation(s)` / `N violation(s)`. A future regression\n       that re-adds `checks` or `latencyMs` fails these tests.\n     • `src/app/api/platform/health/route.test.ts` — 8 cases\n       covering 401/403 (and asserting the service client is\n       NEVER instantiated pre-auth), 200 ok + payload shape,\n       503 degraded with exact count, 503 down on db error,\n       no leaky state between calls, and enum boundary\n       assertions for `checks.invariants`.\n     • `portal/e2e/health.spec.ts` — updated Playwright spec\n       asserts the stripped public payload AND that\n       `/api/platform/health` returns 401/403/404 without a\n       session, preventing accidental public exposure via\n       middleware regressions.\n\n  4. Contracts updated:\n     • `portal/public/openapi.json` — `/api/health` now declares\n       `additionalProperties: false` and enumerates ONLY\n       `status` + `ts`; `/api/platform/health` is a new entry\n       under tags `[\"Platform Admin\",\"System\"]` with full\n       schema + 401/403 responses. Covers the L14-01 coverage\n       gate automatically (no new undocumented paths).\n     • `docs/PORTAL_API.md` — `## Health` section rewritten to\n       spell out the public/admin split and explicitly call\n       out that the stripped payload is by design (L06-02,\n       L01-07) so future reviewers don't \"restore\" the fields.\n\nAlso closes the Medium-severity sibling L01-07 (CISO lens) which\ndocumented the same leak from the reconnaissance-risk angle —\nboth live in the same file change and share the test harness.\n\nVerification:\n  • 16 Vitest cases (8 public + 8 admin) pass.\n  • Full portal suite 1441/1441 green (4 todos) — no regression.\n  • `npx tsc --noEmit` produces no NEW errors (only the\n    pre-existing `lib/feature-flags.ts(69,22)` MapIterator note\n    already tracked separately).\n  • ESLint clean on all L06-02 surface files.\n  • `tools/audit/verify.ts` → 348/348 findings validated.\n\nTracked progress: 98/348 fixed after this finding.\n"
     },
     {
       "id": "L06-03",

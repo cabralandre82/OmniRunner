@@ -24,12 +24,55 @@ OAuth callback handler for Supabase Auth. Exchanges auth code for session.
 
 ### `GET /api/health`
 
-Uptime check endpoint. No authentication required.
+Public uptime-probe endpoint. No authentication required.
+
+By design the response is intentionally opaque — it exposes ONLY a
+boolean health signal so the endpoint cannot be used for operational
+reconnaissance (L06-02, L01-07). External uptime probes read the
+HTTP status code (200 vs 503) as their primary signal and the
+`status` string for human-readable classification.
+
+**Response shape (ONLY these two keys, always):**
+```json
+{ "status": "ok" | "degraded" | "down", "ts": 1709136000000 }
+```
+
+- `200` when all server-side checks pass (`status: "ok"`).
+- `503` when any check fails. `status: "degraded"` when DB is up but
+  invariants are violated, `status: "down"` when DB is unreachable.
+
+No `checks` object, no `latencyMs`, no invariant counts — those are
+served from `/api/platform/health` (below) behind authentication.
+
+### `GET /api/platform/health`
+
+Detailed health snapshot for platform admins. Returns the check
+breakdown + total invariant violation count.
+
+**Auth:** platform_admins membership required.
 
 **Response:**
 ```json
-{ "status": "ok", "ts": 1709136000000 }
+{
+  "ok": true,
+  "status": "ok" | "degraded" | "down",
+  "ts": 1709136000000,
+  "latency_ms": 42,
+  "checks": {
+    "db": "connected" | "unreachable",
+    "invariants": "healthy" | "violations"
+  },
+  "invariant_count": 0,
+  "request_id": "uuid",
+  "checked_at": "2026-04-21T12:34:56.000Z"
+}
 ```
+
+Errors return `{ ok: false, error: { code, message, request_id } }`
+with `UNAUTHORIZED` (401/403) or standard HTTP 5xx for probe failures.
+
+For per-row violation detail (custody + wallet-ledger drift) use
+[`GET /api/platform/invariants`](#get-apiplatforminvariants) instead.
 
 ---
 
