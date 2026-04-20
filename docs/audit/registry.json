@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-20T00:35:50.718Z",
+  "generated_at": "2026-04-20T00:40:38.455Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 93,
-    "fix-pending": 254,
+    "fixed": 94,
+    "fix-pending": 253,
     "in-progress": 1
   },
   "by_wave": {
@@ -4005,9 +4005,10 @@
       "lens": 6,
       "title": "reconcile-wallets-cron sem alerta em drift > 0",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-20T00:00:00.000Z",
       "tags": [
         "finance",
         "atomicity",
@@ -4017,20 +4018,27 @@
         "observability"
       ],
       "files": [
-        "supabase/functions/reconcile-wallets-cron/index.ts"
+        "supabase/functions/reconcile-wallets-cron/index.ts",
+        "supabase/functions/_shared/wallet_drift.ts",
+        "supabase/migrations/20260420110000_l06_wallet_drift_events.sql"
       ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "supabase/functions/_shared/wallet_drift.test.ts",
+        "tools/test_l06_03_wallet_drift_events.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "1efe8b6"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/WALLET_RECONCILIATION_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Defesa em 4 camadas: (1) `public.wallet_drift_events` (RLS-forced,\nservice-role only) é a fonte forense definitiva — append-only, uma row\npor reconcile com `severity ∈ {warn, critical}`, persistida ANTES de\nqualquer tentativa de alerta externo (Slack/PagerDuty fora do ar não\nperde a trilha); (2) `fn_classify_wallet_drift_severity(count, threshold)`\né IMMUTABLE e `fn_record_wallet_drift_event` + `fn_mark_wallet_drift_event_alerted`\nsão SECURITY DEFINER + locked search_path + lock_timeout=2s; (3) helper\nDeno `_shared/wallet_drift.ts` mirror 1:1 da função SQL (`classifyWalletDrift`\ntestado contra os mesmos vetores: 0/1/10/11/9999/NaN/Infinity/threshold\ncustomizado/threshold negativo); `buildSlackDriftPayload` emite Block\nKit + plain-text fallback com tags P1/P2 alinhadas a\n`docs/observability/ALERT_POLICY.md` e `postSlackAlert` tem AbortController\n+ 5s timeout (Slack outage NUNCA bloqueia o cron); (4) edge function\n`reconcile-wallets-cron/index.ts` reescrita para o pipeline completo:\nclassifica → persiste → alerta → marca outcome → log estruturado com\n`severity: ALERT|CRITICAL` + `p_tier` como back-stop. Threshold default\n= 10 wallets (configurável via `WALLET_DRIFT_WARN_THRESHOLD`); webhook\nopcional via `WALLET_DRIFT_ALERT_WEBHOOK` (sem ela, a persistência\ncontinua + log captura). Verificação: 23/23 Deno tests para o helper\n(vetores de classificação, abort timeout, fetch throw captured), 14/14\nintegration tests para SQL (table shape, CHECK enum, anon RLS-blocked,\nclassify mirror, record/mark_alerted lifecycle, input validation 22023,\níndice partial), self-test in-TX da migration validou os 8 cenários\ninternos. Audit verify 348/348. Runbook canônico\n`WALLET_RECONCILIATION_RUNBOOK.md` cobre 3 paths (drift detectado P2,\ndrift CRITICAL P1 com kill-switches/dump CSV/postmortem, e pipeline de\nalerta quebrada com re-fire manual + tabela de erros típicos).\n"
     },
     {
       "id": "L06-04",

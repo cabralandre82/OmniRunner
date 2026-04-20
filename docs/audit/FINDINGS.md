@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-20 00:35:50 UTC.
+> Atualizado em 2026-04-20 00:40:38 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -131,7 +131,7 @@ Total: **348** findings.
 | 🟢 safe | ✅ fixed | [L05-20](./findings/L05-20-delete-account-bloqueia-admin-master-boa-pratica.md) | 3 | L05 · CPO | delete-account bloqueia admin_master (boa prática) | unassigned |
 | 🔴 critical | ✅ fixed | [L06-01](./findings/L06-01-zero-runbook-financeiro-custodia-clearing-swap-withdraw.md) | 1 | L06 · COO | Zero runbook financeiro — custódia, clearing, swap, withdraw | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L06-02](./findings/L06-02-health-check-exibe-contagem-exata-de-violacoes-info.md) | 1 | L06 · COO | Health check exibe contagem exata de violações (info leak operacional) | unassigned |
-| 🟠 high | ⏳ fix-pending | [L06-03](./findings/L06-03-reconcile-wallets-cron-sem-alerta-em-drift-0.md) | 1 | L06 · COO | reconcile-wallets-cron sem alerta em drift > 0 | unassigned |
+| 🟠 high | ✅ fixed | [L06-03](./findings/L06-03-reconcile-wallets-cron-sem-alerta-em-drift-0.md) | 1 | L06 · COO | reconcile-wallets-cron sem alerta em drift > 0 | platform |
 | 🟠 high | ⏳ fix-pending | [L06-04](./findings/L06-04-pg-cron-jobs-sem-monitoramento-de-execucao.md) | 1 | L06 · COO | pg_cron jobs sem monitoramento de execução | unassigned |
 | 🟠 high | ⏳ fix-pending | [L06-05](./findings/L06-05-edge-functions-sem-retry-em-falha-de-pg.md) | 1 | L06 · COO | Edge Functions sem retry em falha de pg_net | unassigned |
 | 🟠 high | ✅ fixed | [L06-06](./findings/L06-06-sem-feature-flags-para-desligar-subsistemas.md) | 1 | L06 · COO | Sem feature flags para desligar subsistemas | unassigned |
