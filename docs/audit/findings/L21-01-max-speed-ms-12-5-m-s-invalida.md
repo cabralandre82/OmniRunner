@@ -4,24 +4,30 @@ audit_ref: "21.1"
 lens: 21
 title: "MAX_SPEED_MS = 12.5 m/s invalida velocistas profissionais"
 severity: critical
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
 tags: ["anti-cheat", "gps", "edge-function", "testing", "personas", "athlete-pro"]
 files:
   - supabase/functions/_shared/anti_cheat.ts
+  - supabase/functions/verify-session/index.ts
+  - supabase/functions/strava-webhook/index.ts
+  - supabase/migrations/20260421110000_l21_athlete_anti_cheat_profile.sql
 correction_type: process
 test_required: true
-tests: []
+tests:
+  - supabase/functions/_shared/anti_cheat.test.ts
+  - tools/test_l21_01_02_anti_cheat_profile.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "903738c"
 owner: unassigned
-runbook: null
+runbook: docs/runbooks/ANTI_CHEAT_RUNBOOK.md
 effort_points: 5
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: "Resolved jointly with L21-02 in commit 903738c. Thresholds passam a ser por skill_bracket (beginner/intermediate/advanced/elite) com elite max_speed_ms=15.0 + clamp via teleport 60 m/s."
 ---
 # [L21-01] MAX_SPEED_MS = 12.5 m/s invalida velocistas profissionais
 > **Lente:** 21 — Atleta Pro · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** fix-pending

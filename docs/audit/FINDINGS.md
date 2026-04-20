@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-20 01:09:51 UTC.
+> Atualizado em 2026-04-20 01:29:01 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -297,8 +297,8 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L20-11](./findings/L20-11-cost-observability-inexistente.md) | 2 | L20 · SRE | Cost observability inexistente | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L20-12](./findings/L20-12-capacity-planning-sem-modelo.md) | 2 | L20 · SRE | Capacity planning sem modelo | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L20-13](./findings/L20-13-error-budget-policy-ausente.md) | 2 | L20 · SRE | Error budget policy ausente | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L21-01](./findings/L21-01-max-speed-ms-12-5-m-s-invalida.md) | 1 | L21 · Atleta Pro | MAX_SPEED_MS = 12.5 m/s invalida velocistas profissionais | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L21-02](./findings/L21-02-max-hr-bpm-220-inferior-a-realidade-de.md) | 1 | L21 · Atleta Pro | MAX_HR_BPM = 220 inferior à realidade de atletas jovens | unassigned |
+| 🔴 critical | ✅ fixed | [L21-01](./findings/L21-01-max-speed-ms-12-5-m-s-invalida.md) | 1 | L21 · Atleta Pro | MAX_SPEED_MS = 12.5 m/s invalida velocistas profissionais | unassigned |
+| 🔴 critical | ✅ fixed | [L21-02](./findings/L21-02-max-hr-bpm-220-inferior-a-realidade-de.md) | 1 | L21 · Atleta Pro | MAX_HR_BPM = 220 inferior à realidade de atletas jovens | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L21-03](./findings/L21-03-dados-gps-e-biometricos-sem-controle-de-propriedade.md) | 1 | L21 · Atleta Pro | Dados GPS e biométricos sem controle de propriedade (dilema do patrocínio) | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L21-04](./findings/L21-04-ausencia-de-training-load-tss-ctl-atl.md) | 1 | L21 · Atleta Pro | Ausência de "training load" / TSS / CTL / ATL | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L21-05](./findings/L21-05-zonas-de-treino-pace-hr-nao-personalizaveis.md) | 1 | L21 · Atleta Pro | Zonas de treino (pace/HR) não personalizáveis | unassigned |
