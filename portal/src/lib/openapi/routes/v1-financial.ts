@@ -169,8 +169,11 @@ const DistributeCoinsBody = z
     athlete_user_id: z.string().uuid().openapi({
       description: "Athlete (auth.users.id) receiving the coins.",
     }),
-    amount: z.number().int().min(1).max(1000).openapi({
-      description: "Amount of coins to mint (integer, 1-1000).",
+    amount: z.number().int().min(1).max(100_000).openapi({
+      description:
+        "Amount of coins to mint (integer, 1-100 000). Cap raised " +
+        "from the legacy 1 000 by L05-03 to fit weekly bonus " +
+        "distributions for medium clubs.",
     }),
   })
   .openapi("DistributeCoinsBody");
@@ -180,6 +183,62 @@ const DistributeCoinsResponse = ApiOkMarkerSchema.extend({
   athlete_user_id: z.string().uuid(),
   amount: z.number().int(),
 }).openapi("DistributeCoinsResponse");
+
+// -- Distribute Coins (Batch) — L05-03 --------------------------------------
+
+const DistributeCoinsBatchItem = z
+  .object({
+    athlete_user_id: z.string().uuid().openapi({
+      description: "Athlete (auth.users.id) receiving this slice.",
+    }),
+    amount: z.number().int().min(1).max(100_000).openapi({
+      description: "Amount of coins for this athlete (1-100 000).",
+    }),
+  })
+  .openapi("DistributeCoinsBatchItem");
+
+const DistributeCoinsBatchBody = z
+  .object({
+    items: z
+      .array(DistributeCoinsBatchItem)
+      .min(1)
+      .max(200)
+      .openapi({
+        description:
+          "1-200 athlete slices, total Σ amount ≤ 1 000 000. Duplicate " +
+          "athlete_user_id is rejected.",
+      }),
+    ref_id: z
+      .string()
+      .min(8)
+      .max(128)
+      .optional()
+      .openapi({
+        description:
+          "Optional explicit batch reference. Falls back to " +
+          "`x-idempotency-key` header or a derived value. " +
+          "Used to derive deterministic per-item ref_ids.",
+      }),
+  })
+  .openapi("DistributeCoinsBatchBody");
+
+const DistributeCoinsBatchItemResult = z
+  .object({
+    athlete_user_id: z.string().uuid(),
+    amount: z.number().int(),
+    new_balance: z.number().int().nullable(),
+    was_idempotent: z.boolean(),
+    ledger_id: z.string().uuid().nullable(),
+  })
+  .openapi("DistributeCoinsBatchItemResult");
+
+const DistributeCoinsBatchResponse = ApiOkMarkerSchema.extend({
+  batch_ref_id: z.string(),
+  total_amount: z.number().int(),
+  total_distributions: z.number().int(),
+  batch_was_idempotent: z.boolean(),
+  items: z.array(DistributeCoinsBatchItemResult),
+}).openapi("DistributeCoinsBatchResponse");
 
 // -- Clearing ---------------------------------------------------------------
 
@@ -417,6 +476,47 @@ registry.registerPath({
         },
       },
     },
+    422: STD_ERROR_RESPONSES[422],
+    429: STD_ERROR_RESPONSES[429],
+    500: STD_ERROR_RESPONSES[500],
+    503: STD_ERROR_RESPONSES[503],
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/v1/distribute-coins/batch",
+  tags: ["OmniCoins"],
+  summary: "Mint coins to up to 200 athletes in a single transaction (L05-03)",
+  description:
+    "Bulk version of `/api/v1/distribute-coins`. Dispatches the whole " +
+    "batch through `distribute_coins_batch_atomic` (see migration " +
+    "`20260421120000_l05_distribute_coins_batch.sql`) which loops over " +
+    "items in a single SQL transaction — any item failing rolls back " +
+    "the entire batch. Idempotency is per-batch via `ref_id` plus a " +
+    "deterministic `<batch>__<idx>` derivation per item, so replays " +
+    "are safe (`batch_was_idempotent: true`). Rate-limited at 5 req/min " +
+    "per group.",
+  request: {
+    body: {
+      required: true,
+      content: {
+        "application/json": { schema: DistributeCoinsBatchBody },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description:
+        "Batch dispatched. `items[].was_idempotent` flags slices that " +
+        "were already credited in a prior call with the same ref_id.",
+      content: {
+        "application/json": { schema: DistributeCoinsBatchResponse },
+      },
+    },
+    400: STD_ERROR_RESPONSES[422],
+    401: STD_ERROR_RESPONSES[401],
+    403: STD_ERROR_RESPONSES[403],
     422: STD_ERROR_RESPONSES[422],
     429: STD_ERROR_RESPONSES[429],
     500: STD_ERROR_RESPONSES[500],

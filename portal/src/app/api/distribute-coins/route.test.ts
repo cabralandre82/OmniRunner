@@ -135,10 +135,33 @@ describe("POST /api/distribute-coins (L02-01: atomic RPC)", () => {
     expect((await res.json()).error.message).toContain("inteiro");
   });
 
-  it("returns 400 when amount exceeds 1000", async () => {
+  // L05-03 — per-call cap raised to 100_000 to support clubs distributing
+  // weekly bonuses to large athlete cohorts without artificial chunking.
+  // The boundary moved from 1_001 → 100_001 here; values up to 100_000
+  // now pass schema validation and are constrained by custódia / inventory
+  // CHECKs at the DB layer (the source of truth for "can we afford?").
+  it("returns 400 when amount exceeds DISTRIBUTE_COINS_AMOUNT_MAX (L05-03)", async () => {
     mockAdminCheck();
-    const res = await POST(req({ athlete_user_id: ATHLETE_UUID, amount: 1001 }));
+    const res = await POST(
+      req({ athlete_user_id: ATHLETE_UUID, amount: 100_001 }),
+    );
     expect(res.status).toBe(400);
+  });
+
+  it("L05-03: amounts above legacy 1_000 cap now pass schema (custódia decides)", async () => {
+    mockAdminCheck();
+    mockAthleteFound(true);
+    mockEmitCoinsAtomic({
+      ledger_id: "ledger-l05-03",
+      new_balance: 5500,
+      was_idempotent: false,
+    });
+    const res = await POST(
+      req({ athlete_user_id: ATHLETE_UUID, amount: 5_000 }),
+    );
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.amount).toBe(5_000);
   });
 
   it("returns 400 when amount is zero", async () => {

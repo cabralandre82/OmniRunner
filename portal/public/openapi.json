@@ -547,7 +547,7 @@
       "post": {
         "tags": ["OmniCoins"],
         "summary": "Distribuir OmniCoins",
-        "description": "Credita OmniCoins para um atleta da assessoria. Apenas admin_master.",
+        "description": "Credita OmniCoins para um atleta da assessoria. Apenas admin_master. L05-03: cap de amount elevado de 1.000 → 100.000.",
         "requestBody": {
           "required": true,
           "content": {
@@ -557,7 +557,7 @@
                 "required": ["athlete_user_id", "amount"],
                 "properties": {
                   "athlete_user_id": { "type": "string", "format": "uuid" },
-                  "amount": { "type": "integer", "minimum": 1, "maximum": 1000 }
+                  "amount": { "type": "integer", "minimum": 1, "maximum": 100000 }
                 }
               }
             }
@@ -590,6 +590,86 @@
           "422": { "description": "Lastro insuficiente" },
           "429": { "description": "Rate limit excedido" },
           "503": { "description": "Violação de invariante" }
+        }
+      }
+    },
+    "/api/distribute-coins/batch": {
+      "post": {
+        "tags": ["OmniCoins"],
+        "summary": "Distribuir OmniCoins em lote (L05-03)",
+        "description": "Distribui OmniCoins para até 200 atletas em uma única transação SQL via distribute_coins_batch_atomic. Qualquer falha rola back o lote inteiro. Idempotência por ref_id (corpo ou header x-idempotency-key) com derivação determinística por item. Apenas admin_master. Rate-limited 5/min/group.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["items"],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 200,
+                    "items": {
+                      "type": "object",
+                      "required": ["athlete_user_id", "amount"],
+                      "properties": {
+                        "athlete_user_id": { "type": "string", "format": "uuid" },
+                        "amount": { "type": "integer", "minimum": 1, "maximum": 100000 }
+                      }
+                    }
+                  },
+                  "ref_id": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128,
+                    "description": "Referência opcional do lote. Se omitida, usa header x-idempotency-key ou um valor derivado portal_batch_<actor>_<ts>."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          { "name": "x-idempotency-key", "in": "header", "schema": { "type": "string" }, "description": "Idempotency key do lote (alternativa ao body.ref_id)." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lote dispatched (was_idempotent por item indica replay).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "batch_ref_id": { "type": "string" },
+                    "total_amount": { "type": "integer" },
+                    "total_distributions": { "type": "integer" },
+                    "batch_was_idempotent": { "type": "boolean" },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "athlete_user_id": { "type": "string", "format": "uuid" },
+                          "amount": { "type": "integer" },
+                          "new_balance": { "type": "integer", "nullable": true },
+                          "was_idempotent": { "type": "boolean" },
+                          "ledger_id": { "type": "string", "format": "uuid", "nullable": true }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validação falhou (items.length, totals, duplicados, ref_id curto)" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas admin_master" },
+          "422": { "description": "CUSTODY_FAILED ou INVENTORY_INSUFFICIENT — lote inteiro rolado back" },
+          "429": { "description": "Rate limit excedido (5/min/group)" },
+          "503": { "description": "Lock/contention, kill switch ou invariant violation" }
         }
       }
     },

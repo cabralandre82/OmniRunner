@@ -457,8 +457,123 @@
           "amount": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 1000,
-            "description": "Amount of coins to mint (integer, 1-1000)."
+            "maximum": 100000,
+            "description": "Amount of coins to mint (integer, 1-100 000). Cap raised from the legacy 1 000 by L05-03 to fit weekly bonus distributions for medium clubs."
+          }
+        },
+        "required": [
+          "athlete_user_id",
+          "amount"
+        ]
+      },
+      "DistributeCoinsBatchResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiOkMarker"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "batch_ref_id": {
+                "type": "string"
+              },
+              "total_amount": {
+                "type": "integer"
+              },
+              "total_distributions": {
+                "type": "integer"
+              },
+              "batch_was_idempotent": {
+                "type": "boolean"
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DistributeCoinsBatchItemResult"
+                }
+              }
+            },
+            "required": [
+              "batch_ref_id",
+              "total_amount",
+              "total_distributions",
+              "batch_was_idempotent",
+              "items"
+            ]
+          }
+        ]
+      },
+      "DistributeCoinsBatchItemResult": {
+        "type": "object",
+        "properties": {
+          "athlete_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amount": {
+            "type": "integer"
+          },
+          "new_balance": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "was_idempotent": {
+            "type": "boolean"
+          },
+          "ledger_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "athlete_user_id",
+          "amount",
+          "new_balance",
+          "was_idempotent",
+          "ledger_id"
+        ]
+      },
+      "DistributeCoinsBatchBody": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DistributeCoinsBatchItem"
+            },
+            "minItems": 1,
+            "maxItems": 200,
+            "description": "1-200 athlete slices, total Σ amount ≤ 1 000 000. Duplicate athlete_user_id is rejected."
+          },
+          "ref_id": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128,
+            "description": "Optional explicit batch reference. Falls back to `x-idempotency-key` header or a derived value. Used to derive deterministic per-item ref_ids."
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "DistributeCoinsBatchItem": {
+        "type": "object",
+        "properties": {
+          "athlete_user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Athlete (auth.users.id) receiving this slice."
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000,
+            "description": "Amount of coins for this athlete (1-100 000)."
           }
         },
         "required": [
@@ -1129,6 +1244,116 @@
           },
           "404": {
             "description": "Athlete not found in this group.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — see `error.details`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (L14-04 — keyed by group/user, not raw IP). Honour the `Retry-After` header.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the next attempt is permitted.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable (e.g. feature flag off).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/distribute-coins/batch": {
+      "post": {
+        "tags": [
+          "OmniCoins"
+        ],
+        "summary": "Mint coins to up to 200 athletes in a single transaction (L05-03)",
+        "description": "Bulk version of `/api/v1/distribute-coins`. Dispatches the whole batch through `distribute_coins_batch_atomic` (see migration `20260421120000_l05_distribute_coins_batch.sql`) which loops over items in a single SQL transaction — any item failing rolls back the entire batch. Idempotency is per-batch via `ref_id` plus a deterministic `<batch>__<idx>` derivation per item, so replays are safe (`batch_was_idempotent: true`). Rate-limited at 5 req/min per group.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DistributeCoinsBatchBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Batch dispatched. `items[].was_idempotent` flags slices that were already credited in a prior call with the same ref_id.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistributeCoinsBatchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed — see `error.details`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — no valid session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — authenticated but not allowed.",
             "content": {
               "application/json": {
                 "schema": {

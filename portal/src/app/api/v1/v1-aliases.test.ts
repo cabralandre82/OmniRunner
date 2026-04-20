@@ -30,6 +30,9 @@ import * as v1Withdraw from "@/app/api/v1/custody/withdraw/route";
 import * as legacyDistribute from "@/app/api/distribute-coins/route";
 import * as v1Distribute from "@/app/api/v1/distribute-coins/route";
 
+import * as legacyDistributeBatch from "@/app/api/distribute-coins/batch/route";
+import * as v1DistributeBatch from "@/app/api/v1/distribute-coins/batch/route";
+
 import * as legacyClearing from "@/app/api/clearing/route";
 import * as v1Clearing from "@/app/api/v1/clearing/route";
 
@@ -52,6 +55,11 @@ const PAIRS: Array<{
   { name: "custody", legacy: legacyCustody, v1: v1Custody },
   { name: "custody/withdraw", legacy: legacyWithdraw, v1: v1Withdraw },
   { name: "distribute-coins", legacy: legacyDistribute, v1: v1Distribute },
+  {
+    name: "distribute-coins/batch",
+    legacy: legacyDistributeBatch,
+    v1: v1DistributeBatch,
+  },
   { name: "clearing", legacy: legacyClearing, v1: v1Clearing },
 ];
 

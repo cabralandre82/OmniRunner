@@ -39,6 +39,8 @@
     "/api/training-plan/workouts/{workoutId}/schedule",
     "/api/training-plan/workouts/{workoutId}/update",
     "/api/training-plan/{planId}",
-    "/api/training-plan/{planId}/weeks"
-  ]
+    "/api/training-plan/{planId}/weeks",
+    "/api/platform/health"
+  ],
+  "rationale_l05_03_addendum": "L05-03 itself documents the two new routes /api/distribute-coins/batch and /api/v1/distribute-coins/batch in BOTH legacy public/openapi.json AND v1 public/openapi-v1.json (via src/lib/openapi/routes/v1-financial.ts). The single grandfathered entry added in this PR is /api/platform/health, an orphan route from an earlier in-flight finding (platform observability surface) that L05-03 did NOT touch but that is now flagged because the coverage gate runs end-to-end. Documenting /api/platform/health is tracked under the L14-01 contract-first registry workstream and will be resolved by registering it with a Zod schema and removing the entry from this baseline."
 }
