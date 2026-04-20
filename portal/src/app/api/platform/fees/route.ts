@@ -4,14 +4,23 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
 import { cached, invalidate, CacheTTL } from "@/lib/cache";
+import { platformFeeTypeSchema } from "@/lib/platform-fee-types";
 import { z } from "zod";
+import { withErrorHandler } from "@/lib/api-handler";
 
-// L01-13 / L01-44 fix: inclui 'fx_spread' para espelhar o CHECK canônico em
-// platform_fee_config (ver supabase/migrations/20260417130000_fix_platform_fee_config_check.sql).
-// Alterar fx_spread via UI é crítico em crises cambiais — antes do fix, só era
-// possível alterar via SQL direto no DB.
+// L17-01 — endpoint financeiro crítico: configura taxas (`rate_pct`,
+// `rate_usd`) que alimentam toda a precificação on-line. Outermost
+// wrapper garante 500 canônico + Sentry + x-request-id em qualquer
+// throw inesperado (e.g. cache failure, admin client crash).
+export const GET = withErrorHandler(_get, "api.platform.fees.get");
+export const POST = withErrorHandler(_post, "api.platform.fees.post");
+
+// L01-45 fix: `fee_type` enum is sourced from the canonical
+// `PLATFORM_FEE_TYPES` constant (see `lib/platform-fee-types.ts`). NEVER
+// inline the list here again — see the comment block in that file for the
+// 2026-04-13 BRL-crisis post-mortem that motivated the consolidation.
 const updateSchema = z.object({
-  fee_type: z.enum(["clearing", "swap", "maintenance", "billing_split", "fx_spread"]),
+  fee_type: platformFeeTypeSchema,
   rate_pct: z.number().min(0).max(100).optional(),
   rate_usd: z.number().min(0).max(10).optional(),
   is_active: z.boolean().optional(),
@@ -36,7 +45,7 @@ async function requirePlatformAdmin() {
   return { user } as const;
 }
 
-export async function GET() {
+async function _get(_req: NextRequest) {
   const auth = await requirePlatformAdmin();
   if ("error" in auth) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
@@ -54,7 +63,7 @@ export async function GET() {
   return NextResponse.json({ fees });
 }
 
-export async function POST(req: NextRequest) {
+async function _post(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? "unknown";
   const rl = await rateLimit(`platform-fees:${ip}`, {
     maxRequests: 20,

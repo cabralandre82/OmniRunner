@@ -3,14 +3,24 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { auditLog } from "@/lib/audit";
 import { logger } from "@/lib/logger";
 import { metrics } from "@/lib/metrics";
+import { withErrorHandler } from "@/lib/api-handler";
 
 /**
  * POST /api/platform/invariants/enforce
  *
  * Cron-safe endpoint that checks custody invariants and auto-blocks
  * accounts with violations. Callable by service role or external cron.
+ *
+ * L17-01 — endpoint financeiro crítico (auto-bloqueia contas custody!).
+ * Outermost wrapper garante 500 canônico + Sentry + x-request-id em
+ * qualquer throw inesperado (e.g. service-role client crash, audit
+ * log falha, RPC timeout fora do `try` interno). O `try/catch` interno
+ * mapeia o caso conhecido `PGRST/does not exist` → 503 (feature not
+ * yet deployed) e re-lança o resto p/ o wrapper.
  */
-export async function POST(req: NextRequest) {
+export const POST = withErrorHandler(_post, "api.platform.invariants.enforce.post");
+
+async function _post(req: NextRequest) {
   const authHeader = req.headers.get("authorization") ?? "";
   const cronSecret = process.env.CRON_SECRET;
 

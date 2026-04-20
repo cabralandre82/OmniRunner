@@ -359,7 +359,11 @@ describe("POST /api/custody/withdraw — L01-02 server-side FX rate", () => {
   it("GET retorna lista de withdrawals para admin_master", async () => {
     mockAdmin();
     getWithdrawals.mockResolvedValueOnce([{ id: "wd-1" }]);
-    const res = await GET();
+    // L17-01 — wrapper agora lê `req.headers`/`req.method`; passa req real.
+    const getReq = new Request("http://localhost/api/custody/withdraw", {
+      headers: { "x-forwarded-for": "127.0.0.1" },
+    }) as unknown as import("next/server").NextRequest;
+    const res = await GET(getReq);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.withdrawals).toHaveLength(1);

@@ -31,6 +31,7 @@ import {
   resolveRequestId,
 } from "@/lib/api/errors";
 import { rateLimitKey } from "@/lib/api/rate-limit-key";
+import { withErrorHandler } from "@/lib/api-handler";
 import { z } from "zod";
 
 const createSchema = z
@@ -165,7 +166,14 @@ function swapErrorToResponse(req: NextRequest, err: SwapError): NextResponse {
 // user → hashed-IP). O legado keyed-by-IP (`swap:${ip}`) misturava
 // milhares de grupos atrás de NAT móvel num único bucket.
 
-export async function GET(req: NextRequest) {
+// L17-01 — outermost safety-net: qualquer throw cai no envelope canônico
+// `{ ok:false, error:{ code:"INTERNAL_ERROR", … } }` em vez de vazar stack
+// trace. Erros de domínio (`SwapError`) continuam sendo capturados inline
+// pelos try/catch logo abaixo para manter o mapping rico de status code.
+export const GET = withErrorHandler(_get, "api.swap.get");
+export const POST = withErrorHandler(_post, "api.swap.post");
+
+async function _get(req: NextRequest) {
   // GET é pré-auth, mas tentamos derivar groupId do cookie para já
   // bucketar por grupo quando o user tiver sessão. Sem cookie: cai
   // para hashed-IP, que ainda assim é melhor que IP plaintext.
@@ -186,7 +194,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ offers });
 }
 
-export async function POST(req: NextRequest) {
+async function _post(req: NextRequest) {
   const cookieGroupId = cookies().get("portal_group_id")?.value ?? null;
   const rl = await rateLimit(
     rateLimitKey({ prefix: "swap", groupId: cookieGroupId, request: req }),
@@ -227,117 +235,116 @@ export async function POST(req: NextRequest) {
 
   const data = parsed.data;
 
-  try {
-    if (data.action === "create") {
-      const ttl = data.expires_in_days ?? DEFAULT_SWAP_TTL_DAYS;
-      const order = await createSwapOffer(auth.groupId, data.amount_usd, ttl);
+  // Erros de I/O / runtime inesperados sobem para `withErrorHandler`,
+  // que devolve 500 canônico + Sentry + request_id. Erros de domínio
+  // semânticos (`SwapError`) ainda são capturados inline para mapear
+  // 4xx/5xx específicos (ver `swapErrorToResponse`).
+  if (data.action === "create") {
+    const ttl = data.expires_in_days ?? DEFAULT_SWAP_TTL_DAYS;
+    const order = await createSwapOffer(auth.groupId, data.amount_usd, ttl);
 
-      if (!order) {
-        return apiServiceUnavailable(req, "Swap feature not available");
-      }
-
-      await auditLog({
-        actorId: auth.user.id,
-        groupId: auth.groupId,
-        action: "swap.offer.created",
-        targetId: order.id,
-        metadata: {
-          amount_usd: data.amount_usd,
-          expires_in_days: ttl,
-          expires_at: order.expires_at,
-        },
-      });
-
-      return NextResponse.json({ order });
+    if (!order) {
+      return apiServiceUnavailable(req, "Swap feature not available");
     }
 
-    if (data.action === "accept") {
-      try {
-        await acceptSwapOffer(
-          data.order_id,
-          auth.groupId,
-          data.external_payment_ref,
-        );
-      } catch (err) {
-        if (err instanceof SwapError) {
-          // L05-01: erro semântico — NÃO emitir auditLog de sucesso.
-          // Logamos a tentativa para forense.
-          await auditLog({
-            actorId: auth.user.id,
-            groupId: auth.groupId,
-            action: "swap.offer.accept_failed",
-            targetId: data.order_id,
-            metadata: { code: err.code, sqlstate: err.sqlstate ?? null },
-          });
-          return swapErrorToResponse(req, err);
-        }
-        throw err;
-      }
+    await auditLog({
+      actorId: auth.user.id,
+      groupId: auth.groupId,
+      action: "swap.offer.created",
+      targetId: order.id,
+      metadata: {
+        amount_usd: data.amount_usd,
+        expires_in_days: ttl,
+        expires_at: order.expires_at,
+      },
+    });
 
-      // L02-07/ADR-008 — WARN observability quando ref ausente.
-      // CFO usa essas linhas para amostragem de revisão semanal. Métrica
-      // futura `swap_accept_without_ref_total` virá daqui.
-      if (!data.external_payment_ref) {
-        logger.warn("swap.accept_without_external_payment_ref", {
-          order_id: data.order_id,
-          buyer_group_id: auth.groupId,
-          actor_id: auth.user.id,
-          adr: "ADR-008",
+    return NextResponse.json({ order });
+  }
+
+  if (data.action === "accept") {
+    try {
+      await acceptSwapOffer(
+        data.order_id,
+        auth.groupId,
+        data.external_payment_ref,
+      );
+    } catch (err) {
+      if (err instanceof SwapError) {
+        // L05-01: erro semântico — NÃO emitir auditLog de sucesso.
+        // Logamos a tentativa para forense.
+        await auditLog({
+          actorId: auth.user.id,
+          groupId: auth.groupId,
+          action: "swap.offer.accept_failed",
+          targetId: data.order_id,
+          metadata: { code: err.code, sqlstate: err.sqlstate ?? null },
         });
+        return swapErrorToResponse(req, err);
       }
-
-      await auditLog({
-        actorId: auth.user.id,
-        groupId: auth.groupId,
-        action: "swap.offer.accepted",
-        targetId: data.order_id,
-        metadata: {
-          external_payment_ref: data.external_payment_ref ?? null,
-          has_payment_ref: Boolean(data.external_payment_ref),
-        },
-      });
-
-      return NextResponse.json({ ok: true });
+      throw err;
     }
 
-    if (data.action === "cancel") {
-      let result;
-      try {
-        result = await cancelSwapOffer(data.order_id, auth.groupId);
-      } catch (err) {
-        if (err instanceof SwapError) {
-          await auditLog({
-            actorId: auth.user.id,
-            groupId: auth.groupId,
-            action: "swap.offer.cancel_failed",
-            targetId: data.order_id,
-            metadata: { code: err.code, sqlstate: err.sqlstate ?? null },
-          });
-          return swapErrorToResponse(req, err);
-        }
-        throw err;
-      }
-
-      await auditLog({
-        actorId: auth.user.id,
-        groupId: auth.groupId,
-        action: "swap.offer.cancelled",
-        targetId: data.order_id,
-        metadata: {
-          previous_status: result.previousStatus,
-          new_status: result.newStatus,
-        },
+    // L02-07/ADR-008 — WARN observability quando ref ausente.
+    // CFO usa essas linhas para amostragem de revisão semanal. Métrica
+    // futura `swap_accept_without_ref_total` virá daqui.
+    if (!data.external_payment_ref) {
+      logger.warn("swap.accept_without_external_payment_ref", {
+        order_id: data.order_id,
+        buyer_group_id: auth.groupId,
+        actor_id: auth.user.id,
+        adr: "ADR-008",
       });
+    }
 
-      return NextResponse.json({
-        ok: true,
+    await auditLog({
+      actorId: auth.user.id,
+      groupId: auth.groupId,
+      action: "swap.offer.accepted",
+      targetId: data.order_id,
+      metadata: {
+        external_payment_ref: data.external_payment_ref ?? null,
+        has_payment_ref: Boolean(data.external_payment_ref),
+      },
+    });
+
+    return NextResponse.json({ ok: true });
+  }
+
+  if (data.action === "cancel") {
+    let result;
+    try {
+      result = await cancelSwapOffer(data.order_id, auth.groupId);
+    } catch (err) {
+      if (err instanceof SwapError) {
+        await auditLog({
+          actorId: auth.user.id,
+          groupId: auth.groupId,
+          action: "swap.offer.cancel_failed",
+          targetId: data.order_id,
+          metadata: { code: err.code, sqlstate: err.sqlstate ?? null },
+        });
+        return swapErrorToResponse(req, err);
+      }
+      throw err;
+    }
+
+    await auditLog({
+      actorId: auth.user.id,
+      groupId: auth.groupId,
+      action: "swap.offer.cancelled",
+      targetId: data.order_id,
+      metadata: {
         previous_status: result.previousStatus,
         new_status: result.newStatus,
-      });
-    }
-  } catch (e: unknown) {
-    logger.error("[swap] operation failed", e);
-    return apiError(req, "SWAP_OPERATION_FAILED", "Operação falhou. Tente novamente.", 422);
+      },
+    });
+
+    return NextResponse.json({
+      ok: true,
+      previous_status: result.previousStatus,
+      new_status: result.newStatus,
+    });
   }
 
   return apiValidationFailed(req, "Unknown action");

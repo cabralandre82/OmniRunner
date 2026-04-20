@@ -9,6 +9,7 @@ import { withIdempotency } from "@/lib/api/idempotency";
 import { apiError, resolveRequestId } from "@/lib/api/errors";
 import { logger } from "@/lib/logger";
 import { metrics } from "@/lib/metrics";
+import { withErrorHandler } from "@/lib/api-handler";
 
 /**
  * Maximum body size for the checkout proxy. Body schema is two short
@@ -66,7 +67,12 @@ const CHECKOUT_GATEWAY_TIMEOUT_MS = 15_000;
  *      gateway_called,gateway_error,replayed}` with reason tags for
  *      operability.
  */
-export async function POST(request: NextRequest) {
+// L17-01 — outermost safety-net: throws inesperados (createClient,
+// JSON.parse de session, fetch crashes não capturados) viram 500
+// INTERNAL_ERROR canônico em vez de stack trace cru.
+export const POST = withErrorHandler(_post, "api.checkout.post");
+
+async function _post(request: NextRequest) {
   const requestId = resolveRequestId(request);
 
   // ── 1. Auth ────────────────────────────────────────────────────────

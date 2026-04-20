@@ -27,7 +27,12 @@ function postReq(body: Record<string, unknown>) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  });
+  }) as unknown as import("next/server").NextRequest;
+}
+
+// L17-01 — withErrorHandler wrapper requires a NextRequest on the GET path too.
+function getReq() {
+  return new Request("http://localhost/api/gateway-preference") as unknown as import("next/server").NextRequest;
 }
 
 const mockUser = { id: "user-admin-1" };
@@ -40,13 +45,13 @@ describe("GET /api/gateway-preference", () => {
 
   it("returns 401 when not authenticated", async () => {
     authClient.auth.getUser.mockResolvedValueOnce({ data: { user: null } });
-    const res = await GET();
+    const res = await GET(getReq());
     expect(res.status).toBe(401);
   });
 
   it("returns default mercadopago when no record", async () => {
     serviceClient.from.mockReturnValueOnce(queryChain({ data: null }));
-    const res = await GET();
+    const res = await GET(getReq());
     const json = await res.json();
     expect(json.preferred_gateway).toBe("mercadopago");
   });
@@ -55,7 +60,7 @@ describe("GET /api/gateway-preference", () => {
     serviceClient.from.mockReturnValueOnce(
       queryChain({ data: { preferred_gateway: "stripe" } }),
     );
-    const res = await GET();
+    const res = await GET(getReq());
     expect((await res.json()).preferred_gateway).toBe("stripe");
   });
 });

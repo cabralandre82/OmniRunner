@@ -5,6 +5,14 @@ import { auditLog } from "@/lib/audit";
 import { logger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
 import { platformRefundActionSchema } from "@/lib/schemas";
+import { withErrorHandler } from "@/lib/api-handler";
+
+// L17-01 — endpoint financeiro crítico: refunds movimentam credits e
+// alteram billing_purchases. Outermost wrapper garante 500 canônico,
+// Sentry capture e x-request-id em qualquer throw inesperado (e.g. RPC
+// `fn_debit_institution_credits` indisponível, network timeout p/
+// admin client).
+export const POST = withErrorHandler(_post, "api.platform.refunds.post");
 
 async function requirePlatformAdmin() {
   const supabase = createClient();
@@ -29,7 +37,7 @@ async function requirePlatformAdmin() {
   return { user };
 }
 
-export async function POST(req: NextRequest) {
+async function _post(req: NextRequest) {
   const auth = await requirePlatformAdmin();
   if ("error" in auth) {
     return NextResponse.json(

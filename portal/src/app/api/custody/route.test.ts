@@ -63,6 +63,14 @@ function req(
   }) as unknown as import("next/server").NextRequest;
 }
 
+// L17-01 — wrapper now reads `req.headers`/`req.method` to derive
+// request_id; GET helpers must pass a real request object.
+function getReq() {
+  return new Request("http://localhost/api/custody", {
+    headers: { "x-forwarded-for": "127.0.0.1" },
+  }) as unknown as import("next/server").NextRequest;
+}
+
 function mockAdminCheck() {
   serviceClient.from.mockReturnValueOnce(
     queryChain({ data: { role: "admin_master" } }),
@@ -85,7 +93,7 @@ describe("Custody API", () => {
   describe("GET", () => {
     it("returns custody account", async () => {
       mockAdminCheck();
-      const res = await GET();
+      const res = await GET(getReq());
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.account).toBeDefined();
@@ -96,7 +104,7 @@ describe("Custody API", () => {
       authClient.auth.getUser.mockResolvedValueOnce({
         data: { user: null },
       });
-      const res = await GET();
+      const res = await GET(getReq());
       expect(res.status).toBe(401);
     });
   });

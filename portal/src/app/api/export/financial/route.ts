@@ -1,11 +1,18 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { cookies } from "next/headers";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
+import { withErrorHandler } from "@/lib/api-handler";
 
-export async function GET() {
+// L17-01 — endpoint financeiro: export CSV do ledger contábil
+// (`coaching_financial_ledger`). Outermost wrapper garante 500
+// canônico + Sentry + x-request-id em qualquer throw inesperado
+// (e.g. ledger query OOM, audit log falha).
+export const GET = withErrorHandler(_get, "api.export.financial.get");
+
+async function _get(_req: NextRequest) {
   const supabase = createClient();
   const {
     data: { user },

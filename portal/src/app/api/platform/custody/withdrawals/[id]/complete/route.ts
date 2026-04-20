@@ -13,6 +13,7 @@ import {
 } from "@/lib/api/errors";
 import { rateLimitKey } from "@/lib/api/rate-limit-key";
 import { logger } from "@/lib/logger";
+import { withErrorHandler } from "@/lib/api-handler";
 
 /**
  * L02-06 — POST /api/platform/custody/withdrawals/[id]/complete
@@ -59,7 +60,13 @@ async function requirePlatformAdmin() {
   return { user } as const;
 }
 
-export async function POST(
+// L17-01 — endpoint financeiro crítico: completa um withdrawal via RPC
+// `complete_withdrawal`. Outermost wrapper garante 500 canônico +
+// Sentry + x-request-id se algo abaixo do `withIdempotency` der throw
+// inesperado (e.g. service-role client crash, network DNS).
+export const POST = withErrorHandler(_post, "api.platform.custody.withdraw.complete");
+
+async function _post(
   req: NextRequest,
   ctx: { params: { id: string } },
 ) {

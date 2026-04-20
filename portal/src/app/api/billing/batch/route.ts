@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { withErrorHandler } from "@/lib/api-handler";
 
-export async function POST(request: NextRequest) {
+// L17-01 — outermost safety-net: throws inesperados (Edge Function fetch
+// crash, batch job insert race) viram 500 INTERNAL_ERROR canônico em vez
+// de stack trace cru.
+export const POST = withErrorHandler(_post, "api.billing.batch.post");
+
+async function _post(request: NextRequest) {
   const supabase = createClient();
   const {
     data: { user },

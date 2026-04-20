@@ -3,6 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
+import { withErrorHandler } from "@/lib/api-handler";
+
+// L17-01 — endpoint platform admin: gerencia tickets de suporte.
+// Outermost wrapper garante 500 canônico + Sentry + x-request-id.
+export const POST = withErrorHandler(_post, "api.platform.support.post");
 
 async function requirePlatformAdmin() {
   const supabase = createClient();
@@ -27,7 +32,7 @@ async function requirePlatformAdmin() {
   return { user };
 }
 
-export async function POST(req: NextRequest) {
+async function _post(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? "unknown";
   const rl = await rateLimit(`platform-support:${ip}`, { maxRequests: 20, windowMs: 60_000 });
   if (!rl.allowed) {

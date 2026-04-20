@@ -51,6 +51,11 @@ function req(body: Record<string, unknown>) {
   }) as unknown as import("next/server").NextRequest;
 }
 
+// L17-01 — withErrorHandler now expects a NextRequest on the GET path too.
+function getReq() {
+  return new Request("http://localhost/api/platform/fees") as unknown as import("next/server").NextRequest;
+}
+
 function mockPlatformAdmin() {
   mockGetUser.mockResolvedValue({
     data: { user: { id: "admin-1" } },
@@ -68,7 +73,7 @@ describe("Platform Fees API", () => {
   describe("GET", () => {
     it("returns 401 when not authenticated", async () => {
       mockGetUser.mockResolvedValue({ data: { user: null } });
-      const res = await GET();
+      const res = await GET(getReq());
       expect(res.status).toBe(401);
     });
 
@@ -77,7 +82,7 @@ describe("Platform Fees API", () => {
         data: { user: { id: "u1" } },
       });
       mockSelectSingle.mockResolvedValue({ data: null });
-      const res = await GET();
+      const res = await GET(getReq());
       expect(res.status).toBe(403);
     });
 
@@ -91,7 +96,7 @@ describe("Platform Fees API", () => {
         adminQueryChain({ data: fees }),
       );
 
-      const res = await GET();
+      const res = await GET(getReq());
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.fees).toHaveLength(2);

@@ -5,10 +5,16 @@ import { cookies } from "next/headers";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
 import { autoTopupSchema } from "@/lib/schemas";
-import { logger } from "@/lib/logger";
+import { withErrorHandler } from "@/lib/api-handler";
+import type { NextRequest } from "next/server";
 
-export async function POST(request: Request) {
-  try {
+// L17-01 — outermost safety-net: throws inesperados (DB outage no insert,
+// audit log crash) viram 500 INTERNAL_ERROR canônico em vez de stack
+// trace cru. Antes desta refatoração existia um try/catch no top-level
+// que devolvia "Erro interno" pt-BR (também flagrado em L07-01).
+export const POST = withErrorHandler(_post, "api.auto-topup.post");
+
+async function _post(request: NextRequest) {
   const rl = await rateLimit(`auto-topup:${request.headers.get("x-forwarded-for") ?? "unknown"}`);
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
@@ -115,8 +121,4 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json({ ok: true });
-  } catch (error) {
-    logger.error("Failed in auto-topup route", error);
-    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
-  }
 }

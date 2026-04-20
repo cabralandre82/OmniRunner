@@ -17,9 +17,9 @@ import {
   apiValidationFailed,
   apiRateLimited,
   apiServiceUnavailable,
-  apiInternalError,
 } from "@/lib/api/errors";
 import { rateLimitKey } from "@/lib/api/rate-limit-key";
+import { withErrorHandler } from "@/lib/api-handler";
 import { z } from "zod";
 
 const depositSchema = z
@@ -90,7 +90,13 @@ function authErrorResponse(
   }
 }
 
-export async function GET(req: NextRequest) {
+// L17-01 — outermost safety-net: qualquer throw vira 500 INTERNAL_ERROR
+// canônico (`{ ok:false, error:{ code, message, request_id } }`) com
+// Sentry capture + request_id propagado em vez de stack trace cru.
+export const GET = withErrorHandler(_get, "api.custody.get");
+export const POST = withErrorHandler(_post, "api.custody.post");
+
+async function _get(req: NextRequest) {
   const auth = await requireAdminMaster();
   if ("error" in auth) return authErrorResponse(req, auth);
 
@@ -98,7 +104,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ account });
 }
 
-export async function POST(req: NextRequest) {
+async function _post(req: NextRequest) {
   // L14-04 — bucket por grupo (cookie) com fallback para hashed-IP.
   const cookieGroupId = cookies().get("portal_group_id")?.value ?? null;
   const rl = await rateLimit(
@@ -182,50 +188,49 @@ export async function POST(req: NextRequest) {
 
   await getOrCreateCustodyAccount(auth.groupId);
 
-  try {
-    const result = await createCustodyDeposit(
-      auth.groupId,
-      parsed.data.amount_usd,
-      parsed.data.gateway,
-      idempotencyKey,
+  // L17-01 — sem try/catch local: erros inesperados de `createCustodyDeposit`
+  // sobem para `withErrorHandler`, que devolve 500 INTERNAL_ERROR canônico
+  // (sem vazar `e.message` cru, que historicamente continha texto de erro
+  // do Postgres / nome de tabela). Audit + Sentry capturados pelo wrapper.
+  const result = await createCustodyDeposit(
+    auth.groupId,
+    parsed.data.amount_usd,
+    parsed.data.gateway,
+    idempotencyKey,
+  );
+
+  if (!result) {
+    return apiServiceUnavailable(
+      req,
+      "Funcionalidade de custódia não disponível ainda",
     );
-
-    if (!result) {
-      return apiServiceUnavailable(
-        req,
-        "Funcionalidade de custódia não disponível ainda",
-      );
-    }
-
-    const { deposit, wasIdempotent } = result;
-
-    // Audit só registra na criação real — replays não inflam o log.
-    if (!wasIdempotent) {
-      await auditLog({
-        actorId: auth.user.id,
-        groupId: auth.groupId,
-        action: "custody.deposit.created",
-        targetId: deposit.id,
-        metadata: {
-          amount_usd: parsed.data.amount_usd,
-          gateway: parsed.data.gateway,
-          idempotency_key: idempotencyKey,
-        },
-      });
-    }
-
-    // L01-04 — header `Idempotent-Replayed: true` permite ao cliente
-    // detectar (Stripe usa convenção similar com `Idempotency-Key`).
-    return NextResponse.json(
-      { deposit, idempotent: wasIdempotent },
-      {
-        headers: wasIdempotent
-          ? { "Idempotent-Replayed": "true" }
-          : undefined,
-      },
-    );
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Deposit failed";
-    return apiInternalError(req, msg);
   }
+
+  const { deposit, wasIdempotent } = result;
+
+  // Audit só registra na criação real — replays não inflam o log.
+  if (!wasIdempotent) {
+    await auditLog({
+      actorId: auth.user.id,
+      groupId: auth.groupId,
+      action: "custody.deposit.created",
+      targetId: deposit.id,
+      metadata: {
+        amount_usd: parsed.data.amount_usd,
+        gateway: parsed.data.gateway,
+        idempotency_key: idempotencyKey,
+      },
+    });
+  }
+
+  // L01-04 — header `Idempotent-Replayed: true` permite ao cliente
+  // detectar (Stripe usa convenção similar com `Idempotency-Key`).
+  return NextResponse.json(
+    { deposit, idempotent: wasIdempotent },
+    {
+      headers: wasIdempotent
+        ? { "Idempotent-Replayed": "true" }
+        : undefined,
+    },
+  );
 }

@@ -5,6 +5,12 @@ import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
 import { invalidateFeatureCache } from "@/lib/feature-flags";
 import { z } from "zod";
+import { withErrorHandler } from "@/lib/api-handler";
+
+// L17-01 — endpoint platform crítico: toggle de feature flags afeta
+// kill switches financeiros (e.g. checkout, swap). Outermost wrapper
+// garante 500 canônico + Sentry + x-request-id em qualquer throw.
+export const POST = withErrorHandler(_post, "api.platform.feature-flags.post");
 
 /**
  * L06-06 — toggle de feature flag pelo platform admin.
@@ -50,7 +56,7 @@ async function requirePlatformAdmin() {
   return { user };
 }
 
-export async function POST(req: NextRequest) {
+async function _post(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? "unknown";
   const rl = await rateLimit(`platform-ff:${ip}`, {
     maxRequests: 20,

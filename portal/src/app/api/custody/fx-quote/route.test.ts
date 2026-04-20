@@ -100,7 +100,10 @@ describe("GET /api/custody/fx-quote — L01-02 read-only quote endpoint", () => 
     expect(getAuthoritativeFxQuote).not.toHaveBeenCalled();
   });
 
-  it("retorna 400 para moeda inválida (JPY)", async () => {
+  // L17-01 / L14-05 — todos os erros agora usam o envelope canônico
+  // `{ ok:false, error:{ code, message, request_id } }` em vez do legado
+  // `{ error, code, detail }`.
+  it("retorna 400 UNSUPPORTED_CURRENCY para moeda inválida (JPY)", async () => {
     const { FxQuoteUnsupportedError } = await import("@/lib/fx/quote");
     mockMembership("coach");
     getAuthoritativeFxQuote.mockRejectedValueOnce(
@@ -110,10 +113,12 @@ describe("GET /api/custody/fx-quote — L01-02 read-only quote endpoint", () => 
     const res = await GET(req("JPY"));
     expect(res.status).toBe(400);
     const body = await res.json();
-    expect(body.code).toBe("unsupported");
+    expect(body.ok).toBe(false);
+    expect(body.error.code).toBe("UNSUPPORTED_CURRENCY");
+    expect(body.error.details.allowed).toContain("BRL");
   });
 
-  it("retorna 503 com code='stale' quando cotação expirada", async () => {
+  it("retorna 503 FX_QUOTE_STALE quando cotação expirada", async () => {
     const { FxQuoteStaleError } = await import("@/lib/fx/quote");
     mockMembership("coach");
     getAuthoritativeFxQuote.mockRejectedValueOnce(
@@ -123,10 +128,11 @@ describe("GET /api/custody/fx-quote — L01-02 read-only quote endpoint", () => 
     const res = await GET(req("BRL"));
     expect(res.status).toBe(503);
     const body = await res.json();
-    expect(body.code).toBe("stale");
+    expect(body.ok).toBe(false);
+    expect(body.error.code).toBe("FX_QUOTE_STALE");
   });
 
-  it("retorna 503 com code='missing' quando não há cotação", async () => {
+  it("retorna 503 FX_QUOTE_MISSING quando não há cotação", async () => {
     const { FxQuoteMissingError } = await import("@/lib/fx/quote");
     mockMembership("coach");
     getAuthoritativeFxQuote.mockRejectedValueOnce(
@@ -136,6 +142,23 @@ describe("GET /api/custody/fx-quote — L01-02 read-only quote endpoint", () => 
     const res = await GET(req("EUR"));
     expect(res.status).toBe(503);
     const body = await res.json();
-    expect(body.code).toBe("missing");
+    expect(body.ok).toBe(false);
+    expect(body.error.code).toBe("FX_QUOTE_MISSING");
+  });
+
+  it("L17-01 — throw inesperado vira 500 INTERNAL_ERROR canônico (não vaza stack)", async () => {
+    mockMembership("coach");
+    getAuthoritativeFxQuote.mockRejectedValueOnce(
+      new Error("connect ECONNREFUSED postgres:5432"),
+    );
+
+    const res = await GET(req("BRL"));
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.ok).toBe(false);
+    expect(body.error.code).toBe("INTERNAL_ERROR");
+    expect(body.error.message).toBe("Internal server error");
+    expect(body.error.message).not.toContain("ECONNREFUSED");
+    expect(body.error.request_id).toBeDefined();
   });
 });

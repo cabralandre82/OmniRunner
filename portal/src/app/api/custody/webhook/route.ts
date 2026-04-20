@@ -11,6 +11,7 @@ import { logger } from "@/lib/logger";
 import { metrics } from "@/lib/metrics";
 import { createServiceClient } from "@/lib/supabase/service";
 import { apiError, resolveRequestId } from "@/lib/api/errors";
+import { withErrorHandler } from "@/lib/api-handler";
 
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_CUSTODY_WEBHOOK_SECRET ?? "";
 const MP_WEBHOOK_SECRET = process.env.MP_CUSTODY_WEBHOOK_SECRET ?? "";
@@ -67,7 +68,14 @@ type Gateway = "stripe" | "mercadopago";
  *      use the `apiError` / NextResponse pattern with `request_id`
  *      propagation (L13-06 / L14-05).
  */
-export async function POST(req: NextRequest) {
+// L17-01 — outermost safety-net. O receiver já tem try/catch granulares
+// para signature/dedup/confirm; o wrapper só protege contra throws
+// inesperados (e.g. JSON.parse com input malformado depois da extração
+// inicial, falhas de DB no audit) — devolvem 500 canônico em vez de
+// stack trace.
+export const POST = withErrorHandler(_post, "api.custody.webhook.post");
+
+async function _post(req: NextRequest) {
   const requestId = resolveRequestId(req);
 
   // ── 1. Body — bounded read ──────────────────────────────────────────

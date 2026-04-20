@@ -1,9 +1,15 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { rateLimit } from "@/lib/rate-limit";
+import { withErrorHandler } from "@/lib/api-handler";
 
-export async function POST() {
+// L17-01 — outermost safety-net: throws inesperados (fetch crash,
+// session JSON parse, supabase auth client crash) viram 500 INTERNAL_ERROR
+// canônico em vez de stack trace cru.
+export const POST = withErrorHandler(_post, "api.billing-portal.post");
+
+async function _post(_request: NextRequest) {
   const supabase = createClient();
   const {
     data: { user },

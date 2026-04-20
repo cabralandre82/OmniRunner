@@ -4,15 +4,14 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getSettlementsForGroup } from "@/lib/clearing";
 import { rateLimit } from "@/lib/rate-limit";
-import { logger } from "@/lib/logger";
 import {
   apiError,
   apiUnauthorized,
   apiForbidden,
   apiRateLimited,
-  apiInternalError,
 } from "@/lib/api/errors";
 import { rateLimitKey } from "@/lib/api/rate-limit-key";
+import { withErrorHandler } from "@/lib/api-handler";
 
 type ClearingAuthError =
   | { error: "Não autorizado"; status: 401 }
@@ -66,29 +65,30 @@ function authErrorResponse(
   }
 }
 
-export async function GET(req: NextRequest) {
-  try {
-    // L14-04 — bucket por grupo (cookie) com fallback para hashed-IP.
-    const cookieGroupId = cookies().get("portal_group_id")?.value ?? null;
-    const rl = await rateLimit(
-      rateLimitKey({ prefix: "clearing", groupId: cookieGroupId, request: req }),
-      { maxRequests: 30, windowMs: 60_000 },
-    );
-    if (!rl.allowed) {
-      const retryAfter = Math.ceil((rl.resetAt - Date.now()) / 1000);
-      return apiRateLimited(req, retryAfter);
-    }
+// L17-01 — outermost safety-net: throws inesperados (RPC outage,
+// auth client crash) viram 500 INTERNAL_ERROR canônico via
+// `withErrorHandler` em vez de stack trace cru. O `logger.error`
+// dentro do wrapper já rota para Sentry com `route` + `requestId`.
+export const GET = withErrorHandler(_get, "api.clearing.get");
 
-    const auth = await requireStaff();
-    if ("error" in auth) return authErrorResponse(req, auth);
-
-    const role =
-      (req.nextUrl.searchParams.get("role") as "creditor" | "debtor") || "both";
-
-    const settlements = await getSettlementsForGroup(auth.groupId, role);
-    return NextResponse.json({ settlements });
-  } catch (error) {
-    logger.error("Failed to fetch clearing settlements", error);
-    return apiInternalError(req, "Erro interno");
+async function _get(req: NextRequest) {
+  // L14-04 — bucket por grupo (cookie) com fallback para hashed-IP.
+  const cookieGroupId = cookies().get("portal_group_id")?.value ?? null;
+  const rl = await rateLimit(
+    rateLimitKey({ prefix: "clearing", groupId: cookieGroupId, request: req }),
+    { maxRequests: 30, windowMs: 60_000 },
+  );
+  if (!rl.allowed) {
+    const retryAfter = Math.ceil((rl.resetAt - Date.now()) / 1000);
+    return apiRateLimited(req, retryAfter);
   }
+
+  const auth = await requireStaff();
+  if ("error" in auth) return authErrorResponse(req, auth);
+
+  const role =
+    (req.nextUrl.searchParams.get("role") as "creditor" | "debtor") || "both";
+
+  const settlements = await getSettlementsForGroup(auth.groupId, role);
+  return NextResponse.json({ settlements });
 }

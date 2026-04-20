@@ -31,6 +31,7 @@ import {
 } from "@/lib/api/errors";
 import { rateLimitKey } from "@/lib/api/rate-limit-key";
 import { withIdempotency } from "@/lib/api/idempotency";
+import { withErrorHandler } from "@/lib/api-handler";
 import { z } from "zod";
 
 /**
@@ -97,7 +98,15 @@ function authErrorResponse(
   }
 }
 
-export async function GET(req: NextRequest) {
+// L17-01 — outermost safety-net: throws inesperados (FxQuote DB outage,
+// invariant check infra error, etc.) viram 500 INTERNAL_ERROR canônico
+// em vez de stack trace cru. Erros de domínio (FxQuoteError,
+// FeatureDisabledError, withdrawal failures) seguem mapeados inline
+// para preservar status codes 503/422 específicos.
+export const GET = withErrorHandler(_get, "api.custody.withdraw.get");
+export const POST = withErrorHandler(_post, "api.custody.withdraw.post");
+
+async function _get(req: NextRequest) {
   const auth = await requireAdminMaster();
   if ("error" in auth) return authErrorResponse(req, auth);
 
@@ -105,7 +114,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ withdrawals });
 }
 
-export async function POST(req: NextRequest) {
+async function _post(req: NextRequest) {
   // L14-04 — bucket por grupo (cookie) para que um grupo ativo não
   // bloqueie withdrawals de outros grupos atrás do mesmo NAT.
   const cookieGroupId = cookies().get("portal_group_id")?.value ?? null;

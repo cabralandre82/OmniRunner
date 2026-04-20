@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { randomUUID } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { withErrorHandler } from "@/lib/api-handler";
 
 async function forwardToEdgeFunction(
   accessToken: string,
@@ -19,7 +20,14 @@ async function forwardToEdgeFunction(
   });
 }
 
-export async function POST(request: NextRequest) {
+// L17-01 — outermost safety-net: throws inesperados (Edge Function fetch
+// crash, RPC vault failure não capturada) viram 500 INTERNAL_ERROR
+// canônico em vez de stack trace cru. Mantemos o envelope legado nas
+// branches abaixo por compat — migração para canonical é tracked em
+// L14-05 (já fixed).
+export const POST = withErrorHandler(_post, "api.billing.asaas.post");
+
+async function _post(request: NextRequest) {
   const supabase = createClient();
   const {
     data: { user },

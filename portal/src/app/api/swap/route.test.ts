@@ -140,7 +140,12 @@ describe("Swap API", () => {
       expect(res.status).toBe(400);
     });
 
-    it("returns 422 when service throws", async () => {
+    it("returns canonical 500 INTERNAL_ERROR when service throws unexpectedly (L17-01)", async () => {
+      // L17-01 — antes: thrown errors caíam num try/catch local que
+      // devolvia 422/SWAP_OPERATION_FAILED (mascarando falhas de infra
+      // como semantic 422). Agora: o `withErrorHandler` outermost
+      // converte qualquer throw em 500 INTERNAL_ERROR canônico, com
+      // logger.error (Sentry) + request_id no header e no body.
       mockAdminCheck();
       mockCreateSwapOffer.mockRejectedValue(
         new Error("Insufficient available backing"),
@@ -149,12 +154,13 @@ describe("Swap API", () => {
       const res = await POST(
         req({ action: "create", amount_usd: 1000 }),
       );
-      expect(res.status).toBe(422);
+      expect(res.status).toBe(500);
       const body = await res.json();
-      // L14-05 — canonical envelope: error.message
-      expect(body.error.message).toBe("Operação falhou. Tente novamente.");
-      expect(body.error.code).toBe("SWAP_OPERATION_FAILED");
       expect(body.ok).toBe(false);
+      expect(body.error.code).toBe("INTERNAL_ERROR");
+      expect(body.error.message).toBe("Internal server error");
+      expect(body.error.request_id).toBeDefined();
+      expect(res.headers.get("x-request-id")).toBe(body.error.request_id);
     });
 
     it("rejeita campos extras (strict schema) — 400", async () => {

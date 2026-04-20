@@ -10,6 +10,12 @@ import {
   FxQuoteStaleError,
   FxQuoteUnsupportedError,
 } from "@/lib/fx/quote";
+import {
+  apiError,
+  apiUnauthorized,
+  apiForbidden,
+} from "@/lib/api/errors";
+import { withErrorHandler } from "@/lib/api-handler";
 
 /**
  * GET /api/custody/fx-quote?currency=BRL
@@ -23,26 +29,36 @@ import {
  * Response 200:
  *   { currency, rate, source, fetched_at, age_seconds }
  * Response 4xx:
- *   400 — currency inválida
- *   401 — não autenticado
- *   403 — não é membro de nenhum grupo (sem portal_group_id)
+ *   400 — currency inválida (`UNSUPPORTED_CURRENCY`)
+ *   401 — não autenticado (`UNAUTHORIZED`)
+ *   403 — não é membro de nenhum grupo (`FORBIDDEN`)
  * Response 503:
- *   - missing — sem cotação ativa
- *   - stale   — idade > 24h
- *   - db_error — erro infra
+ *   - `FX_QUOTE_MISSING` — sem cotação ativa
+ *   - `FX_QUOTE_STALE`   — idade > 24h
+ *   - `FX_QUOTE_UNAVAILABLE` — erro infra
+ *
+ * L14-05 — todas as respostas usam o envelope canônico
+ *   `{ ok:false, error:{ code, message, request_id } }`.
+ *   (Pré-L17-01 esta rota retornava `{ error:"string" }` legado e tinha
+ *   um `throw err` cru no fim do catch que vazava stack trace.)
+ *
+ * L17-01 — `withErrorHandler` envelopa tudo: throws inesperados viram
+ *   500 INTERNAL_ERROR canônico com Sentry capture e `x-request-id`.
  */
-export async function GET(req: NextRequest) {
+export const GET = withErrorHandler(_get, "api.custody.fx-quote.get");
+
+async function _get(req: NextRequest) {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiUnauthorized(req);
   }
 
   const groupId = cookies().get("portal_group_id")?.value;
   if (!groupId) {
-    return NextResponse.json({ error: "No group" }, { status: 403 });
+    return apiForbidden(req, "No portal group selected");
   }
 
   const db = createServiceClient();
@@ -54,7 +70,7 @@ export async function GET(req: NextRequest) {
     .maybeSingle();
 
   if (!membership) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiForbidden(req);
   }
 
   const currencyParam =
@@ -78,31 +94,26 @@ export async function GET(req: NextRequest) {
     );
   } catch (err) {
     if (err instanceof FxQuoteUnsupportedError) {
-      return NextResponse.json(
-        {
-          error: "Unsupported currency",
-          detail: `Válidas: ${SUPPORTED_CURRENCIES.join(", ")}`,
-          code: err.code,
-        },
-        { status: 400 },
+      return apiError(
+        req,
+        "UNSUPPORTED_CURRENCY",
+        `Unsupported currency. Allowed: ${SUPPORTED_CURRENCIES.join(", ")}`,
+        400,
+        { details: { allowed: SUPPORTED_CURRENCIES } },
       );
     }
-    if (err instanceof FxQuoteMissingError || err instanceof FxQuoteStaleError) {
-      return NextResponse.json(
-        {
-          error: err.code === "stale" ? "FX quote stale" : "FX quote missing",
-          detail: err.message,
-          code: err.code,
-        },
-        { status: 503 },
-      );
+    if (err instanceof FxQuoteStaleError) {
+      return apiError(req, "FX_QUOTE_STALE", err.message, 503);
+    }
+    if (err instanceof FxQuoteMissingError) {
+      return apiError(req, "FX_QUOTE_MISSING", err.message, 503);
     }
     if (err instanceof FxQuoteError) {
-      return NextResponse.json(
-        { error: "FX quote unavailable", code: err.code },
-        { status: 503 },
-      );
+      // Generic FX quote error — message preserved (already curated).
+      return apiError(req, "FX_QUOTE_UNAVAILABLE", err.message, 503);
     }
+    // Anything else: re-throw and let `withErrorHandler` produce a
+    // sanitised 500 INTERNAL_ERROR (no leak of `err.message`).
     throw err;
   }
 }

@@ -9,6 +9,12 @@ import {
   platformProductUpdateSchema,
   platformProductDeleteSchema,
 } from "@/lib/schemas";
+import { withErrorHandler } from "@/lib/api-handler";
+
+// L17-01 — endpoint financeiro crítico: gerencia o catálogo
+// `billing_products` (preços, packs de créditos, ativos/inativos).
+// Outermost wrapper garante 500 canônico + Sentry + x-request-id.
+export const POST = withErrorHandler(_post, "api.platform.products.post");
 
 async function requirePlatformAdmin() {
   const supabase = createClient();
@@ -33,7 +39,7 @@ async function requirePlatformAdmin() {
   return { user };
 }
 
-export async function POST(req: NextRequest) {
+async function _post(req: NextRequest) {
   const auth = await requirePlatformAdmin();
   if ("error" in auth) {
     return NextResponse.json(

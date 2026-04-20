@@ -18,6 +18,14 @@ vi.stubGlobal("fetch", mockFetch);
 
 const { POST } = await import("./route");
 
+// L17-01 — wrapper agora lê `req.headers`/`req.method`; helper produz um
+// req real para os testes.
+function makeReq() {
+  return new Request("http://localhost/api/billing-portal", {
+    method: "POST",
+  }) as unknown as import("next/server").NextRequest;
+}
+
 describe("POST /api/billing-portal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -30,7 +38,7 @@ describe("POST /api/billing-portal", () => {
     authClient.auth.getUser.mockResolvedValueOnce({
       data: { user: null },
     });
-    const res = await POST();
+    const res = await POST(makeReq());
     expect(res.status).toBe(401);
   });
 
@@ -41,7 +49,7 @@ describe("POST /api/billing-portal", () => {
       json: async () => ({ ok: true, portal_url: "https://billing.example.com" }),
     });
 
-    const res = await POST();
+    const res = await POST(makeReq());
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.portal_url).toBe("https://billing.example.com");
@@ -54,7 +62,7 @@ describe("POST /api/billing-portal", () => {
       json: async () => ({ error: { message: "Internal error" } }),
     });
 
-    const res = await POST();
+    const res = await POST(makeReq());
     expect(res.status).toBe(500);
     const json = await res.json();
     expect(json.error).toBe("Internal error");

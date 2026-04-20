@@ -1,12 +1,20 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { cookies } from "next/headers";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
 import { gatewayPreferenceSchema } from "@/lib/schemas";
+import { withErrorHandler } from "@/lib/api-handler";
 
-export async function GET() {
+// L17-01 — endpoint financeiro crítico: define o gateway preferido
+// (`mercadopago` | `asaas`) que decide o roteamento de payouts e
+// purchases. Outermost wrapper garante 500 canônico + Sentry +
+// x-request-id em qualquer throw inesperado (DB, audit log).
+export const GET = withErrorHandler(_get, "api.gateway-preference.get");
+export const POST = withErrorHandler(_post, "api.gateway-preference.post");
+
+async function _get(_req: NextRequest) {
   const supabase = createClient();
   const {
     data: { user },
@@ -34,7 +42,7 @@ export async function GET() {
   });
 }
 
-export async function POST(request: Request) {
+async function _post(request: NextRequest) {
   const rl = await rateLimit(`gateway-pref:${request.headers.get("x-forwarded-for") ?? "unknown"}`);
   if (!rl.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
