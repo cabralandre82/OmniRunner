@@ -15,7 +15,9 @@
 > L02-10 (clearing settle-batch chunked / Vercel timeout),
 > L06-03 (reconcile-wallets-cron drift alert pipeline → ver
 > [`WALLET_RECONCILIATION_RUNBOOK.md`](./WALLET_RECONCILIATION_RUNBOOK.md)),
-> L06-04 (cron-health-monitor + alert pipeline genérico).
+> L06-04 (cron-health-monitor + alert pipeline genérico),
+> L12-04 (cron-sla-monitor + p95/breach alert pipeline,
+> usa o mesmo `cron_health_alerts` com `details.kind='sla_breach'`).
 > **Última revisão**: 2026-04-21
 
 ---
@@ -34,6 +36,9 @@
 | Linha `RAISE NOTICE '[L06-04.alert] severity=critical job=...'` em logs Postgres | `cron-health-monitor` detectou job stale/falhando além do esperado |
 | `GET /api/platform/cron-health` retorna `healthy=false` | Pelo menos um job em `severity ∈ {warn, critical}` (ver `counts`) |
 | Linha `severity=warn job=cron-health-monitor` em si mesmo | Auto-monitor parou de rodar — investigar pg_cron geral, não o monitor |
+| Linha `RAISE NOTICE '[L12-04.sla_breach] severity=... job=... p95=...'` | `cron-sla-monitor` detectou p95 acima do `target_seconds` (warn) ou `breach_seconds` (critical) |
+| `GET /api/platform/cron-sla?lookback_hours=24` retorna `healthy=false` | Pelo menos um job com p95 >= `target_seconds` ou breach_count >= 1 na janela |
+| Row em `cron_health_alerts` com `details->>'kind'='sla_breach'` | Alerta L12-04 (não confundir com alerta L06-04 que usa `details->>'kind' IS NULL`) |
 
 ## 2. Diagnóstico
 
@@ -192,6 +197,59 @@ Severidade resumida (mirrored 1:1 em `portal/src/lib/cron-health.ts`):
 > `M H * * *` (daily), `M H * * D` (weekly) e `M H D * *` (monthly).
 > Schedules fora desse conjunto caem para 86400s (daily) — under-alert
 > deliberado para evitar falso-positivo em formatos exóticos.
+
+### 2.5 Visão SLA — duração de execução (L12-04)
+
+Enquanto §2.4 responde "o job rodou recentemente?", §2.5 responde "as
+runs estão dentro do orçamento de duração?". Use isto sempre que um
+incident afetar latência de jobs (ex.: backlog de clearing crescendo,
+reconcile demorando mais que a janela noturna).
+
+```sql
+SELECT name,
+       last_duration_seconds,
+       p50_duration_seconds,
+       p95_duration_seconds,
+       max_duration_seconds,
+       breach_count,
+       target_seconds,
+       breach_seconds,
+       severity                        -- 'ok' | 'warn' | 'critical'
+FROM   public.fn_compute_cron_sla_stats(24)   -- janela em horas
+ORDER  BY CASE severity
+            WHEN 'critical' THEN 0
+            WHEN 'warn'     THEN 1
+            ELSE                 2
+          END,
+          name;
+```
+
+Equivalente HTTP (admin-only):
+
+```bash
+curl -sS "$PORTAL_URL/api/platform/cron-sla?lookback_hours=24" \
+  -H "Cookie: $ADMIN_SESSION_COOKIE" | jq
+```
+
+Severidade SLA (mirrored 1:1 em `portal/src/lib/cron-sla.ts`):
+
+| severity | gatilho |
+|---|---|
+| `ok` | `p95 < target_seconds * 1.5` AND `breach_count = 0` na janela |
+| `warn` | `p95 ≥ target_seconds * 1.5` OR `breach_count = 1..2` |
+| `critical` | `p95 ≥ breach_seconds` OR `breach_count ≥ 3` |
+
+Targets atuais (em `public.cron_sla_targets`, ajustáveis via
+`UPDATE` — guardar postmortem antes de subir target):
+
+| job | target_seconds | breach_seconds |
+|---|---|---|
+| `reconcile-wallets-cron` | 60 | 180 |
+| `reconcile-wallets-daily` | 600 | 1800 |
+| `consolidate-coin-ledger` | 45 | 120 |
+| `gateway-balance-poll` | 30 | 90 |
+| `settle-clearing-batch` | 90 | 300 |
+| `cron-health-monitor` | 5 | 30 |
 
 ## 3. Mitigação
 
@@ -494,6 +552,65 @@ Sinal: portal lento aos domingos 03:00 UTC, `pg_stat_activity` mostra
    - partition-monthly    → `30 5 1 * *`
 3. Validar com query da §2.1.
 
+### 3.9 SLA breach (warn/critical em `cron-sla-monitor`, L12-04)
+
+Sinal: alerta `details->>'kind'='sla_breach'` em `cron_health_alerts`,
+ou `GET /api/platform/cron-sla` retornando severity `warn`/`critical`
+para algum job.
+
+1. **Identificar o offender**:
+
+   ```sql
+   SELECT name, last_duration_seconds, p95_duration_seconds,
+          breach_count, target_seconds, breach_seconds, severity
+   FROM   public.fn_compute_cron_sla_stats(24)
+   WHERE  severity IN ('warn','critical')
+   ORDER  BY severity DESC, p95_duration_seconds DESC;
+   ```
+
+2. **Diferenciar regression vs growth**:
+   - Compare `p95_duration_seconds` da janela atual (24h) com janela
+     anterior (rodar a query com `lookback_hours=168` minus 24).
+     Spike isolado → investigar deploy recente. Crescimento gradual
+     → investigar volume de dados (tabelas crescendo, índices
+     fragmentando, EXPLAIN do query principal do job).
+3. **Triagem por job**:
+   - `reconcile-wallets-cron`/`reconcile-wallets-daily`: ver §3.4 +
+     verificar índices em `coin_ledger(wallet_id, created_at)`.
+   - `gateway-balance-poll`: latência de chamada externa — ver
+     `last_meta.gateway_response_ms`; se pico no provedor, abrir
+     ticket no gateway antes de subir target.
+   - `settle-clearing-batch`: ver §3.5 (chunking pode estar
+     subdimensionado para o backlog atual; aumentar
+     `p_chunk_size` em `fn_settle_clearing_batch_safe`).
+   - `consolidate-coin-ledger`: tabela `coin_ledger` cresceu além
+     da janela de partition; rodar `ensure_partition_monthly`
+     manual e revisar retenção.
+4. **Hot-fix de target** (último recurso, requer postmortem):
+
+   ```sql
+   UPDATE public.cron_sla_targets
+   SET    target_seconds = <novo>, breach_seconds = <novo * 3>,
+          updated_at = now(),
+          description = description || E'\n[' || now()::text ||
+                        '] target raised by SRE during incident'
+   WHERE  job_name = '<job>';
+   ```
+
+   Subir target sem postmortem mascara regression.
+5. **Resolver alerta** após mitigação:
+
+   ```sql
+   UPDATE public.cron_health_alerts
+   SET    recovery_state = 'resolved',
+          resolved_at    = now(),
+          resolved_by    = '<your-uuid>',
+          resolution_notes = '<root cause + ação tomada>'
+   WHERE  job_name = '<job>'
+      AND details->>'kind' = 'sla_breach'
+      AND recovery_state IN ('open','acknowledged');
+   ```
+
 ## 4. Verificação pós-mitigação
 
 ```sql
@@ -533,6 +650,20 @@ ORDER  BY severity DESC, name;
 SELECT name, last_status, last_meta, age(now(), finished_at) AS since_finish
 FROM   public.cron_run_state
 WHERE  name = 'cron-health-monitor';
+
+-- 6) (L12-04) Visão SLA — esperado: nenhum job em
+--    severity ∈ {warn, critical} após mitigação
+SELECT name, severity,
+       last_duration_seconds, p95_duration_seconds, breach_count,
+       target_seconds, breach_seconds
+FROM   public.fn_compute_cron_sla_stats(24)
+WHERE  severity IN ('warn','critical')
+ORDER  BY severity DESC, name;
+
+-- 7) (L12-04) Confirmar que cron-sla-monitor está ativo
+SELECT name, last_status, last_meta, age(now(), finished_at) AS since_finish
+FROM   public.cron_run_state
+WHERE  name = 'cron-sla-monitor';
 ```
 
 ## 5. Pós-incidente
@@ -550,8 +681,11 @@ WHERE  name = 'cron-health-monitor';
 - Migration L12-01: `supabase/migrations/20260419100002_l12_reconcile_wallets_schedule.sql`
 - Migration L02-10: `supabase/migrations/20260420100000_l02_clearing_settle_chunked.sql`
 - Migration L06-04: `supabase/migrations/20260420130000_l06_cron_health_monitor.sql`
+- Migration L12-04: `supabase/migrations/20260420140000_l12_cron_sla_monitoring.sql`
 - Helper TS L06-04: `portal/src/lib/cron-health.ts` (mirror do classifier SQL)
+- Helper TS L12-04: `portal/src/lib/cron-sla.ts` (mirror do classifier SLA)
 - Endpoint admin L06-04: `portal/src/app/api/platform/cron-health/route.ts`
-- Findings: [`docs/audit/findings/L12-01-*.md`](../audit/findings/L12-01-reconcile-wallets-cron-existe-mas-nao-esta-agendado.md), [`L12-02`](../audit/findings/L12-02-thundering-herd-em-02-00-04-00-utc.md), [`L12-03`](../audit/findings/L12-03-5-crons-sem-lock-overlap-risk.md), [`L02-10`](../audit/findings/L02-10-cold-start-timeout-vercel-em-operacoes-longas.md), [`L06-04`](../audit/findings/L06-04-pg-cron-jobs-sem-monitoramento-de-execucao.md)
-- Tests: `tools/test_cron_health.ts`, `tools/test_l02_10_clearing_settle_chunked.ts`, `tools/test_l06_04_cron_health_monitor.ts`
+- Endpoint admin L12-04: `portal/src/app/api/platform/cron-sla/route.ts`
+- Findings: [`docs/audit/findings/L12-01-*.md`](../audit/findings/L12-01-reconcile-wallets-cron-existe-mas-nao-esta-agendado.md), [`L12-02`](../audit/findings/L12-02-thundering-herd-em-02-00-04-00-utc.md), [`L12-03`](../audit/findings/L12-03-5-crons-sem-lock-overlap-risk.md), [`L02-10`](../audit/findings/L02-10-cold-start-timeout-vercel-em-operacoes-longas.md), [`L06-04`](../audit/findings/L06-04-pg-cron-jobs-sem-monitoramento-de-execucao.md), [`L12-04`](../audit/findings/L12-04-pg-cron-nao-monitora-sla-de-execucao.md)
+- Tests: `tools/test_cron_health.ts`, `tools/test_l02_10_clearing_settle_chunked.ts`, `tools/test_l06_04_cron_health_monitor.ts`, `tools/test_l12_04_cron_sla_monitor.ts`
 - Endpoint operacional (replay manual): `POST /api/cron/settle-clearing-batch` (header `Authorization: Bearer $CRON_SECRET`)

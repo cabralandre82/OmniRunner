@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-20T00:57:41.910Z",
+  "generated_at": "2026-04-20T01:03:13.801Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 97,
-    "fix-pending": 250,
+    "fixed": 98,
+    "fix-pending": 249,
     "in-progress": 1
   },
   "by_wave": {
@@ -6398,27 +6398,43 @@
       "lens": 12,
       "title": "pg_cron não monitora SLA de execução",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "migration",
-        "cron"
+        "cron",
+        "reliability",
+        "observability",
+        "performance"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260420140000_l12_cron_sla_monitoring.sql",
+        "portal/src/lib/cron-sla.ts",
+        "portal/src/app/api/platform/cron-sla/route.ts",
+        "docs/runbooks/CRON_HEALTH_RUNBOOK.md",
+        "docs/runbooks/README.md"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l12_04_cron_sla_monitor.ts",
+        "portal/src/lib/cron-sla.test.ts",
+        "portal/src/app/api/platform/cron-sla/route.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "685b769"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/CRON_HEALTH_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Solved with a five-layer pipeline that builds on top of the\nL12-03 cron_run_state substrate (no duplicate state) and the\nL06-04 alert-row pipeline (no duplicate ergonomics — SLA breaches\nflow into the SAME `cron_health_alerts` table, just tagged with\n`details.kind='sla_breach'` so the runbook can dispatch them\nseparately):\n\n  1. Append-only run-history ledger\n     `public.cron_run_history` — captures every terminal\n     transition (`completed | failed | timeout`) of\n     `cron_run_state` via the `AFTER UPDATE` trigger\n     `trg_cron_run_history_capture`. Includes\n     `duration_seconds GENERATED ALWAYS AS STORED` so p50/p95/p99\n     stop being a JOIN-and-extract chore. RLS forced + service-\n     role only. Trigger is exception-swallowing so a buggy\n     capture cannot block the host UPDATE that owns the lock.\n\n  2. Per-job SLA thresholds table\n     `public.cron_sla_thresholds (target_seconds, breach_seconds,\n     enabled, notes)` — operator knob. Falls back to derived\n     defaults (3× expected_interval) when a row is missing, so\n     NO job goes unmonitored. CHECK enforces\n     `breach_seconds >= target_seconds`. Seeded with explicit\n     values for all 13 production jobs at migration time so the\n     baseline ships tight, not \"we'll tune it later\".\n\n  3. SLA stats aggregator\n     `public.fn_compute_cron_sla_stats(p_window_hours int)` —\n     STABLE SECURITY DEFINER, returns one row per known job\n     with run_count, failed_count, avg/p50/p95/p99/max/last\n     duration, breach_count, threshold source ('configured' |\n     'derived'), and the resolved severity from the classifier.\n     Rejects p_window_hours outside [1, 720] with SQLSTATE 22023.\n\n  4. SLA classifier (mirrored SQL ↔ TS)\n     `public.fn_classify_cron_sla(...)` IMMUTABLE — single source\n     of truth for severity. The TS mirror at\n     `portal/src/lib/cron-sla.ts::classifyCronSla` is\n     byte-equivalent and locked down by 21 Vitest cases that\n     hit every branch (disabled, zero runs, last-run breach,\n     p95 breach, 2× breach upgrade, sustained avg drift). Any\n     drift between the two implementations breaks the test.\n\n  5. Scheduled wrapper\n     `public.fn_alert_cron_sla_breaches_safe()` — wrapped in the\n     L12-03 _safe pattern, scheduled `7,37 * * * *` (off-cycle\n     from `cron-health-monitor` at `*/15`, so the two monitors\n     don't fight). For each unhealthy row from (3) it calls\n     `fn_record_cron_health_alert(name, severity,\n     jsonb{kind:'sla_breach', ...}, cooldown_minutes:60)` from\n     L06-04, RAISES NOTICE '[L12-04.sla] severity=... job=... ...'\n     for the log aggregator, and prunes `cron_run_history` rows\n     older than 30 days at the tail of every run.\n\n  6. Admin endpoint\n     `GET /api/platform/cron-sla?window_hours=N&severity_min=...`\n     — auth-gated (platform_admins only), validates inputs with\n     zod (window_hours ∈ [1, 720] int; severity_min ∈ enum),\n     wraps the read-only RPC, ships counts-by-severity + the\n     full job grid + threshold source + duration percentiles.\n     Backed by gauge metrics (`cron_sla.total_jobs`,\n     `cron_sla.unhealthy_jobs`, `cron_sla.critical_jobs`,\n     `cron_sla.healthy`) so dashboards see the same numbers.\n\nOperator-facing decisions:\n  • SLA monitoring is INDEPENDENT from health monitoring (L06-04).\n    A job can be \"scheduled correctly + firing on time\" (L06-04\n    green) and \"running 12× longer than baseline\" (L12-04 red)\n    simultaneously. The runbook §2.5 spells out the distinction.\n  • Adjusting a threshold is an INSERT...ON CONFLICT DO UPDATE\n    on cron_sla_thresholds — no migration, no code change, no\n    restart. Silencing during maintenance is `enabled=false`.\n  • Existing alert dedup (L06-04 cooldown_minutes) is reused —\n    same SRE muscle memory, same forensic queries, same dashboard.\n\nRunbook updates (`docs/runbooks/CRON_HEALTH_RUNBOOK.md`):\n  • Trigger callout extended with L12-04 alert sources and the\n    sla_breach details.kind discriminator.\n  • Sintoma table: 4 new rows for SLA-specific signals.\n  • New §2.5 — SLA view, severity table, threshold-tuning recipe.\n  • New §3.8 — SLA breach diagnosis (spike vs drift vs silent\n    failure), manual disarm, threshold-tightening guidance.\n  • New §3.9 — cron-sla-monitor regression playbook + history\n    retention force-prune.\n  • §4 verification: queries 6 + 7 cover the L12-04 surface.\n  • §6 references list extended with L12-04 migration, helper,\n    endpoint, and integration test.\n\nVerification:\n  • Migration self-test (in BEGIN/COMMIT) covers trigger fire/\n    no-fire, idempotent UPDATE, classifier vectors, stats\n    aggregator with synthetic history, and the alert pipeline\n    end-to-end.\n  • Integration tests (`tools/test_l12_04_cron_sla_monitor.ts`)\n    add 19 black-box assertions including end-to-end \"synthetic\n    breaching job → alert row created with details.kind=sla_breach\"\n    and the schedule wiring + threshold seeding for cron-sla-\n    monitor itself.\n  • Vitest covers TS helper (21 tests) + admin endpoint (9 tests).\n  • All tests pass: 30 vitest + 19 integration + 1 SQL self-test.\n  • `npx tsc --noEmit` produces no NEW errors (only the\n    pre-existing `lib/feature-flags.ts(69,22)` MapIterator note\n    already documented in L06-04).\n  • `npm run lint` clean for the L12-04 surface.\n\nTracked progress: 97/348 fixed after this finding.\n"
     },
     {
       "id": "L12-05",
