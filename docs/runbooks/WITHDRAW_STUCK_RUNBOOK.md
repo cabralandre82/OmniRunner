@@ -7,8 +7,8 @@
 > reputacional alto).
 > **Tempo alvo**: ack < 1h, mitigação < 4h.
 > **Linked findings**: L06-01, L01-02 (withdraw atomic), L02-01,
-> L02-06 (lifecycle completion).
-> **Última revisão**: 2026-04-19
+> L02-06 (lifecycle completion), L03-03 (provider_fee revenue trail).
+> **Última revisão**: 2026-04-20
 
 ---
 
@@ -136,6 +136,13 @@ Resposta de sucesso:
 }
 ```
 
+> **L03-03**: a partir de 2026-04-20, `revenue_reversed_usd` inclui o
+> SOMATÓRIO de `fx_spread` + `provider_fee` da retirada. O audit-log
+> (`portal_audit_log.metadata`) carrega o detalhamento em
+> `fx_spread_reversed_usd` e `provider_fee_reversed_usd` separados —
+> use estes campos para reconciliação fiscal (provider_fee é
+> pass-through, não vira NFS-e).
+
 > ⚠️ **Antes de chamar `/complete`**: confirme no painel do gateway
 > (passo 2.3) que o dinheiro saiu de fato. Marcar `completed` sem o
 > banco ter pago gera ticket pior.
@@ -181,16 +188,42 @@ máximo D+5. Voltarei aqui em 24h."
 ### 3.3 Provider rejeitou — refund interno
 
 Quando banco devolve (ex: dados bancários inválidos), gateway marca
-`failed`. Precisamos:
-1. Re-creditar `total_deposited_usd` no group.
-2. Reverter linha de `platform_revenue` se foi criada.
-3. Marcar withdraw como `failed`.
+`failed`. **Modo preferido**: chamar `fail_withdrawal()` (L02-06 +
+L03-03), que faz tudo atomicamente em uma única TX:
+
+```sql
+SELECT * FROM public.fail_withdrawal(
+  '<WITHDRAW_ID>'::uuid,
+  'invalid_bank_account',         -- razão (obrigatória)
+  '<ACTOR_USER_ID>'::uuid          -- admin_master que está autorizando
+);
+```
+
+A função:
+1. Reverte `total_deposited_usd` (gross — inclui o que viraria
+   `provider_fee` e o que viraria `fx_spread`);
+2. **Deleta AMBAS** as linhas de `platform_revenue` ligadas ao
+   withdraw (`fee_type IN ('fx_spread','provider_fee')`) — L03-03;
+3. Marca o withdraw `failed` com `payout_reference` anotado;
+4. Valida `check_custody_invariants()` no MESMO TX — aborta se
+   quebrar;
+5. Loga em `portal_audit_log` com breakdown
+   (`fx_spread_reversed_usd`, `provider_fee_reversed_usd`).
+
+> ⚠️ **Antes de L03-03 (2026-04-20)**: a função só reverteva
+> `fx_spread` — o `provider_fee` ficava como receita-fantasma em
+> `platform_revenue` mesmo após o refund. Withdraws falhados antes
+> dessa data têm linhas órfãs; rodar a query de auditoria abaixo (§4.2)
+> para identificar e reconciliar manualmente.
+
+Fallback SQL (use só se `fail_withdrawal` falhar — ex.: invariante
+quebrada antes do refund):
 
 ```sql
 BEGIN;
-  -- 1. Reverter saldo (execute_withdrawal subtraiu de total_deposited_usd)
+  -- 1. Reverter saldo (execute_withdrawal subtraiu o GROSS amount_usd)
   WITH w AS (
-    SELECT id, group_id, amount_usd, fx_spread_usd
+    SELECT id, group_id, amount_usd, fx_spread_usd, provider_fee_usd
     FROM public.custody_withdrawals
     WHERE id = '<WITHDRAW_ID>' AND status = 'processing' FOR UPDATE
   )
@@ -200,10 +233,10 @@ BEGIN;
   FROM w
   WHERE ca.group_id = w.group_id;
 
-  -- 2. Estorno de fx_spread (se aplicado)
+  -- 2. Estorno de fx_spread + provider_fee (L03-03 — AMBOS)
   DELETE FROM public.platform_revenue
   WHERE source_ref_id = '<WITHDRAW_ID>'
-    AND fee_type = 'fx_spread';
+    AND fee_type IN ('fx_spread', 'provider_fee');
 
   -- 3. Marca falha
   UPDATE public.custody_withdrawals
@@ -262,6 +295,45 @@ LEFT JOIN (SELECT group_id, SUM(amount_usd) AS sum_withdrawals
            GROUP BY group_id) w ON w.group_id = ca.group_id
 WHERE ca.group_id = '<GROUP_ID>';
 ```
+
+### 4.2 — Auditoria de provider_fee orphans (L03-03)
+
+Identifica withdraws **anteriores a 2026-04-20** com `provider_fee_usd > 0`
+que NÃO tiveram a linha correspondente em `platform_revenue` (o gap
+contábil que L03-03 corrigiu). Use para decidir reconciliação manual:
+
+```sql
+SELECT w.id, w.group_id, w.amount_usd, w.provider_fee_usd, w.fx_spread_usd,
+       w.status, w.created_at,
+       (SELECT count(*) FROM public.platform_revenue r
+         WHERE r.source_ref_id = w.id::text AND r.fee_type = 'provider_fee') AS pf_rows,
+       (SELECT count(*) FROM public.platform_revenue r
+         WHERE r.source_ref_id = w.id::text AND r.fee_type = 'fx_spread') AS fx_rows
+FROM public.custody_withdrawals w
+WHERE w.created_at < '2026-04-20'::timestamptz
+  AND w.provider_fee_usd > 0
+  AND w.status IN ('processing','completed')   -- failed já foi refundado
+  AND NOT EXISTS (
+    SELECT 1 FROM public.platform_revenue r
+    WHERE r.source_ref_id = w.id::text AND r.fee_type = 'provider_fee'
+  )
+ORDER BY w.created_at;
+```
+
+**Reconciliação manual** (rodar em janela de manutenção, com CFO
+copiado):
+```sql
+INSERT INTO public.platform_revenue
+  (fee_type, amount_usd, source_ref_id, group_id, description, created_at)
+SELECT 'provider_fee', w.provider_fee_usd, w.id::text, w.group_id,
+       'L03-03 backfill — provider fee on legacy withdrawal '
+         || w.id::text || ' (run ' || now()::text || ')',
+       w.created_at
+FROM public.custody_withdrawals w
+WHERE w.id = ANY('{<WITHDRAW_ID_1>,<WITHDRAW_ID_2>,...}'::uuid[]);
+```
+Logar em `admin_audit_log` com `runbook='WITHDRAW_STUCK_RUNBOOK#4.2'` +
+`L03-03 backfill`.
 
 ## 5. Comunicação ao usuário
 

@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-20 00:31:17 UTC.
+> Atualizado em 2026-04-20 00:35:50 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -76,7 +76,7 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L02-15](./findings/L02-15-getredis-module-level-cache-vs-runtime-config.md) | 2 | L02 · CTO | getRedis() — Module-level cache vs runtime config | unassigned |
 | 🔴 critical | ✅ fixed | [L03-01](./findings/L03-01-divergencia-de-formula-de-fee-ts-vs-sql.md) | 1 | L03 · CFO | Divergência de fórmula de fee — TS vs SQL | backend-platform |
 | 🟠 high | ⏳ fix-pending | [L03-02](./findings/L03-02-congelamento-de-precos-taxas.md) | 1 | L03 · CFO | Congelamento de preços / taxas | unassigned |
-| 🟠 high | ⏳ fix-pending | [L03-03](./findings/L03-03-execute-withdrawal-total-deposited-usd-amount-usd-nao.md) | 1 | L03 · CFO | execute_withdrawal — total_deposited_usd -= amount_usd não contabiliza fee do provider | unassigned |
+| 🟠 high | ✅ fixed | [L03-03](./findings/L03-03-execute-withdrawal-total-deposited-usd-amount-usd-nao.md) | 1 | L03 · CFO | execute_withdrawal — total_deposited_usd -= amount_usd não contabiliza fee do provider | cfo |
 | 🟢 safe | ✅ fixed | [L03-04](./findings/L03-04-1-coin-us-1-00-peg-enforcement.md) | 3 | L03 · CFO | 1 Coin = US$ 1.00 (peg enforcement) | unassigned |
 | 🟢 safe | ✅ fixed | [L03-05](./findings/L03-05-gateway-fee-na-emissao-chk-gross-fee-net.md) | 3 | L03 · CFO | Gateway fee na emissão — chk_gross_fee_net | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L03-06](./findings/L03-06-fx-spread-calculo-simetrico-entrada-saida.md) | 2 | L03 · CFO | FX spread — Cálculo simétrico entrada/saída | unassigned |

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-20T00:31:17.738Z",
+  "generated_at": "2026-04-20T00:35:50.718Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 92,
-    "fix-pending": 255,
+    "fixed": 93,
+    "fix-pending": 254,
     "in-progress": 1
   },
   "by_wave": {
@@ -2323,9 +2323,10 @@
       "lens": 3,
       "title": "execute_withdrawal — total_deposited_usd -= amount_usd não contabiliza fee do provider",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-20T00:00:00.000Z",
       "tags": [
         "finance",
         "portal",
@@ -2333,20 +2334,29 @@
         "reliability"
       ],
       "files": [
-        "portal/src/lib/custody.ts"
+        "portal/src/lib/platform-fee-types.ts",
+        "portal/src/lib/platform-fee-types.test.ts",
+        "supabase/migrations/20260420090000_l03_provider_fee_revenue_track.sql",
+        "tools/test_l03_03_provider_fee_revenue_track.ts",
+        "docs/runbooks/WITHDRAW_STUCK_RUNBOOK.md"
       ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l03_03_provider_fee_revenue_track.ts",
+        "portal/src/lib/platform-fee-types.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "d2de1fd"
+      ],
+      "owner": "cfo",
+      "runbook": "WITHDRAW_STUCK_RUNBOOK#3.3",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "## Problema\n\n`createWithdrawal` (`portal/src/lib/custody.ts:368-414`) computa\n`localAmount = convertFromUsdWithSpread(amount_usd - provider_fee_usd, fx_rate, spread_pct)` —\no usuário recebe local pelo NET (gross menos a taxa do gateway).\n\n`execute_withdrawal` (migration original `20260228170000:131-134`)\nporém faz `total_deposited_usd -= v_amount` (GROSS) e só registra\n`fx_spread` em `platform_revenue`. O `provider_fee_usd` simplesmente\ndesaparecia da custódia sem lançamento contábil. Em um saque de\n$1000 com $100 provider_fee + $30 fx_spread:\n\n- custódia perde **$1000** (gross) ✓\n- usuário recebe **$870** em moeda local\n- `platform_revenue.fx_spread` recebe **$30**\n- `platform_revenue.provider_fee` recebe **$0** ← bug\n\nResultado: $100 some do balance contábil em todo saque com gateway\nfee. Invariante `deposits_in = withdrawals_out + revenue + held`\nfurada por exatamente o `provider_fee` por saque.\n\n## Solução (5 camadas)\n\n1. **Schema** — migration\n   `supabase/migrations/20260420090000_l03_provider_fee_revenue_track.sql`\n   amplia o CHECK de `platform_revenue.fee_type` para incluir\n   `'provider_fee'`. **Não** amplia `platform_fee_config.fee_type` —\n   divergência deliberada porque provider_fee é pass-through (gateway\n   fica com o dinheiro), não é configurável via UI.\n\n2. **`execute_withdrawal`** — re-criada com bloco simétrico ao\n   `fx_spread`: se `provider_fee_usd > 0`, insere uma linha\n   `'provider_fee'` em `platform_revenue` com\n   `description='Gateway/provider fee on withdrawal (pass-through)'`.\n\n3. **`fail_withdrawal`** (L02-06) — re-criada para deletar AMBAS as\n   linhas de `platform_revenue` (`fx_spread` + `provider_fee`) na\n   mesma TX do refund de `total_deposited_usd`. O `audit_log`\n   ganha campos novos: `fx_spread_reversed_usd` e\n   `provider_fee_reversed_usd` separados, além do total agregado em\n   `revenue_reversed_usd` (mantendo o contrato de retorno do L02-06).\n   Bonus: corrige bug latente de coluna `status` ambígua que o L02-06\n   introduziu (column reference colide com OUT param do RETURNS\n   TABLE) — o teste de integração regredia o problema.\n\n4. **`_enqueue_fiscal_receipt`** (L09-04 trigger) — re-criada para\n   curto-circuitar em `fee_type='provider_fee'`. Lei tributária\n   brasileira: pass-through não é receita de serviço da plataforma,\n   então não deve gerar NFS-e. Sem o curto-circuito o trigger\n   dispararia, bateria no CHECK de `fiscal_receipts.fee_type` e\n   emitiria `RAISE WARNING [L09-04]` ruidoso por linha.\n\n5. **Single source of truth TS** — `portal/src/lib/platform-fee-types.ts`\n   ganha `PLATFORM_REVENUE_FEE_TYPES` (superset = `PLATFORM_FEE_TYPES`\n   ∪ `PLATFORM_PASSTHROUGH_FEE_TYPES`) e\n   `platformRevenueFeeTypeSchema`. Os contract-locks em\n   `platform-fee-types.test.ts` são estendidos para 23 testes (de 9)\n   cobrindo a divergência configurable-vs-passthrough nas 5\n   superfícies (TS const, Zod, OpenAPI, SQL CHECK platform_revenue,\n   SQL CHECK platform_fee_config + L09-04 trigger short-circuit).\n\n## Verificação\n\n### Self-test in-TX da migration\n```\nNOTICE:  [L03-03.self_test] platform_revenue accepts provider_fee;\nplatform_fee_config still rejects it; fiscal_receipts trigger\nshort-circuits on provider_fee (deliberate divergence verified)\n```\n\n### Integração end-to-end (`tools/test_l03_03_provider_fee_revenue_track.ts`)\n```\n✓ provider_fee=0 + fx_spread=0: no revenue rows, custody debited gross\n✓ provider_fee=0 + fx_spread>0: only fx_spread row, custody debited gross\n✓ provider_fee>0 + fx_spread=0: only provider_fee row, custody debited gross\n✓ provider_fee>0 + fx_spread>0: BOTH rows present, distinct types\n✓ reverses fx_spread + provider_fee + refunds custody + audit breakdown\n✓ idempotent on second call against already-failed row\n✓ platform_revenue accepts fee_type='provider_fee'\n✓ platform_fee_config rejects fee_type='provider_fee' (deliberate divergence)\n✓ _enqueue_fiscal_receipt trigger short-circuits on provider_fee\n9 passed, 0 failed\n```\n\n### Contract-lock TS (`platform-fee-types.test.ts`)\n```\nTest Files  1 passed (1)\n     Tests  23 passed (23)\n```\n\n### Vitest full suite + lint + audit verify\n- `npx vitest run` → **1318 passed | 4 todo (1322)** (+14 vs. baseline 1304)\n- `npm run lint`   → **No ESLint warnings or errors**\n- `npx tsx tools/audit/verify.ts` → **348 findings validados**\n\n## Backfill\n\nWithdraws **anteriores a 2026-04-20** com `provider_fee_usd > 0` e\nstatus `processing/completed` ainda têm o gap contábil (executaram\ncontra a função antiga). A `WITHDRAW_STUCK_RUNBOOK §4.2` traz a\nquery de auditoria para identificá-los e a query de reconciliação\nmanual (insere a linha `provider_fee` retroativa com a data\noriginal, marcada `description='L03-03 backfill — ...'` para\nrastreabilidade). Backfill automatizado **não** está em escopo\ndesta correção (pequeno volume; CFO faz batch único em janela de\nmanutenção).\n\n## Histórico relacionado\n- L01-44 / L01-45 — drift do `fee_type` em 5 superfícies. Esta\n  correção estende o single-source-of-truth criado em L01-45 para\n  cobrir a separação configurable-vs-passthrough.\n- L02-06 — `fail_withdrawal` original já fazia delete de\n  `fx_spread`; agora também faz de `provider_fee` no mesmo TX.\n"
     },
     {
       "id": "L03-04",
