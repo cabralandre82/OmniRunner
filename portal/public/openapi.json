@@ -1496,7 +1496,7 @@
       "post": {
         "tags": ["Platform Admin"],
         "summary": "Atualizar taxa",
-        "description": "Atualiza taxa (clearing, swap, maintenance, billing_split).",
+        "description": "Atualiza taxa da plataforma. `fee_type` é a lista canônica em `lib/platform-fee-types.ts`: clearing, swap, fx_spread, billing_split, maintenance.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1505,7 +1505,11 @@
                 "type": "object",
                 "required": ["fee_type"],
                 "properties": {
-                  "fee_type": { "type": "string", "enum": ["clearing", "swap", "maintenance", "billing_split"] },
+                  "fee_type": {
+                    "type": "string",
+                    "enum": ["clearing", "swap", "fx_spread", "billing_split", "maintenance"],
+                    "description": "Canonical platform fee_type. fx_spread (L01-45) é crítico em crises cambiais — antes de 2026-04-13 estava ausente desta enum apesar de existir no banco."
+                  },
                   "rate_pct": { "type": "number", "minimum": 0, "maximum": 100 },
                   "rate_usd": { "type": "number", "minimum": 0, "maximum": 10 },
                   "is_active": { "type": "boolean" }

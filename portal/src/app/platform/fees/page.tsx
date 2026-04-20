@@ -1,30 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  FEE_TYPE_LABELS,
+  isPlatformFeeType,
+} from "@/lib/platform-fee-types";
 import { FeeRow } from "./fee-row";
 
 export const dynamic = "force-dynamic";
-
-const FEE_LABELS: Record<string, { label: string; description: string }> = {
-  clearing: {
-    label: "Clearing (Compensação Interclub)",
-    description: "Aplicada quando coins de um emissor são queimadas em outro clube",
-  },
-  swap: {
-    label: "Swap de Lastro",
-    description: "Aplicada quando assessorias negociam lastro entre si",
-  },
-  maintenance: {
-    label: "Manutenção",
-    description: "Valor em USD por atleta ativo. Deduzida automaticamente quando o atleta paga a mensalidade.",
-  },
-  billing_split: {
-    label: "Split de Cobrança",
-    description: "Percentual retido pela plataforma nas cobranças de assinaturas",
-  },
-  fx_spread: {
-    label: "FX Spread (Saques)",
-    description: "Percentual retido como spread cambial quando uma assessoria solicita saque em moeda local (ex.: BRL). Crítico em crises cambiais — ajuste imediato aqui evita saques com prejuízo operacional.",
-  },
-};
 
 interface Fee {
   id: string;
@@ -99,10 +80,9 @@ export default async function FeesPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {fees.map((fee: Fee) => {
-                const info = FEE_LABELS[fee.fee_type] ?? {
-                  label: fee.fee_type,
-                  description: "",
-                };
+                const info = isPlatformFeeType(fee.fee_type)
+                  ? FEE_TYPE_LABELS[fee.fee_type]
+                  : { label: fee.fee_type, description: "" };
                 return (
                   <FeeRow
                     key={fee.id}
