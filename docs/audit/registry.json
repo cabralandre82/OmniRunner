@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-20T01:03:13.801Z",
+  "generated_at": "2026-04-20T01:06:54.505Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 98,
-    "fix-pending": 249,
+    "fixed": 100,
+    "fix-pending": 247,
     "in-progress": 1
   },
   "by_wave": {
@@ -4771,9 +4771,10 @@
       "lens": 8,
       "title": "ProductEventTracker.trackOnce tem race TOCTOU",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "ux",
@@ -4781,20 +4782,30 @@
         "testing"
       ],
       "files": [
-        "omni_runner/lib/core/analytics/product_event_tracker.dart"
+        "omni_runner/lib/core/analytics/product_event_tracker.dart",
+        "supabase/migrations/20260421100000_l08_product_events_hardening.sql",
+        "portal/src/lib/analytics.ts",
+        "portal/src/lib/product-event-schema.ts",
+        "docs/runbooks/PRODUCT_EVENTS_RUNBOOK.md"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "omni_runner/test/core/analytics/product_event_tracker_test.dart",
+        "portal/src/lib/analytics.test.ts",
+        "tools/test_l08_01_02_product_events_hardening.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "9c2cc88"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/PRODUCT_EVENTS_RUNBOOK.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fix delivered alongside L08-02 (PII leak via free-form jsonb) since\nboth target `public.product_events` and a shared validator trigger\nwas the natural canonical defence.\n\nArchitecture (3 layers):\n\n1. **Database — `idx_product_events_user_event_once`** (UNIQUE\n   PARTIAL INDEX on `(user_id, event_name)` WHERE\n   `event_name LIKE 'first_%' OR event_name = 'onboarding_completed'`).\n   Concurrent inserts of the same one-shot event for the same user\n   collapse into a single row via SQLSTATE 23505 — net DB state is\n   always 1 row per user/event. Multi-shot events (`flow_abandoned`,\n   `billing_*`) intentionally fall outside the predicate so they\n   stay countable.\n\n2. **Mobile — `ProductEventTracker.trackOnce`** now issues a plain\n   `insert` and silently swallows `PostgrestException` with\n   `code == '23505'` for one-shot events. We could not use\n   `upsert(ignoreDuplicates: true)` because PostgREST cannot attach\n   a partial-index predicate to the `ON CONFLICT` clause — the\n   swallow-23505 pattern reaches the same end-state with fewer\n   moving parts.\n\n3. **Documentation — `docs/runbooks/PRODUCT_EVENTS_RUNBOOK.md`**\n   covers the \"add a new one-shot event\" workflow (predicate\n   extension), the de-dup script for historical TOCTOU damage,\n   and the \"regression in client\" bisecte.\n\nVerification:\n\n- `tools/test_l08_01_02_product_events_hardening.ts` test\n  \"20 concurrent inserts collapse to 1 row via partial unique\n  index (TOCTOU killed)\" — exactly 1 success, 19 unique-violations,\n  0 other errors, final DB state = 1 row.\n- Migration self-test (in-TX `DO ... $self_test$`) covers the\n  same path before commit.\n- Dart unit tests cover the dispatch/swallow side with a recording\n  fake Supabase client.\n"
     },
     {
       "id": "L08-02",
@@ -4802,27 +4813,40 @@
       "lens": 8,
       "title": "product_events.properties jsonb aceita qualquer payload — PII leak risk",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "lgpd",
         "rls",
         "mobile"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421100000_l08_product_events_hardening.sql",
+        "omni_runner/lib/core/analytics/product_event_tracker.dart",
+        "portal/src/lib/analytics.ts",
+        "portal/src/lib/product-event-schema.ts",
+        "docs/runbooks/PRODUCT_EVENTS_RUNBOOK.md"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "omni_runner/test/core/analytics/product_event_tracker_test.dart",
+        "portal/src/lib/analytics.test.ts",
+        "tools/test_l08_01_02_product_events_hardening.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "9c2cc88"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/PRODUCT_EVENTS_RUNBOOK.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed in the same commit as L08-01 — both target\n`public.product_events`, both share the same defence stack.\n\nArchitecture (3 layers of defence):\n\n1. **Postgres trigger `trg_validate_product_event` BEFORE INSERT\n   OR UPDATE** — calls `fn_validate_product_event()` which raises\n   SQLSTATE PE001..PE005 for invalid payloads. This is the\n   CANONICAL enforcement point — uniformly applied to mobile\n   (supabase_flutter), portal (supabase-js), and any future\n   ingestion path (Edge Function, batch importer). Validates:\n     • PE001 — `event_name` ∈ whitelist (8 names today)\n     • PE002 — every property key ∈ whitelist (18 keys today)\n     • PE003 — every property value is primitive\n       (string/number/boolean/null) — no nested objects/arrays\n       (closes the \"shove the entire profile/run object into\n       properties\" smuggling vector)\n     • PE004 — string values ≤ 200 chars\n     • PE005 — `properties` is a JSON object (not array/scalar)\n\n2. **Client-side mirrors** — Dart (`ProductEvents.validate`) and\n   TS (`validateProductEvent` in\n   `portal/src/lib/product-event-schema.ts`) replicate the same\n   whitelist. They drop invalid events with a console warn instead\n   of round-tripping a doomed insert. Cross-language drift is\n   detected by `tools/test_l08_01_02_product_events_hardening.ts`\n   (\"Cross-language whitelist parity\" section).\n\n3. **Runbook** — `docs/runbooks/PRODUCT_EVENTS_RUNBOOK.md` documents\n   the 4-place workflow for adding a new event/key, the LGPD\n   incident response (purge query + ANPD notification thresholds),\n   and the trigger-disabled drill.\n\nVerification:\n\n- All 5 SQLSTATEs (PE001..PE005) covered by:\n    • Migration self-test (in-TX before commit)\n    • `tools/test_l08_01_02_product_events_hardening.ts` (live)\n    • `portal/src/lib/analytics.test.ts` (unit)\n    • `omni_runner/test/core/analytics/product_event_tracker_test.dart`\n      (unit)\n- Happy path: every (event_name, key) pair currently emitted by\n  mobile + portal is asserted to PASS validation in all three\n  test layers.\n"
     },
     {
       "id": "L08-03",

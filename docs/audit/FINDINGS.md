@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-20 01:03:13 UTC.
+> Atualizado em 2026-04-20 01:06:54 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -155,8 +155,8 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L07-11](./findings/L07-11-loading-states-inconsistentes.md) | 2 | L07 · CXO | Loading states inconsistentes | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L07-12](./findings/L07-12-copy-financeiro-confunde-atleta.md) | 2 | L07 · CXO | Copy financeiro confunde atleta | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L07-13](./findings/L07-13-confirmacoes-destrutivas-sem-confirm-dialog.md) | 2 | L07 · CXO | Confirmações destrutivas sem confirm dialog | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L08-01](./findings/L08-01-producteventtracker-trackonce-tem-race-toctou.md) | 1 | L08 · CDO | ProductEventTracker.trackOnce tem race TOCTOU | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L08-02](./findings/L08-02-product-events-properties-jsonb-aceita-qualquer-payload-pii.md) | 1 | L08 · CDO | product_events.properties jsonb aceita qualquer payload — PII leak risk | unassigned |
+| 🔴 critical | ✅ fixed | [L08-01](./findings/L08-01-producteventtracker-trackonce-tem-race-toctou.md) | 1 | L08 · CDO | ProductEventTracker.trackOnce tem race TOCTOU | platform |
+| 🔴 critical | ✅ fixed | [L08-02](./findings/L08-02-product-events-properties-jsonb-aceita-qualquer-payload-pii.md) | 1 | L08 · CDO | product_events.properties jsonb aceita qualquer payload — PII leak risk | platform |
 | 🟠 high | ⏳ fix-pending | [L08-03](./findings/L08-03-sem-indice-de-analytics-time-series-em-sessions.md) | 1 | L08 · CDO | Sem índice de analytics time-series em sessions | unassigned |
 | 🟠 high | ⏳ fix-pending | [L08-04](./findings/L08-04-analise-de-sessions-pelo-moving-ms-mas-coluna.md) | 1 | L08 · CDO | Análise de sessions pelo moving_ms mas coluna aceita NULL e 0 | unassigned |
 | 🟠 high | ⏳ fix-pending | [L08-05](./findings/L08-05-views-de-progressao-sem-filtro-de-atletas-inativos.md) | 1 | L08 · CDO | Views de progressão sem filtro de atletas inativos | unassigned |
