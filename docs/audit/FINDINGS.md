@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-19 11:16:48 UTC.
+> Atualizado em 2026-04-20 00:13:14 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -255,7 +255,7 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L16-08](./findings/L16-08-sem-marketplace-de-treinos-planos.md) | 2 | L16 · CAO | Sem marketplace de treinos/planos | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L16-09](./findings/L16-09-sso-saml-oidc-para-enterprise.md) | 2 | L16 · CAO | SSO SAML/OIDC para enterprise | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L16-10](./findings/L16-10-sem-tier-free-trial-sandbox-para-parceiros.md) | 2 | L16 · CAO | Sem tier "free trial" / sandbox para parceiros | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L17-01](./findings/L17-01-witherrorhandler-nao-e-usado-em-endpoints-financeiros-critic.md) | 1 | L17 · VP Eng | withErrorHandler não é usado em endpoints financeiros críticos | unassigned |
+| 🔴 critical | ✅ fixed | [L17-01](./findings/L17-01-witherrorhandler-nao-e-usado-em-endpoints-financeiros-critic.md) | 1 | L17 · VP Eng | withErrorHandler não é usado em endpoints financeiros críticos | platform-team |
 | 🔴 critical | ⏳ fix-pending | [L17-02](./findings/L17-02-5378-linhas-em-portal-src-lib-ts-e.md) | 1 | L17 · VP Eng | 5378 linhas em portal/src/lib/*.ts e sem segregação por bounded context | unassigned |
 | 🟠 high | ⏳ fix-pending | [L17-03](./findings/L17-03-witherrorhandler-usa-any-em-routeargs.md) | 1 | L17 · VP Eng | withErrorHandler usa any em routeArgs | unassigned |
 | 🟠 high | ⏳ fix-pending | [L17-04](./findings/L17-04-testes-unitarios-em-portal-src-lib-qa-test.md) | 1 | L17 · VP Eng | Testes unitários em portal/src/lib/qa-*.test.ts — arquivos >800 linhas | unassigned |

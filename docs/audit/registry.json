@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-19T11:16:48.263Z",
+  "generated_at": "2026-04-20T00:13:14.815Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 89,
-    "fix-pending": 258,
+    "fixed": 90,
+    "fix-pending": 257,
     "in-progress": 1
   },
   "by_wave": {
@@ -7708,9 +7708,10 @@
       "lens": 17,
       "title": "withErrorHandler não é usado em endpoints financeiros críticos",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "mobile",
@@ -7721,20 +7722,59 @@
       ],
       "files": [
         "portal/src/lib/api-handler.ts",
-        "portal/src/app/api/swap/route.ts"
+        "portal/src/lib/api-handler.test.ts",
+        "portal/src/app/api/swap/route.ts",
+        "portal/src/app/api/custody/route.ts",
+        "portal/src/app/api/custody/webhook/route.ts",
+        "portal/src/app/api/custody/withdraw/route.ts",
+        "portal/src/app/api/custody/fx-quote/route.ts",
+        "portal/src/app/api/distribute-coins/route.ts",
+        "portal/src/app/api/clearing/route.ts",
+        "portal/src/app/api/cron/settle-clearing-batch/route.ts",
+        "portal/src/app/api/checkout/route.ts",
+        "portal/src/app/api/billing/asaas/route.ts",
+        "portal/src/app/api/billing/batch/route.ts",
+        "portal/src/app/api/billing-portal/route.ts",
+        "portal/src/app/api/auto-topup/route.ts",
+        "portal/src/app/api/financial/plans/route.ts",
+        "portal/src/app/api/financial/subscriptions/route.ts",
+        "portal/src/app/api/gateway-preference/route.ts",
+        "portal/src/app/api/export/financial/route.ts",
+        "portal/src/app/api/platform/refunds/route.ts",
+        "portal/src/app/api/platform/products/route.ts",
+        "portal/src/app/api/platform/fees/route.ts",
+        "portal/src/app/api/platform/feature-flags/route.ts",
+        "portal/src/app/api/platform/assessorias/route.ts",
+        "portal/src/app/api/platform/support/route.ts",
+        "portal/src/app/api/platform/liga/route.ts",
+        "portal/src/app/api/platform/health/route.ts",
+        "portal/src/app/api/platform/cron-health/route.ts",
+        "portal/src/app/api/platform/cron-sla/route.ts",
+        "portal/src/app/api/platform/invariants/route.ts",
+        "portal/src/app/api/platform/invariants/wallets/route.ts",
+        "portal/src/app/api/platform/invariants/enforce/route.ts",
+        "portal/src/app/api/platform/custody/withdrawals/[id]/complete/route.ts",
+        "portal/src/app/api/platform/custody/withdrawals/[id]/fail/route.ts",
+        "tools/check_financial_routes_have_error_handler.ts",
+        "docs/runbooks/API_ERROR_HANDLING_RUNBOOK.md"
       ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/api-handler.test.ts",
+        "tools/check_financial_routes_have_error_handler.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "26245a8"
+      ],
+      "owner": "platform-team",
+      "runbook": "docs/runbooks/API_ERROR_HANDLING_RUNBOOK.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Wrapper hardened (Sentry span tags + canonical 500 envelope + always-on\nrequest_id). 37 financial/platform routes wrapped. CI guard\n`tools/check_financial_routes_have_error_handler.ts` passes with 0\ncritical fails (31 non-financial routes still flagged as `info` —\nfollow-up tracked separately).\n"
     },
     {
       "id": "L17-02",
