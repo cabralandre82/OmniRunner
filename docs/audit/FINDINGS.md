@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-20 00:24:38 UTC.
+> Atualizado em 2026-04-20 00:31:17 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -53,7 +53,7 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L01-42](./findings/L01-42-platform-fee-config-rls-for-select-using-true.md) | 2 | L01 · CISO | platform_fee_config — RLS FOR SELECT USING (true) | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L01-43](./findings/L01-43-custody-accounts-rls-role-professor-nunca-corresponde.md) | 2 | L01 · CISO | custody_accounts RLS — role 'professor' nunca corresponde | unassigned |
 | 🔴 critical | ✅ fixed | [L01-44](./findings/L01-44-migration-drift-platform-fee-config-fee-type-check.md) | 0 | L01 · CISO | Migration drift — platform_fee_config.fee_type CHECK + INSERT 'fx_spread' | unassigned |
-| 🟠 high | ⏳ fix-pending | [L01-45](./findings/L01-45-fee-type-fx-spread-ausente-do-endpoint-admin.md) | 1 | L01 · CISO | fee_type — 'fx_spread' ausente do endpoint admin | unassigned |
+| 🟠 high | ✅ fixed | [L01-45](./findings/L01-45-fee-type-fx-spread-ausente-do-endpoint-admin.md) | 1 | L01 · CISO | fee_type — 'fx_spread' ausente do endpoint admin | backend-platform |
 | 🟢 safe | ✅ fixed | [L01-46](./findings/L01-46-execute-swap-locks-for-update-com-ordering.md) | 3 | L01 · CISO | execute_swap — Locks FOR UPDATE com ordering | unassigned |
 | ⚪ na | ⏳ fix-pending | [L01-47](./findings/L01-47-executewithdrawal-execute-withdrawal-rpc-sem-codigo-mostrado.md) | 3 | L01 · CISO | executeWithdrawal — execute_withdrawal RPC sem código mostrado | unassigned |
 | 🟢 safe | ✅ fixed | [L01-48](./findings/L01-48-aggregateclearingwindow-aggregation-only.md) | 3 | L01 · CISO | aggregateClearingWindow — Aggregation only | unassigned |

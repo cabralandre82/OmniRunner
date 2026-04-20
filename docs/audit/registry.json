@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-20T00:24:38.046Z",
+  "generated_at": "2026-04-20T00:31:17.738Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 91,
-    "fix-pending": 256,
+    "fixed": 92,
+    "fix-pending": 255,
     "in-progress": 1
   },
   "by_wave": {
@@ -1563,29 +1563,40 @@
       "lens": 1,
       "title": "fee_type — 'fx_spread' ausente do endpoint admin",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
-        "mobile",
-        "portal"
+        "portal",
+        "admin",
+        "openapi",
+        "contract-lock"
       ],
       "files": [
-        "portal/src/app/api/platform/fees/route.ts"
+        "portal/src/lib/platform-fee-types.ts",
+        "portal/src/app/api/platform/fees/route.ts",
+        "portal/src/app/platform/fees/page.tsx",
+        "portal/public/openapi.json"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/platform-fee-types.test.ts",
+        "portal/src/app/api/platform/fees/route.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "dee4da3"
+      ],
+      "owner": "backend-platform",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Consolida a lista canônica de `fee_type` em um único módulo TypeScript\n(`portal/src/lib/platform-fee-types.ts`) e força lockstep entre as cinco\nsuperfícies que historicamente derivaram independentemente.\n\n## Context — por que isso era high-severity\n\nO bug imediato (Zod enum sem `'fx_spread'`) tinha sido corrigido como\nside-effect de L01-44 em 2026-04-17 (commit anterior), mas a finding ficou\npendente porque a causa-raiz NÃO foi atacada: ainda existiam cinco fontes\nparalelas de verdade para o mesmo conjunto de slugs, sem CI cruzado:\n\n  1. `platform_fee_config.fee_type` CHECK (Postgres)\n  2. `platform_revenue.fee_type` CHECK (Postgres)\n  3. Zod enum em `POST /api/platform/fees` (TS)\n  4. `FEE_LABELS` keys em `/platform/fees/page.tsx` (TS)\n  5. `enum` em `public/openapi.json` (JSON)\n\nDrift histórico documentado:\n\n  • L01-44 (2026-04-17) — `fx_spread` foi inserido por migration\n    20260228170000 ANTES do CHECK ser ampliado; fresh installs falharam\n    por meses.\n  • L01-45 (2026-04-13, BRL crisis) — Zod enum rejeitou\n    `fee_type='fx_spread'` mesmo após L01-44 fixar o CHECK; admins não\n    conseguiram ajustar o spread cambial pela UI durante a crise. SRE\n    teve que rodar SQL direto em prod, à 1h da manhã.\n  • OpenAPI (`public/openapi.json`) ainda listava apenas\n    `[\"clearing\",\"swap\",\"maintenance\",\"billing_split\"]` — 8 dias após\n    L01-44 a documentação pública contradizia o backend. Clientes B2B\n    gerando SDK a partir do OpenAPI não tinham `fx_spread` como opção\n    válida.\n\n## Solução implementada\n\n### 1. Constante canônica única (`lib/platform-fee-types.ts`)\n\nNovo módulo expõe:\n\n  • `PLATFORM_FEE_TYPES` — array `as const` ordenado para renderização\n    (clearing, swap, fx_spread, billing_split, maintenance).\n  • `PlatformFeeType` — literal-union derivada do array. NUNCA usar\n    `string` para `fee_type` em assinaturas; o compilador garante o\n    conjunto canônico em todo call-site.\n  • `platformFeeTypeSchema` — `z.enum(PLATFORM_FEE_TYPES)` pré-construído\n    para route handlers (evita perder `as const` por descuido).\n  • `FEE_TYPE_LABELS` — `Record<PlatformFeeType, ...>` com label e\n    descrição em pt-BR. A chave é tipada, então adicionar um slug a\n    `PLATFORM_FEE_TYPES` sem o label correspondente quebra `tsc`.\n  • `isPlatformFeeType()` — type guard para contextos sem Zod (queues\n    internas, parsing de payloads não-tipados).\n\nComentário cabeçalho documenta o procedimento de 4 passos para adicionar\num novo `fee_type` (constante TS → label → migration CHECK + INSERT →\nOpenAPI) e referencia os post-mortems de L01-44 e L01-45.\n\n### 2. Route handler (`/api/platform/fees`)\n\nRemovido enum inline; agora importa `platformFeeTypeSchema`. Comentário\nexplícito proíbe re-inline (\"NEVER inline the list here again\").\n\n### 3. Page (`/platform/fees`)\n\nRemovido `FEE_LABELS` local (cópia divergente); agora usa\n`FEE_TYPE_LABELS` + `isPlatformFeeType()` do módulo canônico. Linhas\ninesperadas (slug em DB sem label canônico) ainda renderizam o\n`fee_type` como label cru — fail-soft, mas o teste de contrato detecta\ndrift na PR.\n\n### 4. OpenAPI (`public/openapi.json`)\n\nEnum atualizado para incluir `fx_spread`. Description aponta para\n`lib/platform-fee-types.ts` como source-of-truth e cita L01-45 para\nrastreabilidade. Teste de contrato faz parsing do JSON e compara o\nconjunto com `PLATFORM_FEE_TYPES` — qualquer regressão futura quebra CI.\n\n### 5. Contract-lock test (`platform-fee-types.test.ts`)\n\nNove testes cruzam as quatro superfícies em uma única run de CI:\n\n  • Lista canônica tem exatamente 5 entradas na ordem documentada.\n  • `'fx_spread'` está presente (regression guard explícito L01-44/45).\n  • `platformFeeTypeSchema` aceita os 5 e rejeita variantes (case,\n    espaços, `null`, número, slug fictício).\n  • `FEE_TYPE_LABELS` tem label + description não-vazios para cada slug.\n  • `FEE_TYPE_LABELS` não tem chaves órfãs (linhas UI sem dados em DB).\n  • `isPlatformFeeType()` narrow correto para válidos e inválidos.\n  • `public/openapi.json` enum (sorted) == `PLATFORM_FEE_TYPES` (sorted).\n  • Migration `20260417130000_fix_platform_fee_config_check.sql` contém\n    `'<slug>'` literal para CADA slug canônico — falha se alguém\n    adicionar um slug em TS sem widening do CHECK no Postgres.\n  • `PlatformFeeType[]` é exhaustivo (smoke test de tipo).\n\n## Defense-in-depth bônus\n\n  • Cabeçalho do módulo é o único playbook documentado para adicionar\n    `fee_type`; runbook não precisa ser mantido em paralelo.\n  • Type-narrowing em `isPlatformFeeType` substitui o fallback genérico\n    `?? { label: fee.fee_type, description: \"\" }` por uma checagem\n    explícita — bugs futuros (ex.: typo em FEE_TYPE_LABELS) ficam\n    visíveis no diff em vez de degradarem silenciosamente para \"label\n    cru\" na UI.\n\n## Verificação\n\n  • `npx vitest run src/lib/platform-fee-types.test.ts src/app/api/platform/fees/route.test.ts`\n    → 24 tests passed (9 novos contract-lock + 15 existentes).\n  • `npm run lint` → clean.\n  • `npx vitest run` (suite completa) → 1304 passed (era 1295; +9\n    novos).\n\n## Histórico de fixes relacionados\n\n  • L01-13 (2026-04-17) — schema parcial fix.\n  • L01-44 (2026-04-17) — CHECK constraint widening + INSERT idempotente\n    de `fx_spread`.\n  • L01-45 (este fix, 2026-04-17) — consolidação em fonte única de\n    verdade + contract-lock test cruzando TS/Zod/labels/OpenAPI/SQL.\n"
     },
     {
       "id": "L01-46",
