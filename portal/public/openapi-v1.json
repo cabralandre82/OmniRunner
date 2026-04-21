@@ -581,6 +581,288 @@
           "amount"
         ]
       },
+      "ReverseCoinsResponse": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ReverseCoinsEmissionResponse"
+          },
+          {
+            "$ref": "#/components/schemas/ReverseCoinsBurnResponse"
+          },
+          {
+            "$ref": "#/components/schemas/ReverseCoinsDepositResponse"
+          }
+        ]
+      },
+      "ReverseCoinsEmissionResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiOkMarker"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "emission"
+                ]
+              },
+              "reversal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reversal_ledger_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "athlete_user_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reversed_amount": {
+                "type": "integer"
+              },
+              "new_balance": {
+                "type": "integer"
+              },
+              "was_idempotent": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "kind",
+              "reversal_id",
+              "reversal_ledger_id",
+              "athlete_user_id",
+              "reversed_amount",
+              "new_balance",
+              "was_idempotent"
+            ]
+          }
+        ]
+      },
+      "ReverseCoinsBurnResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiOkMarker"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "burn"
+                ]
+              },
+              "reversal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "clearing_event_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "athlete_user_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reversed_amount": {
+                "type": "integer"
+              },
+              "new_balance": {
+                "type": "integer"
+              },
+              "settlements_cancelled": {
+                "type": "integer"
+              },
+              "was_idempotent": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "kind",
+              "reversal_id",
+              "clearing_event_id",
+              "athlete_user_id",
+              "reversed_amount",
+              "new_balance",
+              "settlements_cancelled",
+              "was_idempotent"
+            ]
+          }
+        ]
+      },
+      "ReverseCoinsDepositResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiOkMarker"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "deposit"
+                ]
+              },
+              "reversal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "deposit_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "group_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "refunded_usd": {
+                "type": "string"
+              },
+              "was_idempotent": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "kind",
+              "reversal_id",
+              "deposit_id",
+              "group_id",
+              "refunded_usd",
+              "was_idempotent"
+            ]
+          }
+        ]
+      },
+      "ReverseCoinsBody": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ReverseEmissionBody"
+          },
+          {
+            "$ref": "#/components/schemas/ReverseBurnBody"
+          },
+          {
+            "$ref": "#/components/schemas/ReverseDepositBody"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "emission": "#/components/schemas/ReverseEmissionBody",
+            "burn": "#/components/schemas/ReverseBurnBody",
+            "deposit": "#/components/schemas/ReverseDepositBody"
+          }
+        },
+        "description": "Discriminated union sobre `kind`. Cada variante aciona o RPC atômico correspondente em `20260421130000_l03_reverse_coin_flows.sql`."
+      },
+      "ReverseEmissionBody": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "emission"
+            ]
+          },
+          "original_ledger_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID da entrada original em `coin_ledger` (reason=`coach_distribution` ou `institution_token_emission`). O reverse debita o atleta, restaura inventário do grupo emissor e libera a custódia comprometida."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500,
+            "description": "Postmortem obrigatório (≥10 chars). Entra no `coin_reversal_log`, `coin_ledger.metadata.reason_text` e `portal_audit_log` para trilha de auditoria regulatória."
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128,
+            "description": "Idempotência forte. Se ausente no body, deve vir no header `x-idempotency-key` (um dos dois é obrigatório)."
+          }
+        },
+        "required": [
+          "kind",
+          "original_ledger_id",
+          "reason"
+        ]
+      },
+      "ReverseBurnBody": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "burn"
+            ]
+          },
+          "burn_ref_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "`ref_id` da entrada negativa do burn original em `coin_ledger`. O reverse só procede se NENHUM `clearing_settlement` vinculado foi `settled` — senão retorna 422 NOT_REVERSIBLE."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500,
+            "description": "Postmortem obrigatório (≥10 chars). Entra no `coin_reversal_log`, `coin_ledger.metadata.reason_text` e `portal_audit_log` para trilha de auditoria regulatória."
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128,
+            "description": "Idempotência forte; body ou header x-idempotency-key."
+          }
+        },
+        "required": [
+          "kind",
+          "burn_ref_id",
+          "reason"
+        ]
+      },
+      "ReverseDepositBody": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "deposit"
+            ]
+          },
+          "deposit_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID do `custody_deposits` confirmado (status=`confirmed`). O reverse só procede se `total_deposited_usd - amount >= total_committed` — senão 422 INVARIANT_VIOLATION exigindo reversão prévia das emissões financiadas."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500,
+            "description": "Postmortem obrigatório (≥10 chars). Entra no `coin_reversal_log`, `coin_ledger.metadata.reason_text` e `portal_audit_log` para trilha de auditoria regulatória."
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128,
+            "description": "Idempotência forte; body ou header x-idempotency-key."
+          }
+        },
+        "required": [
+          "kind",
+          "deposit_id",
+          "reason"
+        ]
+      },
       "ClearingResponse": {
         "allOf": [
           {
@@ -1403,6 +1685,137 @@
           },
           "503": {
             "description": "Service unavailable (e.g. feature flag off).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coins/reverse": {
+      "post": {
+        "tags": [
+          "OmniCoins"
+        ],
+        "summary": "Reembolso/estorno atômico de emission, burn ou custody deposit (L03-13)",
+        "description": "Substitui os blocos SQL manuais do `CHARGEBACK_RUNBOOK §3.2` por um caminho transacional, idempotente e auditado. Três fluxos selecionados via `kind`: `emission` reverte `emit_coins_atomic`, `burn` reverte `execute_burn_atomic` (proibido se settlements já foram liquidados), `deposit` reverte `confirm_custody_deposit` (proibido se quebraria o invariante `total_deposited_usd >= total_committed`). Idempotência forte via `coin_reversal_log (kind, idempotency_key)`. Apenas `platform_admin` (profiles.platform_role='admin'); rate-limited a 10 req/min por actor. Kill-switch `coins.reverse.enabled`.",
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/components/schemas/IdempotencyKey"
+            },
+            "required": true,
+            "description": "Client-generated idempotency key (8-128 chars, alphanumeric plus `._:-`). When the same key is replayed, the original response is returned with `Idempotent-Replayed: true`.",
+            "name": "idempotency-key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReverseCoinsBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reversão aplicada. Shape do corpo varia por `kind` (discriminated union).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReverseCoinsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED — payload inválido, idempotency_key ausente, ou target em estado não reversível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — no valid session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN — apenas `platform_admin` pode reverter. `admin_master` do grupo NÃO tem permissão.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND — alvo (ledger/burn/deposit) não existe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Reversal bloqueado por precondição de negócio: INSUFFICIENT_BALANCE (atleta já gastou), NOT_REVERSIBLE (burn já compensado entre custódias), INVARIANT_VIOLATION (refund quebraria lastro), INVALID_TARGET_STATE ou CUSTODY_RECOMMIT_FAILED.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (L14-04 — keyed by group/user, not raw IP). Honour the `Retry-After` header.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the next attempt is permitted.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE — kill-switch acionado, invariante global violada, ou lock contention (tenta de novo).",
             "content": {
               "application/json": {
                 "schema": {

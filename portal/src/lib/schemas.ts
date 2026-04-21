@@ -83,6 +83,88 @@ export const distributeCoinsBatchSchema = z
     }
   });
 
+// L03-13 — POST /api/coins/reverse: reembolso/estorno de fluxos financeiros.
+//
+// O achado cobre três ramos de reversão que até agora só existiam como
+// blocos de SQL manual no `CHARGEBACK_RUNBOOK`:
+//
+//   (a) `kind: 'emission'` — reverter um emit_coins_atomic mal feito
+//       (athlete errado, amount errado, chargeback do gateway que lastreou
+//       a emissão). Espelha emit_coins_atomic inversamente: debita wallet,
+//       restaura inventory, libera custódia committed, escreve ledger
+//       negativo com reason=`institution_token_reverse_emission`.
+//   (b) `kind: 'burn'` — reverter uma execute_burn_atomic errônea (burn
+//       disparado por bug de UI, resgate rejeitado pelo parceiro). Só
+//       aceita se NENHUM clearing_settlement associado estiver em
+//       status `settled` (coins já compensadas entre clubs exigem
+//       remediation manual via runbook).
+//   (c) `kind: 'deposit'` — chargeback Stripe/MP sobre um custody_deposit
+//       já confirmado. Exige que total_deposited_usd - amount >=
+//       total_committed (coins já emitidas contra o lastro BLOQUEIAM
+//       o refund e o operador é obrigado a reverter emissões antes).
+//
+// O campo `reason` é obrigatório (>=10 chars) para forçar postmortem
+// explícito no audit_log — espelha a CHECK de clearing_failure_log.
+// `idempotency_key` pode vir no body ou no header `x-idempotency-key`;
+// o schema exige pelo menos um dos dois para evitar replay duplo.
+
+const reverseCoinsReasonSchema = z
+  .string()
+  .min(10, "reason deve ter ao menos 10 caracteres (postmortem obrigatório)")
+  .max(500, "reason máximo é 500 caracteres");
+
+const reverseEmissionSchema = z
+  .object({
+    kind: z.literal("emission"),
+    original_ledger_id: z
+      .string()
+      .uuid("original_ledger_id deve ser UUID válido"),
+    reason: reverseCoinsReasonSchema,
+    idempotency_key: z
+      .string()
+      .min(8, "idempotency_key deve ter ao menos 8 caracteres")
+      .max(128)
+      .optional(),
+  })
+  .strict();
+
+const reverseBurnSchema = z
+  .object({
+    kind: z.literal("burn"),
+    burn_ref_id: z
+      .string()
+      .min(1, "burn_ref_id é obrigatório")
+      .max(128, "burn_ref_id máximo é 128 caracteres"),
+    reason: reverseCoinsReasonSchema,
+    idempotency_key: z
+      .string()
+      .min(8, "idempotency_key deve ter ao menos 8 caracteres")
+      .max(128)
+      .optional(),
+  })
+  .strict();
+
+const reverseDepositSchema = z
+  .object({
+    kind: z.literal("deposit"),
+    deposit_id: z.string().uuid("deposit_id deve ser UUID válido"),
+    reason: reverseCoinsReasonSchema,
+    idempotency_key: z
+      .string()
+      .min(8, "idempotency_key deve ter ao menos 8 caracteres")
+      .max(128)
+      .optional(),
+  })
+  .strict();
+
+export const reverseCoinsSchema = z.discriminatedUnion("kind", [
+  reverseEmissionSchema,
+  reverseBurnSchema,
+  reverseDepositSchema,
+]);
+
+export type ReverseCoinsInput = z.infer<typeof reverseCoinsSchema>;
+
 export const teamInviteSchema = z.object({
   email: z.string().email("E-mail inválido"),
   role: z.enum(["coach", "assistant"], {
@@ -196,6 +278,9 @@ export type DistributeCoinsInput = z.infer<typeof distributeCoinsSchema>;
 export type DistributeCoinsBatchInput = z.infer<
   typeof distributeCoinsBatchSchema
 >;
+export type ReverseEmissionInput = z.infer<typeof reverseEmissionSchema>;
+export type ReverseBurnInput = z.infer<typeof reverseBurnSchema>;
+export type ReverseDepositInput = z.infer<typeof reverseDepositSchema>;
 export type TeamInviteInput = z.infer<typeof teamInviteSchema>;
 export type BrandingInput = z.infer<typeof brandingSchema>;
 export type CheckoutInput = z.infer<typeof checkoutSchema>;

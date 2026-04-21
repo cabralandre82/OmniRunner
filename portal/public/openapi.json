@@ -673,6 +673,83 @@
         }
       }
     },
+    "/api/coins/reverse": {
+      "post": {
+        "tags": ["OmniCoins"],
+        "summary": "Reembolso/estorno atômico de emission, burn ou custody deposit (L03-13)",
+        "description": "Substitui os blocos SQL manuais do CHARGEBACK_RUNBOOK §3.2 por um caminho transacional, idempotente e auditado. Três fluxos via 'kind': emission, burn, deposit. Apenas platform_admin. Rate-limited 10/min/actor. Kill-switch coins.reverse.enabled.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": ["kind", "original_ledger_id", "reason"],
+                    "properties": {
+                      "kind": { "type": "string", "enum": ["emission"] },
+                      "original_ledger_id": { "type": "string", "format": "uuid" },
+                      "reason": { "type": "string", "minLength": 10, "maxLength": 500 },
+                      "idempotency_key": { "type": "string", "minLength": 8, "maxLength": 128 }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": ["kind", "burn_ref_id", "reason"],
+                    "properties": {
+                      "kind": { "type": "string", "enum": ["burn"] },
+                      "burn_ref_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+                      "reason": { "type": "string", "minLength": 10, "maxLength": 500 },
+                      "idempotency_key": { "type": "string", "minLength": 8, "maxLength": 128 }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": ["kind", "deposit_id", "reason"],
+                    "properties": {
+                      "kind": { "type": "string", "enum": ["deposit"] },
+                      "deposit_id": { "type": "string", "format": "uuid" },
+                      "reason": { "type": "string", "minLength": 10, "maxLength": 500 },
+                      "idempotency_key": { "type": "string", "minLength": 8, "maxLength": 128 }
+                    }
+                  }
+                ],
+                "discriminator": { "propertyName": "kind" }
+              }
+            }
+          }
+        },
+        "parameters": [
+          { "name": "x-idempotency-key", "in": "header", "schema": { "type": "string" }, "description": "Idempotency key (alternativa ao body.idempotency_key)." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reversão aplicada (shape varia por kind)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "kind": { "type": "string", "enum": ["emission", "burn", "deposit"] },
+                    "reversal_id": { "type": "string", "format": "uuid" },
+                    "was_idempotent": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "VALIDATION_FAILED — payload inválido ou idempotency_key ausente" },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Apenas platform_admin; admin_master do grupo NÃO pode" },
+          "404": { "description": "Alvo (ledger/burn/deposit) não encontrado" },
+          "422": { "description": "INSUFFICIENT_BALANCE | NOT_REVERSIBLE | INVARIANT_VIOLATION | INVALID_TARGET_STATE | CUSTODY_RECOMMIT_FAILED" },
+          "429": { "description": "Rate limit excedido (10/min/actor)" },
+          "503": { "description": "Kill-switch, invariante global violada ou lock contention" }
+        }
+      }
+    },
     "/api/clearing": {
       "get": {
         "tags": ["Financial"],

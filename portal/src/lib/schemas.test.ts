@@ -12,6 +12,7 @@ import {
   checkoutSchema,
   gatewayPreferenceSchema,
   autoTopupSchema,
+  reverseCoinsSchema,
 } from "./schemas";
 
 describe("distributeCoinsSchema", () => {
@@ -340,5 +341,163 @@ describe("autoTopupSchema", () => {
   it("rejects negative threshold", () => {
     const result = autoTopupSchema.safeParse({ threshold_tokens: -5 });
     expect(result.success).toBe(false);
+  });
+});
+
+// L03-13 — discriminated union for /api/coins/reverse.
+describe("reverseCoinsSchema", () => {
+  const UUID = "550e8400-e29b-41d4-a716-446655440000";
+  const LONG_REASON = "Chargeback Stripe ref abc123 postmortem CFO";
+
+  describe("kind: emission", () => {
+    it("accepts valid payload", () => {
+      const result = reverseCoinsSchema.safeParse({
+        kind: "emission",
+        original_ledger_id: UUID,
+        reason: LONG_REASON,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts optional idempotency_key", () => {
+      const result = reverseCoinsSchema.safeParse({
+        kind: "emission",
+        original_ledger_id: UUID,
+        reason: LONG_REASON,
+        idempotency_key: "rev-abcdef-1",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects non-uuid original_ledger_id", () => {
+      const result = reverseCoinsSchema.safeParse({
+        kind: "emission",
+        original_ledger_id: "not-a-uuid",
+        reason: LONG_REASON,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects reason < 10 chars (postmortem obrigatório)", () => {
+      const result = reverseCoinsSchema.safeParse({
+        kind: "emission",
+        original_ledger_id: UUID,
+        reason: "short",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects reason > 500 chars", () => {
+      const result = reverseCoinsSchema.safeParse({
+        kind: "emission",
+        original_ledger_id: UUID,
+        reason: "x".repeat(501),
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects idempotency_key < 8 chars", () => {
+      const result = reverseCoinsSchema.safeParse({
+        kind: "emission",
+        original_ledger_id: UUID,
+        reason: LONG_REASON,
+        idempotency_key: "short",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects unknown fields (.strict)", () => {
+      const result = reverseCoinsSchema.safeParse({
+        kind: "emission",
+        original_ledger_id: UUID,
+        reason: LONG_REASON,
+        malicious: "<script>",
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("kind: burn", () => {
+    it("accepts valid payload", () => {
+      const result = reverseCoinsSchema.safeParse({
+        kind: "burn",
+        burn_ref_id: "burn-abc-123",
+        reason: LONG_REASON,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects empty burn_ref_id", () => {
+      const result = reverseCoinsSchema.safeParse({
+        kind: "burn",
+        burn_ref_id: "",
+        reason: LONG_REASON,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects burn_ref_id > 128 chars", () => {
+      const result = reverseCoinsSchema.safeParse({
+        kind: "burn",
+        burn_ref_id: "x".repeat(129),
+        reason: LONG_REASON,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects missing reason", () => {
+      const result = reverseCoinsSchema.safeParse({
+        kind: "burn",
+        burn_ref_id: "burn-abc",
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("kind: deposit", () => {
+    it("accepts valid payload", () => {
+      const result = reverseCoinsSchema.safeParse({
+        kind: "deposit",
+        deposit_id: UUID,
+        reason: LONG_REASON,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects non-uuid deposit_id", () => {
+      const result = reverseCoinsSchema.safeParse({
+        kind: "deposit",
+        deposit_id: "deposit-123",
+        reason: LONG_REASON,
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("discriminator", () => {
+    it("rejects unknown kind", () => {
+      const result = reverseCoinsSchema.safeParse({
+        kind: "refund",
+        reason: LONG_REASON,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects missing kind", () => {
+      const result = reverseCoinsSchema.safeParse({
+        original_ledger_id: UUID,
+        reason: LONG_REASON,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects burn fields on emission kind", () => {
+      const result = reverseCoinsSchema.safeParse({
+        kind: "emission",
+        burn_ref_id: "burn-abc",
+        reason: LONG_REASON,
+      });
+      expect(result.success).toBe(false);
+    });
   });
 });

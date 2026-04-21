@@ -36,6 +36,9 @@ import * as v1DistributeBatch from "@/app/api/v1/distribute-coins/batch/route";
 import * as legacyClearing from "@/app/api/clearing/route";
 import * as v1Clearing from "@/app/api/v1/clearing/route";
 
+import * as legacyReverseCoins from "@/app/api/coins/reverse/route";
+import * as v1ReverseCoins from "@/app/api/v1/coins/reverse/route";
+
 type RouteModule = Record<string, unknown>;
 
 function handlerVerbs(mod: RouteModule): Set<string> {
@@ -61,6 +64,11 @@ const PAIRS: Array<{
     v1: v1DistributeBatch,
   },
   { name: "clearing", legacy: legacyClearing, v1: v1Clearing },
+  {
+    name: "coins/reverse",
+    legacy: legacyReverseCoins,
+    v1: v1ReverseCoins,
+  },
 ];
 
 describe("/api/v1/* aliases — handler exports", () => {

@@ -240,6 +240,126 @@ const DistributeCoinsBatchResponse = ApiOkMarkerSchema.extend({
   items: z.array(DistributeCoinsBatchItemResult),
 }).openapi("DistributeCoinsBatchResponse");
 
+// -- Reverse Coins — L03-13 -------------------------------------------------
+
+const ReverseReasonSchema = z
+  .string()
+  .min(10)
+  .max(500)
+  .openapi({
+    description:
+      "Postmortem obrigatório (≥10 chars). Entra no `coin_reversal_log`, " +
+      "`coin_ledger.metadata.reason_text` e `portal_audit_log` para trilha " +
+      "de auditoria regulatória.",
+  });
+
+const ReverseEmissionBody = z
+  .object({
+    kind: z.literal("emission"),
+    original_ledger_id: z.string().uuid().openapi({
+      description:
+        "UUID da entrada original em `coin_ledger` (reason=`coach_distribution` " +
+        "ou `institution_token_emission`). O reverse debita o atleta, restaura " +
+        "inventário do grupo emissor e libera a custódia comprometida.",
+    }),
+    reason: ReverseReasonSchema,
+    idempotency_key: z
+      .string()
+      .min(8)
+      .max(128)
+      .optional()
+      .openapi({
+        description:
+          "Idempotência forte. Se ausente no body, deve vir no header " +
+          "`x-idempotency-key` (um dos dois é obrigatório).",
+      }),
+  })
+  .openapi("ReverseEmissionBody");
+
+const ReverseBurnBody = z
+  .object({
+    kind: z.literal("burn"),
+    burn_ref_id: z.string().min(1).max(128).openapi({
+      description:
+        "`ref_id` da entrada negativa do burn original em `coin_ledger`. " +
+        "O reverse só procede se NENHUM `clearing_settlement` vinculado " +
+        "foi `settled` — senão retorna 422 NOT_REVERSIBLE.",
+    }),
+    reason: ReverseReasonSchema,
+    idempotency_key: z.string().min(8).max(128).optional().openapi({
+      description: "Idempotência forte; body ou header x-idempotency-key.",
+    }),
+  })
+  .openapi("ReverseBurnBody");
+
+const ReverseDepositBody = z
+  .object({
+    kind: z.literal("deposit"),
+    deposit_id: z.string().uuid().openapi({
+      description:
+        "UUID do `custody_deposits` confirmado (status=`confirmed`). " +
+        "O reverse só procede se `total_deposited_usd - amount >= " +
+        "total_committed` — senão 422 INVARIANT_VIOLATION exigindo " +
+        "reversão prévia das emissões financiadas.",
+    }),
+    reason: ReverseReasonSchema,
+    idempotency_key: z.string().min(8).max(128).optional().openapi({
+      description: "Idempotência forte; body ou header x-idempotency-key.",
+    }),
+  })
+  .openapi("ReverseDepositBody");
+
+const ReverseCoinsBody = z
+  .discriminatedUnion("kind", [
+    ReverseEmissionBody,
+    ReverseBurnBody,
+    ReverseDepositBody,
+  ])
+  .openapi("ReverseCoinsBody", {
+    description:
+      "Discriminated union sobre `kind`. Cada variante aciona o RPC " +
+      "atômico correspondente em " +
+      "`20260421130000_l03_reverse_coin_flows.sql`.",
+  });
+
+const ReverseCoinsEmissionResponse = ApiOkMarkerSchema.extend({
+  kind: z.literal("emission"),
+  reversal_id: z.string().uuid(),
+  reversal_ledger_id: z.string().uuid(),
+  athlete_user_id: z.string().uuid(),
+  reversed_amount: z.number().int(),
+  new_balance: z.number().int(),
+  was_idempotent: z.boolean(),
+}).openapi("ReverseCoinsEmissionResponse");
+
+const ReverseCoinsBurnResponse = ApiOkMarkerSchema.extend({
+  kind: z.literal("burn"),
+  reversal_id: z.string().uuid(),
+  clearing_event_id: z.string().uuid().nullable(),
+  athlete_user_id: z.string().uuid(),
+  reversed_amount: z.number().int(),
+  new_balance: z.number().int(),
+  settlements_cancelled: z.number().int(),
+  was_idempotent: z.boolean(),
+}).openapi("ReverseCoinsBurnResponse");
+
+const ReverseCoinsDepositResponse = ApiOkMarkerSchema.extend({
+  kind: z.literal("deposit"),
+  reversal_id: z.string().uuid(),
+  deposit_id: z.string().uuid(),
+  group_id: z.string().uuid(),
+  refunded_usd: z.string(),
+  was_idempotent: z.boolean(),
+}).openapi("ReverseCoinsDepositResponse");
+
+const ReverseCoinsResponse = z
+  .union([
+    ReverseCoinsEmissionResponse,
+    ReverseCoinsBurnResponse,
+    ReverseCoinsDepositResponse,
+  ])
+  .openapi("ReverseCoinsResponse");
+
 // -- Clearing ---------------------------------------------------------------
 
 const Settlement = z
@@ -521,6 +641,94 @@ registry.registerPath({
     429: STD_ERROR_RESPONSES[429],
     500: STD_ERROR_RESPONSES[500],
     503: STD_ERROR_RESPONSES[503],
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/v1/coins/reverse",
+  tags: ["OmniCoins"],
+  summary:
+    "Reembolso/estorno atômico de emission, burn ou custody deposit (L03-13)",
+  description:
+    "Substitui os blocos SQL manuais do `CHARGEBACK_RUNBOOK §3.2` por um " +
+    "caminho transacional, idempotente e auditado. Três fluxos selecionados " +
+    "via `kind`: `emission` reverte `emit_coins_atomic`, `burn` reverte " +
+    "`execute_burn_atomic` (proibido se settlements já foram liquidados), " +
+    "`deposit` reverte `confirm_custody_deposit` (proibido se quebraria o " +
+    "invariante `total_deposited_usd >= total_committed`). Idempotência " +
+    "forte via `coin_reversal_log (kind, idempotency_key)`. Apenas " +
+    "`platform_admin` (profiles.platform_role='admin'); rate-limited a " +
+    "10 req/min por actor. Kill-switch `coins.reverse.enabled`.",
+  request: {
+    headers: z.object({
+      "idempotency-key": IdempotencyKeySchema,
+    }),
+    body: {
+      required: true,
+      content: { "application/json": { schema: ReverseCoinsBody } },
+    },
+  },
+  responses: {
+    200: {
+      description:
+        "Reversão aplicada. Shape do corpo varia por `kind` " +
+        "(discriminated union).",
+      content: { "application/json": { schema: ReverseCoinsResponse } },
+    },
+    400: {
+      description:
+        "VALIDATION_FAILED — payload inválido, idempotency_key ausente, ou " +
+        "target em estado não reversível.",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/ApiErrorBody" },
+        },
+      },
+    },
+    401: STD_ERROR_RESPONSES[401],
+    403: {
+      description:
+        "FORBIDDEN — apenas `platform_admin` pode reverter. " +
+        "`admin_master` do grupo NÃO tem permissão.",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/ApiErrorBody" },
+        },
+      },
+    },
+    404: {
+      description: "NOT_FOUND — alvo (ledger/burn/deposit) não existe.",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/ApiErrorBody" },
+        },
+      },
+    },
+    422: {
+      description:
+        "Reversal bloqueado por precondição de negócio: " +
+        "INSUFFICIENT_BALANCE (atleta já gastou), NOT_REVERSIBLE (burn já " +
+        "compensado entre custódias), INVARIANT_VIOLATION (refund " +
+        "quebraria lastro), INVALID_TARGET_STATE ou CUSTODY_RECOMMIT_FAILED.",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/ApiErrorBody" },
+        },
+      },
+    },
+    429: STD_ERROR_RESPONSES[429],
+    500: STD_ERROR_RESPONSES[500],
+    503: {
+      description:
+        "SERVICE_UNAVAILABLE — kill-switch acionado, invariante global " +
+        "violada, ou lock contention (tenta de novo).",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/ApiErrorBody" },
+        },
+      },
+    },
   },
 });
 
