@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-20T01:58:42.446Z",
+  "generated_at": "2026-04-21T12:56:56.937Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 105,
-    "fix-pending": 242,
+    "fixed": 106,
+    "fix-pending": 241,
     "in-progress": 1
   },
   "by_wave": {
@@ -2636,27 +2636,44 @@
       "lens": 3,
       "title": "Reembolso / Estorno — Não há função reverse_burn ou refund_deposit",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "migration",
-        "reliability"
+        "reliability",
+        "idempotency",
+        "audit-trail"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260421130000_l03_reverse_coin_flows.sql",
+        "portal/src/app/api/coins/reverse/route.ts",
+        "portal/src/app/api/v1/coins/reverse/route.ts",
+        "portal/src/lib/schemas.ts",
+        "portal/src/lib/openapi/routes/v1-financial.ts",
+        "portal/public/openapi.json",
+        "docs/runbooks/REVERSE_COINS_RUNBOOK.md"
+      ],
+      "correction_type": "code+migration+process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/app/api/coins/reverse/route.test.ts",
+        "portal/src/app/api/v1/v1-aliases.test.ts",
+        "portal/src/lib/schemas.test.ts",
+        "tools/test_l03_13_reverse_coins.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "0d68c74"
+      ],
+      "owner": "platform-finance",
+      "runbook": "docs/runbooks/REVERSE_COINS_RUNBOOK.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "L03-13 fechado (PR pendente). Três funções SECURITY DEFINER substituem os\nblocos SQL manuais do CHARGEBACK_RUNBOOK §3.2:\n  • reverse_coin_emission_atomic (inverte emit_coins_atomic, debita\n    wallet via fn_mutate_wallet com check_violation → INSUFFICIENT_BALANCE);\n  • reverse_burn_atomic (inverte execute_burn_atomic, bloqueia se settlement\n    já settled inter-club → NOT_REVERSIBLE, re-commita custódia intra-clube);\n  • reverse_custody_deposit_atomic (inverte confirm_custody_deposit,\n    valida total_deposited >= total_committed → INVARIANT_VIOLATION).\nIdempotência forte via coin_reversal_log (kind, idempotency_key) UNIQUE.\nEndpoint único POST /api/coins/reverse (+v1 alias) com discriminated union\nsobre `kind`, kill-switch `coins.reverse.enabled`, rate-limit 10/min/actor,\nauthz platform_admin apenas, audit log por reversal. withdrawal reversal já\ncoberto por complete/fail_withdrawal (L02-06) — fora do escopo. Cobertura\nvitest (25 testes route + 15 schema + 1 v1-alias) + PG sandbox runner\n(tools/test_l03_13_reverse_coins.ts) com purgeOrphans hermético.\n"
     },
     {
       "id": "L03-14",

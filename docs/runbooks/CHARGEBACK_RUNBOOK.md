@@ -120,14 +120,52 @@ WHERE id = '<DEPOSIT_ID>';
 
 ### 3.2 Aceitar — reverter coins + saldo
 
-> **CRÍTICO**: ordem importa. Reverte coins primeiro (idealmente quando
-> ainda estão vivas), depois saldo. Se coins já foram queimadas, aplicar
-> 3.3 (debt).
+> **L03-13 — 2026-04-21**: os blocos SQL manuais abaixo foram
+> **SUBSTITUÍDOS** pela API canônica `POST /api/coins/reverse` (ver
+> `REVERSE_COINS_RUNBOOK.md`). Os blocos SQL ficam aqui só como
+> referência histórica — em produção, use a API.
 
-Passo 1 — burn das coins emitidas (se ainda vivas):
+**Caminho canônico (preferido)**:
+
+```bash
+# 1) Para cada user_id da query 2.3 com saldo > 0, reverter a emissão
+#    específica (original_ledger_id vem da query 2.2):
+curl -X POST https://<host>/api/coins/reverse \
+  -H "Content-Type: application/json" \
+  -H "x-idempotency-key: rev-emi-$(uuidgen)" \
+  --cookie "<platform_admin_session>" \
+  -d '{
+    "kind": "emission",
+    "original_ledger_id": "<LEDGER_ID_FROM_QUERY_2.2>",
+    "reason": "Chargeback Asaas #<WEBHOOK_EVENT_ID>. Postmortem §3.2."
+  }'
+
+# 2) Depois que TODAS as emissões foram revertidas, reverter o depósito:
+curl -X POST https://<host>/api/coins/reverse \
+  -H "Content-Type: application/json" \
+  -H "x-idempotency-key: rev-dep-$(uuidgen)" \
+  --cookie "<platform_admin_session>" \
+  -d '{
+    "kind": "deposit",
+    "deposit_id": "<DEPOSIT_ID>",
+    "reason": "Chargeback Asaas #<WEBHOOK_EVENT_ID>. Postmortem §3.2."
+  }'
+```
+
+Se a chamada (1) retornar 422 `INSUFFICIENT_BALANCE`, vá para §3.3
+(coins já gastas).
+
+Se a chamada (2) retornar 422 `INVARIANT_VIOLATION`, é porque ainda há
+emissões não revertidas — volte ao passo (1).
+
+**Bloco SQL legado (NÃO USAR, só referência)**:
+
+<details>
+<summary>SQL manual (deprecado após L03-13)</summary>
+
 ```sql
+-- ATENÇÃO: deprecado. Use /api/coins/reverse.
 BEGIN;
-  -- Para cada user_id da query 2.3, criar ledger entry de revogação
   INSERT INTO public.coin_ledger (
     user_id, issuer_group_id, delta_coins, reason, created_at_ms,
     idempotency_key
@@ -135,7 +173,7 @@ BEGIN;
   SELECT
     user_id,
     '<GROUP_ID>'::uuid,
-    -SUM(delta_coins),  -- negativo = burn
+    -SUM(delta_coins),
     'chargeback_revocation:' || '<DEPOSIT_ID>',
     EXTRACT(EPOCH FROM now())::bigint * 1000,
     'chargeback:' || '<DEPOSIT_ID>' || ':' || user_id::text
@@ -144,38 +182,10 @@ BEGIN;
     AND reason LIKE 'distribution%' || '<DEPOSIT_ID>' || '%'
   GROUP BY user_id
   HAVING SUM(delta_coins) > 0;
-
-  -- Não criar entry para users que já queimaram tudo (handled em 3.3)
 COMMIT;
 ```
 
-Passo 2 — reverter `custody_accounts.total_deposited_usd`:
-```sql
-BEGIN;
-  SELECT * FROM public.custody_accounts WHERE group_id = '<GROUP_ID>' FOR UPDATE;
-
-  UPDATE public.custody_accounts
-  SET total_deposited_usd = total_deposited_usd - <AMOUNT_USD>,
-      updated_at = now()
-  WHERE group_id = '<GROUP_ID>';
-
-  -- Recompute committed também (pois coins foram queimadas em 3.2#1):
-  UPDATE public.custody_accounts ca
-  SET total_committed = COALESCE((
-    SELECT SUM(delta_coins) FROM public.coin_ledger
-    WHERE issuer_group_id = ca.group_id
-  ), 0)
-  WHERE ca.group_id = '<GROUP_ID>';
-
-  -- Mark deposit refunded
-  UPDATE public.custody_deposits
-  SET status = 'refunded'
-  WHERE id = '<DEPOSIT_ID>';
-
-  -- Validate
-  SELECT * FROM public.check_custody_invariants() WHERE group_id = '<GROUP_ID>';
-COMMIT;
-```
+</details>
 
 ### 3.3 Coins já queimadas — registrar dívida (group debt)
 

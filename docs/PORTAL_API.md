@@ -222,6 +222,126 @@ distributions.
 - `503 SERVICE_UNAVAILABLE` — invariants check failed
 - `503 FEATURE_DISABLED` — `distribute_coins.enabled` kill switch off
 
+### `POST /api/coins/reverse` (L03-13)
+
+Canonical reembolso/estorno endpoint for the three financial flows
+covered by atomic RPCs in
+`supabase/migrations/20260421130000_l03_reverse_coin_flows.sql`:
+
+| `kind`      | Inverts                    | Primary failure modes                                        |
+|-------------|----------------------------|--------------------------------------------------------------|
+| `emission`  | `emit_coins_atomic`        | `INSUFFICIENT_BALANCE` (atleta já gastou)                    |
+| `burn`      | `execute_burn_atomic`      | `NOT_REVERSIBLE` (settlement já settled inter-club)          |
+| `deposit`   | `confirm_custody_deposit`  | `INVARIANT_VIOLATION` (refund quebraria lastro)              |
+
+Replaces the manual SQL blocks in `CHARGEBACK_RUNBOOK §3.2` with a
+transactional, idempotent, audited path.
+
+**Auth:** `platform_role='admin'` ONLY — `admin_master` do grupo **não**
+tem permissão. Rate limit: 10 req/min por actor. Kill switch:
+`coins.reverse.enabled`. CSRF default-deny (L17-06).
+
+**Body (Zod: `reverseCoinsSchema`, discriminated union):**
+
+```json
+// kind: emission
+{
+  "kind": "emission",
+  "original_ledger_id": "uuid",
+  "reason": "Chargeback Stripe CH_xxx. Postmortem #PR-4815.",
+  "idempotency_key": "rev-emi-abc123"   // or x-idempotency-key header
+}
+
+// kind: burn
+{
+  "kind": "burn",
+  "burn_ref_id": "<burn ref used in execute_burn_atomic>",
+  "reason": "Bug UI redeem duplicou. Postmortem #PR-4890.",
+  "idempotency_key": "rev-burn-abc123"
+}
+
+// kind: deposit
+{
+  "kind": "deposit",
+  "deposit_id": "uuid",
+  "reason": "Chargeback Stripe CH_yyy. Postmortem #PR-4815.",
+  "idempotency_key": "rev-dep-abc123"
+}
+```
+
+Validação: `reason` mínimo 10 chars, máximo 500 (postmortem
+obrigatório). `idempotency_key` mínimo 8 chars (no body ou header
+`x-idempotency-key`; um dos dois é obrigatório).
+
+**Response (200, shape varia por `kind`):**
+
+```json
+// emission
+{
+  "ok": true,
+  "kind": "emission",
+  "reversal_id": "uuid",
+  "reversal_ledger_id": "uuid",
+  "athlete_user_id": "uuid",
+  "reversed_amount": 100,
+  "new_balance": 0,
+  "was_idempotent": false
+}
+
+// burn
+{
+  "ok": true,
+  "kind": "burn",
+  "reversal_id": "uuid",
+  "clearing_event_id": "uuid",
+  "athlete_user_id": "uuid",
+  "reversed_amount": 80,
+  "new_balance": 80,
+  "settlements_cancelled": 2,
+  "was_idempotent": false
+}
+
+// deposit
+{
+  "ok": true,
+  "kind": "deposit",
+  "reversal_id": "uuid",
+  "deposit_id": "uuid",
+  "group_id": "uuid",
+  "refunded_usd": "200.00",
+  "was_idempotent": false
+}
+```
+
+**Idempotency:** idempotency anchor é a tabela `coin_reversal_log` com
+`UNIQUE (kind, idempotency_key)`. Replays retornam
+`was_idempotent: true` sem re-aplicar a mutação. Se você usar o header
+`x-idempotency-key`, o wrapper `withIdempotency` (L18-02) também
+cacheia a resposta inteira.
+
+**Common error codes:**
+- `401 UNAUTHORIZED` — sem sessão.
+- `403 FORBIDDEN` — caller não é `platform_admin`.
+- `400 VALIDATION_FAILED` — payload Zod inválido, `idempotency_key`
+  ausente ou reason < 10 chars.
+- `404 NOT_FOUND` — `LEDGER_NOT_FOUND`, `BURN_NOT_FOUND` ou
+  `DEPOSIT_NOT_FOUND`.
+- `422 INSUFFICIENT_BALANCE` — atleta já gastou as coins; ir para
+  `CHARGEBACK_RUNBOOK §3.3` (dívida do grupo).
+- `422 NOT_REVERSIBLE` — burn com settlement `settled` inter-club;
+  `REVERSE_COINS_RUNBOOK §5` (unwind manual).
+- `422 INVARIANT_VIOLATION` — refund quebraria
+  `deposited >= committed`; reverter emissões primeiro.
+- `422 INVALID_TARGET_STATE` — alvo não está no estado reversível
+  (reason ou status inválidos).
+- `422 CUSTODY_RECOMMIT_FAILED` — lastro atual insuficiente para
+  re-commitar custódia ao reverter burn.
+- `503 LOCK_NOT_AVAILABLE` (`Retry-After: 2`) — lock contention.
+- `503 SERVICE_UNAVAILABLE` — invariants health drift.
+- `503 FEATURE_DISABLED` — `coins.reverse.enabled` kill switch off.
+
+Runbook completo: `docs/runbooks/REVERSE_COINS_RUNBOOK.md`.
+
 ### `POST /api/checkout`
 
 Creates a checkout session for purchasing credit packages.
@@ -427,6 +547,7 @@ In-memory rate limiter per user ID per endpoint. Resets on deploy.
 |----------|:----------:|:------:|
 | `/api/distribute-coins` | 20 | 60s |
 | `/api/distribute-coins/batch` (L05-03) | 5 | 60s |
+| `/api/coins/reverse` (L03-13) | 10 | 60s (per actor) |
 | `/api/checkout` | 5 | 60s |
 | `/api/team/invite` | 10 | 60s |
 | `/api/team/remove` | 10 | 60s |
