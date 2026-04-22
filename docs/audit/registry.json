@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-22T21:48:20.433Z",
+  "generated_at": "2026-04-22T22:04:53.149Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 107,
-    "fix-pending": 240,
+    "fixed": 108,
+    "fix-pending": 239,
     "in-progress": 1
   },
   "by_wave": {
@@ -2527,9 +2527,10 @@
       "lens": 3,
       "title": "platform_revenue.fee_type CHECK",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "webhook",
@@ -2538,14 +2539,22 @@
         "performance",
         "reliability"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260420090000_l03_provider_fee_revenue_track.sql",
+        "portal/src/lib/platform-fee-types.ts",
+        "portal/src/lib/platform-fee-types.test.ts"
+      ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/platform-fee-types.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "d2de1fd"
+      ],
+      "owner": "cfo",
+      "runbook": "WITHDRAW_STUCK_RUNBOOK#3.3",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,

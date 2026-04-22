@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-22 21:48:20 UTC.
+> Atualizado em 2026-04-22 22:04:53 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -82,7 +82,7 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L03-06](./findings/L03-06-fx-spread-calculo-simetrico-entrada-saida.md) | 2 | L03 · CFO | FX spread — Cálculo simétrico entrada/saída | unassigned |
 | ⚪ na | ⏳ fix-pending | [L03-07](./findings/L03-07-cupom-100-pedido-de-0-00.md) | 3 | L03 · CFO | Cupom 100% / pedido de $0.00 | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L03-08](./findings/L03-08-custody-check-custody-invariants-valida-r-i-vs.md) | 2 | L03 · CFO | Custody check_custody_invariants — Valida R_i vs M_i mas não total_settled | unassigned |
-| 🟠 high | ⏳ fix-pending | [L03-09](./findings/L03-09-platform-revenue-fee-type-check.md) | 1 | L03 · CFO | platform_revenue.fee_type CHECK | unassigned |
+| 🟠 high | ✅ fixed | [L03-09](./findings/L03-09-platform-revenue-fee-type-check.md) | 1 | L03 · CFO | platform_revenue.fee_type CHECK | cfo |
 | 🟡 medium | ⏳ fix-pending | [L03-10](./findings/L03-10-custody-commit-coins-reserva-antes-de-credito-ao.md) | 2 | L03 · CFO | custody_commit_coins — Reserva ANTES de crédito ao atleta | unassigned |
 | ⚪ na | ⏳ fix-pending | [L03-11](./findings/L03-11-pedido-de-r-0-via-cupom-100-duplica.md) | 3 | L03 · CFO | Pedido de R$ 0 via cupom 100% (duplica 3.7) | unassigned |
 | 🟢 safe | ✅ fixed | [L03-12](./findings/L03-12-clearing-settlements-fees-concedidas-nulas.md) | 3 | L03 · CFO | clearing_settlements — Fees concedidas nulas | unassigned |
