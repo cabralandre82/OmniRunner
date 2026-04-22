@@ -5,7 +5,11 @@ import {
   verifyMercadoPagoSignature,
   WebhookError,
 } from "@/lib/webhook";
-import { confirmDepositByReference } from "@/lib/custody";
+import {
+  confirmDepositByReference,
+  handleCustodyDispute,
+  type CustodyDisputeOutcome,
+} from "@/lib/custody";
 import { auditLog } from "@/lib/audit";
 import { logger } from "@/lib/logger";
 import { metrics } from "@/lib/metrics";
@@ -212,7 +216,52 @@ async function _post(req: NextRequest) {
     return NextResponse.json({ ok: true, replayed: true, event_id: eventId });
   }
 
-  // ── 6. Confirm deposit ──────────────────────────────────────────────
+  // ── 6. Classify event and route ─────────────────────────────────────
+  //
+  // Pre-L03-20 this branch ALWAYS called `confirmDepositByReference` —
+  // a dispute/refund webhook would silently increment
+  // `custody.webhook.confirmed` for a deposit that was being REVERSED
+  // by the gateway. We now classify the event type first and route
+  // dispute / refund / chargeback payloads to
+  // `fn_handle_custody_dispute_atomic`.
+  const classification = classifyEvent(event, gateway);
+
+  if (classification.kind === "unsupported") {
+    // Accept + ack (200 OK) — unknown/untracked event types must not
+    // trigger gateway retries. Dedup row already recorded. Metrics +
+    // log so ops can spot unexpected topic growth.
+    metrics.increment("custody.webhook.unsupported", { gateway });
+    logger.info("custody.webhook.unsupported_event", {
+      request_id: requestId,
+      gateway,
+      event_id: eventId,
+      event_type: classification.eventType,
+    });
+    await markWebhookEventProcessed({ gateway, eventId });
+    return NextResponse.json({
+      ok: true,
+      skipped: true,
+      reason: "unsupported_event_type",
+      event_id: eventId,
+      event_type: classification.eventType,
+    });
+  }
+
+  if (classification.kind === "dispute" || classification.kind === "refund" || classification.kind === "chargeback") {
+    return handleDispute({
+      req,
+      requestId,
+      gateway,
+      eventId,
+      paymentReference: classification.paymentReference,
+      gatewayDisputeRef: classification.gatewayDisputeRef,
+      kind: classification.kind,
+      reasonCode: classification.reasonCode,
+      event,
+    });
+  }
+
+  // classification.kind === 'success' — legacy deposit-confirmation path.
   if (!paymentReference) {
     metrics.increment("custody.webhook.rejected", { reason: "no_payment_reference" });
     return apiError(req, "VALIDATION_FAILED", "No payment reference found", 400);
@@ -253,6 +302,337 @@ async function _post(req: NextRequest) {
     metrics.increment("custody.webhook.error", { gateway });
     return apiError(req, "INTERNAL_ERROR", msg, 422);
   }
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// L03-20 — dispute / refund / chargeback handler
+// ────────────────────────────────────────────────────────────────────────
+
+interface HandleDisputeArgs {
+  req: NextRequest;
+  requestId: string | null;
+  gateway: Gateway;
+  eventId: string;
+  paymentReference: string | null;
+  gatewayDisputeRef: string | null;
+  kind: "dispute" | "refund" | "chargeback";
+  reasonCode: string;
+  event: Record<string, unknown>;
+}
+
+async function handleDispute(args: HandleDisputeArgs): Promise<NextResponse> {
+  const { req, requestId, gateway, eventId, paymentReference, gatewayDisputeRef, kind, reasonCode, event } = args;
+
+  try {
+    const result = await handleCustodyDispute({
+      gateway,
+      gatewayEventId: eventId,
+      gatewayDisputeRef,
+      paymentReference,
+      kind,
+      reasonCode,
+      rawEvent: event,
+    });
+
+    if (!result) {
+      // Tables/RPC missing — degrade gracefully (legacy DB). Log loud
+      // because in prod this should never happen.
+      logger.error("custody.webhook.dispute_feature_unavailable", undefined, {
+        request_id: requestId,
+        gateway,
+        event_id: eventId,
+      });
+      metrics.increment("custody.webhook.error", { gateway, reason: "dispute_rpc_missing" });
+      return apiError(req, "SERVICE_UNAVAILABLE", "Dispute handling not available", 503);
+    }
+
+    metrics.increment("custody.webhook.dispute", {
+      gateway,
+      kind,
+      outcome: result.outcome,
+    });
+
+    logger.info("custody.webhook.dispute_handled", {
+      request_id: requestId,
+      gateway,
+      event_id: eventId,
+      kind,
+      reason_code: reasonCode,
+      outcome: result.outcome,
+      case_id: result.caseId,
+      case_state: result.caseState,
+      deposit_id: result.depositId,
+      reversal_id: result.reversalId,
+    });
+
+    // Audit for every NON-idempotent resolution — idempotent replays
+    // already audited on first call.
+    if (!result.wasIdempotent) {
+      await auditLog({
+        actorId: "system",
+        action: auditActionFor(result.outcome),
+        targetId: result.caseId,
+        metadata: {
+          gateway,
+          event_id: eventId,
+          kind,
+          reason_code: reasonCode,
+          outcome: result.outcome,
+          case_state: result.caseState,
+          deposit_id: result.depositId,
+          reversal_id: result.reversalId,
+          refunded_usd: result.refundedUsd,
+          payment_reference: paymentReference,
+        },
+      });
+    }
+
+    await markWebhookEventProcessed({ gateway, eventId });
+
+    return NextResponse.json({
+      ok: true,
+      event_id: eventId,
+      kind,
+      outcome: result.outcome,
+      case_id: result.caseId,
+      case_state: result.caseState,
+      deposit_id: result.depositId,
+      reversal_id: result.reversalId,
+      refunded_usd: result.refundedUsd,
+      was_idempotent: result.wasIdempotent,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Dispute handling failed";
+    logger.error("custody.webhook.dispute_failed", err, {
+      request_id: requestId,
+      gateway,
+      event_id: eventId,
+      kind,
+      payment_reference: paymentReference,
+    });
+    metrics.increment("custody.webhook.error", { gateway, reason: "dispute" });
+    // 500 (not 4xx) so the gateway retries — our idempotency key is
+    // (gateway, event_id), so retrying is safe and preferred over
+    // dropping a legitimate dispute.
+    return apiError(req, "INTERNAL_ERROR", msg, 500);
+  }
+}
+
+function auditActionFor(outcome: CustodyDisputeOutcome): string {
+  switch (outcome) {
+    case "reversed":          return "custody.dispute.auto_reversed";
+    case "escalated":         return "custody.dispute.escalated_cfo";
+    case "deposit_not_found": return "custody.dispute.deposit_not_found";
+    case "dismissed":         return "custody.dispute.dismissed";
+    case "idempotent_replay": return "custody.dispute.replay";
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// Helpers — event classification (L03-20)
+// ────────────────────────────────────────────────────────────────────────
+
+type EventKind = "success" | "dispute" | "refund" | "chargeback" | "unsupported";
+
+interface EventClassification {
+  kind: EventKind;
+  /** Human-readable event type echoed in logs/response for observability. */
+  eventType: string;
+  /** `pi_…` / MP payment id — the key used to locate the custody_deposit. */
+  paymentReference: string | null;
+  /** `du_…` / `re_…` / MP refund id — stored on custody_dispute_cases. */
+  gatewayDisputeRef: string | null;
+  /** Gateway-reported reason (or synthesized constant when none exists). */
+  reasonCode: string;
+}
+
+/**
+ * Classify a verified webhook payload into one of the L03-20 buckets.
+ *
+ * The classifier is strictly driven by the payload `type` (Stripe) or
+ * derived status (MercadoPago). Unknown types map to `unsupported` —
+ * the receiver ACKs 200 and persists the dedup row, so the gateway
+ * stops retrying, but no business logic runs.
+ *
+ * For Stripe dispute payloads the `paymentReference` is pulled from
+ * `data.object.payment_intent` (the dispute resource itself has id
+ * `du_…` which is NOT what `custody_deposits.payment_reference`
+ * stores).
+ */
+function classifyEvent(
+  event: Record<string, unknown>,
+  gateway: Gateway,
+): EventClassification {
+  if (gateway === "stripe") return classifyStripe(event);
+  return classifyMercadoPago(event);
+}
+
+function classifyStripe(event: Record<string, unknown>): EventClassification {
+  const type = typeof event.type === "string" ? event.type : "";
+  const dataObj =
+    (event as { data?: { object?: Record<string, unknown> } }).data?.object ?? {};
+
+  // Pull these with the tolerant shape helpers — Stripe payloads can be
+  // sparse (esp. in test mode) and we don't want to crash on a missing
+  // nested field.
+  const objectId = typeof dataObj.id === "string" ? dataObj.id : null;
+  const paymentIntent =
+    typeof dataObj.payment_intent === "string" ? dataObj.payment_intent : null;
+  const reason = typeof dataObj.reason === "string" ? dataObj.reason : null;
+  const status = typeof dataObj.status === "string" ? dataObj.status : null;
+
+  switch (type) {
+    case "payment_intent.succeeded":
+    case "checkout.session.completed":
+      return {
+        kind: "success",
+        eventType: type,
+        paymentReference: objectId,
+        gatewayDisputeRef: null,
+        reasonCode: "payment_succeeded",
+      };
+
+    case "charge.dispute.created":
+    case "charge.dispute.funds_withdrawn":
+      return {
+        kind: "chargeback",
+        eventType: type,
+        paymentReference: paymentIntent,
+        gatewayDisputeRef: objectId,
+        reasonCode: reason ?? "dispute_opened",
+      };
+
+    case "charge.dispute.closed":
+      // Only `lost` requires reversal — `won` means we keep the funds
+      // (no-op). `warning_*` states are informational: we classify
+      // them as unsupported so they ACK without side effects.
+      if (status === "lost") {
+        return {
+          kind: "chargeback",
+          eventType: type,
+          paymentReference: paymentIntent,
+          gatewayDisputeRef: objectId,
+          reasonCode: reason ?? "dispute_lost",
+        };
+      }
+      return {
+        kind: "unsupported",
+        eventType: `${type}:${status ?? "no_status"}`,
+        paymentReference: paymentIntent,
+        gatewayDisputeRef: objectId,
+        reasonCode: reason ?? "dispute_closed_non_lost",
+      };
+
+    case "charge.refunded":
+    case "refund.created":
+    case "charge.refund.updated": {
+      // `charge.refund.updated` with status=succeeded is the canonical
+      // "funds moved back to customer" signal on Stripe. For legacy
+      // `charge.refunded` events `dataObj.refunded=true` is what
+      // matters; we treat both as refunds.
+      return {
+        kind: "refund",
+        eventType: type,
+        paymentReference: paymentIntent,
+        gatewayDisputeRef: objectId,
+        reasonCode: reason ?? "refund_issued",
+      };
+    }
+
+    default:
+      return {
+        kind: "unsupported",
+        eventType: type || "unknown",
+        paymentReference: objectId,
+        gatewayDisputeRef: null,
+        reasonCode: "stripe_unsupported",
+      };
+  }
+}
+
+function classifyMercadoPago(event: Record<string, unknown>): EventClassification {
+  // MP's webhook shape is `{type: 'payment', action: 'payment.updated',
+  // data: {id}}` — the DETAILED status (approved/refunded/charged_back)
+  // is NOT in the webhook body. Gateways that only carry the id force
+  // us to fetch the payment from the API to know the status, but for
+  // the `action` field (when present) we can shortcut.
+  //
+  // We honour two signals in order of trust:
+  //   1. `action` field (`payment.refunded`, `payment.charged_back`,
+  //      `payment.created`/`payment.updated` default to success).
+  //   2. `data.status` (if the integrator attaches it — our own internal
+  //      retry harness does, Stripe-style).
+  const action =
+    typeof (event as { action?: unknown }).action === "string"
+      ? ((event as { action: string }).action)
+      : null;
+  const type =
+    typeof (event as { type?: unknown }).type === "string"
+      ? ((event as { type: string }).type)
+      : null;
+  const data = (event as { data?: { id?: unknown; status?: unknown } }).data ?? {};
+  const dataId =
+    data.id !== undefined && data.id !== null && String(data.id).length > 0
+      ? String(data.id)
+      : null;
+  const status =
+    typeof data.status === "string" ? data.status : null;
+
+  const eventType = action ?? type ?? "unknown";
+
+  // Refund / chargeback signals.
+  if (
+    action === "payment.refunded" ||
+    action === "refund.created" ||
+    status === "refunded"
+  ) {
+    return {
+      kind: "refund",
+      eventType,
+      paymentReference: dataId,
+      gatewayDisputeRef: null,
+      reasonCode: "mp_refunded",
+    };
+  }
+  if (
+    action === "payment.charged_back" ||
+    status === "charged_back"
+  ) {
+    return {
+      kind: "chargeback",
+      eventType,
+      paymentReference: dataId,
+      gatewayDisputeRef: null,
+      reasonCode: "mp_charged_back",
+    };
+  }
+
+  // Default MP `payment.updated` / `payment.created` — treat as
+  // confirmation. The existing receiver fetched the detailed status
+  // from the MP API here; we preserve that behaviour downstream via
+  // `confirmDepositByReference` which is idempotent.
+  if (
+    action === null ||
+    action === "payment.created" ||
+    action === "payment.updated" ||
+    type === "payment"
+  ) {
+    return {
+      kind: "success",
+      eventType,
+      paymentReference: dataId,
+      gatewayDisputeRef: null,
+      reasonCode: "mp_payment_updated",
+    };
+  }
+
+  return {
+    kind: "unsupported",
+    eventType,
+    paymentReference: dataId,
+    gatewayDisputeRef: null,
+    reasonCode: "mp_unsupported",
+  };
 }
 
 // ────────────────────────────────────────────────────────────────────────

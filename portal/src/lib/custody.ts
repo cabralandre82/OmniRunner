@@ -322,6 +322,90 @@ export async function createCustodyDepositWithFx(
 }
 
 /**
+ * L03-20 — handle a dispute / refund / chargeback gateway event.
+ *
+ * Delegates to `fn_handle_custody_dispute_atomic` which:
+ *   • upserts `custody_dispute_cases` (idempotent by gateway + event_id);
+ *   • resolves the deposit by `payment_reference`;
+ *   • attempts `reverse_custody_deposit_atomic` when the deposit is
+ *     `confirmed`, converting `INVARIANT_VIOLATION` (coins already
+ *     emitted against the backing) into `ESCALATED_CFO` instead of
+ *     re-raising — ops picks it up from `/platform/disputes`.
+ *
+ * Returns `null` when the underlying tables/functions are absent (legacy
+ * DBs running on an older migration level) so the route handler can
+ * degrade gracefully.
+ */
+export type CustodyDisputeOutcome =
+  | "idempotent_replay"
+  | "reversed"
+  | "escalated"
+  | "deposit_not_found"
+  | "dismissed";
+
+export interface HandleCustodyDisputeInput {
+  gateway: "stripe" | "mercadopago" | "asaas";
+  gatewayEventId: string;
+  gatewayDisputeRef: string | null;
+  paymentReference: string | null;
+  kind: "dispute" | "refund" | "chargeback";
+  reasonCode: string;
+  rawEvent: Record<string, unknown>;
+}
+
+export interface HandleCustodyDisputeResult {
+  outcome: CustodyDisputeOutcome;
+  caseId: string;
+  caseState: string;
+  depositId: string | null;
+  groupId: string | null;
+  amountUsd: number | null;
+  reversalId: string | null;
+  refundedUsd: number | null;
+  wasIdempotent: boolean;
+}
+
+export async function handleCustodyDispute(
+  input: HandleCustodyDisputeInput,
+): Promise<HandleCustodyDisputeResult | null> {
+  try {
+    const db = createServiceClient();
+    const { data, error } = await db.rpc("fn_handle_custody_dispute_atomic", {
+      p_gateway: input.gateway,
+      p_gateway_event_id: input.gatewayEventId,
+      p_gateway_dispute_ref: input.gatewayDisputeRef,
+      p_payment_reference: input.paymentReference,
+      p_kind: input.kind,
+      p_reason_code: input.reasonCode,
+      p_raw_event: input.rawEvent,
+    });
+
+    if (error) {
+      if (isTableMissing(error)) return null;
+      throw new Error(error.message ?? "fn_handle_custody_dispute_atomic failed");
+    }
+
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) throw new Error("fn_handle_custody_dispute_atomic returned no row");
+
+    return {
+      outcome: row.outcome as CustodyDisputeOutcome,
+      caseId: row.case_id,
+      caseState: row.case_state,
+      depositId: row.deposit_id ?? null,
+      groupId: row.group_id ?? null,
+      amountUsd: row.amount_usd === null || row.amount_usd === undefined ? null : Number(row.amount_usd),
+      reversalId: row.reversal_id ?? null,
+      refundedUsd: row.refunded_usd === null || row.refunded_usd === undefined ? null : Number(row.refunded_usd),
+      wasIdempotent: Boolean(row.was_idempotent),
+    };
+  } catch (err) {
+    if (isTableMissing(err)) return null;
+    throw err;
+  }
+}
+
+/**
  * Confirm deposit by payment_reference (idempotent — webhook-safe).
  */
 export async function confirmDepositByReference(paymentReference: string): Promise<{ depositId: string; alreadyConfirmed: boolean } | null> {

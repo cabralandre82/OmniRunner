@@ -601,8 +601,10 @@ async function main() {
       id: depositId,
       group_id: club.groupId,
       amount_usd: 200,
+      coins_equivalent: 200,
+      payment_gateway: "stripe",
+      payment_reference: `pi_l03_13_dep_${depositId}`,
       status: "pending",
-      external_ref: `l03_13_dep_${depositId}`,
     });
     if (dErr) throw new Error(`custody_deposits: ${dErr.message}`);
     const { error: cErr } = await db.rpc("confirm_custody_deposit", {
@@ -653,8 +655,10 @@ async function main() {
       id: depositId,
       group_id: club.groupId,
       amount_usd: 100,
+      coins_equivalent: 100,
+      payment_gateway: "stripe",
+      payment_reference: `pi_l03_13_dep_inv_${depositId}`,
       status: "pending",
-      external_ref: `l03_13_dep_inv_${depositId}`,
     });
     if (dErr) throw new Error(`deposit insert: ${dErr.message}`);
     await db.rpc("confirm_custody_deposit", {
@@ -705,8 +709,10 @@ async function main() {
       id: depositId,
       group_id: club.groupId,
       amount_usd: 50,
+      coins_equivalent: 50,
+      payment_gateway: "stripe",
+      payment_reference: `pi_l03_13_dep_pending_${depositId}`,
       status: "pending",
-      external_ref: `l03_13_dep_pending_${depositId}`,
     });
     if (dErr) throw new Error(`deposit: ${dErr.message}`);
 
