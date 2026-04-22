@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-21 12:56:56 UTC.
+> Atualizado em 2026-04-22 21:48:20 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -93,7 +93,7 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L03-17](./findings/L03-17-arredondamento-ieee-754-em-typescript.md) | 1 | L03 · CFO | Arredondamento IEEE 754 em TypeScript | portal-team |
 | 🟢 safe | ✅ fixed | [L03-18](./findings/L03-18-coin-ledger-delta-coins-tipo-integer.md) | 3 | L03 · CFO | coin_ledger.delta_coins — Tipo integer | unassigned |
 | ⚪ na | ⏳ fix-pending | [L03-19](./findings/L03-19-nfs-e-fiscal-nao-observado.md) | 3 | L03 · CFO | NFS-e / fiscal — Não observado | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L03-20](./findings/L03-20-disputa-chargeback-stripe.md) | 1 | L03 · CFO | Disputa / chargeback Stripe | unassigned |
+| 🔴 critical | ✅ fixed | [L03-20](./findings/L03-20-disputa-chargeback-stripe.md) | 1 | L03 · CFO | Disputa / chargeback Stripe | platform-ops@omnirunner.app |
 | 🔴 critical | ✅ fixed | [L04-01](./findings/L04-01-fn-delete-user-data-e-incompleta-multiplas-tabelas.md) | 0 | L04 · CLO | fn_delete_user_data é incompleta — múltiplas tabelas com PII não cobertas | unassigned |
 | 🔴 critical | ✅ fixed | [L04-02](./findings/L04-02-edge-function-delete-account-deleta-auth-users-mesmo.md) | 1 | L04 · CLO | Edge Function delete-account deleta auth.users mesmo quando fn_delete_user_data falha | platform |
 | 🔴 critical | ✅ fixed | [L04-03](./findings/L04-03-nao-ha-registro-de-consentimento-opt-in-explicito.md) | 0 | L04 · CLO | Não há registro de consentimento (opt-in explícito LGPD Art. 8) | platform-privacy |

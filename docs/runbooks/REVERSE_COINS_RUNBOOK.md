@@ -6,7 +6,10 @@
 > **Severidade**: P2 por padrão (P1 se envolve chargeback de gateway
 > em cima de coins já distribuídas — ver também `CHARGEBACK_RUNBOOK`).
 > **Tempo alvo**: decisão < 2h, remediação < 24h.
-> **Linked findings**: L03-13 (este runbook), L06-01, L08-07.
+> **Linked findings**: L03-13 (este runbook), L03-20
+> ([`DISPUTE_CHARGEBACK_RUNBOOK`](DISPUTE_CHARGEBACK_RUNBOOK.md) —
+> chamadores deste runbook a partir de webhook de disputa), L06-01,
+> L08-07.
 > **Última revisão**: 2026-04-21
 
 ---

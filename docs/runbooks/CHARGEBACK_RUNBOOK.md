@@ -7,8 +7,12 @@
 > **Tempo alvo**: ack < 4h, resposta jurídica < 24h, prazo legal Asaas
 > 7 dias / Stripe 21 dias.
 > **Linked findings**: L06-01, L01-03 (distribute-coins), L09-04
-> (fiscal receipts).
-> **Última revisão**: 2026-04-17
+> (fiscal receipts), L03-20
+> ([`DISPUTE_CHARGEBACK_RUNBOOK`](DISPUTE_CHARGEBACK_RUNBOOK.md) —
+> triagem automática de Stripe/MP dispute webhooks;
+> este runbook cobre a parte §3.3 (dívida-do-grupo) chamada quando o
+> L03-20 escala um caso como `ESCALATED_CFO`).
+> **Última revisão**: 2026-04-21
 
 ---
 

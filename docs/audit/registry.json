@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-21T12:56:56.937Z",
+  "generated_at": "2026-04-22T21:48:20.433Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 106,
-    "fix-pending": 241,
+    "fixed": 107,
+    "fix-pending": 240,
     "in-progress": 1
   },
   "by_wave": {
@@ -2847,9 +2847,10 @@
       "lens": 3,
       "title": "Disputa / chargeback Stripe",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "lgpd",
         "finance",
@@ -2859,15 +2860,22 @@
         "edge-function"
       ],
       "files": [
-        "supabase/functions/asaas-webhook/index.ts"
+        "portal/src/app/api/custody/webhook/route.ts",
+        "portal/src/lib/custody.ts",
+        "supabase/migrations/20260421150000_l03_13_hotfix_ambiguous_refs.sql",
+        "supabase/migrations/20260421160000_l03_dispute_chargeback_flow.sql"
       ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/app/api/custody/webhook/route.test.ts",
+        "tools/test_l03_20_dispute_chargeback.ts",
+        "supabase/migrations/20260421160000_l03_dispute_chargeback_flow.sql"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "platform-ops@omnirunner.app",
+      "runbook": "docs/runbooks/DISPUTE_CHARGEBACK_RUNBOOK.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
