@@ -8,8 +8,10 @@
 > **Tempo alvo**: decisão < 2h, remediação < 24h.
 > **Linked findings**: L03-13 (este runbook), L03-20
 > ([`DISPUTE_CHARGEBACK_RUNBOOK`](DISPUTE_CHARGEBACK_RUNBOOK.md) —
-> chamadores deste runbook a partir de webhook de disputa), L06-01,
-> L08-07.
+> chamadores deste runbook a partir de webhook de disputa), L03-02
+> ([`CLEARING_FEE_FREEZE_RUNBOOK`](CLEARING_FEE_FREEZE_RUNBOOK.md) — use
+> reverse_coin_emission + emit_coins_atomic para corrigir snapshots de
+> fee rate errados), L06-01, L08-07.
 > **Última revisão**: 2026-04-21
 
 ---

@@ -4,8 +4,9 @@
 > **Severidade**: P1 (no immediate money loss, mas erode confiança e
 > contabilidade fica suja).
 > **Tempo alvo**: ack < 30min, mitigação < 2h.
-> **Linked findings**: L06-01, L02-02 (settle exception swallow), L19-05.
-> **Última revisão**: 2026-04-17
+> **Linked findings**: L06-01, L02-02 (settle exception swallow), L19-05, L03-02 (frozen fee rate).
+> **Linked runbooks**: [`CLEARING_FEE_FREEZE_RUNBOOK.md`](./CLEARING_FEE_FREEZE_RUNBOOK.md) para disputas sobre taxa cobrada em settlement já `settled`.
+> **Última revisão**: 2026-04-21
 
 ---
 

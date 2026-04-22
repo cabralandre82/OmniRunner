@@ -21,7 +21,9 @@ tests:
   - tools/test_l03_20_dispute_chargeback.ts           # 14/14 pgsandbox
   - supabase/migrations/20260421160000_l03_dispute_chargeback_flow.sql  # self-test in-migration (4 branches)
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 4b5aaed
+  - 8acfde7
 owner: platform-ops@omnirunner.app
 runbook: docs/runbooks/DISPUTE_CHARGEBACK_RUNBOOK.md
 effort_points: 5
