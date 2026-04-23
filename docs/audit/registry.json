@@ -8214,26 +8214,38 @@
       "lens": 16,
       "title": "Strava / TrainingPeaks OAuth sem telemetria de uso",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "webhook",
         "integration"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421530000_l16_06_integration_telemetry.sql",
+        "supabase/functions/_shared/integration_telemetry.ts",
+        "supabase/functions/strava-webhook/index.ts",
+        "supabase/functions/trainingpeaks-oauth/index.ts",
+        "supabase/functions/trainingpeaks-sync/index.ts",
+        "portal/src/app/api/platform/integrations/health/route.ts",
+        "tools/audit/check-integration-telemetry.ts"
+      ],
       "correction_type": "code",
       "test_required": true,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:cfc0a10"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "note": "Integration telemetry pipeline: integration_events append-only log (RLS own+admin, partial error indexes, 90d retention) + fn_log_integration_event writer (SECURITY DEFINER, service-role, input clamping) + fn_integration_health_snapshot / fn_integration_connected_counts aggregators (platform_admin only, 42501->403) + strava-webhook, trainingpeaks-oauth, trainingpeaks-sync instrumented via _shared/integration_telemetry.ts + portal /api/platform/integrations/health route + 61-invariant audit:integration-telemetry guard."
     },
     {
       "id": "L16-07",
@@ -8835,26 +8847,33 @@
       "lens": 18,
       "title": "Event bus inexistente — cascatas de efeitos em código imperativo",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "edge-function",
         "migration"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421540000_l18_05_outbox_event_bus.sql",
+        "tools/audit/check-outbox-event-bus.ts"
+      ],
       "correction_type": "process",
       "test_required": true,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:b676952"
+      ],
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Durable transactional outbox: outbox_events table (UNIQUE event_key, 15 event_types, 7 aggregate_types, pending->processing->completed/failed/dead state-machine CHECKs, attempts+backoff+last_error, 4 indexes, admin-only RLS, 30d retention). Lifecycle RPCs (SECURITY DEFINER, service-role): fn_outbox_emit (ON CONFLICT DO NOTHING), fn_outbox_claim (FOR UPDATE SKIP LOCKED + visibility lease), fn_outbox_complete, fn_outbox_fail (dead on max_attempts, otherwise backoff re-queue), fn_outbox_dlq sweep. AFTER UPDATE OF is_verified trigger emits session.verified with idempotent event_key, fails open via RAISE WARNING. 43-invariant audit:outbox-event-bus guard."
     },
     {
       "id": "L18-06",
@@ -10166,26 +10185,33 @@
       "lens": 21,
       "title": "Anti-cheat pode publicamente marcar elite como suspeito",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "personas",
         "athlete-pro"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421550000_l21_10_athlete_review_quarantine.sql",
+        "tools/audit/check-athlete-review-quarantine.ts"
+      ],
       "correction_type": "process",
       "test_required": true,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:6a9eb88"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "note": "Elite reputation protection: sessions.review_status state-machine column (none/pending_review/in_review/approved/rejected) + fn_session_visibility_status (STABLE SECURITY DEFINER) returns viewer-scoped payload (neutral labels for non-owners, integrity_flags only for owner+admin) + athlete_review_requests queue (RLS own read/insert + admin read/update, unique-open partial index, https-only evidence_urls max 5) + fn_request_session_review RPC (gated on ownership + reviewable state + NOTHING_TO_REVIEW, flips review_status atomically) + BEFORE UPDATE trigger fn_sessions_review_status_guard enforcing legal transitions. 32-invariant audit:athlete-review-quarantine guard."
     },
     {
       "id": "L21-11",
