@@ -18,7 +18,8 @@ import { classifyError } from "../_shared/errors.ts";
  *   { action: "grant" | "revoke" | "status",
  *     consent_type: "terms" | "privacy" | "health_data" | "location_tracking"
  *                 | "marketing" | "third_party_strava"
- *                 | "third_party_trainingpeaks" | "coach_data_share",
+ *                 | "third_party_trainingpeaks" | "coach_data_share"
+ *                 | "club_adhesion" | "athlete_contract",  // L09-09
  *     version?: string  // obrigatório para action=grant
  *   }
  *
@@ -42,6 +43,9 @@ const VALID_TYPES = new Set([
   "third_party_strava",
   "third_party_trainingpeaks",
   "coach_data_share",
+  // L09-09 — contratos privados versionados (TERMO_ADESAO_ASSESSORIA / TERMO_ATLETA)
+  "club_adhesion",
+  "athlete_contract",
 ]);
 
 const VALID_ACTIONS = new Set(["grant", "revoke", "status"]);

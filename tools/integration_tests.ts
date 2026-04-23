@@ -1636,10 +1636,10 @@ async function testConstraints() {
   // L04-03: LGPD consent management (consent_events + RPCs)
   // ══════════════════════════════════════════════════════════════════════════
 
-  await test("L04-03: consent_policy_versions seed has 8 canonical types", async () => {
+  await test("L04-03/L09-09: consent_policy_versions seed has 10 canonical types", async () => {
     const { data, error } = await db
       .from("consent_policy_versions")
-      .select("consent_type, current_version, minimum_version, is_required");
+      .select("consent_type, current_version, minimum_version, is_required, document_hash");
     assert(!error, `L04-03: select policy versions falhou: ${error?.message}`);
     const rows = data ?? [];
     const types = new Set(rows.map((r: any) => r.consent_type));
@@ -1647,11 +1647,19 @@ async function testConstraints() {
       "terms", "privacy", "health_data", "location_tracking",
       "marketing", "third_party_strava", "third_party_trainingpeaks",
       "coach_data_share",
+      // L09-09 — contratos privados (TERMO_ADESAO_ASSESSORIA, TERMO_ATLETA)
+      "club_adhesion", "athlete_contract",
     ]) {
-      assert(types.has(t), `L04-03: policy '${t}' ausente do seed`);
+      assert(types.has(t), `L04-03/L09-09: policy '${t}' ausente do seed`);
     }
     const required = rows.filter((r: any) => r.is_required).length;
     assert(required >= 4, `L04-03: esperado ≥4 policies required, got ${required}`);
+    // L09-09 — club_adhesion e athlete_contract devem ter document_hash não-nulo
+    for (const t of ["club_adhesion", "athlete_contract"]) {
+      const row = rows.find((r: any) => r.consent_type === t);
+      assert(row && typeof row.document_hash === "string" && row.document_hash.length === 64,
+        `L09-09: policy '${t}' sem document_hash SHA-256 (got: ${JSON.stringify(row?.document_hash)})`);
+    }
   });
 
   await test("L04-03: profiles ganhou colunas de snapshot de consentimento", async () => {

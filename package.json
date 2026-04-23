@@ -6,7 +6,8 @@
     "prepare": "npx lefthook install",
     "audit:build": "npx tsx tools/audit/build-registry.ts",
     "audit:verify": "npx tsx tools/audit/verify.ts",
-    "audit:check": "npx tsx tools/audit/verify.ts && npx tsx tools/audit/build-registry.ts --check"
+    "audit:check": "npx tsx tools/audit/verify.ts && npx tsx tools/audit/build-registry.ts --check",
+    "legal:check": "npx tsx tools/legal/check-document-hashes.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.4.2",

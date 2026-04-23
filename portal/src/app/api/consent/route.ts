@@ -24,6 +24,9 @@ const VALID_TYPES_LIST = [
   "third_party_strava",
   "third_party_trainingpeaks",
   "coach_data_share",
+  // L09-09 — contratos privados versionados
+  "club_adhesion",
+  "athlete_contract",
 ] as const;
 const VALID_TYPES = new Set<string>(VALID_TYPES_LIST);
 
