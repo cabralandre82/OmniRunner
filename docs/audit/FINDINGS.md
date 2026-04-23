@@ -259,7 +259,7 @@ Total: **348** findings.
 | 🔴 critical | ⏳ fix-pending | [L17-02](./findings/L17-02-5378-linhas-em-portal-src-lib-ts-e.md) | 1 | L17 · VP Eng | 5378 linhas em portal/src/lib/*.ts e sem segregação por bounded context | unassigned |
 | 🟠 high | ⏳ fix-pending | [L17-03](./findings/L17-03-witherrorhandler-usa-any-em-routeargs.md) | 1 | L17 · VP Eng | withErrorHandler usa any em routeArgs | unassigned |
 | 🟠 high | ⏳ fix-pending | [L17-04](./findings/L17-04-testes-unitarios-em-portal-src-lib-qa-test.md) | 1 | L17 · VP Eng | Testes unitários em portal/src/lib/qa-*.test.ts — arquivos >800 linhas | unassigned |
-| 🟠 high | ⏳ fix-pending | [L17-05](./findings/L17-05-logger-silencia-errors-nao-error.md) | 1 | L17 · VP Eng | Logger silencia errors não-Error | unassigned |
+| 🟠 high | ✅ fixed | [L17-05](./findings/L17-05-logger-silencia-errors-nao-error.md) | 1 | L17 · VP Eng | Logger silencia errors não-Error | portal |
 | 🟠 high | ✅ fixed | [L17-06](./findings/L17-06-csrfcheck-nao-e-chamado-no-middleware-central.md) | 1 | L17 · VP Eng | csrfCheck não é chamado no middleware central | platform |
 | 🟡 medium | ⏳ fix-pending | [L17-07](./findings/L17-07-nao-ha-docs-adr-ativo-para-decisoes-arquiteturais.md) | 2 | L17 · VP Eng | Não há docs/adr/ ativo para decisões arquiteturais | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L17-08](./findings/L17-08-ausencia-de-monorepo-tooling-turbo-nx-pnpm-workspaces.md) | 2 | L17 · VP Eng | Ausência de monorepo tooling (turbo, nx, pnpm-workspaces) | unassigned |

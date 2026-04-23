@@ -8155,28 +8155,35 @@
       "lens": 17,
       "title": "Logger silencia errors não-Error",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "portal",
-        "observability"
+        "observability",
+        "sentry"
       ],
       "files": [
-        "portal/src/lib/logger.ts"
+        "portal/src/lib/logger.ts",
+        "tools/audit/check-logger-sentry-capture.ts",
+        "docs/runbooks/LOGGER_SENTRY_CAPTURE_RUNBOOK.md"
       ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/logger.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "4549616"
+      ],
+      "owner": "portal",
+      "runbook": "docs/runbooks/LOGGER_SENTRY_CAPTURE_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "2026-04-21 — fixed. logger.error now unconditionally reports to Sentry (captureException for Error, captureMessage for everything else including undefined/null). normalizeErrorFields helper produces consistent console log shape. 4 production call-sites (custody webhook × 3, checkout proxy) are now observable in Sentry. CI npm run audit:logger-sentry-capture + runbook."
     },
     {
       "id": "L17-06",
