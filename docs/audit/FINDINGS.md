@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-22 23:36:06 UTC.
+> Atualizado em 2026-04-23 00:46:54 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -117,7 +117,7 @@ Total: **348** findings.
 | 🟠 high | ⏳ fix-pending | [L05-06](./findings/L05-06-championship-champ-cancel-refund-de-badges-parcial-e.md) | 1 | L05 · CPO | Championship champ-cancel: refund de badges parcial e silencioso | unassigned |
 | 🟠 high | ⏳ fix-pending | [L05-07](./findings/L05-07-swap-amount-minimo-us-100-inviabiliza-grupos-pequenos.md) | 1 | L05 · CPO | Swap: amount mínimo US$ 100 inviabiliza grupos pequenos | unassigned |
 | 🟠 high | ⏳ fix-pending | [L05-08](./findings/L05-08-withdraw-nenhuma-tela-de-progresso-para-pending-processing.md) | 1 | L05 · CPO | Withdraw: nenhuma tela de progresso para pending→processing→completed | unassigned |
-| 🟠 high | ⏳ fix-pending | [L05-09](./findings/L05-09-deposit-custody-deposits-sem-cap-diario-antifraude.md) | 1 | L05 · CPO | Deposit custody_deposits — sem cap diário antifraude | unassigned |
+| 🟠 high | ✅ fixed | [L05-09](./findings/L05-09-deposit-custody-deposits-sem-cap-diario-antifraude.md) | 1 | L05 · CPO | Deposit custody_deposits — sem cap diário antifraude | cfo+ciso |
 | 🟡 medium | ⏳ fix-pending | [L05-10](./findings/L05-10-swap-offers-visivel-para-todos-os-grupos-sem.md) | 2 | L05 · CPO | Swap offers: visível para todos os grupos, sem filtro de contraparte | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L05-11](./findings/L05-11-ui-distribute-coins-sem-confirmacao-dupla-de-grandes.md) | 2 | L05 · CPO | UI distribute-coins: sem confirmação dupla de grandes valores | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L05-12](./findings/L05-12-challenges-sem-regras-de-tie-break.md) | 2 | L05 · CPO | Challenges sem regras de tie-break | unassigned |

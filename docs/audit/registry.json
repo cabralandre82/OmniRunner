@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-22T23:36:06.050Z",
+  "generated_at": "2026-04-23T00:46:54.035Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 109,
-    "fix-pending": 238,
+    "fixed": 110,
+    "fix-pending": 237,
     "in-progress": 1
   },
   "by_wave": {
@@ -3700,21 +3700,35 @@
       "lens": 5,
       "title": "Deposit custody_deposits — sem cap diário antifraude",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
-        "migration"
+        "migration",
+        "antifraud",
+        "aml",
+        "custody"
       ],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "supabase/migrations/20260421180000_l05_09_custody_daily_deposit_cap.sql",
+        "portal/src/app/api/custody/route.ts",
+        "portal/src/app/api/platform/custody/[groupId]/daily-cap/route.ts"
+      ],
+      "correction_type": "migration",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l05_09_custody_daily_cap.ts",
+        "portal/src/app/api/custody/route.test.ts",
+        "portal/src/app/api/platform/custody/[groupId]/daily-cap/route.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "d2cf37f14678c1c8e196e0957ab48d2c141a71ad"
+      ],
+      "owner": "cfo+ciso",
+      "runbook": "docs/runbooks/CUSTODY_DAILY_CAP_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
