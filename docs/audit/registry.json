@@ -4612,30 +4612,43 @@
       "lens": 7,
       "title": "Flutter deep link Strava OAuth sem state validation (CSRF)",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "integration",
         "mobile",
         "ux",
-        "seo"
+        "security",
+        "csrf"
       ],
       "files": [
-        "omni_runner/lib/core/deep_links/deep_link_handler.dart"
+        "omni_runner/lib/features/strava/data/strava_oauth_state.dart",
+        "omni_runner/lib/features/strava/data/strava_auth_repository_impl.dart",
+        "omni_runner/lib/core/errors/integrations_failures.dart",
+        "omni_runner/lib/core/errors/strava_failures.dart",
+        "omni_runner/lib/core/deep_links/deep_link_handler.dart",
+        "omni_runner/lib/presentation/screens/settings_screen.dart",
+        "tools/audit/check-strava-oauth-state.ts",
+        "docs/runbooks/STRAVA_OAUTH_CSRF_RUNBOOK.md"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "omni_runner/test/features/strava/strava_oauth_state_test.dart",
+        "omni_runner/test/features/strava/strava_auth_repository_test.dart"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "89afcb8"
+      ],
+      "owner": "mobile",
+      "runbook": "docs/runbooks/STRAVA_OAUTH_CSRF_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "2026-04-21 — fixed. OAuthCsrfViolation failure class with reason in {state_missing, state_mismatch} surfaced distinctly from settings_screen UX; StravaOAuthStateGuard (32-byte CSPRNG, FlutterSecureStorage, 10-min TTL, constant-time compare, consume-once) wired into StravaAuthRepositoryImpl.authenticate. CI npm run audit:strava-oauth-state (17 checks) + runbook. Deep-link handler keeps rejecting legacy omnirunner://strava/callback (L01-29 invariant)."
     },
     {
       "id": "L07-05",

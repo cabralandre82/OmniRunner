@@ -145,7 +145,7 @@ Total: **348** findings.
 | 🔴 critical | ⏳ fix-pending | [L07-01](./findings/L07-01-mensagens-de-erro-em-portugues-hardcoded-no-backend.md) | 1 | L07 · CXO | Mensagens de erro em português hardcoded no backend | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L07-02](./findings/L07-02-onboarding-nao-distingue-papeis-atleta-coach-admin-master.md) | 1 | L07 · CXO | Onboarding não distingue papéis (atleta, coach, admin_master) | unassigned |
 | 🟠 high | ⏳ fix-pending | [L07-03](./findings/L07-03-app-mobile-sem-modo-offline-robusto-para-corridas.md) | 1 | L07 · CXO | App mobile sem modo offline robusto para corridas | unassigned |
-| 🟠 high | ⏳ fix-pending | [L07-04](./findings/L07-04-flutter-deep-link-strava-oauth-sem-state-validation.md) | 1 | L07 · CXO | Flutter deep link Strava OAuth sem state validation (CSRF) | unassigned |
+| 🟠 high | ✅ fixed | [L07-04](./findings/L07-04-flutter-deep-link-strava-oauth-sem-state-validation.md) | 1 | L07 · CXO | Flutter deep link Strava OAuth sem state validation (CSRF) | mobile |
 | 🟠 high | ⏳ fix-pending | [L07-05](./findings/L07-05-portal-sem-acessibilidade-a11y-declarada.md) | 1 | L07 · CXO | Portal sem acessibilidade (a11y) declarada | unassigned |
 | 🟠 high | ⏳ fix-pending | [L07-06](./findings/L07-06-timezone-sem-configuracao-do-usuario.md) | 1 | L07 · CXO | Timezone sem configuração do usuário | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L07-07](./findings/L07-07-icones-sem-fallback-mobile-offline.md) | 2 | L07 · CXO | Ícones sem fallback (mobile offline) | unassigned |
