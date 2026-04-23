@@ -1,0 +1,64 @@
+{
+  "$schema": "./manifest.schema.json",
+  "version": 1,
+  "description": "L15-04 — Registry of transactional email templates. Keys are referenced by name from backend callers (`template_key` column on public.email_outbox). Changes to a template's HTML or subject are deployed by committing a new revision and shipping a migration that bumps the corresponding `template_version` if consumers need to pin. See docs/runbooks/EMAIL_TRANSACTIONAL_RUNBOOK.md §3.",
+  "templates": {
+    "coaching_group_invite": {
+      "subject": "Você foi convidado para {{group_name}}",
+      "file": "coaching_group_invite.html",
+      "required_vars": [
+        "recipient_name",
+        "group_name",
+        "coach_name",
+        "invite_link",
+        "expire_date"
+      ],
+      "description": "Coaching group invitation (staff → athlete). Triggered from portal-staff assign flow.",
+      "from_name": "OmniRunner",
+      "category": "transactional"
+    },
+    "championship_invite": {
+      "subject": "{{host_group_name}} convidou sua assessoria para o campeonato {{championship_name}}",
+      "file": "championship_invite.html",
+      "required_vars": [
+        "staff_name",
+        "host_group_name",
+        "championship_name",
+        "invite_link",
+        "start_date"
+      ],
+      "description": "Championship invite (host assessoria → target assessoria staff).",
+      "from_name": "OmniRunner",
+      "category": "transactional"
+    },
+    "weekly_training_summary": {
+      "subject": "Resumo semanal — {{group_name}}",
+      "file": "weekly_training_summary.html",
+      "required_vars": [
+        "athlete_name",
+        "group_name",
+        "sessions_completed",
+        "sessions_total",
+        "total_km",
+        "streak_days",
+        "dashboard_link"
+      ],
+      "description": "Weekly Monday 08:00 BRT digest to athletes.",
+      "from_name": "OmniRunner",
+      "category": "transactional"
+    },
+    "payment_confirmation": {
+      "subject": "Pagamento confirmado — R$ {{amount}}",
+      "file": "payment_confirmation.html",
+      "required_vars": [
+        "user_name",
+        "amount",
+        "description",
+        "receipt_link"
+      ],
+      "description": "Emitted after successful subscription payment, custody deposit, or coin purchase. Explicitly called out in the L15-04 audit risk statement (\"seu withdraw foi processado — users didn't get the email\").",
+      "from_name": "OmniRunner",
+      "category": "transactional"
+    }
+  }
+}

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pagamento confirmado</title>
+  <style>
+    body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; }
+    .header { background: #0f766e; padding: 32px 24px; text-align: center; }
+    .header h1 { color: #ffffff; font-size: 22px; margin: 0; font-weight: 600; }
+    .header .check { display: inline-block; background: #ffffff; color: #0f766e; width: 48px; height: 48px; line-height: 48px; border-radius: 50%; font-size: 28px; font-weight: 700; margin-bottom: 12px; }
+    .body { padding: 32px 24px; }
+    .body p { color: #3f3f46; font-size: 16px; line-height: 1.6; margin: 0 0 16px; }
+    .amount-card { background: #f0fdfa; border: 1px solid #5eead4; border-radius: 8px; padding: 20px 24px; margin: 20px 0; text-align: center; }
+    .amount-card .label { color: #0f766e; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 6px; }
+    .amount-card .value { color: #0f172a; font-size: 28px; font-weight: 700; margin: 0; font-variant-numeric: tabular-nums; }
+    .amount-card .desc { color: #475569; font-size: 14px; margin: 8px 0 0; }
+    .cta { display: inline-block; background: #0f766e; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 8px 0 24px; }
+    .footer { padding: 24px; text-align: center; color: #a1a1aa; font-size: 13px; border-top: 1px solid #e4e4e7; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="check">&#10003;</div>
+      <h1>Pagamento confirmado</h1>
+    </div>
+    <div class="body">
+      <p>Olá <strong>{{user_name}}</strong>,</p>
+      <p>Recebemos seu pagamento com sucesso. Aqui está o resumo:</p>
+      <div class="amount-card">
+        <p class="label">Valor</p>
+        <p class="value">R$ {{amount}}</p>
+        <p class="desc">{{description}}</p>
+      </div>
+      <p style="text-align: center;">
+        <a href="{{receipt_link}}" class="cta">Ver recibo</a>
+      </p>
+      <p style="font-size: 14px; color: #71717a;">
+        Você pode acessar todos os seus comprovantes na aba "Carteira" do aplicativo.
+      </p>
+    </div>
+    <div class="footer">
+      <p>OmniRunner &mdash; Sua plataforma de corrida</p>
+      <p>Este email foi enviado automaticamente. Não responda.</p>
+    </div>
+  </div>
+</body>
+</html>

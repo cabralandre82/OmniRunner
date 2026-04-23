@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resumo semanal — {{group_name}}</title>
+  <style>
+    body { margin: 0; padding: 0; background: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; }
+    .header { background: #1e293b; padding: 32px 24px; text-align: center; }
+    .header h1 { color: #ffffff; font-size: 20px; margin: 0 0 4px; }
+    .header p { color: #cbd5e1; font-size: 14px; margin: 0; }
+    .body { padding: 32px 24px; }
+    .body p { color: #3f3f46; font-size: 16px; line-height: 1.6; margin: 0 0 16px; }
+    .stats { display: table; width: 100%; margin: 16px 0 24px; border-collapse: separate; border-spacing: 8px; }
+    .stat { display: table-cell; background: #f1f5f9; border-radius: 8px; padding: 16px; text-align: center; width: 33%; }
+    .stat .value { color: #0f172a; font-size: 22px; font-weight: 700; margin: 0; font-variant-numeric: tabular-nums; }
+    .stat .label { color: #64748b; font-size: 12px; margin: 4px 0 0; text-transform: uppercase; letter-spacing: 0.5px; }
+    .cta { display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 8px 0 24px; }
+    .footer { padding: 24px; text-align: center; color: #a1a1aa; font-size: 13px; border-top: 1px solid #e4e4e7; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Resumo da sua semana</h1>
+      <p>{{group_name}}</p>
+    </div>
+    <div class="body">
+      <p>Olá <strong>{{athlete_name}}</strong>,</p>
+      <p>Aqui está o resumo dos seus treinos desta semana:</p>
+      <div class="stats">
+        <div class="stat">
+          <p class="value">{{sessions_completed}}/{{sessions_total}}</p>
+          <p class="label">Treinos</p>
+        </div>
+        <div class="stat">
+          <p class="value">{{total_km}}</p>
+          <p class="label">km</p>
+        </div>
+        <div class="stat">
+          <p class="value">{{streak_days}}</p>
+          <p class="label">dias</p>
+        </div>
+      </div>
+      <p style="text-align: center;">
+        <a href="{{dashboard_link}}" class="cta">Ver detalhes</a>
+      </p>
+    </div>
+    <div class="footer">
+      <p>OmniRunner &mdash; Sua plataforma de corrida</p>
+      <p>Este email foi enviado automaticamente. Não responda.</p>
+    </div>
+  </div>
+</body>
+</html>
