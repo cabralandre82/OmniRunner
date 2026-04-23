@@ -225,6 +225,31 @@ export const autoTopupSchema = z.object({
   threshold_tokens: z.number().int().min(1).optional(),
   product_id: z.string().min(1).optional(),
   max_per_month: z.number().int().min(1).max(100).optional(),
+  // L12-05 — daily cap antifraude. Quando qualquer um dos 3 abaixo é
+  // enviado pelo client, a route faz uma chamada extra a
+  // `fn_set_auto_topup_daily_cap` (audit-trailed) ao invés do
+  // direct UPDATE simples para os outros campos.
+  daily_charge_cap_brl: z.number().min(0).max(100_000).optional(),
+  daily_max_charges: z.number().int().min(1).max(24).optional(),
+  daily_limit_timezone: z.string().min(1).max(64).optional(),
+  /** Razão (>= 10 chars) obrigatória SE qualquer daily_* field for enviado.
+   * superRefine abaixo enforça. */
+  daily_cap_change_reason: z.string().min(10).max(500).optional(),
+}).superRefine((data, ctx) => {
+  const touchesDailyCap =
+    data.daily_charge_cap_brl !== undefined
+    || data.daily_max_charges !== undefined
+    || data.daily_limit_timezone !== undefined;
+  if (touchesDailyCap && !data.daily_cap_change_reason) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["daily_cap_change_reason"],
+      message:
+        "daily_cap_change_reason (>= 10 chars) é obrigatória quando " +
+        "daily_charge_cap_brl, daily_max_charges ou daily_limit_timezone " +
+        "é alterado (audit trail L12-05).",
+    });
+  }
 });
 
 export const platformAssessoriaActionSchema = z.object({

@@ -48,6 +48,10 @@ interface SkipResult {
   triggered: false;
   reason: string;
   notified?: boolean;
+  /** L12-05 — populated when reason='daily_cap_reached'; carries the
+   * structured HINT from `fn_apply_auto_topup_daily_cap` so the cron
+   * dashboard / CFO can read it without parsing message strings. */
+  detail?: string;
 }
 
 interface TriggerResult {
@@ -206,6 +210,61 @@ async function runCheck(
   if (prodErr) throw prodErr;
   if (!product || !product.is_active) {
     return { triggered: false, reason: "product_unavailable" };
+  }
+
+  // L12-05 — daily cap antifraude. Chamado ANTES da Stripe.PaymentIntent
+  // para evitar (a) cobrança no cartão do cliente que excede o teto diário
+  // configurado, (b) burst attack onde N invocações inline pós token-debit
+  // contornam o cooldown 24h via race em `last_triggered_at`. Se P0010,
+  // skip esta cobrança e devolve reason='daily_cap_reached' — o cron
+  // próxima hora tentará de novo (a janela diária já estará rolando).
+  // Se a função RPC ausente (deploy parcial), continuamos por compat
+  // com WARN log — fail-soft em deploy progressivo.
+  if (product.currency === "BRL") {
+    const chargeBrl = product.price_cents / 100;
+    const { error: capErr } = await db.rpc("fn_apply_auto_topup_daily_cap", {
+      p_group_id: groupId,
+      p_charge_amount_brl: chargeBrl,
+    });
+    if (capErr) {
+      const code = (capErr as { code?: string }).code;
+      const msg = (capErr as { message?: string }).message ?? "";
+      if (code === "P0010" || /AUTO_TOPUP_DAILY_CAP_EXCEEDED/.test(msg)) {
+        // Audit + analytics: cap-block é um sinal de saúde do produto
+        // (ou de fraude); CFO deve ver isso no painel.
+        db.from("product_events")
+          .insert({
+            user_id: null,
+            event_name: "billing_auto_topup_blocked_daily_cap",
+            properties: {
+              group_id: groupId,
+              product_id: product.id,
+              charge_amount_brl: chargeBrl,
+              hint: (capErr as { hint?: string }).hint ?? null,
+              request_id: requestId,
+            },
+          })
+          .then(
+            () => {},
+            () => {},
+          );
+        return {
+          triggered: false,
+          reason: "daily_cap_reached",
+          detail: (capErr as { hint?: string }).hint ?? msg,
+        };
+      }
+      // 42883 = function does not exist (deploy progressivo); continua
+      // fail-soft com warn. Outros erros propagam para o catch externo.
+      if (code === "42883") {
+        console.warn(JSON.stringify({
+          fn: FN, request_id: requestId,
+          msg: "L12-05 fn_apply_auto_topup_daily_cap not deployed; skipping cap check",
+        }));
+      } else {
+        throw capErr;
+      }
+    }
   }
 
   // 7. Create billing_purchase (source=auto_topup)

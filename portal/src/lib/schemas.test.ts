@@ -342,6 +342,89 @@ describe("autoTopupSchema", () => {
     const result = autoTopupSchema.safeParse({ threshold_tokens: -5 });
     expect(result.success).toBe(false);
   });
+
+  // L12-05 — daily cap antifraude
+  describe("L12-05 daily cap fields", () => {
+    it("accepts daily cap update with reason >= 10 chars", () => {
+      const result = autoTopupSchema.safeParse({
+        daily_charge_cap_brl: 1000,
+        daily_max_charges: 5,
+        daily_cap_change_reason:
+          "ajuste após pico de demanda em SUP-1234 acordado com CFO",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects daily_charge_cap_brl change without reason", () => {
+      const result = autoTopupSchema.safeParse({
+        daily_charge_cap_brl: 1000,
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(
+          result.error.issues.some((i) =>
+            i.path.includes("daily_cap_change_reason"),
+          ),
+        ).toBe(true);
+      }
+    });
+
+    it("rejects daily_max_charges change without reason", () => {
+      const result = autoTopupSchema.safeParse({ daily_max_charges: 10 });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects daily_limit_timezone change without reason", () => {
+      const result = autoTopupSchema.safeParse({
+        daily_limit_timezone: "UTC",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects daily_charge_cap_brl > 100_000 (sanity ceiling)", () => {
+      const result = autoTopupSchema.safeParse({
+        daily_charge_cap_brl: 200_000,
+        daily_cap_change_reason:
+          "tentativa absurda de cap — deve ser bloqueado por sanity",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects daily_max_charges > 24 (cron is hourly)", () => {
+      const result = autoTopupSchema.safeParse({
+        daily_max_charges: 25,
+        daily_cap_change_reason:
+          "tentativa de mais cobranças/dia que horas no dia — bloqueado",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects negative daily_charge_cap_brl", () => {
+      const result = autoTopupSchema.safeParse({
+        daily_charge_cap_brl: -1,
+        daily_cap_change_reason:
+          "cap negativo seria um free-pass; bloqueado por contrato",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects daily_cap_change_reason < 10 chars", () => {
+      const result = autoTopupSchema.safeParse({
+        daily_charge_cap_brl: 1000,
+        daily_cap_change_reason: "short",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("does NOT require reason for non-daily updates", () => {
+      const result = autoTopupSchema.safeParse({
+        enabled: true,
+        threshold_tokens: 100,
+        max_per_month: 5,
+      });
+      expect(result.success).toBe(true);
+    });
+  });
 });
 
 // L03-13 — discriminated union for /api/coins/reverse.

@@ -56,9 +56,19 @@ async function _post(request: NextRequest) {
       { status: 400 },
     );
   }
-  const { enabled, threshold_tokens, product_id, max_per_month } = parsed.data;
+  const {
+    enabled,
+    threshold_tokens,
+    product_id,
+    max_per_month,
+    daily_charge_cap_brl,
+    daily_max_charges,
+    daily_limit_timezone,
+    daily_cap_change_reason,
+  } = parsed.data;
 
-  // Upsert settings
+  // Upsert settings (NÃO inclui campos daily_* — eles vão pelo RPC abaixo
+  // para garantir audit trail L12-05).
   const updatePayload: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
@@ -68,7 +78,6 @@ async function _post(request: NextRequest) {
   if (typeof product_id === "string") updatePayload.product_id = product_id;
   if (typeof max_per_month === "number") updatePayload.max_per_month = max_per_month;
 
-  // Check if settings exist
   const { data: existing } = await db
     .from("billing_auto_topup_settings")
     .select("group_id")
@@ -113,12 +122,104 @@ async function _post(request: NextRequest) {
     }
   }
 
+  // L12-05 — daily cap mudanças passam pelo RPC dedicado para gerar audit
+  // row em billing_auto_topup_cap_changes. Reason é obrigatória (validada
+  // no Zod superRefine). Idempotency derivada do (group_id + reason hash
+  // + payload) para safe-retry sob network flake.
+  let dailyCapApplied: {
+    previous_cap_brl: number | null;
+    new_cap_brl: number | null;
+    previous_max_charges: number | null;
+    new_max_charges: number | null;
+    was_idempotent: boolean;
+  } | null = null;
+
+  const touchesDailyCap =
+    daily_charge_cap_brl !== undefined
+    || daily_max_charges !== undefined
+    || daily_limit_timezone !== undefined;
+
+  if (touchesDailyCap) {
+    // Carrega valores atuais para preencher os params NOT-undefined que
+    // a RPC exige (a RPC não tem partial-update; quem chama precisa passar
+    // os 3 valores, mesmo que algum venha igual ao atual).
+    const { data: current } = await db
+      .from("billing_auto_topup_settings")
+      .select("daily_charge_cap_brl, daily_max_charges, daily_limit_timezone")
+      .eq("group_id", groupId)
+      .maybeSingle();
+
+    if (!current) {
+      // Não deveria acontecer (acabamos de inserir/atualizar), mas é
+      // defensivo: settings podem ter sido removidas em race extremo.
+      return NextResponse.json(
+        { error: "Settings not found after upsert" },
+        { status: 500 },
+      );
+    }
+
+    const idempotencyKey =
+      request.headers.get("x-idempotency-key")
+      || `form-${user.id}-${Date.now().toString(36)}`;
+
+    const { data: capResult, error: capErr } = await db.rpc(
+      "fn_set_auto_topup_daily_cap",
+      {
+        p_group_id: groupId,
+        p_new_cap_brl:
+          daily_charge_cap_brl ?? current.daily_charge_cap_brl,
+        p_new_max_charges:
+          daily_max_charges ?? current.daily_max_charges,
+        p_actor_user_id: user.id,
+        p_reason: daily_cap_change_reason!,
+        p_timezone: daily_limit_timezone ?? null,
+        p_idempotency_key: idempotencyKey,
+      },
+    );
+
+    if (capErr) {
+      const code = (capErr as { code?: string }).code;
+      const status = code === "P0001" ? 400 : code === "P0002" ? 404 : 500;
+      return NextResponse.json(
+        {
+          error: capErr.message ?? "Failed to set daily cap",
+          code: code ?? "UNKNOWN",
+          hint: (capErr as { hint?: string }).hint ?? null,
+        },
+        { status },
+      );
+    }
+
+    if (Array.isArray(capResult) && capResult.length > 0) {
+      const r = capResult[0];
+      dailyCapApplied = {
+        previous_cap_brl: r.out_previous_cap_brl ?? null,
+        new_cap_brl: r.out_new_cap_brl ?? null,
+        previous_max_charges: r.out_previous_max_charges ?? null,
+        new_max_charges: r.out_new_max_charges ?? null,
+        was_idempotent: r.out_was_idempotent ?? false,
+      };
+    }
+  }
+
   await auditLog({
     actorId: user.id,
     groupId: groupId,
     action: "settings.auto_topup",
-    metadata: { enabled, threshold_tokens, product_id, max_per_month },
+    metadata: {
+      enabled,
+      threshold_tokens,
+      product_id,
+      max_per_month,
+      daily_cap_change: dailyCapApplied,
+      daily_cap_change_reason: dailyCapApplied
+        ? daily_cap_change_reason
+        : undefined,
+    },
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    ok: true,
+    daily_cap: dailyCapApplied,
+  });
 }

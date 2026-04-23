@@ -16,6 +16,10 @@ interface TopupSettings {
   threshold_tokens: number;
   product_id: string;
   max_per_month: number;
+  // L12-05 — daily cap antifraude
+  daily_charge_cap_brl?: number | null;
+  daily_max_charges?: number | null;
+  daily_limit_timezone?: string | null;
 }
 
 interface AutoTopupFormProps {
@@ -23,6 +27,11 @@ interface AutoTopupFormProps {
   products: Product[];
   hasStripePaymentMethod?: boolean;
 }
+
+// L12-05 — defaults coerentes com a migration (DEFAULT 500.00 / 3 / SP)
+const DEFAULT_DAILY_CAP_BRL = 500;
+const DEFAULT_DAILY_MAX_CHARGES = 3;
+const DEFAULT_DAILY_TZ = "America/Sao_Paulo";
 
 export function AutoTopupForm({ currentSettings, products, hasStripePaymentMethod }: AutoTopupFormProps) {
   const router = useRouter();
@@ -32,9 +41,29 @@ export function AutoTopupForm({ currentSettings, products, hasStripePaymentMetho
     currentSettings?.product_id ?? products[0]?.id ?? "",
   );
   const [maxPerMonth, setMaxPerMonth] = useState(currentSettings?.max_per_month ?? 3);
+  // L12-05 — daily cap state
+  const initialDailyCap =
+    currentSettings?.daily_charge_cap_brl ?? DEFAULT_DAILY_CAP_BRL;
+  const initialDailyMax =
+    currentSettings?.daily_max_charges ?? DEFAULT_DAILY_MAX_CHARGES;
+  const initialDailyTz =
+    currentSettings?.daily_limit_timezone ?? DEFAULT_DAILY_TZ;
+  const [dailyCapBrl, setDailyCapBrl] = useState<number>(initialDailyCap);
+  const [dailyMaxCharges, setDailyMaxCharges] =
+    useState<number>(initialDailyMax);
+  const [dailyTz, setDailyTz] = useState<string>(initialDailyTz);
+  const [dailyCapReason, setDailyCapReason] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // L12-05 — true se algum dos 3 campos daily_* foi alterado em relação ao
+  // valor atual carregado do banco. Quando true, a textarea de "motivo"
+  // fica obrigatória (audit trail).
+  const dailyCapDirty =
+    dailyCapBrl !== initialDailyCap
+    || dailyMaxCharges !== initialDailyMax
+    || dailyTz !== initialDailyTz;
 
   if (products.length === 0) {
     return (
@@ -45,20 +74,39 @@ export function AutoTopupForm({ currentSettings, products, hasStripePaymentMetho
   }
 
   async function handleSave() {
+    // L12-05 — client-side gate antes de POST: poupa um round-trip e dá
+    // feedback instantâneo. Server-side superRefine no Zod re-valida.
+    if (dailyCapDirty && dailyCapReason.trim().length < 10) {
+      setError(
+        "Informe o motivo (>= 10 caracteres) para alterar os limites " +
+        "diários de antifraude.",
+      );
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(false);
 
     try {
+      const body: Record<string, unknown> = {
+        enabled,
+        threshold_tokens: threshold,
+        product_id: productId,
+        max_per_month: maxPerMonth,
+      };
+
+      if (dailyCapDirty) {
+        body.daily_charge_cap_brl = dailyCapBrl;
+        body.daily_max_charges = dailyMaxCharges;
+        body.daily_limit_timezone = dailyTz;
+        body.daily_cap_change_reason = dailyCapReason.trim();
+      }
+
       const res = await fetch("/api/auto-topup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          enabled,
-          threshold_tokens: threshold,
-          product_id: productId,
-          max_per_month: maxPerMonth,
-        }),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
@@ -69,6 +117,7 @@ export function AutoTopupForm({ currentSettings, products, hasStripePaymentMetho
       }
 
       setSuccess(true);
+      setDailyCapReason("");
       router.refresh();
       setTimeout(() => setSuccess(false), 3000);
     } catch {
@@ -201,6 +250,109 @@ export function AutoTopupForm({ currentSettings, products, hasStripePaymentMetho
               className="w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand sm:w-40"
             />
           </div>
+
+          {/* L12-05 — Limites diários antifraude (defesa em profundidade) */}
+          {hasStripePaymentMethod && (
+            <details
+              data-testid="daily-cap-section"
+              className="rounded-lg border border-border-subtle bg-surface p-3"
+            >
+              <summary className="cursor-pointer text-sm font-medium text-content-primary">
+                Limites diários de antifraude (avançado)
+              </summary>
+              <div className="mt-3 space-y-3">
+                <p className="text-xs text-content-secondary">
+                  Defesa em profundidade contra cobranças indevidas em rajada
+                  (ex.: bug em settings, conta comprometida ou erro do cron).
+                  Atual: até{" "}
+                  <strong>{dailyMaxCharges}x</strong> e{" "}
+                  <strong>{formatBRL(Math.round(dailyCapBrl * 100))}</strong>{" "}
+                  por dia (janela {dailyTz}).
+                </p>
+
+                <div>
+                  <label
+                    htmlFor="daily-cap-brl"
+                    className="block text-xs font-medium text-content-secondary"
+                  >
+                    Teto diário em R$ (0–100.000)
+                  </label>
+                  <input
+                    id="daily-cap-brl"
+                    type="number"
+                    min={0}
+                    max={100000}
+                    step={10}
+                    value={dailyCapBrl}
+                    onChange={(e) => setDailyCapBrl(Number(e.target.value))}
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand sm:w-40"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="daily-max-charges"
+                    className="block text-xs font-medium text-content-secondary"
+                  >
+                    Máximo de cobranças por dia (1–24)
+                  </label>
+                  <input
+                    id="daily-max-charges"
+                    type="number"
+                    min={1}
+                    max={24}
+                    value={dailyMaxCharges}
+                    onChange={(e) => setDailyMaxCharges(Number(e.target.value))}
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand sm:w-32"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="daily-tz"
+                    className="block text-xs font-medium text-content-secondary"
+                  >
+                    Fuso horário da janela diária
+                  </label>
+                  <select
+                    id="daily-tz"
+                    value={dailyTz}
+                    onChange={(e) => setDailyTz(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                  >
+                    <option value="America/Sao_Paulo">America/Sao_Paulo (BRT/BRST)</option>
+                    <option value="America/Manaus">America/Manaus (AMT)</option>
+                    <option value="America/Belem">America/Belem (BRT)</option>
+                    <option value="America/Recife">America/Recife (BRT)</option>
+                    <option value="UTC">UTC</option>
+                  </select>
+                </div>
+
+                {dailyCapDirty && (
+                  <div>
+                    <label
+                      htmlFor="daily-cap-reason"
+                      className="block text-xs font-medium text-content-secondary"
+                    >
+                      Motivo da alteração (obrigatório, mín. 10 caracteres)
+                    </label>
+                    <textarea
+                      id="daily-cap-reason"
+                      value={dailyCapReason}
+                      onChange={(e) => setDailyCapReason(e.target.value)}
+                      rows={2}
+                      placeholder="Ex: ajuste após acordo com CFO em ticket SUP-1234"
+                      className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                    />
+                    <p className="mt-1 text-xs text-content-secondary">
+                      {dailyCapReason.trim().length}/10 caracteres
+                      {dailyCapReason.trim().length >= 10 ? " ✓" : ""}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </details>
+          )}
 
           {/* Summary */}
           {selectedProduct && enabled && (
