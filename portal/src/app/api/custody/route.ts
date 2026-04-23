@@ -188,16 +188,38 @@ async function _post(req: NextRequest) {
 
   await getOrCreateCustodyAccount(auth.groupId);
 
-  // L17-01 — sem try/catch local: erros inesperados de `createCustodyDeposit`
-  // sobem para `withErrorHandler`, que devolve 500 INTERNAL_ERROR canônico
-  // (sem vazar `e.message` cru, que historicamente continha texto de erro
-  // do Postgres / nome de tabela). Audit + Sentry capturados pelo wrapper.
-  const result = await createCustodyDeposit(
-    auth.groupId,
-    parsed.data.amount_usd,
-    parsed.data.gateway,
-    idempotencyKey,
-  );
+  // L17-01 + L05-09 — try/catch APENAS para o caso conhecido P0010
+  // (DAILY_DEPOSIT_CAP_EXCEEDED). Outros throws sobem para `withErrorHandler`,
+  // que devolve 500 INTERNAL_ERROR canônico (sem vazar `e.message` cru, que
+  // historicamente continha texto de erro do Postgres / nome de tabela).
+  // Audit + Sentry capturados pelo wrapper.
+  let result;
+  try {
+    result = await createCustodyDeposit(
+      auth.groupId,
+      parsed.data.amount_usd,
+      parsed.data.gateway,
+      idempotencyKey,
+    );
+  } catch (e: unknown) {
+    const err = e as { code?: string; message?: string; hint?: string };
+    if (err?.code === "P0010" || /DAILY_DEPOSIT_CAP_EXCEEDED/.test(err?.message ?? "")) {
+      return apiError(
+        req,
+        "DAILY_DEPOSIT_CAP_EXCEEDED",
+        "Cap diário de depósitos atingido para este grupo",
+        422,
+        {
+          details: {
+            hint:
+              err?.hint ??
+              "Aumente o limite via PATCH /api/platform/custody/[groupId]/daily-cap (platform admin) ou aguarde a próxima janela. Runbook: CUSTODY_DAILY_CAP_RUNBOOK.",
+          },
+        },
+      );
+    }
+    throw e;
+  }
 
   if (!result) {
     return apiServiceUnavailable(

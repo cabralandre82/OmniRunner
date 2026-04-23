@@ -228,6 +228,66 @@ describe("Custody API", () => {
       );
       expect(res.status).toBe(400);
     });
+
+    // L05-09 — daily deposit cap antifraud guardrail
+    it("returns 422 DAILY_DEPOSIT_CAP_EXCEEDED when RPC raises P0010", async () => {
+      const pgErr = Object.assign(
+        new Error("DAILY_DEPOSIT_CAP_EXCEEDED: group=group-1 would_total=51000 limit=50000"),
+        {
+          code: "P0010",
+          hint: "Cap diário de US$ 50000 atingido. Aumente via PATCH /api/platform/custody/[groupId]/daily-cap",
+        },
+      );
+      createCustodyDepositMock.mockRejectedValueOnce(pgErr);
+      mockAdminCheck();
+      const res = await POST(
+        req(
+          { amount_usd: 49000, gateway: "stripe" },
+          { "x-idempotency-key": VALID_IDEMPOTENCY_KEY },
+        ),
+      );
+      expect(res.status).toBe(422);
+      const body = await res.json();
+      expect(body.error.code).toBe("DAILY_DEPOSIT_CAP_EXCEEDED");
+      expect(body.error.details.hint).toMatch(/Aumente.*PATCH/);
+    });
+
+    it("matches DAILY_DEPOSIT_CAP_EXCEEDED by message even without code", async () => {
+      const pgErr = Object.assign(
+        new Error("DAILY_DEPOSIT_CAP_EXCEEDED on insert"),
+        {},
+      );
+      createCustodyDepositMock.mockRejectedValueOnce(pgErr);
+      mockAdminCheck();
+      const res = await POST(
+        req(
+          { amount_usd: 1000, gateway: "stripe" },
+          { "x-idempotency-key": VALID_IDEMPOTENCY_KEY },
+        ),
+      );
+      expect(res.status).toBe(422);
+      const body = await res.json();
+      expect(body.error.code).toBe("DAILY_DEPOSIT_CAP_EXCEEDED");
+    });
+
+    it("rethrows non-P0010 errors (caught by withErrorHandler → 500)", async () => {
+      // Outermost withErrorHandler wraps this and returns 500 INTERNAL_ERROR.
+      const pgErr = Object.assign(new Error("unexpected DB error"), {
+        code: "P9999",
+      });
+      createCustodyDepositMock.mockRejectedValueOnce(pgErr);
+      mockAdminCheck();
+      const res = await POST(
+        req(
+          { amount_usd: 1000, gateway: "stripe" },
+          { "x-idempotency-key": VALID_IDEMPOTENCY_KEY },
+        ),
+      );
+      expect(res.status).toBe(500);
+      const body = await res.json();
+      // Canonical envelope, no `e.message` leak.
+      expect(body.error.code).toBe("INTERNAL_ERROR");
+    });
   });
 
   describe("POST (confirm) — L01-04 cross-group block", () => {
