@@ -257,7 +257,7 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L16-10](./findings/L16-10-sem-tier-free-trial-sandbox-para-parceiros.md) | 2 | L16 · CAO | Sem tier "free trial" / sandbox para parceiros | unassigned |
 | 🔴 critical | ✅ fixed | [L17-01](./findings/L17-01-witherrorhandler-nao-e-usado-em-endpoints-financeiros-critic.md) | 1 | L17 · VP Eng | withErrorHandler não é usado em endpoints financeiros críticos | platform-team |
 | 🔴 critical | ⏳ fix-pending | [L17-02](./findings/L17-02-5378-linhas-em-portal-src-lib-ts-e.md) | 1 | L17 · VP Eng | 5378 linhas em portal/src/lib/*.ts e sem segregação por bounded context | unassigned |
-| 🟠 high | ⏳ fix-pending | [L17-03](./findings/L17-03-witherrorhandler-usa-any-em-routeargs.md) | 1 | L17 · VP Eng | withErrorHandler usa any em routeArgs | unassigned |
+| 🟠 high | ✅ fixed | [L17-03](./findings/L17-03-witherrorhandler-usa-any-em-routeargs.md) | 1 | L17 · VP Eng | withErrorHandler usa any em routeArgs | portal |
 | 🟠 high | ⏳ fix-pending | [L17-04](./findings/L17-04-testes-unitarios-em-portal-src-lib-qa-test.md) | 1 | L17 · VP Eng | Testes unitários em portal/src/lib/qa-*.test.ts — arquivos >800 linhas | unassigned |
 | 🟠 high | ✅ fixed | [L17-05](./findings/L17-05-logger-silencia-errors-nao-error.md) | 1 | L17 · VP Eng | Logger silencia errors não-Error | portal |
 | 🟠 high | ✅ fixed | [L17-06](./findings/L17-06-csrfcheck-nao-e-chamado-no-middleware-central.md) | 1 | L17 · VP Eng | csrfCheck não é chamado no middleware central | platform |

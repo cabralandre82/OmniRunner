@@ -8100,28 +8100,35 @@
       "lens": 17,
       "title": "withErrorHandler usa any em routeArgs",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "portal",
-        "migration"
+        "typesafety",
+        "api"
       ],
       "files": [
-        "portal/src/lib/api-handler.ts"
+        "portal/src/lib/api-handler.ts",
+        "tools/audit/check-api-handler-types.ts",
+        "docs/runbooks/API_HANDLER_TYPING_RUNBOOK.md"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/api-handler.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "ac4625b"
+      ],
+      "owner": "portal",
+      "runbook": "docs/runbooks/API_HANDLER_TYPING_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "2026-04-21 — fixed. withErrorHandler is now generic over TArgs extends readonly unknown[] (no more any[]). New RouteParams<P> helper lets dynamic routes declare ctx: RouteParams<{ id: string }> and get full typecheck through the wrapper. ApiHandler<TArgs> exported as the canonical handler shape. Removed the `as unknown as H` cast. All 867 portal lib tests pass; tsc green. CI npm run audit:api-handler-types (9 regressions) + runbook."
     },
     {
       "id": "L17-04",
