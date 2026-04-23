@@ -7,8 +7,16 @@ import { startTimer, logRequest, logError } from "../_shared/obs.ts";
 /**
  * onboarding-nudge — Supabase Edge Function
  *
- * Triggered daily by pg_cron at 10:00 UTC. Sends onboarding push
- * notifications to users registered in the last 7 days (D0-D7).
+ * Triggered hourly by pg_cron ('0 * * * *' — L12-07). For each user
+ * registered in the last 7 days, checks whether the user's current
+ * local hour matches their `profiles.notification_hour_local` (default
+ * 9) in their `profiles.timezone` (default 'America/Sao_Paulo'). Only
+ * dispatches the nudge during that single hour per user per day.
+ *
+ * L12-09 idempotency (UNIQUE on notification_log(user_id, rule,
+ * context_id) with context_id = "d${daysSinceRegistration}")
+ * guarantees exactly-once per user per day even if the hourly loop
+ * fires 24×/day. 23 of 24 invocations are near-no-ops.
  *
  * Messages:
  *   D0: Welcome + connect Strava
@@ -19,9 +27,6 @@ import { startTimer, logRequest, logError } from "../_shared/obs.ts";
  *   D5: Check your progress
  *   D6: Weekly goal motivation
  *   D7: One week recap
- *
- * Uses notification_log for dedup (rule = "onboarding_nudge").
- * Dispatches via send-push.
  *
  * Service-role only. Deployed with --no-verify-jwt (cron caller).
  */
@@ -73,6 +78,39 @@ const MS_PER_DAY = 86_400_000;
 const DEDUP_HOURS = 23;
 const MS_PER_HOUR = 3_600_000;
 
+const DEFAULT_TIMEZONE = "America/Sao_Paulo";
+const DEFAULT_NOTIFICATION_HOUR = 9;
+
+/**
+ * Returns the current hour-of-day (0..23) as observed in the given IANA
+ * timezone using the runtime's Intl tables. Falls back silently to the
+ * default Sao_Paulo hour if `tz` is bogus (defence in depth against
+ * rows that somehow bypassed the DB CHECK).
+ */
+function currentHourInTimezone(tz: string): number {
+  try {
+    const fmt = new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      hour12: false,
+      timeZone: tz || DEFAULT_TIMEZONE,
+    });
+    const parts = fmt.formatToParts(new Date());
+    const hourPart = parts.find((p) => p.type === "hour");
+    if (!hourPart) return new Date().getUTCHours();
+    const n = Number.parseInt(hourPart.value, 10);
+    if (!Number.isFinite(n) || n < 0 || n > 23) return new Date().getUTCHours();
+    return n === 24 ? 0 : n;
+  } catch {
+    const fallback = new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      hour12: false,
+      timeZone: DEFAULT_TIMEZONE,
+    }).formatToParts(new Date()).find((p) => p.type === "hour")?.value ?? "9";
+    const n = Number.parseInt(fallback, 10);
+    return Number.isFinite(n) ? (n === 24 ? 0 : n) : 9;
+  }
+}
+
 serve(async (req: Request) => {
   const cors = handleCors(req);
   if (cors) return cors;
@@ -112,12 +150,37 @@ serve(async (req: Request) => {
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * MS_PER_DAY);
 
-    // Fetch users who registered in the last 7 days
-    const { data: recentUsers, error: usersErr } = await db
-      .from("profiles")
-      .select("id, created_at")
-      .gte("created_at", sevenDaysAgo.toISOString())
-      .limit(1000);
+    // Fetch users who registered in the last 7 days. `timezone` /
+    // `notification_hour_local` may not exist on very old dev DBs — we
+    // SELECT defensively and fall back to Sao_Paulo/9 below.
+    let recentUsers:
+      | Array<{
+          id: string;
+          created_at: string;
+          timezone?: string | null;
+          notification_hour_local?: number | null;
+        }>
+      | null = null;
+    let usersErr: { message?: string } | null = null;
+    {
+      const res = await db
+        .from("profiles")
+        .select("id, created_at, timezone, notification_hour_local")
+        .gte("created_at", sevenDaysAgo.toISOString())
+        .limit(1000);
+      if (res.error) {
+        // Fallback for pre-L12-07 schemas (no timezone columns).
+        const fallback = await db
+          .from("profiles")
+          .select("id, created_at")
+          .gte("created_at", sevenDaysAgo.toISOString())
+          .limit(1000);
+        recentUsers = fallback.data as typeof recentUsers;
+        usersErr = fallback.error as typeof usersErr;
+      } else {
+        recentUsers = res.data as typeof recentUsers;
+      }
+    }
 
     if (usersErr || !recentUsers || recentUsers.length === 0) {
       return jsonOk({ evaluated: 0, sent: 0, reason: "no_recent_users" }, requestId);
@@ -125,6 +188,7 @@ serve(async (req: Request) => {
 
     let totalEvaluated = 0;
     let totalSent = 0;
+    let totalSkippedOffHour = 0;
 
     for (const user of recentUsers) {
       const userId = user.id as string;
@@ -137,6 +201,28 @@ serve(async (req: Request) => {
 
       const message = NUDGE_MESSAGES[daysSinceRegistration];
       if (!message) continue;
+
+      // L12-07 — respect user's preferred local-hour window. The cron
+      // runs hourly, but we only dispatch during the user's configured
+      // notification hour (default 9) in their configured timezone
+      // (default Sao_Paulo). L12-09 dedup ensures exactly-once/day even
+      // if we somehow fire twice in the same hour.
+      const userTz =
+        (user.timezone && typeof user.timezone === "string"
+          ? user.timezone
+          : DEFAULT_TIMEZONE);
+      const userPrefHour =
+        typeof user.notification_hour_local === "number" &&
+        user.notification_hour_local >= 0 &&
+        user.notification_hour_local <= 23
+          ? user.notification_hour_local
+          : DEFAULT_NOTIFICATION_HOUR;
+
+      const localHour = currentHourInTimezone(userTz);
+      if (localHour !== userPrefHour) {
+        totalSkippedOffHour++;
+        continue;
+      }
 
       totalEvaluated++;
 
@@ -222,7 +308,14 @@ serve(async (req: Request) => {
       }
     }
 
-    return jsonOk({ evaluated: totalEvaluated, sent: totalSent }, requestId);
+    return jsonOk(
+      {
+        evaluated: totalEvaluated,
+        sent: totalSent,
+        skipped_off_hour: totalSkippedOffHour,
+      },
+      requestId,
+    );
   } catch (_err) {
     status = 500;
     errorCode = "INTERNAL";
