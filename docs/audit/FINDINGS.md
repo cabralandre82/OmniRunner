@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-23 10:48:42 UTC.
+> Atualizado em 2026-04-23 10:58:55 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -325,7 +325,7 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L22-06](./findings/L22-06-voice-coaching-parcial.md) | 1 | L22 · Atleta Amador | Voice coaching parcial | mobile |
 | 🟠 high | ⏳ fix-pending | [L22-07](./findings/L22-07-compra-parcelada-para-assessoria-brasileira.md) | 1 | L22 · Atleta Amador | Compra parcelada para assessoria brasileira | unassigned |
 | 🟠 high | ✅ fixed | [L22-08](./findings/L22-08-desafio-de-grupo-viralizacao-entre-amigos.md) | 1 | L22 · Atleta Amador | Desafio de grupo (viralização entre amigos) | unassigned |
-| 🟠 high | ⏳ fix-pending | [L22-09](./findings/L22-09-progress-celebration-timida.md) | 1 | L22 · Atleta Amador | Progress celebration tímida | unassigned |
+| 🟠 high | ✅ fixed | [L22-09](./findings/L22-09-progress-celebration-timida.md) | 1 | L22 · Atleta Amador | Progress celebration tímida | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L22-10](./findings/L22-10-apple-watch-wear-os-nativo.md) | 2 | L22 · Atleta Amador | Apple Watch / Wear OS nativo | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L22-11](./findings/L22-11-corrida-em-esteira-sem-gps.md) | 2 | L22 · Atleta Amador | Corrida em esteira sem GPS | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L22-12](./findings/L22-12-streaks-dias-consecutivos-correndo-sem-grace-period.md) | 2 | L22 · Atleta Amador | Streaks (dias consecutivos correndo) sem grace period | unassigned |
