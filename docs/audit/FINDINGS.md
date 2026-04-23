@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-23 17:32:45 UTC.
+> Atualizado em 2026-04-23 17:53:38 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -162,7 +162,7 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L08-05](./findings/L08-05-views-de-progressao-sem-filtro-de-atletas-inativos.md) | 1 | L08 · CDO | Views de progressão sem filtro de atletas inativos | platform-data |
 | 🟠 high | ⏳ fix-pending | [L08-06](./findings/L08-06-sem-staging-de-data-warehouse-queries-olap-contra.md) | 1 | L08 · CDO | Sem staging de data warehouse — queries OLAP contra OLTP | unassigned |
 | 🟠 high | ✅ fixed | [L08-07](./findings/L08-07-drift-potencial-entre-coin-ledger-e-wallets-fora.md) | 1 | L08 · CDO | Drift potencial entre coin_ledger e wallets fora do horário do cron | platform |
-| 🟠 high | ⏳ fix-pending | [L08-08](./findings/L08-08-audit-logs-sem-retencao-particionamento.md) | 1 | L08 · CDO | audit_logs sem retenção / particionamento | unassigned |
+| 🟠 high | ✅ fixed | [L08-08](./findings/L08-08-audit-logs-sem-retencao-particionamento.md) | 1 | L08 · CDO | audit_logs sem retenção / particionamento | platform |
 | 🟡 medium | ⏳ fix-pending | [L08-09](./findings/L08-09-event-schema-sem-registry-contract.md) | 2 | L08 · CDO | Event schema sem registry / contract | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L08-10](./findings/L08-10-sem-cohort-analysis-estruturada.md) | 2 | L08 · CDO | Sem cohort analysis estruturada | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L08-11](./findings/L08-11-feature-flags-quando-6-6-implementar-precisam-de.md) | 2 | L08 · CDO | Feature flags (quando [6.6] implementar) precisam de metrics | unassigned |

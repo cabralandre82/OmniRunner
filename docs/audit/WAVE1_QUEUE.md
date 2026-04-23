@@ -95,7 +95,7 @@
 ### 🟢 Batch H — Mobile UX & Coach features (10 entregas, code-tractable)
 
 **Progresso Batch H (Mobile UX):** 🟢 8/10 code-delivered + 2 reclassificados — L21-06 🚫 wont-fix (Sprint 25.0.0 — Strava-only, código dormente), L22-05 ✓, L22-06 🚫 wont-fix (Sprint 25.0.0 — Strava-only, código dormente), L22-08 ✓, L22-09 ✓, L23-06 ✓, L23-07 ✓, L23-11 ✓, L23-13 ✓, L23-14 ✓.
-**Progresso Batch I (Reach goals):** 🟡 3 fixed + 5 wont-fix (Strava-only) / 12 — L22-04 🚫 wont-fix (código dormente em `6ef40ff`), L23-12 ✓ (fixed 2026-04-21 — athlete onboarding state machine), L20-06 ✓ (fixed 2026-04-21 — public status-page aggregator), L21-07/L21-08/L21-09/L21-11 🚫 wont-fix (Sprint 25.0.0 — Strava-only). Pendentes reais: L08-06, L08-08, L16-02, L21-10, L21-12.
+**Progresso Batch I (Reach goals):** 🟡 4 fixed + 5 wont-fix (Strava-only) / 12 — L22-04 🚫 wont-fix (código dormente em `6ef40ff`), L23-12 ✓ (fixed 2026-04-21 — athlete onboarding state machine), L20-06 ✓ (fixed 2026-04-21 — public status-page aggregator), L08-08 ✓ (fixed 2026-04-21 — audit_logs retention + partitioning primitives, commit `d64b72e`), L21-07/L21-08/L21-09/L21-11 🚫 wont-fix (Sprint 25.0.0 — Strava-only). Pendentes reais: L08-06, L16-02, L21-10, L21-12.
 
 > **Sweep Sprint 25.0.0 (2026-04-21)** — 7 findings fechados como `wont-fix` por decisão arquitetural: L21-06, L21-07, L21-08, L21-09, L21-11, L22-04, L22-06. Todos dependem de tracking GPS in-app, que foi removido na Sprint 25.0.0 em favor de Strava como fonte única (`docs/ARCHITECTURE.md` §7). Código-domínio já entregue para L21-06/L22-04/L22-06 fica dormente na árvore — pickup-able se a decisão for revertida. Ver `docs/audit/ROADMAP.md` §"Sweep Strava-only" para motivação completa.
 
@@ -126,7 +126,7 @@
 | 46 | L23-12 | high | 23 | 3 | ✅ Onboarding de novo atleta no clube (fixed 2026-04-21) |
 | 47 | L20-06 | high | 20 | 3 | ✅ Status page pública inexistente (fixed 2026-04-21) |
 | 48 | L16-02 | high | 16 | 3 | Sem custom domain por assessoria |
-| 49 | L08-08 | high | 8 | 3 | `audit_logs` sem retenção / particionamento |
+| 49 | L08-08 | high | 8 | 3 | ✅ `audit_logs` retention + partitioning primitives (fixed 2026-04-21) |
 | 50 | L08-06 | high | 8 | 3 | Sem staging de data warehouse — queries OLAP contra OLTP |
 
 ## Itens explicitamente **deferidos** (precisam stakeholder externo)
