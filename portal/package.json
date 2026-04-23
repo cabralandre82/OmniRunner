@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.5.0",
-    "@sentry/nextjs": "10.40.0",
+    "@sentry/nextjs": "10.49.0",
     "@supabase/ssr": "0.8.0",
     "@supabase/supabase-js": "2.97.0",
     "@upstash/redis": "^1.36.3",
