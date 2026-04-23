@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T17:16:09.280Z",
+  "generated_at": "2026-04-23T17:32:45.830Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,9 +10,10 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 151,
-    "fix-pending": 196,
-    "in-progress": 1
+    "fixed": 148,
+    "fix-pending": 192,
+    "in-progress": 1,
+    "wont-fix": 7
   },
   "by_wave": {
     "0": 15,
@@ -9870,16 +9871,18 @@
       "lens": 21,
       "title": "Polyline GPS resolução baixa (5m distanceFilter)",
       "severity": "high",
-      "status": "fixed",
+      "status": "wont-fix",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "fixed_at": "2026-04-21T00:00:00.000Z",
+      "reopened_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "performance",
         "personas",
         "athlete-pro",
-        "gps"
+        "gps",
+        "strava-only-scope"
       ],
       "files": [
         "omni_runner/lib/domain/entities/location_settings_entity.dart",
@@ -9901,7 +9904,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Resolvido em `9a4ec27` (fix). `LocationSettingsEntity` passa a\nexpor um `RecordingMode` (standard | performance) e fábricas\n`.standard()` (5 m / high — preserva o default pré-L21-06 e a\nparity de bateria) e `.performance()` (1 m + `LocationAccuracy.\nbestForNavigation` — multi-constellation GNSS em iOS, fused\nprovider de maior prioridade em Android). O enum\n`LocationAccuracy` ganhou a variante `bestForNavigation` e\n`LocationStreamRepo._mapAccuracy` passa a mapá-la para\n`geo.LocationAccuracy.bestForNavigation`. O catálogo\n`PreferencesKeys` (L11-05) ganhou a chave não-sensível\n`recording_mode` para a tela de configurações persistir a escolha\ndo atleta. O modo é **opt-in** — default permanece 5 m / high —\ncom trade-off documentado de ~+30 % de bateria e volume de\npontos ~3-5×. Cobertura: 11 testes em\n`test/domain/entities/location_settings_entity_test.dart` que\nfixam os presets (5 m / high / standard vs. 1 m /\nbestForNavigation / performance), `copyWith`, contrato Equatable\ne cardinalidade dos enums, impedindo regressão silenciosa dos\nnúmeros citados neste finding.\n"
+      "note": "**Reclassificado `wont-fix` em 2026-04-21** — o app não faz\nmais tracking GPS próprio desde a Sprint 25.0.0 (ver\n`docs/ARCHITECTURE.md` §7 — \"ATIVIDADE (Strava como Fonte\nÚnica)\"). Dados de corrida chegam exclusivamente via\nStrava API + webhook, então `LocationSettingsEntity.\ndistanceFilterMeters` + `LocationAccuracy.bestForNavigation`\nnão têm caller no produto atual. O código entregue em\n`9a4ec27` fica dormente — nenhum screen consome os presets\n`.standard()` / `.performance()` e os testes rodam contra\nVOs inertes. Mantido em árvore para não poluir git log\ncom revert; pode ser deletado num cleanup dedicado se e\nquando decidirmos que a dormência atrapalha descoberta.\n\nHistórico original abaixo por rastreabilidade:\n\nResolvido em `9a4ec27` (fix). `LocationSettingsEntity` passa a\nexpor um `RecordingMode` (standard | performance) e fábricas\n`.standard()` (5 m / high — preserva o default pré-L21-06 e a\nparity de bateria) e `.performance()` (1 m + `LocationAccuracy.\nbestForNavigation` — multi-constellation GNSS em iOS, fused\nprovider de maior prioridade em Android). O enum\n`LocationAccuracy` ganhou a variante `bestForNavigation` e\n`LocationStreamRepo._mapAccuracy` passa a mapá-la para\n`geo.LocationAccuracy.bestForNavigation`. O catálogo\n`PreferencesKeys` (L11-05) ganhou a chave não-sensível\n`recording_mode` para a tela de configurações persistir a escolha\ndo atleta. O modo é **opt-in** — default permanece 5 m / high —\ncom trade-off documentado de ~+30 % de bateria e volume de\npontos ~3-5×. Cobertura: 11 testes em\n`test/domain/entities/location_settings_entity_test.dart` que\nfixam os presets (5 m / high / standard vs. 1 m /\nbestForNavigation / performance), `copyWith`, contrato Equatable\ne cardinalidade dos enums, impedindo regressão silenciosa dos\nnúmeros citados neste finding.\n"
     },
     {
       "id": "L21-07",
@@ -9909,15 +9912,17 @@
       "lens": 21,
       "title": "Sem interoperabilidade com .fit real-time",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "wont-fix",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "webhook",
         "integration",
         "mobile",
         "personas",
-        "athlete-pro"
+        "athlete-pro",
+        "strava-only-scope"
       ],
       "files": [
         "omni_runner/lib/features/integrations_export/data/fit/fit_encoder.dart"
@@ -9933,7 +9938,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "**wont-fix (2026-04-21).** O finding pede OAuth direto com\nGarmin/Coros/Polar/Suunto para receber `.fit` em tempo\nreal e tratar cada um como webhook-push paralelo ao\n`strava-webhook`. A decisão de produto da Sprint 25.0.0\n(`docs/ARCHITECTURE.md` §7) definiu **Strava como fonte\núnica** de atividades — qualquer dispositivo que\nsincroniza com Strava (Garmin, Coros, Polar, Apple Watch,\nFitbit) chega ao Omni Runner via o mesmo pipeline. Ter\nN integrações diretas quebra a invariante \"uma única\nfila de atividades\" que todo o anti-cheat / XP /\nbadge / missão assume. Se no futuro quisermos sair da\ndependência de Strava, este finding vira o blueprint da\nalternativa; até lá, permanece `wont-fix` por decisão\nde arquitetura, não por falta de solução técnica.\n"
     },
     {
       "id": "L21-08",
@@ -9941,12 +9946,14 @@
       "lens": 21,
       "title": "Lap splits manuais inexistentes em tela de corrida",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "wont-fix",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "personas",
-        "athlete-pro"
+        "athlete-pro",
+        "strava-only-scope"
       ],
       "files": [],
       "correction_type": "process",
@@ -9960,7 +9967,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "**wont-fix (2026-04-21).** Finding pede botão \"Lap\"\nfísico na tela de recording do app + auto-lap\nconfigurável. O produto não tem mais tela de recording\ndesde a Sprint 25.0.0 (`docs/ARCHITECTURE.md` §7 —\nStrava-only); atletas usam Garmin/Coros no pulso ou o\nStrava app para gravar, e o Omni consome a atividade\nvia webhook Strava que já inclui `laps[]` estruturados.\nExposição dos laps já-capturados pelo Strava na UI do\nOmni é um enhancement de visualização não coberto por\neste finding.\n"
     },
     {
       "id": "L21-09",
@@ -9968,13 +9975,15 @@
       "lens": 21,
       "title": "Calibração de GPS em pista (400 m outdoor)",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "wont-fix",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "gps",
         "personas",
-        "athlete-pro"
+        "athlete-pro",
+        "strava-only-scope"
       ],
       "files": [],
       "correction_type": "process",
@@ -9988,7 +9997,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "**wont-fix (2026-04-21).** O app não faz tracking GPS\nin-app desde a Sprint 25.0.0 (`docs/ARCHITECTURE.md`\n§7 — Strava é fonte única). A correção sobre GPS de\npista pertence ao dispositivo do atleta (modo \"track\nrun\" do Garmin/Coros) e vem pronta via Strava; não há\nponto de calibração no pipeline Omni. Se o produto\nmudar de direção e voltar a gravar GPS nativo, este\nfinding é reaberto.\n"
     },
     {
       "id": "L21-10",
@@ -10023,13 +10032,15 @@
       "lens": 21,
       "title": "Ghost mode não funciona para competições reais",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "wont-fix",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "personas",
-        "athlete-pro"
+        "athlete-pro",
+        "strava-only-scope"
       ],
       "files": [],
       "correction_type": "process",
@@ -10043,7 +10054,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "**wont-fix (2026-04-21).** `challenge_ghost_provider.dart`\né runtime de corrida in-app — \"correr ao lado\" de um\nghost pressupõe loop tick-a-tick de posição live, o que\nnão existe desde a Sprint 25.0.0\n(`docs/ARCHITECTURE.md` §7 — Strava-only). Comparação\npós-sync (meu 5K × ghost de Berlim 2025) continua\npossível via analytics batch e pode ser um follow-up\nseparado; este finding específico (ghost durante o run)\nfica fechado.\n"
     },
     {
       "id": "L21-12",
@@ -10389,14 +10400,16 @@
       "lens": 22,
       "title": "Feedback de ritmo só pós-corrida",
       "severity": "high",
-      "status": "fixed",
+      "status": "wont-fix",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "fixed_at": "2026-04-21T00:00:00.000Z",
+      "reopened_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "personas",
-        "athlete-amateur"
+        "athlete-amateur",
+        "strava-only-scope"
       ],
       "files": [
         "omni_runner/lib/domain/usecases/pace_guidance_voice_trigger.dart",
@@ -10419,7 +10432,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Pure-domain trigger shipped; AudioCueFormatter catalogue keys (pace.too_fast / pace.too_slow / pace.on_target) and SettingsRepository binding are tracked follow-ups (L22-04-catalogue, L22-04-settings)."
+      "note": "**Reclassificado `wont-fix` em 2026-04-21.** O finding pede\nguidance de ritmo **em tempo real** durante a corrida (\"20s\nmais rápido que alvo. Desacelere.\"); o produto não faz mais\ntracking in-app desde Sprint 25.0.0 (`docs/ARCHITECTURE.md`\n§7 — Strava é fonte única), então não há loop de `pace`\nchegando tick-a-tick para o `PaceGuidanceVoiceTrigger`\nconsumir. O código entregue no commit `6ef40ff` fica\ndormente na árvore (value object + trigger puro + 24\ntestes); pickup é trivial caso tracking in-app volte.\nFollow-ups `L22-04-catalogue`/`L22-04-settings`/`L22-04-ui`\nficam cancelados junto.\n"
     },
     {
       "id": "L22-05",
@@ -10469,17 +10482,19 @@
       "lens": 22,
       "title": "Voice coaching parcial",
       "severity": "high",
-      "status": "fixed",
+      "status": "wont-fix",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "fixed_at": "2026-04-21T00:00:00.000Z",
+      "reopened_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "reliability",
         "personas",
         "athlete-amateur",
         "i18n",
-        "audio"
+        "audio",
+        "strava-only-scope"
       ],
       "files": [
         "omni_runner/lib/domain/value_objects/audio_coach_locale.dart",
@@ -10511,7 +10526,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Shipped the three cues the finding called out explicitly plus\nmulti-locale support, in 5 defense layers:\n\n1. `AudioCoachLocale` (value object) — enum `ptBR`/`en`/`es`\n   carrying BCP-47 tags (`pt-BR`/`en-US`/`es-ES`) + `fromTag`\n   null-safe resolver that falls back to `ptBR` on unknown\n   input so voice coaching never crashes the session.\n2. `AudioCueFormatter` (domain service) — single locale-aware\n   text renderer. 15 translation keys × 3 locales + 3\n   motivational pools + 1 hydration reminder per locale. The\n   `translationKeys` Set is a declared invariant the CI guard\n   matches against the catalogue.\n3. Three new voice triggers (domain usecases):\n   - `CountdownVoiceTrigger` — priority 2 (interrupts), fires\n     once per whole second from `countdownSec` down to 0 (GO!),\n     stateful, `reset()` per session.\n   - `MotivationVoiceTrigger` — priority 14, fires every\n     `intervalMs` (default 10 min) of moving time, rotates\n     modulo the locale's pool, `isPaused` suppression,\n     `minSpacingMs` cool-down floor.\n   - `HydrationVoiceTrigger` — priority 13, silent during\n     `warmupMs` (default 20 min), then every `intervalMs`\n     after with the locale's hydration phrase.\n4. `AudioCoachService.init({locale: ...})` + new `setLocale()`\n   mid-session; `AudioCoachRepo` delegates text rendering to\n   the formatter and exposes `setLocale(...)` which updates\n   both formatter and engine. Defaults preserve 100% backward\n   compat (existing callers still speak pt-BR unchanged).\n5. CI guard (`npm run audit:voice-coaching-i18n`) asserts\n   enum shape, BCP-47 tags, `fromTag` factory, catalogue\n   coverage per locale, motivational pool non-empty per\n   locale, 3 trigger files with the expected class contract,\n   and runbook cross-linkage. Smoke-tested: removing an `es`\n   catalogue entry surfaces `missing: countdown.go` on the\n   `es` block.\n\nTests: 71 new Dart cases (31 formatter + 11 countdown +\n9 motivation + 9 hydration + 11 `fromTag` cases embedded\nin formatter suite). `flutter analyze` clean, full suite\n2199/2199 green (was 2128; +71).\n\nRunbook `AUDIO_CUES_RUNBOOK.md` (8 sections) covers invariants\ntable, \"how to add a new locale / cue type\", mid-session\nlocale swap code snippet, 6 operational playbooks including\npriority contract for \"coach talks over itself\".\n\nCode: `9dab4ec`.\n"
+      "note": "Shipped the three cues the finding called out explicitly plus\nmulti-locale support, in 5 defense layers:\n\n1. `AudioCoachLocale` (value object) — enum `ptBR`/`en`/`es`\n   carrying BCP-47 tags (`pt-BR`/`en-US`/`es-ES`) + `fromTag`\n   null-safe resolver that falls back to `ptBR` on unknown\n   input so voice coaching never crashes the session.\n2. `AudioCueFormatter` (domain service) — single locale-aware\n   text renderer. 15 translation keys × 3 locales + 3\n   motivational pools + 1 hydration reminder per locale. The\n   `translationKeys` Set is a declared invariant the CI guard\n   matches against the catalogue.\n3. Three new voice triggers (domain usecases):\n   - `CountdownVoiceTrigger` — priority 2 (interrupts), fires\n     once per whole second from `countdownSec` down to 0 (GO!),\n     stateful, `reset()` per session.\n   - `MotivationVoiceTrigger` — priority 14, fires every\n     `intervalMs` (default 10 min) of moving time, rotates\n     modulo the locale's pool, `isPaused` suppression,\n     `minSpacingMs` cool-down floor.\n   - `HydrationVoiceTrigger` — priority 13, silent during\n     `warmupMs` (default 20 min), then every `intervalMs`\n     after with the locale's hydration phrase.\n4. `AudioCoachService.init({locale: ...})` + new `setLocale()`\n   mid-session; `AudioCoachRepo` delegates text rendering to\n   the formatter and exposes `setLocale(...)` which updates\n   both formatter and engine. Defaults preserve 100% backward\n   compat (existing callers still speak pt-BR unchanged).\n5. CI guard (`npm run audit:voice-coaching-i18n`) asserts\n   enum shape, BCP-47 tags, `fromTag` factory, catalogue\n   coverage per locale, motivational pool non-empty per\n   locale, 3 trigger files with the expected class contract,\n   and runbook cross-linkage. Smoke-tested: removing an `es`\n   catalogue entry surfaces `missing: countdown.go` on the\n   `es` block.\n\nTests: 71 new Dart cases (31 formatter + 11 countdown +\n9 motivation + 9 hydration + 11 `fromTag` cases embedded\nin formatter suite). `flutter analyze` clean, full suite\n2199/2199 green (was 2128; +71).\n\nRunbook `AUDIO_CUES_RUNBOOK.md` (8 sections) covers invariants\ntable, \"how to add a new locale / cue type\", mid-session\nlocale swap code snippet, 6 operational playbooks including\npriority contract for \"coach talks over itself\".\n\nCode: `9dab4ec`.\n\n**Reclassificado `wont-fix` em 2026-04-21** — os 3 cues\npropostos (countdown \"3, 2, 1, GO\", motivação periódica,\navisos de hidratação em corrida longa) são triggers\ntick-a-tick **durante** a corrida. Como o app não faz\nmais tracking in-app desde a Sprint 25.0.0\n(`docs/ARCHITECTURE.md` §7 — Strava-only), não há loop\nlive que alimente `CountdownVoiceTrigger`,\n`MotivationVoiceTrigger` ou `HydrationVoiceTrigger`. O\ncódigo do commit `9dab4ec` fica dormente (puro-domain,\n71 testes contra VOs inertes); `AudioCoachLocale` +\n`AudioCueFormatter` são value objects genéricos e\ncontinuam pickup-able se tracking in-app voltar ou se\nalgum canal pós-sync precisar TTS.\n"
     },
     {
       "id": "L22-07",

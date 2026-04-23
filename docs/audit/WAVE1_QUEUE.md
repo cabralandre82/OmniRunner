@@ -94,14 +94,16 @@
 
 ### 🟢 Batch H — Mobile UX & Coach features (10 entregas, code-tractable)
 
-**Progresso Batch H (Mobile UX):** 🟢 10/10 — L21-06 ✓, L22-05 ✓, L22-06 ✓, L22-08 ✓, L22-09 ✓, L23-06 ✓, L23-07 ✓, L23-11 ✓, L23-13 ✓, L23-14 ✓.
-**Progresso Batch I (Reach goals):** 🟠 3/12 — L22-04 ✓ (fixed 2026-04-21 — real-time pace guidance voice trigger), L23-12 ✓ (fixed 2026-04-21 — athlete onboarding state machine), L20-06 ✓ (fixed 2026-04-21 — public status-page aggregator).
+**Progresso Batch H (Mobile UX):** 🟢 8/10 code-delivered + 2 reclassificados — L21-06 🚫 wont-fix (Sprint 25.0.0 — Strava-only, código dormente), L22-05 ✓, L22-06 🚫 wont-fix (Sprint 25.0.0 — Strava-only, código dormente), L22-08 ✓, L22-09 ✓, L23-06 ✓, L23-07 ✓, L23-11 ✓, L23-13 ✓, L23-14 ✓.
+**Progresso Batch I (Reach goals):** 🟡 3 fixed + 5 wont-fix (Strava-only) / 12 — L22-04 🚫 wont-fix (código dormente em `6ef40ff`), L23-12 ✓ (fixed 2026-04-21 — athlete onboarding state machine), L20-06 ✓ (fixed 2026-04-21 — public status-page aggregator), L21-07/L21-08/L21-09/L21-11 🚫 wont-fix (Sprint 25.0.0 — Strava-only). Pendentes reais: L08-06, L08-08, L16-02, L21-10, L21-12.
+
+> **Sweep Sprint 25.0.0 (2026-04-21)** — 7 findings fechados como `wont-fix` por decisão arquitetural: L21-06, L21-07, L21-08, L21-09, L21-11, L22-04, L22-06. Todos dependem de tracking GPS in-app, que foi removido na Sprint 25.0.0 em favor de Strava como fonte única (`docs/ARCHITECTURE.md` §7). Código-domínio já entregue para L21-06/L22-04/L22-06 fica dormente na árvore — pickup-able se a decisão for revertida. Ver `docs/audit/ROADMAP.md` §"Sweep Strava-only" para motivação completa.
 
 | # | id | sev | L | ep | Título |
 |---|---|---|---|---|---|
-| 29 | L21-06 | high | 21 | 3 | ✅ Polyline GPS resolução baixa (`distanceFilter` 5 m) (fixed 2026-04-21) |
+| 29 | L21-06 | high | 21 | 3 | 🚫 Polyline GPS resolução baixa — **wont-fix** (Sprint 25.0.0 — Strava-only) |
 | 30 | L22-05 | high | 22 | 3 | ✅ Grupos locais sem descoberta por proximidade (fixed 2026-04-21) |
-| 31 | L22-06 | high | 22 | 3 | ✅ Voice coaching parcial (sem TTS por bracket) (fixed 2026-04-21) |
+| 31 | L22-06 | high | 22 | 3 | 🚫 Voice coaching parcial — **wont-fix** (Sprint 25.0.0 — Strava-only) |
 | 32 | L22-08 | high | 22 | 3 | ✅ Desafio de grupo (viralização entre amigos) (fixed 2026-04-21) |
 | 33 | L22-09 | high | 22 | 3 | ✅ Progress celebration tímida (fixed 2026-04-21) |
 | 34 | L23-06 | high | 23 | 3 | ✅ Plano mensal/trimestral não periodizado (fixed 2026-04-21) |
@@ -114,13 +116,13 @@
 
 | # | id | sev | L | ep | Título |
 |---|---|---|---|---|---|
-| 39 | L21-07 | high | 21 | 3 | Sem interoperabilidade com `.fit` real-time |
-| 40 | L21-08 | high | 21 | 3 | Lap splits manuais inexistentes em tela de corrida |
-| 41 | L21-09 | high | 21 | 3 | Calibração de GPS em pista (400 m outdoor) |
+| 39 | L21-07 | high | 21 | 3 | 🚫 Sem interoperabilidade com `.fit` real-time — **wont-fix** (Sprint 25.0.0 — Strava-only) |
+| 40 | L21-08 | high | 21 | 3 | 🚫 Lap splits manuais em tela de corrida — **wont-fix** (Sprint 25.0.0 — Strava-only) |
+| 41 | L21-09 | high | 21 | 3 | 🚫 Calibração de GPS em pista — **wont-fix** (Sprint 25.0.0 — Strava-only) |
 | 42 | L21-10 | high | 21 | 3 | Anti-cheat pode publicamente marcar elite como suspeito |
-| 43 | L21-11 | high | 21 | 3 | Ghost mode não funciona para competições reais |
+| 43 | L21-11 | high | 21 | 3 | 🚫 Ghost mode durante corrida — **wont-fix** (Sprint 25.0.0 — Strava-only) |
 | 44 | L21-12 | high | 21 | 3 | Sem "team dashboard" para staff técnica |
-| 45 | L22-04 | high | 22 | 3 | ✅ Feedback de ritmo só pós-corrida (fixed 2026-04-21) |
+| 45 | L22-04 | high | 22 | 3 | 🚫 Feedback de ritmo só pós-corrida — **wont-fix** (Sprint 25.0.0 — Strava-only) |
 | 46 | L23-12 | high | 23 | 3 | ✅ Onboarding de novo atleta no clube (fixed 2026-04-21) |
 | 47 | L20-06 | high | 20 | 3 | ✅ Status page pública inexistente (fixed 2026-04-21) |
 | 48 | L16-02 | high | 16 | 3 | Sem custom domain por assessoria |

@@ -4,11 +4,12 @@ audit_ref: "22.6"
 lens: 22
 title: "Voice coaching parcial"
 severity: high
-status: fixed
+status: wont-fix
 wave: 1
 discovered_at: 2026-04-17
 fixed_at: 2026-04-21
-tags: ["mobile", "reliability", "personas", "athlete-amateur", "i18n", "audio"]
+reopened_at: 2026-04-21
+tags: ["mobile", "reliability", "personas", "athlete-amateur", "i18n", "audio", "strava-only-scope"]
 files:
   - omni_runner/lib/domain/value_objects/audio_coach_locale.dart
   - omni_runner/lib/domain/services/audio_cue_formatter.dart
@@ -84,9 +85,23 @@ note: |
   priority contract for "coach talks over itself".
 
   Code: `9dab4ec`.
+
+  **Reclassificado `wont-fix` em 2026-04-21** — os 3 cues
+  propostos (countdown "3, 2, 1, GO", motivação periódica,
+  avisos de hidratação em corrida longa) são triggers
+  tick-a-tick **durante** a corrida. Como o app não faz
+  mais tracking in-app desde a Sprint 25.0.0
+  (`docs/ARCHITECTURE.md` §7 — Strava-only), não há loop
+  live que alimente `CountdownVoiceTrigger`,
+  `MotivationVoiceTrigger` ou `HydrationVoiceTrigger`. O
+  código do commit `9dab4ec` fica dormente (puro-domain,
+  71 testes contra VOs inertes); `AudioCoachLocale` +
+  `AudioCueFormatter` são value objects genéricos e
+  continuam pickup-able se tracking in-app voltar ou se
+  algum canal pós-sync precisar TTS.
 ---
 # [L22-06] Voice coaching parcial
-> **Lente:** 22 — Atleta Amador · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** ✅ fixed
+> **Lente:** 22 — Atleta Amador · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** 🚫 wont-fix (Sprint 25.0.0 — Strava-only)
 **Camada:** mobile
 **Personas impactadas:** atleta amador, atleta pro
 ## Achado
@@ -104,3 +119,4 @@ Contexto completo e motivação detalhada em [`docs/audit/parts/`](../parts/) �
 ## Histórico
 - `2026-04-17` — Descoberto na auditoria inicial (Lente 22 — Atleta Amador, item 22.6).
 - `2026-04-21` — ✅ Fixado. `AudioCoachLocale` (ptBR/en/es), `AudioCueFormatter` com 15 chaves × 3 locales, 3 novos triggers (countdown/motivation/hydration), `AudioCoachService.setLocale` mid-session, CI `audit:voice-coaching-i18n` (20 invariants), runbook `AUDIO_CUES_RUNBOOK.md`. 71 novos testes Dart, flutter analyze clean, 2199/2199 green. Commit `9dab4ec`.
+- `2026-04-21` — **Reclassificado `wont-fix`** após revisão. Sprint 25.0.0 removeu tracking in-app (`docs/ARCHITECTURE.md` §7 — Strava-only); os 3 cues pedidos são todos tick-a-tick durante a corrida. Código fica dormente, value objects permanecem pickup-able.

@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-23 17:16:09 UTC.
+> Atualizado em 2026-04-23 17:32:45 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -302,12 +302,12 @@ Total: **348** findings.
 | 🔴 critical | ⏳ fix-pending | [L21-03](./findings/L21-03-dados-gps-e-biometricos-sem-controle-de-propriedade.md) | 1 | L21 · Atleta Pro | Dados GPS e biométricos sem controle de propriedade (dilema do patrocínio) | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L21-04](./findings/L21-04-ausencia-de-training-load-tss-ctl-atl.md) | 1 | L21 · Atleta Pro | Ausência de "training load" / TSS / CTL / ATL | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L21-05](./findings/L21-05-zonas-de-treino-pace-hr-nao-personalizaveis.md) | 1 | L21 · Atleta Pro | Zonas de treino (pace/HR) não personalizáveis | unassigned |
-| 🟠 high | ✅ fixed | [L21-06](./findings/L21-06-polyline-gps-resolucao-baixa-5m-distancefilter.md) | 1 | L21 · Atleta Pro | Polyline GPS resolução baixa (5m distanceFilter) | mobile |
-| 🟠 high | ⏳ fix-pending | [L21-07](./findings/L21-07-sem-interoperabilidade-com-fit-real-time.md) | 1 | L21 · Atleta Pro | Sem interoperabilidade com .fit real-time | unassigned |
-| 🟠 high | ⏳ fix-pending | [L21-08](./findings/L21-08-lap-splits-manuais-inexistentes-em-tela-de-corrida.md) | 1 | L21 · Atleta Pro | Lap splits manuais inexistentes em tela de corrida | unassigned |
-| 🟠 high | ⏳ fix-pending | [L21-09](./findings/L21-09-calibracao-de-gps-em-pista-400-m-outdoor.md) | 1 | L21 · Atleta Pro | Calibração de GPS em pista (400 m outdoor) | unassigned |
+| 🟠 high | 🚫 wont-fix | [L21-06](./findings/L21-06-polyline-gps-resolucao-baixa-5m-distancefilter.md) | 1 | L21 · Atleta Pro | Polyline GPS resolução baixa (5m distanceFilter) | mobile |
+| 🟠 high | 🚫 wont-fix | [L21-07](./findings/L21-07-sem-interoperabilidade-com-fit-real-time.md) | 1 | L21 · Atleta Pro | Sem interoperabilidade com .fit real-time | unassigned |
+| 🟠 high | 🚫 wont-fix | [L21-08](./findings/L21-08-lap-splits-manuais-inexistentes-em-tela-de-corrida.md) | 1 | L21 · Atleta Pro | Lap splits manuais inexistentes em tela de corrida | unassigned |
+| 🟠 high | 🚫 wont-fix | [L21-09](./findings/L21-09-calibracao-de-gps-em-pista-400-m-outdoor.md) | 1 | L21 · Atleta Pro | Calibração de GPS em pista (400 m outdoor) | unassigned |
 | 🟠 high | ⏳ fix-pending | [L21-10](./findings/L21-10-anti-cheat-pode-publicamente-marcar-elite-como-suspeito.md) | 1 | L21 · Atleta Pro | Anti-cheat pode publicamente marcar elite como suspeito | unassigned |
-| 🟠 high | ⏳ fix-pending | [L21-11](./findings/L21-11-ghost-mode-nao-funciona-para-competicoes-reais.md) | 1 | L21 · Atleta Pro | Ghost mode não funciona para competições reais | unassigned |
+| 🟠 high | 🚫 wont-fix | [L21-11](./findings/L21-11-ghost-mode-nao-funciona-para-competicoes-reais.md) | 1 | L21 · Atleta Pro | Ghost mode não funciona para competições reais | unassigned |
 | 🟠 high | ⏳ fix-pending | [L21-12](./findings/L21-12-sem-team-dashboard-para-staff-tecnica.md) | 1 | L21 · Atleta Pro | Sem "team dashboard" para staff técnica | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L21-13](./findings/L21-13-recovery-sleep-tracking-ausente.md) | 2 | L21 · Atleta Pro | Recovery/sleep tracking ausente | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L21-14](./findings/L21-14-sem-race-predictor-vdot-riegel.md) | 2 | L21 · Atleta Pro | Sem race predictor (VDOT/Riegel) | unassigned |
@@ -320,9 +320,9 @@ Total: **348** findings.
 | 🔴 critical | ⏳ fix-pending | [L22-01](./findings/L22-01-onboarding-nao-inclui-primeira-corrida-guiada.md) | 1 | L22 · Atleta Amador | Onboarding não inclui "primeira corrida guiada" | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L22-02](./findings/L22-02-conceito-de-moeda-omnicoin-confunde-amador.md) | 1 | L22 · Atleta Amador | Conceito de "moeda / OmniCoin" confunde amador | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L22-03](./findings/L22-03-plano-semanal-pessoal-ausente-para-solo-runner.md) | 1 | L22 · Atleta Amador | Plano semanal pessoal ausente para solo runner | unassigned |
-| 🟠 high | ✅ fixed | [L22-04](./findings/L22-04-feedback-de-ritmo-so-pos-corrida.md) | 1 | L22 · Atleta Amador | Feedback de ritmo só pós-corrida | audit-bot |
+| 🟠 high | 🚫 wont-fix | [L22-04](./findings/L22-04-feedback-de-ritmo-so-pos-corrida.md) | 1 | L22 · Atleta Amador | Feedback de ritmo só pós-corrida | audit-bot |
 | 🟠 high | ✅ fixed | [L22-05](./findings/L22-05-grupos-locais-sem-descoberta-por-proximidade.md) | 1 | L22 · Atleta Amador | Grupos locais sem descoberta por proximidade | data-platform |
-| 🟠 high | ✅ fixed | [L22-06](./findings/L22-06-voice-coaching-parcial.md) | 1 | L22 · Atleta Amador | Voice coaching parcial | mobile |
+| 🟠 high | 🚫 wont-fix | [L22-06](./findings/L22-06-voice-coaching-parcial.md) | 1 | L22 · Atleta Amador | Voice coaching parcial | mobile |
 | 🟠 high | ⏳ fix-pending | [L22-07](./findings/L22-07-compra-parcelada-para-assessoria-brasileira.md) | 1 | L22 · Atleta Amador | Compra parcelada para assessoria brasileira | unassigned |
 | 🟠 high | ✅ fixed | [L22-08](./findings/L22-08-desafio-de-grupo-viralizacao-entre-amigos.md) | 1 | L22 · Atleta Amador | Desafio de grupo (viralização entre amigos) | unassigned |
 | 🟠 high | ✅ fixed | [L22-09](./findings/L22-09-progress-celebration-timida.md) | 1 | L22 · Atleta Amador | Progress celebration tímida | unassigned |
