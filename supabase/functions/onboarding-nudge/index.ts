@@ -142,18 +142,41 @@ serve(async (req: Request) => {
 
       const contextId = `d${daysSinceRegistration}`;
 
-      // Dedup check via notification_log
-      const since = new Date(now.getTime() - DEDUP_HOURS * MS_PER_HOUR).toISOString();
-      const { data: existing } = await db
-        .from("notification_log")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("rule", "onboarding_nudge")
-        .eq("context_id", contextId)
-        .gte("sent_at", since)
-        .limit(1);
+      // L12-09 — race-safe claim: INSERT ... ON CONFLICT DO NOTHING via RPC.
+      // Returns TRUE iff this caller won the claim (and owns the dispatch).
+      // A legacy select+insert fallback kicks in if the RPC isn't installed
+      // yet (e.g. fresh dev DB before this PR's migration).
+      let claimed = false;
+      try {
+        const { data, error } = await db.rpc("fn_try_claim_notification", {
+          p_user_id: userId,
+          p_rule: "onboarding_nudge",
+          p_context_id: contextId,
+        });
+        if (error) throw error;
+        claimed = data === true;
+      } catch {
+        const since = new Date(now.getTime() - DEDUP_HOURS * MS_PER_HOUR).toISOString();
+        const { data: existing } = await db
+          .from("notification_log")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("rule", "onboarding_nudge")
+          .eq("context_id", contextId)
+          .gte("sent_at", since)
+          .limit(1);
+        if (existing && existing.length > 0) continue;
 
-      if (existing && existing.length > 0) continue;
+        const { error: insErr } = await db.from("notification_log").insert({
+          user_id: userId,
+          rule: "onboarding_nudge",
+          context_id: contextId,
+        });
+        claimed = !insErr || (insErr.code as string | undefined) !== "23505";
+        if (insErr && (insErr.code as string | undefined) === "23505") continue;
+      }
+
+      if (!claimed) continue;
 
       // Dispatch push via send-push
       const ctrl = new AbortController();
@@ -182,12 +205,20 @@ serve(async (req: Request) => {
       }
 
       if (ok) {
-        await db.from("notification_log").insert({
-          user_id: userId,
-          rule: "onboarding_nudge",
-          context_id: contextId,
-        });
         totalSent++;
+      } else {
+        // Dispatch failed — release the claim within the 60s window so the
+        // next cron run retries (L12-09).
+        try {
+          await db.rpc("fn_release_notification", {
+            p_user_id: userId,
+            p_rule: "onboarding_nudge",
+            p_context_id: contextId,
+            p_max_age_seconds: 60,
+          });
+        } catch {
+          // non-fatal — at worst, this user waits until the next day bucket
+        }
       }
     }
 

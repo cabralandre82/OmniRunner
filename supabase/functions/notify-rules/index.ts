@@ -237,7 +237,7 @@ async function evaluateChallengeReceived(
     const challengeName = (p.challenges as { name: string })?.name ?? "Desafio";
     const contextId = p.challenge_id as string;
 
-    if (await wasRecentlyNotified(db, userId, "challenge_received", contextId)) {
+    if (!(await tryClaimNotification(db, userId, "challenge_received", contextId))) {
       continue;
     }
 
@@ -249,8 +249,9 @@ async function evaluateChallengeReceived(
     });
 
     if (ok) {
-      await logNotification(db, userId, "challenge_received", contextId);
       sent++;
+    } else {
+      await releaseNotificationClaim(db, userId, "challenge_received", contextId);
     }
   }
 
@@ -305,7 +306,7 @@ async function evaluateStreakAtRisk(
     const userId = u.user_id as string;
     const streak = u.streak_current as number;
 
-    if (await wasRecentlyNotified(db, userId, "streak_at_risk", todayKey)) {
+    if (!(await tryClaimNotification(db, userId, "streak_at_risk", todayKey))) {
       continue;
     }
 
@@ -317,8 +318,9 @@ async function evaluateStreakAtRisk(
     });
 
     if (ok) {
-      await logNotification(db, userId, "streak_at_risk", todayKey);
       sent++;
+    } else {
+      await releaseNotificationClaim(db, userId, "streak_at_risk", todayKey);
     }
   }
 
@@ -383,7 +385,7 @@ async function evaluateChampionshipStarting(
     for (const p of participants) {
       const userId = p.user_id as string;
 
-      if (await wasRecentlyNotified(db, userId, "championship_starting", champId)) {
+      if (!(await tryClaimNotification(db, userId, "championship_starting", champId))) {
         continue;
       }
 
@@ -399,8 +401,9 @@ async function evaluateChampionshipStarting(
       });
 
       if (ok) {
-        await logNotification(db, userId, "championship_starting", champId);
         totalSent++;
+      } else {
+        await releaseNotificationClaim(db, userId, "championship_starting", champId);
       }
     }
   }
@@ -433,7 +436,7 @@ async function evaluateChampInviteReceived(
   let sent = 0;
 
   for (const userId of context.user_ids) {
-    if (await wasRecentlyNotified(db, userId, "championship_invite_received", context.championship_id)) {
+    if (!(await tryClaimNotification(db, userId, "championship_invite_received", context.championship_id))) {
       continue;
     }
 
@@ -445,8 +448,9 @@ async function evaluateChampInviteReceived(
     });
 
     if (ok) {
-      await logNotification(db, userId, "championship_invite_received", context.championship_id);
       sent++;
+    } else {
+      await releaseNotificationClaim(db, userId, "championship_invite_received", context.championship_id);
     }
   }
 
@@ -478,7 +482,7 @@ async function evaluateChallengeTeamInviteReceived(
   let sent = 0;
 
   for (const userId of context.user_ids) {
-    if (await wasRecentlyNotified(db, userId, "challenge_team_invite_received", context.challenge_id)) {
+    if (!(await tryClaimNotification(db, userId, "challenge_team_invite_received", context.challenge_id))) {
       continue;
     }
 
@@ -490,8 +494,9 @@ async function evaluateChallengeTeamInviteReceived(
     });
 
     if (ok) {
-      await logNotification(db, userId, "challenge_team_invite_received", context.challenge_id);
       sent++;
+    } else {
+      await releaseNotificationClaim(db, userId, "challenge_team_invite_received", context.challenge_id);
     }
   }
 
@@ -564,7 +569,7 @@ async function evaluateChallengeAccepted(
   const dedupKey = `${challengeId}:${joinerId ?? "unknown"}`;
 
   for (const userId of targetIds) {
-    if (await wasRecentlyNotified(db, userId, "challenge_accepted", dedupKey)) {
+    if (!(await tryClaimNotification(db, userId, "challenge_accepted", dedupKey))) {
       continue;
     }
 
@@ -576,8 +581,9 @@ async function evaluateChallengeAccepted(
     });
 
     if (ok) {
-      await logNotification(db, userId, "challenge_accepted", dedupKey);
       sent++;
+    } else {
+      await releaseNotificationClaim(db, userId, "challenge_accepted", dedupKey);
     }
   }
 
@@ -627,7 +633,7 @@ async function evaluateJoinRequestReceived(
   for (const s of staff) {
     const userId = s.user_id as string;
 
-    if (await wasRecentlyNotified(db, userId, "join_request_received", dedupKey)) {
+    if (!(await tryClaimNotification(db, userId, "join_request_received", dedupKey))) {
       continue;
     }
 
@@ -639,8 +645,9 @@ async function evaluateJoinRequestReceived(
     });
 
     if (ok) {
-      await logNotification(db, userId, "join_request_received", dedupKey);
       sent++;
+    } else {
+      await releaseNotificationClaim(db, userId, "join_request_received", dedupKey);
     }
   }
 
@@ -671,7 +678,7 @@ async function evaluateFriendRequestReceived(
   const senderName = sender?.display_name ?? "Alguém";
   const dedupKey = `${context.from_user_id}:${context.to_user_id}`;
 
-  if (await wasRecentlyNotified(db, context.to_user_id, "friend_request_received", dedupKey)) {
+  if (!(await tryClaimNotification(db, context.to_user_id, "friend_request_received", dedupKey))) {
     return { evaluated: 1, sent: 0 };
   }
 
@@ -682,8 +689,8 @@ async function evaluateFriendRequestReceived(
     data: { type: "friend_request_received", from_user_id: context.from_user_id },
   });
 
-  if (ok) {
-    await logNotification(db, context.to_user_id, "friend_request_received", dedupKey);
+  if (!ok) {
+    await releaseNotificationClaim(db, context.to_user_id, "friend_request_received", dedupKey);
   }
 
   return { evaluated: 1, sent: ok ? 1 : 0 };
@@ -713,7 +720,7 @@ async function evaluateFriendRequestAccepted(
   const accepterName = accepter?.display_name ?? "Alguém";
   const dedupKey = `${context.accepter_user_id}:${context.original_sender_id}`;
 
-  if (await wasRecentlyNotified(db, context.original_sender_id, "friend_request_accepted", dedupKey)) {
+  if (!(await tryClaimNotification(db, context.original_sender_id, "friend_request_accepted", dedupKey))) {
     return { evaluated: 1, sent: 0 };
   }
 
@@ -724,8 +731,8 @@ async function evaluateFriendRequestAccepted(
     data: { type: "friend_request_accepted", accepter_user_id: context.accepter_user_id },
   });
 
-  if (ok) {
-    await logNotification(db, context.original_sender_id, "friend_request_accepted", dedupKey);
+  if (!ok) {
+    await releaseNotificationClaim(db, context.original_sender_id, "friend_request_accepted", dedupKey);
   }
 
   return { evaluated: 1, sent: ok ? 1 : 0 };
@@ -770,7 +777,7 @@ async function evaluateChallengeSettled(
   for (const p of participants) {
     const userId = p.user_id as string;
 
-    if (await wasRecentlyNotified(db, userId, "challenge_settled", challengeId)) {
+    if (!(await tryClaimNotification(db, userId, "challenge_settled", challengeId))) {
       continue;
     }
 
@@ -797,8 +804,9 @@ async function evaluateChallengeSettled(
     });
 
     if (ok) {
-      await logNotification(db, userId, "challenge_settled", challengeId);
       sent++;
+    } else {
+      await releaseNotificationClaim(db, userId, "challenge_settled", challengeId);
     }
   }
 
@@ -851,10 +859,16 @@ async function evaluateChallengeExpiring(
         !p.contributing_session_ids || p.contributing_session_ids.length === 0,
     );
 
+    // L12-09: include a UTC-date bucket so the "≤24h remaining" reminder can
+    // legitimately re-fire on a subsequent day if the challenge is extended
+    // without the unique constraint blocking it forever.
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const expireCtx = `${challengeId}:${todayKey}`;
+
     for (const p of needsReminder) {
       const userId = p.user_id as string;
 
-      if (await wasRecentlyNotified(db, userId, "challenge_expiring", challengeId)) {
+      if (!(await tryClaimNotification(db, userId, "challenge_expiring", expireCtx))) {
         continue;
       }
 
@@ -866,8 +880,9 @@ async function evaluateChallengeExpiring(
       });
 
       if (ok) {
-        await logNotification(db, userId, "challenge_expiring", challengeId);
         totalSent++;
+      } else {
+        await releaseNotificationClaim(db, userId, "challenge_expiring", expireCtx);
       }
     }
   }
@@ -902,7 +917,7 @@ async function evaluateInactivityNudge(
   for (const row of inactive) {
     const userId = row.user_id as string;
 
-    if (await wasRecentlyNotified(db, userId, "inactivity_nudge", todayKey)) {
+    if (!(await tryClaimNotification(db, userId, "inactivity_nudge", todayKey))) {
       continue;
     }
 
@@ -926,8 +941,9 @@ async function evaluateInactivityNudge(
     });
 
     if (ok) {
-      await logNotification(db, userId, "inactivity_nudge", todayKey);
       sent++;
+    } else {
+      await releaseNotificationClaim(db, userId, "inactivity_nudge", todayKey);
     }
   }
 
@@ -953,7 +969,7 @@ async function evaluateBadgeEarned(
   const badgeName = context.badge_name ?? "uma conquista";
   const dedupKey = `${userId}:${context.badge_id}`;
 
-  if (await wasRecentlyNotified(db, userId, "badge_earned", dedupKey)) {
+  if (!(await tryClaimNotification(db, userId, "badge_earned", dedupKey))) {
     return { evaluated: 1, sent: 0 };
   }
 
@@ -964,8 +980,8 @@ async function evaluateBadgeEarned(
     data: { type: "badge_earned", badge_id: context.badge_id },
   });
 
-  if (ok) {
-    await logNotification(db, userId, "badge_earned", dedupKey);
+  if (!ok) {
+    await releaseNotificationClaim(db, userId, "badge_earned", dedupKey);
   }
 
   return { evaluated: 1, sent: ok ? 1 : 0 };
@@ -1015,7 +1031,7 @@ async function evaluateLeagueRankChange(
   for (const m of members) {
     const userId = m.user_id as string;
 
-    if (await wasRecentlyNotified(db, userId, "league_rank_change", dedupKey)) {
+    if (!(await tryClaimNotification(db, userId, "league_rank_change", dedupKey))) {
       continue;
     }
 
@@ -1027,8 +1043,9 @@ async function evaluateLeagueRankChange(
     });
 
     if (ok) {
-      await logNotification(db, userId, "league_rank_change", dedupKey);
       sent++;
+    } else {
+      await releaseNotificationClaim(db, userId, "league_rank_change", dedupKey);
     }
   }
 
@@ -1062,7 +1079,7 @@ async function evaluateJoinRequestApproved(
   const groupName = group?.name ?? "uma assessoria";
   const dedupKey = `${groupId}:${userId}`;
 
-  if (await wasRecentlyNotified(db, userId, "join_request_approved", dedupKey)) {
+  if (!(await tryClaimNotification(db, userId, "join_request_approved", dedupKey))) {
     return { evaluated: 1, sent: 0 };
   }
 
@@ -1073,8 +1090,8 @@ async function evaluateJoinRequestApproved(
     data: { type: "join_request_approved", group_id: groupId },
   });
 
-  if (ok) {
-    await logNotification(db, userId, "join_request_approved", dedupKey);
+  if (!ok) {
+    await releaseNotificationClaim(db, userId, "join_request_approved", dedupKey);
   }
 
   return { evaluated: 1, sent: ok ? 1 : 0 };
@@ -1116,12 +1133,18 @@ async function evaluateLowCreditsAlert(
   if (!staff || staff.length === 0) return { evaluated: 0, sent: 0 };
 
   let sent = 0;
-  const dedupKey = `low_credits:${groupId}`;
+  // L12-09: include UTC-date bucket so a legitimate "low credits" alert can
+  // re-fire on a subsequent day if the admin hasn't topped up — without a
+  // date, the UNIQUE(user,rule,context_id) constraint would silently dedup
+  // forever after the first alert. Hour bucket would be too spammy; day is
+  // the historical 12h-lookback intent.
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const dedupKey = `low_credits:${groupId}:${todayKey}`;
 
   for (const s of staff) {
     const userId = s.user_id as string;
 
-    if (await wasRecentlyNotified(db, userId, "low_credits_alert", dedupKey)) {
+    if (!(await tryClaimNotification(db, userId, "low_credits_alert", dedupKey))) {
       continue;
     }
 
@@ -1133,8 +1156,9 @@ async function evaluateLowCreditsAlert(
     });
 
     if (ok) {
-      await logNotification(db, userId, "low_credits_alert", dedupKey);
       sent++;
+    } else {
+      await releaseNotificationClaim(db, userId, "low_credits_alert", dedupKey);
     }
   }
 
@@ -1145,16 +1169,56 @@ async function evaluateLowCreditsAlert(
 // Helpers
 // ═════════════════════════════════════════════════════════════════════════════
 
-async function wasRecentlyNotified(
+/**
+ * L12-09 — Race-safe dedup primitives.
+ *
+ * `tryClaimNotification` wraps the `public.fn_try_claim_notification`
+ * RPC which performs `INSERT ... ON CONFLICT DO NOTHING` against the
+ * UNIQUE(user_id, rule, context_id) constraint on `notification_log`.
+ * It returns TRUE iff the caller owns the dispatch (the row was
+ * inserted), FALSE iff some other caller already claimed the tuple.
+ *
+ * If the caller proceeds but dispatch then FAILS, it MUST call
+ * `releaseNotificationClaim` within 60s so a subsequent cron run can
+ * retry. A stale claim (>60s) is never released — that prevents a
+ * misbehaving caller from wiping a legitimate old notification.
+ *
+ * For rules that need "repeat every N hours" semantics, callers must
+ * encode a time-bucket into `contextId` (e.g. a `YYYY-MM-DD` suffix).
+ *
+ * A non-throwing fallback to the legacy `wasRecentlyNotified` path is
+ * kept in place for environments where the RPC isn't available yet
+ * (e.g. a freshly-bootstrapped dev DB without this PR's migration).
+ */
+async function tryClaimNotification(
   // deno-lint-ignore no-explicit-any
   db: any,
   userId: string,
   rule: string,
   contextId: string,
 ): Promise<boolean> {
-  const since = new Date(Date.now() - DEDUP_HOURS * MS_PER_HOUR).toISOString();
+  try {
+    const { data, error } = await db.rpc("fn_try_claim_notification", {
+      p_user_id: userId,
+      p_rule: rule,
+      p_context_id: contextId,
+    });
+    if (!error) return data === true;
+    log.warn("fn_try_claim_notification RPC failed; falling back to select+insert", {
+      rule,
+      context_id: contextId,
+      error: error.message,
+    });
+  } catch (err) {
+    log.warn("fn_try_claim_notification RPC threw; falling back to select+insert", {
+      rule,
+      context_id: contextId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
 
-  const { data } = await db
+  const since = new Date(Date.now() - DEDUP_HOURS * MS_PER_HOUR).toISOString();
+  const { data: existing } = await db
     .from("notification_log")
     .select("id")
     .eq("user_id", userId)
@@ -1162,22 +1226,53 @@ async function wasRecentlyNotified(
     .eq("context_id", contextId)
     .gte("sent_at", since)
     .limit(1);
+  if (existing && existing.length > 0) return false;
 
-  return data != null && data.length > 0;
+  const { error: insErr } = await db.from("notification_log").insert({
+    user_id: userId,
+    rule,
+    context_id: contextId,
+  });
+  if (insErr) {
+    if ((insErr.code as string | undefined) === "23505") return false;
+    log.error("notification_log insert failed", {
+      rule,
+      context_id: contextId,
+      error: insErr.message,
+    });
+    return false;
+  }
+  return true;
 }
 
-async function logNotification(
+async function releaseNotificationClaim(
   // deno-lint-ignore no-explicit-any
   db: any,
   userId: string,
   rule: string,
   contextId: string,
 ): Promise<void> {
-  await db.from("notification_log").insert({
-    user_id: userId,
-    rule,
-    context_id: contextId,
-  });
+  try {
+    const { error } = await db.rpc("fn_release_notification", {
+      p_user_id: userId,
+      p_rule: rule,
+      p_context_id: contextId,
+      p_max_age_seconds: 60,
+    });
+    if (error) {
+      log.warn("fn_release_notification RPC failed", {
+        rule,
+        context_id: contextId,
+        error: error.message,
+      });
+    }
+  } catch (err) {
+    log.warn("fn_release_notification RPC threw", {
+      rule,
+      context_id: contextId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
 }
 
 async function dispatchPush(
