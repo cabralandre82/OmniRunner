@@ -85,103 +85,61 @@ serve(async (req: Request) => {
 
     const { championship_id } = body;
 
-    const { data: champ, error: champErr } = await db
-      .from("championships")
-      .select("id, host_group_id, status")
-      .eq("id", championship_id)
-      .maybeSingle();
+    // (L05-06) All four writes — withdraw participants, revoke
+    // invites, refund badges, flip championship to 'cancelled' —
+    // happen inside `public.fn_champ_cancel_atomic`. That RPC
+    // owns the authorization check (FORBIDDEN if caller is not
+    // admin_master / coach of the host group), the status
+    // precondition (INVALID_STATUS on anything but
+    // draft/open/active), and the row lock (FOR UPDATE). Any
+    // failure inside raises and rolls back the whole
+    // transaction — no more "cancelled but badges silently
+    // lost" path.
+    const { data: rpcData, error: rpcErr } = await db.rpc(
+      "fn_champ_cancel_atomic",
+      { p_championship_id: championship_id, p_caller_user_id: user.id },
+    );
 
-    if (champErr) {
-      const classified = classifyError(champErr);
-      status = classified.httpStatus;
-      errorCode = classified.code;
-      return jsonErr(classified.httpStatus, classified.code, classified.message, requestId);
-    }
-
-    if (!champ) {
-      status = 404;
-      return jsonErr(404, "NOT_FOUND", "Campeonato não encontrado", requestId);
-    }
-
-    if (!["draft", "open", "active"].includes(champ.status)) {
-      status = 409;
-      return jsonErr(409, "INVALID_STATUS",
-        `Campeonato já está "${champ.status}". Só é possível cancelar campeonatos em rascunho, abertos ou em andamento.`,
-        requestId);
-    }
-
-    const { data: membership } = await db
-      .from("coaching_members")
-      .select("role")
-      .eq("group_id", champ.host_group_id)
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (!membership || !["admin_master", "coach"].includes(membership.role)) {
-      status = 403;
-      return jsonErr(403, "FORBIDDEN",
-        "Apenas o staff da assessoria organizadora pode cancelar o campeonato",
-        requestId);
-    }
-
-    const now = new Date().toISOString();
-
-    // Withdraw all enrolled/active participants
-    await db.from("championship_participants")
-      .update({ status: "withdrawn", updated_at: now })
-      .eq("championship_id", championship_id)
-      .in("status", ["enrolled", "active"]);
-
-    // Revoke all pending invites
-    await db.from("championship_invites")
-      .update({ status: "revoked", responded_at: now })
-      .eq("championship_id", championship_id)
-      .eq("status", "pending");
-
-    // Refund badge credits: count activated badges and credit back to group inventory
-    try {
-      const { count: badgeCount } = await db
-        .from("championship_badges")
-        .select("id", { count: "exact", head: true })
-        .eq("championship_id", championship_id);
-
-      if (badgeCount && badgeCount > 0) {
-        await db.rpc("fn_credit_badge_inventory", {
-          p_group_id: champ.host_group_id,
-          p_amount: badgeCount,
-          p_source_ref: `champ_cancel_refund:${championship_id}`,
-        });
+    if (rpcErr) {
+      const msg = rpcErr.message ?? String(rpcErr);
+      if (msg.includes("FORBIDDEN")) {
+        status = 403;
+        errorCode = "FORBIDDEN";
+        return jsonErr(
+          403,
+          "FORBIDDEN",
+          "Apenas o staff da assessoria organizadora pode cancelar o campeonato",
+          requestId,
+        );
       }
-    } catch (e) {
-      console.warn(JSON.stringify({
-        request_id: requestId, fn: FN,
-        msg: `Badge refund failed: ${e instanceof Error ? e.message : String(e)}`,
-        championship_id,
-      }));
-    }
-
-    // Cancel the championship
-    const { data: updated, error: updateErr } = await db
-      .from("championships")
-      .update({ status: "cancelled", updated_at: now })
-      .eq("id", championship_id)
-      .in("status", ["draft", "open", "active"])
-      .select("id, status")
-      .maybeSingle();
-
-    if (updateErr) {
-      const classified = classifyError(updateErr);
+      if (msg.includes("NOT_FOUND")) {
+        status = 404;
+        errorCode = "NOT_FOUND";
+        return jsonErr(404, "NOT_FOUND", "Campeonato não encontrado", requestId);
+      }
+      if (msg.includes("INVALID_STATUS")) {
+        status = 409;
+        errorCode = "INVALID_STATUS";
+        return jsonErr(
+          409,
+          "INVALID_STATUS",
+          "Campeonato não está em estado cancelável.",
+          requestId,
+        );
+      }
+      const classified = classifyError(rpcErr);
       status = classified.httpStatus;
       errorCode = classified.code;
       return jsonErr(classified.httpStatus, classified.code, classified.message, requestId);
     }
-
-    const participantsWithdrawn = true;
 
     return jsonOk({
-      championship_id: champ.id,
+      championship_id,
       status: "cancelled",
-      participants_withdrawn: participantsWithdrawn,
+      noop: Boolean(rpcData?.noop),
+      participants_withdrawn: rpcData?.participants_withdrawn ?? 0,
+      invites_revoked: rpcData?.invites_revoked ?? 0,
+      badges_refunded: rpcData?.badges_refunded ?? 0,
     }, requestId);
   } catch (_err) {
     status = 500;
