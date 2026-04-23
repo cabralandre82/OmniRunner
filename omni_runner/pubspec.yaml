@@ -18,8 +18,19 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # of the product and file versions while build-number is used as the build suffix.
 version: 0.9.0+1
 
+# L11-08 — Dart/Flutter SDK pinned to a SINGLE MINOR window so local
+# `flutter pub get` cannot silently resolve against a different Dart
+# language spec than CI. The CI uses `flutter-version: 3.41.x`
+# (.github/workflows/flutter.yml) which bundles Dart 3.11.x —
+# environment.sdk/flutter below MUST mirror that pairing. Enforced by
+# `npm run audit:flutter-sdk-pinning`
+# (tools/audit/check-flutter-sdk-pinning.ts) and documented in
+# docs/runbooks/FLUTTER_SDK_PINNING_RUNBOOK.md + .tool-versions.
+# Widening these ranges without updating the CI workflows + runbook
+# in the same PR is a guard failure.
 environment:
-  sdk: '>=3.8.0 <4.0.0'
+  sdk: '>=3.11.0 <3.12.0'
+  flutter: '>=3.41.0 <3.42.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions

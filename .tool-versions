@@ -1,0 +1,10 @@
+# L11-08 — repo-level SDK pinning for asdf/pluggable toolchain managers.
+# Keep in lockstep with:
+#   - omni_runner/pubspec.yaml (environment.sdk + environment.flutter)
+#   - .github/workflows/flutter.yml + release.yml (flutter-version)
+#   - docs/runbooks/FLUTTER_SDK_PINNING_RUNBOOK.md
+#   - tools/audit/check-flutter-sdk-pinning.ts (CI guard)
+# Widening any of these without updating the others = CI guard failure.
+flutter 3.41.1
+dart 3.11.0
+nodejs 20

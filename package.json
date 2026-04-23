@@ -24,6 +24,7 @@
     "audit:shared-prefs-sensitive-keys": "npx tsx tools/audit/check-shared-prefs-sensitive-keys.ts",
     "audit:npm-dependency-pinning": "npx tsx tools/audit/check-npm-dependency-pinning.ts",
     "audit:sqlcipher-eol": "npx tsx tools/audit/check-sqlcipher-eol.ts",
+    "audit:flutter-sdk-pinning": "npx tsx tools/audit/check-flutter-sdk-pinning.ts",
     "legal:check": "npx tsx tools/legal/check-document-hashes.ts"
   },
   "devDependencies": {

@@ -113,9 +113,15 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      # L11-08 — MUST match the flutter-version pinned in
+      # .github/workflows/flutter.yml / security.yml and the
+      # `environment.flutter` range in omni_runner/pubspec.yaml
+      # (enforced by `npm run audit:flutter-sdk-pinning`). If you
+      # bump here, bump all three in the SAME PR + update
+      # docs/runbooks/FLUTTER_SDK_PINNING_RUNBOOK.md + .tool-versions.
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.22.x"
+          flutter-version: "3.41.x"
           channel: stable
           cache: true
 
