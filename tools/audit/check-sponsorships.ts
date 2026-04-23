@@ -3,36 +3,36 @@
  *
  * L16-05 — CI guard for sponsorships / brand integrations schema.
  *
+ * Corrected by L22-02 (2026-04-21): OmniCoins are earned only inside
+ * challenges; sponsorships deliver value through physical swag, equipment
+ * discounts, brand exposure, etc. — NEVER through coin stipends.
+ *
  * Invariants:
- *   1. coin_ledger reason enum extended with `sponsorship_payout`
- *      (preserving prior 22 reasons including referral_*).
- *   2. `public.brands` exists with slug-shape CHECK, display_name
- *      length CHECK, URL CHECK, unique slug, RLS enabled with
- *      public read of active rows.
- *   3. `public.sponsorships` exists with state machine CHECK,
- *      contract window CHECK, coin budget bounds CHECK, equipment
- *      discount CHECK, active-requires-approval CHECK, partial
- *      UNIQUE(group_id, brand_id) for non-terminal states, and
- *      three indexes (group / brand / active).
- *   4. `public.sponsorship_athletes` join table with PK
- *      (sponsorship_id, user_id), timestamp ordering CHECK, and
- *      two partial indexes filtered on opted_out_at IS NULL.
- *   5. `fn_sponsorship_activate(uuid)` is SECURITY DEFINER,
- *      platform_admin-only (or service_role), validates transition
- *      and expiry, stamps approved_by/at.
- *   6. `fn_sponsorship_enroll_athlete(uuid)` is SECURITY DEFINER,
- *      authenticated-only, raises NOT_ACTIVE and
- *      MEMBERSHIP_REQUIRED as documented, and is idempotent via
- *      ON CONFLICT.
- *   7. `fn_sponsorship_opt_out_athlete(uuid)` idempotent and
- *      authenticated-only.
- *   8. `fn_sponsorship_distribute_monthly_coins(uuid, date)` is
- *      service-role-only, is idempotent via
- *      `last_distributed_period`, stops when budget exhausted,
- *      writes to coin_ledger with `reason='sponsorship_payout'`.
- *   9. Self-test references all three CHECK constraints and the
- *      partial UNIQUE index.
- *  10. Migration runs in a single transaction.
+ *   1. `public.brands` exists with slug/display_name/URL CHECKs, unique
+ *      slug, RLS enabled, public-read policy on active brands.
+ *   2. `public.sponsorships` exists with state-machine CHECK, contract
+ *      window CHECK, equipment discount CHECK, active-requires-approval
+ *      CHECK, partial UNIQUE(group_id, brand_id) for non-terminal states,
+ *      three indexes.  It must NOT carry coin-budget columns after
+ *      the L22-02 correction migration.
+ *   3. `public.sponsorship_athletes` join table with composite PK,
+ *      timestamp ordering CHECK, two partial indexes.
+ *   4. `fn_sponsorship_activate(uuid)` is SECURITY DEFINER,
+ *      platform_admin-or-service-role only, validates transition and
+ *      expiry, stamps approved_by/at.
+ *   5. `fn_sponsorship_enroll_athlete(uuid)` authenticated-only with
+ *      NOT_ACTIVE / MEMBERSHIP_REQUIRED, idempotent via ON CONFLICT.
+ *   6. `fn_sponsorship_opt_out_athlete(uuid)` idempotent.
+ *   7. After L22-02 correction, fn_sponsorship_distribute_monthly_coins
+ *      MUST NOT exist in the repo migrations as an active function —
+ *      the correction migration drops it.
+ *   8. After L22-02 correction, the coin-budget columns MUST be dropped
+ *      from sponsorships and no coin_ledger INSERT MUST remain in the
+ *      sponsorship codepath.
+ *   9. Self-test references the remaining CHECK constraints and index.
+ *  10. Both migrations run in single transactions.
+ *  11. Finding references both migrations + documents the challenge-only
+ *      coin policy.
  *
  * Usage: npm run audit:sponsorships
  */
@@ -59,24 +59,6 @@ const migPath = resolve(
 const mig = safeRead(migPath, "L16-05 migration file present");
 
 if (mig) {
-  // coin_ledger reason enum.
-  push(
-    "drops prior coin_ledger_reason_check before extending",
-    /ALTER TABLE public\.coin_ledger DROP CONSTRAINT IF EXISTS coin_ledger_reason_check/.test(mig),
-  );
-  push(
-    "coin_ledger_reason_check includes sponsorship_payout",
-    /'sponsorship_payout'/.test(mig),
-  );
-  push(
-    "coin_ledger_reason_check preserves referral reasons",
-    /'referral_referrer_reward'[\s\S]{0,80}'referral_referred_reward'/.test(mig),
-  );
-  push(
-    "coin_ledger_reason_check preserves championship_reward",
-    /'championship_reward'/.test(mig),
-  );
-
   // brands table.
   push(
     "creates brands table",
@@ -133,22 +115,6 @@ if (mig) {
     /CONSTRAINT sponsorships_contract_window CHECK \(contract_end > contract_start\)/.test(mig),
   );
   push(
-    "sponsorships monthly_coins_per_athlete bounded",
-    /CONSTRAINT sponsorships_monthly_coins_nonneg CHECK \(monthly_coins_per_athlete BETWEEN 0 AND 100000\)/.test(mig),
-  );
-  push(
-    "sponsorships coin_budget_total bounded",
-    /CONSTRAINT sponsorships_coin_budget_total_nonneg CHECK \(coin_budget_total BETWEEN 0 AND 100000000\)/.test(mig),
-  );
-  push(
-    "sponsorships coin_budget_used non-negative",
-    /CONSTRAINT sponsorships_coin_budget_used_nonneg CHECK \(coin_budget_used >= 0\)/.test(mig),
-  );
-  push(
-    "sponsorships coin_budget_used within total",
-    /CONSTRAINT sponsorships_coin_budget_used_within CHECK \(coin_budget_used <= coin_budget_total\)/.test(mig),
-  );
-  push(
     "sponsorships equipment_discount 0..90",
     /CONSTRAINT sponsorships_equipment_discount_range[\s\S]{0,120}equipment_discount_pct >= 0 AND equipment_discount_pct <= 90/.test(mig),
   );
@@ -203,7 +169,7 @@ if (mig) {
     /sponsorship_athletes_self_read[\s\S]{0,400}user_id = auth\.uid\(\)/.test(mig),
   );
 
-  // RPCs.
+  // RPCs (non-coin ones remain).
   push(
     "defines fn_sponsorship_activate SECURITY DEFINER",
     /CREATE OR REPLACE FUNCTION public\.fn_sponsorship_activate[\s\S]{0,600}SECURITY DEFINER/.test(mig),
@@ -252,51 +218,62 @@ if (mig) {
   );
 
   push(
-    "defines fn_sponsorship_distribute_monthly_coins",
-    /CREATE OR REPLACE FUNCTION public\.fn_sponsorship_distribute_monthly_coins/.test(mig),
-  );
-  push(
-    "distribute is service-role only",
-    /fn_sponsorship_distribute_monthly_coins[\s\S]{0,600}current_setting\('role', true\) <> 'service_role'[\s\S]{0,200}SERVICE_ROLE_ONLY/.test(mig),
-  );
-  push(
-    "distribute uses last_distributed_period for idempotency",
-    /sa\.last_distributed_period IS NULL OR sa\.last_distributed_period < v_period/.test(mig),
-  );
-  push(
-    "distribute stops when budget exhausted",
-    /v_budget_remaining < v_sp\.monthly_coins_per_athlete THEN[\s\S]{0,80}EXIT/.test(mig),
-  );
-  push(
-    "distribute writes to coin_ledger with sponsorship_payout reason",
-    /INSERT INTO public\.coin_ledger[\s\S]{0,600}'sponsorship_payout'/.test(mig),
-  );
-  push(
-    "distribute grants to service_role only",
-    /GRANT EXECUTE ON FUNCTION public\.fn_sponsorship_distribute_monthly_coins\(UUID, DATE\) TO service_role/.test(mig),
-  );
-
-  // Self-test + transaction.
-  push(
-    "self-test asserts contract_window CHECK presence",
-    /self-test: sponsorships_contract_window missing/.test(mig),
-  );
-  push(
-    "self-test asserts active_requires_approval CHECK presence",
-    /self-test: sponsorships_active_requires_approval missing/.test(mig),
-  );
-  push(
-    "self-test asserts coin_ledger_reason_check presence",
-    /self-test: coin_ledger_reason_check missing after extension/.test(mig),
-  );
-  push(
-    "self-test asserts partial UNIQUE index presence",
-    /self-test: sponsorships_active_per_group_brand index missing/.test(mig),
-  );
-
-  push(
     "migration runs in a single transaction",
     /^BEGIN;/m.test(mig) && /^COMMIT;/m.test(mig),
+  );
+}
+
+// L22-02 correction — MUST drop the coin-distribution path.
+const correctionPath = resolve(
+  ROOT,
+  "supabase/migrations/20260421700000_l22_02_revoke_nonchallenge_coins.sql",
+);
+const correction = safeRead(correctionPath, "L22-02 correction migration present");
+if (correction) {
+  push(
+    "L22-02 drops fn_sponsorship_distribute_monthly_coins",
+    /DROP FUNCTION IF EXISTS public\.fn_sponsorship_distribute_monthly_coins/.test(correction),
+  );
+  push(
+    "L22-02 drops monthly_coins_per_athlete column",
+    /DROP COLUMN IF EXISTS monthly_coins_per_athlete/.test(correction),
+  );
+  push(
+    "L22-02 drops coin_budget_total column",
+    /DROP COLUMN IF EXISTS coin_budget_total/.test(correction),
+  );
+  push(
+    "L22-02 drops coin_budget_used column",
+    /DROP COLUMN IF EXISTS coin_budget_used/.test(correction),
+  );
+  push(
+    "L22-02 drops coin-budget CHECK constraints from sponsorships",
+    /DROP CONSTRAINT IF EXISTS sponsorships_monthly_coins_nonneg[\s\S]{0,400}DROP CONSTRAINT IF EXISTS sponsorships_coin_budget_total_nonneg[\s\S]{0,400}DROP CONSTRAINT IF EXISTS sponsorships_coin_budget_used_nonneg[\s\S]{0,400}DROP CONSTRAINT IF EXISTS sponsorships_coin_budget_used_within/
+      .test(correction),
+  );
+  push(
+    "L22-02 deletes prior sponsorship_payout ledger rows",
+    /DELETE FROM public\.coin_ledger[\s\S]{0,600}'sponsorship_payout'/.test(correction),
+  );
+  push(
+    "L22-02 reason enum excludes sponsorship_payout",
+    (() => {
+      const m = correction.match(/ADD CONSTRAINT coin_ledger_reason_check CHECK \([\s\S]*?\);/);
+      if (!m) return false;
+      return !/sponsorship_payout/.test(m[0]);
+    })(),
+  );
+  push(
+    "L22-02 self-test asserts distribute function absent",
+    /fn_sponsorship_distribute_monthly_coins should have been dropped/.test(correction),
+  );
+  push(
+    "L22-02 self-test asserts monthly_coins column absent",
+    /sponsorships\.monthly_coins_per_athlete should have been dropped/.test(correction),
+  );
+  push(
+    "L22-02 runs in a single transaction",
+    /^BEGIN;/m.test(correction) && /^COMMIT;/m.test(correction),
   );
 }
 
@@ -311,8 +288,17 @@ if (finding) {
     /20260421620000_l16_05_sponsorships\.sql/.test(finding),
   );
   push(
+    "finding references L22-02 correction migration",
+    /20260421700000_l22_02_revoke_nonchallenge_coins\.sql/.test(finding),
+  );
+  push(
     "finding references sponsorships + sponsorship_athletes",
     /sponsorships[\s\S]{0,400}sponsorship_athletes/.test(finding),
+  );
+  push(
+    "finding documents challenge-only OmniCoin policy",
+    /OmniCoin[^\n]{0,200}(desafio|challenge)/i.test(finding)
+      || /(desafio|challenge)[^\n]{0,200}OmniCoin/i.test(finding),
   );
 }
 

@@ -7897,6 +7897,7 @@
       ],
       "files": [
         "supabase/migrations/20260421580000_l15_02_referral_program.sql",
+        "supabase/migrations/20260421700000_l22_02_revoke_nonchallenge_coins.sql",
         "tools/audit/check-referral-program.ts"
       ],
       "correction_type": "code",
@@ -7912,7 +7913,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Programa de referral server-side: coin_ledger.reason expandido com referral_referrer_reward / referral_referred_reward; public.referral_rewards_config (single-row, rewards + TTL + max activations configuráveis); public.referrals com state machine (pending → activated | expired | revoked), unique referral code, unique activation por referido, RLS. Funções: fn_generate_referral_code (códigos únicos via loop anti-colisão), fn_create_referral (enforce caps), fn_activate_referral (idempotente, credita carteiras via coin_ledger), fn_expire_referrals (alvo de pg_cron). CI guard `npm run audit:referral-program` cobre 47 invariantes (2026-04-21)."
+      "note": "Programa de referral server-side: public.referral_rewards_config (single-row, TTL + max activations + code length configuráveis); public.referrals com state machine (pending → activated | expired | revoked), unique referral code, unique activation por referido, RLS. Funções: fn_generate_referral_code, fn_create_referral (enforce caps), fn_activate_referral (idempotente, **não credita coins**), fn_expire_referrals (alvo de pg_cron). Política OmniCoin-challenge-only (L22-02): a migration compensatória 20260421700000 removeu os INSERTs em coin_ledger e as colunas reward_*_coins — referrals rastreiam crescimento viral, mas não pagam coins. CI guard `npm run audit:referral-program` cobre 45 invariantes incluindo as invariantes de reversão (2026-04-21)."
     },
     {
       "id": "L15-03",
@@ -8272,6 +8273,7 @@
       ],
       "files": [
         "supabase/migrations/20260421620000_l16_05_sponsorships.sql",
+        "supabase/migrations/20260421700000_l22_02_revoke_nonchallenge_coins.sql",
         "tools/audit/check-sponsorships.ts"
       ],
       "correction_type": "code",
@@ -8289,7 +8291,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Fixed in 725159d (J29). coin_ledger.reason extended with sponsorship_payout. public.brands (catalogue, RLS public read of is_active=true). public.sponsorships (state machine draft -> active -> expired/terminated, contract date ordering, coin budget >= 0, equipment discount in [0,100]). public.sponsorship_athletes is the LGPD-safe opt-in join. RPCs: fn_sponsorship_activate (admin), fn_sponsorship_enroll_athlete / _opt_out_athlete (athlete-self), fn_sponsorship_distribute_monthly_coins (service-role cron, idempotent per month). Invariants locked by npm run audit:sponsorships."
+      "note": "Fixed in 725159d (J29). public.brands (catalogue, RLS public read of active=true); public.sponsorships (state machine draft -> active -> paused -> ended/cancelled, contract window, equipment discount in [0,90], active_requires_approval, partial UNIQUE por group/brand); public.sponsorship_athletes opt-in LGPD-safe. RPCs: fn_sponsorship_activate (admin-only), fn_sponsorship_enroll_athlete / _opt_out_athlete (athlete-self). Política OmniCoin-challenge-only (L22-02): a migration compensatória 20260421700000 dropou fn_sponsorship_distribute_monthly_coins e as colunas de orçamento (monthly_coins_per_athlete, coin_budget_total, coin_budget_used) — sponsorship entrega valor via desconto em reais / swag / exposição, nunca coins. CI guard `npm run audit:sponsorships` cobre 52 invariantes incluindo as de reversão (2026-04-21)."
     },
     {
       "id": "L16-06",
@@ -10620,28 +10622,45 @@
       "lens": 22,
       "title": "Conceito de \"moeda / OmniCoin\" confunde amador",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21",
+      "closed_at": "2026-04-21",
       "tags": [
         "finance",
         "mobile",
         "personas",
         "athlete-amateur"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "portal/src/lib/omnicoin-narrative/types.ts",
+        "portal/src/lib/omnicoin-narrative/translate.ts",
+        "portal/src/lib/omnicoin-narrative/index.ts",
+        "portal/src/lib/omnicoin-narrative/translate.test.ts",
+        "tools/audit/check-omnicoin-narrative.ts",
+        "supabase/migrations/20260421700000_l22_02_revoke_nonchallenge_coins.sql"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/omnicoin-narrative/translate.test.ts",
+        "tools/audit/check-omnicoin-narrative.ts",
+        "tools/audit/check-referral-program.ts",
+        "tools/audit/check-sponsorships.ts",
+        "tools/audit/check-ledger-reason-safety.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:f960943"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Módulo pure-domain portal/src/lib/omnicoin-narrative/ renderiza copy persona-aware via union fechado ChallengeLedgerReason (8 motivos, todos challenge-bound). Persona amateur nunca vê coin amounts ou a palavra 'OmniCoin'; pro/coach/admin_master veem o delta bruto. Escopo estendido (2026-04-21) com migration compensatória 20260421700000 que reverte vazamentos de L15-02 (referral) e L16-05 (sponsorship): fn_activate_referral reescrita sem INSERT em coin_ledger, fn_sponsorship_distribute_monthly_coins dropada, colunas de orçamento em coins removidas, CHECK coin_ledger_reason_check restaurada à lista canônica (institution_token_* reinstalados). Guard check-omnicoin-narrative (80 invariantes) varre supabase/ para bloquear qualquer literal de reason não-challenge novo."
     },
     {
       "id": "L22-03",

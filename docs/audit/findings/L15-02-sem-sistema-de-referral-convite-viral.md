@@ -10,6 +10,7 @@ discovered_at: 2026-04-17
 tags: ["finance", "mobile", "migration", "seo"]
 files:
   - supabase/migrations/20260421580000_l15_02_referral_program.sql
+  - supabase/migrations/20260421700000_l22_02_revoke_nonchallenge_coins.sql
   - tools/audit/check-referral-program.ts
 correction_type: process
 test_required: true
@@ -26,41 +27,39 @@ deferred_to_wave: null
 fixed_at: 2026-04-21
 closed_at: 2026-04-21
 note: |
-  Viral referral primitives now live server-side as a
-  complete lifecycle.
-  - `coin_ledger_reason_check` extended with
-    `referral_referrer_reward` + `referral_referred_reward`
-    (preserving the 20 L03-13 reasons).
-  - `public.referral_rewards_config` (id=1, CHECK-bounded
-    rewards / ttl_days / per-user cap / code length) is the
-    single knob operators tune.
-  - `public.referrals` table with state-machine CHECK
-    (pending → activated|expired|revoked), self-referral
-    CHECK, exhaustive status-timestamps CHECK, UNIQUE
-    referral_code, UNIQUE(referred_user_id) WHERE
-    status='activated' (idempotency), and
-    pending-expiry partial index. RLS own-read + admin-read;
-    inserts/updates go through SECURITY DEFINER RPCs.
-  - BEFORE UPDATE trigger `fn_referrals_status_guard` locks
-    the state machine.
-  - `fn_generate_referral_code(p_len)` emits cryptographically
-    random upper-case alphanumeric codes (`gen_random_bytes`)
-    excluding 0/O/1/I, length clamped [6, 16], up to 8
-    retries, P0002 on exhaustion.
-  - `fn_create_referral(channel)` validates the channel enum,
-    enforces the per-referrer cap, stamps
-    `expires_at = now() + ttl_days`, raises P0003 on cap
-    breach.
-  - `fn_activate_referral(code)` gates on pending + not
-    expired + not self + no prior activation; writes the two
-    coin_ledger rows atomically and bumps both wallets
-    best-effort. FOR UPDATE on the claim.
-  - `fn_expire_referrals()` is the service_role-only cron
-    sweep for pending rows past TTL.
-  - Self-test asserts generator length + alphabet + clamp,
-    reason-enum extension, and config seeding.
-  - CI guard `npm run audit:referral-program` enforces 47
-    invariants.
+  Viral referral primitives live server-side as a complete lifecycle.
+  OmniCoin policy (L22-02): **desafios são o único fluxo que emite
+  OmniCoins** — referrals rastreiam crescimento viral mas NÃO pagam
+  coins.
+
+  - `public.referral_rewards_config` (id=1, CHECK-bounded ttl_days /
+    per-user cap / code length) é o único knob operacional; as colunas
+    `reward_referrer_coins` / `reward_referred_coins` foram removidas
+    pela migration compensatória de L22-02.
+  - `public.referrals` table com state-machine CHECK
+    (pending → activated|expired|revoked), self-referral CHECK,
+    status-timestamps exhaustivo, UNIQUE `referral_code`, UNIQUE
+    `referred_user_id` WHERE status='activated' (idempotência) e
+    pending-expiry partial index. RLS own-read + admin-read; inserts
+    / updates via SECURITY DEFINER RPCs.
+  - BEFORE UPDATE trigger `fn_referrals_status_guard` trava o state
+    machine (pending-only exits).
+  - `fn_generate_referral_code(p_len)` emite código crypto-random
+    upper-case alfanumérico (`gen_random_bytes`) excluindo 0/O/1/I,
+    length clamped [6, 16], até 8 retries, P0002 em exhaustion.
+  - `fn_create_referral(channel)` valida o enum do canal, respeita o
+    cap por referrer e stampa `expires_at = now() + ttl_days`.
+  - `fn_activate_referral(code)` gates em pending + not expired + not
+    self + no prior activation; **não grava em `coin_ledger` e não
+    mexe em `wallets.balance_coins`** — apenas flipa o status para
+    'activated'. FOR UPDATE na claim.
+  - `fn_expire_referrals()` é o cron service-role only que varre
+    pending rows passadas do TTL.
+  - Self-test da migration principal + self-test da compensatória
+    L22-02 (que garante que reasons `referral_*_reward` / wallet bump
+    não voltaram).
+  - CI guard `npm run audit:referral-program` enforce tanto a
+    migration original quanto a compensatória.
 ---
 # [L15-02] Sem sistema de referral/convite viral
 > **Lente:** 15 — CMO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fixed
@@ -74,26 +73,29 @@ note: |
 
 ## Correção proposta
 
-—
+— Tracking server-side de referral (`referrals` table + lifecycle) sem pagar coins, já que OmniCoins são reservadas a desafios. Recompensa alternativa (selo "embaixador", destaque no feed, conteúdo exclusivo) fica para evolução futura e não entra no ledger financeiro.
 
-```sql
-CREATE TABLE public.referrals (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  referrer_user_id uuid NOT NULL REFERENCES auth.users(id),
-  referred_user_id uuid REFERENCES auth.users(id),
-  referral_code text NOT NULL UNIQUE,
-  channel text,  -- 'whatsapp','instagram','email','link'
-  reward_referrer_coins int DEFAULT 10,
-  reward_referred_coins int DEFAULT 5,
-  status text DEFAULT 'pending' CHECK (status IN ('pending','activated','expired')),
-  activated_at timestamptz,
-  created_at timestamptz DEFAULT now()
-);
-```
+## Correção aplicada (2026-04-21)
 
-Mobile: tela "Convide 3 amigos → ganhe 30 coins"; deep link `omnirunner://ref/CODE`.
+1. Migration `20260421580000_l15_02_referral_program.sql` entregou o
+   schema completo (config + tabela + triggers + 3 RPCs + self-test).
+2. Migration compensatória `20260421700000_l22_02_revoke_nonchallenge_coins.sql`
+   removeu o bloco de coin-credit após review do produto:
+   - `fn_activate_referral` reescrita sem `INSERT INTO coin_ledger` e
+     sem bump em `wallets.balance_coins`.
+   - Colunas `reward_referrer_coins` / `reward_referred_coins` dropadas
+     tanto de `referral_rewards_config` quanto de `referrals`.
+   - Reasons `referral_referrer_reward` / `referral_referred_reward`
+     removidas do `coin_ledger_reason_check`.
+   - Qualquer linha pré-existente com esses reasons é deletada e as
+     wallets afetadas são reconciliadas a partir do ledger.
+3. CI guard `npm run audit:referral-program` foi atualizado para exigir
+   ambas as migrations e provar via regex que a função atual não
+   contém nenhum `INSERT INTO public.coin_ledger`.
 
 ## Referência narrativa
 Contexto completo e motivação detalhada em [`docs/audit/parts/`](../parts/) — buscar pelo anchor `[15.2]`.
 ## Histórico
 - `2026-04-17` — Descoberto na auditoria inicial (Lente 15 — CMO, item 15.2).
+- `2026-04-21` — Entregue schema + RPCs + guard (J24).
+- `2026-04-21` — Coin-credit removido após reafirmação da política OmniCoin-challenge-only (L22-02 correction).

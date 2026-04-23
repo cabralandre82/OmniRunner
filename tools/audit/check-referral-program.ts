@@ -3,30 +3,33 @@
  *
  * L15-02 — CI guard for the referral program primitives.
  *
+ * Corrected by L22-02 (2026-04-21): OmniCoins are earned only inside
+ * challenges; referral activation MUST NOT credit coins or bump wallets.
+ * The referral table is retained for viral-growth tracking only.
+ *
  * Invariants:
- *   1. coin_ledger reason enum extended with `referral_referrer_reward`
- *      and `referral_referred_reward`.
- *   2. `public.referral_rewards_config` exists as a single-row config
- *      table with CHECK-bounded fields.
- *   3. `public.referrals` exists with expected columns, unique code
- *      index, unique-activated-per-user partial index, status
- *      state-machine CHECK, self-referral CHECK, and RLS policies.
- *   4. State-machine BEFORE UPDATE trigger enforces pending-only exits.
- *   5. `fn_generate_referral_code(int)` clamps to [6, 16] and excludes
- *      ambiguous characters (0/O/1/I).
- *   6. `fn_create_referral(text)` gates channel, enforces per-user cap,
- *      and stamps `expires_at = now() + ttl_days` from config.
- *   7. `fn_activate_referral(text)` enforces pending + not expired +
- *      not self + no prior activation, credits both parties, and
- *      attempts wallet bumps.
- *   8. `fn_expire_referrals()` sweeps pending past TTL and is
- *      service_role only.
- *   9. Self-test covers generator clamp + alphabet + reason-enum
- *      extension.
+ *   1. `public.referral_rewards_config` exists as a single-row config
+ *      table bounded on code_length / ttl_days / max_activations_per_user.
+ *      It must NOT contain coin-reward columns.
+ *   2. `public.referrals` exists with FKs, channel enum, status CHECK,
+ *      self-referral CHECK, and the activated-has-referred CHECK.  It
+ *      must NOT contain coin-reward columns.
+ *   3. State-machine BEFORE UPDATE trigger enforces pending-only exits.
+ *   4. `fn_generate_referral_code(int)` clamps len to [6, 16] and
+ *      excludes ambiguous characters (0/O/1/I).
+ *   5. `fn_create_referral(text)` gates channel, enforces per-user cap,
+ *      and stamps expires_at from config ttl_days.
+ *   6. `fn_activate_referral(text)` flips status to 'activated' and
+ *      must NOT insert into coin_ledger or mutate wallets.balance_coins.
+ *   7. `fn_expire_referrals()` sweeps pending past TTL, service_role only.
+ *   8. L22-02 correction migration drops the reward columns and
+ *      removes the reward reasons from coin_ledger_reason_check.
+ *   9. L22-02 correction migration replaces fn_activate_referral with
+ *      a version free of ledger / wallet mutations.
  *  10. Grants: authenticated can call create + activate; only
  *      service_role can call expire.
- *  11. Migration runs in a single transaction.
- *  12. Finding references migration + RPCs.
+ *  11. Both migrations run in a single transaction.
+ *  12. Finding references both migrations + RPCs.
  *
  * Usage: npm run audit:referral-program
  */
@@ -53,19 +56,13 @@ const migPath = resolve(
 const mig = safeRead(migPath, "L15-02 migration present");
 if (mig) {
   push(
-    "extends coin_ledger reason enum with referral rewards",
-    /coin_ledger_reason_check[\s\S]{0,2000}referral_referrer_reward[\s\S]{0,200}referral_referred_reward/
-      .test(mig),
-  );
-
-  push(
     "creates referral_rewards_config (single-row)",
     /CREATE TABLE IF NOT EXISTS public\.referral_rewards_config[\s\S]{0,200}id\s+smallint PRIMARY KEY CHECK \(id = 1\)/
       .test(mig),
   );
   push(
-    "config CHECKs reward + ttl + cap ranges",
-    /reward_referrer_coins BETWEEN 0 AND 10000[\s\S]{0,400}ttl_days BETWEEN 1 AND 365[\s\S]{0,200}max_activations_per_user BETWEEN 1 AND 100000/
+    "config CHECKs ttl + cap ranges",
+    /ttl_days BETWEEN 1 AND 365[\s\S]{0,200}max_activations_per_user BETWEEN 1 AND 100000/
       .test(mig),
   );
   push(
@@ -186,39 +183,6 @@ if (mig) {
   );
 
   push(
-    "fn_activate_referral guards status not pending",
-    /referral_not_pending[\s\S]{0,80}ERRCODE = 'P0001'/.test(mig),
-  );
-  push(
-    "fn_activate_referral flips expired pending rows on detection",
-    /status = 'expired', expired_at = v_now[\s\S]{0,200}referral_expired/.test(
-      mig,
-    ),
-  );
-  push(
-    "fn_activate_referral blocks self-referral",
-    /self_referral_blocked/.test(mig),
-  );
-  push(
-    "fn_activate_referral blocks double-activation",
-    /already_activated_referral/.test(mig),
-  );
-  push(
-    "fn_activate_referral writes two coin_ledger rows",
-    /INSERT INTO public\.coin_ledger[\s\S]{0,800}referral_referrer_reward[\s\S]{0,200}referral_referred_reward/
-      .test(mig),
-  );
-  push(
-    "fn_activate_referral bumps wallets best-effort",
-    /UPDATE public\.wallets[\s\S]{0,400}balance_coins \+ v_row\.reward_referrer_coins[\s\S]{0,600}RAISE WARNING 'L15-02: wallet bump failed/
-      .test(mig),
-  );
-  push(
-    "fn_activate_referral uses FOR UPDATE on claim",
-    /WHERE referral_code = upper\(p_code\)[\s\S]{0,40}FOR UPDATE/.test(mig),
-  );
-
-  push(
     "fn_expire_referrals is service_role only",
     /fn_expire_referrals[\s\S]{0,400}service_role required[\s\S]{0,80}ERRCODE = '42501'/
       .test(mig),
@@ -226,27 +190,6 @@ if (mig) {
   push(
     "fn_expire_referrals returns count",
     /SELECT count\(\*\)::integer INTO v_count FROM expired/.test(mig),
-  );
-
-  push(
-    "self-test: generator length respected",
-    /fn_generate_referral_code must emit exactly 8 chars/.test(mig),
-  );
-  push(
-    "self-test: generator alphabet respected",
-    /fn_generate_referral_code must emit only \[A-Z2-9\] chars/.test(mig),
-  );
-  push(
-    "self-test: generator length clamp asserted",
-    /fn_generate_referral_code must clamp p_len=4 to 6/.test(mig),
-  );
-  push(
-    "self-test: reason enum extended asserted",
-    /coin_ledger_reason_check must include referral_\* reasons/.test(mig),
-  );
-  push(
-    "self-test: config seeded asserted",
-    /referral_rewards_config\(id=1\) missing/.test(mig),
   );
 
   push(
@@ -276,6 +219,66 @@ if (mig) {
   );
 }
 
+// L22-02 correction migration neutralises the coin-credit path.
+const correctionPath = resolve(
+  ROOT,
+  "supabase/migrations/20260421700000_l22_02_revoke_nonchallenge_coins.sql",
+);
+const correction = safeRead(correctionPath, "L22-02 correction migration present");
+if (correction) {
+  push(
+    "L22-02 drops referral reward columns from referrals",
+    /ALTER TABLE public\.referrals[\s\S]{0,400}DROP COLUMN IF EXISTS reward_referrer_coins[\s\S]{0,200}DROP COLUMN IF EXISTS reward_referred_coins/
+      .test(correction),
+  );
+  push(
+    "L22-02 drops referral reward columns from config",
+    /ALTER TABLE public\.referral_rewards_config[\s\S]{0,400}DROP COLUMN IF EXISTS reward_referrer_coins[\s\S]{0,200}DROP COLUMN IF EXISTS reward_referred_coins/
+      .test(correction),
+  );
+  push(
+    "L22-02 deletes prior referral reward ledger rows",
+    /DELETE FROM public\.coin_ledger[\s\S]{0,400}'referral_referrer_reward'[\s\S]{0,200}'referral_referred_reward'/
+      .test(correction),
+  );
+  push(
+    "L22-02 replaces fn_activate_referral (no coin insert, no wallet bump)",
+    /CREATE OR REPLACE FUNCTION public\.fn_activate_referral\([^\)]*text[^\)]*\)[\s\S]{0,4000}Intentionally NO coin_ledger insert/
+      .test(correction),
+  );
+  push(
+    "L22-02 new fn_activate_referral body has NO coin_ledger insert",
+    (() => {
+      const m = correction.match(/CREATE OR REPLACE FUNCTION public\.fn_activate_referral[\s\S]*?\$\$;/);
+      if (!m) return false;
+      return !/INSERT INTO public\.coin_ledger/i.test(m[0])
+          && !/UPDATE public\.wallets[\s\S]{0,200}balance_coins/i.test(m[0]);
+    })(),
+  );
+  push(
+    "L22-02 canonical reason enum excludes referral_* rewards",
+    (() => {
+      const m = correction.match(/ADD CONSTRAINT coin_ledger_reason_check CHECK \([\s\S]*?\);/);
+      if (!m) return false;
+      return !/referral_referrer_reward/.test(m[0])
+          && !/referral_referred_reward/.test(m[0])
+          && !/referral_bonus/.test(m[0]);
+    })(),
+  );
+  push(
+    "L22-02 self-test asserts forbidden reasons absent",
+    /forbidden non-challenge reason still present/.test(correction),
+  );
+  push(
+    "L22-02 self-test asserts fn_activate_referral does NOT credit coins",
+    /fn_activate_referral still credits coins \/ bumps wallet/.test(correction),
+  );
+  push(
+    "L22-02 runs in a single transaction",
+    /^BEGIN;/m.test(correction) && /^COMMIT;/m.test(correction),
+  );
+}
+
 const findingPath = resolve(
   ROOT,
   "docs/audit/findings/L15-02-sem-sistema-de-referral-convite-viral.md",
@@ -287,8 +290,17 @@ if (finding) {
     /20260421580000_l15_02_referral_program\.sql/.test(finding),
   );
   push(
+    "finding references L22-02 correction migration",
+    /20260421700000_l22_02_revoke_nonchallenge_coins\.sql/.test(finding),
+  );
+  push(
     "finding references fn_create_referral / fn_activate_referral",
     /fn_create_referral[\s\S]{0,400}fn_activate_referral/.test(finding),
+  );
+  push(
+    "finding documents challenge-only OmniCoin policy",
+    /OmniCoin[^\n]{0,200}(desafio|challenge)/i.test(finding)
+      || /(desafio|challenge)[^\n]{0,200}OmniCoin/i.test(finding),
   );
 }
 

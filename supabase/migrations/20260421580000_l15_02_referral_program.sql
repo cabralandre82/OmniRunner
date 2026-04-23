@@ -367,7 +367,10 @@ BEGIN
    WHERE id = v_row.id
    RETURNING * INTO v_row;
 
-  -- coin payouts (reason enum was extended above)
+  -- Historical coin payouts — DISABLED at runtime by the L22-02 correction
+  -- migration, which CREATE OR REPLACEs this entire function body to remove
+  -- both INSERTs below.  See docs/audit/findings/L15-02-*.md for details.
+  -- L04-07-OK: referral_referrer_reward/referral_referred_reward are revoked by 20260421700000_l22_02_revoke_nonchallenge_coins.sql
   INSERT INTO public.coin_ledger (user_id, delta_coins, reason, ref_id, created_at_ms)
   VALUES
     (v_row.referrer_user_id, v_row.reward_referrer_coins,

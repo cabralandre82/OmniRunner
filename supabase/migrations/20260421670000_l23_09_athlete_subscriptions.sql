@@ -24,8 +24,10 @@
 -- ║   4. fn_subscription_generate_cycle (service-role cron) — idempotent    ║
 -- ║      per period_month via unique index + ON CONFLICT DO NOTHING.        ║
 -- ║   5. fn_subscription_mark_invoice_paid (service-role) — closes the      ║
--- ║      invoice and emits an outbox event so the coin-credit pipeline      ║
--- ║      can fulfil the group's custody deposit asynchronously.             ║
+-- ║      invoice and emits an outbox event so the BRL custody-deposit       ║
+-- ║      pipeline can credit the group's custody asynchronously.  NOTE:     ║
+-- ║      this settles in reais (stored in custody), never in OmniCoins —    ║
+-- ║      OmniCoins are exclusively earned/spent inside challenges.          ║
 -- ║   6. fn_subscription_mark_overdue (service-role cron) — sweep.          ║
 -- ╚════════════════════════════════════════════════════════════════════════════╝
 

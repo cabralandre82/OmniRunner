@@ -38,36 +38,48 @@ const MIG_DIR = join(ROOT, "supabase", "migrations");
  *   (b) ser adicionada nesta lista + ao CHECK `coin_ledger_reason_check` no
  *       mesmo commit, passando o lint + o self-test da migration.
  *
- * Atualizado em lockstep com 20260421130000_l03_reverse_coin_flows.sql
- * (L03-13) que é a migration mais recente a reescrever a whitelist.
+ * Atualizado em lockstep com 20260421700000_l22_02_revoke_nonchallenge_coins.sql
+ * (L22-02 correction), que é a migration mais recente a reescrever a
+ * whitelist. Política do produto (L22-02): OmniCoins são emitidas/queimadas
+ * somente em fluxos de desafio — qualquer reason proposto para
+ * reward de referral / sponsorship / onboarding / welcome é rejeitado.
  */
 const CANONICAL_REASONS = new Set<string>([
+  // challenge-bound user payouts
   "session_completed",
   "challenge_one_vs_one_completed",
   "challenge_one_vs_one_won",
   "challenge_group_completed",
+  "challenge_team_completed",
+  "challenge_team_won",
+  "challenge_entry_fee",
+  "challenge_pool_won",
+  "challenge_entry_refund",
+  "challenge_withdrawal_refund",
+  "challenge_prize_pending",
+  "challenge_prize_cleared",
+  "cross_assessoria_pending",
+  "cross_assessoria_cleared",
+  "cross_assessoria_burned",
+  // streak / PR / badge / mission (challenge-adjacent personal records)
   "streak_weekly",
   "streak_monthly",
   "pr_distance",
   "pr_pace",
-  "challenge_entry_fee",
-  "challenge_pool_won",
-  "challenge_entry_refund",
-  "cosmetic_purchase",
-  "admin_adjustment",
-  "admin_correction",
   "badge_reward",
   "mission_reward",
+  // cosmetic spend (user burns coins on skins)
+  "cosmetic_purchase",
+  // institutional token lifecycle (B2B)
   "institution_token_issue",
   "institution_token_burn",
   "institution_switch_burn",
   "institution_token_reverse_emission",
   "institution_token_reverse_burn",
+  // operational correction tools
+  "admin_adjustment",
+  "admin_correction",
   "batch_credit",
-  "challenge_team_won",
-  "challenge_team_completed",
-  "challenge_prize_pending",
-  "challenge_prize_cleared",
 ]);
 
 /**

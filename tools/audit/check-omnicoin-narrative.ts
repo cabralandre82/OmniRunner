@@ -272,7 +272,171 @@ if (finding) {
       || /CHALLENGE_LEDGER_REASONS/.test(finding)
       || /shouldHideCoinAmount/.test(finding),
   );
+  push(
+    "finding references L22-02 correction migration",
+    /20260421700000_l22_02_revoke_nonchallenge_coins\.sql/.test(finding),
+  );
 }
+
+// ─── Database-side invariant: coin_ledger_reason_check is challenge-only ──
+const correctionPath = resolve(
+  ROOT,
+  "supabase/migrations/20260421700000_l22_02_revoke_nonchallenge_coins.sql",
+);
+const correction = safeRead(correctionPath, "L22-02 correction migration present");
+if (correction) {
+  const checkBlock = correction.match(/ADD CONSTRAINT coin_ledger_reason_check CHECK \([\s\S]*?\);/);
+  push(
+    "correction migration contains reason-check block",
+    !!checkBlock,
+  );
+  if (checkBlock) {
+    const body = checkBlock[0];
+    const forbidden = [
+      "referral_referrer_reward",
+      "referral_referred_reward",
+      "referral_bonus",
+      "referral_new_user",
+      "sponsorship_payout",
+      "redemption_payout",
+      "custody_reversal",
+      "championship_reward",
+      "welcome_bonus",
+      "onboarding_bonus",
+    ];
+    for (const r of forbidden) {
+      push(
+        `canonical coin_ledger CHECK does NOT allow ${r}`,
+        !new RegExp(`'${r}'`).test(body),
+      );
+    }
+    push(
+      "canonical coin_ledger CHECK keeps institution_token_issue (pre-existing)",
+      /'institution_token_issue'/.test(body),
+    );
+    push(
+      "canonical coin_ledger CHECK keeps challenge_entry_fee",
+      /'challenge_entry_fee'/.test(body),
+    );
+    push(
+      "canonical coin_ledger CHECK keeps challenge_withdrawal_refund",
+      /'challenge_withdrawal_refund'/.test(body),
+    );
+  }
+}
+
+// ─── Code-side invariant: no non-challenge coin crediting in supabase/ ────
+//
+// Scan every file under supabase/migrations and supabase/functions for
+// INSERT INTO public.coin_ledger; each emission site's nearest `reason` token
+// must be in the canonical challenge-bound set (or one of the pre-existing
+// institution_token_* reasons that already existed before Batch J).  The
+// check is conservative: it only flags clearly non-challenge reason literals.
+
+const ALLOWED_LEDGER_REASON_LITERALS = new Set<string>([
+  "challenge_entry_fee",
+  "challenge_entry_refund",
+  "challenge_withdrawal_refund",
+  "challenge_one_vs_one_completed",
+  "challenge_one_vs_one_won",
+  "challenge_group_completed",
+  "challenge_pool_won",
+  "challenge_team_won",
+  "session_completed",
+  "streak_weekly",
+  "streak_monthly",
+  "pr_distance",
+  "pr_pace",
+  "cosmetic_purchase",
+  "admin_adjustment",
+  "badge_reward",
+  "mission_reward",
+  "institution_token_issue",
+  "institution_token_burn",
+  "institution_switch_burn",
+  "institution_token_reverse_emission",
+  "institution_token_reverse_burn",
+]);
+
+const KNOWN_FORBIDDEN_REASONS = new Set<string>([
+  "referral_referrer_reward",
+  "referral_referred_reward",
+  "referral_bonus",
+  "referral_new_user",
+  "sponsorship_payout",
+  "redemption_payout",
+  "custody_reversal",
+  "championship_reward",
+  "welcome_bonus",
+  "onboarding_bonus",
+  "signup_bonus",
+  "invite_bonus",
+]);
+
+function collectFiles(root: string, exts: string[]): string[] {
+  const { readdirSync, statSync } = require("node:fs") as typeof import("node:fs");
+  const { join } = require("node:path") as typeof import("node:path");
+  const out: string[] = [];
+  const walk = (p: string) => {
+    let entries: string[] = [];
+    try { entries = readdirSync(p); } catch { return; }
+    for (const name of entries) {
+      if (name === "node_modules" || name === ".git") continue;
+      const full = join(p, name);
+      let s;
+      try { s = statSync(full); } catch { continue; }
+      if (s.isDirectory()) walk(full);
+      else if (exts.some((e) => name.endsWith(e))) out.push(full);
+    }
+  };
+  walk(root);
+  return out;
+}
+
+const scanTargets = [
+  ...collectFiles(resolve(ROOT, "supabase/migrations"), [".sql"]),
+  ...collectFiles(resolve(ROOT, "supabase/functions"), [".ts"]),
+];
+
+// Migrations are append-only: the original L15-02 and L16-05 files have the
+// forbidden literals baked in because that is how they got into the schema
+// in the first place, and the compensating migration L22-02 is what actually
+// drops them at runtime. We only flag NEW occurrences in files other than
+// the three historically-involved migrations.
+const HISTORICAL_ALLOWED = new Set([
+  resolve(ROOT, "supabase/migrations/20260421580000_l15_02_referral_program.sql"),
+  resolve(ROOT, "supabase/migrations/20260421620000_l16_05_sponsorships.sql"),
+  resolve(ROOT, "supabase/migrations/20260421700000_l22_02_revoke_nonchallenge_coins.sql"),
+]);
+
+let forbiddenHits = 0;
+const forbiddenDetails: string[] = [];
+for (const file of scanTargets) {
+  if (HISTORICAL_ALLOWED.has(file)) continue;
+  let body = "";
+  try { body = readFileSync(file, "utf8"); } catch { continue; }
+  for (const reason of KNOWN_FORBIDDEN_REASONS) {
+    const needle = new RegExp(`'${reason}'`);
+    if (needle.test(body)) {
+      forbiddenHits += 1;
+      forbiddenDetails.push(`${file.replace(ROOT + "/", "")} references '${reason}'`);
+    }
+  }
+}
+push(
+  "no new non-challenge reason literals in supabase/ code",
+  forbiddenHits === 0,
+  forbiddenHits === 0 ? undefined : forbiddenDetails.slice(0, 10).join("; "),
+);
+
+// Sanity: the canonical allowed list is non-trivial.
+push(
+  "canonical allowed-reason whitelist covers all challenge reasons used by edge functions",
+  ["challenge_entry_fee", "challenge_entry_refund", "challenge_withdrawal_refund",
+   "challenge_group_completed", "challenge_one_vs_one_won", "badge_reward"].every(
+     (r) => ALLOWED_LEDGER_REASON_LITERALS.has(r),
+   ),
+);
 
 let failed = 0;
 for (const r of results) {

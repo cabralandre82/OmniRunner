@@ -405,6 +405,10 @@ BEGIN
 
     v_to_credit := v_sp.monthly_coins_per_athlete;
 
+    -- Historical monthly sponsorship payout — DISABLED at runtime by the
+    -- L22-02 correction migration, which DROPs this function entirely and
+    -- removes 'sponsorship_payout' from coin_ledger_reason_check.
+    -- L04-07-OK: sponsorship_payout is revoked by 20260421700000_l22_02_revoke_nonchallenge_coins.sql
     INSERT INTO public.coin_ledger (user_id, amount, reason, metadata)
     VALUES (
       v_athlete.user_id,
