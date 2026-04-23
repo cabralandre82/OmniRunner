@@ -21,6 +21,7 @@
     "audit:api-handler-types": "npx tsx tools/audit/check-api-handler-types.ts",
     "audit:portal-test-file-size": "npx tsx tools/audit/check-portal-test-file-size.ts",
     "audit:email-platform": "npx tsx tools/audit/check-email-platform.ts",
+    "audit:groups-nearby": "npx tsx tools/audit/check-groups-nearby.ts",
     "audit:shared-prefs-sensitive-keys": "npx tsx tools/audit/check-shared-prefs-sensitive-keys.ts",
     "audit:npm-dependency-pinning": "npx tsx tools/audit/check-npm-dependency-pinning.ts",
     "audit:sqlcipher-eol": "npx tsx tools/audit/check-sqlcipher-eol.ts",
