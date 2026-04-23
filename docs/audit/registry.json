@@ -10247,27 +10247,41 @@
       "lens": 22,
       "title": "Grupos locais sem descoberta por proximidade",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "lgpd",
         "personas",
-        "athlete-amateur"
+        "athlete-amateur",
+        "geo",
+        "privacy"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421370000_l22_05_coaching_groups_nearby.sql",
+        "portal/src/app/api/groups/nearby/route.ts",
+        "tools/audit/check-groups-nearby.ts",
+        "tools/test_l22_05_coaching_groups_nearby.ts",
+        "docs/runbooks/GROUPS_NEARBY_RUNBOOK.md"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l22_05_coaching_groups_nearby.ts",
+        "tools/audit/check-groups-nearby.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "local:32e764f"
+      ],
+      "owner": "data-platform",
+      "runbook": "docs/runbooks/GROUPS_NEARBY_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Delivered an opt-in proximity discovery surface with privacy-by-design snap-to-grid (500m/1km/5km), without PostGIS. Migration adds base_lat/base_lng (numeric(8,5)), allow_discovery, location_precision_m to coaching_groups with 4 CHECKs (incl. chk_coaching_groups_discovery_needs_coords) and a partial btree on the hot subset. fn_groups_snap_coord (IMMUTABLE) rounds coords to coach's precision; fn_groups_nearby (STABLE SECURITY DEFINER, authenticated-only) clamps radius [1,100], bounding-box prunes, Haversine refines, returns snapped coords + distance rounded to nearest km (min 1) — defeating triangulation. fn_group_set_base_location gates writes to coach_user_id. GET /api/groups/nearby exposes the RPC through apiOk/apiUnauthorized. fn_coaching_groups_assert_discovery_shape raises P0010 on drift; wired as npm run audit:groups-nearby. 25 integration tests green; portal tsc/eslint clean. Code: 32e764f."
     },
     {
       "id": "L22-06",
