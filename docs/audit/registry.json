@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T11:13:36.200Z",
+  "generated_at": "2026-04-23T11:23:11.073Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 144,
-    "fix-pending": 203,
+    "fixed": 145,
+    "fix-pending": 202,
     "in-progress": 1
   },
   "by_wave": {
@@ -11099,21 +11099,31 @@
       "lens": 23,
       "title": "Análise coletiva (grupo) limitada",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "personas",
         "coach"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421380000_l23_07_group_analytics_overview.sql",
+        "portal/src/app/api/platform/analytics/group-overview/route.ts",
+        "tools/audit/check-group-analytics.ts",
+        "docs/runbooks/GROUP_ANALYTICS_RUNBOOK.md"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-group-analytics.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:fdda9e9"
+      ],
       "owner": "unassigned",
-      "runbook": null,
+      "runbook": "docs/runbooks/GROUP_ANALYTICS_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,

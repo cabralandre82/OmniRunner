@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-23 11:13:36 UTC.
+> Atualizado em 2026-04-23 11:23:11 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -343,7 +343,7 @@ Total: **348** findings.
 | 🔴 critical | ⏳ fix-pending | [L23-04](./findings/L23-04-bulk-assign-semanal-ver-20260416000000-bulk-assign-and.md) | 1 | L23 · Treinador | Bulk assign semanal (ver 20260416000000_bulk_assign_and_week_templates.sql) sem rollback | unassigned |
 | 🟠 high | ⏳ fix-pending | [L23-05](./findings/L23-05-workout-template-library-pobre.md) | 1 | L23 · Treinador | Workout template library pobre | unassigned |
 | 🟠 high | ✅ fixed | [L23-06](./findings/L23-06-plano-mensal-trimestral-nao-periodizado.md) | 1 | L23 · Treinador | Plano mensal/trimestral não periodizado | unassigned |
-| 🟠 high | ⏳ fix-pending | [L23-07](./findings/L23-07-analise-coletiva-grupo-limitada.md) | 1 | L23 · Treinador | Análise coletiva (grupo) limitada | unassigned |
+| 🟠 high | ✅ fixed | [L23-07](./findings/L23-07-analise-coletiva-grupo-limitada.md) | 1 | L23 · Treinador | Análise coletiva (grupo) limitada | unassigned |
 | 🟠 high | ⏳ fix-pending | [L23-08](./findings/L23-08-presenca-em-treinos-coletivos-via-qr-code-staff.md) | 1 | L23 · Treinador | Presença em treinos coletivos via QR code (staff_training_scan_screen.dart existe) | unassigned |
 | 🟠 high | ⏳ fix-pending | [L23-09](./findings/L23-09-billing-integrado-cobranca-de-mensalidade-aos-atletas.md) | 1 | L23 · Treinador | Billing integrado (cobrança de mensalidade aos atletas) | unassigned |
 | 🟠 high | ⏳ fix-pending | [L23-10](./findings/L23-10-treinos-com-dependencia-entre-atletas-par-grupo.md) | 1 | L23 · Treinador | Treinos com dependência entre atletas (par/grupo) | unassigned |
