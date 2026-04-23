@@ -6334,25 +6334,42 @@
       "lens": 11,
       "title": "Flutter sdk: '>=3.8.0 <4.0.0' — permite 3.9, 3.10…",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "mobile"
+        "mobile",
+        "supply-chain",
+        "fixed"
       ],
-      "files": [],
+      "files": [
+        "omni_runner/pubspec.yaml",
+        ".tool-versions",
+        ".github/workflows/release.yml",
+        ".github/workflows/flutter.yml",
+        ".github/workflows/security.yml",
+        "omni_runner/analysis_options.yaml",
+        "tools/audit/check-flutter-sdk-pinning.ts",
+        "docs/runbooks/FLUTTER_SDK_PINNING_RUNBOOK.md",
+        "package.json"
+      ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-flutter-sdk-pinning.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "local/924416b — fix(mobile/sdk): pin Dart/Flutter to single-minor + CI guard (L11-08)"
+      ],
+      "owner": "mobile",
+      "runbook": "docs/runbooks/FLUTTER_SDK_PINNING_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Single-minor SDK pin + cross-workflow alignment + CI guard. Pre-fix: pubspec sdk '>=3.8.0 <4.0.0' permitia Dart 3.9/3.10/3.11 a resolver o mesmo pubspec (language-spec drift possível entre local dev e CI); release.yml estava em flutter-version 3.22.x enquanto flutter.yml + security.yml estavam em 3.41.x — release APKs compilados com toolchain diferente do CI test (silent divergence real). Fix em 4 camadas: (1) pubspec narrow `sdk: '>=3.11.0 <3.12.0'` + `flutter: '>=3.41.0 <3.42.0'` com 10-line warning block citando L11-08 e o runbook; janela single-minor aceita patches (3.11.1, 3.11.2), rejeita minor drift; (2) .tool-versions em repo root para asdf/fvm/pluggable toolchain managers — `flutter 3.41.1`, `dart 3.11.0`, `nodejs 20` — `cd <repo> && asdf install` dá ao dev exatamente a toolchain do CI; (3) Alinhamento cross-workflow: release.yml flutter-version 3.22.x → 3.41.x matching flutter.yml/security.yml, com warning block sibling citando L11-08; (4) CI guard check-flutter-sdk-pinning.ts (npm run audit:flutter-sdk-pinning) enforçando 5 invariants: single-minor em sdk+flutter (upper == lower.minor+1, patch 0, mesmo major; rejeita cross-major/multi-minor/one-sided/missing bounds) + warning block >=4 lines mencionando L11-08 + .tool-versions dart/flutter minor matching pubspec + TODAS `flutter-version:` lines em .github/workflows/*.yml matching pubspec minor (zero exceções, nem para 'just this one job') + runbook exists + cross-links check-flutter-sdk-pinning.\n\nSide-effect cleanup: faixa narrower surfaced deprecated lint `avoid_null_checks_in_equality_operators` (deprecated em Dart 3.11, antes mascarado pela faixa wider compat mode). Removido de analysis_options.yaml.\n\nSmoke-tested: widened pubspec → sdk_range_too_wide flagged com remediação exata; planted 3.99.x em flutter.yml → workflow_flutter_drift flagged nas 3 jobs com line numbers; ambos revertem clean. Verification: audit:flutter-sdk-pinning green, audit:verify 348 findings, audit:email-platform 6 invariants, audit:shared-prefs-sensitive-keys 891 dart files, audit:npm-dependency-pinning 8 criticals, audit:sqlcipher-eol green, flutter analyze no issues, flutter test 2128/2128 passed.\n\nCross-refs: L11-06 (mesma filosofia NPM side — pin exato + CI guard + runbook), L11-07 (Flutter major bump 3.x→4.x é explicit exit criterion #2 em ADR-009 via NDK deprecation — single-minor pin dá visibilidade desse signal cedo), L11-05 (FlutterSecureStorage sensível a language-spec regressions em minors passadas), L01-30/31 (ProGuard rules versionadas alongside Flutter — single-minor mantém stable), L11-03 gitleaks + L11-09 least-privilege GITHUB_TOKEN (workflows shared; alignment cross-workflow mantém esses guards efetivos)."
     },
     {
       "id": "L11-09",
