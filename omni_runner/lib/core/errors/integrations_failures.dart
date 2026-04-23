@@ -31,6 +31,41 @@ final class AuthRevoked extends IntegrationFailure {
   const AuthRevoked();
 }
 
+/// OAuth2 authorization-server callback failed the CSRF defence
+/// (RFC 6749 §10.12 `state` parameter).
+///
+/// Raised by [StravaAuthRepositoryImpl.authenticate] when the value
+/// echoed back by Strava does not match the CSPRNG token minted by
+/// [StravaOAuthStateGuard.beginFlow]. Any of the following trigger it:
+///
+///   * Missing `state` in the callback (someone crafted the redirect
+///     by hand — well-behaved clients always include it).
+///   * Wrong `state` value (classic login-CSRF: a forged authorize
+///     request tried to graft an attacker-controlled Strava account
+///     onto the victim's Omni Runner session).
+///   * Expired state (TTL 10 min — almost certainly a stale redirect,
+///     not an attack, but handled with the same safety rails).
+///   * Replay of a previously consumed state (the guard is
+///     consume-once, so a second callback with the same value fails).
+///
+/// UI should surface this as a distinct, user-safe message — never as
+/// a generic "Erro ao conectar". The attempted exchange was aborted
+/// BEFORE any token request, so no Strava code was sent to the auth
+/// server. Users are free to retry cleanly from scratch.
+///
+/// L07-04 — see `docs/runbooks/STRAVA_OAUTH_CSRF_RUNBOOK.md`.
+final class OAuthCsrfViolation extends IntegrationFailure {
+  /// Machine-readable reason for logging / telemetry. One of:
+  ///   * `'state_missing'` — callback came back with no `state` query param.
+  ///   * `'state_mismatch'` — `state` value does not match the minted token
+  ///     (also covers expired or not-previously-minted).
+  final String reason;
+  const OAuthCsrfViolation({this.reason = 'state_mismatch'});
+
+  @override
+  String toString() => 'OAuthCsrfViolation(reason=$reason)';
+}
+
 // ── Upload ────────────────────────────────────────────────────
 
 /// Upload rejected by provider (4xx — bad file, duplicate, etc.).

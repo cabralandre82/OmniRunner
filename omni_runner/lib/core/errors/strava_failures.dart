@@ -21,6 +21,7 @@ export 'package:omni_runner/core/errors/integrations_failures.dart'
         AuthFailed,
         TokenExpired,
         AuthRevoked,
+        OAuthCsrfViolation,
         // Upload
         UploadRejected,
         UploadNetworkError,

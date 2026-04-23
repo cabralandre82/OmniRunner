@@ -339,10 +339,10 @@ void main() {
         await expectLater(
           repo.authenticate(),
           throwsA(
-            isA<AuthFailed>().having(
+            isA<OAuthCsrfViolation>().having(
               (e) => e.reason,
               'reason',
-              contains('OAuth state mismatch'),
+              'state_mismatch',
             ),
           ),
         );
@@ -355,7 +355,8 @@ void main() {
       },
     );
 
-    test('missing state in callback is rejected', () async {
+    test('missing state in callback is rejected with state_missing reason',
+        () async {
       final repo = buildRepoWith(
         returnedCallback:
             'omnirunnerauth://localhost/exchange_token?code=ATTACKER',
@@ -364,10 +365,10 @@ void main() {
       await expectLater(
         repo.authenticate(),
         throwsA(
-          isA<AuthFailed>().having(
+          isA<OAuthCsrfViolation>().having(
             (e) => e.reason,
             'reason',
-            contains('OAuth state mismatch'),
+            'state_missing',
           ),
         ),
       );
@@ -416,7 +417,7 @@ void main() {
       );
       await expectLater(
         replayRepo.authenticate(),
-        throwsA(isA<AuthFailed>()),
+        throwsA(isA<OAuthCsrfViolation>()),
       );
     });
 

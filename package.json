@@ -16,6 +16,7 @@
     "audit:anti-credential-stuffing": "npx tsx tools/audit/check-anti-credential-stuffing.ts",
     "audit:jwt-claims-validation": "npx tsx tools/audit/check-jwt-claims-validation.ts",
     "audit:audit-logs-append-only": "npx tsx tools/audit/check-audit-logs-append-only.ts",
+    "audit:strava-oauth-state": "npx tsx tools/audit/check-strava-oauth-state.ts",
     "legal:check": "npx tsx tools/legal/check-document-hashes.ts"
   },
   "devDependencies": {

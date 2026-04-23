@@ -239,6 +239,26 @@ class _StravaIntegrationTileState extends State<_StravaIntegrationTile> {
           ),
         );
       }
+    } on OAuthCsrfViolation catch (e) {
+      // L07-04: a state_mismatch / state_missing is ALWAYS user-safe
+      // (no token exchange happened — the forged code never reached
+      // Strava's /oauth/token endpoint). Distinct message so the user
+      // doesn't assume a network blip, and distinct colour so support
+      // can triage "CSRF attempts" separately in screen recordings.
+      await _loadState();
+      if (mounted) {
+        final cs = Theme.of(context).colorScheme;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e.reason == 'state_missing'
+                  ? 'Retorno do Strava sem verificação de segurança. Por favor, tente conectar novamente.'
+                  : 'Tentativa de conexão inválida detectada. Por favor, tente conectar novamente.',
+            ),
+            backgroundColor: cs.error,
+          ),
+        );
+      }
     } on IntegrationFailure {
       await _loadState();
       if (mounted && _state is StravaConnected) {

@@ -133,10 +133,22 @@ final class StravaAuthRepositoryImpl implements IStravaAuthRepository {
       // exchange a forged authorisation code. `validateAndConsume`
       // also clears the persisted state on every path (pass or fail)
       // so a replay of the callback URL is impossible.
+      //
+      // L07-04: surface the CSRF failure as a distinct
+      // `OAuthCsrfViolation` so UI can offer a user-safe message
+      // instead of a generic "Erro ao conectar" — and so telemetry
+      // can count attempted forgeries separately from network errors.
       final stateOk = await _stateGuard.validateAndConsume(returnedState);
       if (!stateOk) {
         _cachedState = const StravaDisconnected();
-        throw const AuthFailed('OAuth state mismatch — flow aborted');
+        final reason = (returnedState == null || returnedState.isEmpty)
+            ? 'state_missing'
+            : 'state_mismatch';
+        AppLogger.warn(
+          'OAuth callback rejected: $reason (no token exchange performed)',
+          tag: _tag,
+        );
+        throw OAuthCsrfViolation(reason: reason);
       }
 
       if (code == null || code.isEmpty) {
