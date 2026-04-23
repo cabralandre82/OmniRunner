@@ -5838,23 +5838,36 @@
       "lens": 10,
       "title": "Logs de acesso sensíveis sem imutabilidade",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "tags": [],
-      "files": [],
+      "tags": [
+        "audit",
+        "security",
+        "database"
+      ],
+      "files": [
+        "supabase/migrations/20260421350000_l10_08_audit_logs_append_only.sql",
+        "tools/audit/check-audit-logs-append-only.ts",
+        "tools/test_l10_08_audit_logs_append_only.ts",
+        "docs/runbooks/AUDIT_LOGS_APPEND_ONLY_RUNBOOK.md"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l10_08_audit_logs_append_only.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "0e13ba8"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/AUDIT_LOGS_APPEND_ONLY_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "2026-04-21 — fixed. public.audit_append_only_config registry + fn_audit_reject_mutation BEFORE UPDATE/DELETE/TRUNCATE trigger (P0010) installed on portal_audit_log, coin_ledger_pii_redactions, cron_edge_retry_attempts, consent_events. account_deletion_log registered as append_with_outcome. CI npm run audit:audit-logs-append-only + runbook."
     },
     {
       "id": "L10-09",

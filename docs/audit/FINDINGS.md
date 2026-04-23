@@ -186,7 +186,7 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L10-05](./findings/L10-05-csp-hardened-1-31-mas-sem-report-uri.md) | 1 | L10 · CSO | CSP hardened ([1.31]) mas sem report-uri | portal-team |
 | 🟠 high | ⏳ fix-pending | [L10-06](./findings/L10-06-segregacao-de-funcao-sod-ausente-em-platform-admin.md) | 1 | L10 · CSO | Segregação de função (SoD) ausente em platform_admin | unassigned |
 | 🟠 high | ✅ fixed | [L10-07](./findings/L10-07-zero-trust-entre-microservicos-edge-functions-confiam-no.md) | 1 | L10 · CSO | Zero-trust entre microserviços — Edge Functions confiam no JWT sem validar audience | platform |
-| 🟠 high | ⏳ fix-pending | [L10-08](./findings/L10-08-logs-de-acesso-sensiveis-sem-imutabilidade.md) | 1 | L10 · CSO | Logs de acesso sensíveis sem imutabilidade | unassigned |
+| 🟠 high | ✅ fixed | [L10-08](./findings/L10-08-logs-de-acesso-sensiveis-sem-imutabilidade.md) | 1 | L10 · CSO | Logs de acesso sensíveis sem imutabilidade | platform |
 | 🟠 high | ✅ fixed | [L10-09](./findings/L10-09-falta-defesa-anti-credential-stuffing-no-mobile-portal.md) | 1 | L10 · CSO | Falta defesa anti credential stuffing no Mobile/Portal | platform-security |
 | 🟡 medium | ⏳ fix-pending | [L10-10](./findings/L10-10-nao-ha-pentest-externo-documentado.md) | 2 | L10 · CSO | Não há pentest externo documentado | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L10-11](./findings/L10-11-sem-inventario-de-chaves-de-api-terceiros.md) | 2 | L10 · CSO | Sem inventário de chaves de API terceiros | unassigned |

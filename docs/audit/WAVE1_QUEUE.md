@@ -12,7 +12,7 @@
 **Progresso Batch B (Cron / Reliability):** ✅ 5/5 — L06-05 ✓, L12-09 ✓, L12-06 ✓, L12-07 ✓ (+ L07-06 co-fix), L12-08 ✓.
 **Progresso Batch C (DBA / Schema Cleanup):** ✅ 4/4 — L19-04 ✓ · L19-08 ✓ · L19-06 ✓ · L08-05 ✓.
 **Progresso Batch D (Sessions / Data Integrity):** ✅ 2/2 — L08-04 ✓ · L08-03 ✓.
-**Progresso Batch E (Security & Auth):** 🟡 2/4 — L10-09 ✓ · L10-07 ✓ · L10-08 ⏳ · L07-04 ⏳.
+**Progresso Batch E (Security & Auth):** 🟡 3/4 — L10-09 ✓ · L10-07 ✓ · L10-08 ✓ · L07-04 ⏳.
 
 ## Critério de pontuação
 
@@ -67,7 +67,7 @@
 |---|---|---|---|---|---|
 | 17 | L10-09 | high | 10 | 3 | ✅ Falta defesa anti credential stuffing no Mobile/Portal (fixed 2026-04-21) |
 | 18 | L10-07 | high | 10 | 3 | ✅ Edge Functions confiam no JWT sem validar `audience`/`issuer` (fixed 2026-04-21) |
-| 19 | L10-08 | high | 10 | 3 | Logs de acesso sensíveis sem imutabilidade (`audit_logs` append-only) |
+| 19 | L10-08 | high | 10 | 3 | ✅ Logs de acesso sensíveis sem imutabilidade (fixed 2026-04-21) |
 | 20 | L07-04 | high | 7 | 3 | Flutter deep link Strava OAuth sem state validation (CSRF) |
 
 ### 🟢 Batch F — Plumbing / DX (4 entregas, em `portal/src/lib/*`)
