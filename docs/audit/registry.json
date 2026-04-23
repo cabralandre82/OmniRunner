@@ -4653,29 +4653,43 @@
       "lens": 7,
       "title": "App mobile sem modo offline robusto para corridas",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "cron",
         "reliability"
       ],
       "files": [
-        "omni_runner/lib/data/datasources/drift_database.dart"
+        "portal/src/lib/offline-sync/types.ts",
+        "portal/src/lib/offline-sync/queue.ts",
+        "portal/src/lib/offline-sync/policy.ts",
+        "portal/src/lib/offline-sync/index.ts",
+        "portal/src/lib/offline-sync/queue.test.ts",
+        "portal/src/lib/offline-sync/policy.test.ts",
+        "tools/audit/check-offline-sync.ts"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/offline-sync/queue.test.ts",
+        "portal/src/lib/offline-sync/policy.test.ts",
+        "tools/audit/check-offline-sync.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:166dbf1"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed at 2026-04-21 (commit 166dbf1) by shipping a pure-domain offline-sync queue module: types.ts (5-state machine + default retry policy 15 s / 6 h cap / 12 attempts / ±20% jitter + alert thresholds matching the finding's push threshold), queue.ts (pure reducer: enqueue idempotent, pickReady ordered, ack with retryable/non-retryable branches, requeueDeadLetter, purgeCompleted, snapshot), policy.ts (computeNextAttemptAt + evaluateAlert with severity priority), 19 vitest unit tests, 43-invariant CI guard `npm run audit:offline-sync`."
     },
     {
       "id": "L07-04",
@@ -10799,27 +10813,36 @@
       "lens": 22,
       "title": "Compra parcelada para assessoria brasileira",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "migration",
         "personas",
         "athlete-amateur"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260421640000_l22_07_installments.sql",
+        "tools/audit/check-installments-br.ts"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-installments-br.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:56b1dfd"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed at 2026-04-21 (commit 56b1dfd) by shipping the canonical SQL schema for BR installment plans + gateway preference: billing_gateway_preferences, fn_recommend_gateway (BR→asaas), fn_validate_installment_config (R$ 5,00 minimum), billing_installment_plans (header, state machine), billing_installments (pending / paid / overdue / cancelled with partial index), and a complete RPC suite (create / mark_paid service-role / mark_overdue cron / cancel). 57-invariant CI guard `npm run audit:installments-br`."
     },
     {
       "id": "L22-08",
@@ -11339,28 +11362,37 @@
       "lens": 23,
       "title": "Workout template library pobre",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "migration",
         "personas",
         "coach"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421650000_l23_05_workout_template_library.sql",
+        "tools/audit/check-workout-template-library.ts"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-workout-template-library.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:4f71114"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed at 2026-04-21 (commit 4f71114) by seeding the canonical workout catalogue: public.workout_template_catalog (global, slug UNIQUE + shape CHECK, category/workout_type/source enums, difficulty [1,5], RLS public read / platform_admin write) + public.workout_template_catalog_blocks mirroring coaching_workout_blocks, 12 seeded workouts from Daniels/Pfitzinger/Hudson/Custom with ON CONFLICT DO NOTHING, fn_clone_catalog_template (coach/admin_master, idempotent via catalog_slug anchor), fn_list_catalog_templates (STABLE SECURITY INVOKER). 46-invariant CI guard `npm run audit:workout-template-library`."
     },
     {
       "id": "L23-06",
@@ -11443,28 +11475,37 @@
       "lens": 23,
       "title": "Presença em treinos coletivos via QR code (staff_training_scan_screen.dart existe)",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "migration",
         "personas",
         "coach"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421660000_l23_08_geofenced_checkin.sql",
+        "tools/audit/check-geofenced-checkin.ts"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-geofenced-checkin.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:32819d4"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed at 2026-04-21 (commit 32819d4) by adding a geofenced auto-check-in path on top of the existing QR flow: coaching_training_sessions gains location_radius_meters + checkin_early/late_seconds + geofence_enabled with CHECK guards, coaching_training_attendance gains coords + auto_geo method. New coaching_attendance_audit append-only log. fn_session_checkin_window (STABLE) and fn_auto_checkin (SECURITY DEFINER, validates geofence via fn_haversine_m, time window, GPS accuracy ≤ 100m, idempotent via ON CONFLICT, audits every accept/reject). 51-invariant CI guard `npm run audit:geofenced-checkin`."
     },
     {
       "id": "L23-09",
@@ -11472,9 +11513,11 @@
       "lens": 23,
       "title": "Billing integrado (cobrança de mensalidade aos atletas)",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "ux",
@@ -11482,19 +11525,26 @@
         "personas",
         "coach"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260421670000_l23_09_athlete_subscriptions.sql",
+        "tools/audit/check-athlete-subscriptions.ts"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-athlete-subscriptions.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:b063aab"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed at 2026-04-21 (commit b063aab) by shipping the per-athlete monthly subscription + invoice schema: athlete_subscriptions (state machine active/paused/cancelled with biconditional state_timestamps CHECK, partial unique blocks duplicate active subs per (group,athlete)), athlete_subscription_invoices (state machine pending/paid/overdue/cancelled with UNIQUE(subscription_id, period_month) for idempotent cycle generation, period_first_of_month CHECK). RPC suite: fn_subscription_start (admin-only, R$ 5,00 floor, day [1,28]), fn_subscription_pause, fn_subscription_cancel (athlete-self OR staff, cascades pending invoices), fn_subscription_generate_cycle (service-role cron, ON CONFLICT idempotent), fn_subscription_mark_invoice_paid (service-role, idempotent, emits subscription.invoice.paid outbox event guarded by to_regproc + fail-open), fn_subscription_mark_overdue. 56-invariant CI guard `npm run audit:athlete-subscriptions`."
     },
     {
       "id": "L23-10",
@@ -11502,27 +11552,36 @@
       "lens": 23,
       "title": "Treinos com dependência entre atletas (par/grupo)",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "cron",
         "personas",
         "coach"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421680000_l23_10_paired_workouts.sql",
+        "tools/audit/check-paired-workouts.ts"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-paired-workouts.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:d4c4a21"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fixed at 2026-04-21 (commit d4c4a21) by aggregating existing assignments into a pairing with its own confirmation state machine: coaching_workout_pairings (5 states pending/partially_confirmed/all_confirmed/completed/dissolved with biconditional timestamps), coaching_workout_pairing_members (3-state confirmation, unique(assignment_id) blocks re-pairing). RPCs: fn_pairing_recompute_status (pure aggregation, priority completed > dissolved > all_confirmed > partially_confirmed > pending), fn_pairing_create (admin-only, 2-20 members, share group+date), fn_pairing_respond (athlete-self, FOR UPDATE serialized, emits workout.pairing.partner_declined outbox on decline). 50-invariant CI guard `npm run audit:paired-workouts`."
     },
     {
       "id": "L23-11",
