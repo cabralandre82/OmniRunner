@@ -52,6 +52,7 @@
     "audit:privacy-zones": "npx tsx tools/audit/check-privacy-zones.ts",
     "audit:social-handles-policy": "npx tsx tools/audit/check-social-handles-policy.ts",
     "audit:referral-program": "npx tsx tools/audit/check-referral-program.ts",
+    "audit:white-label-branding": "npx tsx tools/audit/check-white-label-branding.ts",
     "audit:og-metadata": "npx tsx tools/audit/check-og-metadata.ts",
     "audit:challenge-invite-deep-link": "npx tsx tools/audit/check-challenge-invite-deep-link.ts",
     "audit:milestone-celebration": "npx tsx tools/audit/check-milestone-celebration.ts",
