@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T10:58:55.573Z",
+  "generated_at": "2026-04-23T11:13:36.200Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 143,
-    "fix-pending": 204,
+    "fixed": 144,
+    "fix-pending": 203,
     "in-progress": 1
   },
   "by_wave": {
@@ -11061,21 +11061,32 @@
       "lens": 23,
       "title": "Plano mensal/trimestral não periodizado",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "personas",
         "coach"
       ],
-      "files": [],
+      "files": [
+        "portal/src/lib/periodization/types.ts",
+        "portal/src/lib/periodization/generate-periodization.ts",
+        "portal/src/app/api/training-plan/wizard/route.ts",
+        "tools/audit/check-periodization-template.ts",
+        "docs/runbooks/PERIODIZATION_WIZARD_RUNBOOK.md"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/periodization/__tests__/generate-periodization.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:b4f36a9"
+      ],
       "owner": "unassigned",
-      "runbook": null,
+      "runbook": "docs/runbooks/PERIODIZATION_WIZARD_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
