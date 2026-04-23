@@ -11,6 +11,7 @@
     "audit:duplicate-indexes": "npx tsx tools/audit/check-duplicate-indexes.ts",
     "audit:constraint-naming": "npx tsx tools/audit/check-constraint-naming.ts",
     "audit:audit-logs-gin": "npx tsx tools/audit/check-audit-logs-gin.ts",
+    "audit:sessions-coherence": "npx tsx tools/audit/check-sessions-coherence.ts",
     "legal:check": "npx tsx tools/legal/check-document-hashes.ts"
   },
   "devDependencies": {
