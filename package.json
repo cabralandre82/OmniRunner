@@ -24,6 +24,7 @@
     "audit:groups-nearby": "npx tsx tools/audit/check-groups-nearby.ts",
     "audit:voice-coaching-i18n": "npx tsx tools/audit/check-voice-coaching-i18n.ts",
     "audit:pace-guidance": "npx tsx tools/audit/check-pace-guidance-voice.ts",
+    "audit:athlete-onboarding": "npx tsx tools/audit/check-athlete-onboarding.ts",
     "audit:challenge-invite-deep-link": "npx tsx tools/audit/check-challenge-invite-deep-link.ts",
     "audit:milestone-celebration": "npx tsx tools/audit/check-milestone-celebration.ts",
     "audit:periodization-template": "npx tsx tools/audit/check-periodization-template.ts",
