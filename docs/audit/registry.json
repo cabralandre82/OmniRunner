@@ -5855,22 +5855,33 @@
       "lens": 10,
       "title": "Falta defesa anti credential stuffing no Mobile/Portal",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "rate-limit",
         "edge-function",
         "testing"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421340000_l10_09_anti_credential_stuffing.sql",
+        "tools/audit/check-anti-credential-stuffing.ts",
+        "tools/test_l10_09_anti_credential_stuffing.ts",
+        "package.json",
+        "docs/runbooks/ANTI_CREDENTIAL_STUFFING_RUNBOOK.md"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l10_09_anti_credential_stuffing.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "b2fb402"
+      ],
+      "owner": "platform-security",
+      "runbook": "docs/runbooks/ANTI_CREDENTIAL_STUFFING_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
