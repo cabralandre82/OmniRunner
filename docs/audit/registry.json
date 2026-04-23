@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T00:46:54.035Z",
+  "generated_at": "2026-04-23T00:56:28.333Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 110,
-    "fix-pending": 237,
+    "fixed": 111,
+    "fix-pending": 236,
     "in-progress": 1
   },
   "by_wave": {
@@ -3638,22 +3638,35 @@
       "lens": 5,
       "title": "Swap: amount mínimo US$ 100 inviabiliza grupos pequenos",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
-        "portal"
+        "portal",
+        "ux",
+        "marketplace"
       ],
       "files": [
-        "portal/src/app/api/swap/route.ts"
+        "portal/src/lib/swap.ts",
+        "portal/src/app/api/swap/route.ts",
+        "portal/src/lib/openapi/routes/v1-financial.ts",
+        "portal/public/openapi.json",
+        "portal/src/app/(portal)/swap/swap-actions.tsx"
       ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/swap.test.ts",
+        "portal/src/app/api/swap/route.test.ts",
+        "portal/src/app/(portal)/swap/swap-actions.test.tsx"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "1ad1a91ad459ba52b5edbb7764d017041e5886b3"
+      ],
+      "owner": "cpo+frontend",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
