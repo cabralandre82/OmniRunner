@@ -4968,23 +4968,33 @@
       "lens": 8,
       "title": "Sem índice de analytics time-series em sessions",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "migration",
         "performance"
       ],
       "files": [
-        "supabase/migrations/20260218000000_full_schema.sql"
+        "supabase/migrations/20260218000000_full_schema.sql",
+        "supabase/migrations/20260421330000_l08_03_sessions_time_series_index.sql",
+        "tools/audit/check-sessions-time-series-index.ts",
+        "tools/test_l08_03_sessions_time_series_index.ts",
+        "package.json",
+        "docs/runbooks/SESSIONS_TIME_SERIES_INDEX_RUNBOOK.md"
       ],
       "correction_type": "migration",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l08_03_sessions_time_series_index.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "b68e71d"
+      ],
+      "owner": "platform-data",
+      "runbook": "docs/runbooks/SESSIONS_TIME_SERIES_INDEX_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
