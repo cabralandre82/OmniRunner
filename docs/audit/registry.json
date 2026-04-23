@@ -10289,28 +10289,49 @@
       "lens": 22,
       "title": "Voice coaching parcial",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "reliability",
         "personas",
-        "athlete-amateur"
+        "athlete-amateur",
+        "i18n",
+        "audio"
       ],
-      "files": [],
-      "correction_type": "config",
+      "files": [
+        "omni_runner/lib/domain/value_objects/audio_coach_locale.dart",
+        "omni_runner/lib/domain/services/audio_cue_formatter.dart",
+        "omni_runner/lib/domain/usecases/countdown_voice_trigger.dart",
+        "omni_runner/lib/domain/usecases/motivation_voice_trigger.dart",
+        "omni_runner/lib/domain/usecases/hydration_voice_trigger.dart",
+        "omni_runner/lib/data/datasources/audio_coach_service.dart",
+        "omni_runner/lib/data/repositories_impl/audio_coach_repo.dart",
+        "tools/audit/check-voice-coaching-i18n.ts",
+        "docs/runbooks/AUDIO_CUES_RUNBOOK.md"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "omni_runner/test/domain/services/audio_cue_formatter_test.dart",
+        "omni_runner/test/domain/usecases/countdown_voice_trigger_test.dart",
+        "omni_runner/test/domain/usecases/motivation_voice_trigger_test.dart",
+        "omni_runner/test/domain/usecases/hydration_voice_trigger_test.dart",
+        "tools/audit/check-voice-coaching-i18n.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "local:9dab4ec"
+      ],
+      "owner": "mobile",
+      "runbook": "docs/runbooks/AUDIO_CUES_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Shipped 3 cues (countdown / motivation / hydration) + multi-locale (ptBR/en/es) in 5 defense layers. `AudioCoachLocale` enum with BCP-47 tags + null-safe fromTag resolver. `AudioCueFormatter` single locale-aware renderer with 15 keys × 3 locales + motivational pools + hydration phrase. Three new triggers with stateful reset/cool-down/priorities (countdown=2, motivation=14, hydration=13). `AudioCoachService.init({locale})` + setLocale mid-session; repo delegates text rendering. CI `audit:voice-coaching-i18n` (20 invariants: enum shape, BCP-47 tags, fromTag factory, catalogue coverage per locale, motivational pool per locale, 3 trigger files, runbook mutual-linkage). 71 new Dart tests (flutter test 2199/2199 green), flutter analyze clean. Runbook AUDIO_CUES_RUNBOOK.md (§1 why, §2 invariants table, §3 what shipped, §4 how-to add locale/cue/swap mid-session, §5 six playbooks inc. priority contract, §6 signals, §7 rollback additive, §8 cross-refs L22-05/L21-06/L11-05/L17-05). Code: 9dab4ec."
     },
     {
       "id": "L22-07",
