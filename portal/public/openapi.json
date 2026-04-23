@@ -505,7 +505,7 @@
                     "required": ["action", "amount_usd"],
                     "properties": {
                       "action": { "type": "string", "enum": ["create"] },
-                      "amount_usd": { "type": "number", "minimum": 100, "maximum": 500000 }
+                      "amount_usd": { "type": "number", "minimum": 10, "maximum": 500000, "description": "Min US$ 10 (L05-07: floor reduzido de 100 para suportar clubes amadores). Max US$ 500.000." }
                     }
                   },
                   {

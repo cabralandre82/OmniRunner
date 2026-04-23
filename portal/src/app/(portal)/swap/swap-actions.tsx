@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { csrfFetch } from "@/lib/api/csrf-fetch";
+import { SWAP_MIN_AMOUNT_USD } from "@/lib/swap";
 
 export function SwapActions({
   acceptOrderId,
@@ -41,8 +42,8 @@ export function SwapActions({
 
   async function handleCreate() {
     const val = parseFloat(amount);
-    if (!val || val < 100) {
-      setMessage("Valor mínimo: US$ 100.00");
+    if (!val || val < SWAP_MIN_AMOUNT_USD) {
+      setMessage(`Valor mínimo: US$ ${SWAP_MIN_AMOUNT_USD.toFixed(2)}`);
       return;
     }
 
@@ -103,13 +104,20 @@ export function SwapActions({
 
       <input
         type="number"
-        min={100}
+        min={SWAP_MIN_AMOUNT_USD}
         step={1}
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
         placeholder="5000"
         className="w-full rounded-lg border border-border px-3 py-2 text-sm mb-3"
+        aria-describedby="swap-min-helper"
       />
+      <p
+        id="swap-min-helper"
+        className="text-[11px] text-content-secondary -mt-2 mb-3"
+      >
+        Mínimo US$ {SWAP_MIN_AMOUNT_USD.toFixed(2)} · máximo US$ 500.000,00
+      </p>
 
       {message && (
         <p className="text-xs text-error mb-2">{message}</p>

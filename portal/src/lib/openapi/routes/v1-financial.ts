@@ -28,6 +28,10 @@ import {
   ApiOkMarkerSchema,
   IdempotencyKeySchema,
 } from "../registry";
+import {
+  SWAP_MIN_AMOUNT_USD,
+  SWAP_MAX_AMOUNT_USD,
+} from "@/lib/swap";
 
 // -- Domain schemas ---------------------------------------------------------
 
@@ -42,10 +46,16 @@ import {
 const SwapCreateBody = z
   .object({
     action: z.literal("create"),
-    amount_usd: z.number().min(100).max(500_000).openapi({
-      description: "Amount of USD to offer for swap.",
-      example: 1500,
-    }),
+    amount_usd: z.number()
+      .min(SWAP_MIN_AMOUNT_USD)
+      .max(SWAP_MAX_AMOUNT_USD)
+      .openapi({
+        description:
+          `Amount of USD to offer for swap (min $${SWAP_MIN_AMOUNT_USD}, ` +
+          `max $${SWAP_MAX_AMOUNT_USD}). L05-07: floor lowered from $100 ` +
+          "to support small amateur clubs in the P2P marketplace.",
+        example: 1500,
+      }),
     expires_in_days: z.union([
       z.literal(1),
       z.literal(7),

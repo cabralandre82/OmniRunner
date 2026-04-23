@@ -134,11 +134,54 @@ describe("Swap API", () => {
       expect(body.order.id).toBe("o1");
     });
 
-    it("returns 400 for amount below minimum", async () => {
+    it("returns 400 for amount below minimum (L05-07: floor is US$ 10)", async () => {
       mockAdminCheck();
-      const res = await POST(req({ action: "create", amount_usd: 10 }));
+      const res = await POST(req({ action: "create", amount_usd: 5 }));
       expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.ok).toBe(false);
+      expect(body.error.code).toBe("VALIDATION_FAILED");
     });
+
+    it(
+      "L05-07 — amount at the new floor (US$ 10) is now accepted, " +
+        "unblocking small amateur clubs that the previous US$ 100 floor excluded",
+      async () => {
+        mockAdminCheck();
+        mockCreateSwapOffer.mockResolvedValue({
+          id: "small-club-offer",
+          amount_usd: 10,
+          status: "open",
+        });
+        const res = await POST(
+          req({ action: "create", amount_usd: 10 }),
+        );
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.order.id).toBe("small-club-offer");
+        expect(mockCreateSwapOffer).toHaveBeenCalledWith(
+          expect.any(String),
+          10,
+          expect.any(Number),
+        );
+      },
+    );
+
+    it(
+      "L05-07 regression — amount of US$ 50 (rejected pre-fix when floor " +
+        "was US$ 100) is now accepted",
+      async () => {
+        mockAdminCheck();
+        mockCreateSwapOffer.mockResolvedValue({
+          id: "mid-amateur-offer",
+          amount_usd: 50,
+        });
+        const res = await POST(
+          req({ action: "create", amount_usd: 50 }),
+        );
+        expect(res.status).toBe(200);
+      },
+    );
 
     it("returns canonical 500 INTERNAL_ERROR when service throws unexpectedly (L17-01)", async () => {
       // L17-01 — antes: thrown errors caíam num try/catch local que

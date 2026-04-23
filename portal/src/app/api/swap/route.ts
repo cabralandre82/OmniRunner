@@ -9,6 +9,8 @@ import {
   cancelSwapOffer,
   SwapError,
   DEFAULT_SWAP_TTL_DAYS,
+  SWAP_MIN_AMOUNT_USD,
+  SWAP_MAX_AMOUNT_USD,
   SWAP_PAYMENT_REF_MIN_LEN,
   SWAP_PAYMENT_REF_MAX_LEN,
   type SwapErrorCode,
@@ -37,7 +39,10 @@ import { z } from "zod";
 const createSchema = z
   .object({
     action: z.literal("create"),
-    amount_usd: z.number().min(100).max(500_000),
+    // L05-07 — floor reduzido de US$ 100 → US$ 10 para suportar clubes
+    // amadores (20-50 atletas). Constante canônica em `@/lib/swap` é
+    // reusada por OpenAPI e UI (lockstep contract).
+    amount_usd: z.number().min(SWAP_MIN_AMOUNT_USD).max(SWAP_MAX_AMOUNT_USD),
     // L05-02 — TTL canônico (1/7/30/90 dias). Default 7d se omitido.
     expires_in_days: z
       .union([z.literal(1), z.literal(7), z.literal(30), z.literal(90)])

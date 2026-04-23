@@ -32,6 +32,25 @@ export type SwapTtlDays = (typeof SWAP_TTL_DAYS)[number];
 export const DEFAULT_SWAP_TTL_DAYS: SwapTtlDays = 7;
 
 /**
+ * L05-07 — limites canônicos do `amount_usd` em ofertas de swap. **Floor
+ * deliberadamente baixo (US$ 10)** para que clubes amadores (20-50 atletas)
+ * consigam usar o marketplace P2P; o floor anterior (US$ 100) excluía o
+ * segmento adoção-inicial. **Cap (US$ 500_000)** vem do tamanho típico de
+ * uma rodada de funding institucional num clube grande — acima disso o
+ * tesoureiro deve dividir em ofertas múltiplas (defense vs digit-fat-finger
+ * em UI desktop). Constantes exportadas para reuso em route handler, OpenAPI
+ * e UI — single source of truth, o teste contract `swap.test.ts` valida
+ * lockstep entre as 3 superfícies.
+ *
+ * O `swap_orders.amount_usd` no banco já tem CHECK `> 0` em
+ * `20260228150001_custody_clearing_model.sql:172` (defesa contra
+ * receita negativa); não duplicamos o floor de UX no DB porque o limite
+ * de produto pode evoluir sem migration.
+ */
+export const SWAP_MIN_AMOUNT_USD = 10;
+export const SWAP_MAX_AMOUNT_USD = 500_000;
+
+/**
  * L05-01 — Erros tipados para RPCs de swap.
  *
  * Os SQLSTATE codes vêm das migrations 20260417180000 (cancel_swap_order e

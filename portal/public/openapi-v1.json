@@ -184,9 +184,9 @@
           },
           "amount_usd": {
             "type": "number",
-            "minimum": 100,
+            "minimum": 10,
             "maximum": 500000,
-            "description": "Amount of USD to offer for swap.",
+            "description": "Amount of USD to offer for swap (min $10, max $500000). L05-07: floor lowered from $100 to support small amateur clubs in the P2P marketplace.",
             "example": 1500
           },
           "expires_in_days": {

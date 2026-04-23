@@ -453,4 +453,51 @@ describe("swap service", () => {
       });
     });
   });
+
+  describe("L05-07 — SWAP_MIN_AMOUNT_USD lockstep contract", () => {
+    it("constants are the canonical floor/cap values", async () => {
+      const { SWAP_MIN_AMOUNT_USD, SWAP_MAX_AMOUNT_USD } = await import(
+        "./swap"
+      );
+      expect(SWAP_MIN_AMOUNT_USD).toBe(10);
+      expect(SWAP_MAX_AMOUNT_USD).toBe(500_000);
+    });
+
+    it(
+      "legacy public/openapi.json swap create body uses the new floor " +
+        "(US$ 10) — guards against silent drift between hand-maintained " +
+        "spec and the route handler's Zod schema",
+      async () => {
+        const fs = await import("node:fs/promises");
+        const raw = await fs.readFile(
+          new URL("../../public/openapi.json", import.meta.url),
+          "utf8",
+        );
+        const spec = JSON.parse(raw);
+        const swapCreate = spec.paths["/api/swap"].post
+          .requestBody.content["application/json"].schema.oneOf[0];
+        expect(swapCreate.properties.amount_usd.minimum).toBe(10);
+        expect(swapCreate.properties.amount_usd.maximum).toBe(500000);
+      },
+    );
+
+    it(
+      "swap-actions UI references SWAP_MIN_AMOUNT_USD via import (no " +
+        "literal duplication) — guards against UI drift",
+      async () => {
+        const fs = await import("node:fs/promises");
+        const ui = await fs.readFile(
+          new URL(
+            "../app/(portal)/swap/swap-actions.tsx",
+            import.meta.url,
+          ),
+          "utf8",
+        );
+        expect(ui).toContain('SWAP_MIN_AMOUNT_USD');
+        expect(ui).toContain('from "@/lib/swap"');
+        expect(ui).not.toMatch(/min={100}/);
+        expect(ui).not.toMatch(/val < 100/);
+      },
+    );
+  });
 });
