@@ -5,8 +5,10 @@
 > de stakeholders externos (legal, CFO, design, product). Detalhes em
 > `docs/audit/ROADMAP.md` Onda 1.
 
-**Posição atual:** 77/179 fixed (Onda 1).
+**Posição atual:** 80/179 fixed (Onda 1).
 **Pista:** 50 entregas correção engenharia → 127/179 (71 %), libera Onda 2.
+
+**Progresso Batch A (Custody & Finance):** ✅ 3/5 — L05-09 ✓, L05-07 ✓, L12-05 ✓ · pendentes: L09-09, L04-07.
 
 ## Critério de pontuação
 
