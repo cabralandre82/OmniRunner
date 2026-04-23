@@ -72,6 +72,7 @@
     "audit:onboarding-flows": "npx tsx tools/audit/check-onboarding-flows.ts",
     "audit:bcb-classification": "npx tsx tools/audit/check-bcb-classification.ts",
     "audit:iof-calculator": "npx tsx tools/audit/check-iof-calculator.ts",
+    "audit:portal-bounded-contexts": "npx tsx tools/audit/check-portal-bounded-contexts.ts",
     "audit:og-metadata": "npx tsx tools/audit/check-og-metadata.ts",
     "audit:challenge-invite-deep-link": "npx tsx tools/audit/check-challenge-invite-deep-link.ts",
     "audit:milestone-celebration": "npx tsx tools/audit/check-milestone-celebration.ts",

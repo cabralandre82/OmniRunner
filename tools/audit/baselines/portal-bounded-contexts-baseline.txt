@@ -1,0 +1,7 @@
+# L17-02 bounded-context baseline — pre-existing cross-layer imports.
+# Regenerate with: UPDATE_BASELINE=1 npm run audit:portal-bounded-contexts
+# This file is a DEBT LEDGER — it must only shrink, never grow.
+portal/src/lib/actions.ts|shared->infra|route-policy.ts
+portal/src/lib/actions.ts|shared->infra|supabase
+portal/src/lib/audit.ts|security->platform|observability
+portal/src/lib/openapi/routes/v1-financial.ts|infra->financial|swap.ts
