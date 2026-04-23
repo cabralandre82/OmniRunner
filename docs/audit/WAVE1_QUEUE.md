@@ -5,12 +5,13 @@
 > de stakeholders externos (legal, CFO, design, product). Detalhes em
 > `docs/audit/ROADMAP.md` Onda 1.
 
-**Posição atual:** 89/179 fixed (Onda 1).
+**Posição atual:** 90/179 fixed (Onda 1).
 **Pista:** 50 entregas correção engenharia → 127/179 (71 %), libera Onda 2.
 
 **Progresso Batch A (Custody & Finance):** ✅ 5/5 — L05-09 ✓, L05-07 ✓, L12-05 ✓, L09-09 ✓, L04-07 ✓.
 **Progresso Batch B (Cron / Reliability):** ✅ 5/5 — L06-05 ✓, L12-09 ✓, L12-06 ✓, L12-07 ✓ (+ L07-06 co-fix), L12-08 ✓.
 **Progresso Batch C (DBA / Schema Cleanup):** ✅ 4/4 — L19-04 ✓ · L19-08 ✓ · L19-06 ✓ · L08-05 ✓.
+**Progresso Batch D (Sessions / Data Integrity):** 🟡 1/2 — L08-04 ✓ · L08-03 ⏳.
 
 ## Critério de pontuação
 
@@ -56,7 +57,7 @@
 
 | # | id | sev | L | ep | Título |
 |---|---|---|---|---|---|
-| 15 | L08-04 | high | 8 | 3 | Análise de `sessions` por `moving_ms` aceita NULL e 0 (CHECK coherence) |
+| 15 | L08-04 | high | 8 | 3 | ✅ Análise de `sessions` por `moving_ms` aceita NULL e 0 (fixed 2026-04-21) |
 | 16 | L08-03 | high | 8 | 3 | Sem índice de analytics time-series em `sessions` |
 
 ### 🟢 Batch E — Security & Auth (4 entregas, mistas)

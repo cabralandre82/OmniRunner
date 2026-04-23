@@ -158,7 +158,7 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L08-01](./findings/L08-01-producteventtracker-trackonce-tem-race-toctou.md) | 1 | L08 · CDO | ProductEventTracker.trackOnce tem race TOCTOU | platform |
 | 🔴 critical | ✅ fixed | [L08-02](./findings/L08-02-product-events-properties-jsonb-aceita-qualquer-payload-pii.md) | 1 | L08 · CDO | product_events.properties jsonb aceita qualquer payload — PII leak risk | platform |
 | 🟠 high | ⏳ fix-pending | [L08-03](./findings/L08-03-sem-indice-de-analytics-time-series-em-sessions.md) | 1 | L08 · CDO | Sem índice de analytics time-series em sessions | unassigned |
-| 🟠 high | ⏳ fix-pending | [L08-04](./findings/L08-04-analise-de-sessions-pelo-moving-ms-mas-coluna.md) | 1 | L08 · CDO | Análise de sessions pelo moving_ms mas coluna aceita NULL e 0 | unassigned |
+| 🟠 high | ✅ fixed | [L08-04](./findings/L08-04-analise-de-sessions-pelo-moving-ms-mas-coluna.md) | 1 | L08 · CDO | Análise de sessions pelo moving_ms mas coluna aceita NULL e 0 | platform-data |
 | 🟠 high | ⏳ fix-pending | [L08-05](./findings/L08-05-views-de-progressao-sem-filtro-de-atletas-inativos.md) | 1 | L08 · CDO | Views de progressão sem filtro de atletas inativos | unassigned |
 | 🟠 high | ⏳ fix-pending | [L08-06](./findings/L08-06-sem-staging-de-data-warehouse-queries-olap-contra.md) | 1 | L08 · CDO | Sem staging de data warehouse — queries OLAP contra OLTP | unassigned |
 | 🟠 high | ✅ fixed | [L08-07](./findings/L08-07-drift-potencial-entre-coin-ledger-e-wallets-fora.md) | 1 | L08 · CDO | Drift potencial entre coin_ledger e wallets fora do horário do cron | platform |

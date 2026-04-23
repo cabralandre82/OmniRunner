@@ -4997,24 +4997,34 @@
       "lens": 8,
       "title": "Análise de sessions pelo moving_ms mas coluna aceita NULL e 0",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "gps",
         "portal",
         "migration"
       ],
       "files": [
-        "supabase/migrations/20260312000000_fix_broken_functions.sql"
+        "supabase/migrations/20260312000000_fix_broken_functions.sql",
+        "supabase/migrations/20260421320000_l08_04_sessions_coherence_check.sql",
+        "tools/audit/check-sessions-coherence.ts",
+        "tools/test_l08_04_sessions_coherence_check.ts",
+        "package.json",
+        "docs/runbooks/SESSIONS_COHERENCE_RUNBOOK.md"
       ],
       "correction_type": "migration",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l08_04_sessions_coherence_check.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "ae57c8c"
+      ],
+      "owner": "platform-data",
+      "runbook": "docs/runbooks/SESSIONS_COHERENCE_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
