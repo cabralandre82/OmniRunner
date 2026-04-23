@@ -12,8 +12,8 @@
  * Coverage
  * ────────
  *   schema / constraints
- *     (1) coin_ledger_reason_length_guard installed
- *     (2) coin_ledger_reason_pii_guard installed
+ *     (1) chk_coin_ledger_reason_length_guard installed
+ *     (2) chk_coin_ledger_reason_pii_guard installed
  *     (3) coin_ledger_pii_redactions table exists + RLS service-role-only
  *     (4) coin_ledger_archive has mirror constraints if archive exists
  *
@@ -138,22 +138,22 @@ async function main() {
   // ──────────────────────────────────────────────────────────────────────
   section("schema / constraints");
 
-  await test("(1) coin_ledger_reason_length_guard installed", () => {
+  await test("(1) chk_coin_ledger_reason_length_guard installed", () => {
     const out = psql(
       `SELECT conname FROM pg_constraint
         WHERE conrelid = 'public.coin_ledger'::regclass
-          AND conname  = 'coin_ledger_reason_length_guard';`,
+          AND conname  = 'chk_coin_ledger_reason_length_guard';`,
     );
-    assertEq(out, "coin_ledger_reason_length_guard", "constraint name");
+    assertEq(out, "chk_coin_ledger_reason_length_guard", "constraint name");
   });
 
-  await test("(2) coin_ledger_reason_pii_guard installed", () => {
+  await test("(2) chk_coin_ledger_reason_pii_guard installed", () => {
     const out = psql(
       `SELECT conname FROM pg_constraint
         WHERE conrelid = 'public.coin_ledger'::regclass
-          AND conname  = 'coin_ledger_reason_pii_guard';`,
+          AND conname  = 'chk_coin_ledger_reason_pii_guard';`,
     );
-    assertEq(out, "coin_ledger_reason_pii_guard", "constraint name");
+    assertEq(out, "chk_coin_ledger_reason_pii_guard", "constraint name");
   });
 
   await test("(3) coin_ledger_pii_redactions table + RLS", () => {

@@ -9,6 +9,7 @@
     "audit:check": "npx tsx tools/audit/verify.ts && npx tsx tools/audit/build-registry.ts --check",
     "audit:ledger-reason": "npx tsx tools/audit/check-ledger-reason-safety.ts",
     "audit:duplicate-indexes": "npx tsx tools/audit/check-duplicate-indexes.ts",
+    "audit:constraint-naming": "npx tsx tools/audit/check-constraint-naming.ts",
     "legal:check": "npx tsx tools/legal/check-document-hashes.ts"
   },
   "devDependencies": {
