@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T18:32:50.471Z",
+  "generated_at": "2026-04-23T19:00:03.574Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 155,
-    "fix-pending": 185,
+    "fixed": 160,
+    "fix-pending": 180,
     "in-progress": 1,
     "wont-fix": 7
   },
@@ -4702,29 +4702,39 @@
       "lens": 7,
       "title": "Portal sem acessibilidade (a11y) declarada",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "portal",
         "a11y"
       ],
       "files": [
-        "docs/a11y.md"
+        "docs/a11y.md",
+        "portal/.eslintrc.json",
+        "tools/audit/a11y-baseline-allowlist.json",
+        "tools/audit/check-a11y-baseline.ts"
       ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "npm run audit:a11y-baseline"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "local:906fc19",
+        "local:78c8268"
+      ],
+      "owner": "platform-portal",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Shipped a WCAG 2.1 AA baseline document at `docs/a11y.md` citing\nLBI 13.146/2015, extended `portal/.eslintrc.json` with\n`plugin:jsx-a11y/recommended` and pinned the 10 critical rules\nto \"error\". Two ratchet allow-lists keep the CI guard truthful\nwithout blocking merges on legacy code: (a)\n`tools/audit/a11y-baseline-allowlist.json` enumerates the 38\nexisting `<table>` offenders without `<caption>`; (b) an\n`overrides` block in `.eslintrc.json` downgrades the four rules\nthat fire in 21 legacy files to \"warn\" while keeping \"error\"\nfor new code. The guard flags stale allow-list entries so the\nratchet does not rot. 27 static invariants enforced via\n`npm run audit:a11y-baseline`.\n"
     },
     {
       "id": "L07-06",
@@ -5560,27 +5570,35 @@
       "lens": 9,
       "title": "Política de reembolso/chargeback sem prazo SLA",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "edge-function"
       ],
       "files": [
-        "supabase/functions/process-refund/"
+        "supabase/migrations/20260421430000_l09_07_refund_sla.sql",
+        "docs/compliance/REFUND_POLICY.md",
+        "tools/audit/check-refund-sla.ts"
       ],
-      "correction_type": "docs",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "npm run audit:refund-sla"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "local:9813af4"
+      ],
+      "owner": "platform-finance",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Extended `public.billing_refund_requests` with `sla_target_at`,\n`sla_breached_at`, `sla_breach_reason`. A BEFORE INSERT trigger\n`trg_billing_refund_requests_set_sla_target` sets the target to\n48 business hours (or 72h for weekend intake). Historical rows\nwere backfilled. `public.v_billing_refund_requests_breached`\n(security_invoker) surfaces open-and-overdue requests; idempotent\nhelper `fn_billing_refund_sla_mark_breached(uuid, text)` stamps\nthe breach and logs to `public.audit_logs`. CDC Art. 49\ncooling-off commitment, 2026 holiday calendar, and decision log\nlive in `docs/compliance/REFUND_POLICY.md`. 34 static invariants\nenforced via `npm run audit:refund-sla`.\n"
     },
     {
       "id": "L09-08",
@@ -5588,27 +5606,39 @@
       "lens": 9,
       "title": "provider_fee_usd ([2.12]) — ônus ao cliente ou à plataforma?",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "migration",
         "ux"
       ],
-      "files": [],
+      "files": [
+        "docs/adr/ADR-0001-provider-fee-ownership.md",
+        "docs/adr/README.md",
+        "docs/adr/TEMPLATE.md",
+        "supabase/migrations/20260421440000_l09_08_billing_fee_policy.sql",
+        "tools/audit/check-billing-fee-policy.ts"
+      ],
       "correction_type": "config",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "npm run audit:billing-fee-policy"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "local:1f42841"
+      ],
+      "owner": "platform-finance",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "ADR-0001 accepts \"pass-through by default\" for Stripe/Asaas\ngateway fees: CDC Art. 6 III requires clear disclosure and\nunit economics cannot absorb the fee at scale. Database\nsupport lives in singleton `public.billing_fee_policy`\n(PRIMARY KEY CHECK (id = 1)) with `gateway_passthrough` boolean,\nNOT NULL `disclosure_template` (pt-BR copy), pinned\n`adr_reference = 'ADR-0001'`. RLS forced; SELECT for\nauthenticated, FOR ALL for service_role. STABLE SECURITY\nDEFINER `fn_billing_fee_policy()` exposes the row. This PR\nalso seeds the `docs/adr/` directory (README + TEMPLATE) for\nfuture architectural decisions (L09-01, L09-05, L16-03, etc.).\n32 static invariants enforced via\n`npm run audit:billing-fee-policy`.\n"
     },
     {
       "id": "L09-09",
@@ -5840,23 +5870,39 @@
       "lens": 10,
       "title": "Sem WAF explícito",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "tags": [],
-      "files": [],
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "tags": [
+        "security",
+        "portal"
+      ],
+      "files": [
+        "portal/src/lib/security/waf.ts",
+        "portal/src/lib/security/waf.test.ts",
+        "portal/src/middleware.ts",
+        "docs/runbooks/WAF_RUNBOOK.md",
+        "tools/audit/check-waf.ts"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "npm run audit:waf",
+        "cd portal && npx vitest run src/lib/security/waf.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "local:78c8268"
+      ],
+      "owner": "platform-security",
+      "runbook": "docs/runbooks/WAF_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Shipped a three-layer WAF posture. L1 Vercel Firewall baseline\n(UA deny-list, webhook geo-fence, platform-admin geo alert,\nauth rate limit) is documented in the runbook. L2 is an\nin-process `portal/src/lib/security/waf.ts` module with a\ncurated UA deny-list (14 entries: sqlmap/nikto/nmap/...) and a\npath deny-list (19 entries: /wp-admin, /.env, /.git/config,\n...), plus an explicit allow-list (`/.well-known/security.txt`)\nso L10-01 is never shadowed. Middleware calls `evaluateWaf`\nBEFORE origin pinning and CSRF, emits `waf.blocked` metric,\nand returns 403 via `tagResponse` so CSP/version headers still\nland. L3 Cloudflare is contingency-only with a DNS-switch\nplaybook. 40 unit tests + 46 static invariants enforced via\n`npm run audit:waf`.\n"
     },
     {
       "id": "L10-05",
@@ -9179,26 +9225,37 @@
       "lens": 19,
       "title": "pg_stat_statements não referenciado em tuning",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
-        "mobile"
+        "mobile",
+        "dba"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421450000_l19_07_pg_stat_statements.sql",
+        "docs/runbooks/DBA_QUERY_TUNING.md",
+        "tools/audit/check-pg-stat-statements.ts"
+      ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "npm run audit:pg-stat-statements"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "local:9fc786f"
+      ],
+      "owner": "platform-dba",
+      "runbook": "docs/runbooks/DBA_QUERY_TUNING.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Migration installs `pg_stat_statements`, exposes a\nservice-role-only view `public.v_pg_stat_statements_top`\n(security_invoker, mean ≥ 100 ms, ORDER BY total_exec_time\nDESC) and two SECURITY DEFINER wrappers\n(`fn_pg_stat_statements_top`, `fn_pg_stat_statements_reset`).\nRaw stats are never exposed to anon/authenticated because query\ntext can leak literals/PII/service keys. The DBA_QUERY_TUNING\nrunbook declares first-Tuesday monthly reviews with a watch/\nbreach classification (100 ms / 400 ms thresholds), a P1\nbreach playbook with `CREATE INDEX CONCURRENTLY` preference\nand \"never rollback finance migrations to fix latency\", and a\nreset policy gated behind the review log. 33 invariants\nenforced via `npm run audit:pg-stat-statements`.\n"
     },
     {
       "id": "L19-08",

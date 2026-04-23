@@ -4,23 +4,46 @@ audit_ref: "10.4"
 lens: 10
 title: "Sem WAF explícito"
 severity: high
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
-tags: []
-files: []
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["security", "portal"]
+files:
+  - portal/src/lib/security/waf.ts
+  - portal/src/lib/security/waf.test.ts
+  - portal/src/middleware.ts
+  - docs/runbooks/WAF_RUNBOOK.md
+  - tools/audit/check-waf.ts
 correction_type: code
 test_required: true
-tests: []
+tests:
+  - npm run audit:waf
+  - cd portal && npx vitest run src/lib/security/waf.test.ts
 linked_issues: []
-linked_prs: []
-owner: unassigned
-runbook: null
+linked_prs:
+  - local:78c8268
+owner: platform-security
+runbook: docs/runbooks/WAF_RUNBOOK.md
 effort_points: 3
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Shipped a three-layer WAF posture. L1 Vercel Firewall baseline
+  (UA deny-list, webhook geo-fence, platform-admin geo alert,
+  auth rate limit) is documented in the runbook. L2 is an
+  in-process `portal/src/lib/security/waf.ts` module with a
+  curated UA deny-list (14 entries: sqlmap/nikto/nmap/...) and a
+  path deny-list (19 entries: /wp-admin, /.env, /.git/config,
+  ...), plus an explicit allow-list (`/.well-known/security.txt`)
+  so L10-01 is never shadowed. Middleware calls `evaluateWaf`
+  BEFORE origin pinning and CSRF, emits `waf.blocked` metric,
+  and returns 403 via `tagResponse` so CSP/version headers still
+  land. L3 Cloudflare is contingency-only with a DNS-switch
+  playbook. 40 unit tests + 46 static invariants enforced via
+  `npm run audit:waf`.
 ---
 # [L10-04] Sem WAF explícito
 > **Lente:** 10 — CSO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fix-pending

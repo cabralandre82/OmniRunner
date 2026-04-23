@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-23 18:32:50 UTC.
+> Atualizado em 2026-04-23 19:00:03 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -146,7 +146,7 @@ Total: **348** findings.
 | 🔴 critical | ⏳ fix-pending | [L07-02](./findings/L07-02-onboarding-nao-distingue-papeis-atleta-coach-admin-master.md) | 1 | L07 · CXO | Onboarding não distingue papéis (atleta, coach, admin_master) | unassigned |
 | 🟠 high | ⏳ fix-pending | [L07-03](./findings/L07-03-app-mobile-sem-modo-offline-robusto-para-corridas.md) | 1 | L07 · CXO | App mobile sem modo offline robusto para corridas | unassigned |
 | 🟠 high | ✅ fixed | [L07-04](./findings/L07-04-flutter-deep-link-strava-oauth-sem-state-validation.md) | 1 | L07 · CXO | Flutter deep link Strava OAuth sem state validation (CSRF) | mobile |
-| 🟠 high | ⏳ fix-pending | [L07-05](./findings/L07-05-portal-sem-acessibilidade-a11y-declarada.md) | 1 | L07 · CXO | Portal sem acessibilidade (a11y) declarada | unassigned |
+| 🟠 high | ✅ fixed | [L07-05](./findings/L07-05-portal-sem-acessibilidade-a11y-declarada.md) | 1 | L07 · CXO | Portal sem acessibilidade (a11y) declarada | platform-portal |
 | 🟠 high | ✅ fixed | [L07-06](./findings/L07-06-timezone-sem-configuracao-do-usuario.md) | 1 | L07 · CXO | Timezone sem configuração do usuário | cxo |
 | 🟡 medium | ⏳ fix-pending | [L07-07](./findings/L07-07-icones-sem-fallback-mobile-offline.md) | 2 | L07 · CXO | Ícones sem fallback (mobile offline) | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L07-08](./findings/L07-08-dark-mode-parcial.md) | 2 | L07 · CXO | Dark mode parcial | unassigned |
@@ -173,8 +173,8 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L09-04](./findings/L09-04-nota-fiscal-recibo-fiscal-nao-emitida-em-withdrawals.md) | 0 | L09 · CRO | Nota fiscal / recibo fiscal não emitida em withdrawals | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L09-05](./findings/L09-05-iof-nao-recolhido-em-swap-inter-cliente.md) | 1 | L09 · CRO | IOF não recolhido em swap inter-cliente | unassigned |
 | 🟠 high | ⏳ fix-pending | [L09-06](./findings/L09-06-gateway-de-pagamento-asaas-chave-armazenada-em-plaintext.md) | 1 | L09 · CRO | Gateway de pagamento Asaas: chave armazenada em plaintext na DB | unassigned |
-| 🟠 high | ⏳ fix-pending | [L09-07](./findings/L09-07-politica-de-reembolso-chargeback-sem-prazo-sla.md) | 1 | L09 · CRO | Política de reembolso/chargeback sem prazo SLA | unassigned |
-| 🟠 high | ⏳ fix-pending | [L09-08](./findings/L09-08-provider-fee-usd-2-12-onus-ao-cliente.md) | 1 | L09 · CRO | provider_fee_usd ([2.12]) — ônus ao cliente ou à plataforma? | unassigned |
+| 🟠 high | ✅ fixed | [L09-07](./findings/L09-07-politica-de-reembolso-chargeback-sem-prazo-sla.md) | 1 | L09 · CRO | Política de reembolso/chargeback sem prazo SLA | platform-finance |
+| 🟠 high | ✅ fixed | [L09-08](./findings/L09-08-provider-fee-usd-2-12-onus-ao-cliente.md) | 1 | L09 · CRO | provider_fee_usd ([2.12]) — ônus ao cliente ou à plataforma? | platform-finance |
 | 🟠 high | ✅ fixed | [L09-09](./findings/L09-09-contratos-privados-termo-de-adesao-do-clube-termo.md) | 1 | L09 · CRO | Contratos privados (termo de adesão do clube, termo de atleta) inexistentes no repo | legal-ops |
 | 🟡 medium | ⏳ fix-pending | [L09-10](./findings/L09-10-relatorio-anual-de-transparencia-marco-civil-art-11.md) | 2 | L09 · CRO | Relatório anual de transparência (Marco Civil Art. 11) | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L09-11](./findings/L09-11-cessao-de-credito-implicita-em-clearing-settlements-document.md) | 2 | L09 · CRO | Cessão de crédito implícita em clearing_settlements — documentar | unassigned |
@@ -182,7 +182,7 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L10-01](./findings/L10-01-nenhum-bug-bounty-disclosure-policy.md) | 1 | L10 · CSO | Nenhum bug bounty / disclosure policy | security |
 | 🔴 critical | ✅ fixed | [L10-02](./findings/L10-02-threat-model-formal-nao-documentado.md) | 1 | L10 · CSO | Threat model formal não documentado | security |
 | 🔴 critical | ⏳ fix-pending | [L10-03](./findings/L10-03-service-role-key-distribuida-amplamente.md) | 1 | L10 · CSO | Service-role key distribuída amplamente | unassigned |
-| 🟠 high | ⏳ fix-pending | [L10-04](./findings/L10-04-sem-waf-explicito.md) | 1 | L10 · CSO | Sem WAF explícito | unassigned |
+| 🟠 high | ✅ fixed | [L10-04](./findings/L10-04-sem-waf-explicito.md) | 1 | L10 · CSO | Sem WAF explícito | platform-security |
 | 🟠 high | ✅ fixed | [L10-05](./findings/L10-05-csp-hardened-1-31-mas-sem-report-uri.md) | 1 | L10 · CSO | CSP hardened ([1.31]) mas sem report-uri | portal-team |
 | 🟠 high | ⏳ fix-pending | [L10-06](./findings/L10-06-segregacao-de-funcao-sod-ausente-em-platform-admin.md) | 1 | L10 · CSO | Segregação de função (SoD) ausente em platform_admin | unassigned |
 | 🟠 high | ✅ fixed | [L10-07](./findings/L10-07-zero-trust-entre-microservicos-edge-functions-confiam-no.md) | 1 | L10 · CSO | Zero-trust entre microserviços — Edge Functions confiam no JWT sem validar audience | platform |
@@ -280,7 +280,7 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L19-04](./findings/L19-04-idx-ledger-user-vs-idx-coin-ledger-user.md) | 1 | L19 · DBA | idx_ledger_user vs idx_coin_ledger_user_created — evoluções sem limpeza | dba |
 | 🔴 critical | ✅ fixed | [L19-05](./findings/L19-05-falta-for-update-nowait-em-funcoes-de-lock.md) | 0 | L19 · DBA | Falta FOR UPDATE NOWAIT em funções de lock crítico | unassigned |
 | 🟠 high | ✅ fixed | [L19-06](./findings/L19-06-jsonb-em-audit-logs-metadata-sem-indice-gin.md) | 1 | L19 · DBA | JSONB em audit_logs.metadata sem índice GIN | platform-dba |
-| 🟠 high | ⏳ fix-pending | [L19-07](./findings/L19-07-pg-stat-statements-nao-referenciado-em-tuning.md) | 1 | L19 · DBA | pg_stat_statements não referenciado em tuning | unassigned |
+| 🟠 high | ✅ fixed | [L19-07](./findings/L19-07-pg-stat-statements-nao-referenciado-em-tuning.md) | 1 | L19 · DBA | pg_stat_statements não referenciado em tuning | platform-dba |
 | 🟠 high | ✅ fixed | [L19-08](./findings/L19-08-constraints-check-sem-name-padronizado.md) | 1 | L19 · DBA | Constraints CHECK sem name padronizado | platform-db |
 | 🟡 medium | ⏳ fix-pending | [L19-09](./findings/L19-09-connection-pooling-nao-documentado.md) | 2 | L19 · DBA | Connection pooling não documentado | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L19-10](./findings/L19-10-sem-autovacuum-tuning-para-tabelas-hot.md) | 2 | L19 · DBA | Sem autovacuum tuning para tabelas hot | unassigned |
