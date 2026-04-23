@@ -6213,25 +6213,38 @@
       "lens": 11,
       "title": "flutter_secure_storage: ^10.0.0 mas release inclui shared_preferences",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "mobile"
+        "mobile",
+        "security",
+        "supply-chain",
+        "lint",
+        "storage"
       ],
-      "files": [],
-      "correction_type": "test",
+      "files": [
+        "omni_runner/lib/core/storage/preferences_keys.dart",
+        "omni_runner/lib/core/storage/prefs_safe_key.dart",
+        "tools/audit/check-shared-prefs-sensitive-keys.ts"
+      ],
+      "correction_type": "lint",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "omni_runner/test/core/storage/preferences_keys_test.dart"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "local/aaf0277 — fix(mobile): SharedPreferences sensitive-key lint + safe-key wrapper (L11-05)"
+      ],
+      "owner": "mobile",
+      "runbook": "docs/runbooks/SECURE_STORAGE_POLICY_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Landed 2026-04-21 with 3 defensive layers: (1) Catalogue — PreferencesKeys as single entry point for SharedPreferences keyspace; every entry routes through PrefsSafeKey.plain/.prefix which runs assertSafe at class-load (app boot); heuristic rejects tokens?/secret/password/credential/api[_-]?key/auth[_-]?(token|secret|code)/private[_-]?key/refresh[_-]?token/access[_-]?token/jwt/bearer/session[_-]?(id|token|secret)/oauth[_-]?(state|token|secret)/mfa[_-]?(code|secret)/otp/pin[_-]?(code|hash)/cvv/card[_-]?number/ssn/cpf/passport/totp[_-]?secret; custom boundary (?<![a-zA-Z])...(?![a-zA-Z]) fixes Dart \\b-over-_ problem; allowlist for strava_athlete_name/id (public); PrefsSafeKeyViolation (ArgumentError) thrown at boot. (2) Dart test — 9 tests: 28 sensitive words rejected, 21 safe keys accepted, allowlist honoured, every allKeys entry passes assertSafe, no duplicates, purpose > 8 chars, prefixes end in '_'. (3) CI guard npm run audit:shared-prefs-sensitive-keys — scans 891 .dart files; 3 key-extraction modes (literal, PreferencesKeys.x camelCase→snake, bare identifier camelCase→snake); opt-out // L11-05-OK: <reason> surfaced in report; self-check preferences_keys.dart still binds to PrefsSafeKey. Current tree: 0 violations, 0 opt-outs. Smoke-tested with 3 planted violations (all flagged) + 1 planted opt-out (surfaced + suppressed). Runbook covers policy table, add-new-key/new-component guides, 6 operational playbooks (leak discovered, CI/test failed, boot crash, false positive, dep bump), cross-refs L01-29/L04-07/L10-09/L11-06-08/L01-30-31. flutter analyze clean; flutter test 2128 pass."
     },
     {
       "id": "L11-06",

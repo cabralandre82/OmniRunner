@@ -81,11 +81,13 @@
 | 23 | L17-04 | high | 17 | 3 | ✅ Testes em `portal/src/lib/qa-*.test.ts` > 800 linhas (fixed 2026-04-21) |
 | 24 | L15-04 | high | 15 | 3 | ✅ Sem email transactional platform (Resend/Postmark) (fixed 2026-04-21) |
 
-### 🟢 Batch G — Mobile / Flutter (4 entregas, em `omni_runner/`)
+### 🟡 Batch G — Mobile / Flutter (4 entregas, em `omni_runner/`)
+
+**Progresso Batch G (Mobile / Flutter):** 🟡 1/4 — L11-05 ✓ · L11-06 ⏳ · L11-07 ⏳ · L11-08 ⏳.
 
 | # | id | sev | L | ep | Título |
 |---|---|---|---|---|---|
-| 25 | L11-05 | high | 11 | 3 | `flutter_secure_storage` ^10 mas release usa `shared_preferences` |
+| 25 | L11-05 | high | 11 | 3 | ✅ `flutter_secure_storage` ^10 mas release usa `shared_preferences` (fixed 2026-04-21) |
 | 26 | L11-06 | high | 11 | 3 | Dependências com `^` permitem breaking minor |
 | 27 | L11-07 | high | 11 | 3 | `sqlcipher_flutter_libs: ^0.7.0+eol` — end of life |
 | 28 | L11-08 | high | 11 | 3 | `Flutter sdk: '>=3.8.0 <4.0.0'` permite 3.9, 3.10… |
