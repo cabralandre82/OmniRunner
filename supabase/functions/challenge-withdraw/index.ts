@@ -84,10 +84,12 @@ serve(async (req: Request) => {
 
     const { challenge_id } = body;
 
-    // Fetch challenge
+    // Fetch challenge. (L05-04) Include ends_at_ms + the new
+    // withdraw_cutoff_hours column so we can block withdrawals
+    // inside the cutoff window BEFORE we flip participant state.
     const { data: challenge, error: chErr } = await db
       .from("challenges")
-      .select("id, status, entry_fee_coins, creator_user_id")
+      .select("id, status, entry_fee_coins, creator_user_id, ends_at_ms, withdraw_cutoff_hours")
       .eq("id", challenge_id)
       .maybeSingle();
 
@@ -108,6 +110,30 @@ serve(async (req: Request) => {
       httpStatus = 409;
       return jsonErr(409, "INVALID_STATUS",
         `Não é possível sair de um desafio com status "${challenge.status}"`, requestId);
+    }
+
+    // (L05-04) Withdraw cutoff. The product rule is "you may not
+    // withdraw in the last N hours before ends_at_ms", where N
+    // is `challenges.withdraw_cutoff_hours` (default 48, 0 = no
+    // cutoff, duels backfilled to 0). We only enforce for
+    // challenges that actually have a scheduled end — open-ended
+    // group challenges without `ends_at_ms` keep the pre-L05-04
+    // behaviour by design.
+    const cutoffHours = Number(challenge.withdraw_cutoff_hours ?? 0);
+    const endsAtMs = challenge.ends_at_ms == null ? null : Number(challenge.ends_at_ms);
+    if (cutoffHours > 0 && endsAtMs !== null && Number.isFinite(endsAtMs)) {
+      const cutoffMs = cutoffHours * 3600 * 1000;
+      const remainingMs = endsAtMs - Date.now();
+      if (remainingMs <= cutoffMs) {
+        httpStatus = 422;
+        errorCode = "WITHDRAW_LOCKED";
+        return jsonErr(
+          422,
+          "WITHDRAW_LOCKED",
+          `Retirada bloqueada nas últimas ${cutoffHours}h do desafio.`,
+          requestId,
+        );
+      }
     }
 
     // Verify user is a participant
