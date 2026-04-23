@@ -4,23 +4,52 @@ audit_ref: "16.4"
 lens: 16
 title: "Sem outbound webhooks para parceiros"
 severity: high
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
 tags: ["webhook", "integration", "migration", "cron"]
-files: []
+files:
+  - supabase/migrations/20260421610000_l16_04_outbound_webhooks.sql
+  - tools/audit/check-outbound-webhooks.ts
 correction_type: code
 test_required: true
-tests: []
+tests:
+  - tools/audit/check-outbound-webhooks.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "local:48cd3c4"
 owner: unassigned
 runbook: null
 effort_points: 3
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Fixed in 48cd3c4 (J28). `fn_validate_webhook_url` (IMMUTABLE
+  PARALLEL SAFE) blocks non-HTTPS, loopback/localhost,
+  RFC1918 (10/8, 172.16/12, 192.168/16), link-local,
+  100.64/10, 0.0.0.0, and 169.254/16 targets — preventing
+  attackers from pivoting our egress into the cluster.
+  `fn_validate_outbound_webhook_events` whitelists 15
+  canonical events (session.verified, coin.distributed,
+  championship.ended, athlete.enrolled, sponsorship.activated
+  …) so partners can't be leaked undocumented internal
+  signals. `public.outbound_webhook_endpoints` stores
+  configuration (HMAC secret, event filter, enabled flag,
+  per-endpoint rate limit) with RLS for group admins.
+  `public.outbound_webhook_deliveries` logs every attempt —
+  state machine (pending → in_flight → delivered/failed),
+  exponential backoff, `FOR UPDATE SKIP LOCKED` so multiple
+  workers can claim without duplicates, respects
+  `audit_logs_retention_config`. Admin RPCs
+  (`fn_outbound_webhook_register`, `_rotate_secret`,
+  `_enable`) are SECURITY DEFINER with coaching_members
+  role check; worker RPCs (`fn_outbound_webhook_enqueue`,
+  `_claim`, `_mark_delivered`, `_mark_failed`) are
+  service-role-only. Invariants locked by
+  `npm run audit:outbound-webhooks`.
 ---
 # [L16-04] Sem outbound webhooks para parceiros
 > **Lente:** 16 — CAO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fix-pending

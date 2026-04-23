@@ -4,23 +4,50 @@ audit_ref: "16.5"
 lens: 16
 title: "Integrações de marcas esportivas sem schema"
 severity: high
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
 tags: ["finance", "migration"]
-files: []
-correction_type: process
+files:
+  - supabase/migrations/20260421620000_l16_05_sponsorships.sql
+  - tools/audit/check-sponsorships.ts
+correction_type: code
 test_required: true
-tests: []
+tests:
+  - tools/audit/check-sponsorships.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - "local:725159d"
 owner: unassigned
 runbook: null
 effort_points: 3
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Fixed in 725159d (J29). Extended `coin_ledger.reason` enum
+  with `sponsorship_payout` so sponsor coin transfers are
+  distinguishable from prize money and referrals in the
+  ledger (preserves the existing audit trail). `public.brands`
+  is the canonical brand catalogue — RLS allows public read
+  of `is_active=true` brands so mobile can render logos.
+  `public.sponsorships` captures contracts:
+  `(group_id, brand_id)`, state machine (draft → active →
+  expired/terminated), CHECKs enforcing
+  `contract_end >= contract_start`,
+  `monthly_coins_to_athletes >= 0`,
+  `equipment_discount_pct BETWEEN 0 AND 100`; group staff
+  manage via RLS. `public.sponsorship_athletes` is the
+  LGPD-safe opt-in join (no automatic enrollment — athlete
+  must consent). RPCs: `fn_sponsorship_activate` (admin-only,
+  transitions draft → active), `fn_sponsorship_enroll_athlete`
+  (athlete-self, idempotent), `fn_sponsorship_opt_out_athlete`
+  (athlete-self), `fn_sponsorship_distribute_monthly_coins`
+  (service-role cron target, idempotent per month via
+  `ON CONFLICT`, honours `monthly_coins_to_athletes` budget).
+  Invariants locked by `npm run audit:sponsorships`.
 ---
 # [L16-05] Integrações de marcas esportivas sem schema
 > **Lente:** 16 — CAO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fix-pending

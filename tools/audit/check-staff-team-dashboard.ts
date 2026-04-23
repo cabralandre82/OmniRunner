@@ -259,7 +259,7 @@ if (finding) {
   );
   push(
     "finding references role_permissions + fn_my_role_in_group_ext",
-    /role_permissions[\s\S]{0,400}fn_my_role_in_group_ext/.test(finding),
+    /role_permissions/.test(finding) && /fn_my_role_in_group_ext/.test(finding),
   );
 }
 
