@@ -3,6 +3,8 @@ import 'dart:collection';
 import 'package:omni_runner/data/datasources/audio_coach_service.dart';
 import 'package:omni_runner/domain/entities/audio_event_entity.dart';
 import 'package:omni_runner/domain/repositories/i_audio_coach.dart';
+import 'package:omni_runner/domain/services/audio_cue_formatter.dart';
+import 'package:omni_runner/domain/value_objects/audio_coach_locale.dart';
 
 /// Concrete [IAudioCoach] with a priority-based queue.
 ///
@@ -12,24 +14,43 @@ import 'package:omni_runner/domain/repositories/i_audio_coach.dart';
 /// - priority > [queueThreshold]: discard if queue is non-empty.
 ///
 /// Queue is drained FIFO; on completion the next item is spoken automatically.
+///
+/// L22-06: text rendering is delegated to [AudioCueFormatter] so the
+/// repo stays locale-agnostic. Callers can swap locale via [setLocale].
 class AudioCoachRepo implements IAudioCoach {
   final AudioCoachService _service;
   final int interruptThreshold;
   final int queueThreshold;
   final int maxQueueSize;
+  AudioCueFormatter _formatter;
 
   final Queue<AudioEventEntity> _queue = Queue<AudioEventEntity>();
   bool _draining = false;
 
   AudioCoachRepo({
     required AudioCoachService service,
+    AudioCueFormatter? formatter,
     this.interruptThreshold = 5,
     this.queueThreshold = 15,
     this.maxQueueSize = 5,
-  }) : _service = service;
+  })  : _service = service,
+        _formatter = formatter ?? const AudioCueFormatter();
+
+  /// The current formatter (exposed for tests and diagnostics).
+  AudioCueFormatter get formatter => _formatter;
+
+  /// Current coach locale.
+  AudioCoachLocale get locale => _formatter.locale;
 
   @override
-  Future<void> init() => _service.init();
+  Future<void> init() => _service.init(locale: _formatter.locale);
+
+  /// Swap the active locale. Updates both the formatter used to
+  /// render future events and the TTS engine itself.
+  Future<void> setLocale(AudioCoachLocale locale) async {
+    _formatter = AudioCueFormatter(locale: locale);
+    await _service.setLocale(locale);
+  }
 
   @override
   Future<void> speak(AudioEventEntity event) async {
@@ -37,19 +58,16 @@ class AudioCoachRepo implements IAudioCoach {
       await _speak(event);
       return;
     }
-    // High priority → interrupt current speech.
     if (event.priority <= interruptThreshold) {
       await _service.stop();
       _queue.clear();
       await _speak(event);
       return;
     }
-    // Normal priority → enqueue if room.
     if (event.priority <= queueThreshold) {
       if (_queue.length < maxQueueSize) _queue.addLast(event);
       return;
     }
-    // Low priority → discard when queue non-empty.
     if (_queue.isEmpty) {
       _queue.addLast(event);
     }
@@ -61,10 +79,8 @@ class AudioCoachRepo implements IAudioCoach {
     await _service.dispose();
   }
 
-  // -- internals --
-
   Future<void> _speak(AudioEventEntity event) async {
-    final text = _buildText(event);
+    final text = _formatter.format(event);
     if (text.isEmpty) return;
     await _service.speak(text);
     _drainQueue();
@@ -76,77 +92,9 @@ class AudioCoachRepo implements IAudioCoach {
     _draining = true;
     while (_queue.isNotEmpty) {
       final next = _queue.removeFirst();
-      final text = _buildText(next);
+      final text = _formatter.format(next);
       if (text.isNotEmpty) await _service.speak(text);
     }
     _draining = false;
-  }
-
-  /// Convert [AudioEventEntity] to spoken text.
-  ///
-  /// If payload contains a `text` key, use it directly.
-  /// Otherwise builds a minimal phrase from the event type and payload.
-  static String _buildText(AudioEventEntity event) {
-    final p = event.payload;
-    if (p.containsKey('text')) return p['text'].toString();
-    return switch (event.type) {
-      AudioEventType.distanceAnnouncement => _distanceText(p),
-      AudioEventType.timeAnnouncement => _timeText(p),
-      AudioEventType.paceAlert => _paceText(p),
-      AudioEventType.heartRateAlert => _hrText(p),
-      AudioEventType.sessionEvent => _sessionText(p),
-      AudioEventType.countdown => _countdownText(p),
-      AudioEventType.custom => '',
-    };
-  }
-
-  static String _distanceText(Map<String, Object> p) {
-    final km = p['distanceKm'];
-    final pace = p['paceFormatted'];
-    if (km == null) return '';
-    final buf = StringBuffer('$km quilômetros');
-    if (pace != null) buf.write('. Pace $pace por quilômetro');
-    return buf.toString();
-  }
-
-  static String _timeText(Map<String, Object> p) {
-    final min = p['elapsedMin'];
-    return min != null ? '$min minutos' : '';
-  }
-
-  static String _paceText(Map<String, Object> p) {
-    final msg = p['message'];
-    return msg?.toString() ?? 'Atenção ao pace';
-  }
-
-  static String _hrText(Map<String, Object> p) {
-    final zone = p['zone'];
-    final bpm = p['bpm'];
-    final direction = p['direction'];
-    if (zone == null) return 'Alerta cardíaco';
-    final buf = StringBuffer('Zona $zone');
-    if (direction == 'up') {
-      buf.write('. Subindo');
-    } else if (direction == 'down') {
-      buf.write('. Descendo');
-    }
-    if (bpm != null) buf.write('. $bpm BPM');
-    return buf.toString();
-  }
-
-  static String _sessionText(Map<String, Object> p) {
-    final action = p['action'];
-    return switch (action?.toString()) {
-      'start' => 'Corrida iniciada',
-      'pause' => 'Pausado',
-      'resume' => 'Retomando',
-      'finish' => 'Corrida finalizada',
-      _ => '',
-    };
-  }
-
-  static String _countdownText(Map<String, Object> p) {
-    final n = p['value'];
-    return n != null ? '$n' : '';
   }
 }
