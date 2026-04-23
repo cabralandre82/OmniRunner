@@ -62,6 +62,7 @@
     "audit:geofenced-checkin": "npx tsx tools/audit/check-geofenced-checkin.ts",
     "audit:athlete-subscriptions": "npx tsx tools/audit/check-athlete-subscriptions.ts",
     "audit:paired-workouts": "npx tsx tools/audit/check-paired-workouts.ts",
+    "audit:offline-sync": "npx tsx tools/audit/check-offline-sync.ts",
     "audit:og-metadata": "npx tsx tools/audit/check-og-metadata.ts",
     "audit:challenge-invite-deep-link": "npx tsx tools/audit/check-challenge-invite-deep-link.ts",
     "audit:milestone-celebration": "npx tsx tools/audit/check-milestone-celebration.ts",
