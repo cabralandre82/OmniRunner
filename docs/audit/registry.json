@@ -3087,9 +3087,11 @@
       "lens": 4,
       "title": "Trajetórias GPS brutas sem opção de privacy zones (home/work zones)",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21",
+      "closed_at": "2026-04-21",
       "tags": [
         "lgpd",
         "integration",
@@ -3099,20 +3101,23 @@
         "reliability"
       ],
       "files": [
-        "omni_runner/lib/data/datasources/drift_database.dart"
+        "supabase/migrations/20260421560000_l04_05_privacy_zones.sql",
+        "tools/audit/check-privacy-zones.ts"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:l04-05-privacy-zones"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Server-side privacy primitives: profiles.privacy_zones jsonb (IMMUTABLE CHECK via fn_validate_privacy_zones), PL/pgSQL IMMUTABLE helpers fn_haversine_m / fn_point_in_zones / fn_decode_polyline / fn_encode_polyline / fn_mask_polyline, and SECURITY DEFINER RPC fn_session_polyline_for_viewer que devolve raw para owner/platform_admin (loggado em portal_audit_log fail-open) e masked+head/tail trim para os demais. CI guard `npm run audit:privacy-zones` enforça 44 invariantes (2026-04-21)."
     },
     {
       "id": "L04-06",
@@ -3120,27 +3125,34 @@
       "lens": 4,
       "title": "Campo instagram_handle, tiktok_handle em profiles sem política de uso",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21",
+      "closed_at": "2026-04-21",
       "tags": [
         "rls",
         "rate-limit",
         "mobile"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260421570000_l04_06_social_handles_policy.sql",
+        "tools/audit/check-social-handles-policy.ts"
+      ],
+      "correction_type": "code",
       "test_required": true,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:l04-06-social-handles-policy"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "fn_validate_social_handle (IMMUTABLE) enforça formato estrito (1-30 chars, [A-Za-z0-9._], sem links/slashes) via CHECK em instagram_handle/tiktok_handle. Novo profiles.profile_public jsonb (privacy-first defaults via fn_validate_profile_public). profiles.social_handles_updated_at + BEFORE UPDATE trigger fn_profiles_social_handles_rate_limit aplica rate limit configurável (default 24h, service_role isento) e grava diffs em portal_audit_log (fail-open). RPC fn_public_profile_view (STABLE SECURITY DEFINER) devolve visão viewer-scoped respeitando profile_public (handles só para owner/admin/opt-in explícito). CI guard `npm run audit:social-handles-policy` cobre 37 invariantes (2026-04-21)."
     },
     {
       "id": "L04-07",
@@ -7858,28 +7870,35 @@
       "lens": 15,
       "title": "Sem sistema de referral/convite viral",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21",
+      "closed_at": "2026-04-21",
       "tags": [
         "finance",
         "mobile",
         "migration",
         "seo"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260421580000_l15_02_referral_program.sql",
+        "tools/audit/check-referral-program.ts"
+      ],
+      "correction_type": "code",
       "test_required": true,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:l15-02-referral-program"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Programa de referral server-side: coin_ledger.reason expandido com referral_referrer_reward / referral_referred_reward; public.referral_rewards_config (single-row, rewards + TTL + max activations configuráveis); public.referrals com state machine (pending → activated | expired | revoked), unique referral code, unique activation por referido, RLS. Funções: fn_generate_referral_code (códigos únicos via loop anti-colisão), fn_create_referral (enforce caps), fn_activate_referral (idempotente, credita carteiras via coin_ledger), fn_expire_referrals (alvo de pg_cron). CI guard `npm run audit:referral-program` cobre 47 invariantes (2026-04-21)."
     },
     {
       "id": "L15-03",
@@ -7887,26 +7906,40 @@
       "lens": 15,
       "title": "Social sharing sem Open Graph dinâmico",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21",
+      "closed_at": "2026-04-21",
       "tags": [
         "mobile",
         "portal"
       ],
-      "files": [],
+      "files": [
+        "portal/src/lib/og-metadata.ts",
+        "portal/src/lib/og-metadata.test.ts",
+        "portal/src/app/challenge/[id]/opengraph-image.tsx",
+        "portal/src/app/invite/[code]/opengraph-image.tsx",
+        "portal/src/app/challenge/[id]/page.tsx",
+        "portal/src/app/invite/[code]/page.tsx",
+        "tools/audit/check-og-metadata.ts"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/og-metadata.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:1b226e0"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Dynamic Open Graph + Twitter metadata em todas as páginas shareable do portal. `portal/src/lib/og-metadata.ts` centraliza o builder (`getSiteBaseUrl` resolve NEXT_PUBLIC_PORTAL_BASE_URL/PORTAL_BASE_URL com fallback https://omnirunner.app + sanitização; `buildOgMetadata` emite openGraph+twitter.card+canonical e default image URL `<url>/opengraph-image`). Dois route segments dinâmicos (`challenge/[id]/opengraph-image.tsx`, `invite/[code]/opengraph-image.tsx`) devolvem ImageResponse PNG (runtime=edge, size 1200x630, paleta via OG_IMAGE_THEMES). `generateMetadata` das duas pages usa o helper. 8 testes vitest + CI guard `npm run audit:og-metadata` (35 invariantes)."
     },
     {
       "id": "L15-04",

@@ -4,27 +4,53 @@ audit_ref: "4.5"
 lens: 4
 title: "Trajetórias GPS brutas sem opção de privacy zones (home/work zones)"
 severity: high
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
 tags: ["lgpd", "integration", "mobile", "migration", "testing", "reliability"]
 files:
-  - omni_runner/lib/data/datasources/drift_database.dart
+  - supabase/migrations/20260421560000_l04_05_privacy_zones.sql
+  - tools/audit/check-privacy-zones.ts
 correction_type: process
 test_required: true
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - local:b5a4720
 owner: unassigned
 runbook: null
 effort_points: 3
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+note: |
+  GPS polyline privacy primitives now live server-side (the app
+  no longer tracks runs itself — Strava is the single source —
+  so enforcement has to happen where the polyline is stored).
+  - `profiles.privacy_zones jsonb` with IMMUTABLE shape
+    validator (max 5 zones, radius clamped [50, 500] m).
+  - Pure helpers: `fn_haversine_m`, `fn_point_in_zones`,
+    `fn_decode_polyline`, `fn_encode_polyline_value`,
+    `fn_encode_polyline`, `fn_mask_polyline(polyline, zones,
+    trim_start_m default 200, trim_end_m default 200)`.
+  - Viewer-scoped accessor
+    `fn_session_polyline_for_viewer(session_id)` —
+    owner + platform_admin get raw; everyone else gets the
+    mask with default 200m head/tail trim + owner's
+    privacy_zones. platform_admin reads are audit-logged to
+    `portal_audit_log` (`session.polyline.admin_view`);
+    audit failures are fail-open via RAISE WARNING so they
+    never block legitimate admin reads.
+  - Self-test block covers validator accept/reject, haversine
+    sanity, decoder cardinality on Google's canonical sample,
+    encoder round-trip, and zone-filtering edge cases.
+  - CI guard `npm run audit:privacy-zones` enforces 44
+    invariants.
 ---
 # [L04-05] Trajetórias GPS brutas sem opção de privacy zones (home/work zones)
-> **Lente:** 4 — CLO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fix-pending
+> **Lente:** 4 — CLO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fixed
 **Camada:** —
 **Personas impactadas:** —
 ## Achado
