@@ -57,6 +57,7 @@
     "audit:outbound-webhooks": "npx tsx tools/audit/check-outbound-webhooks.ts",
     "audit:sponsorships": "npx tsx tools/audit/check-sponsorships.ts",
     "audit:staff-team-dashboard": "npx tsx tools/audit/check-staff-team-dashboard.ts",
+    "audit:installments-br": "npx tsx tools/audit/check-installments-br.ts",
     "audit:og-metadata": "npx tsx tools/audit/check-og-metadata.ts",
     "audit:challenge-invite-deep-link": "npx tsx tools/audit/check-challenge-invite-deep-link.ts",
     "audit:milestone-celebration": "npx tsx tools/audit/check-milestone-celebration.ts",
