@@ -13,6 +13,7 @@
     "audit:audit-logs-gin": "npx tsx tools/audit/check-audit-logs-gin.ts",
     "audit:sessions-coherence": "npx tsx tools/audit/check-sessions-coherence.ts",
     "audit:sessions-time-series-index": "npx tsx tools/audit/check-sessions-time-series-index.ts",
+    "audit:anti-credential-stuffing": "npx tsx tools/audit/check-anti-credential-stuffing.ts",
     "legal:check": "npx tsx tools/legal/check-document-hashes.ts"
   },
   "devDependencies": {
