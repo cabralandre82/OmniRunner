@@ -28,6 +28,7 @@
     "audit:periodization-template": "npx tsx tools/audit/check-periodization-template.ts",
     "audit:group-analytics": "npx tsx tools/audit/check-group-analytics.ts",
     "audit:athlete-monthly-report": "npx tsx tools/audit/check-athlete-monthly-report.ts",
+    "audit:athlete-feedback-gate": "npx tsx tools/audit/check-athlete-feedback-gate.ts",
     "audit:shared-prefs-sensitive-keys": "npx tsx tools/audit/check-shared-prefs-sensitive-keys.ts",
     "audit:npm-dependency-pinning": "npx tsx tools/audit/check-npm-dependency-pinning.ts",
     "audit:sqlcipher-eol": "npx tsx tools/audit/check-sqlcipher-eol.ts",
