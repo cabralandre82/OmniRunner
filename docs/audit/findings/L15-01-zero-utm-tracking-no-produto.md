@@ -4,27 +4,43 @@ audit_ref: "15.1"
 lens: 15
 title: "Zero UTM tracking no produto"
 severity: high
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
 tags: ["rls", "portal", "migration"]
 files:
   - portal/src/lib/attribution.ts
+  - portal/src/app/api/attribution/capture/route.ts
+  - supabase/migrations/20260421520000_l15_01_utm_attribution.sql
+  - tools/audit/check-utm-attribution.ts
 correction_type: process
 test_required: true
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - local:f6fd338
 owner: unassigned
 runbook: null
 effort_points: 3
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+note: |
+  Full UTM capture pipeline: client cookie (first-touch, 90-day
+  TTL, marketing-consent gated, length-clamped) → POST
+  /api/attribution/capture (zod-validated, rate-limited, IP
+  truncated to /24 or /48, UA sha256-hashed) →
+  marketing_attribution_events (append-only, CHECK on identity
+  and per-field length, RLS for own-user + platform_admin) →
+  SECURITY DEFINER AFTER INSERT trigger that snapshots first-
+  touch into profiles.attribution (jsonb). Events registered at
+  180-day retention in audit_logs_retention_config. Ships with
+  audit:utm-attribution guard (37 invariants).
 ---
 # [L15-01] Zero UTM tracking no produto
-> **Lente:** 15 — CMO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fix-pending
+> **Lente:** 15 — CMO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fixed
 **Camada:** —
 **Personas impactadas:** —
 ## Achado

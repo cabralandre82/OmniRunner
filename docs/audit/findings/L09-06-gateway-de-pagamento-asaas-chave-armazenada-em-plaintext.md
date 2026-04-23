@@ -4,26 +4,43 @@ audit_ref: "9.6"
 lens: 9
 title: "Gateway de pagamento Asaas: chave armazenada em plaintext na DB"
 severity: high
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
 tags: ["lgpd", "finance", "anti-cheat", "mobile"]
-files: []
+files:
+  - supabase/migrations/20260421500000_l09_06_billing_providers_at_rest_encryption.sql
+  - tools/audit/check-billing-providers-encryption.ts
 correction_type: process
 test_required: true
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - local:41110d8
 owner: unassigned
 runbook: null
 effort_points: 3
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+note: |
+  billing_providers table stores per-assessoria Asaas / Mercado
+  Pago / Stripe credentials as pgp_sym_encrypt bytea. RLS +
+  column privileges make api_key_enc unreadable by authenticated
+  / anon; only service_role can SELECT the ciphertext. Access
+  goes exclusively through fn_set_billing_provider_key (bumps
+  key_version, writes key_set audit row) and
+  fn_get_billing_provider_key (decrypts, writes key_access audit
+  row with reason). Master key loaded into GUC app.settings.kms_key
+  per edge-function transaction from Supabase Vault / AWS KMS.
+  KMS_UNAVAILABLE guard closes the "accidental plaintext" path.
+  Ships with audit:billing-providers-encryption guard
+  (32 invariants).
 ---
 # [L09-06] Gateway de pagamento Asaas: chave armazenada em plaintext na DB
-> **Lente:** 9 — CRO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fix-pending
+> **Lente:** 9 — CRO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fixed
 **Camada:** —
 **Personas impactadas:** —
 ## Achado

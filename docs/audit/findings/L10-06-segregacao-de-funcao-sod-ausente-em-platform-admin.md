@@ -4,26 +4,42 @@ audit_ref: "10.6"
 lens: 10
 title: "Segregação de função (SoD) ausente em platform_admin"
 severity: high
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
 tags: ["mobile", "migration", "reliability"]
-files: []
+files:
+  - supabase/migrations/20260421510000_l10_06_admin_approvals_sod.sql
+  - tools/audit/check-admin-approvals-sod.ts
 correction_type: config
 test_required: true
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - local:fd950f8
 owner: unassigned
 runbook: null
 effort_points: 3
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+note: |
+  admin_approvals queue + BEFORE UPDATE trigger enforce two-
+  person rule on high-risk platform_admin actions:
+  platform_fee_config / admin-grant / billing_provider key
+  mutations always require a second distinct admin;
+  withdrawals and refunds require dual approval above
+  US$ 10k. Self-approval blocked by CHECK at INSERT time and
+  re-asserted by trigger to cover service-role paths.
+  `status = 'executed'` requires prior `status = 'approved'`,
+  and terminal statuses are locked. 24h TTL enforced by
+  fn_admin_approvals_expire_overdue (cron target). Ships with
+  audit:admin-approvals-sod guard (27 invariants).
 ---
 # [L10-06] Segregação de função (SoD) ausente em platform_admin
-> **Lente:** 10 — CSO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fix-pending
+> **Lente:** 10 — CSO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fixed
 **Camada:** —
 **Personas impactadas:** —
 ## Achado

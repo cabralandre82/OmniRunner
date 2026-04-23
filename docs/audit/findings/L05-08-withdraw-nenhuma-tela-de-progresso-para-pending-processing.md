@@ -4,27 +4,45 @@ audit_ref: "5.8"
 lens: 5
 title: "Withdraw: nenhuma tela de progresso para pending→processing→completed"
 severity: high
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
 tags: ["finance", "webhook", "mobile", "portal", "cron", "reliability"]
 files:
   - portal/src/app/api/custody/withdraw/route.ts
+  - portal/src/app/api/custody/withdraw/[id]/timeline/route.ts
+  - supabase/migrations/20260421490000_l05_08_withdrawal_timeline.sql
+  - tools/audit/check-withdrawal-timeline.ts
 correction_type: process
 test_required: true
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - local:582867b
 owner: unassigned
 runbook: null
 effort_points: 3
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+note: |
+  Withdrawal progress is now a first-class DB primitive. Trigger
+  on custody_withdrawals records every state transition into
+  custody_withdrawal_events (append-only, (withdrawal_id, status)
+  UNIQUE, RLS to admin_master of host group). The portal calls
+  fn_withdrawal_timeline(uuid) to render a 4-step UI backed by
+  canonical policy: expected_completion_at (SLA-derived),
+  sla_breached flag, and refund_eta_days=2 on failed terminal
+  state. Historical rows are backfilled via ON CONFLICT DO
+  NOTHING. Ships with audit:withdrawal-timeline guard
+  (26 invariants). The full async webhook rewrite remains wave-2
+  scope; this patch provides the UI contract so the timeline
+  renders correctly as soon as the async path ships.
 ---
 # [L05-08] Withdraw: nenhuma tela de progresso para pending→processing→completed
-> **Lente:** 5 — CPO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fix-pending
+> **Lente:** 5 — CPO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fixed
 **Camada:** —
 **Personas impactadas:** —
 ## Achado

@@ -4,27 +4,44 @@ audit_ref: "10.3"
 lens: 10
 title: "Service-role key distribuída amplamente"
 severity: critical
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
 tags: ["portal", "edge-function"]
 files:
   - portal/src/lib/supabase/service.ts
+  - docs/runbooks/SERVICE_ROLE_ROTATION_RUNBOOK.md
+  - docs/security/SERVICE_ROLE_USAGE_INVENTORY.md
+  - tools/audit/check-service-role-inventory.ts
 correction_type: process
 test_required: true
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - local:925d338
 owner: unassigned
-runbook: null
+runbook: docs/runbooks/SERVICE_ROLE_ROTATION_RUNBOOK.md
 effort_points: 5
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+note: |
+  Canonical inventory
+  (docs/security/SERVICE_ROLE_USAGE_INVENTORY.md) lists every
+  file allowed to reference SUPABASE_SERVICE_ROLE_KEY (and its
+  _STAGING / _PREVIEW / _CI variants). A CI guard
+  (audit:service-role-inventory) greps the repo on every PR and
+  fails the build on any unlisted consumer, forcing explicit
+  @security review. Paired with
+  docs/runbooks/SERVICE_ROLE_ROTATION_RUNBOOK.md which documents
+  the quarterly + ad-hoc rotation procedure, the env-specific
+  key split (prod never leaks into preview / CI / staging),
+  verification steps, and evidence capture.
 ---
 # [L10-03] Service-role key distribuída amplamente
-> **Lente:** 10 — CSO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** fix-pending
+> **Lente:** 10 — CSO · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** fixed
 **Camada:** —
 **Personas impactadas:** —
 ## Achado

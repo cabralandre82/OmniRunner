@@ -3645,9 +3645,11 @@
       "lens": 5,
       "title": "Championship champ-cancel: refund de badges parcial e silencioso",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "atomicity",
         "mobile",
@@ -3655,20 +3657,24 @@
         "performance"
       ],
       "files": [
-        "supabase/functions/champ-cancel/index.ts"
+        "supabase/functions/champ-cancel/index.ts",
+        "supabase/migrations/20260421480000_l05_06_champ_cancel_atomic.sql",
+        "tools/audit/check-champ-cancel-atomic.ts"
       ],
       "correction_type": "process",
       "test_required": true,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:a564d3c"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Atomic champ cancel RPC (fn_champ_cancel_atomic) wraps all four writes in one SECURITY DEFINER transaction with authorization, status and row-lock inside. No silent catch. 35 CI invariants."
     },
     {
       "id": "L05-07",
@@ -3718,9 +3724,11 @@
       "lens": 5,
       "title": "Withdraw: nenhuma tela de progresso para pending→processing→completed",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "webhook",
@@ -3730,20 +3738,25 @@
         "reliability"
       ],
       "files": [
-        "portal/src/app/api/custody/withdraw/route.ts"
+        "portal/src/app/api/custody/withdraw/route.ts",
+        "portal/src/app/api/custody/withdraw/[id]/timeline/route.ts",
+        "supabase/migrations/20260421490000_l05_08_withdrawal_timeline.sql",
+        "tools/audit/check-withdrawal-timeline.ts"
       ],
       "correction_type": "process",
       "test_required": true,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:582867b"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "custody_withdrawal_events + fn_withdrawal_timeline(uuid) + GET /api/custody/withdraw/[id]/timeline. Canonical SLA policy (2min+10min) baked into DB. 26 CI invariants."
     },
     {
       "id": "L05-09",
@@ -5541,28 +5554,35 @@
       "lens": 9,
       "title": "Gateway de pagamento Asaas: chave armazenada em plaintext na DB",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "lgpd",
         "finance",
         "anti-cheat",
         "mobile"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421500000_l09_06_billing_providers_at_rest_encryption.sql",
+        "tools/audit/check-billing-providers-encryption.ts"
+      ],
       "correction_type": "process",
       "test_required": true,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:41110d8"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "billing_providers + pgp_sym_encrypt bytea. KMS key via GUC app.settings.kms_key. All access via fn_set/get helpers with audit log. KMS_UNAVAILABLE guard. 32 CI invariants."
     },
     {
       "id": "L09-07",
@@ -5841,28 +5861,35 @@
       "lens": 10,
       "title": "Service-role key distribuída amplamente",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "portal",
         "edge-function"
       ],
       "files": [
-        "portal/src/lib/supabase/service.ts"
+        "portal/src/lib/supabase/service.ts",
+        "docs/runbooks/SERVICE_ROLE_ROTATION_RUNBOOK.md",
+        "docs/security/SERVICE_ROLE_USAGE_INVENTORY.md",
+        "tools/audit/check-service-role-inventory.ts"
       ],
       "correction_type": "process",
       "test_required": true,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:925d338"
+      ],
       "owner": "unassigned",
-      "runbook": null,
+      "runbook": "docs/runbooks/SERVICE_ROLE_ROTATION_RUNBOOK.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Canonical inventory of service-role consumers + quarterly rotation runbook + CI guard that blocks unlisted consumers. Env-specific key split documented."
     },
     {
       "id": "L10-04",
@@ -5952,27 +5979,34 @@
       "lens": 10,
       "title": "Segregação de função (SoD) ausente em platform_admin",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "migration",
         "reliability"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421510000_l10_06_admin_approvals_sod.sql",
+        "tools/audit/check-admin-approvals-sod.ts"
+      ],
       "correction_type": "config",
       "test_required": true,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:fd950f8"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "admin_approvals queue + BEFORE UPDATE trigger enforce two-person rule. fn_admin_approval_required policy: fee-config/admin-grant/billing-key always, money-movers above US$ 10k. 24h TTL via cron. 27 CI invariants."
     },
     {
       "id": "L10-07",
@@ -7787,29 +7821,36 @@
       "lens": 15,
       "title": "Zero UTM tracking no produto",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "rls",
         "portal",
         "migration"
       ],
       "files": [
-        "portal/src/lib/attribution.ts"
+        "portal/src/lib/attribution.ts",
+        "portal/src/app/api/attribution/capture/route.ts",
+        "supabase/migrations/20260421520000_l15_01_utm_attribution.sql",
+        "tools/audit/check-utm-attribution.ts"
       ],
       "correction_type": "process",
       "test_required": true,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:f6fd338"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Full UTM capture pipeline: client cookie (first-touch, consent-gated, length-clamped) → POST /api/attribution/capture (zod, rate-limited, IP truncated, UA sha256) → marketing_attribution_events + profiles.attribution first-touch trigger. 180-day retention. 37 CI invariants."
     },
     {
       "id": "L15-02",

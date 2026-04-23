@@ -4,27 +4,41 @@ audit_ref: "5.6"
 lens: 5
 title: "Championship champ-cancel: refund de badges parcial e silencioso"
 severity: high
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
 tags: ["atomicity", "mobile", "edge-function", "performance"]
 files:
   - supabase/functions/champ-cancel/index.ts
+  - supabase/migrations/20260421480000_l05_06_champ_cancel_atomic.sql
+  - tools/audit/check-champ-cancel-atomic.ts
 correction_type: process
 test_required: true
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - local:a564d3c
 owner: unassigned
 runbook: null
 effort_points: 3
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+note: |
+  All four writes (withdraw participants, revoke invites, refund
+  badges, flip championship status) are now wrapped in a single
+  SECURITY DEFINER RPC `fn_champ_cancel_atomic(uuid, uuid)` that
+  owns authorization (admin_master/coach of host_group), status
+  precondition (draft/open/active), and row lock (FOR UPDATE).
+  No silent catch — any failure raises and rolls back the whole
+  transaction. Idempotent on retry via noop branch when the
+  championship is already cancelled. Ships with
+  audit:champ-cancel-atomic guard (35 invariants).
 ---
 # [L05-06] Championship champ-cancel: refund de badges parcial e silencioso
-> **Lente:** 5 — CPO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fix-pending
+> **Lente:** 5 — CPO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fixed
 **Camada:** —
 **Personas impactadas:** —
 ## Achado
