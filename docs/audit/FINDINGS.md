@@ -198,7 +198,7 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L11-03](./findings/L11-03-sem-gitleaks-trufflehog-no-ci.md) | 1 | L11 · Supply Chain | Sem gitleaks / trufflehog no CI | unassigned |
 | 🟠 high | ✅ fixed | [L11-04](./findings/L11-04-dependabot-agrupa-todas-as-minor-patch-pr-monstro.md) | 1 | L11 · Supply Chain | Dependabot agrupa todas as minor+patch — PR monstro | unassigned |
 | 🟠 high | ✅ fixed | [L11-05](./findings/L11-05-flutter-secure-storage-10-0-0-mas-release.md) | 1 | L11 · Supply Chain | flutter_secure_storage: ^10.0.0 mas release inclui shared_preferences | mobile |
-| 🟠 high | ⏳ fix-pending | [L11-06](./findings/L11-06-dependencias-com-permitem-breaking-minor.md) | 1 | L11 · Supply Chain | Dependências com ^ permitem breaking minor | unassigned |
+| 🟠 high | ✅ fixed | [L11-06](./findings/L11-06-dependencias-com-permitem-breaking-minor.md) | 1 | L11 · Supply Chain | Dependências com ^ permitem breaking minor | platform |
 | 🟠 high | ⏳ fix-pending | [L11-07](./findings/L11-07-sqlcipher-flutter-libs-0-7-0-eol-eol.md) | 1 | L11 · Supply Chain | sqlcipher_flutter_libs: ^0.7.0+eol — "eol" = end of life | unassigned |
 | 🟠 high | ⏳ fix-pending | [L11-08](./findings/L11-08-flutter-sdk-3-8-0-4-0-0.md) | 1 | L11 · Supply Chain | Flutter sdk: '>=3.8.0 <4.0.0' — permite 3.9, 3.10… | unassigned |
 | 🟡 medium | ✅ fixed | [L11-09](./findings/L11-09-github-actions-sem-oidc-para-deploys.md) | 1 | L11 · Supply Chain | GitHub Actions sem OIDC para deploys | unassigned |

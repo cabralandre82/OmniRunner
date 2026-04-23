@@ -6252,25 +6252,40 @@
       "lens": 11,
       "title": "Dependências com ^ permitem breaking minor",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "portal"
+        "portal",
+        "supply-chain",
+        "deps",
+        "reproducibility",
+        "lint"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        ".npmrc",
+        "portal/.npmrc",
+        "package.json",
+        "portal/package.json",
+        "tools/audit/check-npm-dependency-pinning.ts"
+      ],
+      "correction_type": "config",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-npm-dependency-pinning.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "local/d609c78 — fix(deps): pin critical npm packages + .npmrc save-exact (L11-06)"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/NPM_DEPENDENCY_PINNING_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Landed 2026-04-21 in 3 layers: (1) .npmrc at workspace-root AND portal/ with save-exact=true + save-prefix= + engine-strict=true; (2) 8 boundary packages pinned exact — portal: next@14.2.35 (rendering/middleware), @supabase/ssr@0.8.0 (auth cookie), @supabase/supabase-js@2.97.0 (RPC/RLS shape), zod@4.3.6 (3↔4 typing break), @sentry/nextjs@10.40.0 (getActiveSpan contract); root: tsx@4.21.0 (audit script runtime), lefthook@2.1.1 (pre-commit), js-yaml@4.1.1 (registry parser); (3) CI guard npm run audit:npm-dependency-pinning with 3 sub-checks (npmrc presence + shape; criticals via isExactVersion rejecting ^/~/>=/</hyphen/||/*/x/file:/link:/git/https:/github:/npm:/workspace; specifiers blanket-ban on *, latest, x). Smoke-tested: planted ^zod fails 'must be exact'; planted sonner:latest fails 'banned specifier'. Leaf deps caret-OK intentionally (full lockdown noisy; L11-06-ext follow-up). Runbook covers policy matrix, 6 operational playbooks, Dependabot/Renovate integration, lockfile drift, cross-refs L11-05/07/08, L11-01-09, L17-05. All existing audit guards + portal lint + logger tests remain green."
     },
     {
       "id": "L11-07",

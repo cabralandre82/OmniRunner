@@ -83,12 +83,12 @@
 
 ### 🟡 Batch G — Mobile / Flutter (4 entregas, em `omni_runner/`)
 
-**Progresso Batch G (Mobile / Flutter):** 🟡 1/4 — L11-05 ✓ · L11-06 ⏳ · L11-07 ⏳ · L11-08 ⏳.
+**Progresso Batch G (Mobile / Flutter):** 🟡 2/4 — L11-05 ✓ · L11-06 ✓ · L11-07 ⏳ · L11-08 ⏳.
 
 | # | id | sev | L | ep | Título |
 |---|---|---|---|---|---|
 | 25 | L11-05 | high | 11 | 3 | ✅ `flutter_secure_storage` ^10 mas release usa `shared_preferences` (fixed 2026-04-21) |
-| 26 | L11-06 | high | 11 | 3 | Dependências com `^` permitem breaking minor |
+| 26 | L11-06 | high | 11 | 3 | ✅ Dependências com `^` permitem breaking minor (fixed 2026-04-21) |
 | 27 | L11-07 | high | 11 | 3 | `sqlcipher_flutter_libs: ^0.7.0+eol` — end of life |
 | 28 | L11-08 | high | 11 | 3 | `Flutter sdk: '>=3.8.0 <4.0.0'` permite 3.9, 3.10… |
 
