@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T15:49:26.719Z",
+  "generated_at": "2026-04-23T16:54:26.640Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 148,
-    "fix-pending": 199,
+    "fixed": 149,
+    "fix-pending": 198,
     "in-progress": 1
   },
   "by_wave": {
@@ -10372,27 +10372,37 @@
       "lens": 22,
       "title": "Feedback de ritmo só pós-corrida",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "personas",
         "athlete-amateur"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "omni_runner/lib/domain/usecases/pace_guidance_voice_trigger.dart",
+        "tools/audit/check-pace-guidance-voice.ts",
+        "docs/runbooks/PACE_GUIDANCE_RUNBOOK.md"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "omni_runner/test/domain/usecases/pace_guidance_voice_trigger_test.dart",
+        "tools/audit/check-pace-guidance-voice.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "local:6ef40ff"
+      ],
+      "owner": "audit-bot",
+      "runbook": "docs/runbooks/PACE_GUIDANCE_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Pure-domain trigger shipped; AudioCueFormatter catalogue keys (pace.too_fast / pace.too_slow / pace.on_target) and SettingsRepository binding are tracked follow-ups (L22-04-catalogue, L22-04-settings)."
     },
     {
       "id": "L22-05",

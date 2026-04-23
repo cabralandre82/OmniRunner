@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-23 15:49:26 UTC.
+> Atualizado em 2026-04-23 16:54:26 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -320,7 +320,7 @@ Total: **348** findings.
 | 🔴 critical | ⏳ fix-pending | [L22-01](./findings/L22-01-onboarding-nao-inclui-primeira-corrida-guiada.md) | 1 | L22 · Atleta Amador | Onboarding não inclui "primeira corrida guiada" | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L22-02](./findings/L22-02-conceito-de-moeda-omnicoin-confunde-amador.md) | 1 | L22 · Atleta Amador | Conceito de "moeda / OmniCoin" confunde amador | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L22-03](./findings/L22-03-plano-semanal-pessoal-ausente-para-solo-runner.md) | 1 | L22 · Atleta Amador | Plano semanal pessoal ausente para solo runner | unassigned |
-| 🟠 high | ⏳ fix-pending | [L22-04](./findings/L22-04-feedback-de-ritmo-so-pos-corrida.md) | 1 | L22 · Atleta Amador | Feedback de ritmo só pós-corrida | unassigned |
+| 🟠 high | ✅ fixed | [L22-04](./findings/L22-04-feedback-de-ritmo-so-pos-corrida.md) | 1 | L22 · Atleta Amador | Feedback de ritmo só pós-corrida | audit-bot |
 | 🟠 high | ✅ fixed | [L22-05](./findings/L22-05-grupos-locais-sem-descoberta-por-proximidade.md) | 1 | L22 · Atleta Amador | Grupos locais sem descoberta por proximidade | data-platform |
 | 🟠 high | ✅ fixed | [L22-06](./findings/L22-06-voice-coaching-parcial.md) | 1 | L22 · Atleta Amador | Voice coaching parcial | mobile |
 | 🟠 high | ⏳ fix-pending | [L22-07](./findings/L22-07-compra-parcelada-para-assessoria-brasileira.md) | 1 | L22 · Atleta Amador | Compra parcelada para assessoria brasileira | unassigned |

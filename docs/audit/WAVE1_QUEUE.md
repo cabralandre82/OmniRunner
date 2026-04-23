@@ -95,6 +95,7 @@
 ### 🟢 Batch H — Mobile UX & Coach features (10 entregas, code-tractable)
 
 **Progresso Batch H (Mobile UX):** 🟢 10/10 — L21-06 ✓, L22-05 ✓, L22-06 ✓, L22-08 ✓, L22-09 ✓, L23-06 ✓, L23-07 ✓, L23-11 ✓, L23-13 ✓, L23-14 ✓.
+**Progresso Batch I (Reach goals):** 🟠 1/12 — L22-04 ✓ (fixed 2026-04-21 — real-time pace guidance voice trigger).
 
 | # | id | sev | L | ep | Título |
 |---|---|---|---|---|---|
@@ -119,7 +120,7 @@
 | 42 | L21-10 | high | 21 | 3 | Anti-cheat pode publicamente marcar elite como suspeito |
 | 43 | L21-11 | high | 21 | 3 | Ghost mode não funciona para competições reais |
 | 44 | L21-12 | high | 21 | 3 | Sem "team dashboard" para staff técnica |
-| 45 | L22-04 | high | 22 | 3 | Feedback de ritmo só pós-corrida |
+| 45 | L22-04 | high | 22 | 3 | ✅ Feedback de ritmo só pós-corrida (fixed 2026-04-21) |
 | 46 | L23-12 | high | 23 | 3 | Onboarding de novo atleta no clube |
 | 47 | L20-06 | high | 20 | 3 | Status page pública inexistente |
 | 48 | L16-02 | high | 16 | 3 | Sem custom domain por assessoria |
