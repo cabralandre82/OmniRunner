@@ -23,6 +23,7 @@
     "audit:email-platform": "npx tsx tools/audit/check-email-platform.ts",
     "audit:shared-prefs-sensitive-keys": "npx tsx tools/audit/check-shared-prefs-sensitive-keys.ts",
     "audit:npm-dependency-pinning": "npx tsx tools/audit/check-npm-dependency-pinning.ts",
+    "audit:sqlcipher-eol": "npx tsx tools/audit/check-sqlcipher-eol.ts",
     "legal:check": "npx tsx tools/legal/check-document-hashes.ts"
   },
   "devDependencies": {

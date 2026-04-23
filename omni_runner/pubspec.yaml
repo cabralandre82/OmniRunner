@@ -73,7 +73,18 @@ dependencies:
   go_router: ^17.1.0
   drift: ^2.32.0
   drift_flutter: ^0.3.0
-  sqlcipher_flutter_libs: ^0.7.0+eol
+  # L11-07 — sqlcipher_flutter_libs is End-of-Life upstream (no further
+  # releases, no security patches). We pin to the exact final release
+  # (no caret prefix, no range), guarded by CI:
+  #   npm run audit:sqlcipher-eol
+  # Migration plan, trigger criteria, and runbook:
+  #   docs/adr/009-sqlcipher-eol-migration.md
+  #   docs/runbooks/SQLCIPHER_EOL_RUNBOOK.md
+  # DO NOT replace with `^0.7.0+eol` — caret allows transitive name-squat
+  # forks to ship as `0.7.1+malicious` and silently get picked up by
+  # `pub get`. Any version change MUST be an explicit migration PR that
+  # updates the ADR + runbook + this guard in the same commit.
+  sqlcipher_flutter_libs: 0.7.0+eol
 
 dev_dependencies:
   flutter_test:
