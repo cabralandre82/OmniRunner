@@ -33,6 +33,7 @@ import {
   buildReportToHeader,
   generateNonce,
 } from "@/lib/security/csp";
+import { evaluateWaf } from "@/lib/security/waf";
 
 /**
  * Portal middleware (L13-01..L13-07).
@@ -155,6 +156,24 @@ export async function middleware(request: NextRequest) {
     }
     return res;
   };
+
+  // (L10-04) In-process WAF runs FIRST — even before origin pinning.
+  // This covers well-known scanner UAs (sqlmap/nmap/nikto/...) and
+  // well-known attack paths (/wp-admin, /.env, /.git/config, ...).
+  // It is a defence-in-depth complement to Vercel's edge firewall
+  // (see docs/runbooks/WAF_RUNBOOK.md) — purely in-process and
+  // free of I/O, so blocking here short-circuits every subsequent
+  // check on attacker traffic.
+  const wafVerdict = evaluateWaf({
+    userAgent: request.headers.get("user-agent"),
+    pathname,
+  });
+  if (!wafVerdict.ok) {
+    metrics.increment("waf.blocked", { rule: wafVerdict.rule });
+    return tagResponse(
+      new NextResponse("Forbidden", { status: 403 }),
+    );
+  }
 
   // (L17-06) Origin pinning runs FIRST — the cheapest and broadest
   // CSRF gate. Every `/api/*` mutating request that isn't in

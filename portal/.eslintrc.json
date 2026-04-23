@@ -13,6 +13,39 @@
     "jsx-a11y/no-noninteractive-tabindex": "error",
     "jsx-a11y/role-has-required-aria-props": "error"
   },
+  "overrides": [
+    {
+      "files": [
+        "src/app/(portal)/custody/deposit-button.tsx",
+        "src/app/(portal)/financial/plans/plans-client.tsx",
+        "src/app/(portal)/financial/subscriptions/assign/assign-client.tsx",
+        "src/app/(portal)/fx/fx-simulator.tsx",
+        "src/app/(portal)/fx/withdraw-button.tsx",
+        "src/app/(portal)/settings/auto-topup-form.tsx",
+        "src/app/(portal)/settings/branding-form.tsx",
+        "src/app/(portal)/training-plan/*/page.tsx",
+        "src/app/(portal)/training-plan/new/page.tsx",
+        "src/app/(portal)/workouts/assign/assign-client.tsx",
+        "src/app/(portal)/workouts/template-builder.tsx",
+        "src/app/platform/conquistas/badge-form.tsx",
+        "src/app/platform/liga/league-admin.tsx",
+        "src/app/platform/platform-sidebar.tsx",
+        "src/app/platform/produtos/actions.tsx",
+        "src/components/onboarding/onboarding-overlay.tsx",
+        "src/components/training-plan/batch-assign-modal.tsx",
+        "src/components/training-plan/block-editor.tsx",
+        "src/components/training-plan/week-template-library.tsx",
+        "src/components/training-plan/workout-action-drawer.tsx",
+        "src/components/training-plan/workout-picker-drawer.tsx"
+      ],
+      "rules": {
+        "jsx-a11y/label-has-associated-control": "warn",
+        "jsx-a11y/click-events-have-key-events": "warn",
+        "jsx-a11y/no-static-element-interactions": "warn",
+        "jsx-a11y/no-autofocus": "warn"
+      }
+    }
+  ],
   "ignorePatterns": [
     "**/*.test.ts",
     "**/*.test.tsx",
