@@ -19,6 +19,7 @@
     "audit:strava-oauth-state": "npx tsx tools/audit/check-strava-oauth-state.ts",
     "audit:logger-sentry-capture": "npx tsx tools/audit/check-logger-sentry-capture.ts",
     "audit:api-handler-types": "npx tsx tools/audit/check-api-handler-types.ts",
+    "audit:portal-test-file-size": "npx tsx tools/audit/check-portal-test-file-size.ts",
     "legal:check": "npx tsx tools/legal/check-document-hashes.ts"
   },
   "devDependencies": {
