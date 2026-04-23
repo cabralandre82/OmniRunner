@@ -77,6 +77,7 @@
     "audit:bulk-assign-preview": "npx tsx tools/audit/check-bulk-assign-preview.ts",
     "audit:bulk-assign-rollback": "npx tsx tools/audit/check-bulk-assign-rollback.ts",
     "audit:coach-daily-digest": "npx tsx tools/audit/check-coach-daily-digest.ts",
+    "audit:dpo-channel": "npx tsx tools/audit/check-dpo-channel.ts",
     "audit:og-metadata": "npx tsx tools/audit/check-og-metadata.ts",
     "audit:challenge-invite-deep-link": "npx tsx tools/audit/check-challenge-invite-deep-link.ts",
     "audit:milestone-celebration": "npx tsx tools/audit/check-milestone-celebration.ts",
