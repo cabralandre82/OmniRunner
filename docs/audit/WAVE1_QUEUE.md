@@ -10,7 +10,7 @@
 
 **Progresso Batch A (Custody & Finance):** ✅ 5/5 — L05-09 ✓, L05-07 ✓, L12-05 ✓, L09-09 ✓, L04-07 ✓.
 **Progresso Batch B (Cron / Reliability):** ✅ 5/5 — L06-05 ✓, L12-09 ✓, L12-06 ✓, L12-07 ✓ (+ L07-06 co-fix), L12-08 ✓.
-**Progresso Batch C (DBA / Schema Cleanup):** 🟡 1/4 — L19-04 ✓ · pendente: L19-08, L19-06, L08-05.
+**Progresso Batch C (DBA / Schema Cleanup):** 🟡 2/4 — L19-04 ✓ · L19-08 ✓ · pendente: L19-06, L08-05.
 
 ## Critério de pontuação
 
@@ -47,8 +47,8 @@
 
 | # | id | sev | L | ep | Título |
 |---|---|---|---|---|---|
-| 11 | L19-04 | high | 19 | 3 | `idx_ledger_user` vs `idx_coin_ledger_user_created` — duplicidade sem limpeza |
-| 12 | L19-08 | high | 19 | 3 | Constraints CHECK sem nome padronizado |
+| 11 | L19-04 | high | 19 | 3 | ✅ `idx_ledger_user` vs `idx_coin_ledger_user_created` — duplicidade sem limpeza (fixed 2026-04-21) |
+| 12 | L19-08 | high | 19 | 3 | ✅ Constraints CHECK sem nome padronizado (fixed 2026-04-21) |
 | 13 | L19-06 | high | 19 | 3 | JSONB em `audit_logs.metadata` sem índice GIN |
 | 14 | L08-05 | high | 8 | 3 | Views de progressão sem filtro de atletas inativos |
 
