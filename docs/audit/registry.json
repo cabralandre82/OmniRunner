@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T14:21:19.288Z",
+  "generated_at": "2026-04-23T15:49:26.719Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 147,
-    "fix-pending": 200,
+    "fixed": 148,
+    "fix-pending": 199,
     "in-progress": 1
   },
   "by_wave": {
@@ -11332,22 +11332,37 @@
       "lens": 23,
       "title": "\"Corrida de teste\" (time trial) agendada",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "testing",
         "personas",
         "coach"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "omni_runner/lib/domain/value_objects/time_trial_protocol.dart",
+        "omni_runner/lib/domain/entities/time_trial_result_entity.dart",
+        "omni_runner/lib/domain/services/time_trial_threshold_estimator.dart",
+        "omni_runner/lib/domain/services/time_trial_scheduler.dart",
+        "omni_runner/test/domain/services/time_trial_threshold_estimator_test.dart",
+        "omni_runner/test/domain/services/time_trial_scheduler_test.dart",
+        "tools/audit/check-time-trial.ts",
+        "docs/runbooks/TIME_TRIAL_RUNBOOK.md",
+        "package.json"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-time-trial.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:50e4eb4"
+      ],
       "owner": "unassigned",
-      "runbook": null,
+      "runbook": "docs/runbooks/TIME_TRIAL_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
