@@ -6293,26 +6293,40 @@
       "lens": 11,
       "title": "sqlcipher_flutter_libs: ^0.7.0+eol — \"eol\" = end of life",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
-        "reliability"
+        "reliability",
+        "supply-chain",
+        "fixed"
       ],
-      "files": [],
+      "files": [
+        "omni_runner/pubspec.yaml",
+        "tools/audit/check-sqlcipher-eol.ts",
+        "docs/adr/009-sqlcipher-eol-migration.md",
+        "docs/runbooks/SQLCIPHER_EOL_RUNBOOK.md",
+        "package.json",
+        ".github/dependabot.yml"
+      ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-sqlcipher-eol.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "local/6c661f7 — fix(mobile/deps): pin sqlcipher_flutter_libs + EOL CI guard (L11-07)"
+      ],
+      "owner": "mobile",
+      "runbook": "docs/runbooks/SQLCIPHER_EOL_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Pin-and-watch posture (ADR-009), not a full migration. The acute supply-chain risk of an EOL package is 'a transitive name-squat publishes as 0.7.1+malicious and pub get silently picks it up' — the exact pin + CI guard kills that. Residual 'CVE exposure' on the frozen SQLCipher binaries handled by a watch protocol (GHSA feeds + ADR-009 exit criteria: CVSS>=7.0 on exercised path / Flutter 4 NDK deprecation / store rejection / security review / customer contract). Migration to sqlite3_flutter_libs + app-layer AES-GCM (Option A in ADR-009) queued for Onda 2 — closes C-03 PRAGMA key injection as side-effect.\n\nThree-layer defence: (1) Exact pin `sqlcipher_flutter_libs: 0.7.0+eol` in omni_runner/pubspec.yaml (no caret) with 10-line warning block citing L11-07/ADR/runbook. (2) ADR-009 with threat-model (3 CVE categories: KDF already mitigated via PRAGMA raw-hex + secure-storage key; SQL parser = medium residual; memory safety = low residual but high impact), 3 evaluated migration options (A sqlite3_flutter_libs + AES-GCM preferred/L effort; B CMake SQLCipher fork M effort; C community fork rejected — just moves supply-chain risk), 5 exit criteria. (3) Operational runbook with 7 playbooks (upgrade-request, CVE-fires, dependabot-PR, CI-guard-fails, execute-migration, fork-proposed, security-review) + detection-signals table + rollback. (4) CI guard check-sqlcipher-eol.ts enforcing 5 invariants: pin exactly 0.7.0+eol (rejects ^/~/>=/*/ranges/aliases) + warning block >=4 contiguous comment lines mentioning L11-07 + ADR present and references L11-07/SQLCipher + runbook present and references check-sqlcipher-eol + ADR-009 by file + Dependabot drift-and-storage group contains sqlcipher_flutter_libs.\n\nSmoke-tests: planted caret re-intro → pin_drift flagged with exact remediation; Dependabot ignore removal → missing_dependabot_ignore flagged; both revert clean. Verification: audit:sqlcipher-eol green, audit:verify 348 findings, audit:email-platform 6 invariants, audit:shared-prefs-sensitive-keys 891 dart files, audit:npm-dependency-pinning 8 criticals, flutter analyze no issues, flutter pub deps resolves 0.7.0+eol exactly. Cross-refs: L11-06 (same philosophy NPM side), L11-05 (DB key via FlutterSecureStorage under PrefsSafeKey), L11-08 (future trigger via Flutter SDK bump = ADR-009 exit criterion #2), L01-30/31 (ProGuard §7 Drift+SQLCipher rules stay correct for pinned version), C-03 PRAGMA key raw-hex (closes via Option A migration)."
     },
     {
       "id": "L11-08",
