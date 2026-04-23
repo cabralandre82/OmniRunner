@@ -4,23 +4,34 @@ audit_ref: "5.5"
 lens: 5
 title: "Challenge: ganhador de zero participantes"
 severity: high
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
-tags: ["finance", "mobile", "testing"]
-files: []
-correction_type: process
+fixed_at: 2026-04-23
+closed_at: 2026-04-23
+tags: ["challenge", "sql", "rpc", "atomic", "settlement"]
+files:
+  - supabase/migrations/20260421470000_l05_05_zero_winner_challenge_settlement.sql
+  - tools/audit/check-zero-winner-challenge.ts
+correction_type: rpc
 test_required: true
-tests: []
+tests:
+  - tools/audit/check-zero-winner-challenge.ts
 linked_issues: []
-linked_prs: []
-owner: unassigned
+linked_prs:
+  - 29098d7
+owner: challenges
 runbook: null
 effort_points: 3
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  RPC atômica `fn_settle_zero_winner_challenge` (SECURITY DEFINER,
+  search_path pinned) detecta challenges sem participantes elegíveis e
+  retorna o stake aos depositantes via reverse_burn helpers em vez de
+  premiar um "ganhador fantasma". Migration 20260421470000 + commit
+  29098d7. Reconciliação de wallets validada por self-test.
 ---
 # [L05-05] Challenge: ganhador de zero participantes
 > **Lente:** 5 — CPO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fix-pending

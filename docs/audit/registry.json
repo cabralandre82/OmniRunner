@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T23:11:53.348Z",
+  "generated_at": "2026-04-23T23:25:39.536Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 194,
-    "fix-pending": 145,
+    "fixed": 199,
+    "fix-pending": 140,
     "in-progress": 1,
     "wont-fix": 7,
     "safe": 1
@@ -3599,30 +3599,38 @@
       "lens": 5,
       "title": "Challenge/Championship: participante pode retirar-se (withdraw) durante disputa — sem regra de cutoff",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-23T00:00:00.000Z",
+      "closed_at": "2026-04-23T00:00:00.000Z",
       "tags": [
-        "edge-function",
+        "challenge",
+        "sql",
         "migration",
-        "performance",
-        "reliability"
+        "cutoff",
+        "fairness"
       ],
       "files": [
-        "supabase/functions/challenge-withdraw/index.ts"
+        "supabase/migrations/20260421460000_l05_04_challenge_withdraw_cutoff.sql",
+        "tools/audit/check-challenge-withdraw-cutoff.ts"
       ],
-      "correction_type": "process",
+      "correction_type": "schema",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-challenge-withdraw-cutoff.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "d929792"
+      ],
+      "owner": "challenges",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Migration 20260421460000_l05_04_challenge_withdraw_cutoff.sql adiciona\n`public.challenges.withdraw_cutoff_hours` (integer NOT NULL DEFAULT 48,\nCHECK BETWEEN 0 AND 168). Duel-style challenges (`type='one_vs_one'`)\nrecebem backfill 0 (duel refund/cancellation é escopo de L05-06).\n`supabase/functions/challenge-withdraw/index.ts` consulta a coluna e\nrejeita o withdraw quando faltam menos horas que o cutoff. Self-test\nno migration valida default, CHECK e backfill. Commit d929792.\n"
     },
     {
       "id": "L05-05",
@@ -3630,27 +3638,38 @@
       "lens": 5,
       "title": "Challenge: ganhador de zero participantes",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-23T00:00:00.000Z",
+      "closed_at": "2026-04-23T00:00:00.000Z",
       "tags": [
-        "finance",
-        "mobile",
-        "testing"
+        "challenge",
+        "sql",
+        "rpc",
+        "atomic",
+        "settlement"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260421470000_l05_05_zero_winner_challenge_settlement.sql",
+        "tools/audit/check-zero-winner-challenge.ts"
+      ],
+      "correction_type": "rpc",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-zero-winner-challenge.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "29098d7"
+      ],
+      "owner": "challenges",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "RPC atômica `fn_settle_zero_winner_challenge` (SECURITY DEFINER,\nsearch_path pinned) detecta challenges sem participantes elegíveis e\nretorna o stake aos depositantes via reverse_burn helpers em vez de\npremiar um \"ganhador fantasma\". Migration 20260421470000 + commit\n29098d7. Reconciliação de wallets validada por self-test.\n"
     },
     {
       "id": "L05-06",
@@ -10132,30 +10151,43 @@
       "lens": 21,
       "title": "Ausência de \"training load\" / TSS / CTL / ATL",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "integration",
-        "mobile",
-        "migration",
-        "performance",
-        "personas",
-        "athlete-pro"
+        "athlete-pro",
+        "training-load",
+        "pure-domain",
+        "tss",
+        "ctl-atl"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "portal/src/lib/training-load/types.ts",
+        "portal/src/lib/training-load/tss.ts",
+        "portal/src/lib/training-load/rolling.ts",
+        "portal/src/lib/training-load/index.ts",
+        "tools/audit/check-training-load.ts"
+      ],
+      "correction_type": "domain-module",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/training-load/tss.test.ts",
+        "portal/src/lib/training-load/rolling.test.ts",
+        "tools/audit/check-training-load.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "7ace577"
+      ],
+      "owner": "athlete-pro",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Módulo pure-domain `portal/src/lib/training-load/` exporta\nconstantes canônicas (`CTL_TAU_DAYS=42`, `ATL_TAU_DAYS=7`,\n`TSS_MAX_PER_SESSION=500`, `IF_MAX=1.3`), `computeSessionTss`\n(rTSS > hrTSS > fallback), `rollupDailyTss`, `buildLoadSeries`\n(EWMA com seed opcional), `classifyTrainingZone` e\n`computeCtlRampRate`. Zero IO, determinístico. Vitest tests\ncobrem todos os caminhos. 59 invariantes via\n`audit:training-load`. Commit 7ace577.\n"
     },
     {
       "id": "L21-05",
@@ -10163,29 +10195,38 @@
       "lens": 21,
       "title": "Zonas de treino (pace/HR) não personalizáveis",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "edge-function",
-        "migration",
-        "testing",
-        "personas",
-        "athlete-pro"
+        "athlete-pro",
+        "training-zones",
+        "sql",
+        "rpc",
+        "personalization"
       ],
-      "files": [],
-      "correction_type": "test",
+      "files": [
+        "supabase/migrations/20260421690000_l21_05_athlete_zones.sql",
+        "tools/audit/check-athlete-zones.ts"
+      ],
+      "correction_type": "rpc",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-athlete-zones.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "c2a0edd"
+      ],
+      "owner": "athlete-pro",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Migration introduz `fn_validate_pace_zones` /\n`fn_validate_hr_zones` (IMMUTABLE, 3-7 zonas ordenadas, bounds\nfisiológicos), tabela `public.athlete_zones` (JSONB pace/HR +\nLTHR/HRmax/VO2max + versioning), tabela append-only\n`public.athlete_zone_history` com triggers de imutabilidade e\nsnapshot. RPCs SECURITY DEFINER: `fn_zones_compute_from_anchors`\n(Daniels/Friel), `fn_zones_set` (upsert com ownership check\nathlete-self OR group-coach), `fn_zones_classify_pace/_hr`. 54\ninvariantes via `audit:athlete-zones`. Commit c2a0edd.\n"
     },
     {
       "id": "L21-06",
@@ -10651,27 +10692,41 @@
       "lens": 22,
       "title": "Onboarding não inclui \"primeira corrida guiada\"",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "mobile",
-        "personas",
-        "athlete-amateur"
+        "athlete-amateur",
+        "onboarding",
+        "pure-domain",
+        "state-machine"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "portal/src/lib/first-run-onboarding/types.ts",
+        "portal/src/lib/first-run-onboarding/machine.ts",
+        "portal/src/lib/first-run-onboarding/resume.ts",
+        "portal/src/lib/first-run-onboarding/index.ts",
+        "tools/audit/check-first-run-onboarding.ts"
+      ],
+      "correction_type": "domain-module",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/first-run-onboarding/machine.test.ts",
+        "tools/audit/check-first-run-onboarding.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "430fb53"
+      ],
+      "owner": "athlete-amateur",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Máquina de estados pura `portal/src/lib/first-run-onboarding/`\ncom 10 estados, 11 eventos, `TERMINAL_STATES`, `STATE_PROGRESS`\n0–100 %. Reducer total (ignora eventos ilegais), trata\n`strava_connection_failed` com rewind e error-payload, conta\n`skipCount` com cap, gerencia `celebratedAt`. `evaluateResume`\ndecide nudge de re-engajamento por terminal-state, idade e\nretries (`DEFAULT_RESUME_POLICY` 3 dias / 3 retries). 26 vitest\ncases cobrem happy path, Strava failure/recovery, skip/resume,\nterminal, progress, history, resume policy. 49 invariantes via\n`audit:first-run-onboarding`. UI wiring é follow-up explícito\n(L22-01-presenter). Commit 430fb53.\n"
     },
     {
       "id": "L22-02",

@@ -4,23 +4,42 @@ audit_ref: "21.4"
 lens: 21
 title: "Ausência de \"training load\" / TSS / CTL / ATL"
 severity: critical
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
-tags: ["integration", "mobile", "migration", "performance", "personas", "athlete-pro"]
-files: []
-correction_type: process
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["athlete-pro", "training-load", "pure-domain", "tss", "ctl-atl"]
+files:
+  - portal/src/lib/training-load/types.ts
+  - portal/src/lib/training-load/tss.ts
+  - portal/src/lib/training-load/rolling.ts
+  - portal/src/lib/training-load/index.ts
+  - tools/audit/check-training-load.ts
+correction_type: domain-module
 test_required: true
-tests: []
+tests:
+  - portal/src/lib/training-load/tss.test.ts
+  - portal/src/lib/training-load/rolling.test.ts
+  - tools/audit/check-training-load.ts
 linked_issues: []
-linked_prs: []
-owner: unassigned
+linked_prs:
+  - 7ace577
+owner: athlete-pro
 runbook: null
 effort_points: 5
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Módulo pure-domain `portal/src/lib/training-load/` exporta
+  constantes canônicas (`CTL_TAU_DAYS=42`, `ATL_TAU_DAYS=7`,
+  `TSS_MAX_PER_SESSION=500`, `IF_MAX=1.3`), `computeSessionTss`
+  (rTSS > hrTSS > fallback), `rollupDailyTss`, `buildLoadSeries`
+  (EWMA com seed opcional), `classifyTrainingZone` e
+  `computeCtlRampRate`. Zero IO, determinístico. Vitest tests
+  cobrem todos os caminhos. 59 invariantes via
+  `audit:training-load`. Commit 7ace577.
 ---
 # [L21-04] Ausência de "training load" / TSS / CTL / ATL
 > **Lente:** 21 — Atleta Pro · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** fix-pending

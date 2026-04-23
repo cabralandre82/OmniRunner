@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-23 23:11:53 UTC.
+> Atualizado em 2026-04-23 23:25:39 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -112,8 +112,8 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L05-01](./findings/L05-01-swap-race-entre-accept-e-cancel-do-dono.md) | 0 | L05 · CPO | Swap: race entre accept e cancel do dono da oferta | unassigned |
 | 🔴 critical | ✅ fixed | [L05-02](./findings/L05-02-swap-nao-tem-ttl-expiracao-ofertas-ficam-para.md) | 1 | L05 · CPO | Swap não tem TTL/expiração — ofertas ficam para sempre | unassigned |
 | 🔴 critical | ✅ fixed | [L05-03](./findings/L05-03-post-api-distribute-coins-amount-max-1000-conflita.md) | 1 | L05 · CPO | POST /api/distribute-coins: amount max 1000 — conflita com grandes clubes | unassigned |
-| 🟠 high | ⏳ fix-pending | [L05-04](./findings/L05-04-challenge-championship-participante-pode-retirar-se-withdraw.md) | 1 | L05 · CPO | Challenge/Championship: participante pode retirar-se (withdraw) durante disputa — sem regra de cutoff | unassigned |
-| 🟠 high | ⏳ fix-pending | [L05-05](./findings/L05-05-challenge-ganhador-de-zero-participantes.md) | 1 | L05 · CPO | Challenge: ganhador de zero participantes | unassigned |
+| 🟠 high | ✅ fixed | [L05-04](./findings/L05-04-challenge-championship-participante-pode-retirar-se-withdraw.md) | 1 | L05 · CPO | Challenge/Championship: participante pode retirar-se (withdraw) durante disputa — sem regra de cutoff | challenges |
+| 🟠 high | ✅ fixed | [L05-05](./findings/L05-05-challenge-ganhador-de-zero-participantes.md) | 1 | L05 · CPO | Challenge: ganhador de zero participantes | challenges |
 | 🟠 high | ✅ fixed | [L05-06](./findings/L05-06-championship-champ-cancel-refund-de-badges-parcial-e.md) | 1 | L05 · CPO | Championship champ-cancel: refund de badges parcial e silencioso | unassigned |
 | 🟠 high | ✅ fixed | [L05-07](./findings/L05-07-swap-amount-minimo-us-100-inviabiliza-grupos-pequenos.md) | 1 | L05 · CPO | Swap: amount mínimo US$ 100 inviabiliza grupos pequenos | cpo+frontend |
 | 🟠 high | ✅ fixed | [L05-08](./findings/L05-08-withdraw-nenhuma-tela-de-progresso-para-pending-processing.md) | 1 | L05 · CPO | Withdraw: nenhuma tela de progresso para pending→processing→completed | unassigned |
@@ -300,8 +300,8 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L21-01](./findings/L21-01-max-speed-ms-12-5-m-s-invalida.md) | 1 | L21 · Atleta Pro | MAX_SPEED_MS = 12.5 m/s invalida velocistas profissionais | unassigned |
 | 🔴 critical | ✅ fixed | [L21-02](./findings/L21-02-max-hr-bpm-220-inferior-a-realidade-de.md) | 1 | L21 · Atleta Pro | MAX_HR_BPM = 220 inferior à realidade de atletas jovens | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L21-03](./findings/L21-03-dados-gps-e-biometricos-sem-controle-de-propriedade.md) | 1 | L21 · Atleta Pro | Dados GPS e biométricos sem controle de propriedade (dilema do patrocínio) | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L21-04](./findings/L21-04-ausencia-de-training-load-tss-ctl-atl.md) | 1 | L21 · Atleta Pro | Ausência de "training load" / TSS / CTL / ATL | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L21-05](./findings/L21-05-zonas-de-treino-pace-hr-nao-personalizaveis.md) | 1 | L21 · Atleta Pro | Zonas de treino (pace/HR) não personalizáveis | unassigned |
+| 🔴 critical | ✅ fixed | [L21-04](./findings/L21-04-ausencia-de-training-load-tss-ctl-atl.md) | 1 | L21 · Atleta Pro | Ausência de "training load" / TSS / CTL / ATL | athlete-pro |
+| 🔴 critical | ✅ fixed | [L21-05](./findings/L21-05-zonas-de-treino-pace-hr-nao-personalizaveis.md) | 1 | L21 · Atleta Pro | Zonas de treino (pace/HR) não personalizáveis | athlete-pro |
 | 🟠 high | 🚫 wont-fix | [L21-06](./findings/L21-06-polyline-gps-resolucao-baixa-5m-distancefilter.md) | 1 | L21 · Atleta Pro | Polyline GPS resolução baixa (5m distanceFilter) | mobile |
 | 🟠 high | 🚫 wont-fix | [L21-07](./findings/L21-07-sem-interoperabilidade-com-fit-real-time.md) | 1 | L21 · Atleta Pro | Sem interoperabilidade com .fit real-time | unassigned |
 | 🟠 high | 🚫 wont-fix | [L21-08](./findings/L21-08-lap-splits-manuais-inexistentes-em-tela-de-corrida.md) | 1 | L21 · Atleta Pro | Lap splits manuais inexistentes em tela de corrida | unassigned |
@@ -317,7 +317,7 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L21-18](./findings/L21-18-heart-rate-ble-drop-sem-recovery-visual.md) | 2 | L21 · Atleta Pro | Heart-rate BLE drop sem recovery visual | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L21-19](./findings/L21-19-post-run-nutrition-log-esquecido.md) | 2 | L21 · Atleta Pro | Post-run nutrition log esquecido | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L21-20](./findings/L21-20-privacy-mode-para-competicoes.md) | 2 | L21 · Atleta Pro | Privacy mode para competições | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L22-01](./findings/L22-01-onboarding-nao-inclui-primeira-corrida-guiada.md) | 1 | L22 · Atleta Amador | Onboarding não inclui "primeira corrida guiada" | unassigned |
+| 🔴 critical | ✅ fixed | [L22-01](./findings/L22-01-onboarding-nao-inclui-primeira-corrida-guiada.md) | 1 | L22 · Atleta Amador | Onboarding não inclui "primeira corrida guiada" | athlete-amateur |
 | 🔴 critical | ✅ fixed | [L22-02](./findings/L22-02-conceito-de-moeda-omnicoin-confunde-amador.md) | 1 | L22 · Atleta Amador | Conceito de "moeda / OmniCoin" confunde amador | unassigned |
 | 🔴 critical | ? safe | [L22-03](./findings/L22-03-plano-semanal-pessoal-ausente-para-solo-runner.md) | 1 | L22 · Atleta Amador | Plano semanal pessoal ausente para solo runner | product |
 | 🟠 high | 🚫 wont-fix | [L22-04](./findings/L22-04-feedback-de-ritmo-so-pos-corrida.md) | 1 | L22 · Atleta Amador | Feedback de ritmo só pós-corrida | audit-bot |

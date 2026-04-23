@@ -4,23 +4,38 @@ audit_ref: "21.5"
 lens: 21
 title: "Zonas de treino (pace/HR) não personalizáveis"
 severity: critical
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
-tags: ["edge-function", "migration", "testing", "personas", "athlete-pro"]
-files: []
-correction_type: test
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["athlete-pro", "training-zones", "sql", "rpc", "personalization"]
+files:
+  - supabase/migrations/20260421690000_l21_05_athlete_zones.sql
+  - tools/audit/check-athlete-zones.ts
+correction_type: rpc
 test_required: true
-tests: []
+tests:
+  - tools/audit/check-athlete-zones.ts
 linked_issues: []
-linked_prs: []
-owner: unassigned
+linked_prs:
+  - c2a0edd
+owner: athlete-pro
 runbook: null
 effort_points: 5
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Migration introduz `fn_validate_pace_zones` /
+  `fn_validate_hr_zones` (IMMUTABLE, 3-7 zonas ordenadas, bounds
+  fisiológicos), tabela `public.athlete_zones` (JSONB pace/HR +
+  LTHR/HRmax/VO2max + versioning), tabela append-only
+  `public.athlete_zone_history` com triggers de imutabilidade e
+  snapshot. RPCs SECURITY DEFINER: `fn_zones_compute_from_anchors`
+  (Daniels/Friel), `fn_zones_set` (upsert com ownership check
+  athlete-self OR group-coach), `fn_zones_classify_pace/_hr`. 54
+  invariantes via `audit:athlete-zones`. Commit c2a0edd.
 ---
 # [L21-05] Zonas de treino (pace/HR) não personalizáveis
 > **Lente:** 21 — Atleta Pro · **Severidade:** 🔴 Critical · **Onda:** 0 · **Status:** fix-pending
