@@ -44,6 +44,7 @@
     "audit:withdrawal-timeline": "npx tsx tools/audit/check-withdrawal-timeline.ts",
     "audit:billing-providers-encryption": "npx tsx tools/audit/check-billing-providers-encryption.ts",
     "audit:service-role-inventory": "npx tsx tools/audit/check-service-role-inventory.ts",
+    "audit:admin-approvals-sod": "npx tsx tools/audit/check-admin-approvals-sod.ts",
     "audit:challenge-invite-deep-link": "npx tsx tools/audit/check-challenge-invite-deep-link.ts",
     "audit:milestone-celebration": "npx tsx tools/audit/check-milestone-celebration.ts",
     "audit:periodization-template": "npx tsx tools/audit/check-periodization-template.ts",
