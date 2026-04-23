@@ -33,7 +33,7 @@ vi.mock("@sentry/nextjs", () => ({
   spanToJSON: () => ({}),
 }));
 
-import { withErrorHandler } from "./api-handler";
+import { withErrorHandler, type RouteParams } from "./api-handler";
 
 function makeReq(headers: Record<string, string> = {}, method = "POST") {
   const h = new Headers();
@@ -148,8 +148,16 @@ describe("withErrorHandler — throw fallback", () => {
 
 describe("withErrorHandler — context forwarding", () => {
   it("forwards { params } from Next.js dynamic routes", async () => {
-    const handler = vi.fn(async (_req: NextRequest, ctx: any) =>
-      NextResponse.json({ id: ctx?.params?.id }),
+    // L17-03 — ctx is TYPED, not `any`. The generic `TArgs` inference on
+    // withErrorHandler pulls { params: { id: string } } from the handler
+    // signature all the way through the wrapper; a wrong key here
+    // (e.g. `ctx?.params?.slug`) is a compile error.
+    const handler = vi.fn(
+      async (
+        _req: NextRequest,
+        ctx: RouteParams<{ id: string }>,
+      ): Promise<NextResponse> =>
+        NextResponse.json({ id: ctx.params.id }),
     );
     const wrapped = withErrorHandler(handler, "api.test.dyn");
     const res = await wrapped(makeReq(), { params: { id: "abc-123" } });
@@ -157,6 +165,28 @@ describe("withErrorHandler — context forwarding", () => {
     expect(handler.mock.calls[0][1]).toEqual({ params: { id: "abc-123" } });
     const body = await res.json();
     expect(body.id).toBe("abc-123");
+  });
+
+  it("L17-03 — preserves the handler signature exactly (no any)", async () => {
+    // Static route (no ctx). Calling `wrapped(req, {...})` must be a
+    // compile-time error; we verify by asserting arity at runtime.
+    const staticHandler = async (_req: NextRequest): Promise<NextResponse> =>
+      NextResponse.json({ ok: true });
+    const wrapped = withErrorHandler(staticHandler, "api.test.static");
+    expect(wrapped.length).toBe(staticHandler.length);
+
+    // Dynamic route with a specific param shape.
+    const dynHandler = async (
+      _req: NextRequest,
+      ctx: RouteParams<{ groupId: string; id: string }>,
+    ): Promise<NextResponse> =>
+      NextResponse.json({ gid: ctx.params.groupId, id: ctx.params.id });
+    const wrappedDyn = withErrorHandler(dynHandler, "api.test.nested");
+    const res = await wrappedDyn(makeReq(), {
+      params: { groupId: "g-1", id: "a-2" },
+    });
+    const body = await res.json();
+    expect(body).toEqual({ gid: "g-1", id: "a-2" });
   });
 });
 

@@ -18,6 +18,7 @@
     "audit:audit-logs-append-only": "npx tsx tools/audit/check-audit-logs-append-only.ts",
     "audit:strava-oauth-state": "npx tsx tools/audit/check-strava-oauth-state.ts",
     "audit:logger-sentry-capture": "npx tsx tools/audit/check-logger-sentry-capture.ts",
+    "audit:api-handler-types": "npx tsx tools/audit/check-api-handler-types.ts",
     "legal:check": "npx tsx tools/legal/check-document-hashes.ts"
   },
   "devDependencies": {

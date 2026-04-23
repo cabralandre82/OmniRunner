@@ -63,9 +63,27 @@ import * as Sentry from "@sentry/nextjs";
 import { apiError } from "./api/errors";
 import { logger } from "./logger";
 
-export type ApiHandler = (
+/**
+ * L17-03 — canonical shape of the second arg App-Router passes to a
+ * dynamic route handler (`/api/foo/[id]` → `{ params: { id: string } }`).
+ * Kept deliberately permissive on the value type because some routes
+ * nest (`[groupId]/[id]`) and the wrapper MUST forward verbatim.
+ */
+export type RouteParams<P extends Record<string, string | string[]> = Record<string, string | string[]>> = {
+  params: P;
+};
+
+/**
+ * L17-03 — the top-level route handler contract. Uses a tuple generic
+ * parameter `TArgs` (instead of `any[]`) so the wrapper preserves the
+ * wrapped handler's signature end-to-end: static routes have
+ * `TArgs = []`, dynamic routes have `TArgs = [RouteParams<...>]`. The
+ * inference is driven from the handler passed into `withErrorHandler`
+ * — nothing in app/api/** needs to annotate TArgs manually.
+ */
+export type ApiHandler<TArgs extends readonly unknown[] = readonly unknown[]> = (
   req: NextRequest,
-  context?: unknown,
+  ...routeArgs: TArgs
 ) => Promise<NextResponse>;
 
 /** Mapeia um erro lançado pelo handler para uma resposta HTTP custom.
@@ -86,17 +104,23 @@ export interface WithErrorHandlerOptions {
  * Wraps a Next.js App-Router handler with logging, Sentry capture,
  * `x-request-id` propagation and a canonical 500 envelope.
  *
- * The second argument (`routeArgs`) is forwarded verbatim — Next.js
- * supplies `{ params }` for dynamic segments (`[id]`, `[slug]`).
+ * L17-03 — the second argument (`routeArgs`) is forwarded verbatim —
+ * Next.js supplies `{ params }` for dynamic segments (`[id]`, `[slug]`).
+ * We now use a generic `TArgs extends readonly unknown[]` tuple so the
+ * wrapped handler's signature is preserved end-to-end (no `any` leak):
+ * the caller's `ctx: { params: ... }` annotation survives the wrapper
+ * and is still type-checked.
  */
-export function withErrorHandler<
-  H extends (req: NextRequest, ...routeArgs: any[]) => Promise<NextResponse>,
->(handler: H, routeName: string, options?: WithErrorHandlerOptions): H {
+export function withErrorHandler<TArgs extends readonly unknown[]>(
+  handler: ApiHandler<TArgs>,
+  routeName: string,
+  options?: WithErrorHandlerOptions,
+): ApiHandler<TArgs> {
   const fallbackMessage = options?.fallbackMessage ?? "Internal server error";
 
-  const wrapped = async (
+  const wrapped: ApiHandler<TArgs> = async (
     req: NextRequest,
-    ...routeArgs: any[]
+    ...routeArgs: TArgs
   ): Promise<NextResponse> => {
     const incomingId = req.headers.get("x-request-id");
     const requestId = incomingId && incomingId.length > 0
@@ -163,5 +187,5 @@ export function withErrorHandler<
     }
   };
 
-  return wrapped as unknown as H;
+  return wrapped;
 }
