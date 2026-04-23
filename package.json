@@ -60,6 +60,7 @@
     "audit:installments-br": "npx tsx tools/audit/check-installments-br.ts",
     "audit:workout-template-library": "npx tsx tools/audit/check-workout-template-library.ts",
     "audit:geofenced-checkin": "npx tsx tools/audit/check-geofenced-checkin.ts",
+    "audit:athlete-subscriptions": "npx tsx tools/audit/check-athlete-subscriptions.ts",
     "audit:og-metadata": "npx tsx tools/audit/check-og-metadata.ts",
     "audit:challenge-invite-deep-link": "npx tsx tools/audit/check-challenge-invite-deep-link.ts",
     "audit:milestone-celebration": "npx tsx tools/audit/check-milestone-celebration.ts",
