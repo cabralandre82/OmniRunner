@@ -10668,29 +10668,33 @@
       "lens": 22,
       "title": "Plano semanal pessoal ausente para solo runner",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "safe",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "edge-function",
-        "migration",
-        "reliability",
+        "scope-mismatch",
         "personas",
-        "athlete-amateur"
+        "athlete-amateur",
+        "coach-driven"
       ],
-      "files": [],
-      "correction_type": "code",
-      "test_required": true,
+      "files": [
+        "supabase/migrations/20260407000000_training_plan_module.sql",
+        "portal/src/lib/periodization/types.ts",
+        "portal/src/lib/periodization/generate-periodization.ts"
+      ],
+      "correction_type": "none",
+      "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "product",
       "runbook": null,
-      "effort_points": 5,
+      "effort_points": 0,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fechado como scope-mismatch. O produto Omni Runner é voltado para assessorias esportivas — todo amador está em uma coaching_groups com coach que prescreve o plano. A persona 'solo runner sem coach' não existe neste produto. Caminho real: coach usa L23-06 periodization wizard + L23-05 workout template library para montar o plano que chega ao atleta via training_plan_weeks / training_plan_workouts (migration 20260407000000). Sem código novo, sem testes novos."
     },
     {
       "id": "L22-04",
