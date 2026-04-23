@@ -52,7 +52,7 @@ async function _post(request: NextRequest) {
   try {
     await assertSubsystemEnabled(
       "distribute_coins.enabled",
-      "Distribuição de coins temporariamente suspensa pelo time de ops.",
+      "Coin distribution is temporarily suspended by ops.",
     );
   } catch (e) {
     if (e instanceof FeatureDisabledError) {
@@ -120,7 +120,7 @@ async function _post(request: NextRequest) {
     .maybeSingle();
 
   if (!member) {
-    return apiNotFound(request, "Atleta não encontrado nesta assessoria");
+    return apiError(request, "ATHLETE_NOT_FOUND", "Athlete not found in this coaching group.", 404);
   }
 
   const healthy = await assertInvariantsHealthy();
@@ -195,26 +195,26 @@ async function _post(request: NextRequest) {
         if (rpcErr.code === "55P03" || msg.includes("lock_not_available")) {
           return {
             status: 503,
-            body: errorBody("LOCK_NOT_AVAILABLE", "Recurso em uso, tente novamente em instantes."),
+            body: errorBody("LOCK_NOT_AVAILABLE", "Resource is locked, please retry in a moment."),
             headers: { "Retry-After": "2" },
           };
         }
         if (msg.includes("CUSTODY_FAILED") || rpcErr.code === "P0002") {
           return {
             status: 422,
-            body: errorBody("CUSTODY_FAILED", "Lastro insuficiente na custódia da assessoria. Deposite mais lastro antes de emitir coins."),
+            body: errorBody("CUSTODY_FAILED", "Insufficient custody backing. Top up custody before distributing coins."),
           };
         }
         if (msg.includes("INVENTORY_INSUFFICIENT") || rpcErr.code === "P0003") {
           return {
             status: 422,
-            body: errorBody("INVENTORY_INSUFFICIENT", "Saldo insuficiente de OmniCoins"),
+            body: errorBody("INVENTORY_INSUFFICIENT", "Insufficient OmniCoin balance."),
           };
         }
         if (msg.includes("INVALID_AMOUNT") || msg.includes("MISSING_REF_ID") || rpcErr.code === "P0001") {
           return {
             status: 400,
-            body: errorBody("VALIDATION_FAILED", "Parâmetros inválidos"),
+            body: errorBody("VALIDATION_FAILED", "Invalid parameters."),
           };
         }
         logger.error("emit_coins_atomic failed", rpcErr, {
@@ -225,7 +225,7 @@ async function _post(request: NextRequest) {
         });
         return {
           status: 500,
-          body: errorBody("INTERNAL_ERROR", "Erro ao distribuir coins"),
+          body: errorBody("INTERNAL_ERROR", "Coin distribution failed."),
         };
       }
 
