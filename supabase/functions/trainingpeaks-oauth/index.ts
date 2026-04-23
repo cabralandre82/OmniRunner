@@ -4,6 +4,7 @@ import { startTimer, logRequest, logError } from "../_shared/obs.ts";
 import { CORS_HEADERS, handleCors } from "../_shared/cors.ts";
 import { jsonOk, jsonErr } from "../_shared/http.ts";
 import { requireUser, AuthError } from "../_shared/auth.ts";
+import { logIntegrationEvent } from "../_shared/integration_telemetry.ts";
 
 const FN = "trainingpeaks-oauth";
 const TP_CLIENT_ID = Deno.env.get("TRAININGPEAKS_CLIENT_ID") ?? "";
@@ -86,6 +87,15 @@ serve(async (req: Request) => {
         `${TP_AUTH_URL}?response_type=code&client_id=${TP_CLIENT_ID}` +
         `&redirect_uri=${encodeURIComponent(TP_REDIRECT_URI)}` +
         `&scope=workouts:read workouts:write athlete:read&state=${encodeURIComponent(signedState)}`;
+      const telemetryDb = createClient(SUPABASE_URL, SERVICE_KEY);
+      const [tpUserId] = statePayload.split(":");
+      await logIntegrationEvent(telemetryDb, {
+        provider: "trainingpeaks",
+        event_type: "oauth_start",
+        status: "success",
+        user_id: tpUserId || null,
+        metadata: { request_id: requestId },
+      });
       return Response.redirect(authUrl, 302);
     }
 
@@ -141,6 +151,16 @@ serve(async (req: Request) => {
         status = 502;
         errorCode = "TOKEN_EXCHANGE_FAILED";
         const errText = await tokenRes.text();
+        const telemetryDb = createClient(SUPABASE_URL, SERVICE_KEY);
+        await logIntegrationEvent(telemetryDb, {
+          provider: "trainingpeaks",
+          event_type: "oauth_callback_error",
+          status: "error",
+          user_id: userId || null,
+          error_code: `HTTP_${tokenRes.status}`,
+          latency_ms: elapsed(),
+          metadata: { request_id: requestId },
+        });
         return jsonErr(502, "TOKEN_EXCHANGE_FAILED", errText.substring(0, 200), requestId);
       }
 
@@ -182,8 +202,27 @@ serve(async (req: Request) => {
       if (upsertErr) {
         status = 500;
         errorCode = "DB_UPSERT_FAILED";
+        await logIntegrationEvent(db, {
+          provider: "trainingpeaks",
+          event_type: "oauth_callback_error",
+          status: "error",
+          user_id: userId,
+          error_code: "DB_UPSERT_FAILED",
+          latency_ms: elapsed(),
+          metadata: { request_id: requestId },
+        });
         return jsonErr(500, "DB_UPSERT_FAILED", upsertErr.message, requestId);
       }
+
+      await logIntegrationEvent(db, {
+        provider: "trainingpeaks",
+        event_type: "oauth_callback_success",
+        status: "success",
+        user_id: userId,
+        external_id: tpUserId,
+        latency_ms: elapsed(),
+        metadata: { request_id: requestId, group_id: groupId },
+      });
 
       return new Response(
         `<html><body><h2>TrainingPeaks vinculado com sucesso!</h2><p>Volte ao aplicativo.</p><script>window.close();</script></body></html>`,
@@ -251,6 +290,15 @@ serve(async (req: Request) => {
       if (!refreshRes.ok) {
         status = 502;
         errorCode = "REFRESH_FAILED";
+        await logIntegrationEvent(db, {
+          provider: "trainingpeaks",
+          event_type: "token_refresh_failure",
+          status: "error",
+          user_id,
+          error_code: `HTTP_${refreshRes.status}`,
+          latency_ms: elapsed(),
+          metadata: { request_id: requestId },
+        });
         return jsonErr(502, "REFRESH_FAILED", "Token refresh failed", requestId);
       }
 
@@ -264,6 +312,15 @@ serve(async (req: Request) => {
         })
         .eq("athlete_user_id", user_id)
         .eq("provider", "trainingpeaks");
+
+      await logIntegrationEvent(db, {
+        provider: "trainingpeaks",
+        event_type: "token_refresh_success",
+        status: "success",
+        user_id,
+        latency_ms: elapsed(),
+        metadata: { request_id: requestId },
+      });
 
       return jsonOk({ refreshed: true }, requestId);
     }

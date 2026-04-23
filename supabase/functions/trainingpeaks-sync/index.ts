@@ -4,6 +4,7 @@ import { startTimer, logRequest, logError } from "../_shared/obs.ts";
 import { handleCors } from "../_shared/cors.ts";
 import { jsonOk, jsonErr } from "../_shared/http.ts";
 import { requireUser, AuthError } from "../_shared/auth.ts";
+import { logIntegrationEvent } from "../_shared/integration_telemetry.ts";
 
 const FN = "trainingpeaks-sync";
 const TP_API = "https://api.trainingpeaks.com/v1";
@@ -222,6 +223,14 @@ serve(async (req: Request) => {
               pushed_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             }).eq("id", sync.id);
+            await logIntegrationEvent(db, {
+              provider: "trainingpeaks",
+              event_type: "sync_success",
+              status: "success",
+              user_id: sync.athlete_user_id,
+              external_id: tpResult.Id?.toString() ?? null,
+              metadata: { assignment_id: sync.assignment_id, request_id: requestId },
+            });
             return true;
           } else {
             const errText = await tpRes.text();
@@ -230,6 +239,14 @@ serve(async (req: Request) => {
               error_message: `TP API ${tpRes.status}: ${errText.substring(0, 200)}`,
               updated_at: new Date().toISOString(),
             }).eq("id", sync.id);
+            await logIntegrationEvent(db, {
+              provider: "trainingpeaks",
+              event_type: "sync_failure",
+              status: "error",
+              user_id: sync.athlete_user_id,
+              error_code: `HTTP_${tpRes.status}`,
+              metadata: { assignment_id: sync.assignment_id, request_id: requestId },
+            });
             return false;
           }
         } catch (err) {
@@ -238,6 +255,14 @@ serve(async (req: Request) => {
             error_message: (err as Error).message?.substring(0, 200),
             updated_at: new Date().toISOString(),
           }).eq("id", sync.id);
+          await logIntegrationEvent(db, {
+            provider: "trainingpeaks",
+            event_type: "sync_failure",
+            status: "error",
+            user_id: sync.athlete_user_id,
+            error_code: "EXCEPTION",
+            metadata: { assignment_id: sync.assignment_id, request_id: requestId },
+          });
           return false;
         } finally {
           clearTimeout(timer);

@@ -9,6 +9,7 @@ import {
   haversine,
 } from "../_shared/anti_cheat.ts";
 import { withCircuitBreaker } from "../_shared/circuit_breaker.ts";
+import { logIntegrationEvent } from "../_shared/integration_telemetry.ts";
 
 /**
  * strava-webhook — Supabase Edge Function
@@ -64,6 +65,16 @@ serve(async (req: Request) => {
       const verifyToken = Deno.env.get("STRAVA_VERIFY_TOKEN") ?? "omnirunner_strava_verify";
 
       if (mode === "subscribe" && token === verifyToken && challenge) {
+        const telemetryDb = createClient(supabaseUrl, serviceKey, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+        });
+        await logIntegrationEvent(telemetryDb, {
+          provider: "strava",
+          event_type: "webhook_validated",
+          status: "success",
+          latency_ms: elapsed(),
+          metadata: { request_id: requestId },
+        });
         return new Response(JSON.stringify({ "hub.challenge": challenge }), {
           status: 200,
           headers: { "Content-Type": "application/json" },
@@ -122,9 +133,48 @@ serve(async (req: Request) => {
       const msg = enqueueErr.message ?? "";
       // ON CONFLICT / duplicate → already queued, still return 200
       if (msg.includes("duplicate") || msg.includes("unique") || msg.includes("conflict")) {
+        await logIntegrationEvent(db, {
+          provider: "strava",
+          event_type: "webhook_dedup",
+          status: "ignored",
+          external_id: String(event.object_id),
+          latency_ms: elapsed(),
+          metadata: {
+            owner_id: event.owner_id,
+            aspect_type: event.aspect_type,
+            request_id: requestId,
+          },
+        });
         return jsonOk({ queued: false, reason: "already_queued", owner_id: event.owner_id, object_id: event.object_id }, requestId);
       }
       console.error(JSON.stringify({ request_id: requestId, fn: FN, error_code: "ENQUEUE_FAILED", detail: msg }));
+      await logIntegrationEvent(db, {
+        provider: "strava",
+        event_type: "webhook_received",
+        status: "error",
+        external_id: String(event.object_id),
+        error_code: "ENQUEUE_FAILED",
+        latency_ms: elapsed(),
+        metadata: {
+          owner_id: event.owner_id,
+          aspect_type: event.aspect_type,
+          request_id: requestId,
+        },
+      });
+    } else {
+      await logIntegrationEvent(db, {
+        provider: "strava",
+        event_type: "webhook_received",
+        status: "success",
+        external_id: String(event.object_id),
+        latency_ms: elapsed(),
+        metadata: {
+          owner_id: event.owner_id,
+          aspect_type: event.aspect_type,
+          subscription_id: event.subscription_id ?? null,
+          request_id: requestId,
+        },
+      });
     }
 
     return jsonOk({
@@ -168,6 +218,13 @@ export async function processStravaEvent(
   const stravaActivityId = event.object_id;
 
   if (event.aspect_type !== "create") {
+    await logIntegrationEvent(db, {
+      provider: "strava",
+      event_type: "session_ignored",
+      status: "ignored",
+      external_id: String(stravaActivityId),
+      metadata: { reason: `aspect_${event.aspect_type}`, request_id: requestId },
+    });
     return { imported: false, ignored: true, reason: `aspect_${event.aspect_type}` };
   }
 
@@ -178,7 +235,20 @@ export async function processStravaEvent(
     .eq("strava_athlete_id", stravaAthleteId)
     .maybeSingle();
 
-  if (!conn) return { imported: false, ignored: true, reason: "no_connection" };
+  if (!conn) {
+    await logIntegrationEvent(db, {
+      provider: "strava",
+      event_type: "session_ignored",
+      status: "ignored",
+      external_id: String(stravaActivityId),
+      metadata: {
+        reason: "no_connection",
+        strava_athlete_id: stravaAthleteId,
+        request_id: requestId,
+      },
+    });
+    return { imported: false, ignored: true, reason: "no_connection" };
+  }
 
   // 2. Check for duplicate
   const { data: existing } = await db
@@ -188,7 +258,17 @@ export async function processStravaEvent(
     .eq("strava_activity_id", stravaActivityId)
     .maybeSingle();
 
-  if (existing) return { imported: false, ignored: true, reason: "duplicate" };
+  if (existing) {
+    await logIntegrationEvent(db, {
+      provider: "strava",
+      event_type: "session_ignored",
+      status: "ignored",
+      user_id: conn.user_id,
+      external_id: String(stravaActivityId),
+      metadata: { reason: "duplicate", request_id: requestId },
+    });
+    return { imported: false, ignored: true, reason: "duplicate" };
+  }
 
   // 3. Get valid access token (refresh if expired)
   let accessToken = conn.access_token;
@@ -220,7 +300,18 @@ export async function processStravaEvent(
       clearTimeout(refreshTimer);
     }
 
-    if (!refreshRes.ok) return { imported: false, ignored: true, reason: "token_refresh_failed" };
+    if (!refreshRes.ok) {
+      await logIntegrationEvent(db, {
+        provider: "strava",
+        event_type: "token_refresh_failure",
+        status: "error",
+        user_id: conn.user_id,
+        error_code: `HTTP_${refreshRes.status}`,
+        external_id: String(stravaActivityId),
+        metadata: { request_id: requestId },
+      });
+      return { imported: false, ignored: true, reason: "token_refresh_failed" };
+    }
 
     const tokens = await refreshRes.json();
     accessToken = tokens.access_token;
@@ -234,6 +325,15 @@ export async function processStravaEvent(
         updated_at: new Date().toISOString(),
       })
       .eq("user_id", conn.user_id);
+
+    await logIntegrationEvent(db, {
+      provider: "strava",
+      event_type: "token_refresh_success",
+      status: "success",
+      user_id: conn.user_id,
+      external_id: String(stravaActivityId),
+      metadata: { request_id: requestId },
+    });
   }
 
   // 4. Fetch activity details
@@ -399,6 +499,22 @@ export async function processStravaEvent(
       is_verified: !hasCritical, source_type: activity.type,
     },
   }).then(() => {}, () => {});
+
+  await logIntegrationEvent(db, {
+    provider: "strava",
+    event_type: "session_imported",
+    status: "success",
+    user_id: conn.user_id,
+    external_id: String(stravaActivityId),
+    metadata: {
+      session_id: sessionId,
+      activity_type: activity.type,
+      distance_m: activity.distance,
+      is_verified: !hasCritical,
+      integrity_flags: uniqueFlags,
+      request_id: requestId,
+    },
+  });
 
   return { imported: true, session_id: sessionId };
 }
