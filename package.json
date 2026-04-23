@@ -69,6 +69,7 @@
     "audit:omnicoin-narrative": "npx tsx tools/audit/check-omnicoin-narrative.ts",
     "audit:workout-messages": "npx tsx tools/audit/check-workout-messages.ts",
     "audit:api-error-i18n": "npx tsx tools/audit/check-api-error-i18n.ts",
+    "audit:onboarding-flows": "npx tsx tools/audit/check-onboarding-flows.ts",
     "audit:og-metadata": "npx tsx tools/audit/check-og-metadata.ts",
     "audit:challenge-invite-deep-link": "npx tsx tools/audit/check-challenge-invite-deep-link.ts",
     "audit:milestone-celebration": "npx tsx tools/audit/check-milestone-celebration.ts",

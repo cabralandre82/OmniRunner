@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useMemo, useRef, useCallback, useState } from "react";
 import { useOnboarding } from "./use-onboarding";
 import { OnboardingStep } from "./onboarding-step";
+import type { CoachingRole, OnboardingStepId } from "@/lib/onboarding-flows";
 
 const STEPS = [
   {
@@ -128,13 +129,32 @@ const STEPS = [
   },
 ];
 
-export function OnboardingOverlay() {
-  const { currentStep, totalSteps, isActive, next, prev, skip, complete } = useOnboarding();
+export interface OnboardingOverlayProps {
+  /**
+   * L07-02: role of the authenticated staff user — when provided,
+   * the tour filters to only the steps visible to that role.
+   * `coach` and `assistant` never see custody/clearing/distributions/
+   * financial steps. Leaving unset falls back to the full
+   * admin_master superset.
+   */
+  role?: CoachingRole | null;
+}
+
+export function OnboardingOverlay({ role = null }: OnboardingOverlayProps = {}) {
+  const { currentStep, totalSteps, flow, isActive, next, prev, skip, complete } =
+    useOnboarding({ role });
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [spotlightRect, setSpotlightRect] = useState<DOMRect | null>(null);
   const rafRef = useRef<number | null>(null);
 
-  const step = STEPS[currentStep];
+  const stepsById = useMemo(() => {
+    const map = new Map<OnboardingStepId, (typeof STEPS)[number]>();
+    for (const s of STEPS) map.set(s.id as OnboardingStepId, s);
+    return map;
+  }, []);
+
+  const currentId = flow[currentStep];
+  const step = currentId ? stepsById.get(currentId) : undefined;
   const hasTarget = step?.targetSelector ?? false;
 
   const updateTargetRect = useCallback(() => {
