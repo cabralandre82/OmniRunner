@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { buildOgMetadata } from "@/lib/og-metadata";
+
 const APP_SCHEME = "omnirunner";
 const STORE_URL_ANDROID =
   "https://play.google.com/store/apps/details?id=com.omnirunner.omni_runner";
@@ -11,17 +13,14 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  return {
-    title: "Desafio — Omni Runner",
-    description:
-      "Você recebeu um convite para um desafio no Omni Runner. Abra o app para participar!",
-    openGraph: {
-      title: "Desafio no Omni Runner",
-      description: "Toque para abrir o desafio no app.",
-      type: "website",
-      url: `https://omnirunner.app/challenge/${params.id}`,
-    },
-  };
+  const shortId = (params.id ?? "").slice(0, 8).toUpperCase();
+  return buildOgMetadata({
+    path: `/challenge/${params.id}`,
+    title: "Desafio aberto — Omni Runner",
+    description: shortId
+      ? `Aceite o desafio #${shortId} no Omni Runner. Abra o app para participar.`
+      : "Você recebeu um convite para um desafio no Omni Runner. Abra o app para participar.",
+  });
 }
 
 export default function ChallengeLandingPage({ params }: Props) {

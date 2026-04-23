@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { buildOgMetadata } from "@/lib/og-metadata";
+
 const APP_SCHEME = "omnirunner";
 const STORE_URL_ANDROID =
   "https://play.google.com/store/apps/details?id=com.omnirunner.omni_runner";
@@ -11,17 +13,14 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  return {
-    title: "Convite — Omni Runner",
-    description:
-      "Você foi convidado para uma assessoria no Omni Runner. Abra o app para se juntar!",
-    openGraph: {
-      title: "Convite para Assessoria — Omni Runner",
-      description: "Toque para aceitar o convite no app.",
-      type: "website",
-      url: `https://omnirunner.app/invite/${params.code}`,
-    },
-  };
+  const code = (params.code ?? "").slice(0, 10).toUpperCase();
+  return buildOgMetadata({
+    path: `/invite/${params.code}`,
+    title: "Convite para Assessoria — Omni Runner",
+    description: code
+      ? `Use o código ${code} no Omni Runner para entrar na assessoria que te convidou.`
+      : "Você foi convidado para uma assessoria no Omni Runner. Abra o app para aceitar.",
+  });
 }
 
 export default function InviteLandingPage({ params }: Props) {
