@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T19:00:03.574Z",
+  "generated_at": "2026-04-23T23:11:53.348Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,10 +10,11 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 160,
-    "fix-pending": 180,
+    "fixed": 194,
+    "fix-pending": 145,
     "in-progress": 1,
-    "wont-fix": 7
+    "wont-fix": 7,
+    "safe": 1
   },
   "by_wave": {
     "0": 15,
@@ -3090,8 +3091,6 @@
       "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "fixed_at": "2026-04-21",
-      "closed_at": "2026-04-21",
       "tags": [
         "lgpd",
         "integration",
@@ -3104,12 +3103,12 @@
         "supabase/migrations/20260421560000_l04_05_privacy_zones.sql",
         "tools/audit/check-privacy-zones.ts"
       ],
-      "correction_type": "code",
+      "correction_type": "process",
       "test_required": true,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
-        "local:l04-05-privacy-zones"
+        "local:b5a4720"
       ],
       "owner": "unassigned",
       "runbook": null,
@@ -3117,7 +3116,9 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Server-side privacy primitives: profiles.privacy_zones jsonb (IMMUTABLE CHECK via fn_validate_privacy_zones), PL/pgSQL IMMUTABLE helpers fn_haversine_m / fn_point_in_zones / fn_decode_polyline / fn_encode_polyline / fn_mask_polyline, and SECURITY DEFINER RPC fn_session_polyline_for_viewer que devolve raw para owner/platform_admin (loggado em portal_audit_log fail-open) e masked+head/tail trim para os demais. CI guard `npm run audit:privacy-zones` enforça 44 invariantes (2026-04-21)."
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "note": "GPS polyline privacy primitives now live server-side (the app\nno longer tracks runs itself — Strava is the single source —\nso enforcement has to happen where the polyline is stored).\n- `profiles.privacy_zones jsonb` with IMMUTABLE shape\n  validator (max 5 zones, radius clamped [50, 500] m).\n- Pure helpers: `fn_haversine_m`, `fn_point_in_zones`,\n  `fn_decode_polyline`, `fn_encode_polyline_value`,\n  `fn_encode_polyline`, `fn_mask_polyline(polyline, zones,\n  trim_start_m default 200, trim_end_m default 200)`.\n- Viewer-scoped accessor\n  `fn_session_polyline_for_viewer(session_id)` —\n  owner + platform_admin get raw; everyone else gets the\n  mask with default 200m head/tail trim + owner's\n  privacy_zones. platform_admin reads are audit-logged to\n  `portal_audit_log` (`session.polyline.admin_view`);\n  audit failures are fail-open via RAISE WARNING so they\n  never block legitimate admin reads.\n- Self-test block covers validator accept/reject, haversine\n  sanity, decoder cardinality on Google's canonical sample,\n  encoder round-trip, and zone-filtering edge cases.\n- CI guard `npm run audit:privacy-zones` enforces 44\n  invariants.\n"
     },
     {
       "id": "L04-06",
@@ -3128,8 +3129,6 @@
       "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "fixed_at": "2026-04-21",
-      "closed_at": "2026-04-21",
       "tags": [
         "rls",
         "rate-limit",
@@ -3139,12 +3138,12 @@
         "supabase/migrations/20260421570000_l04_06_social_handles_policy.sql",
         "tools/audit/check-social-handles-policy.ts"
       ],
-      "correction_type": "code",
+      "correction_type": "process",
       "test_required": true,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
-        "local:l04-06-social-handles-policy"
+        "local:7ea0ef8"
       ],
       "owner": "unassigned",
       "runbook": null,
@@ -3152,7 +3151,9 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "fn_validate_social_handle (IMMUTABLE) enforça formato estrito (1-30 chars, [A-Za-z0-9._], sem links/slashes) via CHECK em instagram_handle/tiktok_handle. Novo profiles.profile_public jsonb (privacy-first defaults via fn_validate_profile_public). profiles.social_handles_updated_at + BEFORE UPDATE trigger fn_profiles_social_handles_rate_limit aplica rate limit configurável (default 24h, service_role isento) e grava diffs em portal_audit_log (fail-open). RPC fn_public_profile_view (STABLE SECURITY DEFINER) devolve visão viewer-scoped respeitando profile_public (handles só para owner/admin/opt-in explícito). CI guard `npm run audit:social-handles-policy` cobre 37 invariantes (2026-04-21)."
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "note": "Social-handle policy now enforced at three layers.\n- CHECK-bound format validation via\n  `fn_validate_social_handle(text)` applied to both\n  `profiles.instagram_handle` and `profiles.tiktok_handle`\n  (1-30 chars of `[A-Za-z0-9._]`, rejects http / bit.ly /\n  slashes).\n- `profiles.profile_public jsonb` with privacy-first\n  defaults (`show_instagram:false`, `show_tiktok:false`,\n  `show_pace:false`, `show_location:false`) and a shape\n  CHECK via `fn_validate_profile_public`. This decouples\n  social visibility from `display_name`, the concrete ask\n  in the finding.\n- `profiles.social_handles_updated_at` + BEFORE UPDATE\n  trigger `fn_profiles_social_handles_rate_limit` enforcing\n  a configurable min-interval\n  (`app.social_handle_min_interval_seconds`, default 24h,\n  service_role waived), raising P0001 on violation, and\n  writing `profile.social_handle_changed` rows into\n  `portal_audit_log` for anti-impersonation investigations\n  (fail-open audit).\n- `fn_public_profile_view(uuid)` viewer-scoped accessor —\n  handles returned only to self / platform_admin / when the\n  owner toggled the corresponding `show_*` flag; also\n  surfaces `show_pace` / `show_location` so feeds honour\n  them without re-reading profiles.\n- Self-test asserts validator accept/reject (9 cases) +\n  profile_public shape accept/reject.\n- CI guard `npm run audit:social-handles-policy` enforces\n  37 invariants.\n"
     },
     {
       "id": "L04-07",
@@ -3660,8 +3661,6 @@
       "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "fixed_at": "2026-04-21T00:00:00.000Z",
-      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "atomicity",
         "mobile",
@@ -3686,7 +3685,9 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Atomic champ cancel RPC (fn_champ_cancel_atomic) wraps all four writes in one SECURITY DEFINER transaction with authorization, status and row-lock inside. No silent catch. 35 CI invariants."
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "note": "All four writes (withdraw participants, revoke invites, refund\nbadges, flip championship status) are now wrapped in a single\nSECURITY DEFINER RPC `fn_champ_cancel_atomic(uuid, uuid)` that\nowns authorization (admin_master/coach of host_group), status\nprecondition (draft/open/active), and row lock (FOR UPDATE).\nNo silent catch — any failure raises and rolls back the whole\ntransaction. Idempotent on retry via noop branch when the\nchampionship is already cancelled. Ships with\naudit:champ-cancel-atomic guard (35 invariants).\n"
     },
     {
       "id": "L05-07",
@@ -3739,8 +3740,6 @@
       "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "fixed_at": "2026-04-21T00:00:00.000Z",
-      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "webhook",
@@ -3768,7 +3767,9 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "custody_withdrawal_events + fn_withdrawal_timeline(uuid) + GET /api/custody/withdraw/[id]/timeline. Canonical SLA policy (2min+10min) baked into DB. 26 CI invariants."
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "note": "Withdrawal progress is now a first-class DB primitive. Trigger\non custody_withdrawals records every state transition into\ncustody_withdrawal_events (append-only, (withdrawal_id, status)\nUNIQUE, RLS to admin_master of host group). The portal calls\nfn_withdrawal_timeline(uuid) to render a 4-step UI backed by\ncanonical policy: expected_completion_at (SLA-derived),\nsla_breached flag, and refund_eta_days=2 on failed terminal\nstate. Historical rows are backfilled via ON CONFLICT DO\nNOTHING. Ships with audit:withdrawal-timeline guard\n(26 invariants). The full async webhook rewrite remains wave-2\nscope; this patch provides the UI contract so the timeline\nrenders correctly as soon as the async path ships.\n"
     },
     {
       "id": "L05-09",
@@ -4592,60 +4593,80 @@
       "lens": 7,
       "title": "Mensagens de erro em português hardcoded no backend",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "mobile",
         "portal",
+        "i18n",
+        "api",
         "testing"
       ],
       "files": [
-        "portal/src/app/api/swap/route.ts"
+        "portal/src/lib/api/error-messages.ts",
+        "portal/src/lib/api/error-messages.test.ts",
+        "portal/src/app/api/distribute-coins/route.ts",
+        "tools/audit/baselines/api-error-i18n-baseline.txt"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-api-error-i18n.ts",
+        "portal/src/lib/api/error-messages.test.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "portal-platform",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Infraestrutura de i18n para erros HTTP canônicos. Três camadas:\n\n1. **Registry** — `portal/src/lib/api/error-messages.ts` mantém\n   `ERROR_MESSAGES: Record<string, LocalisedMessage>` com 34 códigos\n   canônicos cobrindo os 11 `COMMON_ERROR_CODES` + domínios\n   (coin distribution, FX/swap, AI, paginação, training plans,\n   gateway/DB/infra). Cada entrada tem triade obrigatória\n   `{ en, ptBR, es }`. Inglês é a locale canônica do servidor\n   (logs, Sentry, OpenAPI) — locales pt-BR e es ficam acessíveis\n   via `resolveErrorMessage(code, locale)` para clientes que\n   querem renderizar copy traduzida.\n\n2. **Locale resolver** — `resolveClientLocale(acceptLanguageHeader)`\n   parseia `Accept-Language` para uma das três locales suportadas\n   (`en` default, `ptBR` ou `es`). Tolera formatos `pt-BR`,\n   `pt_BR`, `pt;q=0.8`, `es-MX`, `es-AR` etc.\n\n3. **CI guard** `tools/audit/check-api-error-i18n.ts` (`audit:api-error-i18n`):\n   - valida shape do registry (~55 assertions)\n   - obriga que todo código em `COMMON_ERROR_CODES` tenha entrada no registry\n   - valida que toda entrada tem triade `en / ptBR / es`\n   - **baseline ratchet**: grava `tools/audit/baselines/api-error-i18n-baseline.txt`\n     (84 strings pt-BR legadas em rotas de API) como dívida técnica.\n     Guard FALHA se: (a) nova string pt-BR aparece em `portal/src/app/api/**/*.ts`\n     fora da whitelist de identificadores, ou (b) baseline tem entrada stale\n     (arquivo já migrado) — sinalizando momento de encolher baseline via\n     `UPDATE_BASELINE=1 npm run audit:api-error-i18n`.\n\n4. **Migração exemplar** — `portal/src/app/api/distribute-coins/route.ts`\n   migrado para mensagens em inglês canônicas (`apiError(request,\n   \"ATHLETE_NOT_FOUND\", ...)`, `\"Coin distribution is temporarily\n   suspended by ops.\"`, etc.). Demonstra padrão para as ~84 rotas\n   restantes. Follow-up incremental: cada PR que toca uma rota\n   remove sua string do baseline.\n\nTeste unitário `error-messages.test.ts` cobre (a) triade presente\nem todo código, (b) inglês ASCII-only (canônica server-side),\n(c) pt-BR tem diacríticos reais em ≥ 60 % dos códigos (sanidade\nde tradução), (d) SCREAMING_SNAKE, (e) `resolveErrorMessage`\nfallback para inglês, (f) `resolveClientLocale` reconhece pt/es/en\nvariantes e faz fallback seguro para `en`.\n\nCoin policy: L07-01 não toca `coin_ledger` nem emite OmniCoins.\n"
     },
     {
       "id": "L07-02",
       "audit_ref": "7.2",
       "lens": 7,
-      "title": "Onboarding não distingue papéis (atleta, coach, admin_master)",
+      "title": "Onboarding não distingue papéis (coach, admin_master, assistant)",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "finance",
-        "integration",
         "portal",
-        "ux"
+        "ux",
+        "coach",
+        "onboarding",
+        "personas"
       ],
       "files": [
-        "portal/src/components/onboarding/onboarding-overlay.ts"
+        "portal/src/lib/onboarding-flows/types.ts",
+        "portal/src/lib/onboarding-flows/flows.ts",
+        "portal/src/lib/onboarding-flows/index.ts",
+        "portal/src/lib/onboarding-flows/flows.test.ts",
+        "portal/src/components/onboarding/use-onboarding.ts",
+        "portal/src/components/onboarding/onboarding-overlay.tsx"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-onboarding-flows.ts",
+        "portal/src/lib/onboarding-flows/flows.test.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "portal-ux",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Pure-domain module `portal/src/lib/onboarding-flows/` é a single\nsource of truth de \"qual role vê qual step do tour, em que ordem\".\nMódulo não tem React, DOM ou i18n — retorna arrays ordenados de\n`OnboardingStepId` que a camada de UI traduz.\n\nEscopo: o portal atende **apenas staff** de assessoria\n(`admin_master`, `coach`, `assistant`) — atletas vivem no app\nmobile. Essa distinção já existe no RLS mas o tour tinha um\núnico fluxo genérico de 10 steps que mostrava custody, clearing\ne distributions (módulos gated a `admin_master`) para coaches e\nassistentes.\n\nPolítica canônica (`STEP_VISIBILITY`):\n  - `admin_master`: todos os 10 steps (superset)\n  - `coach`: remove financial, custody, clearing, distributions\n    (4 módulos que nunca vê no app por RLS)\n  - `assistant`: coach ∖ {settings} (coach menos config admin)\n\nInvariantes asseguradas por `validateFlowInvariants()` + CI\nguard `audit:onboarding-flows` (31 asserts):\n  - admin_master sempre vê todos os steps\n  - coach nunca vê `custody`, `clearing`, `distributions`,\n    `financial` (módulos admin-only)\n  - assistant ⊆ coach (assistant é coach restrito)\n  - todos os roles veem `welcome`\n  - CANONICAL_ORDER é preservado por role (nunca reshuffle)\n  - STEP_VISIBILITY ↔ CANONICAL_ORDER consistentes\n\nWiring:\n  - `useOnboarding({ role })` monta flow via\n    `buildFlowForRole(role)`, usa localStorage key per-role\n    (`onboarding_completed_admin_master`, `..._coach`, `..._assistant`)\n    para que promoção coach→admin_master reative o tour completo.\n  - `<OnboardingOverlay role={role} />` propaga a role para o hook\n    e resolve `step` via `stepsById.get(flow[currentStep])`.\n\nMódulo tem 6 funções pure-domain (`buildFlowForRole`,\n`flowLengthForRole`, `stepIsVisibleFor`, `nextStepFor`,\n`validateFlowInvariants`) + classe `OnboardingFlowInputError`\npara roles desconhecidos, testadas por 18 unit tests vitest.\n\nCoin policy: L07-02 não toca `coin_ledger` — onboarding é UX\npura, nenhum gatilho OmniCoin. Política L22-02 preservada.\n"
     },
     {
       "id": "L07-03",
@@ -4689,7 +4710,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Fixed at 2026-04-21 (commit 166dbf1) by shipping a pure-domain offline-sync queue module: types.ts (5-state machine + default retry policy 15 s / 6 h cap / 12 attempts / ±20% jitter + alert thresholds matching the finding's push threshold), queue.ts (pure reducer: enqueue idempotent, pickReady ordered, ack with retryable/non-retryable branches, requeueDeadLetter, purgeCompleted, snapshot), policy.ts (computeNextAttemptAt + evaluateAlert with severity priority), 19 vitest unit tests, 43-invariant CI guard `npm run audit:offline-sync`."
+      "note": "Fixed at 2026-04-21 (commit 166dbf1) by shipping a pure-domain\noffline-sync queue module. Run capture now comes from Strava, but\nthe queue primitive is still required for the newly-shipped offline\nflows: auto check-in (L23-08), session notes, pairing responses\n(L23-10), and workout completion marks.\n  - portal/src/lib/offline-sync/types.ts — 5-state machine (pending,\n    in_flight, done, failed, dead_letter), DEFAULT_RETRY_POLICY\n    (15 s base, 6 h cap, 12 attempts, ±20 % jitter),\n    DEFAULT_OFFLINE_ALERT_POLICY (pendingCountThreshold = 5,\n    oldestPendingAgeMsThreshold = 3 days, matching the finding's\n    \"push if > 3 days\" recommendation).\n  - queue.ts — pure reducer: enqueue (idempotent by id), pickReady\n    (sorted by nextAttemptAt, limit), markInFlight, ack (ok →\n    done; retryable → exponential backoff; non-retryable or\n    attempts ≥ maxAttempts → dead_letter), requeueDeadLetter,\n    purgeCompleted, snapshot.\n  - policy.ts — computeNextAttemptAt with exponential doubling,\n    maxDelayMs cap, and symmetric ± jitter band; evaluateAlert with\n    severity priority dead_letter > (pending ∧ age) > age >\n    pending > OK.\n  - index.ts re-exports types + policy + queue.\n  - 19 vitest unit tests covering idempotency, ordering, backoff\n    doubling, cap enforcement, jitter band, maxAttempts dead-letter,\n    requeue, purge, snapshot, and every alert branch.\n  - 43-invariant CI guard `npm run audit:offline-sync`.\nFollow-up: the Flutter client will bind Drift persistence to this\nreducer in a subsequent PR — the pure module can be verified in\nisolation first.\n"
     },
     {
       "id": "L07-04",
@@ -5426,29 +5447,36 @@
       "lens": 9,
       "title": "Modelo de \"Coin = US$ 1\" pode ser classificado como arranjo de pagamento (BCB Circ. 3.885/2018)",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
-        "testing",
+        "compliance",
+        "bcb",
+        "adr",
         "reliability"
       ],
       "files": [
-        "docs/compliance/BCB_CLASSIFICATION.md"
+        "docs/compliance/BCB_CLASSIFICATION.md",
+        "tools/audit/check-bcb-classification.ts"
       ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-bcb-classification.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "legal-finance-platform",
+      "runbook": "docs/compliance/BCB_CLASSIFICATION.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "ADR formal `docs/compliance/BCB_CLASSIFICATION.md` define a\nposição regulatória do produto. Três opções foram analisadas;\n**Option B — Parceria com IP autorizada (Asaas)** foi escolhida.\n\nPosture operacional:\n- Fluxo fiduciário (BRL) roda dentro da Asaas (IP autorizada BCB).\n- Omni Runner atua como **Payment Initiation Service** (PIS) + orquestrador.\n- `custody_accounts` / `clearing_settlements` são espelho contábil,\n  não fonte monetária — reconciliação diária contra saldo Asaas.\n- OmniCoin é ticket esportivo não-monetário, emitido apenas em\n  desafios (reforçado pela L22-02).\n- Asaas assume deveres de PLD/FT, COAF reporting, KYC/KYB,\n  limites por CPF/CNPJ.\n- Omni Runner nunca emite BRL fora da Asaas; três caminhos\n  enumerados de withdrawal: (1) challenge prize, (2) custody\n  reversal, (3) subscription refund.\n\nCI guard `audit:bcb-classification` enforça (~35 invariantes):\n- seções §1–§6 canônicas presentes;\n- 7 referências legais obrigatórias (Lei 7.492/86, BCB Circ.\n  3.885/2018, Res. BCB 80/2021, Lei 9.613/98, LC 105/2001,\n  Circ. BCB 3.978/2020, CMN/BCB Circ. 3.682/2013);\n- as 3 opções apresentadas com decisão explícita;\n- cross-refs L22-02, L09-06, L09-07;\n- review triggers canônicos (Asaas perde autorização, volume\n  > R$ 250 mi, regra BCB nova, expansão multi-país).\n\nOpções não escolhidas (registradas para auditoria futura):\n- **Option A** (\"crédito de marketing\" não-resgatável) —\n  rejeitada: desnatura o produto (desafios com prêmio em BRL\n  precisam de resgate).\n- **Option C** (Omni Runner vira IP autorizada BCB) — adiada:\n  capital mínimo R$ 2 mi + 18–24 meses de processo, reavaliar\n  em Wave 5+ se volume anual > R$ 250 mi.\n\nCoin policy: ADR reforça L22-02 — OmniCoin permanece challenge-only\ne jamais é tratada como unidade monetária.\n"
     },
     {
       "id": "L09-02",
@@ -5554,25 +5582,39 @@
       "lens": 9,
       "title": "IOF não recolhido em swap inter-cliente",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "mobile"
+        "finance",
+        "compliance",
+        "tax",
+        "iof",
+        "pure-domain"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "portal/src/lib/iof/types.ts",
+        "portal/src/lib/iof/calculator.ts",
+        "portal/src/lib/iof/index.ts",
+        "tools/audit/check-iof-calculator.ts"
+      ],
+      "correction_type": "primitive",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/iof/calculator.test.ts",
+        "tools/audit/check-iof-calculator.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "platform-finance",
+      "runbook": "docs/compliance/BCB_CLASSIFICATION.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Primitiva pura `portal/src/lib/iof` calcula IOF para todas as\noperações financeiras relevantes do Omni Runner:\n- `credito_pj` / `credito_pf`: daily accrual (0.0041% / 0.0082%) +\n  adicional fixo 0.38%, capped em 365 dias.\n- `cambio_brl_usd_out` / `in`: 0.38% flat (Decreto 11.153/2022).\n- `seguro_vida` / `saude` / `outros`: 0.38 / 2.38 / 7.38%.\n- `titulo_privado`: 1.5%. `derivativo`: 0.005% nocional.\n- `cessao_credito_onerosa`: 0% + `collectedBy=none` — classificação\n  da ADR-008 reafirmada aqui (cessão de crédito pré-existente\n  entre assessorias, pagamento off-platform, **não configura\n  operação de crédito nova** nos termos do CTN art. 63 I / STJ\n  REsp 1.239.223), mas com warning que qualquer mudança de escopo\n  (remuneração on-platform, matching ativo, intermediação)\n  **exige reconsulta tributarista**.\n\nA primitiva retorna envelope auditável (`IofComputation`) com\n`effectiveRatePct`, `iofAmountCents`, `collectedBy`\n(`asaas | omni | none`), `legalReference` (artigo RIOF literal),\n`explanation` em PT-BR para o audit log, e `warnings` não-bloqueantes.\n\nAlinhado com a ADR `docs/compliance/BCB_CLASSIFICATION.md` (L09-01):\nsempre que há incidência real de IOF (câmbio ou crédito), o\n`collectedBy` é `asaas` — a IP autorizada é a contribuinte\nestatutária; Omni Runner apenas espelha o valor para reconciliação.\n\nTestes `calculator.test.ts` (25 cases) cobrem validação de input,\ntodas as branches de `kind`, rounding bancário, cap de 365 dias,\nausência de taxpayer em crédito, serialização JSON round-trip.\n\nCI guard `audit:iof-calculator` enforça 70+ invariantes (union\nde `IofOperationKind`, constantes de alíquota, ausência de IO,\ncross-ref com finding e ADR-008).\n"
     },
     {
       "id": "L09-06",
@@ -5583,8 +5625,6 @@
       "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "fixed_at": "2026-04-21T00:00:00.000Z",
-      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "lgpd",
         "finance",
@@ -5608,7 +5648,9 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "billing_providers + pgp_sym_encrypt bytea. KMS key via GUC app.settings.kms_key. All access via fn_set/get helpers with audit log. KMS_UNAVAILABLE guard. 32 CI invariants."
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "note": "billing_providers table stores per-assessoria Asaas / Mercado\nPago / Stripe credentials as pgp_sym_encrypt bytea. RLS +\ncolumn privileges make api_key_enc unreadable by authenticated\n/ anon; only service_role can SELECT the ciphertext. Access\ngoes exclusively through fn_set_billing_provider_key (bumps\nkey_version, writes key_set audit row) and\nfn_get_billing_provider_key (decrypts, writes key_access audit\nrow with reason). Master key loaded into GUC app.settings.kms_key\nper edge-function transaction from Supabase Vault / AWS KMS.\nKMS_UNAVAILABLE guard closes the \"accidental plaintext\" path.\nShips with audit:billing-providers-encryption guard\n(32 invariants).\n"
     },
     {
       "id": "L09-07",
@@ -5890,8 +5932,6 @@
       "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "fixed_at": "2026-04-21T00:00:00.000Z",
-      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "portal",
         "edge-function"
@@ -5915,7 +5955,9 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Canonical inventory of service-role consumers + quarterly rotation runbook + CI guard that blocks unlisted consumers. Env-specific key split documented."
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "note": "Canonical inventory\n(docs/security/SERVICE_ROLE_USAGE_INVENTORY.md) lists every\nfile allowed to reference SUPABASE_SERVICE_ROLE_KEY (and its\n_STAGING / _PREVIEW / _CI variants). A CI guard\n(audit:service-role-inventory) greps the repo on every PR and\nfails the build on any unlisted consumer, forcing explicit\n@security review. Paired with\ndocs/runbooks/SERVICE_ROLE_ROTATION_RUNBOOK.md which documents\nthe quarterly + ad-hoc rotation procedure, the env-specific\nkey split (prod never leaks into preview / CI / staging),\nverification steps, and evidence capture.\n"
     },
     {
       "id": "L10-04",
@@ -6008,8 +6050,6 @@
       "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "fixed_at": "2026-04-21T00:00:00.000Z",
-      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "migration",
@@ -6032,7 +6072,9 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "admin_approvals queue + BEFORE UPDATE trigger enforce two-person rule. fn_admin_approval_required policy: fee-config/admin-grant/billing-key always, money-movers above US$ 10k. 24h TTL via cron. 27 CI invariants."
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "note": "admin_approvals queue + BEFORE UPDATE trigger enforce two-\nperson rule on high-risk platform_admin actions:\nplatform_fee_config / admin-grant / billing_provider key\nmutations always require a second distinct admin;\nwithdrawals and refunds require dual approval above\nUS$ 10k. Self-approval blocked by CHECK at INSERT time and\nre-asserted by trigger to cover service-role paths.\n`status = 'executed'` requires prior `status = 'approved'`,\nand terminal statuses are locked. 24h TTL enforced by\nfn_admin_approvals_expire_overdue (cron target). Ships with\naudit:admin-approvals-sod guard (27 invariants).\n"
     },
     {
       "id": "L10-07",
@@ -7850,8 +7892,6 @@
       "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "fixed_at": "2026-04-21T00:00:00.000Z",
-      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "rls",
         "portal",
@@ -7876,7 +7916,9 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Full UTM capture pipeline: client cookie (first-touch, consent-gated, length-clamped) → POST /api/attribution/capture (zod, rate-limited, IP truncated, UA sha256) → marketing_attribution_events + profiles.attribution first-touch trigger. 180-day retention. 37 CI invariants."
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "note": "Full UTM capture pipeline: client cookie (first-touch, 90-day\nTTL, marketing-consent gated, length-clamped) → POST\n/api/attribution/capture (zod-validated, rate-limited, IP\ntruncated to /24 or /48, UA sha256-hashed) →\nmarketing_attribution_events (append-only, CHECK on identity\nand per-field length, RLS for own-user + platform_admin) →\nSECURITY DEFINER AFTER INSERT trigger that snapshots first-\ntouch into profiles.attribution (jsonb). Events registered at\n180-day retention in audit_logs_retention_config. Ships with\naudit:utm-attribution guard (37 invariants).\n"
     },
     {
       "id": "L15-02",
@@ -7887,8 +7929,6 @@
       "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "fixed_at": "2026-04-21",
-      "closed_at": "2026-04-21",
       "tags": [
         "finance",
         "mobile",
@@ -7900,12 +7940,12 @@
         "supabase/migrations/20260421700000_l22_02_revoke_nonchallenge_coins.sql",
         "tools/audit/check-referral-program.ts"
       ],
-      "correction_type": "code",
+      "correction_type": "process",
       "test_required": true,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
-        "local:l15-02-referral-program"
+        "local:08842bf"
       ],
       "owner": "unassigned",
       "runbook": null,
@@ -7913,7 +7953,9 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Programa de referral server-side: public.referral_rewards_config (single-row, TTL + max activations + code length configuráveis); public.referrals com state machine (pending → activated | expired | revoked), unique referral code, unique activation por referido, RLS. Funções: fn_generate_referral_code, fn_create_referral (enforce caps), fn_activate_referral (idempotente, **não credita coins**), fn_expire_referrals (alvo de pg_cron). Política OmniCoin-challenge-only (L22-02): a migration compensatória 20260421700000 removeu os INSERTs em coin_ledger e as colunas reward_*_coins — referrals rastreiam crescimento viral, mas não pagam coins. CI guard `npm run audit:referral-program` cobre 45 invariantes incluindo as invariantes de reversão (2026-04-21)."
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "note": "Viral referral primitives live server-side as a complete lifecycle.\nOmniCoin policy (L22-02): **desafios são o único fluxo que emite\nOmniCoins** — referrals rastreiam crescimento viral mas NÃO pagam\ncoins.\n\n- `public.referral_rewards_config` (id=1, CHECK-bounded ttl_days /\n  per-user cap / code length) é o único knob operacional; as colunas\n  `reward_referrer_coins` / `reward_referred_coins` foram removidas\n  pela migration compensatória de L22-02.\n- `public.referrals` table com state-machine CHECK\n  (pending → activated|expired|revoked), self-referral CHECK,\n  status-timestamps exhaustivo, UNIQUE `referral_code`, UNIQUE\n  `referred_user_id` WHERE status='activated' (idempotência) e\n  pending-expiry partial index. RLS own-read + admin-read; inserts\n  / updates via SECURITY DEFINER RPCs.\n- BEFORE UPDATE trigger `fn_referrals_status_guard` trava o state\n  machine (pending-only exits).\n- `fn_generate_referral_code(p_len)` emite código crypto-random\n  upper-case alfanumérico (`gen_random_bytes`) excluindo 0/O/1/I,\n  length clamped [6, 16], até 8 retries, P0002 em exhaustion.\n- `fn_create_referral(channel)` valida o enum do canal, respeita o\n  cap por referrer e stampa `expires_at = now() + ttl_days`.\n- `fn_activate_referral(code)` gates em pending + not expired + not\n  self + no prior activation; **não grava em `coin_ledger` e não\n  mexe em `wallets.balance_coins`** — apenas flipa o status para\n  'activated'. FOR UPDATE na claim.\n- `fn_expire_referrals()` é o cron service-role only que varre\n  pending rows passadas do TTL.\n- Self-test da migration principal + self-test da compensatória\n  L22-02 (que garante que reasons `referral_*_reward` / wallet bump\n  não voltaram).\n- CI guard `npm run audit:referral-program` enforce tanto a\n  migration original quanto a compensatória.\n"
     },
     {
       "id": "L15-03",
@@ -7924,8 +7966,6 @@
       "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "fixed_at": "2026-04-21",
-      "closed_at": "2026-04-21",
       "tags": [
         "mobile",
         "portal"
@@ -7954,7 +7994,9 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Dynamic Open Graph + Twitter metadata em todas as páginas shareable do portal. `portal/src/lib/og-metadata.ts` centraliza o builder (`getSiteBaseUrl` resolve NEXT_PUBLIC_PORTAL_BASE_URL/PORTAL_BASE_URL com fallback https://omnirunner.app + sanitização; `buildOgMetadata` emite openGraph+twitter.card+canonical e default image URL `<url>/opengraph-image`). Dois route segments dinâmicos (`challenge/[id]/opengraph-image.tsx`, `invite/[code]/opengraph-image.tsx`) devolvem ImageResponse PNG (runtime=edge, size 1200x630, paleta via OG_IMAGE_THEMES). `generateMetadata` das duas pages usa o helper. 8 testes vitest + CI guard `npm run audit:og-metadata` (35 invariantes)."
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "note": "Dynamic Open Graph + Twitter metadata now drives every\nshareable portal page. The app no longer records runs\n(Strava is the single source), so the shareable surface is\nthe Next.js portal (`/challenge/[id]`, `/invite/[code]`).\n- `portal/src/lib/og-metadata.ts` centralises the Metadata\n  contract: `getSiteBaseUrl()` resolves from\n  `NEXT_PUBLIC_PORTAL_BASE_URL` / `PORTAL_BASE_URL`\n  (rejects non-http), strips trailing slash, defaults to\n  `https://omnirunner.app`. `buildOgMetadata({ path, title,\n  description, imageUrl? })` emits\n  `openGraph.{title,description,url,type,siteName,locale,\n  images:[1200x630]}`, `twitter.card=summary_large_image`,\n  and `alternates.canonical`. Default image URL is\n  `<url>/opengraph-image` — the deterministic path Next.js\n  App Router uses for co-located segments.\n- `portal/src/lib/og-metadata.test.ts` (8 vitest cases)\n  covers env fallback, env override + trailing-slash\n  normalisation, malformed-env rejection, full payload\n  shape, image-URL override, and path leading-slash\n  normalisation.\n- `portal/src/app/challenge/[id]/opengraph-image.tsx` and\n  `portal/src/app/invite/[code]/opengraph-image.tsx` emit\n  edge-runtime `ImageResponse` previews with\n  `OG_IMAGE_THEMES` palettes + brand lockup.\n- Both `page.tsx` now call `generateMetadata` →\n  `buildOgMetadata` with entity-derived title/description\n  (short ID / short code). No more ad-hoc `openGraph`\n  copies per route.\n- CI guard `npm run audit:og-metadata` asserts 35\n  invariants (helper shape, test coverage, OG image routes,\n  page wiring).\n"
     },
     {
       "id": "L15-04",
@@ -8123,8 +8165,8 @@
       "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "fixed_at": "2026-04-21",
-      "closed_at": "2026-04-21",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "portal",
@@ -8149,7 +8191,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Fixed in 837ce91 (J26). Expanded public.portal_branding with brand_name, subtitle, logo_url_dark, favicon_url, branding_enabled, updated_by, version. Added fn_validate_hex_color + fn_validate_https_url (IMMUTABLE PARALLEL SAFE) and strict CHECK constraints. BEFORE UPDATE trigger bumps version, stamps updated_by, and fail-open audits via portal_audit_log. fn_group_branding_public is STABLE SECURITY DEFINER so the login screen can resolve branding pre-auth; fn_group_branding_set requires coaching_members.role IN (admin_master, coach). Invariants locked by npm run audit:white-label-branding."
+      "note": "Fixed in 837ce91 (J26). Expanded `public.portal_branding` with\n`brand_name`, `subtitle`, `logo_url_dark`, `favicon_url`,\n`branding_enabled`, `updated_by`, `version`. Added\n`fn_validate_hex_color` + `fn_validate_https_url` (IMMUTABLE\nPARALLEL SAFE) and strict CHECK constraints. `BEFORE UPDATE`\ntrigger bumps `version`, stamps `updated_by = auth.uid()`, and\nfail-open audits via `portal_audit_log`. `fn_group_branding_public`\nis STABLE SECURITY DEFINER so the login screen can resolve\nbranding pre-auth; `fn_group_branding_set` requires\n`coaching_members.role IN ('admin_master','coach')`. Invariants\nlocked by `npm run audit:white-label-branding`.\n"
     },
     {
       "id": "L16-02",
@@ -8160,8 +8202,8 @@
       "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "fixed_at": "2026-04-21",
-      "closed_at": "2026-04-21",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "portal"
@@ -8185,7 +8227,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Fixed in 2794914 (J27). public.coaching_group_domains holds host -> group mapping with state machine (pending_dns, verifying, verified, failed, revoked), unique host, DNS challenge, partial unique index on (group_id) WHERE is_primary. fn_validate_custom_host (IMMUTABLE PARALLEL SAFE) rejects omnirunner.* subdomains, hosts > 253 chars, non-HTTPS URLs, IP literals, and hosts without a TLD dot. Register/revoke are admin-only; verify/fail are service-role-only (SoD). fn_custom_domain_resolve is STABLE SECURITY DEFINER for Next.js middleware. Invariants locked by npm run audit:custom-domains."
+      "note": "Fixed in 2794914 (J27). Ships server-side primitives for\nhost-to-group resolution. `public.coaching_group_domains`\nholds host → group mapping with a state machine\n(pending_dns → verifying → verified → failed/revoked),\nunique host, DNS challenge, and a partial unique index on\n(group_id) WHERE is_primary keeps one primary per group.\n`fn_validate_custom_host` (IMMUTABLE PARALLEL SAFE) rejects\n`omnirunner.*` subdomains, hosts > 253 chars, non-HTTPS\nURLs, IP literals, and hosts without a TLD dot. Normalizer\ntrigger lower-cases host/sub on write; audit trigger\nfail-open writes to `portal_audit_log`. Lifecycle RPCs\n(`fn_custom_domain_register` / `_mark_verified` /\n`_mark_failed` / `_revoke`) enforce SoD: admin-only\nregister/revoke, service-role-only verify/fail transitions.\n`fn_custom_domain_resolve` is STABLE SECURITY DEFINER so\nNext.js middleware can resolve anon traffic without a row\nleak (only returns verified hosts). Invariants locked by\n`npm run audit:custom-domains`. Edge integration (Vercel\n`/v9/projects/.../domains` + ACME) stays an operational\nwiring task on top of these primitives.\n"
     },
     {
       "id": "L16-03",
@@ -8227,8 +8269,8 @@
       "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "fixed_at": "2026-04-21",
-      "closed_at": "2026-04-21",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "webhook",
         "integration",
@@ -8254,7 +8296,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Fixed in 48cd3c4 (J28). fn_validate_webhook_url blocks non-HTTPS, loopback, RFC1918, link-local, 100.64/10, 0.0.0.0, and 169.254/16. fn_validate_outbound_webhook_events whitelists 15 canonical events. outbound_webhook_endpoints + outbound_webhook_deliveries (state machine pending -> in_flight -> delivered/failed, exponential backoff, FOR UPDATE SKIP LOCKED). Admin RPCs SECURITY DEFINER with coaching_members role check; worker RPCs service-role-only. Invariants locked by npm run audit:outbound-webhooks."
+      "note": "Fixed in 48cd3c4 (J28). `fn_validate_webhook_url` (IMMUTABLE\nPARALLEL SAFE) blocks non-HTTPS, loopback/localhost,\nRFC1918 (10/8, 172.16/12, 192.168/16), link-local,\n100.64/10, 0.0.0.0, and 169.254/16 targets — preventing\nattackers from pivoting our egress into the cluster.\n`fn_validate_outbound_webhook_events` whitelists 15\ncanonical events (session.verified, coin.distributed,\nchampionship.ended, athlete.enrolled, sponsorship.activated\n…) so partners can't be leaked undocumented internal\nsignals. `public.outbound_webhook_endpoints` stores\nconfiguration (HMAC secret, event filter, enabled flag,\nper-endpoint rate limit) with RLS for group admins.\n`public.outbound_webhook_deliveries` logs every attempt —\nstate machine (pending → in_flight → delivered/failed),\nexponential backoff, `FOR UPDATE SKIP LOCKED` so multiple\nworkers can claim without duplicates, respects\n`audit_logs_retention_config`. Admin RPCs\n(`fn_outbound_webhook_register`, `_rotate_secret`,\n`_enable`) are SECURITY DEFINER with coaching_members\nrole check; worker RPCs (`fn_outbound_webhook_enqueue`,\n`_claim`, `_mark_delivered`, `_mark_failed`) are\nservice-role-only. Invariants locked by\n`npm run audit:outbound-webhooks`.\n"
     },
     {
       "id": "L16-05",
@@ -8265,8 +8307,8 @@
       "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "fixed_at": "2026-04-21",
-      "closed_at": "2026-04-21",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "migration"
@@ -8291,7 +8333,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Fixed in 725159d (J29). public.brands (catalogue, RLS public read of active=true); public.sponsorships (state machine draft -> active -> paused -> ended/cancelled, contract window, equipment discount in [0,90], active_requires_approval, partial UNIQUE por group/brand); public.sponsorship_athletes opt-in LGPD-safe. RPCs: fn_sponsorship_activate (admin-only), fn_sponsorship_enroll_athlete / _opt_out_athlete (athlete-self). Política OmniCoin-challenge-only (L22-02): a migration compensatória 20260421700000 dropou fn_sponsorship_distribute_monthly_coins e as colunas de orçamento (monthly_coins_per_athlete, coin_budget_total, coin_budget_used) — sponsorship entrega valor via desconto em reais / swag / exposição, nunca coins. CI guard `npm run audit:sponsorships` cobre 52 invariantes incluindo as de reversão (2026-04-21)."
+      "note": "Brand / sponsorship schema lives server-side. OmniCoin policy\n(L22-02): **desafios são o único fluxo que emite OmniCoins** —\npatrocínios entregam valor via descontos em reais, benefícios\nfísicos, exposição de marca, etc., jamais via moeda virtual.\n\n- `public.brands` catálogo canônico: slug/display_name/URLs com\n  CHECK, unique slug, RLS com public-read das `active = true` para\n  o mobile renderizar logos.\n- Tabelas ativas: `sponsorships` (contrato por grupo) +\n  `sponsorship_athletes` (opt-in atleta-por-atleta).\n- `public.sponsorships` captura contratos por grupo:\n  `(group_id, brand_id)`, state machine\n  (draft → active → paused → ended/cancelled), CHECK\n  `contract_end > contract_start`, CHECK `equipment_discount_pct\n  BETWEEN 0 AND 90`, `active_requires_approval`, partial UNIQUE\n  `(group_id, brand_id)` enquanto status ∈ {draft, active, paused}.\n  As colunas de orçamento em coins (`monthly_coins_per_athlete`,\n  `coin_budget_total`, `coin_budget_used`) foram dropadas pela\n  migration compensatória de L22-02.\n- `public.sponsorship_athletes` é o join LGPD-safe opt-in (sem\n  auto-enrollment — atleta precisa consentir).\n- RPCs: `fn_sponsorship_activate` (platform-admin-or-service-role,\n  gate em CONTRACT_EXPIRED + INVALID_TRANSITION),\n  `fn_sponsorship_enroll_athlete` (authenticated self, idempotente\n  via ON CONFLICT), `fn_sponsorship_opt_out_athlete` (self).\n  `fn_sponsorship_distribute_monthly_coins` foi **dropada** pela\n  migration compensatória — sponsorship não paga OmniCoins.\n- Reason `sponsorship_payout` (e cinco outros reasons aspiracionais\n  que L16-05 havia adicionado — `referral_bonus`, `referral_new_user`,\n  `redemption_payout`, `custody_reversal`, `championship_reward`)\n  foram **removidos** do `coin_ledger_reason_check` pela compensatória\n  L22-02; institution_token_* reasons pré-existentes foram\n  reinstalados (L16-05 havia dropado silenciosamente).\n- Invariants bloqueadas por `npm run audit:sponsorships`, que agora\n  exige tanto a migration L16-05 quanto a compensatória L22-02.\n"
     },
     {
       "id": "L16-06",
@@ -8330,7 +8372,7 @@
       "deferred_to_wave": null,
       "fixed_at": "2026-04-21T00:00:00.000Z",
       "closed_at": "2026-04-21T00:00:00.000Z",
-      "note": "Integration telemetry pipeline: integration_events append-only log (RLS own+admin, partial error indexes, 90d retention) + fn_log_integration_event writer (SECURITY DEFINER, service-role, input clamping) + fn_integration_health_snapshot / fn_integration_connected_counts aggregators (platform_admin only, 42501->403) + strava-webhook, trainingpeaks-oauth, trainingpeaks-sync instrumented via _shared/integration_telemetry.ts + portal /api/platform/integrations/health route + 61-invariant audit:integration-telemetry guard."
+      "note": "Integration telemetry pipeline now backs every OAuth / webhook /\nsync surface for Strava + TrainingPeaks. `integration_events`\ncaptures provider, event_type, status, latency, and external_id\nin an append-only log with RLS (own-user + platform_admin read),\npartial indexes on errors, and 90-day retention. The writer is\n`fn_log_integration_event` (SECURITY DEFINER, service-role-only,\ninput clamping); the dashboard aggregator\n`fn_integration_health_snapshot` returns per-provider totals,\nerror_rate, p50/p95 latency, and by_event_type breakdown under\nplatform_role='admin' (42501 otherwise). `fn_integration_connected_counts`\ncomplements with live connection counters (strava_connections +\ncoaching_device_links where provider=trainingpeaks). Edge\nfunctions now import `_shared/integration_telemetry.ts` and\nemit events on webhook receipt, dedup, token refresh\nsuccess/failure, OAuth callback success/error, session import,\nand sync push outcomes. Portal route\n`/api/platform/integrations/health` proxies both RPCs with zod\nquery validation and admin-only gating. CI guard\n`npm run audit:integration-telemetry` enforces 61 invariants.\n"
     },
     {
       "id": "L16-07",
@@ -8515,30 +8557,38 @@
       "lens": 17,
       "title": "5378 linhas em portal/src/lib/*.ts e sem segregação por bounded context",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "finance",
-        "webhook",
-        "rate-limit",
-        "security-headers",
+        "architecture",
         "portal",
-        "migration"
+        "bounded-context",
+        "ci-guard"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "portal/src/lib/_boundaries/manifest.ts",
+        "portal/src/lib/_boundaries/index.ts",
+        "tools/audit/check-portal-bounded-contexts.ts",
+        "tools/audit/baselines/portal-bounded-contexts-baseline.txt"
+      ],
+      "correction_type": "ci-guard",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/_boundaries/manifest.test.ts",
+        "tools/audit/check-portal-bounded-contexts.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "portal-architecture",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Em vez de um refactor big-bang do diretório (risco alto, pouco\nbenefício sem equipe maior), L17-02 fixa o problema via\n**manifesto + CI guard + baseline ratchet**:\n\n1. `portal/src/lib/_boundaries/manifest.ts` — single source of\n   truth classificando os 55+ arquivos/subdirs em 9 bounded\n   contexts: `financial` (custody/clearing/swap/billing/fx/iof),\n   `security` (audit/rate-limit/roles/webhook), `platform`\n   (feature-flags/cron/analytics/observability), `infra`\n   (api/supabase/cache/logger/openapi), `domain` (pure-domain\n   value objects: first-run-onboarding, omnicoin-narrative,\n   onboarding-flows, periodization, training-load, offline-sync),\n   `integration` (deep-links/og-metadata/product-event-schema),\n   `shared` (format/actions/export), `qa`, `boundaries`.\n\n2. `LAYERING_RULES` define edges permitidas entre contexts:\n   - `domain` MUST NOT depender de `infra/financial/security/platform`\n     (invariante crítico para módulos pure-domain).\n   - `infra` depende só de `shared`.\n   - `security ↮ platform` (proíbe fan-out horizontal).\n   - `qa` tem acesso global; `integration` não toca infra.\n\n3. CI guard `audit:portal-bounded-contexts` (tools/audit/\n   check-portal-bounded-contexts.ts) enforça:\n   - todo arquivo/subdir em portal/src/lib está no manifesto;\n   - todo manifest entry existe em disco;\n   - nenhum import quebra LAYERING_RULES (via parse de\n     `import ... from \"./x\"` e `@/lib/x`);\n   - baseline ratchet em\n     `tools/audit/baselines/portal-bounded-contexts-baseline.txt`\n     congela débitos preexistentes (4 entradas iniciais), e\n     falha tanto em NOVAS violações quanto em entradas do\n     baseline já corrigidas (ratchet monotonicamente decrescente).\n\n4. Testes unitários (16 casos em `manifest.test.ts`) verificam\n   unicidade de paths, coerência de BOUNDED_CONTEXTS, auto-import\n   reflexivo, ausência de edges domain→infra/financial/security,\n   edges qa→* completos.\n\nDébito congelado no baseline (4 imports cross-layer):\n- `actions.ts` (shared) → `route-policy.ts` + `supabase` (infra)\n- `audit.ts` (security) → `observability` (platform)\n- `openapi/routes/v1-financial.ts` (infra) → `swap.ts` (financial)\n\nRefactor físico (mover arquivos para subdirs) pode ser feito\nincrementalmente sem mudar o manifesto; a CI guard já garante\nque ninguém adicionará novos cross-imports enquanto isso.\n"
     },
     {
       "id": "L17-03",
@@ -8902,29 +8952,36 @@
       "lens": 18,
       "title": "Architecture: Flutter viola Clean Arch em vários pontos",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
-        "observability",
-        "seo",
-        "testing",
-        "reliability"
+        "architecture",
+        "flutter",
+        "clean-arch",
+        "ci-guard"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "tools/audit/check-flutter-clean-arch.ts",
+        "tools/audit/baselines/flutter-clean-arch-baseline.txt"
+      ],
+      "correction_type": "ci-guard",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-flutter-clean-arch.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "mobile-platform",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Em vez de refactor big-bang da árvore `omni_runner/lib` (639+\narquivos .dart), L18-04 fixa o problema via CI guard com **baseline\nratchet** para congelar o débito existente e impedir regressão.\n\nFences de Clean Architecture enforçados\n(`tools/audit/check-flutter-clean-arch.ts`):\n\n1. `presentation/*` e `features/*` **MUST NOT** importar `data/*`\n   — deve passar por interface de repositório declarada em\n   `domain/repositories/`.\n2. `presentation/*` e `features/*` **MUST NOT** importar IO clients\n   de 3rd-party (`package:supabase_flutter`, `drift`, `dio`, `http`,\n   `sqflite`, `firebase_firestore`) — mesma regra.\n3. `domain/*` **MUST NOT** importar `data/*`, `presentation/*`,\n   `features/*`, `core/*`, ou IO clients — domain é pure core\n   funcional (apenas `dart:` stdlib + pacotes puros como `meta`).\n4. `data/*` **MAY** importar `domain/*` (implementa contratos),\n   mas **MUST NOT** importar `presentation/*` ou `features/*`\n   (inversão de dependência).\n5. `core/*` **MAY** importar `domain/*` mas **MUST NOT** importar\n   `data/*` ou `presentation/*`.\n\nExceções (composition roots):\n- `core/di/*` — único local autorizado a wire implementações\n  concretas.\n- `core/router/*` — binding de rotas para screens/blocs.\n- `core/push/*` — deep-link dispatcher para screens.\n- `main.dart` — app entry point.\n\nBaseline ratchet em `tools/audit/baselines/flutter-clean-arch-\nbaseline.txt` congela 109 violações preexistentes (56 em\n`presentation`, 43 em `domain`, 7 em `data`, 3 em `features`).\nCI falha tanto em NOVAS violações quanto em entradas do baseline\njá corrigidas (ratchet monotonicamente decrescente).\n\nTop offenders priorizados para refactor imediato (baseado no\nachado original):\n- `presentation/screens/today_screen.dart` → `data/services/today_data_service.dart`\n- `presentation/screens/profile_screen.dart` → `data/services/profile_data_service.dart`\n- `presentation/screens/athlete_workout_day_screen.dart` → `data/services/workout_delivery_service.dart`\n- Várias telas importando `package:supabase_flutter` diretamente.\n\nEstratégia de repayment:\n1. Extrair repository interface em `domain/repositories/`\n   espelhando o `data_service`.\n2. Mover service para `data/repositories_impl/` e fazer implementar\n   a interface.\n3. Substituir import direto em `presentation/*` por injeção via\n   `GetIt` resolve de interface.\n4. Regenerar baseline (`UPDATE_BASELINE=1 npm run\n   audit:flutter-clean-arch`) — o ratchet só aceita baselines\n   menores do que o anterior.\n"
     },
     {
       "id": "L18-05",
@@ -8950,15 +9007,15 @@
       "linked_prs": [
         "local:b676952"
       ],
-      "fixed_at": "2026-04-21T00:00:00.000Z",
-      "closed_at": "2026-04-21T00:00:00.000Z",
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Durable transactional outbox: outbox_events table (UNIQUE event_key, 15 event_types, 7 aggregate_types, pending->processing->completed/failed/dead state-machine CHECKs, attempts+backoff+last_error, 4 indexes, admin-only RLS, 30d retention). Lifecycle RPCs (SECURITY DEFINER, service-role): fn_outbox_emit (ON CONFLICT DO NOTHING), fn_outbox_claim (FOR UPDATE SKIP LOCKED + visibility lease), fn_outbox_complete, fn_outbox_fail (dead on max_attempts, otherwise backoff re-queue), fn_outbox_dlq sweep. AFTER UPDATE OF is_verified trigger emits session.verified with idempotent event_key, fails open via RAISE WARNING. 43-invariant audit:outbox-event-bus guard."
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "note": "Durable outbox primitives replace implicit caller-side\norchestration with an explicit event queue.\n`public.outbox_events` is append-only with UNIQUE(event_key)\nfor idempotent producers, CHECK-bounded status state-machine\n(pending/processing/completed/failed/dead), 15 event_types,\n7 aggregate_types, attempts + backoff + last_error columns,\n4 indexes (ready partial, aggregate composite, type+time,\ndead), RLS admin-only SELECT, and 30-day retention\nregistration. Lifecycle RPCs (all SECURITY DEFINER,\nservice-role only): `fn_outbox_emit` (ON CONFLICT DO\nNOTHING), `fn_outbox_claim` (FOR UPDATE SKIP LOCKED +\nvisibility lease [5s, 3600s], limit [1, 1000]),\n`fn_outbox_complete`, `fn_outbox_fail` (promotes to 'dead'\npast max_attempts, otherwise backoff + re-queue to pending),\nand `fn_outbox_dlq` sweep. AFTER UPDATE OF is_verified\ntrigger on `public.sessions` produces `session.verified`\nevents using event_key `session.verified:<uuid>` — the\ntrigger fails open (RAISE WARNING) so outbox outages never\nblock writes. 43-invariant CI guard\n`npm run audit:outbox-event-bus`.\n"
     },
     {
       "id": "L18-06",
@@ -10296,7 +10353,7 @@
       "deferred_to_wave": null,
       "fixed_at": "2026-04-21T00:00:00.000Z",
       "closed_at": "2026-04-21T00:00:00.000Z",
-      "note": "Elite reputation protection: sessions.review_status state-machine column (none/pending_review/in_review/approved/rejected) + fn_session_visibility_status (STABLE SECURITY DEFINER) returns viewer-scoped payload (neutral labels for non-owners, integrity_flags only for owner+admin) + athlete_review_requests queue (RLS own read/insert + admin read/update, unique-open partial index, https-only evidence_urls max 5) + fn_request_session_review RPC (gated on ownership + reviewable state + NOTHING_TO_REVIEW, flips review_status atomically) + BEFORE UPDATE trigger fn_sessions_review_status_guard enforcing legal transitions. 32-invariant audit:athlete-review-quarantine guard."
+      "note": "Elite athlete reputation protection now layered across the\nproduct.\n\n- `sessions.review_status` column + CHECK-bound state machine\n  (none → pending_review → in_review →\n  approved|rejected|none) provides a formal lifecycle for\n  flagged sessions.\n- `fn_session_visibility_status(uuid)` (STABLE SECURITY\n  DEFINER) returns a viewer-scoped payload: non-owners see\n  only neutral labels (`verified`, `pending_review`,\n  `verification_pending`) with NO integrity_flags exposure;\n  session owners and platform_admin receive integrity_flags +\n  review_status. This is the contract feeds/leaderboards must\n  call instead of reading `sessions.is_verified /\n  integrity_flags` directly.\n- `athlete_review_requests` queue stores manual-review\n  submissions: athlete_id, session_id, status (pending /\n  in_review / approved / rejected / auto_dismissed),\n  athlete_note, evidence_urls (https-only, max 5),\n  reviewer_id, resolution_note. UNIQUE partial index on\n  status IN (pending, in_review) prevents parallel open\n  requests per session. RLS: athlete owns read+insert of\n  their own rows; platform_admin reads + updates\n  everything.\n- `fn_request_session_review(session_id, note,\n  evidence_urls)` gates on session ownership, reviewable\n  state (`review_status IN (none, rejected)`), and\n  NOTHING_TO_REVIEW (requires integrity_flags IS NOT NULL OR\n  is_verified = false). Returns the full request row; flips\n  `sessions.review_status = pending_review` atomically.\n- BEFORE UPDATE OF review_status trigger\n  `fn_sessions_review_status_guard` enforces legal state\n  transitions; illegal transitions raise INVALID_TRANSITION.\n\nCI guard: `npm run audit:athlete-review-quarantine` — 32\ninvariants on column, state-machine CHECKs, visibility\nhelper, queue table shape, RPC gating, trigger behaviour, and\nself-test block.\n"
     },
     {
       "id": "L21-11",
@@ -10337,8 +10394,8 @@
       "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "fixed_at": "2026-04-21",
-      "closed_at": "2026-04-21",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "personas",
         "athlete-pro"
@@ -10362,7 +10419,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Fixed in 4bcadf6 (J30). Expanded coaching_members.role CHECK to {admin_master, coach, assistant, physio, nutritionist, psychologist, athlete} via pg_constraint introspection. public.role_permissions is the canonical (role, permission) matrix with shape CHECK namespace.action, public read RLS + platform_admin write. Seeded with canonical policy. fn_is_staff_role (IMMUTABLE PARALLEL SAFE) abstracts staff list. fn_role_has_permission (STABLE PARALLEL SAFE, NULL-safe). public.athlete_staff_access is the athlete-controlled per-(athlete, staff, permission) grant with composite PK + revoked_at >= granted_at CHECK + partial staff index on live rows + athlete-own write RLS + staff read of own rows. fn_my_role_in_group_ext (STABLE SECURITY DEFINER) returns {role, is_staff, permissions} jsonb. Invariants locked by npm run audit:staff-team-dashboard."
+      "note": "Fixed in 4bcadf6 (J30). Expanded `coaching_members.role`\nCHECK to include `physio`, `nutritionist`, `psychologist`\nwithout breaking any existing CHECK-bound RLS policy\n(`pg_constraint` introspection drops the existing CHECK\nby name, re-adds the expanded one). `public.role_permissions`\nis the canonical `(role, permission)` matrix — permission\nshape CHECK is `^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$` so\ncallers only query well-formed `namespace.action` strings.\nSeeded with the canonical policy (admin_master = everything;\ncoach = training + health read + health notes;\nnutritionist = nutrition read/write;\npsychologist = mental read/write;\nphysio = health notes write; athlete = read own).\n`fn_is_staff_role` (IMMUTABLE PARALLEL SAFE) abstracts the\nstaff membership list so new specialist roles don't need\nevery caller rewritten. `fn_role_has_permission` (STABLE\nPARALLEL SAFE, NULL-safe) reads role_permissions and\nreturns `COALESCE(granted, FALSE)`. `public.athlete_staff_access`\nis the athlete-controlled, per-(athlete, staff, permission)\ngrant (composite PK, `revoked_at >= granted_at` CHECK,\npartial staff index on live rows, athlete-own write RLS +\nstaff read of own rows + platform_admin read). Lets an\nathlete open nutrition to ONE nutritionist without\nblanket-enabling every nutritionist in the group.\n`fn_my_role_in_group_ext` returns `{role, is_staff,\npermissions}` jsonb so the portal/mobile render\nrole-specific dashboards without N queries. Invariants\nlocked by `npm run audit:staff-team-dashboard`.\n"
     },
     {
       "id": "L21-13",
@@ -10625,8 +10682,8 @@
       "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "fixed_at": "2026-04-21",
-      "closed_at": "2026-04-21",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "mobile",
@@ -10647,20 +10704,17 @@
         "portal/src/lib/omnicoin-narrative/translate.test.ts",
         "tools/audit/check-omnicoin-narrative.ts",
         "tools/audit/check-referral-program.ts",
-        "tools/audit/check-sponsorships.ts",
-        "tools/audit/check-ledger-reason-safety.ts"
+        "tools/audit/check-sponsorships.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [
-        "local:f960943"
-      ],
+      "linked_prs": [],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Módulo pure-domain portal/src/lib/omnicoin-narrative/ renderiza copy persona-aware via union fechado ChallengeLedgerReason (8 motivos, todos challenge-bound). Persona amateur nunca vê coin amounts ou a palavra 'OmniCoin'; pro/coach/admin_master veem o delta bruto. Escopo estendido (2026-04-21) com migration compensatória 20260421700000 que reverte vazamentos de L15-02 (referral) e L16-05 (sponsorship): fn_activate_referral reescrita sem INSERT em coin_ledger, fn_sponsorship_distribute_monthly_coins dropada, colunas de orçamento em coins removidas, CHECK coin_ledger_reason_check restaurada à lista canônica (institution_token_* reinstalados). Guard check-omnicoin-narrative (80 invariantes) varre supabase/ para bloquear qualquer literal de reason não-challenge novo."
+      "note": "Amadores nunca veem coins; o módulo `omnicoin-narrative` renderiza copy\npersona-aware usando um union fechado de `ChallengeLedgerReason` (8\nmotivos, todos ligados a desafios). Para a persona `amateur` o template\né puramente narrativo e **nunca** menciona \"OmniCoin\" nem números\nderivados de `deltaCoins`. Personas `pro` / `coach` / `admin_master`\nenxergam o valor bruto para reconciliação operacional.\n\nEscopo estendido (2026-04-21): após o product owner reafirmar que\n\"OmniCoins são usadas SOMENTE em desafios\", a migration compensatória\n`20260421700000_l22_02_revoke_nonchallenge_coins.sql` foi adicionada\npara reverter dois vazamentos introduzidos em Batch J:\n  - L15-02: `fn_activate_referral` creditava `referral_referrer_reward`\n    / `referral_referred_reward` no `coin_ledger` + bump em `wallets`.\n    Substituído por uma versão sem mutação de ledger/wallet (a tabela\n    `referrals` continua existindo para tracking de crescimento viral).\n  - L16-05: `fn_sponsorship_distribute_monthly_coins` creditava uma\n    mesada mensal sob reason `sponsorship_payout`. Função dropada e\n    colunas de orçamento (`monthly_coins_per_athlete`, `coin_budget_*`)\n    removidas de `sponsorships`.\n  - CHECK constraint `coin_ledger_reason_check` restaurado para a\n    lista canônica L03-13 + `challenge_withdrawal_refund`; reasons\n    pre-existentes `institution_token_*` / `institution_switch_burn`\n    (que L16-05 havia removido silenciosamente) foram reinstalados.\n  - Self-test da migration falha se qualquer reason proibido ressurgir.\n  - CI guard `check-omnicoin-narrative` varre `supabase/migrations` +\n    `supabase/functions` e falha se qualquer literal de reason\n    proibido for reintroduzido em código.\n"
     },
     {
       "id": "L22-03",
@@ -10694,7 +10748,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Fechado como scope-mismatch. O produto Omni Runner é voltado para assessorias esportivas — todo amador está em uma coaching_groups com coach que prescreve o plano. A persona 'solo runner sem coach' não existe neste produto. Caminho real: coach usa L23-06 periodization wizard + L23-05 workout template library para montar o plano que chega ao atleta via training_plan_weeks / training_plan_workouts (migration 20260407000000). Sem código novo, sem testes novos."
+      "note": "Finding resolvido como **scope-mismatch / N/A**. A hipótese do finding\noriginal era \"80 % dos amadores brasileiros treinam sem coach, o produto\nos exclui\". Isso não reflete o modelo de produto: **o Omni Runner é uma\nplataforma voltada para assessorias esportivas** — todo atleta amador\nque usa o produto está vinculado a uma assessoria / coaching_group com\num coach responsável por prescrever o plano. O cenário \"solo runner\nsem coach\" não é uma persona suportada e não será suportada.\n\nO caminho real de prescrição de plano para amador já existe em dois\nmódulos desta onda:\n\n- **L23-06 periodization wizard** (`portal/src/lib/periodization/`) —\n  coach escolhe `raceTarget + totalWeeks + athleteLevel` na wizard,\n  gera `PeriodizationPlan` base → build → peak → taper, materializa em\n  `training_plan_weeks`. Nunca é chamado diretamente pelo atleta.\n- **L23-05 workout template library** — catálogo canônico de workouts\n  que o coach usa para preencher o plano semanal após o macro-bloco da\n  wizard. Template library também é coach-facing only.\n- **Periodização existente** em\n  `supabase/migrations/20260407000000_training_plan_module.sql`\n  (~1500 linhas) já modela o fluxo coach → atleta end-to-end.\n\nNão há gap funcional a fechar. Qualquer futura feature \"plano\nauto-gerado\" só existiria para **auxiliar coaches** (ex: sugestão de\nprimeiro draft que o coach edita), nunca como atalho para contornar a\nassessoria. Se tal feature for eventualmente priorizada, ela vira um\nfinding novo com audit_ref diferente.\n"
     },
     {
       "id": "L22-04",
@@ -10865,7 +10919,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Fixed at 2026-04-21 (commit 56b1dfd) by shipping the canonical SQL schema for BR installment plans + gateway preference: billing_gateway_preferences, fn_recommend_gateway (BR→asaas), fn_validate_installment_config (R$ 5,00 minimum), billing_installment_plans (header, state machine), billing_installments (pending / paid / overdue / cancelled with partial index), and a complete RPC suite (create / mark_paid service-role / mark_overdue cron / cancel). 57-invariant CI guard `npm run audit:installments-br`."
+      "note": "Fixed at 2026-04-21 (commit 56b1dfd) by shipping the canonical SQL schema\nfor BR installment plans + per-group gateway preference:\n  - public.billing_gateway_preferences (admin_master write, coach read).\n  - fn_recommend_gateway(country_code) IMMUTABLE PARALLEL SAFE —\n    'asaas' for 'BR', 'stripe' otherwise (NULL included).\n  - fn_validate_installment_config(count, total_cents) IMMUTABLE PARALLEL\n    SAFE — enforces count ∈ [1, 12], total_cents > 0, and minimum R$ 5,00\n    per installment.\n  - public.billing_installment_plans (header, unique on purchase_id, state\n    machine active → completed / cancelled with CHECK on gateway,\n    payment_method, validity, terminal timestamps).\n  - public.billing_installments (state pending → paid / overdue /\n    cancelled, unique (plan_id, sequence_no), partial index on\n    (due_date) WHERE status='pending' for overdue sweeps).\n  - fn_create_installment_plan (admin-only, atomic schedule generation,\n    cents-exact distribution with remainder on first installment).\n  - fn_mark_installment_paid (service-role, idempotent, promotes plan to\n    completed when all installments are paid; FOR UPDATE).\n  - fn_mark_installments_overdue (service-role cron target).\n  - fn_cancel_installment_plan (admin-only, cascades pending + overdue).\n  - Self-tests assert gateway recommender, config validator, schema\n    CHECKs, and index presence.\n  - 57-invariant CI guard `npm run audit:installments-br`.\n"
     },
     {
       "id": "L22-08",
@@ -11270,28 +11324,36 @@
       "lens": 23,
       "title": "Workout delivery em massa sem preview por atleta",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "reliability",
-        "personas",
-        "coach"
+        "coach",
+        "rpc",
+        "preview"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260421720000_l23_01_bulk_assign_preview.sql",
+        "tools/audit/check-bulk-assign-preview.ts"
+      ],
+      "correction_type": "rpc",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-bulk-assign-preview.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "coach-tooling",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Introduz RPC read-only `public.fn_bulk_assign_preview(p_group_id,\np_athlete_ids[], p_target_date, p_planned_tss)` que gera matriz de\nrisco \"atleta × alerta\" ANTES do bulk-assign ser gravado. Retorna\njsonb envelope com:\n\n- `counts` {green, yellow, red, gray}\n- `athletes[]` com `risk_level`, `reasons[]`,\n  `workouts_confirmed_7d/14d`, `upcoming_week_count`,\n  `last_confirmed_at`\n\nRisk rules (derivadas dos sinais disponíveis hoje via\nworkout_delivery_items — sem depender de tabelas que ainda não\nexistem como injury_reports ou subjective_wellness):\n\n- 🔴 **red**   — ≥7 treinos confirmados em 7d (volume excessivo,\n                 >1/dia em média) OR ≥5 treinos na fila desta\n                 semana (overbooked).\n- 🟡 **yellow**— ≥5 confirmados em 7d OR ≥3 na fila desta semana.\n- ⚪ **gray**  — 0 confirmados em 14d (sem baseline de carga)\n                 OR perfil não é atleta do grupo.\n- 🟢 **green** — caso contrário.\n\nGates:\n- P0001 INVALID_INPUT: p_group_id null, p_athlete_ids vazio ou\n  > 500 entradas (DoS guard).\n- P0002 GROUP_NOT_FOUND: p_group_id inexistente.\n- P0010 UNAUTHORIZED: auth.uid() null ou role ≠ (coach|assistant).\n\nPropriedades:\n- `SECURITY DEFINER`, `STABLE` (read-only; nunca escreve em\n  qualquer tabela), `search_path = public, pg_temp`.\n- `REVOKE FROM PUBLIC` + `GRANT EXECUTE TO authenticated`.\n- **Nunca toca coin_ledger/wallets** (marker L04-07-OK reforçando\n  política L22-02 OmniCoin challenge-only).\n\nOrdenação do array retornado: red → yellow → gray → green, dentro\nde cada grupo por `display_name`. UX safer-first: atletas de\nmaior risco aparecem primeiro, coach confirma com 1 clique ou\najusta individual com 2 cliques.\n\nCI guard `audit:bulk-assign-preview` (60+ asserts) valida assinatura,\nSECURITY DEFINER, STABLE, thresholds de classificação, gates de\nerro, envelope shape, grants, ausência de escrita no ledger.\n\nFutura evolução: quando tabelas de injury-report ou subjective-\nwellness existirem, estender CTE `classified` para incorporar\nsinais adicionais sem quebrar o contrato externo.\n"
     },
     {
       "id": "L23-02",
@@ -11328,28 +11390,35 @@
       "lens": 23,
       "title": "Comunicação coach ↔ atleta carece",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "migration",
         "personas",
-        "coach"
+        "coach",
+        "messaging"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260421710000_l23_03_workout_messages.sql"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-workout-messages.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "coach-platform",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "`public.workout_messages` é a primitiva canônica para conversas\ninline coach↔atleta ancoradas em um `workout_delivery_items.id`.\nThread é **append-only** (no edit, no delete), cada mensagem carrega\n`body_text` (≤ 2000 chars) e/ou `audio_url` (HTTPS, duração 1-90 s).\n`chk_workout_messages_has_payload` impede bolha vazia;\n`chk_workout_messages_audio_shape` obriga URL HTTPS + duração\nválida; `chk_workout_messages_no_self_message` bloqueia auto-envio.\n\nRLS scope tri-party: participante envia/lê (`from_user_id = uid` ou\n`to_user_id = uid`) + staff do grupo (`admin_master`, `coach`,\n`assistant`) lê para moderação. Todas as políticas INSERT/UPDATE/\nDELETE diretas são **bloqueadas** (`WITH CHECK false` / `USING\nfalse`) — a única rota de escrita autorizada é o RPC `SECURITY\nDEFINER` `fn_workout_message_send(item_id, body_text, audio_url,\naudio_duration_sec)`, que (i) exige `auth.uid()`, (ii) resolve o\nrecipiente a partir do `athlete_user_id` do item para staff, ou o\ncoach canônico do grupo para reply do atleta, (iii) rejeita\nnão-participante com P0004, item inexistente com P0002, payload\nvazio com P0005.\n\n`fn_workout_message_mark_read(message_id)` é recipient-only com\n`FOR UPDATE`, idempotente (retorna `false` se já lida). O trigger\n`fn_workout_messages_read_at_guard` garante que (a) `read_at` só é\ngravado uma vez, (b) nenhuma outra coluna (`body_text`, `audio_url`,\n`audio_duration_sec`, `from_user_id`, `to_user_id`, `created_at`)\npode ser mutada via UPDATE. `fn_workout_message_unread_count()` é\n`STABLE SECURITY DEFINER` scoped a `auth.uid()` para a UI render o\nbadge sem expor dados de outro atleta.\n\nÍndices cobrem (a) thread read `(workout_delivery_item_id,\ncreated_at)` para abrir o chat, (b) partial `(to_user_id, created_at\nDESC) WHERE read_at IS NULL` para unread inbox, (c) `(group_id,\ncreated_at DESC)` para staff moderation overview.\n\nCoin policy: O RPC de envio **não** toca `coin_ledger` em\ncircunstância alguma — mensagens são feature de produto, não\ngatilho de OmniCoin (reforça L22-02). O guard CI tem teste\ndedicado de ausência da string `coin_ledger` na migration.\n\nSelf-test inline na migration valida: tabela presente, 4 CHECKs\npresentes, RLS habilitada, ausência de policies INSERT/UPDATE/\nDELETE permissivas, 3 RPCs presentes como SECURITY DEFINER,\ntrigger de read_at presente, índice partial de unread presente.\n49 invariantes via `audit:workout-messages`.\n"
     },
     {
       "id": "L23-04",
@@ -11357,27 +11426,36 @@
       "lens": 23,
       "title": "Bulk assign semanal (ver 20260416000000_bulk_assign_and_week_templates.sql) sem rollback",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "migration",
-        "personas",
-        "coach"
+        "coach",
+        "rollback",
+        "sql",
+        "rpc"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260421730000_l23_04_bulk_assign_rollback.sql",
+        "tools/audit/check-bulk-assign-rollback.ts"
+      ],
+      "correction_type": "rpc",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-bulk-assign-rollback.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "coach-tooling",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Migration aditiva, retrocompatível:\n\n1. Nova tabela `public.bulk_assign_batches` registra cada lote\n   com `actor_id`, `group_id`, `description`, `items_count`,\n   `undo_ttl_minutes` (1–1440, default 60), `created_at`,\n   `undone_at`, `undone_by`, `undo_reason`. CHECK garante\n   consistência de (undone_at, undone_by).\n2. Colunas opcionais `bulk_batch_id` em `plan_workout_releases`\n   e `training_plan_weeks`, indexadas parcialmente (WHERE IS NOT\n   NULL para evitar overhead em linhas legacy).\n3. RPCs `SECURITY DEFINER`, `search_path=public,pg_temp`,\n   REVOKE PUBLIC + GRANT EXECUTE TO authenticated:\n\n   - `fn_bulk_assign_batch_open(group_id, actor_id, description,\n     ttl_minutes)` — cria batch; role gate coach/admin_master.\n   - `fn_bulk_assign_batch_attach(batch_id, release_ids[],\n     week_ids[])` — anexa releases criados por\n     `fn_bulk_assign_week` ao batch; group_id boundary defense.\n   - `fn_bulk_assign_batch_undo(batch_id, actor_id, reason)` —\n     desfaz atomicamente: cancela plan_workout_releases,\n     cancela training_plan_weeks, escreve workout_change_log\n     com change_type='bulk_assign_undone', atualiza batch\n     com undone_at/by/reason. Retorna jsonb com counts.\n   - `fn_bulk_assign_batch_summary(batch_id)` — read-only jsonb\n     com `can_undo`, `already_undone`, `undo_deadline`; UI usa\n     para habilitar/desabilitar botão \"Desfazer\".\n\nGates do undo:\n- P0001 INVALID_INPUT: batch_id ou actor_id null.\n- P0002 BATCH_NOT_FOUND: batch inexistente.\n- P0003 BATCH_ALREADY_UNDONE: idempotência.\n- P0005 UNDO_WINDOW_EXPIRED: TTL excedido (default 60 min).\n- P0010 UNAUTHORIZED: actor não é coach/admin_master do grupo\n  nem platform_admin, OU actor ≠ batch.actor_id (sem escalação\n  por platform_admin).\n\nRLS em `bulk_assign_batches`: leitura permitida a staff do grupo\n(admin_master, coach, assistant); DML direto bloqueado (só via\nRPC).\n\nOmniCoin: nenhuma função toca coin_ledger/wallets (L04-07-OK).\n\nCI guard `audit:bulk-assign-rollback` (~70 asserts) valida\nschema, RLS, SECURITY DEFINER em todas as 4 RPCs, REVOKE/GRANT,\ncódigos de erro canônicos (P0001/P0002/P0003/P0005/P0010), TTL\nbounds, author-only gate, group boundary em attach, ausência\nde INSERT em coin_ledger, self-test runtime.\n\nIntegração com coach tooling: UI chama\n`fn_bulk_assign_batch_open` → `fn_bulk_assign_week` (cria\nreleases, existente) → `fn_bulk_assign_batch_attach` com os IDs\nretornados. Se coach clicar \"Desfazer último lote\", chama\n`fn_bulk_assign_batch_summary` para validar TTL, depois\n`fn_bulk_assign_batch_undo`.\n"
     },
     {
       "id": "L23-05",
@@ -11415,7 +11493,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Fixed at 2026-04-21 (commit 4f71114) by seeding the canonical workout catalogue: public.workout_template_catalog (global, slug UNIQUE + shape CHECK, category/workout_type/source enums, difficulty [1,5], RLS public read / platform_admin write) + public.workout_template_catalog_blocks mirroring coaching_workout_blocks, 12 seeded workouts from Daniels/Pfitzinger/Hudson/Custom with ON CONFLICT DO NOTHING, fn_clone_catalog_template (coach/admin_master, idempotent via catalog_slug anchor), fn_list_catalog_templates (STABLE SECURITY INVOKER). 46-invariant CI guard `npm run audit:workout-template-library`."
+      "note": "Fixed at 2026-04-21 (commit 4f71114) by seeding the canonical workout\ncatalogue and cloning RPC:\n  - public.workout_template_catalog — global library (no group_id),\n    with slug UNIQUE + shape CHECK (^[a-z][a-z0-9_-]{2,62}$),\n    category CHECK enum (12 types), workout_type CHECK enum, source\n    CHECK enum (daniels, pfitzinger, hudson, custom), difficulty ∈\n    [1, 5], is_active flag. RLS: public read of active templates +\n    platform_admin write.\n  - public.workout_template_catalog_blocks — mirrors\n    coaching_workout_blocks shape, with block_type / hr_zone / rpe\n    CHECKs and UNIQUE(catalog_id, order_index).\n  - Seed: 12 canonical workouts (Daniels, Pfitzinger, Hudson, Custom)\n    inserted via ON CONFLICT (slug) DO NOTHING; some include\n    block-level seeds (e.g. daniels-tempo-20).\n  - fn_clone_catalog_template(catalog_id, group_id, custom_name) —\n    SECURITY DEFINER, coach / admin_master only, idempotent via\n    catalog_slug anchor in the description, copies blocks.\n  - fn_list_catalog_templates(category, source, difficulty_max) —\n    STABLE SECURITY INVOKER, filter helper.\n  - Self-tests assert seed count, source diversity, block count,\n    CHECK / index presence.\n  - 46-invariant CI guard `npm run audit:workout-template-library`.\n"
     },
     {
       "id": "L23-06",
@@ -11528,7 +11606,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Fixed at 2026-04-21 (commit 32819d4) by adding a geofenced auto-check-in path on top of the existing QR flow: coaching_training_sessions gains location_radius_meters + checkin_early/late_seconds + geofence_enabled with CHECK guards, coaching_training_attendance gains coords + auto_geo method. New coaching_attendance_audit append-only log. fn_session_checkin_window (STABLE) and fn_auto_checkin (SECURITY DEFINER, validates geofence via fn_haversine_m, time window, GPS accuracy ≤ 100m, idempotent via ON CONFLICT, audits every accept/reject). 51-invariant CI guard `npm run audit:geofenced-checkin`."
+      "note": "Fixed at 2026-04-21 (commit 32819d4) by extending the existing QR\nattendance rail with a geofenced auto-check-in path that lets\nathletes check themselves in when they enter the session's radius:\n  - coaching_training_sessions gains location_radius_meters\n    (CHECK [25, 5000]), checkin_early_seconds / checkin_late_seconds\n    (both [0, 86400]), geofence_enabled (default FALSE). CHECK\n    geofence_requires_location forces lat/lng/radius when enabled.\n  - coaching_training_attendance gains checkin_lat / checkin_lng /\n    checkin_accuracy_m. CHECK method_check drops and re-adds to add\n    'auto_geo'. CHECK auto_geo_has_coords forces coords on auto_geo\n    rows.\n  - public.coaching_attendance_audit append-only log of accepted +\n    rejected attempts with reason_code (shape ^[A-Z][A-Z0-9_]{2,48}$).\n    RLS: athlete-self, staff per-session, platform_admin.\n  - fn_session_checkin_window(session_id) STABLE SECURITY INVOKER —\n    returns (window_open_at, window_close_at, is_open).\n  - fn_auto_checkin(session_id, lat, lng, accuracy_m) SECURITY\n    DEFINER — validates auth, lat/lng range, accuracy_m ≤ 100,\n    session not cancelled, geofence_enabled, membership, window,\n    and uses fn_haversine_m for distance. Idempotent via\n    ON CONFLICT (session_id, athlete_user_id) DO NOTHING. Every\n    rejection emits an audit row with an explicit reason code.\n  - fn_record_attendance_audit SECURITY DEFINER fail-open (RAISE\n    WARNING) so audit outages never block a legitimate check-in.\n  - Self-tests assert column / CHECK / fn_auto_checkin presence.\n  - 51-invariant CI guard `npm run audit:geofenced-checkin`.\n"
     },
     {
       "id": "L23-09",
@@ -11567,7 +11645,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Fixed at 2026-04-21 (commit b063aab) by shipping the per-athlete monthly subscription + invoice schema: athlete_subscriptions (state machine active/paused/cancelled with biconditional state_timestamps CHECK, partial unique blocks duplicate active subs per (group,athlete)), athlete_subscription_invoices (state machine pending/paid/overdue/cancelled with UNIQUE(subscription_id, period_month) for idempotent cycle generation, period_first_of_month CHECK). RPC suite: fn_subscription_start (admin-only, R$ 5,00 floor, day [1,28]), fn_subscription_pause, fn_subscription_cancel (athlete-self OR staff, cascades pending invoices), fn_subscription_generate_cycle (service-role cron, ON CONFLICT idempotent), fn_subscription_mark_invoice_paid (service-role, idempotent, emits subscription.invoice.paid outbox event guarded by to_regproc + fail-open), fn_subscription_mark_overdue. 56-invariant CI guard `npm run audit:athlete-subscriptions`."
+      "note": "Fixed at 2026-04-21 (commit b063aab) by shipping the per-athlete\nmonthly subscription + invoice schema so the coletivo loop (athlete\npays → group custody credit → staff withdrawal) can close end-to-end:\n  - public.athlete_subscriptions — (group, athlete) contract with\n    price_cents, billing_day_of_month ∈ [1, 28], gateway ∈\n    {asaas, stripe, mercadopago}, 3-state machine (active / paused /\n    cancelled) with CHECK state_timestamps biconditional. Partial\n    unique index blocks duplicate active subscriptions. RLS:\n    athlete-self + group staff read.\n  - public.athlete_subscription_invoices — one row per (subscription,\n    period_month) via UNIQUE index, status ∈ {pending, paid, overdue,\n    cancelled}, biconditional paid_timestamp + cancelled_timestamp\n    CHECKs. period_first_of_month CHECK. Partial status+due index.\n  - fn_subscription_start (admin-only, enforces coach/admin_master,\n    athlete membership, R$ 5,00 floor, day range).\n  - fn_subscription_pause (admin-only, rejects non-active).\n  - fn_subscription_cancel (athlete-self OR group staff, cascades\n    pending invoices to cancelled).\n  - fn_subscription_generate_cycle (service-role cron, idempotent via\n    ON CONFLICT).\n  - fn_subscription_mark_invoice_paid (service-role, idempotent on\n    paid, emits outbox event subscription.invoice.paid guarded by\n    to_regproc + fail-open so the coin-credit pipeline can consume\n    asynchronously).\n  - fn_subscription_mark_overdue (service-role sweep).\n  - 56-invariant CI guard `npm run audit:athlete-subscriptions`.\n"
     },
     {
       "id": "L23-10",
@@ -11604,7 +11682,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Fixed at 2026-04-21 (commit d4c4a21) by aggregating existing assignments into a pairing with its own confirmation state machine: coaching_workout_pairings (5 states pending/partially_confirmed/all_confirmed/completed/dissolved with biconditional timestamps), coaching_workout_pairing_members (3-state confirmation, unique(assignment_id) blocks re-pairing). RPCs: fn_pairing_recompute_status (pure aggregation, priority completed > dissolved > all_confirmed > partially_confirmed > pending), fn_pairing_create (admin-only, 2-20 members, share group+date), fn_pairing_respond (athlete-self, FOR UPDATE serialized, emits workout.pairing.partner_declined outbox on decline). 50-invariant CI guard `npm run audit:paired-workouts`."
+      "note": "Fixed at 2026-04-21 (commit d4c4a21) by introducing the pairing\naggregate on top of coaching_workout_assignments:\n  - public.coaching_workout_pairings (group_id, scheduled_date,\n    title, min_confirmations ∈ [2, 20], 5-state machine\n    pending → partially_confirmed → all_confirmed → completed /\n    dissolved) with biconditional dissolved_timestamp /\n    completed_timestamp CHECKs.\n  - public.coaching_workout_pairing_members — join with\n    confirmation_status ∈ {pending, confirmed, declined},\n    responded_at, decline_reason. CHECK responded_timestamp\n    biconditional, decline_has_reason_shape enforces reason\n    length on decline. Unique indexes on assignment_id\n    (no assignment in two pairings) and (pairing, athlete).\n  - fn_pairing_recompute_status — pure aggregation helper with\n    priority completed > dissolved > all_confirmed >\n    partially_confirmed > pending. Stamps transition timestamps.\n  - fn_pairing_create (admin-only, 2-20 assignments, share\n    group + date, refuses assignments already paired with\n    23505 unique_violation).\n  - fn_pairing_respond (athlete-self, FOR UPDATE to serialize,\n    refuses terminal pairings with P0005, emits\n    workout.pairing.partner_declined outbox event on decline\n    guarded by to_regproc + fail-open so mobile clients can\n    notify the remaining partners).\n  - Self-tests assert pairings status_check, dissolved_timestamp\n    CHECK, responded_timestamp CHECK, assignment uniq index.\n  - 50-invariant CI guard `npm run audit:paired-workouts`.\n"
     },
     {
       "id": "L23-11",

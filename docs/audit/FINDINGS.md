@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-23 19:00:03 UTC.
+> Atualizado em 2026-04-23 23:11:53 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -98,8 +98,8 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L04-02](./findings/L04-02-edge-function-delete-account-deleta-auth-users-mesmo.md) | 1 | L04 · CLO | Edge Function delete-account deleta auth.users mesmo quando fn_delete_user_data falha | platform |
 | 🔴 critical | ✅ fixed | [L04-03](./findings/L04-03-nao-ha-registro-de-consentimento-opt-in-explicito.md) | 0 | L04 · CLO | Não há registro de consentimento (opt-in explícito LGPD Art. 8) | platform-privacy |
 | 🔴 critical | ✅ fixed | [L04-04](./findings/L04-04-dados-de-saude-biometricos-dados-sensiveis-lgpd-art.md) | 0 | L04 · CLO | Dados de saúde/biométricos (dados sensíveis, LGPD Art. 11) sem proteção reforçada | unassigned |
-| 🟠 high | ⏳ fix-pending | [L04-05](./findings/L04-05-trajetorias-gps-brutas-sem-opcao-de-privacy-zones.md) | 1 | L04 · CLO | Trajetórias GPS brutas sem opção de privacy zones (home/work zones) | unassigned |
-| 🟠 high | ⏳ fix-pending | [L04-06](./findings/L04-06-campo-instagram-handle-tiktok-handle-em-profiles-sem.md) | 1 | L04 · CLO | Campo instagram_handle, tiktok_handle em profiles sem política de uso | unassigned |
+| 🟠 high | ✅ fixed | [L04-05](./findings/L04-05-trajetorias-gps-brutas-sem-opcao-de-privacy-zones.md) | 1 | L04 · CLO | Trajetórias GPS brutas sem opção de privacy zones (home/work zones) | unassigned |
+| 🟠 high | ✅ fixed | [L04-06](./findings/L04-06-campo-instagram-handle-tiktok-handle-em-profiles-sem.md) | 1 | L04 · CLO | Campo instagram_handle, tiktok_handle em profiles sem política de uso | unassigned |
 | 🟠 high | ✅ fixed | [L04-07](./findings/L04-07-coin-ledger-retem-reason-com-pii-embutida.md) | 1 | L04 · CLO | coin_ledger retém reason com PII embutida | clo |
 | 🟠 high | ✅ fixed | [L04-08](./findings/L04-08-backups-supabase-sem-politica-de-retencao-documentada.md) | 1 | L04 · CLO | Backups Supabase — sem política de retenção documentada | platform |
 | 🟠 high | ✅ fixed | [L04-09](./findings/L04-09-terceiros-strava-trainingpeaks-nao-ha-processo-de-revogacao.md) | 1 | L04 · CLO | Terceiros (Strava, TrainingPeaks) — não há processo de revogação | platform |
@@ -114,9 +114,9 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L05-03](./findings/L05-03-post-api-distribute-coins-amount-max-1000-conflita.md) | 1 | L05 · CPO | POST /api/distribute-coins: amount max 1000 — conflita com grandes clubes | unassigned |
 | 🟠 high | ⏳ fix-pending | [L05-04](./findings/L05-04-challenge-championship-participante-pode-retirar-se-withdraw.md) | 1 | L05 · CPO | Challenge/Championship: participante pode retirar-se (withdraw) durante disputa — sem regra de cutoff | unassigned |
 | 🟠 high | ⏳ fix-pending | [L05-05](./findings/L05-05-challenge-ganhador-de-zero-participantes.md) | 1 | L05 · CPO | Challenge: ganhador de zero participantes | unassigned |
-| 🟠 high | ⏳ fix-pending | [L05-06](./findings/L05-06-championship-champ-cancel-refund-de-badges-parcial-e.md) | 1 | L05 · CPO | Championship champ-cancel: refund de badges parcial e silencioso | unassigned |
+| 🟠 high | ✅ fixed | [L05-06](./findings/L05-06-championship-champ-cancel-refund-de-badges-parcial-e.md) | 1 | L05 · CPO | Championship champ-cancel: refund de badges parcial e silencioso | unassigned |
 | 🟠 high | ✅ fixed | [L05-07](./findings/L05-07-swap-amount-minimo-us-100-inviabiliza-grupos-pequenos.md) | 1 | L05 · CPO | Swap: amount mínimo US$ 100 inviabiliza grupos pequenos | cpo+frontend |
-| 🟠 high | ⏳ fix-pending | [L05-08](./findings/L05-08-withdraw-nenhuma-tela-de-progresso-para-pending-processing.md) | 1 | L05 · CPO | Withdraw: nenhuma tela de progresso para pending→processing→completed | unassigned |
+| 🟠 high | ✅ fixed | [L05-08](./findings/L05-08-withdraw-nenhuma-tela-de-progresso-para-pending-processing.md) | 1 | L05 · CPO | Withdraw: nenhuma tela de progresso para pending→processing→completed | unassigned |
 | 🟠 high | ✅ fixed | [L05-09](./findings/L05-09-deposit-custody-deposits-sem-cap-diario-antifraude.md) | 1 | L05 · CPO | Deposit custody_deposits — sem cap diário antifraude | cfo+ciso |
 | 🟡 medium | ⏳ fix-pending | [L05-10](./findings/L05-10-swap-offers-visivel-para-todos-os-grupos-sem.md) | 2 | L05 · CPO | Swap offers: visível para todos os grupos, sem filtro de contraparte | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L05-11](./findings/L05-11-ui-distribute-coins-sem-confirmacao-dupla-de-grandes.md) | 2 | L05 · CPO | UI distribute-coins: sem confirmação dupla de grandes valores | unassigned |
@@ -142,9 +142,9 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L06-11](./findings/L06-11-secret-rotation-sem-playbook.md) | 2 | L06 · COO | Secret rotation sem playbook | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L06-12](./findings/L06-12-api-liveness-trivial-mas-api-readiness-inexistente.md) | 2 | L06 · COO | /api/liveness trivial mas /api/readiness inexistente | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L06-13](./findings/L06-13-logs-estruturados-sem-request-id-propagado-do-portal.md) | 2 | L06 · COO | Logs estruturados sem request_id propagado do portal | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L07-01](./findings/L07-01-mensagens-de-erro-em-portugues-hardcoded-no-backend.md) | 1 | L07 · CXO | Mensagens de erro em português hardcoded no backend | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L07-02](./findings/L07-02-onboarding-nao-distingue-papeis-atleta-coach-admin-master.md) | 1 | L07 · CXO | Onboarding não distingue papéis (atleta, coach, admin_master) | unassigned |
-| 🟠 high | ⏳ fix-pending | [L07-03](./findings/L07-03-app-mobile-sem-modo-offline-robusto-para-corridas.md) | 1 | L07 · CXO | App mobile sem modo offline robusto para corridas | unassigned |
+| 🔴 critical | ✅ fixed | [L07-01](./findings/L07-01-mensagens-de-erro-em-portugues-hardcoded-no-backend.md) | 1 | L07 · CXO | Mensagens de erro em português hardcoded no backend | portal-platform |
+| 🔴 critical | ✅ fixed | [L07-02](./findings/L07-02-onboarding-nao-distingue-papeis-atleta-coach-admin-master.md) | 1 | L07 · CXO | Onboarding não distingue papéis (coach, admin_master, assistant) | portal-ux |
+| 🟠 high | ✅ fixed | [L07-03](./findings/L07-03-app-mobile-sem-modo-offline-robusto-para-corridas.md) | 1 | L07 · CXO | App mobile sem modo offline robusto para corridas | unassigned |
 | 🟠 high | ✅ fixed | [L07-04](./findings/L07-04-flutter-deep-link-strava-oauth-sem-state-validation.md) | 1 | L07 · CXO | Flutter deep link Strava OAuth sem state validation (CSRF) | mobile |
 | 🟠 high | ✅ fixed | [L07-05](./findings/L07-05-portal-sem-acessibilidade-a11y-declarada.md) | 1 | L07 · CXO | Portal sem acessibilidade (a11y) declarada | platform-portal |
 | 🟠 high | ✅ fixed | [L07-06](./findings/L07-06-timezone-sem-configuracao-do-usuario.md) | 1 | L07 · CXO | Timezone sem configuração do usuário | cxo |
@@ -167,12 +167,12 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L08-10](./findings/L08-10-sem-cohort-analysis-estruturada.md) | 2 | L08 · CDO | Sem cohort analysis estruturada | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L08-11](./findings/L08-11-feature-flags-quando-6-6-implementar-precisam-de.md) | 2 | L08 · CDO | Feature flags (quando [6.6] implementar) precisam de metrics | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L08-12](./findings/L08-12-mobile-analytics-nao-enviados-quando-offline.md) | 2 | L08 · CDO | Mobile: analytics não enviados quando offline | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L09-01](./findings/L09-01-modelo-de-coin-us-1-pode-ser-classificado.md) | 1 | L09 · CRO | Modelo de "Coin = US$ 1" pode ser classificado como arranjo de pagamento (BCB Circ. 3.885/2018) | unassigned |
+| 🔴 critical | ✅ fixed | [L09-01](./findings/L09-01-modelo-de-coin-us-1-pode-ser-classificado.md) | 1 | L09 · CRO | Modelo de "Coin = US$ 1" pode ser classificado como arranjo de pagamento (BCB Circ. 3.885/2018) | legal-finance-platform |
 | 🔴 critical | ⏳ fix-pending | [L09-02](./findings/L09-02-ausencia-de-kyc-aml-para-grupos-com-custodia.md) | 1 | L09 · CRO | Ausência de KYC/AML para grupos com custódia | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L09-03](./findings/L09-03-relatorio-de-operacoes-sos-coaf-inexistente.md) | 1 | L09 · CRO | Relatório de Operações (SOS COAF) inexistente | unassigned |
 | 🔴 critical | ✅ fixed | [L09-04](./findings/L09-04-nota-fiscal-recibo-fiscal-nao-emitida-em-withdrawals.md) | 0 | L09 · CRO | Nota fiscal / recibo fiscal não emitida em withdrawals | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L09-05](./findings/L09-05-iof-nao-recolhido-em-swap-inter-cliente.md) | 1 | L09 · CRO | IOF não recolhido em swap inter-cliente | unassigned |
-| 🟠 high | ⏳ fix-pending | [L09-06](./findings/L09-06-gateway-de-pagamento-asaas-chave-armazenada-em-plaintext.md) | 1 | L09 · CRO | Gateway de pagamento Asaas: chave armazenada em plaintext na DB | unassigned |
+| 🔴 critical | ✅ fixed | [L09-05](./findings/L09-05-iof-nao-recolhido-em-swap-inter-cliente.md) | 1 | L09 · CRO | IOF não recolhido em swap inter-cliente | platform-finance |
+| 🟠 high | ✅ fixed | [L09-06](./findings/L09-06-gateway-de-pagamento-asaas-chave-armazenada-em-plaintext.md) | 1 | L09 · CRO | Gateway de pagamento Asaas: chave armazenada em plaintext na DB | unassigned |
 | 🟠 high | ✅ fixed | [L09-07](./findings/L09-07-politica-de-reembolso-chargeback-sem-prazo-sla.md) | 1 | L09 · CRO | Política de reembolso/chargeback sem prazo SLA | platform-finance |
 | 🟠 high | ✅ fixed | [L09-08](./findings/L09-08-provider-fee-usd-2-12-onus-ao-cliente.md) | 1 | L09 · CRO | provider_fee_usd ([2.12]) — ônus ao cliente ou à plataforma? | platform-finance |
 | 🟠 high | ✅ fixed | [L09-09](./findings/L09-09-contratos-privados-termo-de-adesao-do-clube-termo.md) | 1 | L09 · CRO | Contratos privados (termo de adesão do clube, termo de atleta) inexistentes no repo | legal-ops |
@@ -181,10 +181,10 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L09-12](./findings/L09-12-auditoria-externa-financeira-inexistente.md) | 2 | L09 · CRO | Auditoria externa financeira — inexistente | unassigned |
 | 🔴 critical | ✅ fixed | [L10-01](./findings/L10-01-nenhum-bug-bounty-disclosure-policy.md) | 1 | L10 · CSO | Nenhum bug bounty / disclosure policy | security |
 | 🔴 critical | ✅ fixed | [L10-02](./findings/L10-02-threat-model-formal-nao-documentado.md) | 1 | L10 · CSO | Threat model formal não documentado | security |
-| 🔴 critical | ⏳ fix-pending | [L10-03](./findings/L10-03-service-role-key-distribuida-amplamente.md) | 1 | L10 · CSO | Service-role key distribuída amplamente | unassigned |
+| 🔴 critical | ✅ fixed | [L10-03](./findings/L10-03-service-role-key-distribuida-amplamente.md) | 1 | L10 · CSO | Service-role key distribuída amplamente | unassigned |
 | 🟠 high | ✅ fixed | [L10-04](./findings/L10-04-sem-waf-explicito.md) | 1 | L10 · CSO | Sem WAF explícito | platform-security |
 | 🟠 high | ✅ fixed | [L10-05](./findings/L10-05-csp-hardened-1-31-mas-sem-report-uri.md) | 1 | L10 · CSO | CSP hardened ([1.31]) mas sem report-uri | portal-team |
-| 🟠 high | ⏳ fix-pending | [L10-06](./findings/L10-06-segregacao-de-funcao-sod-ausente-em-platform-admin.md) | 1 | L10 · CSO | Segregação de função (SoD) ausente em platform_admin | unassigned |
+| 🟠 high | ✅ fixed | [L10-06](./findings/L10-06-segregacao-de-funcao-sod-ausente-em-platform-admin.md) | 1 | L10 · CSO | Segregação de função (SoD) ausente em platform_admin | unassigned |
 | 🟠 high | ✅ fixed | [L10-07](./findings/L10-07-zero-trust-entre-microservicos-edge-functions-confiam-no.md) | 1 | L10 · CSO | Zero-trust entre microserviços — Edge Functions confiam no JWT sem validar audience | platform |
 | 🟠 high | ✅ fixed | [L10-08](./findings/L10-08-logs-de-acesso-sensiveis-sem-imutabilidade.md) | 1 | L10 · CSO | Logs de acesso sensíveis sem imutabilidade | platform |
 | 🟠 high | ✅ fixed | [L10-09](./findings/L10-09-falta-defesa-anti-credential-stuffing-no-mobile-portal.md) | 1 | L10 · CSO | Falta defesa anti credential stuffing no Mobile/Portal | platform-security |
@@ -237,26 +237,26 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L14-07](./findings/L14-07-sem-idempotency-key-header-em-posts-financeiros.md) | 2 | L14 · Contracts | Sem idempotency-key header em POSTs financeiros | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L14-08](./findings/L14-08-content-negotiation-inexistente.md) | 2 | L14 · Contracts | Content negotiation inexistente | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L14-09](./findings/L14-09-sem-quota-por-parceiro-api-key-tier.md) | 2 | L14 · Contracts | Sem quota por parceiro (API key tier) | unassigned |
-| 🟠 high | ⏳ fix-pending | [L15-01](./findings/L15-01-zero-utm-tracking-no-produto.md) | 1 | L15 · CMO | Zero UTM tracking no produto | unassigned |
-| 🟠 high | ⏳ fix-pending | [L15-02](./findings/L15-02-sem-sistema-de-referral-convite-viral.md) | 1 | L15 · CMO | Sem sistema de referral/convite viral | unassigned |
-| 🟠 high | ⏳ fix-pending | [L15-03](./findings/L15-03-social-sharing-sem-open-graph-dinamico.md) | 1 | L15 · CMO | Social sharing sem Open Graph dinâmico | unassigned |
+| 🟠 high | ✅ fixed | [L15-01](./findings/L15-01-zero-utm-tracking-no-produto.md) | 1 | L15 · CMO | Zero UTM tracking no produto | unassigned |
+| 🟠 high | ✅ fixed | [L15-02](./findings/L15-02-sem-sistema-de-referral-convite-viral.md) | 1 | L15 · CMO | Sem sistema de referral/convite viral | unassigned |
+| 🟠 high | ✅ fixed | [L15-03](./findings/L15-03-social-sharing-sem-open-graph-dinamico.md) | 1 | L15 · CMO | Social sharing sem Open Graph dinâmico | unassigned |
 | 🟠 high | ✅ fixed | [L15-04](./findings/L15-04-sem-email-transactional-platform.md) | 1 | L15 · CMO | Sem email transactional platform | platform |
 | 🟡 medium | ⏳ fix-pending | [L15-05](./findings/L15-05-sem-landing-pages-seo-otimizadas.md) | 2 | L15 · CMO | Sem landing pages SEO-otimizadas | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L15-06](./findings/L15-06-sem-a-b-testing-framework.md) | 2 | L15 · CMO | Sem A/B testing framework | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L15-07](./findings/L15-07-wrapped-ja-existe-nao-e-compartilhavel-fora-do.md) | 2 | L15 · CMO | Wrapped (já existe) não é compartilhável fora do app | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L15-08](./findings/L15-08-sem-push-segmentation.md) | 2 | L15 · CMO | Sem push segmentation | unassigned |
-| 🟠 high | ⏳ fix-pending | [L16-01](./findings/L16-01-sem-white-label-branding-customizado-por-grupo.md) | 1 | L16 · CAO | Sem white-label / branding customizado por grupo | unassigned |
-| 🟠 high | ⏳ fix-pending | [L16-02](./findings/L16-02-sem-custom-domain-por-assessoria.md) | 1 | L16 · CAO | Sem custom domain por assessoria | unassigned |
+| 🟠 high | ✅ fixed | [L16-01](./findings/L16-01-sem-white-label-branding-customizado-por-grupo.md) | 1 | L16 · CAO | Sem white-label / branding customizado por grupo | unassigned |
+| 🟠 high | ✅ fixed | [L16-02](./findings/L16-02-sem-custom-domain-por-assessoria.md) | 1 | L16 · CAO | Sem custom domain por assessoria | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L16-03](./findings/L16-03-sem-api-publica-para-parceiros-b2b.md) | 1 | L16 · CAO | Sem API pública para parceiros B2B | unassigned |
-| 🟠 high | ⏳ fix-pending | [L16-04](./findings/L16-04-sem-outbound-webhooks-para-parceiros.md) | 1 | L16 · CAO | Sem outbound webhooks para parceiros | unassigned |
-| 🟠 high | ⏳ fix-pending | [L16-05](./findings/L16-05-integracoes-de-marcas-esportivas-sem-schema.md) | 1 | L16 · CAO | Integrações de marcas esportivas sem schema | unassigned |
-| 🟠 high | ⏳ fix-pending | [L16-06](./findings/L16-06-strava-trainingpeaks-oauth-sem-telemetria-de-uso.md) | 1 | L16 · CAO | Strava / TrainingPeaks OAuth sem telemetria de uso | unassigned |
+| 🟠 high | ✅ fixed | [L16-04](./findings/L16-04-sem-outbound-webhooks-para-parceiros.md) | 1 | L16 · CAO | Sem outbound webhooks para parceiros | unassigned |
+| 🟠 high | ✅ fixed | [L16-05](./findings/L16-05-integracoes-de-marcas-esportivas-sem-schema.md) | 1 | L16 · CAO | Integrações de marcas esportivas sem schema | unassigned |
+| 🟠 high | ✅ fixed | [L16-06](./findings/L16-06-strava-trainingpeaks-oauth-sem-telemetria-de-uso.md) | 1 | L16 · CAO | Strava / TrainingPeaks OAuth sem telemetria de uso | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L16-07](./findings/L16-07-trainingpeaks-oauth-client-credentials-em-env.md) | 2 | L16 · CAO | TrainingPeaks OAuth client credentials em env | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L16-08](./findings/L16-08-sem-marketplace-de-treinos-planos.md) | 2 | L16 · CAO | Sem marketplace de treinos/planos | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L16-09](./findings/L16-09-sso-saml-oidc-para-enterprise.md) | 2 | L16 · CAO | SSO SAML/OIDC para enterprise | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L16-10](./findings/L16-10-sem-tier-free-trial-sandbox-para-parceiros.md) | 2 | L16 · CAO | Sem tier "free trial" / sandbox para parceiros | unassigned |
 | 🔴 critical | ✅ fixed | [L17-01](./findings/L17-01-witherrorhandler-nao-e-usado-em-endpoints-financeiros-critic.md) | 1 | L17 · VP Eng | withErrorHandler não é usado em endpoints financeiros críticos | platform-team |
-| 🔴 critical | ⏳ fix-pending | [L17-02](./findings/L17-02-5378-linhas-em-portal-src-lib-ts-e.md) | 1 | L17 · VP Eng | 5378 linhas em portal/src/lib/*.ts e sem segregação por bounded context | unassigned |
+| 🔴 critical | ✅ fixed | [L17-02](./findings/L17-02-5378-linhas-em-portal-src-lib-ts-e.md) | 1 | L17 · VP Eng | 5378 linhas em portal/src/lib/*.ts e sem segregação por bounded context | portal-architecture |
 | 🟠 high | ✅ fixed | [L17-03](./findings/L17-03-witherrorhandler-usa-any-em-routeargs.md) | 1 | L17 · VP Eng | withErrorHandler usa any em routeArgs | portal |
 | 🟠 high | ✅ fixed | [L17-04](./findings/L17-04-testes-unitarios-em-portal-src-lib-qa-test.md) | 1 | L17 · VP Eng | Testes unitários em portal/src/lib/qa-*.test.ts — arquivos >800 linhas | portal |
 | 🟠 high | ✅ fixed | [L17-05](./findings/L17-05-logger-silencia-errors-nao-error.md) | 1 | L17 · VP Eng | Logger silencia errors não-Error | portal |
@@ -267,8 +267,8 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L18-01](./findings/L18-01-duas-fontes-da-verdade-para-balance-de-wallet.md) | 1 | L18 · Principal Eng | Duas fontes da verdade para balance de wallet (wallets.balance_coins vs SUM(coin_ledger)) | principal-eng |
 | 🔴 critical | ✅ fixed | [L18-02](./findings/L18-02-idempotencia-ad-hoc-em-cada-rpc-padrao-nao.md) | 1 | L18 · Principal Eng | Idempotência ad-hoc em cada RPC — padrão não unificado | backend |
 | 🔴 critical | ✅ fixed | [L18-03](./findings/L18-03-security-definer-sem-set-search-path-em-funcoes.md) | 0 | L18 · Principal Eng | SECURITY DEFINER sem SET search_path em funções antigas | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L18-04](./findings/L18-04-architecture-flutter-viola-clean-arch-em-varios-pontos.md) | 1 | L18 · Principal Eng | Architecture: Flutter viola Clean Arch em vários pontos | unassigned |
-| 🟠 high | ⏳ fix-pending | [L18-05](./findings/L18-05-event-bus-inexistente-cascatas-de-efeitos-em-codigo.md) | 1 | L18 · Principal Eng | Event bus inexistente — cascatas de efeitos em código imperativo | unassigned |
+| 🔴 critical | ✅ fixed | [L18-04](./findings/L18-04-architecture-flutter-viola-clean-arch-em-varios-pontos.md) | 1 | L18 · Principal Eng | Architecture: Flutter viola Clean Arch em vários pontos | mobile-platform |
+| 🟠 high | ✅ fixed | [L18-05](./findings/L18-05-event-bus-inexistente-cascatas-de-efeitos-em-codigo.md) | 1 | L18 · Principal Eng | Event bus inexistente — cascatas de efeitos em código imperativo | unassigned |
 | 🟠 high | ✅ fixed | [L18-06](./findings/L18-06-cachedflags-em-feature-flags-ts-cache-de-modulo.md) | 1 | L18 · Principal Eng | cachedFlags em feature-flags.ts — cache de módulo com TTL racional | backend |
 | 🟠 high | ✅ fixed | [L18-07](./findings/L18-07-userbucket-em-feature-flags-usa-hash-java-style.md) | 1 | L18 · Principal Eng | userBucket em feature-flags usa hash Java-style (inseguro, colisões) | backend |
 | 🟠 high | ✅ fixed | [L18-08](./findings/L18-08-edge-functions-vs-route-handlers-responsabilidade-duplicada.md) | 1 | L18 · Principal Eng | Edge Functions vs Route Handlers — responsabilidade duplicada | backend |
@@ -306,9 +306,9 @@ Total: **348** findings.
 | 🟠 high | 🚫 wont-fix | [L21-07](./findings/L21-07-sem-interoperabilidade-com-fit-real-time.md) | 1 | L21 · Atleta Pro | Sem interoperabilidade com .fit real-time | unassigned |
 | 🟠 high | 🚫 wont-fix | [L21-08](./findings/L21-08-lap-splits-manuais-inexistentes-em-tela-de-corrida.md) | 1 | L21 · Atleta Pro | Lap splits manuais inexistentes em tela de corrida | unassigned |
 | 🟠 high | 🚫 wont-fix | [L21-09](./findings/L21-09-calibracao-de-gps-em-pista-400-m-outdoor.md) | 1 | L21 · Atleta Pro | Calibração de GPS em pista (400 m outdoor) | unassigned |
-| 🟠 high | ⏳ fix-pending | [L21-10](./findings/L21-10-anti-cheat-pode-publicamente-marcar-elite-como-suspeito.md) | 1 | L21 · Atleta Pro | Anti-cheat pode publicamente marcar elite como suspeito | unassigned |
+| 🟠 high | ✅ fixed | [L21-10](./findings/L21-10-anti-cheat-pode-publicamente-marcar-elite-como-suspeito.md) | 1 | L21 · Atleta Pro | Anti-cheat pode publicamente marcar elite como suspeito | unassigned |
 | 🟠 high | 🚫 wont-fix | [L21-11](./findings/L21-11-ghost-mode-nao-funciona-para-competicoes-reais.md) | 1 | L21 · Atleta Pro | Ghost mode não funciona para competições reais | unassigned |
-| 🟠 high | ⏳ fix-pending | [L21-12](./findings/L21-12-sem-team-dashboard-para-staff-tecnica.md) | 1 | L21 · Atleta Pro | Sem "team dashboard" para staff técnica | unassigned |
+| 🟠 high | ✅ fixed | [L21-12](./findings/L21-12-sem-team-dashboard-para-staff-tecnica.md) | 1 | L21 · Atleta Pro | Sem "team dashboard" para staff técnica | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L21-13](./findings/L21-13-recovery-sleep-tracking-ausente.md) | 2 | L21 · Atleta Pro | Recovery/sleep tracking ausente | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L21-14](./findings/L21-14-sem-race-predictor-vdot-riegel.md) | 2 | L21 · Atleta Pro | Sem race predictor (VDOT/Riegel) | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L21-15](./findings/L21-15-weather-enrichment-sessao-historica.md) | 2 | L21 · Atleta Pro | Weather enrichment (sessão histórica) | unassigned |
@@ -318,12 +318,12 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L21-19](./findings/L21-19-post-run-nutrition-log-esquecido.md) | 2 | L21 · Atleta Pro | Post-run nutrition log esquecido | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L21-20](./findings/L21-20-privacy-mode-para-competicoes.md) | 2 | L21 · Atleta Pro | Privacy mode para competições | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L22-01](./findings/L22-01-onboarding-nao-inclui-primeira-corrida-guiada.md) | 1 | L22 · Atleta Amador | Onboarding não inclui "primeira corrida guiada" | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L22-02](./findings/L22-02-conceito-de-moeda-omnicoin-confunde-amador.md) | 1 | L22 · Atleta Amador | Conceito de "moeda / OmniCoin" confunde amador | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L22-03](./findings/L22-03-plano-semanal-pessoal-ausente-para-solo-runner.md) | 1 | L22 · Atleta Amador | Plano semanal pessoal ausente para solo runner | unassigned |
+| 🔴 critical | ✅ fixed | [L22-02](./findings/L22-02-conceito-de-moeda-omnicoin-confunde-amador.md) | 1 | L22 · Atleta Amador | Conceito de "moeda / OmniCoin" confunde amador | unassigned |
+| 🔴 critical | ? safe | [L22-03](./findings/L22-03-plano-semanal-pessoal-ausente-para-solo-runner.md) | 1 | L22 · Atleta Amador | Plano semanal pessoal ausente para solo runner | product |
 | 🟠 high | 🚫 wont-fix | [L22-04](./findings/L22-04-feedback-de-ritmo-so-pos-corrida.md) | 1 | L22 · Atleta Amador | Feedback de ritmo só pós-corrida | audit-bot |
 | 🟠 high | ✅ fixed | [L22-05](./findings/L22-05-grupos-locais-sem-descoberta-por-proximidade.md) | 1 | L22 · Atleta Amador | Grupos locais sem descoberta por proximidade | data-platform |
 | 🟠 high | 🚫 wont-fix | [L22-06](./findings/L22-06-voice-coaching-parcial.md) | 1 | L22 · Atleta Amador | Voice coaching parcial | mobile |
-| 🟠 high | ⏳ fix-pending | [L22-07](./findings/L22-07-compra-parcelada-para-assessoria-brasileira.md) | 1 | L22 · Atleta Amador | Compra parcelada para assessoria brasileira | unassigned |
+| 🟠 high | ✅ fixed | [L22-07](./findings/L22-07-compra-parcelada-para-assessoria-brasileira.md) | 1 | L22 · Atleta Amador | Compra parcelada para assessoria brasileira | unassigned |
 | 🟠 high | ✅ fixed | [L22-08](./findings/L22-08-desafio-de-grupo-viralizacao-entre-amigos.md) | 1 | L22 · Atleta Amador | Desafio de grupo (viralização entre amigos) | unassigned |
 | 🟠 high | ✅ fixed | [L22-09](./findings/L22-09-progress-celebration-timida.md) | 1 | L22 · Atleta Amador | Progress celebration tímida | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L22-10](./findings/L22-10-apple-watch-wear-os-nativo.md) | 2 | L22 · Atleta Amador | Apple Watch / Wear OS nativo | unassigned |
@@ -337,16 +337,16 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L22-18](./findings/L22-18-onboarding-nao-pergunta-objetivo.md) | 2 | L22 · Atleta Amador | Onboarding não pergunta objetivo | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L22-19](./findings/L22-19-social-comparison-saudavel-vs-toxica.md) | 2 | L22 · Atleta Amador | Social comparison saudável vs tóxica | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L22-20](./findings/L22-20-retencao-d30-d90-hooks-especificos.md) | 2 | L22 · Atleta Amador | Retenção D30/D90 — hooks específicos | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L23-01](./findings/L23-01-workout-delivery-em-massa-sem-preview-por-atleta.md) | 1 | L23 · Treinador | Workout delivery em massa sem preview por atleta | unassigned |
+| 🔴 critical | ✅ fixed | [L23-01](./findings/L23-01-workout-delivery-em-massa-sem-preview-por-atleta.md) | 1 | L23 · Treinador | Workout delivery em massa sem preview por atleta | coach-tooling |
 | 🔴 critical | ⏳ fix-pending | [L23-02](./findings/L23-02-dashboard-de-overview-diario-para-coach-tem-100.md) | 1 | L23 · Treinador | Dashboard de overview diário para coach tem 100-500 atletas | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L23-03](./findings/L23-03-comunicacao-coach-atleta-carece.md) | 1 | L23 · Treinador | Comunicação coach ↔ atleta carece | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L23-04](./findings/L23-04-bulk-assign-semanal-ver-20260416000000-bulk-assign-and.md) | 1 | L23 · Treinador | Bulk assign semanal (ver 20260416000000_bulk_assign_and_week_templates.sql) sem rollback | unassigned |
-| 🟠 high | ⏳ fix-pending | [L23-05](./findings/L23-05-workout-template-library-pobre.md) | 1 | L23 · Treinador | Workout template library pobre | unassigned |
+| 🔴 critical | ✅ fixed | [L23-03](./findings/L23-03-comunicacao-coach-atleta-carece.md) | 1 | L23 · Treinador | Comunicação coach ↔ atleta carece | coach-platform |
+| 🔴 critical | ✅ fixed | [L23-04](./findings/L23-04-bulk-assign-semanal-ver-20260416000000-bulk-assign-and.md) | 1 | L23 · Treinador | Bulk assign semanal (ver 20260416000000_bulk_assign_and_week_templates.sql) sem rollback | coach-tooling |
+| 🟠 high | ✅ fixed | [L23-05](./findings/L23-05-workout-template-library-pobre.md) | 1 | L23 · Treinador | Workout template library pobre | unassigned |
 | 🟠 high | ✅ fixed | [L23-06](./findings/L23-06-plano-mensal-trimestral-nao-periodizado.md) | 1 | L23 · Treinador | Plano mensal/trimestral não periodizado | unassigned |
 | 🟠 high | ✅ fixed | [L23-07](./findings/L23-07-analise-coletiva-grupo-limitada.md) | 1 | L23 · Treinador | Análise coletiva (grupo) limitada | unassigned |
-| 🟠 high | ⏳ fix-pending | [L23-08](./findings/L23-08-presenca-em-treinos-coletivos-via-qr-code-staff.md) | 1 | L23 · Treinador | Presença em treinos coletivos via QR code (staff_training_scan_screen.dart existe) | unassigned |
-| 🟠 high | ⏳ fix-pending | [L23-09](./findings/L23-09-billing-integrado-cobranca-de-mensalidade-aos-atletas.md) | 1 | L23 · Treinador | Billing integrado (cobrança de mensalidade aos atletas) | unassigned |
-| 🟠 high | ⏳ fix-pending | [L23-10](./findings/L23-10-treinos-com-dependencia-entre-atletas-par-grupo.md) | 1 | L23 · Treinador | Treinos com dependência entre atletas (par/grupo) | unassigned |
+| 🟠 high | ✅ fixed | [L23-08](./findings/L23-08-presenca-em-treinos-coletivos-via-qr-code-staff.md) | 1 | L23 · Treinador | Presença em treinos coletivos via QR code (staff_training_scan_screen.dart existe) | unassigned |
+| 🟠 high | ✅ fixed | [L23-09](./findings/L23-09-billing-integrado-cobranca-de-mensalidade-aos-atletas.md) | 1 | L23 · Treinador | Billing integrado (cobrança de mensalidade aos atletas) | unassigned |
+| 🟠 high | ✅ fixed | [L23-10](./findings/L23-10-treinos-com-dependencia-entre-atletas-par-grupo.md) | 1 | L23 · Treinador | Treinos com dependência entre atletas (par/grupo) | unassigned |
 | 🟠 high | ✅ fixed | [L23-11](./findings/L23-11-relatorios-para-atleta-resumo-mensal-do-coach.md) | 1 | L23 · Treinador | Relatórios para atleta (resumo mensal do coach) | unassigned |
 | 🟠 high | ✅ fixed | [L23-12](./findings/L23-12-onboarding-de-novo-atleta-no-clube.md) | 1 | L23 · Treinador | Onboarding de novo atleta no clube | audit-bot |
 | 🟠 high | ✅ fixed | [L23-13](./findings/L23-13-feedback-do-atleta-rpe-dor-humor-nao-requerido.md) | 1 | L23 · Treinador | Feedback do atleta (RPE, dor, humor) não requerido | unassigned |
