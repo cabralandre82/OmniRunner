@@ -55,6 +55,7 @@
     "audit:white-label-branding": "npx tsx tools/audit/check-white-label-branding.ts",
     "audit:custom-domains": "npx tsx tools/audit/check-custom-domains.ts",
     "audit:outbound-webhooks": "npx tsx tools/audit/check-outbound-webhooks.ts",
+    "audit:sponsorships": "npx tsx tools/audit/check-sponsorships.ts",
     "audit:og-metadata": "npx tsx tools/audit/check-og-metadata.ts",
     "audit:challenge-invite-deep-link": "npx tsx tools/audit/check-challenge-invite-deep-link.ts",
     "audit:milestone-celebration": "npx tsx tools/audit/check-milestone-celebration.ts",
