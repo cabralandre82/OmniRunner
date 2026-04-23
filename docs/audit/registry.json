@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T17:05:12.983Z",
+  "generated_at": "2026-04-23T17:16:09.280Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 150,
-    "fix-pending": 197,
+    "fixed": 151,
+    "fix-pending": 196,
     "in-progress": 1
   },
   "by_wave": {
@@ -9446,23 +9446,40 @@
       "lens": 20,
       "title": "Status page pública inexistente",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "tags": [],
-      "files": [],
-      "correction_type": "process",
+      "tags": [
+        "sre",
+        "status-page",
+        "public-api",
+        "observability"
+      ],
+      "files": [
+        "portal/src/lib/status/types.ts",
+        "portal/src/lib/status/aggregate.ts",
+        "portal/src/lib/status/feeds.ts",
+        "portal/src/lib/status/__tests__/aggregate.test.ts",
+        "portal/src/app/api/public/status/route.ts",
+        "tools/audit/check-public-status.ts",
+        "docs/runbooks/PUBLIC_STATUS_PAGE_RUNBOOK.md"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/status/__tests__/aggregate.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "local:ca43e64"
+      ],
+      "owner": "sre",
+      "runbook": "docs/runbooks/PUBLIC_STATUS_PAGE_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Ships the aggregator + public endpoint\n(`GET /api/public/status`) consumed by the future\n`status.omnirunner.com`. Domain layer in\n`portal/src/lib/status/` with 6 canonical components\n(web/api/database/auth/payments/strava), 5-level severity\nladder matching Atlassian/Better-Stack wire contract,\nTTL-cached (60s, floor 30s pinned by CI), never-5xx contract\n(feed throws coerced to `unknown`), CORS-permissive (GET +\nOPTIONS preflight). Tests: 27 vitest cases. CI:\n`npm run audit:public-status` (46/46 checks). Deferred:\n`L20-06-external-feeds` (Vercel/Supabase/Stripe/Strava\nadapters), `L20-06-incident-timeline`, `L20-06-site`\n(status page itself), `L20-06-i18n`,\n`L20-06-admin-invalidate`, `L20-06-rate-limit`.\n"
     },
     {
       "id": "L20-07",

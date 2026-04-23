@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-23 17:05:12 UTC.
+> Atualizado em 2026-04-23 17:16:09 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -289,7 +289,7 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L20-03](./findings/L20-03-sem-tracing-distribuido-opentelemetry.md) | 1 | L20 · SRE | Sem tracing distribuído (OpenTelemetry) | sre |
 | 🟠 high | ✅ fixed | [L20-04](./findings/L20-04-sentry-sem-tracessamplerate-tuning-documentado.md) | 1 | L20 · SRE | Sentry sem tracesSampleRate tuning documentado | unassigned |
 | 🟠 high | ✅ fixed | [L20-05](./findings/L20-05-alerts-sem-canal-de-severidade.md) | 1 | L20 · SRE | Alerts sem canal de severidade | unassigned |
-| 🟠 high | ⏳ fix-pending | [L20-06](./findings/L20-06-status-page-publica-inexistente.md) | 1 | L20 · SRE | Status page pública inexistente | unassigned |
+| 🟠 high | ✅ fixed | [L20-06](./findings/L20-06-status-page-publica-inexistente.md) | 1 | L20 · SRE | Status page pública inexistente | sre |
 | 🟠 high | ✅ fixed | [L20-07](./findings/L20-07-backup-testado-zero-evidence.md) | 1 | L20 · SRE | Backup testado — zero evidence | unassigned |
 | 🟠 high | ✅ fixed | [L20-08](./findings/L20-08-post-mortem-template-ausente.md) | 1 | L20 · SRE | Post-mortem template ausente | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L20-09](./findings/L20-09-chaos-engineering-inexistente.md) | 2 | L20 · SRE | Chaos engineering inexistente | unassigned |
