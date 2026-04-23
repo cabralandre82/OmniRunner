@@ -94,9 +94,11 @@
 
 ### 🟢 Batch H — Mobile UX & Coach features (10 entregas, code-tractable)
 
+**Progresso Batch H (Mobile UX):** 🟡 1/10 — L21-06 ✓.
+
 | # | id | sev | L | ep | Título |
 |---|---|---|---|---|---|
-| 29 | L21-06 | high | 21 | 3 | Polyline GPS resolução baixa (`distanceFilter` 5 m) |
+| 29 | L21-06 | high | 21 | 3 | ✅ Polyline GPS resolução baixa (`distanceFilter` 5 m) (fixed 2026-04-21) |
 | 30 | L22-05 | high | 22 | 3 | Grupos locais sem descoberta por proximidade |
 | 31 | L22-06 | high | 22 | 3 | Voice coaching parcial (sem TTS por bracket) |
 | 32 | L22-08 | high | 22 | 3 | Desafio de grupo (viralização entre amigos) |

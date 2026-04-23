@@ -9700,28 +9700,38 @@
       "lens": 21,
       "title": "Polyline GPS resolução baixa (5m distanceFilter)",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "performance",
         "personas",
-        "athlete-pro"
+        "athlete-pro",
+        "gps"
       ],
-      "files": [],
+      "files": [
+        "omni_runner/lib/domain/entities/location_settings_entity.dart",
+        "omni_runner/lib/data/repositories_impl/location_stream_repo.dart",
+        "omni_runner/lib/core/storage/preferences_keys.dart"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "omni_runner/test/domain/entities/location_settings_entity_test.dart"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "local:9a4ec27"
+      ],
+      "owner": "mobile",
       "runbook": null,
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Resolvido em 9a4ec27. LocationSettingsEntity passa a expor RecordingMode (standard|performance) e fábricas .standard() (5 m / high — default preservado) e .performance() (1 m + LocationAccuracy.bestForNavigation — GNSS multi-constelação em iOS). LocationAccuracy ganhou variante bestForNavigation e LocationStreamRepo._mapAccuracy passa a mapeá-la. PreferencesKeys ganhou chave não-sensível recording_mode via catálogo L11-05. Modo é opt-in — default permanece 5 m / high — com trade-off documentado de ~+30 % bateria e volume de pontos ~3-5×. Contrato fixado por 11 testes em test/domain/entities/location_settings_entity_test.dart."
     },
     {
       "id": "L21-07",

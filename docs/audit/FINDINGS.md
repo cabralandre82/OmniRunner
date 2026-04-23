@@ -302,7 +302,7 @@ Total: **348** findings.
 | 🔴 critical | ⏳ fix-pending | [L21-03](./findings/L21-03-dados-gps-e-biometricos-sem-controle-de-propriedade.md) | 1 | L21 · Atleta Pro | Dados GPS e biométricos sem controle de propriedade (dilema do patrocínio) | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L21-04](./findings/L21-04-ausencia-de-training-load-tss-ctl-atl.md) | 1 | L21 · Atleta Pro | Ausência de "training load" / TSS / CTL / ATL | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L21-05](./findings/L21-05-zonas-de-treino-pace-hr-nao-personalizaveis.md) | 1 | L21 · Atleta Pro | Zonas de treino (pace/HR) não personalizáveis | unassigned |
-| 🟠 high | ⏳ fix-pending | [L21-06](./findings/L21-06-polyline-gps-resolucao-baixa-5m-distancefilter.md) | 1 | L21 · Atleta Pro | Polyline GPS resolução baixa (5m distanceFilter) | unassigned |
+| 🟠 high | ✅ fixed | [L21-06](./findings/L21-06-polyline-gps-resolucao-baixa-5m-distancefilter.md) | 1 | L21 · Atleta Pro | Polyline GPS resolução baixa (5m distanceFilter) | mobile |
 | 🟠 high | ⏳ fix-pending | [L21-07](./findings/L21-07-sem-interoperabilidade-com-fit-real-time.md) | 1 | L21 · Atleta Pro | Sem interoperabilidade com .fit real-time | unassigned |
 | 🟠 high | ⏳ fix-pending | [L21-08](./findings/L21-08-lap-splits-manuais-inexistentes-em-tela-de-corrida.md) | 1 | L21 · Atleta Pro | Lap splits manuais inexistentes em tela de corrida | unassigned |
 | 🟠 high | ⏳ fix-pending | [L21-09](./findings/L21-09-calibracao-de-gps-em-pista-400-m-outdoor.md) | 1 | L21 · Atleta Pro | Calibração de GPS em pista (400 m outdoor) | unassigned |
