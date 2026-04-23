@@ -1,0 +1,10 @@
+# Omni Runner — machine-readable security policy (RFC 9116)
+# Human-readable version: https://github.com/cabralandre82/OmniRunner/blob/master/SECURITY.md
+
+Contact: mailto:security@omnirunner.com
+Contact: https://github.com/cabralandre82/OmniRunner/security/advisories/new
+Expires: 2027-04-21T00:00:00.000Z
+Preferred-Languages: pt, en
+Policy: https://github.com/cabralandre82/OmniRunner/blob/master/SECURITY.md
+Canonical: https://omnirunner.com/.well-known/security.txt
+Hiring: https://omnirunner.com/careers
