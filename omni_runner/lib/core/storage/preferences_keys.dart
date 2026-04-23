@@ -139,6 +139,15 @@ class PreferencesKeys {
     purpose: 'UI: Garmin/FIT import guide "seen" flag',
   );
 
+  /// L21-06 — athlete-selected GPS recording mode
+  /// (see [RecordingMode]). String value: "standard" (default) or
+  /// "performance" (1 m filter + bestForNavigation, ~+30 % battery).
+  /// Non-sensitive: just a UI toggle, not an identifier.
+  static final PrefsSafeKey _recordingMode = PrefsSafeKey.plain(
+    'recording_mode',
+    purpose: 'L21-06: GPS recording mode (standard|performance)',
+  );
+
   // ─────────────────────────── Public string facade ─────────────────────
   //
   // Call-sites use these as `prefs.getString(PreferencesKeys.themeMode)`.
@@ -163,6 +172,7 @@ class PreferencesKeys {
   static String get bleHrLastDeviceId => _bleHrLastDeviceId.name;
   static String get bleHrLastDeviceName => _bleHrLastDeviceName.name;
   static String get hasSeenGarminImportGuide => _hasSeenGarminImportGuide.name;
+  static String get recordingMode => _recordingMode.name;
 
   // ─────────────────────────── Catalogue introspection ──────────────────
 
@@ -190,5 +200,6 @@ class PreferencesKeys {
     _bleHrLastDeviceId,
     _bleHrLastDeviceName,
     _hasSeenGarminImportGuide,
+    _recordingMode,
   ];
 }

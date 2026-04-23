@@ -32,11 +32,19 @@ class LocationStreamRepo implements ILocationStream {
   }
 
   /// Maps domain [LocationAccuracy] to geolocator [geo.LocationAccuracy].
+  ///
+  /// L21-06: [LocationAccuracy.bestForNavigation] maps to the platform
+  /// "finest available" — on iOS this enables multi-constellation GNSS
+  /// + CoreLocation `kCLLocationAccuracyBestForNavigation` (used when
+  /// the user is in `RecordingMode.performance`). On Android the
+  /// geolocator plugin uses the same enum; it resolves to the
+  /// high-accuracy fused provider.
   geo.LocationAccuracy _mapAccuracy(LocationAccuracy accuracy) {
     return switch (accuracy) {
       LocationAccuracy.low => geo.LocationAccuracy.low,
       LocationAccuracy.medium => geo.LocationAccuracy.medium,
       LocationAccuracy.high => geo.LocationAccuracy.best,
+      LocationAccuracy.bestForNavigation => geo.LocationAccuracy.bestForNavigation,
     };
   }
 }
