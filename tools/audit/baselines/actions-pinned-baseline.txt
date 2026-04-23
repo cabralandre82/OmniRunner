@@ -1,0 +1,59 @@
+# L11-10 baseline — one '<workflow>:<uses line>' per row.
+# Re-pin actions to commit SHAs and remove from this file to repay debt.
+.github/workflows/audit.yml:31:- uses: actions/checkout@v4
+.github/workflows/audit.yml:33:- uses: actions/setup-node@v4
+.github/workflows/flutter.yml:113:- uses: actions/upload-artifact@v4
+.github/workflows/flutter.yml:32:- uses: actions/checkout@v4
+.github/workflows/flutter.yml:33:- uses: subosito/flutter-action@v2
+.github/workflows/flutter.yml:50:- uses: actions/checkout@v4
+.github/workflows/flutter.yml:51:- uses: subosito/flutter-action@v2
+.github/workflows/flutter.yml:61:uses: actions/upload-artifact@v4
+.github/workflows/flutter.yml:76:- uses: actions/checkout@v4
+.github/workflows/flutter.yml:77:- uses: actions/setup-java@v4
+.github/workflows/flutter.yml:81:- uses: subosito/flutter-action@v2
+.github/workflows/portal.yml:101:- uses: actions/checkout@v4
+.github/workflows/portal.yml:102:- uses: actions/setup-node@v4
+.github/workflows/portal.yml:162:- uses: actions/checkout@v4
+.github/workflows/portal.yml:163:- uses: actions/setup-node@v4
+.github/workflows/portal.yml:192:uses: actions/upload-artifact@v4
+.github/workflows/portal.yml:204:- uses: actions/checkout@v4
+.github/workflows/portal.yml:210:- uses: actions/setup-node@v4
+.github/workflows/portal.yml:40:- uses: actions/checkout@v4
+.github/workflows/portal.yml:41:- uses: actions/setup-node@v4
+.github/workflows/portal.yml:58:- uses: actions/checkout@v4
+.github/workflows/portal.yml:59:- uses: actions/setup-node@v4
+.github/workflows/portal.yml:70:uses: actions/upload-artifact@v4
+.github/workflows/portal.yml:84:- uses: actions/checkout@v4
+.github/workflows/portal.yml:85:- uses: actions/setup-node@v4
+.github/workflows/release.yml:111:- uses: actions/setup-java@v4
+.github/workflows/release.yml:122:- uses: subosito/flutter-action@v2
+.github/workflows/release.yml:128:- uses: ruby/setup-ruby@v1
+.github/workflows/release.yml:201:uses: softprops/action-gh-release@v2
+.github/workflows/release.yml:225:uses: google-github-actions/auth@v2
+.github/workflows/release.yml:42:- uses: actions/checkout@v4
+.github/workflows/security.yml:101:uses: actions/upload-artifact@v4
+.github/workflows/security.yml:116:- uses: actions/checkout@v4
+.github/workflows/security.yml:117:- uses: actions/setup-node@v4
+.github/workflows/security.yml:126:uses: anchore/sbom-action@v0
+.github/workflows/security.yml:134:uses: actions/upload-artifact@v4
+.github/workflows/security.yml:144:- uses: actions/checkout@v4
+.github/workflows/security.yml:145:- uses: subosito/flutter-action@v2
+.github/workflows/security.yml:154:uses: anchore/sbom-action@v0
+.github/workflows/security.yml:162:uses: actions/upload-artifact@v4
+.github/workflows/security.yml:175:- uses: actions/checkout@v4
+.github/workflows/security.yml:182:uses: gitleaks/gitleaks-action@v2
+.github/workflows/security.yml:44:- uses: actions/checkout@v4
+.github/workflows/security.yml:45:- uses: actions/setup-node@v4
+.github/workflows/security.yml:70:uses: actions/upload-artifact@v4
+.github/workflows/security.yml:86:- uses: actions/checkout@v4
+.github/workflows/security.yml:89:uses: google/osv-scanner-action/osv-scanner-action@v2.0.0
+.github/workflows/supabase.yml:100:- uses: actions/setup-node@v4
+.github/workflows/supabase.yml:114:- uses: actions/checkout@v4
+.github/workflows/supabase.yml:115:- uses: denoland/setup-deno@v1
+.github/workflows/supabase.yml:39:- uses: actions/checkout@v4
+.github/workflows/supabase.yml:58:- uses: actions/checkout@v4
+.github/workflows/supabase.yml:60:- uses: supabase/setup-cli@v1
+.github/workflows/supabase.yml:67:- uses: actions/setup-node@v4
+.github/workflows/supabase.yml:99:- uses: actions/checkout@v4
+.github/workflows/update-snapshots.yml:20:- uses: actions/checkout@v4
+.github/workflows/update-snapshots.yml:24:- uses: actions/setup-node@v4

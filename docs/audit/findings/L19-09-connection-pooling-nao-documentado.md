@@ -4,35 +4,43 @@ audit_ref: "19.9"
 lens: 19
 title: "Connection pooling não documentado"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["atomicity", "portal", "edge-function"]
-files: []
+fixed_at: 2026-04-23
+closed_at: 2026-04-23
+tags: ["dba", "runbook", "documentation"]
+files:
+  - docs/runbooks/CONNECTION_POOLING.md
+  - tools/audit/check-connection-pooling.ts
 correction_type: process
-test_required: false
-tests: []
+test_required: true
+tests:
+  - tools/audit/check-connection-pooling.ts
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: platform
+runbook: docs/runbooks/CONNECTION_POOLING.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Runbook `docs/runbooks/CONNECTION_POOLING.md` v1.0 documenta:
+  topologia (Vercel + EF → pgBouncer transaction mode → Postgres);
+  pool sizes por tier (Free 60 / Pro 200 / Team 400 / Enterprise
+  1000); rationale para transaction mode; failure modes
+  (remaining connection slots / ETIMEDOUT / burst de digest);
+  observability (`pg_stat_activity` snapshots em audit_logs).
+  CI guard `audit:connection-pooling` (11 asserts).
 ---
 # [L19-09] Connection pooling não documentado
-> **Lente:** 19 — DBA · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending
-**Camada:** —
-**Personas impactadas:** —
-## Achado
-— Supabase oferece PgBouncer transacional/session. Portal usa `@supabase/ssr` (ephemeral); Edge Functions criam client por request. Em burst alto, conexões saturam.
-## Correção proposta
+> **Lente:** 19 — DBA · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** ✅ fixed
 
-— Documentar: Portal usa pool **transaction mode**; Edge Functions também. Configurar `poolSize` no client.
+## Correção aplicada
+Runbook completo em `docs/runbooks/CONNECTION_POOLING.md`. CI
+guard `audit:connection-pooling` (11 asserts) bloqueia drift.
 
-## Referência narrativa
-Contexto completo e motivação detalhada em [`docs/audit/parts/`](../parts/) — buscar pelo anchor `[19.9]`.
 ## Histórico
-- `2026-04-17` — Descoberto na auditoria inicial (Lente 19 — DBA, item 19.9).
+- `2026-04-17` — Descoberto na auditoria inicial.
+- `2026-04-23` — Fixed via runbook + CI guard.

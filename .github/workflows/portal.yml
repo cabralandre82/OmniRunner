@@ -43,7 +43,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: portal/package-lock.json
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npx tsc --noEmit
       - run: npm run lint
 
@@ -61,7 +61,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: portal/package-lock.json
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm test -- --reporter verbose --coverage
         env:
           CI: true
@@ -87,7 +87,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: portal/package-lock.json
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run build
 
   e2e:
@@ -104,7 +104,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: portal/package-lock.json
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npx playwright install --with-deps chromium
       - run: npm run build
       # L11-09 — Verificação anti-prod: o secret SUPABASE_SERVICE_ROLE_KEY
@@ -165,7 +165,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: portal/package-lock.json
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npx playwright install --with-deps chromium
       - run: npm run build
       - name: Start portal
@@ -212,7 +212,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: portal/package-lock.json
-      - run: npm ci
+      - run: npm ci --ignore-scripts
         working-directory: portal
       - run: npm run build
         working-directory: portal

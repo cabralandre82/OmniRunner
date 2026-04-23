@@ -27,7 +27,7 @@ jobs:
           cache: 'npm'
           cache-dependency-path: portal/package-lock.json
 
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npx playwright install --with-deps chromium
       - run: npm run build
 
