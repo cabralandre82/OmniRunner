@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T17:53:38.748Z",
+  "generated_at": "2026-04-23T18:07:46.636Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 149,
-    "fix-pending": 191,
+    "fixed": 150,
+    "fix-pending": 190,
     "in-progress": 1,
     "wont-fix": 7
   },
@@ -5126,27 +5126,39 @@
       "lens": 8,
       "title": "Sem staging de data warehouse — queries OLAP contra OLTP",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "atomicity",
-        "mobile"
+        "mobile",
+        "platform",
+        "olap"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260421410000_l08_06_olap_staging.sql",
+        "tools/audit/check-olap-staging.ts",
+        "docs/runbooks/OLAP_STAGING_RUNBOOK.md"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-olap-staging.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "local:06b4087"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/OLAP_STAGING_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Entregue como camada de staging `public_olap.*` (MVs + pg_cron), não como\nréplica dedicada. Dashboards `/platform/*` migram incrementalmente para\nler as MVs. Follow-ups registrados: `L08-06-read-replica` (infra,\nsubstituir/complementar com pg_logical) e `L08-06-portal-migrate`\n(migrar consumidores).\n"
     },
     {
       "id": "L08-07",
