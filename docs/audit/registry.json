@@ -5801,7 +5801,7 @@
       "lens": 10,
       "title": "Zero-trust entre microserviços — Edge Functions confiam no JWT sem validar audience",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
@@ -5810,20 +5810,27 @@
         "edge-function"
       ],
       "files": [
-        "supabase/functions/_shared/auth.ts"
+        "supabase/functions/_shared/auth.ts",
+        "tools/audit/check-jwt-claims-validation.ts",
+        "tools/test_l10_07_jwt_claims_validation.ts",
+        "docs/runbooks/JWT_ZERO_TRUST_RUNBOOK.md"
       ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l10_07_jwt_claims_validation.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "15601fa"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/JWT_ZERO_TRUST_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "2026-04-21 — fixed. Shared _shared/auth.ts requireUser now enforces iss/aud validation with env overrides, optional per-route allowedAudiences and allowedClients (x-omni-client header), and machine-readable reason codes. CI guard npm run audit:jwt-claims-validation blocks bypasses."
     },
     {
       "id": "L10-08",

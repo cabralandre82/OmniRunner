@@ -5,14 +5,14 @@
 > de stakeholders externos (legal, CFO, design, product). Detalhes em
 > `docs/audit/ROADMAP.md` Onda 1.
 
-**Posição atual:** 92/179 fixed (Onda 1).
+**Posição atual:** 93/179 fixed (Onda 1).
 **Pista:** 50 entregas correção engenharia → 127/179 (71 %), libera Onda 2.
 
 **Progresso Batch A (Custody & Finance):** ✅ 5/5 — L05-09 ✓, L05-07 ✓, L12-05 ✓, L09-09 ✓, L04-07 ✓.
 **Progresso Batch B (Cron / Reliability):** ✅ 5/5 — L06-05 ✓, L12-09 ✓, L12-06 ✓, L12-07 ✓ (+ L07-06 co-fix), L12-08 ✓.
 **Progresso Batch C (DBA / Schema Cleanup):** ✅ 4/4 — L19-04 ✓ · L19-08 ✓ · L19-06 ✓ · L08-05 ✓.
 **Progresso Batch D (Sessions / Data Integrity):** ✅ 2/2 — L08-04 ✓ · L08-03 ✓.
-**Progresso Batch E (Security & Auth):** 🟡 1/4 — L10-09 ✓ · L10-07 ⏳ · L10-08 ⏳ · L07-04 ⏳.
+**Progresso Batch E (Security & Auth):** 🟡 2/4 — L10-09 ✓ · L10-07 ✓ · L10-08 ⏳ · L07-04 ⏳.
 
 ## Critério de pontuação
 
@@ -66,7 +66,7 @@
 | # | id | sev | L | ep | Título |
 |---|---|---|---|---|---|
 | 17 | L10-09 | high | 10 | 3 | ✅ Falta defesa anti credential stuffing no Mobile/Portal (fixed 2026-04-21) |
-| 18 | L10-07 | high | 10 | 3 | Edge Functions confiam no JWT sem validar `audience`/`issuer` |
+| 18 | L10-07 | high | 10 | 3 | ✅ Edge Functions confiam no JWT sem validar `audience`/`issuer` (fixed 2026-04-21) |
 | 19 | L10-08 | high | 10 | 3 | Logs de acesso sensíveis sem imutabilidade (`audit_logs` append-only) |
 | 20 | L07-04 | high | 7 | 3 | Flutter deep link Strava OAuth sem state validation (CSRF) |
 
