@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T00:56:28.333Z",
+  "generated_at": "2026-04-23T10:48:42.297Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 111,
-    "fix-pending": 236,
+    "fixed": 142,
+    "fix-pending": 205,
     "in-progress": 1
   },
   "by_wave": {
@@ -3147,21 +3147,35 @@
       "lens": 4,
       "title": "coin_ledger retém reason com PII embutida",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
-        "atomicity"
+        "atomicity",
+        "lgpd",
+        "migration",
+        "rls"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260421220000_l04_07_ledger_reason_pii_guard.sql",
+        "tools/audit/check-ledger-reason-safety.ts",
+        "tools/test_l04_07_ledger_reason_pii.ts",
+        "docs/runbooks/LEDGER_PII_REDACTION_RUNBOOK.md"
+      ],
+      "correction_type": "migration",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l04_07_ledger_reason_pii.ts",
+        "supabase/migrations/20260421220000_l04_07_ledger_reason_pii_guard.sql"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "be5e962"
+      ],
+      "owner": "clo",
+      "runbook": "docs/runbooks/LEDGER_PII_REDACTION_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
@@ -4215,9 +4229,10 @@
       "lens": 6,
       "title": "Edge Functions sem retry em falha de pg_net",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "security-headers",
@@ -4227,15 +4242,22 @@
         "cron"
       ],
       "files": [
-        "supabase/migrations/20260221000001_auto_topup_cron.sql"
+        "supabase/migrations/20260421230000_l06_05_edge_retry_wrapper.sql",
+        "tools/test_l06_05_edge_retry_wrapper.ts",
+        "docs/runbooks/EDGE_RETRY_WRAPPER_RUNBOOK.md"
       ],
       "correction_type": "migration",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l06_05_edge_retry_wrapper.ts",
+        "supabase/migrations/20260421230000_l06_05_edge_retry_wrapper.sql"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "86a3e03"
+      ],
+      "owner": "coo",
+      "runbook": "docs/runbooks/EDGE_RETRY_WRAPPER_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
@@ -4648,7 +4670,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "2026-04-21 — fixed. OAuthCsrfViolation failure class with reason in {state_missing, state_mismatch} surfaced distinctly from settings_screen UX; StravaOAuthStateGuard (32-byte CSPRNG, FlutterSecureStorage, 10-min TTL, constant-time compare, consume-once) wired into StravaAuthRepositoryImpl.authenticate. CI npm run audit:strava-oauth-state (17 checks) + runbook. Deep-link handler keeps rejecting legacy omnirunner://strava/callback (L01-29 invariant)."
+      "note": "2026-04-21 — fixed. StravaOAuthStateGuard (32-byte CSPRNG, FlutterSecureStorage, 10-min TTL, constant-time compare, consume-once) wired into StravaAuthRepositoryImpl.authenticate() via _stateGuard.beginFlow() + validateAndConsume(returnedState). New OAuthCsrfViolation IntegrationFailure subclass with reason in {state_missing, state_mismatch} surfaced distinctly in settings_screen UX. Deep-link handler (L01-29) keeps rejecting legacy omnirunner://strava/callback paths as UnknownLinkAction. CI npm run audit:strava-oauth-state (17 checks) + runbook."
     },
     {
       "id": "L07-05",
@@ -4686,25 +4708,32 @@
       "lens": 7,
       "title": "Timezone sem configuração do usuário",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "portal"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421260000_l12_07_onboarding_nudge_user_timezone.sql"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l12_07_onboarding_nudge_timezone.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "4f14773"
+      ],
+      "owner": "cxo",
+      "runbook": "docs/runbooks/ONBOARDING_NUDGE_TIMEZONE_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Encerrado como side-effect de L12-07 (profile timezone era pré-requisito)."
     },
     {
       "id": "L07-07",
@@ -5060,18 +5089,30 @@
       "lens": 8,
       "title": "Views de progressão sem filtro de atletas inativos",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "tags": [],
-      "files": [],
-      "correction_type": "process",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "tags": [
+        "analytics",
+        "views"
+      ],
+      "files": [
+        "supabase/migrations/20260421310000_l08_05_inactive_athletes_filter.sql",
+        "tools/test_l08_05_inactive_athletes_filter.ts",
+        "docs/runbooks/INACTIVE_ATHLETES_VIEWS_RUNBOOK.md"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l08_05_inactive_athletes_filter.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "bed5d0c"
+      ],
+      "owner": "platform-data",
+      "runbook": "docs/runbooks/INACTIVE_ATHLETES_VIEWS_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
@@ -5529,23 +5570,38 @@
       "lens": 9,
       "title": "Contratos privados (termo de adesão do clube, termo de atleta) inexistentes no repo",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "lgpd"
+        "lgpd",
+        "legal",
+        "consent-management",
+        "wave-1"
       ],
       "files": [
         "docs/legal/TERMO_ADESAO_ASSESSORIA.md",
-        "docs/legal/TERMO_ATLETA.md"
+        "docs/legal/TERMO_ATLETA.md",
+        "docs/legal/README.md",
+        "supabase/migrations/20260421210000_l09_09_legal_contracts_consent.sql",
+        "tools/legal/check-document-hashes.ts",
+        "portal/src/app/api/consent/route.ts",
+        "supabase/functions/consent-record/index.ts"
       ],
       "correction_type": "docs",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l09_09_legal_contracts.ts",
+        "portal/src/app/api/consent/route.test.ts",
+        "tools/integration_tests.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "5c1f09c"
+      ],
+      "owner": "legal-ops",
+      "runbook": "docs/runbooks/LEGAL_CONTRACTS_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
@@ -5919,7 +5975,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "DB foundation + CI done; login-pre-check Edge Function wiring is a non-blocking follow-up."
     },
     {
       "id": "L10-10",
@@ -6244,7 +6300,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Landed 2026-04-21 with 3 defensive layers: (1) Catalogue — PreferencesKeys as single entry point for SharedPreferences keyspace; every entry routes through PrefsSafeKey.plain/.prefix which runs assertSafe at class-load (app boot); heuristic rejects tokens?/secret/password/credential/api[_-]?key/auth[_-]?(token|secret|code)/private[_-]?key/refresh[_-]?token/access[_-]?token/jwt/bearer/session[_-]?(id|token|secret)/oauth[_-]?(state|token|secret)/mfa[_-]?(code|secret)/otp/pin[_-]?(code|hash)/cvv/card[_-]?number/ssn/cpf/passport/totp[_-]?secret; custom boundary (?<![a-zA-Z])...(?![a-zA-Z]) fixes Dart \\b-over-_ problem; allowlist for strava_athlete_name/id (public); PrefsSafeKeyViolation (ArgumentError) thrown at boot. (2) Dart test — 9 tests: 28 sensitive words rejected, 21 safe keys accepted, allowlist honoured, every allKeys entry passes assertSafe, no duplicates, purpose > 8 chars, prefixes end in '_'. (3) CI guard npm run audit:shared-prefs-sensitive-keys — scans 891 .dart files; 3 key-extraction modes (literal, PreferencesKeys.x camelCase→snake, bare identifier camelCase→snake); opt-out // L11-05-OK: <reason> surfaced in report; self-check preferences_keys.dart still binds to PrefsSafeKey. Current tree: 0 violations, 0 opt-outs. Smoke-tested with 3 planted violations (all flagged) + 1 planted opt-out (surfaced + suppressed). Runbook covers policy table, add-new-key/new-component guides, 6 operational playbooks (leak discovered, CI/test failed, boot crash, false positive, dep bump), cross-refs L01-29/L04-07/L10-09/L11-06-08/L01-30-31. flutter analyze clean; flutter test 2128 pass."
+      "note": "Landed 2026-04-21 with three defensive layers instead of a single custom_lint\npackage (which is 2–3 days of yak-shaving per-dev for marginal gain):\n\nLAYER 1 — CATALOGUE (lib/core/storage/preferences_keys.dart + prefs_safe_key.dart)\n• PreferencesKeys is the SINGLE allowed entry point for the SharedPreferences\n  keyspace. Every entry routes through PrefsSafeKey.plain(...) or .prefix(...),\n  which run assertSafe(name) at class-load time (app boot).\n• Heuristic (case-insensitive, underscore/hyphen aware):\n    tokens?|secret|password|credential|api[_-]?key|auth[_-]?(token|secret|code)\n    |private[_-]?key|refresh[_-]?token|access[_-]?token|jwt|bearer\n    |session[_-]?(id|token|secret)|oauth[_-]?(state|token|secret)\n    |mfa[_-]?(code|secret)|otp[_-]?(code|secret)?|pin[_-]?(code|hash)\n    |cvv|card[_-]?number|ssn|cpf|passport|totp[_-]?secret\n• Custom boundary (?<![a-zA-Z])...(?![a-zA-Z]) fixes Dart's \\b-over-underscore\n  problem: matches access_token AND my_access_token, still rejects tokenize.\n• Explicit allowlist: strava_athlete_name, strava_athlete_id (public profile).\n• PrefsSafeKeyViolation (ArgumentError) thrown at boot — crashes loudly; a\n  secret in plaintext is data-loss class, not log-and-continue.\n\nLAYER 2 — FLUTTER TEST (test/core/storage/preferences_keys_test.dart, 9 tests)\n• 28 sensitive keywords correctly rejected.\n• 21 safe keys correctly accepted.\n• Allowlist honored for strava_athlete_name/id.\n• Error message carries L11-05 id + FlutterSecureStorage pointer.\n• Every PreferencesKeys.allKeys entry passes assertSafe.\n• No duplicates; every entry has purpose > 8 chars; prefixes end in '_'.\n\nLAYER 3 — CI GUARD (tools/audit/check-shared-prefs-sensitive-keys.ts)\n• npm run audit:shared-prefs-sensitive-keys.\n• Scans 891 .dart files under omni_runner/lib/** + test/** (minus guard files).\n• Three key-extraction modes: string literal, PreferencesKeys.<name>\n  (camelCase→snake), bare identifier (camelCase→snake; variable named\n  accessToken triggers even without a literal value).\n• Receivers recognised: prefs, sharedPrefs, _prefs, p, sp, _pref,\n  sharedPreferences.\n• Opt-out: // L11-05-OK: <reason> on offending line or preceding line;\n  every opt-out surfaced in report for reviewer audit.\n• Self-check: verifies preferences_keys.dart still imports prefs_safe_key.dart\n  and still references PrefsSafeKey.plain/prefix/allKeys.\n\nCurrent tree: 0 violations, 0 opt-outs. Smoke tested with 3 planted\nviolations (literal, camelCase var, PreferencesKeys-style) — all 3 flagged\nwith correct file/line/pattern; planted opt-out surfaced the reason in\nreport and suppressed the violation.\n\nRUNBOOK (docs/runbooks/SECURE_STORAGE_POLICY_RUNBOOK.md)\n• Policy decision table (what goes where, what is transient-only).\n• How to add a new key (5 steps).\n• How to add a new FlutterSecureStorage component (conventions, testing).\n• 6 operational playbooks (leak discovered; CI guard failed; Dart test\n  failed; PrefsSafeKeyViolation at boot; false positive remediation;\n  dependency-bump audit checklist).\n• Detection signals table.\n• Cross-refs to L01-29 (Strava OAuth state), L04-07, L10-09, L11-06/07/08,\n  L01-30/31.\n\nflutter analyze: clean. flutter test: 2128 tests pass (9 new + 2119 existing).\n"
     },
     {
       "id": "L11-06",
@@ -6285,7 +6341,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Landed 2026-04-21 in 3 layers: (1) .npmrc at workspace-root AND portal/ with save-exact=true + save-prefix= + engine-strict=true; (2) 8 boundary packages pinned exact — portal: next@14.2.35 (rendering/middleware), @supabase/ssr@0.8.0 (auth cookie), @supabase/supabase-js@2.97.0 (RPC/RLS shape), zod@4.3.6 (3↔4 typing break), @sentry/nextjs@10.40.0 (getActiveSpan contract); root: tsx@4.21.0 (audit script runtime), lefthook@2.1.1 (pre-commit), js-yaml@4.1.1 (registry parser); (3) CI guard npm run audit:npm-dependency-pinning with 3 sub-checks (npmrc presence + shape; criticals via isExactVersion rejecting ^/~/>=/</hyphen/||/*/x/file:/link:/git/https:/github:/npm:/workspace; specifiers blanket-ban on *, latest, x). Smoke-tested: planted ^zod fails 'must be exact'; planted sonner:latest fails 'banned specifier'. Leaf deps caret-OK intentionally (full lockdown noisy; L11-06-ext follow-up). Runbook covers policy matrix, 6 operational playbooks, Dependabot/Renovate integration, lockfile drift, cross-refs L11-05/07/08, L11-01-09, L17-05. All existing audit guards + portal lint + logger tests remain green."
+      "note": "Landed 2026-04-21 in three layers:\n\nLAYER 1 — .npmrc (both at workspace root AND portal/):\n  save-exact=true      # npm install foo writes exact version\n  save-prefix=         # explicit empty prefix (defence in depth)\n  engine-strict=true   # npm refuses install on engine mismatch\n\nLAYER 2 — manifest pins to EXACT semver (no caret/tilde) for 8 boundary\npackages that own product contracts:\n  portal/package.json:\n    next                14.2.35   (was ^14.2.15 resolved to 14.2.35)\n    @supabase/ssr       0.8.0     (auth cookie contract)\n    @supabase/supabase-js 2.97.0  (RPC + RLS error shape)\n    zod                 4.3.6     (schema contract; 3→4 type-break risk)\n    @sentry/nextjs      10.40.0   (observability boundary)\n  package.json (root):\n    tsx                 4.21.0    (was ^4.19.2 resolved to 4.21.0)\n    lefthook            2.1.1     (pre-commit runner)\n    js-yaml             4.1.1     (audit registry parser)\n\nLeaf / caret-OK deps untouched intentionally — full lockdown is a\nfollow-up (L11-06-ext); this PR tightens the boundary surface.\n\nLAYER 3 — CI guard `npm run audit:npm-dependency-pinning`\n(tools/audit/check-npm-dependency-pinning.ts) with 3 sub-checks:\n\n  1. npmrc: both files exist + each contains save-exact=true and\n     save-prefix= lines; missing either fails closed.\n\n  2. criticals: every CRITICAL_PACKAGES entry passes isExactVersion():\n     rejects ^, ~, >=, <=, >, <, hyphen ranges, ||, * / x, file:,\n     link:, git*, https?:, github:, npm:, workspace: protocols.\n     Accepts plain semver + prerelease + build metadata.\n\n  3. specifiers: scans ALL deps (not just criticals) for `*`, `latest`,\n     `x` — nondeterministic resolution banned everywhere.\n\nSmoke-tested: (a) reintroducing \"zod\": \"^4.3.6\" fails with\n\"must be an exact semver (no ^, ~, ranges, or aliases)\" pointing at\nportal/package.json; (b) reintroducing \"sonner\": \"latest\" fails with\n\"uses banned specifier 'latest' tag\". Current tree: 0 regressions.\n\nRUNBOOK (docs/runbooks/NPM_DEPENDENCY_PINNING_RUNBOOK.md):\n  • Policy matrix mapping each critical package → contract it owns →\n    pinning rule.\n  • 6 operational playbooks (security advisory upgrade flow; accidental\n    caret reintroduction; guard fails on a legitimate caret; Dependabot\n    / Renovate auto-PRs; *latest* sneak-in; lockfile drift).\n  • Detection signals table.\n  • Cross-refs to L11-05 (secure storage sibling), L11-07 (sqlcipher\n    EOL — different remediation), L11-08 (Flutter SDK pinning —\n    Dart-side analogue), L11-01/02/03/04/09 (supply-chain sextet\n    already in Onda 0), L17-05 (@sentry/nextjs.getActiveSpan contract\n    consumer).\n\nDecision NOT to use: a full-lockdown policy (pin EVERY leaf dep). The\nguard would flag hundreds of false positives during routine\nmaintenance; the product contract is owned by the 8 boundary packages\nidentified above. Leaf packages are caret-OK provided they don't use\n`*` / `latest` (the specifiers check catches that).\n\nVerified: both `npm install` runs succeed idempotently; `npm ls` in\nboth workspaces shows exactly the pinned versions; portal lint clean;\nportal logger vitest suite (14 tests) green; audit:verify (348\nfindings), audit:email-platform (6 invariants),\naudit:shared-prefs-sensitive-keys (891 dart files) all stay green\nalongside this change.\n"
     },
     {
       "id": "L11-07",
@@ -6318,7 +6374,8 @@
       ],
       "linked_issues": [],
       "linked_prs": [
-        "local/6c661f7 — fix(mobile/deps): pin sqlcipher_flutter_libs + EOL CI guard (L11-07)"
+        "local:6c661f7 fix(mobile/deps): pin sqlcipher_flutter_libs + EOL CI guard (L11-07)",
+        "local:TBD docs(audit): close L11-07 (SQLCipher EOL pin + ADR-009 + runbook + guard)"
       ],
       "owner": "mobile",
       "runbook": "docs/runbooks/SQLCIPHER_EOL_RUNBOOK.md",
@@ -6326,7 +6383,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Pin-and-watch posture (ADR-009), not a full migration. The acute supply-chain risk of an EOL package is 'a transitive name-squat publishes as 0.7.1+malicious and pub get silently picks it up' — the exact pin + CI guard kills that. Residual 'CVE exposure' on the frozen SQLCipher binaries handled by a watch protocol (GHSA feeds + ADR-009 exit criteria: CVSS>=7.0 on exercised path / Flutter 4 NDK deprecation / store rejection / security review / customer contract). Migration to sqlite3_flutter_libs + app-layer AES-GCM (Option A in ADR-009) queued for Onda 2 — closes C-03 PRAGMA key injection as side-effect.\n\nThree-layer defence: (1) Exact pin `sqlcipher_flutter_libs: 0.7.0+eol` in omni_runner/pubspec.yaml (no caret) with 10-line warning block citing L11-07/ADR/runbook. (2) ADR-009 with threat-model (3 CVE categories: KDF already mitigated via PRAGMA raw-hex + secure-storage key; SQL parser = medium residual; memory safety = low residual but high impact), 3 evaluated migration options (A sqlite3_flutter_libs + AES-GCM preferred/L effort; B CMake SQLCipher fork M effort; C community fork rejected — just moves supply-chain risk), 5 exit criteria. (3) Operational runbook with 7 playbooks (upgrade-request, CVE-fires, dependabot-PR, CI-guard-fails, execute-migration, fork-proposed, security-review) + detection-signals table + rollback. (4) CI guard check-sqlcipher-eol.ts enforcing 5 invariants: pin exactly 0.7.0+eol (rejects ^/~/>=/*/ranges/aliases) + warning block >=4 contiguous comment lines mentioning L11-07 + ADR present and references L11-07/SQLCipher + runbook present and references check-sqlcipher-eol + ADR-009 by file + Dependabot drift-and-storage group contains sqlcipher_flutter_libs.\n\nSmoke-tests: planted caret re-intro → pin_drift flagged with exact remediation; Dependabot ignore removal → missing_dependabot_ignore flagged; both revert clean. Verification: audit:sqlcipher-eol green, audit:verify 348 findings, audit:email-platform 6 invariants, audit:shared-prefs-sensitive-keys 891 dart files, audit:npm-dependency-pinning 8 criticals, flutter analyze no issues, flutter pub deps resolves 0.7.0+eol exactly. Cross-refs: L11-06 (same philosophy NPM side), L11-05 (DB key via FlutterSecureStorage under PrefsSafeKey), L11-08 (future trigger via Flutter SDK bump = ADR-009 exit criterion #2), L01-30/31 (ProGuard §7 Drift+SQLCipher rules stay correct for pinned version), C-03 PRAGMA key raw-hex (closes via Option A migration)."
+      "note": "Pin-and-watch posture (ADR-009), not a full migration. The acute\nsupply-chain risk of an EOL package is \"a transitive name-squat\npublishes as 0.7.1+malicious and `pub get` silently picks it up\";\nthe exact pin + CI guard kills that. The residual \"CVE exposure\"\nrisk on the frozen SQLCipher binaries is handled by a watch\nprotocol (GHSA feeds for sqlcipher/sqlite) and ADR-009 §\"Exit\ncriteria\". An actual migration to `sqlite3_flutter_libs` +\napp-layer AES-GCM is queued for Onda 2 or when a trigger fires\n(whichever comes first) — see runbook Section 4.5.\n\nThree-layer defence:\n  1. Exact pin: `sqlcipher_flutter_libs: 0.7.0+eol` in\n     omni_runner/pubspec.yaml (no caret), preceded by a 10-line\n     warning block referencing L11-07, the ADR, and the runbook.\n  2. ADR-009 documenting the threat model, three evaluated\n     migration options (A/B/C with effort + cons), the preferred\n     option, and the exit criteria. Paired with the operational\n     runbook which includes 7 playbooks and a detection-signals\n     table.\n  3. CI guard (`npm run audit:sqlcipher-eol`) that rejects pin\n     drift, missing warning block, missing ADR, missing runbook,\n     missing Dependabot ignore entry.\n\nCross-references in the runbook to L11-06 (same philosophy, NPM\nside), L11-05 (secure-storage policy covers the DB encryption\nkey), L11-08 (Flutter SDK pinning — future trigger via NDK bump),\nL01-30/31 (ProGuard §7 stays correct for the pinned version),\nC-03 (PRAGMA key raw-hex format — closed by the Option A\nmigration).\n"
     },
     {
       "id": "L11-08",
@@ -6369,7 +6426,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Single-minor SDK pin + cross-workflow alignment + CI guard. Pre-fix: pubspec sdk '>=3.8.0 <4.0.0' permitia Dart 3.9/3.10/3.11 a resolver o mesmo pubspec (language-spec drift possível entre local dev e CI); release.yml estava em flutter-version 3.22.x enquanto flutter.yml + security.yml estavam em 3.41.x — release APKs compilados com toolchain diferente do CI test (silent divergence real). Fix em 4 camadas: (1) pubspec narrow `sdk: '>=3.11.0 <3.12.0'` + `flutter: '>=3.41.0 <3.42.0'` com 10-line warning block citando L11-08 e o runbook; janela single-minor aceita patches (3.11.1, 3.11.2), rejeita minor drift; (2) .tool-versions em repo root para asdf/fvm/pluggable toolchain managers — `flutter 3.41.1`, `dart 3.11.0`, `nodejs 20` — `cd <repo> && asdf install` dá ao dev exatamente a toolchain do CI; (3) Alinhamento cross-workflow: release.yml flutter-version 3.22.x → 3.41.x matching flutter.yml/security.yml, com warning block sibling citando L11-08; (4) CI guard check-flutter-sdk-pinning.ts (npm run audit:flutter-sdk-pinning) enforçando 5 invariants: single-minor em sdk+flutter (upper == lower.minor+1, patch 0, mesmo major; rejeita cross-major/multi-minor/one-sided/missing bounds) + warning block >=4 lines mencionando L11-08 + .tool-versions dart/flutter minor matching pubspec + TODAS `flutter-version:` lines em .github/workflows/*.yml matching pubspec minor (zero exceções, nem para 'just this one job') + runbook exists + cross-links check-flutter-sdk-pinning.\n\nSide-effect cleanup: faixa narrower surfaced deprecated lint `avoid_null_checks_in_equality_operators` (deprecated em Dart 3.11, antes mascarado pela faixa wider compat mode). Removido de analysis_options.yaml.\n\nSmoke-tested: widened pubspec → sdk_range_too_wide flagged com remediação exata; planted 3.99.x em flutter.yml → workflow_flutter_drift flagged nas 3 jobs com line numbers; ambos revertem clean. Verification: audit:flutter-sdk-pinning green, audit:verify 348 findings, audit:email-platform 6 invariants, audit:shared-prefs-sensitive-keys 891 dart files, audit:npm-dependency-pinning 8 criticals, audit:sqlcipher-eol green, flutter analyze no issues, flutter test 2128/2128 passed.\n\nCross-refs: L11-06 (mesma filosofia NPM side — pin exato + CI guard + runbook), L11-07 (Flutter major bump 3.x→4.x é explicit exit criterion #2 em ADR-009 via NDK deprecation — single-minor pin dá visibilidade desse signal cedo), L11-05 (FlutterSecureStorage sensível a language-spec regressions em minors passadas), L01-30/31 (ProGuard rules versionadas alongside Flutter — single-minor mantém stable), L11-03 gitleaks + L11-09 least-privilege GITHUB_TOKEN (workflows shared; alignment cross-workflow mantém esses guards efetivos)."
+      "note": "Single-minor SDK pin + cross-workflow alignment + CI guard. Pre-fix\nstate: pubspec `sdk: '>=3.8.0 <4.0.0'` allowed Dart 3.9/3.10/3.11\nto all resolve against the same pubspec (language-spec drift\npossible); release.yml was on flutter-version 3.22.x while\nflutter.yml + security.yml were on 3.41.x — release APKs were\nbuilt with a different toolchain than CI tested with. Fix in three\nlayers:\n  1. Narrow pubspec to `sdk: '>=3.11.0 <3.12.0'` and\n     `flutter: '>=3.41.0 <3.42.0'` (single-minor window matching\n     the CI flutter-version). Keeps patch updates floating, rejects\n     minor drift.\n  2. Repo-level `.tool-versions` for asdf/fvm: flutter 3.41.1 /\n     dart 3.11.0 / nodejs 20. Local dev gets exactly the CI\n     toolchain with `asdf install`.\n  3. CI guard `check-flutter-sdk-pinning.ts` (`npm run\n     audit:flutter-sdk-pinning`) enforcing: pubspec single-minor\n     ranges on BOTH sdk + flutter; warning block >=4 lines\n     mentioning L11-08; .tool-versions dart/flutter minor matches\n     pubspec; every `flutter-version:` line across\n     `.github/workflows/*.yml` matches the pubspec minor;\n     runbook exists + cross-links the guard.\n\nSide-effect cleanup: narrower pubspec range surfaced a\ndeprecated lint (`avoid_null_checks_in_equality_operators`,\ndeprecated in Dart 3.11) that had been hidden by the wider\ncompat mode; removed from analysis_options.yaml.\n\nSmoke-tested: widened pubspec → sdk_range_too_wide flagged;\nplanted 3.99.x in flutter.yml → workflow_flutter_drift on all\n3 jobs; both revert clean.\n\nCross-refs: L11-06 (same pinning philosophy NPM side), L11-07\n(Flutter major bump is an explicit exit criterion in ADR-009),\nL11-05 (FlutterSecureStorage sensitive to language-spec\nregressions), L01-30/31 (ProGuard rules versioned alongside\nFlutter — single-minor keeps them stable).\n"
     },
     {
       "id": "L11-09",
@@ -6703,21 +6760,38 @@
       "lens": 12,
       "title": "auto-topup-hourly — cobrança automática sem cap diário",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "edge-function",
-        "migration"
+        "migration",
+        "antifraud",
+        "billing",
+        "cron"
       ],
-      "files": [],
-      "correction_type": "config",
+      "files": [
+        "supabase/migrations/20260421200000_l12_05_auto_topup_daily_cap.sql",
+        "supabase/functions/auto-topup-check/index.ts",
+        "portal/src/app/api/auto-topup/route.ts",
+        "portal/src/app/(portal)/settings/auto-topup-form.tsx",
+        "portal/src/lib/schemas.ts"
+      ],
+      "correction_type": "migration",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l12_05_auto_topup_daily_cap.ts",
+        "portal/src/app/api/auto-topup/route.test.ts",
+        "portal/src/app/(portal)/settings/auto-topup-form.test.tsx",
+        "portal/src/lib/schemas.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "73d871f"
+      ],
+      "owner": "platform-billing",
+      "runbook": "docs/runbooks/AUTO_TOPUP_DAILY_CAP_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
@@ -6730,20 +6804,30 @@
       "lens": 12,
       "title": "archive-old-sessions roda como função pesada sem batch",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "atomicity"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421250000_l12_06_archive_sessions_chunked_commits.sql",
+        "supabase/functions/archive-old-sessions/index.ts",
+        "tools/test_l12_06_archive_sessions_chunked.ts",
+        "docs/runbooks/ARCHIVE_OLD_SESSIONS_RUNBOOK.md"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l12_06_archive_sessions_chunked.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "d8b0e10"
+      ],
+      "owner": "coo",
+      "runbook": "docs/runbooks/ARCHIVE_OLD_SESSIONS_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
@@ -6756,27 +6840,37 @@
       "lens": 12,
       "title": "Horário UTC → usuários BR veem \"meia-noite Brasil\"",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "cron",
         "ux"
       ],
-      "files": [],
-      "correction_type": "config",
+      "files": [
+        "supabase/migrations/20260421260000_l12_07_onboarding_nudge_user_timezone.sql",
+        "supabase/functions/onboarding-nudge/index.ts",
+        "tools/test_l12_07_onboarding_nudge_timezone.ts",
+        "docs/runbooks/ONBOARDING_NUDGE_TIMEZONE_RUNBOOK.md"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l12_07_onboarding_nudge_timezone.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "4f14773"
+      ],
+      "owner": "coo",
+      "runbook": "docs/runbooks/ONBOARDING_NUDGE_TIMEZONE_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "fix também encerra L07-06 (profiles.timezone)."
     },
     {
       "id": "L12-08",
@@ -6784,18 +6878,30 @@
       "lens": 12,
       "title": "clearing-cron em 02:00 — consolidação de D-1 antes de fim do dia",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "tags": [],
-      "files": [],
-      "correction_type": "process",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "tags": [
+        "cron",
+        "finance"
+      ],
+      "files": [
+        "supabase/migrations/20260421270000_l12_08_clearing_cron_deterministic_cutoff.sql",
+        "tools/test_l12_08_clearing_cron_deterministic_cutoff.ts",
+        "docs/runbooks/CLEARING_CRON_CUTOFF_RUNBOOK.md"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l12_08_clearing_cron_deterministic_cutoff.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "7f52a25"
+      ],
+      "owner": "cfo",
+      "runbook": "docs/runbooks/CLEARING_CRON_CUTOFF_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
@@ -6808,20 +6914,34 @@
       "lens": 12,
       "title": "lifecycle-cron dispara notificações idempotência não garantida",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "migration"
+        "migration",
+        "cron",
+        "notifications",
+        "idempotency"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421240000_l12_09_notification_idempotency.sql",
+        "supabase/functions/notify-rules/index.ts",
+        "supabase/functions/onboarding-nudge/index.ts",
+        "tools/test_l12_09_notification_idempotency.ts",
+        "docs/runbooks/NOTIFICATION_IDEMPOTENCY_RUNBOOK.md"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l12_09_notification_idempotency.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "48b2886"
+      ],
+      "owner": "coo",
+      "runbook": "docs/runbooks/NOTIFICATION_IDEMPOTENCY_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
@@ -7682,7 +7802,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Landed 2026-04-21 — DB foundation (email_outbox table + 4 SECURITY DEFINER helpers: fn_enqueue_email idempotent, fn_mark_email_sent/failed with P0010 INVALID_TRANSITION guards, fn_email_outbox_assert_shape CI helper; RLS FORCE + service_role FOR ALL; REVOKE ALL FROM anon/authenticated) + Shared lib (_shared/email.ts with Resend/Inbucket/Null provider abstraction, escapeHtml on every {{var}}, TEMPLATE_MANIFEST typed surface, sendEmail dispatcher) + Edge fn (POST /send-email service-role-gated, orchestrates enqueue → dispatch → mark, short-circuits already_sent replays) + 4 HTML templates (coaching_group_invite, championship_invite, weekly_training_summary, payment_confirmation) with manifest.json registry. Tests: 27/27 Deno unit + 18/18 pg integration. CI: npm run audit:email-platform with 6 invariants. Runbook covers 6 operational playbooks + cross-refs to L10-09, L12-09, L18-04, L04-07, L03-17. Follow-ups parked: L15-05 (drain cron + 90d GC), L15-06 (PII retention), L15-07 (bounce webhook)."
+      "note": "Landed 2026-04-21 across three pillars:\n\nDB FOUNDATION (20260421360000_l15_04_email_outbox.sql)\n• public.email_outbox — canonical queue, 1 row/lifecycle, UNIQUE idempotency_key\n  (CHECK length 8..256), RLS ENABLE+FORCE, service_role FOR ALL only. 5 CHECKs.\n• fn_enqueue_email (SECURITY DEFINER) — INSERT ON CONFLICT DO NOTHING;\n  normalises recipient_email (lower+trim); returns row id either way.\n• fn_mark_email_sent / fn_mark_email_failed (SECURITY DEFINER) — idempotent\n  transitions; raise P0010 INVALID_TRANSITION on sent/suppressed→failed and\n  failed/suppressed→sent.\n• fn_email_outbox_assert_shape (SECURITY DEFINER) — raises P0010 if schema /\n  RLS / indexes / CHECKs / privileges drift. Used by CI guard.\n• REVOKE ALL FROM PUBLIC, anon, authenticated on all 4 helpers;\n  GRANT EXECUTE TO service_role explicitly.\n\nEDGE-FN / SHARED LIB (supabase/functions/_shared/email.ts + send-email/)\n• EmailProvider abstraction: ResendProvider (prod), InbucketProvider (supabase\n  start), NullProvider (default — zero outbound HTTP, safe for CI). Selected\n  via EMAIL_PROVIDER env var.\n• escapeHtml applied to every {{var}} in body (subjects opt-out, plain text).\n• TEMPLATE_MANIFEST mirrors email-templates/manifest.json as the typed\n  EmailTemplateKey surface. CI enforces parity.\n• POST /send-email (service-role gated) orchestrates enqueue → dispatch →\n  mark_sent/failed. Short-circuits replays of already-sent rows with\n  HTTP 200 + status:already_sent.\n\nTEMPLATES (supabase/email-templates/)\n• 4 shipped: coaching_group_invite, championship_invite, weekly_training_summary,\n  payment_confirmation. Responsive 600px, brand palette, required_vars\n  registered in manifest.\n\nTESTING\n• Deno unit tests (_shared/email.test.ts): 27 green — escapeHtml, renderTemplate,\n  validateEmailAddress, assertRequiredVars (per template), resolveProvider,\n  NullProvider, InMemoryLoader, sendEmail end-to-end including XSS\n  neutralisation and terminal-vs-transient classification.\n• Integration tests (tools/test_l15_04_email_outbox.ts): 18 green — schema\n  (table + RLS forced, 4 helpers SECURITY DEFINER, service_role vs\n  anon/authenticated privileges, unique index, 5 CHECKs), argument\n  validation, behaviour (enqueue idempotency + normalisation, mark_sent\n  idempotency, mark_failed non-terminal/terminal, INVALID_TRANSITION).\n\nCI GUARD (npm run audit:email-platform)\n• 6 invariants: DB shape via fn_email_outbox_assert_shape; shared/email.ts\n  exports; send-email service-role gating + correct wiring; manifest parity;\n  no direct provider HTTP outside sanctioned modules; runbook exists.\n\nRUNBOOK (docs/runbooks/EMAIL_TRANSACTIONAL_RUNBOOK.md)\n• Architecture diagram, \"add new template\" checklist, 6 operational\n  playbooks (provider outage, missing vars, failure spike, batch replay,\n  GC retention, CI guard failure), security posture, detection signals,\n  rollback, cross-refs to L10-09/L12-09/L18-04/L04-07/L03-17.\n\nRelated follow-ups (not in this PR): L15-05 (scheduled drain cron + 90-day\nGC), L15-06 (category=pii retention carve-out), L15-07 (bounce/complaint\nwebhook).\n"
     },
     {
       "id": "L15-05",
@@ -8285,7 +8405,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "2026-04-21 — fixed. logger.error now unconditionally reports to Sentry (captureException for Error, captureMessage for everything else including undefined/null). normalizeErrorFields helper produces consistent console log shape. 4 production call-sites (custody webhook × 3, checkout proxy) are now observable in Sentry. CI npm run audit:logger-sentry-capture + runbook."
+      "note": "2026-04-21 — fixed. logger.error now unconditionally reports to Sentry (captureException for Error, captureMessage for everything else including undefined/null). normalizeErrorFields helper produces a consistent console log shape. 4 production call-sites (custody webhook × 3, checkout proxy) are now observable in Sentry. CI npm run audit:logger-sentry-capture (8 regressions) + runbook."
     },
     {
       "id": "L17-06",
@@ -8875,23 +8995,33 @@
       "lens": 19,
       "title": "idx_ledger_user vs idx_coin_ledger_user_created — evoluções sem limpeza",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "migration",
         "performance",
         "reliability"
       ],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "supabase/migrations/20260421280000_l19_04_dedupe_ledger_indexes.sql",
+        "tools/test_l19_04_duplicate_indexes.ts",
+        "tools/audit/check-duplicate-indexes.ts",
+        "docs/runbooks/LEDGER_INDEX_NAMING_RUNBOOK.md"
+      ],
+      "correction_type": "migration",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l19_04_duplicate_indexes.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "d5bcc54"
+      ],
+      "owner": "dba",
+      "runbook": "docs/runbooks/LEDGER_INDEX_NAMING_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
@@ -8948,20 +9078,31 @@
       "lens": 19,
       "title": "JSONB em audit_logs.metadata sem índice GIN",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "performance"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421300000_l19_06_audit_logs_metadata_gin.sql",
+        "tools/audit/check-audit-logs-gin.ts",
+        "tools/test_l19_06_audit_logs_metadata_gin.ts",
+        "package.json",
+        "docs/runbooks/AUDIT_LOGS_METADATA_GIN_RUNBOOK.md"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l19_06_audit_logs_metadata_gin.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "271c549"
+      ],
+      "owner": "platform-dba",
+      "runbook": "docs/runbooks/AUDIT_LOGS_METADATA_GIN_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
@@ -9001,21 +9142,33 @@
       "lens": 19,
       "title": "Constraints CHECK sem name padronizado",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "migration"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421290000_l19_08_check_constraint_naming.sql",
+        "tools/audit/check-constraint-naming.ts",
+        "tools/test_l19_08_check_constraint_naming.ts",
+        "tools/test_l04_07_ledger_reason_pii.ts",
+        "package.json",
+        "docs/runbooks/DB_CHECK_CONSTRAINT_NAMING_RUNBOOK.md"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/test_l19_08_check_constraint_naming.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "44cd970"
+      ],
+      "owner": "platform-db",
+      "runbook": "docs/runbooks/DB_CHECK_CONSTRAINT_NAMING_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
@@ -9731,7 +9884,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Resolvido em 9a4ec27. LocationSettingsEntity passa a expor RecordingMode (standard|performance) e fábricas .standard() (5 m / high — default preservado) e .performance() (1 m + LocationAccuracy.bestForNavigation — GNSS multi-constelação em iOS). LocationAccuracy ganhou variante bestForNavigation e LocationStreamRepo._mapAccuracy passa a mapeá-la. PreferencesKeys ganhou chave não-sensível recording_mode via catálogo L11-05. Modo é opt-in — default permanece 5 m / high — com trade-off documentado de ~+30 % bateria e volume de pontos ~3-5×. Contrato fixado por 11 testes em test/domain/entities/location_settings_entity_test.dart."
+      "note": "Resolvido em `9a4ec27` (fix). `LocationSettingsEntity` passa a\nexpor um `RecordingMode` (standard | performance) e fábricas\n`.standard()` (5 m / high — preserva o default pré-L21-06 e a\nparity de bateria) e `.performance()` (1 m + `LocationAccuracy.\nbestForNavigation` — multi-constellation GNSS em iOS, fused\nprovider de maior prioridade em Android). O enum\n`LocationAccuracy` ganhou a variante `bestForNavigation` e\n`LocationStreamRepo._mapAccuracy` passa a mapá-la para\n`geo.LocationAccuracy.bestForNavigation`. O catálogo\n`PreferencesKeys` (L11-05) ganhou a chave não-sensível\n`recording_mode` para a tela de configurações persistir a escolha\ndo atleta. O modo é **opt-in** — default permanece 5 m / high —\ncom trade-off documentado de ~+30 % de bateria e volume de\npontos ~3-5×. Cobertura: 11 testes em\n`test/domain/entities/location_settings_entity_test.dart` que\nfixam os presets (5 m / high / standard vs. 1 m /\nbestForNavigation / performance), `copyWith`, contrato Equatable\ne cardinalidade dos enums, impedindo regressão silenciosa dos\nnúmeros citados neste finding.\n"
     },
     {
       "id": "L21-07",
@@ -10281,7 +10434,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Delivered an opt-in proximity discovery surface with privacy-by-design snap-to-grid (500m/1km/5km), without PostGIS. Migration adds base_lat/base_lng (numeric(8,5)), allow_discovery, location_precision_m to coaching_groups with 4 CHECKs (incl. chk_coaching_groups_discovery_needs_coords) and a partial btree on the hot subset. fn_groups_snap_coord (IMMUTABLE) rounds coords to coach's precision; fn_groups_nearby (STABLE SECURITY DEFINER, authenticated-only) clamps radius [1,100], bounding-box prunes, Haversine refines, returns snapped coords + distance rounded to nearest km (min 1) — defeating triangulation. fn_group_set_base_location gates writes to coach_user_id. GET /api/groups/nearby exposes the RPC through apiOk/apiUnauthorized. fn_coaching_groups_assert_discovery_shape raises P0010 on drift; wired as npm run audit:groups-nearby. 25 integration tests green; portal tsc/eslint clean. Code: 32e764f."
+      "note": "Delivered an opt-in proximity discovery surface with a\nprivacy-preserving snap-to-grid model, without pulling in PostGIS\n(deferred until a second GIS use-case lands):\n\n1. `coaching_groups` gains `base_lat numeric(8,5)`, `base_lng\n   numeric(8,5)`, `allow_discovery boolean NOT NULL DEFAULT\n   false`, and `location_precision_m smallint` constrained to\n   {500 m, 1 km, 5 km}. Four CHECKs (L19-08 naming) guard\n   lat/lng range, precision enum, and forbid enabling\n   discovery without coords\n   (`chk_coaching_groups_discovery_needs_coords`).\n2. A partial btree index covers only the hot subset\n   (`allow_discovery=true AND approval_status='approved' AND\n   base_lat IS NOT NULL`) — enough for the bounding-box prune.\n3. `fn_groups_snap_coord(coord, precision_m)` (IMMUTABLE) rounds\n   any WGS84 degree to the coach-chosen grid; raw coords never\n   leave the database. `fn_groups_nearby(lat, lng, radius_km)`\n   (STABLE SECURITY DEFINER, authenticated-only) validates\n   inputs (22023 on drift), clamps radius to [1, 100],\n   bounding-box-prunes, Haversine-refines, and returns snapped\n   coords + distance rounded to the nearest integer km (min 1)\n   — defeating triangulation.\n4. `fn_group_set_base_location(...)` (VOLATILE SECURITY\n   DEFINER) is the coach's write path: it validates caller =\n   `coach_user_id` and toggles discovery only after coords are\n   present.\n5. `GET /api/groups/nearby?lat&lng&radius_km` exposes the RPC\n   through the canonical `apiOk`/`apiUnauthorized` envelope.\n   Unauthenticated requests fail with 401; caller location is\n   never persisted.\n6. `fn_coaching_groups_assert_discovery_shape()` raises P0010\n   when columns / CHECKs / index / helpers / privileges drift;\n   wrapped by `tools/audit/check-groups-nearby.ts` and wired as\n   `npm run audit:groups-nearby`.\n7. `tools/test_l22_05_coaching_groups_nearby.ts` (25 cases)\n   covers schema, snap, radius, filters, ordering, CHECK\n   violations, input validation (22023), and shape-guard drift.\n8. `docs/runbooks/GROUPS_NEARBY_RUNBOOK.md` documents the\n   privacy posture, coach enable workflow, 6 operational\n   playbooks, rollback posture, and cross-references.\n\nCode: `32e764f`.\n"
     },
     {
       "id": "L22-06",
@@ -10331,7 +10484,7 @@
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": "Shipped 3 cues (countdown / motivation / hydration) + multi-locale (ptBR/en/es) in 5 defense layers. `AudioCoachLocale` enum with BCP-47 tags + null-safe fromTag resolver. `AudioCueFormatter` single locale-aware renderer with 15 keys × 3 locales + motivational pools + hydration phrase. Three new triggers with stateful reset/cool-down/priorities (countdown=2, motivation=14, hydration=13). `AudioCoachService.init({locale})` + setLocale mid-session; repo delegates text rendering. CI `audit:voice-coaching-i18n` (20 invariants: enum shape, BCP-47 tags, fromTag factory, catalogue coverage per locale, motivational pool per locale, 3 trigger files, runbook mutual-linkage). 71 new Dart tests (flutter test 2199/2199 green), flutter analyze clean. Runbook AUDIO_CUES_RUNBOOK.md (§1 why, §2 invariants table, §3 what shipped, §4 how-to add locale/cue/swap mid-session, §5 six playbooks inc. priority contract, §6 signals, §7 rollback additive, §8 cross-refs L22-05/L21-06/L11-05/L17-05). Code: 9dab4ec."
+      "note": "Shipped the three cues the finding called out explicitly plus\nmulti-locale support, in 5 defense layers:\n\n1. `AudioCoachLocale` (value object) — enum `ptBR`/`en`/`es`\n   carrying BCP-47 tags (`pt-BR`/`en-US`/`es-ES`) + `fromTag`\n   null-safe resolver that falls back to `ptBR` on unknown\n   input so voice coaching never crashes the session.\n2. `AudioCueFormatter` (domain service) — single locale-aware\n   text renderer. 15 translation keys × 3 locales + 3\n   motivational pools + 1 hydration reminder per locale. The\n   `translationKeys` Set is a declared invariant the CI guard\n   matches against the catalogue.\n3. Three new voice triggers (domain usecases):\n   - `CountdownVoiceTrigger` — priority 2 (interrupts), fires\n     once per whole second from `countdownSec` down to 0 (GO!),\n     stateful, `reset()` per session.\n   - `MotivationVoiceTrigger` — priority 14, fires every\n     `intervalMs` (default 10 min) of moving time, rotates\n     modulo the locale's pool, `isPaused` suppression,\n     `minSpacingMs` cool-down floor.\n   - `HydrationVoiceTrigger` — priority 13, silent during\n     `warmupMs` (default 20 min), then every `intervalMs`\n     after with the locale's hydration phrase.\n4. `AudioCoachService.init({locale: ...})` + new `setLocale()`\n   mid-session; `AudioCoachRepo` delegates text rendering to\n   the formatter and exposes `setLocale(...)` which updates\n   both formatter and engine. Defaults preserve 100% backward\n   compat (existing callers still speak pt-BR unchanged).\n5. CI guard (`npm run audit:voice-coaching-i18n`) asserts\n   enum shape, BCP-47 tags, `fromTag` factory, catalogue\n   coverage per locale, motivational pool non-empty per\n   locale, 3 trigger files with the expected class contract,\n   and runbook cross-linkage. Smoke-tested: removing an `es`\n   catalogue entry surfaces `missing: countdown.go` on the\n   `es` block.\n\nTests: 71 new Dart cases (31 formatter + 11 countdown +\n9 motivation + 9 hydration + 11 `fromTag` cases embedded\nin formatter suite). `flutter analyze` clean, full suite\n2199/2199 green (was 2128; +71).\n\nRunbook `AUDIO_CUES_RUNBOOK.md` (8 sections) covers invariants\ntable, \"how to add a new locale / cue type\", mid-session\nlocale swap code snippet, 6 operational playbooks including\npriority contract for \"coach talks over itself\".\n\nCode: `9dab4ec`.\n"
     },
     {
       "id": "L22-07",
@@ -10367,9 +10520,10 @@
       "lens": 22,
       "title": "Desafio de grupo (viralização entre amigos)",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "ux",
@@ -10378,19 +10532,36 @@
         "personas",
         "athlete-amateur"
       ],
-      "files": [],
+      "files": [
+        "omni_runner/lib/domain/value_objects/challenge_invite_link.dart",
+        "omni_runner/lib/domain/value_objects/challenge_share_channel.dart",
+        "omni_runner/lib/domain/services/challenge_invite_message_builder.dart",
+        "omni_runner/lib/domain/entities/challenge_share_intent_entity.dart",
+        "omni_runner/lib/domain/usecases/gamification/share_challenge_invite.dart",
+        "omni_runner/lib/presentation/screens/challenge_invite_screen.dart",
+        "portal/public/.well-known/assetlinks.json",
+        "portal/public/.well-known/apple-app-site-association",
+        "tools/audit/check-challenge-invite-deep-link.ts",
+        "docs/runbooks/CHALLENGE_INVITE_VIRAL_RUNBOOK.md"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "omni_runner/test/domain/value_objects/challenge_invite_link_test.dart",
+        "omni_runner/test/domain/services/challenge_invite_message_builder_test.dart",
+        "omni_runner/test/domain/usecases/gamification/share_challenge_invite_test.dart"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:d52f941"
+      ],
       "owner": "unassigned",
-      "runbook": null,
+      "runbook": "docs/runbooks/CHALLENGE_INVITE_VIRAL_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Domain pipeline (canonical link VO → locale-aware builder → share intent use-case) + WhatsApp-specific launch via wa.me/?text= + CI guard enforcing .well-known/* invariants."
     },
     {
       "id": "L22-09",

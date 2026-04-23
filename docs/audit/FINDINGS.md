@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-23 00:56:28 UTC.
+> Atualizado em 2026-04-23 10:48:42 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -100,7 +100,7 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L04-04](./findings/L04-04-dados-de-saude-biometricos-dados-sensiveis-lgpd-art.md) | 0 | L04 · CLO | Dados de saúde/biométricos (dados sensíveis, LGPD Art. 11) sem proteção reforçada | unassigned |
 | 🟠 high | ⏳ fix-pending | [L04-05](./findings/L04-05-trajetorias-gps-brutas-sem-opcao-de-privacy-zones.md) | 1 | L04 · CLO | Trajetórias GPS brutas sem opção de privacy zones (home/work zones) | unassigned |
 | 🟠 high | ⏳ fix-pending | [L04-06](./findings/L04-06-campo-instagram-handle-tiktok-handle-em-profiles-sem.md) | 1 | L04 · CLO | Campo instagram_handle, tiktok_handle em profiles sem política de uso | unassigned |
-| 🟠 high | ⏳ fix-pending | [L04-07](./findings/L04-07-coin-ledger-retem-reason-com-pii-embutida.md) | 1 | L04 · CLO | coin_ledger retém reason com PII embutida | unassigned |
+| 🟠 high | ✅ fixed | [L04-07](./findings/L04-07-coin-ledger-retem-reason-com-pii-embutida.md) | 1 | L04 · CLO | coin_ledger retém reason com PII embutida | clo |
 | 🟠 high | ⏳ fix-pending | [L04-08](./findings/L04-08-backups-supabase-sem-politica-de-retencao-documentada.md) | 1 | L04 · CLO | Backups Supabase — sem política de retenção documentada | unassigned |
 | 🟠 high | ⏳ fix-pending | [L04-09](./findings/L04-09-terceiros-strava-trainingpeaks-nao-ha-processo-de-revogacao.md) | 1 | L04 · CLO | Terceiros (Strava, TrainingPeaks) — não há processo de revogação | unassigned |
 | 🟠 high | ⏳ fix-pending | [L04-10](./findings/L04-10-transferencia-internacional-de-dados-supabase-us-sentry-us.md) | 1 | L04 · CLO | Transferência internacional de dados (Supabase US, Sentry US) sem cláusulas | unassigned |
@@ -133,7 +133,7 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L06-02](./findings/L06-02-health-check-exibe-contagem-exata-de-violacoes-info.md) | 1 | L06 · COO | Health check exibe contagem exata de violações (info leak operacional) | platform |
 | 🟠 high | ✅ fixed | [L06-03](./findings/L06-03-reconcile-wallets-cron-sem-alerta-em-drift-0.md) | 1 | L06 · COO | reconcile-wallets-cron sem alerta em drift > 0 | platform |
 | 🟠 high | ✅ fixed | [L06-04](./findings/L06-04-pg-cron-jobs-sem-monitoramento-de-execucao.md) | 1 | L06 · COO | pg_cron jobs sem monitoramento de execução | platform |
-| 🟠 high | ⏳ fix-pending | [L06-05](./findings/L06-05-edge-functions-sem-retry-em-falha-de-pg.md) | 1 | L06 · COO | Edge Functions sem retry em falha de pg_net | unassigned |
+| 🟠 high | ✅ fixed | [L06-05](./findings/L06-05-edge-functions-sem-retry-em-falha-de-pg.md) | 1 | L06 · COO | Edge Functions sem retry em falha de pg_net | coo |
 | 🟠 high | ✅ fixed | [L06-06](./findings/L06-06-sem-feature-flags-para-desligar-subsistemas.md) | 1 | L06 · COO | Sem feature flags para desligar subsistemas | unassigned |
 | 🟠 high | ✅ fixed | [L06-07](./findings/L06-07-global-error-do-next-js-nao-reporta-a.md) | 1 | L06 · COO | Global error do Next.js não reporta a Sentry | portal-platform |
 | 🟠 high | ✅ fixed | [L06-08](./findings/L06-08-delete-account-executa-deleteuser-sem-audit-log.md) | 1 | L06 · COO | delete-account executa deleteUser sem audit_log | platform |
@@ -147,7 +147,7 @@ Total: **348** findings.
 | 🟠 high | ⏳ fix-pending | [L07-03](./findings/L07-03-app-mobile-sem-modo-offline-robusto-para-corridas.md) | 1 | L07 · CXO | App mobile sem modo offline robusto para corridas | unassigned |
 | 🟠 high | ✅ fixed | [L07-04](./findings/L07-04-flutter-deep-link-strava-oauth-sem-state-validation.md) | 1 | L07 · CXO | Flutter deep link Strava OAuth sem state validation (CSRF) | mobile |
 | 🟠 high | ⏳ fix-pending | [L07-05](./findings/L07-05-portal-sem-acessibilidade-a11y-declarada.md) | 1 | L07 · CXO | Portal sem acessibilidade (a11y) declarada | unassigned |
-| 🟠 high | ⏳ fix-pending | [L07-06](./findings/L07-06-timezone-sem-configuracao-do-usuario.md) | 1 | L07 · CXO | Timezone sem configuração do usuário | unassigned |
+| 🟠 high | ✅ fixed | [L07-06](./findings/L07-06-timezone-sem-configuracao-do-usuario.md) | 1 | L07 · CXO | Timezone sem configuração do usuário | cxo |
 | 🟡 medium | ⏳ fix-pending | [L07-07](./findings/L07-07-icones-sem-fallback-mobile-offline.md) | 2 | L07 · CXO | Ícones sem fallback (mobile offline) | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L07-08](./findings/L07-08-dark-mode-parcial.md) | 2 | L07 · CXO | Dark mode parcial | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L07-09](./findings/L07-09-notificacoes-push-sem-deep-link-preciso.md) | 2 | L07 · CXO | Notificações push: sem deep link preciso | unassigned |
@@ -159,7 +159,7 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L08-02](./findings/L08-02-product-events-properties-jsonb-aceita-qualquer-payload-pii.md) | 1 | L08 · CDO | product_events.properties jsonb aceita qualquer payload — PII leak risk | platform |
 | 🟠 high | ✅ fixed | [L08-03](./findings/L08-03-sem-indice-de-analytics-time-series-em-sessions.md) | 1 | L08 · CDO | Sem índice de analytics time-series em sessions | platform-data |
 | 🟠 high | ✅ fixed | [L08-04](./findings/L08-04-analise-de-sessions-pelo-moving-ms-mas-coluna.md) | 1 | L08 · CDO | Análise de sessions pelo moving_ms mas coluna aceita NULL e 0 | platform-data |
-| 🟠 high | ⏳ fix-pending | [L08-05](./findings/L08-05-views-de-progressao-sem-filtro-de-atletas-inativos.md) | 1 | L08 · CDO | Views de progressão sem filtro de atletas inativos | unassigned |
+| 🟠 high | ✅ fixed | [L08-05](./findings/L08-05-views-de-progressao-sem-filtro-de-atletas-inativos.md) | 1 | L08 · CDO | Views de progressão sem filtro de atletas inativos | platform-data |
 | 🟠 high | ⏳ fix-pending | [L08-06](./findings/L08-06-sem-staging-de-data-warehouse-queries-olap-contra.md) | 1 | L08 · CDO | Sem staging de data warehouse — queries OLAP contra OLTP | unassigned |
 | 🟠 high | ✅ fixed | [L08-07](./findings/L08-07-drift-potencial-entre-coin-ledger-e-wallets-fora.md) | 1 | L08 · CDO | Drift potencial entre coin_ledger e wallets fora do horário do cron | platform |
 | 🟠 high | ⏳ fix-pending | [L08-08](./findings/L08-08-audit-logs-sem-retencao-particionamento.md) | 1 | L08 · CDO | audit_logs sem retenção / particionamento | unassigned |
@@ -175,7 +175,7 @@ Total: **348** findings.
 | 🟠 high | ⏳ fix-pending | [L09-06](./findings/L09-06-gateway-de-pagamento-asaas-chave-armazenada-em-plaintext.md) | 1 | L09 · CRO | Gateway de pagamento Asaas: chave armazenada em plaintext na DB | unassigned |
 | 🟠 high | ⏳ fix-pending | [L09-07](./findings/L09-07-politica-de-reembolso-chargeback-sem-prazo-sla.md) | 1 | L09 · CRO | Política de reembolso/chargeback sem prazo SLA | unassigned |
 | 🟠 high | ⏳ fix-pending | [L09-08](./findings/L09-08-provider-fee-usd-2-12-onus-ao-cliente.md) | 1 | L09 · CRO | provider_fee_usd ([2.12]) — ônus ao cliente ou à plataforma? | unassigned |
-| 🟠 high | ⏳ fix-pending | [L09-09](./findings/L09-09-contratos-privados-termo-de-adesao-do-clube-termo.md) | 1 | L09 · CRO | Contratos privados (termo de adesão do clube, termo de atleta) inexistentes no repo | unassigned |
+| 🟠 high | ✅ fixed | [L09-09](./findings/L09-09-contratos-privados-termo-de-adesao-do-clube-termo.md) | 1 | L09 · CRO | Contratos privados (termo de adesão do clube, termo de atleta) inexistentes no repo | legal-ops |
 | 🟡 medium | ⏳ fix-pending | [L09-10](./findings/L09-10-relatorio-anual-de-transparencia-marco-civil-art-11.md) | 2 | L09 · CRO | Relatório anual de transparência (Marco Civil Art. 11) | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L09-11](./findings/L09-11-cessao-de-credito-implicita-em-clearing-settlements-document.md) | 2 | L09 · CRO | Cessão de crédito implícita em clearing_settlements — documentar | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L09-12](./findings/L09-12-auditoria-externa-financeira-inexistente.md) | 2 | L09 · CRO | Auditoria externa financeira — inexistente | unassigned |
@@ -211,11 +211,11 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L12-02](./findings/L12-02-thundering-herd-em-02-00-04-00-utc.md) | 1 | L12 · Cron/Scheduler | Thundering herd em 02:00–04:00 UTC | platform |
 | 🔴 critical | ✅ fixed | [L12-03](./findings/L12-03-5-crons-sem-lock-overlap-risk.md) | 1 | L12 · Cron/Scheduler | */5 * * * * crons sem lock — overlap risk | platform |
 | 🟠 high | ✅ fixed | [L12-04](./findings/L12-04-pg-cron-nao-monitora-sla-de-execucao.md) | 1 | L12 · Cron/Scheduler | pg_cron não monitora SLA de execução | platform |
-| 🟠 high | ⏳ fix-pending | [L12-05](./findings/L12-05-auto-topup-hourly-cobranca-automatica-sem-cap-diario.md) | 1 | L12 · Cron/Scheduler | auto-topup-hourly — cobrança automática sem cap diário | unassigned |
-| 🟠 high | ⏳ fix-pending | [L12-06](./findings/L12-06-archive-old-sessions-roda-como-funcao-pesada-sem.md) | 1 | L12 · Cron/Scheduler | archive-old-sessions roda como função pesada sem batch | unassigned |
-| 🟠 high | ⏳ fix-pending | [L12-07](./findings/L12-07-horario-utc-usuarios-br-veem-meia-noite-brasil.md) | 1 | L12 · Cron/Scheduler | Horário UTC → usuários BR veem "meia-noite Brasil" | unassigned |
-| 🟠 high | ⏳ fix-pending | [L12-08](./findings/L12-08-clearing-cron-em-02-00-consolidacao-de-d.md) | 1 | L12 · Cron/Scheduler | clearing-cron em 02:00 — consolidação de D-1 antes de fim do dia | unassigned |
-| 🟠 high | ⏳ fix-pending | [L12-09](./findings/L12-09-lifecycle-cron-dispara-notificacoes-idempotencia-nao-garanti.md) | 1 | L12 · Cron/Scheduler | lifecycle-cron dispara notificações idempotência não garantida | unassigned |
+| 🟠 high | ✅ fixed | [L12-05](./findings/L12-05-auto-topup-hourly-cobranca-automatica-sem-cap-diario.md) | 1 | L12 · Cron/Scheduler | auto-topup-hourly — cobrança automática sem cap diário | platform-billing |
+| 🟠 high | ✅ fixed | [L12-06](./findings/L12-06-archive-old-sessions-roda-como-funcao-pesada-sem.md) | 1 | L12 · Cron/Scheduler | archive-old-sessions roda como função pesada sem batch | coo |
+| 🟠 high | ✅ fixed | [L12-07](./findings/L12-07-horario-utc-usuarios-br-veem-meia-noite-brasil.md) | 1 | L12 · Cron/Scheduler | Horário UTC → usuários BR veem "meia-noite Brasil" | coo |
+| 🟠 high | ✅ fixed | [L12-08](./findings/L12-08-clearing-cron-em-02-00-consolidacao-de-d.md) | 1 | L12 · Cron/Scheduler | clearing-cron em 02:00 — consolidação de D-1 antes de fim do dia | cfo |
+| 🟠 high | ✅ fixed | [L12-09](./findings/L12-09-lifecycle-cron-dispara-notificacoes-idempotencia-nao-garanti.md) | 1 | L12 · Cron/Scheduler | lifecycle-cron dispara notificações idempotência não garantida | coo |
 | 🟡 medium | ⏳ fix-pending | [L12-10](./findings/L12-10-jobs-pg-cron-executam-como-superuser-padrao.md) | 2 | L12 · Cron/Scheduler | Jobs pg_cron executam como superuser (padrão) | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L12-11](./findings/L12-11-cron-schedule-em-migration-duplicada-corre-risco.md) | 2 | L12 · Cron/Scheduler | cron.schedule em migration duplicada corre risco | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L12-12](./findings/L12-12-timezone-do-cron-utc-ok-mas-horario-dst.md) | 2 | L12 · Cron/Scheduler | Timezone do cron = UTC ok, mas horário DST? | unassigned |
@@ -277,11 +277,11 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L19-01](./findings/L19-01-coin-ledger-nao-e-particionada-tabela-crescendo-sem.md) | 0 | L19 · DBA | coin_ledger não é particionada — tabela crescendo sem controle | unassigned |
 | 🔴 critical | ✅ fixed | [L19-02](./findings/L19-02-delete-em-archive-cron-gera-table-bloat-massivo.md) | 1 | L19 · DBA | DELETE em archive cron gera table bloat massivo | platform-data-eng |
 | 🔴 critical | ✅ fixed | [L19-03](./findings/L19-03-indexes-redundantes-em-sessions.md) | 1 | L19 · DBA | Indexes redundantes em sessions | platform-data-eng |
-| 🟠 high | ⏳ fix-pending | [L19-04](./findings/L19-04-idx-ledger-user-vs-idx-coin-ledger-user.md) | 1 | L19 · DBA | idx_ledger_user vs idx_coin_ledger_user_created — evoluções sem limpeza | unassigned |
+| 🟠 high | ✅ fixed | [L19-04](./findings/L19-04-idx-ledger-user-vs-idx-coin-ledger-user.md) | 1 | L19 · DBA | idx_ledger_user vs idx_coin_ledger_user_created — evoluções sem limpeza | dba |
 | 🔴 critical | ✅ fixed | [L19-05](./findings/L19-05-falta-for-update-nowait-em-funcoes-de-lock.md) | 0 | L19 · DBA | Falta FOR UPDATE NOWAIT em funções de lock crítico | unassigned |
-| 🟠 high | ⏳ fix-pending | [L19-06](./findings/L19-06-jsonb-em-audit-logs-metadata-sem-indice-gin.md) | 1 | L19 · DBA | JSONB em audit_logs.metadata sem índice GIN | unassigned |
+| 🟠 high | ✅ fixed | [L19-06](./findings/L19-06-jsonb-em-audit-logs-metadata-sem-indice-gin.md) | 1 | L19 · DBA | JSONB em audit_logs.metadata sem índice GIN | platform-dba |
 | 🟠 high | ⏳ fix-pending | [L19-07](./findings/L19-07-pg-stat-statements-nao-referenciado-em-tuning.md) | 1 | L19 · DBA | pg_stat_statements não referenciado em tuning | unassigned |
-| 🟠 high | ⏳ fix-pending | [L19-08](./findings/L19-08-constraints-check-sem-name-padronizado.md) | 1 | L19 · DBA | Constraints CHECK sem name padronizado | unassigned |
+| 🟠 high | ✅ fixed | [L19-08](./findings/L19-08-constraints-check-sem-name-padronizado.md) | 1 | L19 · DBA | Constraints CHECK sem name padronizado | platform-db |
 | 🟡 medium | ⏳ fix-pending | [L19-09](./findings/L19-09-connection-pooling-nao-documentado.md) | 2 | L19 · DBA | Connection pooling não documentado | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L19-10](./findings/L19-10-sem-autovacuum-tuning-para-tabelas-hot.md) | 2 | L19 · DBA | Sem autovacuum tuning para tabelas hot | unassigned |
 | 🔴 critical | ✅ fixed | [L20-01](./findings/L20-01-sem-dashboard-consolidado-de-operacoes-financeiras.md) | 1 | L20 · SRE | Sem dashboard consolidado de operações financeiras | unassigned |
@@ -324,7 +324,7 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L22-05](./findings/L22-05-grupos-locais-sem-descoberta-por-proximidade.md) | 1 | L22 · Atleta Amador | Grupos locais sem descoberta por proximidade | data-platform |
 | 🟠 high | ✅ fixed | [L22-06](./findings/L22-06-voice-coaching-parcial.md) | 1 | L22 · Atleta Amador | Voice coaching parcial | mobile |
 | 🟠 high | ⏳ fix-pending | [L22-07](./findings/L22-07-compra-parcelada-para-assessoria-brasileira.md) | 1 | L22 · Atleta Amador | Compra parcelada para assessoria brasileira | unassigned |
-| 🟠 high | ⏳ fix-pending | [L22-08](./findings/L22-08-desafio-de-grupo-viralizacao-entre-amigos.md) | 1 | L22 · Atleta Amador | Desafio de grupo (viralização entre amigos) | unassigned |
+| 🟠 high | ✅ fixed | [L22-08](./findings/L22-08-desafio-de-grupo-viralizacao-entre-amigos.md) | 1 | L22 · Atleta Amador | Desafio de grupo (viralização entre amigos) | unassigned |
 | 🟠 high | ⏳ fix-pending | [L22-09](./findings/L22-09-progress-celebration-timida.md) | 1 | L22 · Atleta Amador | Progress celebration tímida | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L22-10](./findings/L22-10-apple-watch-wear-os-nativo.md) | 2 | L22 · Atleta Amador | Apple Watch / Wear OS nativo | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L22-11](./findings/L22-11-corrida-em-esteira-sem-gps.md) | 2 | L22 · Atleta Amador | Corrida em esteira sem GPS | unassigned |
