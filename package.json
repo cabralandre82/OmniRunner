@@ -76,6 +76,7 @@
     "audit:flutter-clean-arch": "npx tsx tools/audit/check-flutter-clean-arch.ts",
     "audit:bulk-assign-preview": "npx tsx tools/audit/check-bulk-assign-preview.ts",
     "audit:bulk-assign-rollback": "npx tsx tools/audit/check-bulk-assign-rollback.ts",
+    "audit:coach-daily-digest": "npx tsx tools/audit/check-coach-daily-digest.ts",
     "audit:og-metadata": "npx tsx tools/audit/check-og-metadata.ts",
     "audit:challenge-invite-deep-link": "npx tsx tools/audit/check-challenge-invite-deep-link.ts",
     "audit:milestone-celebration": "npx tsx tools/audit/check-milestone-celebration.ts",
