@@ -65,6 +65,7 @@
     "audit:offline-sync": "npx tsx tools/audit/check-offline-sync.ts",
     "audit:training-load": "npx tsx tools/audit/check-training-load.ts",
     "audit:athlete-zones": "npx tsx tools/audit/check-athlete-zones.ts",
+    "audit:first-run-onboarding": "npx tsx tools/audit/check-first-run-onboarding.ts",
     "audit:og-metadata": "npx tsx tools/audit/check-og-metadata.ts",
     "audit:challenge-invite-deep-link": "npx tsx tools/audit/check-challenge-invite-deep-link.ts",
     "audit:milestone-celebration": "npx tsx tools/audit/check-milestone-celebration.ts",
