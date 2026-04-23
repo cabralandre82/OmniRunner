@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T11:23:11.073Z",
+  "generated_at": "2026-04-23T14:11:14.056Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 145,
-    "fix-pending": 202,
+    "fixed": 146,
+    "fix-pending": 201,
     "in-progress": 1
   },
   "by_wave": {
@@ -11223,22 +11223,33 @@
       "lens": 23,
       "title": "Relatórios para atleta (resumo mensal do coach)",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "personas",
         "coach"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421390000_l23_11_athlete_monthly_report.sql",
+        "portal/src/app/api/coaching/athlete-monthly-report/route.ts",
+        "tools/audit/check-athlete-monthly-report.ts",
+        "docs/runbooks/ATHLETE_MONTHLY_REPORT_RUNBOOK.md",
+        "package.json"
+      ],
       "correction_type": "config",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-athlete-monthly-report.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:bda6bec"
+      ],
       "owner": "unassigned",
-      "runbook": null,
+      "runbook": "docs/runbooks/ATHLETE_MONTHLY_REPORT_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,

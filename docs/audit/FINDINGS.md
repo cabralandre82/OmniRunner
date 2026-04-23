@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-23 11:23:11 UTC.
+> Atualizado em 2026-04-23 14:11:14 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -347,7 +347,7 @@ Total: **348** findings.
 | 🟠 high | ⏳ fix-pending | [L23-08](./findings/L23-08-presenca-em-treinos-coletivos-via-qr-code-staff.md) | 1 | L23 · Treinador | Presença em treinos coletivos via QR code (staff_training_scan_screen.dart existe) | unassigned |
 | 🟠 high | ⏳ fix-pending | [L23-09](./findings/L23-09-billing-integrado-cobranca-de-mensalidade-aos-atletas.md) | 1 | L23 · Treinador | Billing integrado (cobrança de mensalidade aos atletas) | unassigned |
 | 🟠 high | ⏳ fix-pending | [L23-10](./findings/L23-10-treinos-com-dependencia-entre-atletas-par-grupo.md) | 1 | L23 · Treinador | Treinos com dependência entre atletas (par/grupo) | unassigned |
-| 🟠 high | ⏳ fix-pending | [L23-11](./findings/L23-11-relatorios-para-atleta-resumo-mensal-do-coach.md) | 1 | L23 · Treinador | Relatórios para atleta (resumo mensal do coach) | unassigned |
+| 🟠 high | ✅ fixed | [L23-11](./findings/L23-11-relatorios-para-atleta-resumo-mensal-do-coach.md) | 1 | L23 · Treinador | Relatórios para atleta (resumo mensal do coach) | unassigned |
 | 🟠 high | ⏳ fix-pending | [L23-12](./findings/L23-12-onboarding-de-novo-atleta-no-clube.md) | 1 | L23 · Treinador | Onboarding de novo atleta no clube | unassigned |
 | 🟠 high | ⏳ fix-pending | [L23-13](./findings/L23-13-feedback-do-atleta-rpe-dor-humor-nao-requerido.md) | 1 | L23 · Treinador | Feedback do atleta (RPE, dor, humor) não requerido | unassigned |
 | 🟠 high | ⏳ fix-pending | [L23-14](./findings/L23-14-corrida-de-teste-time-trial-agendada.md) | 1 | L23 · Treinador | "Corrida de teste" (time trial) agendada | unassigned |
