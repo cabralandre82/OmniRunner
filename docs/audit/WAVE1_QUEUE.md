@@ -94,7 +94,7 @@
 
 ### 🟢 Batch H — Mobile UX & Coach features (10 entregas, code-tractable)
 
-**Progresso Batch H (Mobile UX):** 🟡 8/10 — L21-06 ✓, L22-05 ✓, L22-06 ✓, L22-08 ✓, L22-09 ✓, L23-06 ✓, L23-07 ✓, L23-11 ✓.
+**Progresso Batch H (Mobile UX):** 🟡 9/10 — L21-06 ✓, L22-05 ✓, L22-06 ✓, L22-08 ✓, L22-09 ✓, L23-06 ✓, L23-07 ✓, L23-11 ✓, L23-13 ✓.
 
 | # | id | sev | L | ep | Título |
 |---|---|---|---|---|---|
@@ -106,7 +106,7 @@
 | 34 | L23-06 | high | 23 | 3 | ✅ Plano mensal/trimestral não periodizado (fixed 2026-04-21) |
 | 35 | L23-07 | high | 23 | 3 | ✅ Análise coletiva (grupo) limitada (fixed 2026-04-21) |
 | 36 | L23-11 | high | 23 | 3 | ✅ Relatórios para atleta (resumo mensal do coach) (fixed 2026-04-21) |
-| 37 | L23-13 | high | 23 | 3 | Feedback do atleta (RPE, dor, humor) não requerido |
+| 37 | L23-13 | high | 23 | 3 | ✅ Feedback do atleta (RPE, dor, humor) não requerido (fixed 2026-04-21) |
 | 38 | L23-14 | high | 23 | 3 | "Corrida de teste" (time trial) agendada |
 
 ### 🟡 Batch I — Reach goals (12 entregas com mais incerteza)

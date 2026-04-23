@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T14:11:14.056Z",
+  "generated_at": "2026-04-23T14:21:19.288Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 146,
-    "fix-pending": 201,
+    "fixed": 147,
+    "fix-pending": 200,
     "in-progress": 1
   },
   "by_wave": {
@@ -11290,22 +11290,36 @@
       "lens": 23,
       "title": "Feedback do atleta (RPE, dor, humor) não requerido",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "personas",
         "coach"
       ],
-      "files": [],
+      "files": [
+        "omni_runner/lib/domain/value_objects/workout_completion_status.dart",
+        "omni_runner/lib/domain/services/workout_feedback_evaluator.dart",
+        "omni_runner/lib/domain/services/feedback_streak_calculator.dart",
+        "omni_runner/test/domain/services/workout_feedback_evaluator_test.dart",
+        "omni_runner/test/domain/services/feedback_streak_calculator_test.dart",
+        "tools/audit/check-athlete-feedback-gate.ts",
+        "docs/runbooks/ATHLETE_FEEDBACK_GATE_RUNBOOK.md",
+        "package.json"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-athlete-feedback-gate.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "local:a4b8b59"
+      ],
       "owner": "unassigned",
-      "runbook": null,
+      "runbook": "docs/runbooks/ATHLETE_FEEDBACK_GATE_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,

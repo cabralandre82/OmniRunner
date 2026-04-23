@@ -1,16 +1,16 @@
 # SCORECARD — Progresso da Auditoria
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-23 14:11:14 UTC.
+> Atualizado em 2026-04-23 14:21:19 UTC.
 
 ## Visão Geral
 
 | Métrica | Valor | Progresso |
 |---|---|---|
 | **Total de findings** | 348 | — |
-| **✅ Corrigidos** | 146 / 348 (42.0%) | `████████░░░░░░░░░░░░` |
+| **✅ Corrigidos** | 147 / 348 (42.2%) | `████████░░░░░░░░░░░░` |
 | **🚧 Em progresso** | 1 | — |
-| **⏳ Pendentes** | 201 | — |
+| **⏳ Pendentes** | 200 | — |
 | **⏭️ Adiados** | 0 | — |
 | **🚫 Won't fix** | 0 | — |
 
@@ -19,7 +19,7 @@
 | Severidade | Total | Corrigidos | % | Progresso |
 |---|---|---|---|---|
 | 🔴 Critical | 69 | 47 | 68.1% | `██████████████░░░░░░` |
-| 🟠 High | 123 | 79 | 64.2% | `█████████████░░░░░░░` |
+| 🟠 High | 123 | 80 | 65.0% | `█████████████░░░░░░░` |
 | 🟡 Medium | 127 | 3 | 2.4% | `░░░░░░░░░░░░░░░░░░░░` |
 
 ## Por Onda
@@ -27,7 +27,7 @@
 | Onda | Total | Corrigidos | % | Progresso |
 |---|---|---|---|---|
 | Onda 0 | 15 | 15 | 100.0% | `████████████████████` |
-| Onda 1 | 179 | 113 | 63.1% | `█████████████░░░░░░░` |
+| Onda 1 | 179 | 114 | 63.7% | `█████████████░░░░░░░` |
 | Onda 2 | 125 | 1 | 0.8% | `░░░░░░░░░░░░░░░░░░░░` |
 | Onda 3 | 29 | 17 | 58.6% | `████████████░░░░░░░░` |
 
@@ -57,7 +57,7 @@
 | 20 | SRE | 13 | 7 | 3 | 3 | `█████░░░░░` |
 | 21 | Atleta Pro | 20 | 3 | 5 | 2 | `██░░░░░░░░` |
 | 22 | Atleta Amador | 20 | 4 | 3 | 0 | `██░░░░░░░░` |
-| 23 | Treinador | 20 | 3 | 4 | 0 | `██░░░░░░░░` |
+| 23 | Treinador | 20 | 4 | 4 | 0 | `██░░░░░░░░` |
 
 ---
 
