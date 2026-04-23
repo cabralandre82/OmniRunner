@@ -39,6 +39,7 @@
     "audit:waf": "npx tsx tools/audit/check-waf.ts",
     "audit:pg-stat-statements": "npx tsx tools/audit/check-pg-stat-statements.ts",
     "audit:challenge-withdraw-cutoff": "npx tsx tools/audit/check-challenge-withdraw-cutoff.ts",
+    "audit:zero-participant-settle": "npx tsx tools/audit/check-zero-participant-settle.ts",
     "audit:challenge-invite-deep-link": "npx tsx tools/audit/check-challenge-invite-deep-link.ts",
     "audit:milestone-celebration": "npx tsx tools/audit/check-milestone-celebration.ts",
     "audit:periodization-template": "npx tsx tools/audit/check-periodization-template.ts",

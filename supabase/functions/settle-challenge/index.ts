@@ -156,7 +156,14 @@ serve(async (req: Request) => {
       .eq("status", "accepted");
 
     if (!participants || participants.length === 0) {
-      await db.from("challenges").update({ status: "expired" }).eq("id", ch.id);
+      // (L05-05) Zero participants — call the atomic helper so any
+      // entry fees that were collected from participants who later
+      // withdrew get refunded, and the challenge ends in the
+      // diagnostic status `expired_no_winners` instead of plain
+      // `expired`.
+      await adminDb.rpc("fn_settle_challenge_no_winners", {
+        p_challenge_id: ch.id,
+      });
       continue;
     }
 
@@ -195,7 +202,12 @@ serve(async (req: Request) => {
       .eq("status", "accepted");
 
     if (!freshParticipants || freshParticipants.length === 0) {
-      await db.from("challenges").update({ status: "expired" }).eq("id", ch.id);
+      // (L05-05) Same path as the pre-claim check: call the atomic
+      // helper so collected fees are refunded and the status lands
+      // on `expired_no_winners`.
+      await adminDb.rpc("fn_settle_challenge_no_winners", {
+        p_challenge_id: ch.id,
+      });
       continue;
     }
 
