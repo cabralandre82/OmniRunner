@@ -4,24 +4,42 @@ audit_ref: "4.9"
 lens: 4
 title: "Terceiros (Strava, TrainingPeaks) — não há processo de revogação"
 severity: high
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
 tags: ["lgpd", "webhook", "security-headers", "integration", "mobile", "cron"]
 files:
-  - omni_runner/lib/features/strava/presentation/strava_connect_controller.dart
-correction_type: process
+  - supabase/migrations/20260421420000_l04_09_third_party_revocation.sql
+  - docs/runbooks/THIRD_PARTY_REVOCATION_RUNBOOK.md
+  - tools/audit/check-third-party-revocation.ts
+correction_type: code
 test_required: true
-tests: []
+tests:
+  - tools/audit/check-third-party-revocation.ts
 linked_issues: []
-linked_prs: []
-owner: unassigned
-runbook: null
+linked_prs:
+  - local:e7a9866
+owner: platform
+runbook: docs/runbooks/THIRD_PARTY_REVOCATION_RUNBOOK.md
 effort_points: 3
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Ships the database contract: public.third_party_revocations
+  append-only queue (CHECK provider ∈ {strava, training_peaks},
+  event ∈ 7 states, retry_count 0..20), auto-enqueue trigger on
+  strava_connections DELETE, helpers fn_request_third_party_revocation
+  / fn_third_party_revocations_due / fn_complete_third_party_revocation
+  (SECURITY DEFINER, pinned search_path, service_role-only grants).
+  State transitions are append-only rows linked by request_id —
+  L10-08 keeps the log immutable. Self-test exercises enqueue → due
+  → completed → DELETE-blocked + unknown-provider rejection.
+  Follow-ups explicitly scoped out: L04-09-strava-worker (Edge Function
+  that calls POST /oauth/deauthorize), L04-09-tp-worker (blocked on
+  TrainingPeaks integration).
 ---
 # [L04-09] Terceiros (Strava, TrainingPeaks) — não há processo de revogação
 > **Lente:** 4 — CLO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fix-pending

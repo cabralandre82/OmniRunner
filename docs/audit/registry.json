@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T18:07:46.636Z",
+  "generated_at": "2026-04-23T18:32:50.471Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 150,
-    "fix-pending": 190,
+    "fixed": 155,
+    "fix-pending": 185,
     "in-progress": 1,
     "wont-fix": 7
   },
@@ -3189,9 +3189,11 @@
       "lens": 4,
       "title": "Backups Supabase — sem política de retenção documentada",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "lgpd",
         "rls",
@@ -3199,20 +3201,26 @@
         "reliability"
       ],
       "files": [
-        "docs/compliance/BACKUP_POLICY.md"
+        "docs/compliance/BACKUP_POLICY.md",
+        "docs/runbooks/BACKUP_RESTORE_RUNBOOK.md",
+        "tools/audit/check-backup-policy.ts"
       ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-backup-policy.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "local:b8f0380"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/BACKUP_RESTORE_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Published BACKUP_POLICY.md with retention matrix (PITR 7d, daily 14d,\nweekly 30d, monthly 180d), LGPD erasure alignment (30-day restore\nblock after confirmed erasure, 180-day residual exposure ceiling),\nstaging obfuscation rules, quarterly restore-drill cadence, and\nsa-east-1 region declaration. Paired with BACKUP_RESTORE_RUNBOOK.md\nthat ships the operational SQL for PITR restore, snapshot restore,\npost-restore PII scrubbing (DPO-gated), and staging obfuscation.\nCI guard audit:backup-policy (26 invariants) enforces the retention\nmatrix, erasure rules, cross-links to L04-09 / L04-10 / L08-08 / L10-08.\nFollow-up: drill-log enforcement (L04-08-drill-log) once enough\nquarterly drills exist to feed a cadence check.\n"
     },
     {
       "id": "L04-09",
@@ -3220,9 +3228,11 @@
       "lens": 4,
       "title": "Terceiros (Strava, TrainingPeaks) — não há processo de revogação",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "lgpd",
         "webhook",
@@ -3232,20 +3242,26 @@
         "cron"
       ],
       "files": [
-        "omni_runner/lib/features/strava/presentation/strava_connect_controller.dart"
+        "supabase/migrations/20260421420000_l04_09_third_party_revocation.sql",
+        "docs/runbooks/THIRD_PARTY_REVOCATION_RUNBOOK.md",
+        "tools/audit/check-third-party-revocation.ts"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-third-party-revocation.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "local:e7a9866"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/THIRD_PARTY_REVOCATION_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Ships the database contract: public.third_party_revocations\nappend-only queue (CHECK provider ∈ {strava, training_peaks},\nevent ∈ 7 states, retry_count 0..20), auto-enqueue trigger on\nstrava_connections DELETE, helpers fn_request_third_party_revocation\n/ fn_third_party_revocations_due / fn_complete_third_party_revocation\n(SECURITY DEFINER, pinned search_path, service_role-only grants).\nState transitions are append-only rows linked by request_id —\nL10-08 keeps the log immutable. Self-test exercises enqueue → due\n→ completed → DELETE-blocked + unknown-provider rejection.\nFollow-ups explicitly scoped out: L04-09-strava-worker (Edge Function\nthat calls POST /oauth/deauthorize), L04-09-tp-worker (blocked on\nTrainingPeaks integration).\n"
     },
     {
       "id": "L04-10",
@@ -3253,29 +3269,36 @@
       "lens": 4,
       "title": "Transferência internacional de dados (Supabase US, Sentry US) sem cláusulas",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "lgpd",
         "observability",
         "reliability"
       ],
       "files": [
-        "docs/compliance/DATA_TRANSFER.md"
+        "docs/compliance/DATA_TRANSFER.md",
+        "tools/audit/check-data-transfer.ts"
       ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-data-transfer.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "local:c8ac7f0"
+      ],
+      "owner": "platform",
+      "runbook": "docs/compliance/DATA_TRANSFER.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Published docs/compliance/DATA_TRANSFER.md with per-processor rows\n(Supabase sa-east-1, Sentry US, Vercel edge, Resend/SendGrid US,\nStripe US, Asaas BR, Strava US, GitHub US), each with DPA status,\nSCCs stance, data categories, retention, and LGPD Art. 33 legal\nbasis. Records the 2026-03 Supabase migration to sa-east-1 that\neliminated the largest single transfer volume; remaining US\ntransfers (observability + payments + Strava) each documented\nindividually. ANPD Resolução CD/ANPD nº 19/2024 SCCs incorporated\nby reference; fallback bases declared (consent for Strava,\ncontract execution for Stripe). Change procedure requires DPO\ndelegate approval + ROPA parity. CI guard audit:data-transfer\n(22 invariants) enforces processor list, regions, Sentry PII\ncross-link, LGPD/ANPD references, change procedure, and decision\nlog. Follow-up L04-10-ropa-parity tracks ROPA delivery.\n"
     },
     {
       "id": "L04-11",
@@ -5712,26 +5735,37 @@
       "lens": 10,
       "title": "Nenhum bug bounty / disclosure policy",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "rls",
         "portal"
       ],
-      "files": [],
+      "files": [
+        "SECURITY.md",
+        "portal/public/.well-known/security.txt",
+        "docs/runbooks/SECURITY_DISCLOSURE_RUNBOOK.md",
+        "tools/audit/check-security-disclosure.ts"
+      ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-security-disclosure.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "local:77c4992"
+      ],
+      "owner": "security",
+      "runbook": "docs/runbooks/SECURITY_DISCLOSURE_RUNBOOK.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Published the full vulnerability disclosure stack:\n(a) SECURITY.md at repo root with reporting instructions, scope,\n    safe harbour, and resolution SLA table (24h/72h/14d for\n    critical down to 10d/next-release/180d for low);\n(b) /.well-known/security.txt (RFC 9116) with Expires date in the\n    future, Contact, Policy, Canonical, Preferred-Languages;\n(c) Internal triage runbook with 14-day cadence, hostile-reporter /\n    duplicate / leaked-PoC playbooks;\n(d) CI guard (27 invariants) that rejects stale security.txt,\n    missing SLA table, missing safe-harbour clause, and missing\n    runbook cross-link.\nPublic bug bounty program remains deferred until after the first\nexternal penetration test (tracked by L10-02 threat-model review\nhistory) — retroactive rewards are committed in SECURITY.md.\n"
     },
     {
       "id": "L10-02",
@@ -5739,9 +5773,11 @@
       "lens": 10,
       "title": "Threat model formal não documentado",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "mobile",
@@ -5749,20 +5785,25 @@
         "testing"
       ],
       "files": [
-        "docs/security/THREAT_MODEL.md"
+        "docs/security/THREAT_MODEL.md",
+        "tools/audit/check-threat-model.ts"
       ],
       "correction_type": "process",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-threat-model.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "local:05cec54"
+      ],
+      "owner": "security",
+      "runbook": "docs/security/THREAT_MODEL.md",
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Formal STRIDE + DFD document at docs/security/THREAT_MODEL.md.\nSix trust boundaries (TB1 network … TB6 backup), textual DFD of\nMobile ↔ Portal ↔ Supabase ↔ Stripe / Asaas / Strava / Sentry,\nSTRIDE table per boundary with mitigation status (✅/🟡/⏳) and\nlinked finding IDs, ranked asset list headed by OmniCoin ledger\nand service-role key, severity-bump rules feeding L10-01 SLAs,\n6-story abuse catalogue, 90-day / major-feature review cadence.\nStrava-only architectural decision (Sprint 25.0.0) explicitly\nacknowledged — rows about live in-app GPS tracking were reclassified\nwont-fix in the accompanying audit sweep. CI guard audit:threat-model\n(33 invariants) keeps coverage locked.\n"
     },
     {
       "id": "L10-03",

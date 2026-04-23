@@ -134,9 +134,9 @@
 Lente 9 — regulatório (BCB/KYC/COAF/IOF): `L09-01`, `L09-02`, `L09-03`, `L09-05`,
 `L09-06`, `L09-07`, `L09-08` — bloqueiam em parecer legal/contábil.
 
-Lente 10 — security policy: `L10-01` (bug bounty), `L10-02` (threat model),
-`L10-03` (key distribution), `L10-04` (WAF), `L10-06` (SoD) — bloqueiam em
-sign-off CISO/legal.
+Lente 10 — security policy: ~~`L10-01` (bug bounty)~~ ✅ fixed 2026-04-21,
+~~`L10-02` (threat model)~~ ✅ fixed 2026-04-21, `L10-03` (key distribution),
+`L10-04` (WAF), `L10-06` (SoD) — remaining bloqueiam em sign-off CISO/legal.
 
 Lente 16 — produto B2B: `L16-01` (white-label), `L16-03` (B2B API), `L16-04`
 (outbound webhooks), `L16-05` (brand schema), `L16-06` (OAuth telemetry) —
@@ -155,7 +155,8 @@ Lente 22/23 — produto: `L22-01`, `L22-02`, `L22-03`, `L22-07`, `L23-01`,
 `L23-02`, `L23-03`, `L23-04`, `L23-05`, `L23-08`, `L23-09`, `L23-10` —
 bloqueiam em UX/produto.
 
-Lente 4 — política: `L04-05`, `L04-06`, `L04-08`, `L04-09`, `L04-10` —
+Lente 4 — política: `L04-05`, `L04-06`, ~~`L04-08`~~ ✅ fixed 2026-04-21,
+~~`L04-09`~~ ✅ fixed 2026-04-21, ~~`L04-10`~~ ✅ fixed 2026-04-21 — remaining
 bloqueiam em DPO/legal.
 
 Lente 7 — i18n/UX: `L07-01`, `L07-02`, `L07-03`, `L07-05`, `L07-06` —

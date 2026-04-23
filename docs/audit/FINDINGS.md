@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-23 18:07:46 UTC.
+> Atualizado em 2026-04-23 18:32:50 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -101,9 +101,9 @@ Total: **348** findings.
 | 🟠 high | ⏳ fix-pending | [L04-05](./findings/L04-05-trajetorias-gps-brutas-sem-opcao-de-privacy-zones.md) | 1 | L04 · CLO | Trajetórias GPS brutas sem opção de privacy zones (home/work zones) | unassigned |
 | 🟠 high | ⏳ fix-pending | [L04-06](./findings/L04-06-campo-instagram-handle-tiktok-handle-em-profiles-sem.md) | 1 | L04 · CLO | Campo instagram_handle, tiktok_handle em profiles sem política de uso | unassigned |
 | 🟠 high | ✅ fixed | [L04-07](./findings/L04-07-coin-ledger-retem-reason-com-pii-embutida.md) | 1 | L04 · CLO | coin_ledger retém reason com PII embutida | clo |
-| 🟠 high | ⏳ fix-pending | [L04-08](./findings/L04-08-backups-supabase-sem-politica-de-retencao-documentada.md) | 1 | L04 · CLO | Backups Supabase — sem política de retenção documentada | unassigned |
-| 🟠 high | ⏳ fix-pending | [L04-09](./findings/L04-09-terceiros-strava-trainingpeaks-nao-ha-processo-de-revogacao.md) | 1 | L04 · CLO | Terceiros (Strava, TrainingPeaks) — não há processo de revogação | unassigned |
-| 🟠 high | ⏳ fix-pending | [L04-10](./findings/L04-10-transferencia-internacional-de-dados-supabase-us-sentry-us.md) | 1 | L04 · CLO | Transferência internacional de dados (Supabase US, Sentry US) sem cláusulas | unassigned |
+| 🟠 high | ✅ fixed | [L04-08](./findings/L04-08-backups-supabase-sem-politica-de-retencao-documentada.md) | 1 | L04 · CLO | Backups Supabase — sem política de retenção documentada | platform |
+| 🟠 high | ✅ fixed | [L04-09](./findings/L04-09-terceiros-strava-trainingpeaks-nao-ha-processo-de-revogacao.md) | 1 | L04 · CLO | Terceiros (Strava, TrainingPeaks) — não há processo de revogação | platform |
+| 🟠 high | ✅ fixed | [L04-10](./findings/L04-10-transferencia-internacional-de-dados-supabase-us-sentry-us.md) | 1 | L04 · CLO | Transferência internacional de dados (Supabase US, Sentry US) sem cláusulas | platform |
 | 🟡 medium | ⏳ fix-pending | [L04-11](./findings/L04-11-nao-ha-dpo-nomeado-canal-de-titular-publicado.md) | 2 | L04 · CLO | Não há DPO nomeado / canal de titular publicado | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L04-12](./findings/L04-12-portal-admin-expoe-dados-sensiveis-sem-masking.md) | 2 | L04 · CLO | Portal admin expõe dados sensíveis sem masking | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L04-13](./findings/L04-13-logs-estruturados-enviam-user-id-e-podem-enviar.md) | 2 | L04 · CLO | Logs estruturados enviam user_id e podem enviar ip_address ao Sentry | unassigned |
@@ -179,8 +179,8 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L09-10](./findings/L09-10-relatorio-anual-de-transparencia-marco-civil-art-11.md) | 2 | L09 · CRO | Relatório anual de transparência (Marco Civil Art. 11) | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L09-11](./findings/L09-11-cessao-de-credito-implicita-em-clearing-settlements-document.md) | 2 | L09 · CRO | Cessão de crédito implícita em clearing_settlements — documentar | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L09-12](./findings/L09-12-auditoria-externa-financeira-inexistente.md) | 2 | L09 · CRO | Auditoria externa financeira — inexistente | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L10-01](./findings/L10-01-nenhum-bug-bounty-disclosure-policy.md) | 1 | L10 · CSO | Nenhum bug bounty / disclosure policy | unassigned |
-| 🔴 critical | ⏳ fix-pending | [L10-02](./findings/L10-02-threat-model-formal-nao-documentado.md) | 1 | L10 · CSO | Threat model formal não documentado | unassigned |
+| 🔴 critical | ✅ fixed | [L10-01](./findings/L10-01-nenhum-bug-bounty-disclosure-policy.md) | 1 | L10 · CSO | Nenhum bug bounty / disclosure policy | security |
+| 🔴 critical | ✅ fixed | [L10-02](./findings/L10-02-threat-model-formal-nao-documentado.md) | 1 | L10 · CSO | Threat model formal não documentado | security |
 | 🔴 critical | ⏳ fix-pending | [L10-03](./findings/L10-03-service-role-key-distribuida-amplamente.md) | 1 | L10 · CSO | Service-role key distribuída amplamente | unassigned |
 | 🟠 high | ⏳ fix-pending | [L10-04](./findings/L10-04-sem-waf-explicito.md) | 1 | L10 · CSO | Sem WAF explícito | unassigned |
 | 🟠 high | ✅ fixed | [L10-05](./findings/L10-05-csp-hardened-1-31-mas-sem-report-uri.md) | 1 | L10 · CSO | CSP hardened ([1.31]) mas sem report-uri | portal-team |

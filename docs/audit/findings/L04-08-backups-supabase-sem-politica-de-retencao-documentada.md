@@ -4,24 +4,41 @@ audit_ref: "4.8"
 lens: 4
 title: "Backups Supabase — sem política de retenção documentada"
 severity: high
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-17
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
 tags: ["lgpd", "rls", "migration", "reliability"]
 files:
   - docs/compliance/BACKUP_POLICY.md
+  - docs/runbooks/BACKUP_RESTORE_RUNBOOK.md
+  - tools/audit/check-backup-policy.ts
 correction_type: process
 test_required: true
-tests: []
+tests:
+  - tools/audit/check-backup-policy.ts
 linked_issues: []
-linked_prs: []
-owner: unassigned
-runbook: null
+linked_prs:
+  - local:b8f0380
+owner: platform
+runbook: docs/runbooks/BACKUP_RESTORE_RUNBOOK.md
 effort_points: 3
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Published BACKUP_POLICY.md with retention matrix (PITR 7d, daily 14d,
+  weekly 30d, monthly 180d), LGPD erasure alignment (30-day restore
+  block after confirmed erasure, 180-day residual exposure ceiling),
+  staging obfuscation rules, quarterly restore-drill cadence, and
+  sa-east-1 region declaration. Paired with BACKUP_RESTORE_RUNBOOK.md
+  that ships the operational SQL for PITR restore, snapshot restore,
+  post-restore PII scrubbing (DPO-gated), and staging obfuscation.
+  CI guard audit:backup-policy (26 invariants) enforces the retention
+  matrix, erasure rules, cross-links to L04-09 / L04-10 / L08-08 / L10-08.
+  Follow-up: drill-log enforcement (L04-08-drill-log) once enough
+  quarterly drills exist to feed a cadence check.
 ---
 # [L04-08] Backups Supabase — sem política de retenção documentada
 > **Lente:** 4 — CLO · **Severidade:** 🟠 High · **Onda:** 1 · **Status:** fix-pending
