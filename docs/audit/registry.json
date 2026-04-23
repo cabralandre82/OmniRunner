@@ -8136,25 +8136,42 @@
       "lens": 17,
       "title": "Testes unitários em portal/src/lib/qa-*.test.ts — arquivos >800 linhas",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
-        "testing"
+        "testing",
+        "portal",
+        "refactor"
       ],
-      "files": [],
+      "files": [
+        "portal/src/lib/__qa__/qa-e2e-fixtures.ts",
+        "portal/src/lib/qa-e2e-smoke.test.ts",
+        "portal/src/lib/qa-e2e-idempotency.test.ts",
+        "portal/src/lib/qa-e2e-antifraud.test.ts",
+        "portal/src/lib/qa-e2e-concurrency.test.ts",
+        "tools/audit/check-portal-test-file-size.ts",
+        "docs/runbooks/PORTAL_TEST_FILE_SIZE_RUNBOOK.md"
+      ],
       "correction_type": "test",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/qa-e2e-smoke.test.ts",
+        "portal/src/lib/qa-e2e-idempotency.test.ts",
+        "portal/src/lib/qa-e2e-antifraud.test.ts",
+        "portal/src/lib/qa-e2e-concurrency.test.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "447493a"
+      ],
+      "owner": "portal",
+      "runbook": "docs/runbooks/PORTAL_TEST_FILE_SIZE_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "2026-04-21 — fixed. qa-e2e.test.ts (842 lines, 4 describes) split into 4 focused files each < 200 lines + a shared __qa__/qa-e2e-fixtures.ts module. 24/24 tests still pass; full portal lib suite: 867 tests across 46 files. CI npm run audit:portal-test-file-size enforces 800-line hard cap + required splits + forbidden monolith + allowlist discipline. Runbook documents the split pattern for future suites."
     },
     {
       "id": "L17-05",
