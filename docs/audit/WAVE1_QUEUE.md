@@ -72,14 +72,14 @@
 
 ### 🟢 Batch F — Plumbing / DX (4 entregas, em `portal/src/lib/*`)
 
-**Progresso Batch F (Plumbing / DX):** 🟡 3/4 — L17-05 ✓ · L17-03 ✓ · L17-04 ✓ · L15-04 ⏳.
+**Progresso Batch F (Plumbing / DX):** ✅ 4/4 — L17-05 ✓ · L17-03 ✓ · L17-04 ✓ · L15-04 ✓ (fixed 2026-04-21 — email platform: outbox + provider abstraction + send-email edge fn).
 
 | # | id | sev | L | ep | Título |
 |---|---|---|---|---|---|
 | 21 | L17-05 | high | 17 | 3 | ✅ Logger silencia errors não-`Error` (fixed 2026-04-21) |
 | 22 | L17-03 | high | 17 | 3 | ✅ `withErrorHandler` usa `any` em `routeArgs` (fixed 2026-04-21) |
 | 23 | L17-04 | high | 17 | 3 | ✅ Testes em `portal/src/lib/qa-*.test.ts` > 800 linhas (fixed 2026-04-21) |
-| 24 | L15-04 | high | 15 | 3 | Sem email transactional platform (Resend/Postmark) |
+| 24 | L15-04 | high | 15 | 3 | ✅ Sem email transactional platform (Resend/Postmark) (fixed 2026-04-21) |
 
 ### 🟢 Batch G — Mobile / Flutter (4 entregas, em `omni_runner/`)
 

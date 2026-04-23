@@ -240,7 +240,7 @@ Total: **348** findings.
 | 🟠 high | ⏳ fix-pending | [L15-01](./findings/L15-01-zero-utm-tracking-no-produto.md) | 1 | L15 · CMO | Zero UTM tracking no produto | unassigned |
 | 🟠 high | ⏳ fix-pending | [L15-02](./findings/L15-02-sem-sistema-de-referral-convite-viral.md) | 1 | L15 · CMO | Sem sistema de referral/convite viral | unassigned |
 | 🟠 high | ⏳ fix-pending | [L15-03](./findings/L15-03-social-sharing-sem-open-graph-dinamico.md) | 1 | L15 · CMO | Social sharing sem Open Graph dinâmico | unassigned |
-| 🟠 high | ⏳ fix-pending | [L15-04](./findings/L15-04-sem-email-transactional-platform.md) | 1 | L15 · CMO | Sem email transactional platform | unassigned |
+| 🟠 high | ✅ fixed | [L15-04](./findings/L15-04-sem-email-transactional-platform.md) | 1 | L15 · CMO | Sem email transactional platform | platform |
 | 🟡 medium | ⏳ fix-pending | [L15-05](./findings/L15-05-sem-landing-pages-seo-otimizadas.md) | 2 | L15 · CMO | Sem landing pages SEO-otimizadas | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L15-06](./findings/L15-06-sem-a-b-testing-framework.md) | 2 | L15 · CMO | Sem A/B testing framework | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L15-07](./findings/L15-07-wrapped-ja-existe-nao-e-compartilhavel-fora-do.md) | 2 | L15 · CMO | Wrapped (já existe) não é compartilhável fora do app | unassigned |
