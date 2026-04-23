@@ -3,9 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:omni_runner/core/logging/logger.dart';
 import 'package:omni_runner/domain/entities/challenge_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_participant_entity.dart';
 import 'package:omni_runner/domain/entities/challenge_rules_entity.dart';
+import 'package:omni_runner/domain/usecases/gamification/share_challenge_invite.dart';
+import 'package:omni_runner/domain/value_objects/challenge_invite_link.dart';
+import 'package:omni_runner/domain/value_objects/challenge_share_channel.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_bloc.dart';
 import 'package:omni_runner/presentation/blocs/challenges/challenges_state.dart';
 import 'package:omni_runner/core/theme/design_tokens.dart';
@@ -27,8 +32,13 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
   late ChallengeEntity _challenge;
   bool _shared = false;
 
+  final ShareChallengeInvite _shareInvite = ShareChallengeInvite();
+
+  // L22-08: canonical deep link is now built via [ChallengeInviteLink]
+  // so the host stays in lock-step with the `.well-known/*` verification
+  // files served from `portal/public/.well-known/`.
   String get _deepLink =>
-      'https://omnirunner.app/challenge/${_challenge.id}';
+      ChallengeInviteLink.forId(_challenge.id).url;
 
   @override
   void initState() {
@@ -169,24 +179,28 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Share button
+            // L22-08: WhatsApp-specific button (viral loop between
+            // friends). Routes through `wa.me/?text=<encoded>` via
+            // url_launcher so Android App Links / iOS Universal
+            // Links handle the deep link back into the app when the
+            // recipient taps it.
             FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF25D366),
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.chat_rounded),
+              label: const Text('Convidar via WhatsApp'),
+              onPressed: _shareViaWhatsApp,
+            ),
+            const SizedBox(height: 8),
+
+            // Native share sheet (iOS/Android) — generic fallback
+            // for recipients on Telegram, SMS, email, etc.
+            OutlinedButton.icon(
               icon: const Icon(Icons.share_rounded),
-              label: const Text('Enviar convite'),
-              onPressed: () {
-                final title = _challenge.title ?? _defaultTitle();
-                final metric = _goalLabel(_challenge.rules.goal);
-                final window = _formatWindow(_challenge.rules.windowMs);
-                _shared = true;
-                SharePlus.instance.share(
-                  ShareParams(
-                    text: 'Participe do meu desafio "$title" no Omni Runner!\n'
-                        'Modalidade: $metric\n'
-                        'Duração: $window\n\n'
-                        '$_deepLink',
-                  ),
-                );
-              },
+              label: const Text('Outros apps'),
+              onPressed: _shareViaNative,
             ),
             const SizedBox(height: 24),
 
@@ -243,25 +257,52 @@ class _ChallengeInviteScreenState extends State<ChallengeInviteScreen> {
     );
   }
 
+  Future<void> _shareViaWhatsApp() async {
+    final intent = _shareInvite(
+      challengeId: _challenge.id,
+      channel: ChallengeShareChannel.whatsapp,
+      challengeTitle: _challenge.title ?? _defaultTitle(),
+    );
+    final launchUrl = intent.platformLaunchUrl;
+    if (launchUrl == null) return;
+    final uri = Uri.parse(launchUrl);
+    try {
+      final ok = await launchUrl_(uri);
+      if (ok) {
+        _shared = true;
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('WhatsApp não disponível. Usando compartilhamento nativo.')),
+        );
+        await _shareViaNative();
+      }
+    } on Object catch (e) {
+      AppLogger.warn('WhatsApp launch failed: $e', tag: 'ChallengeInvite');
+      if (!mounted) return;
+      await _shareViaNative();
+    }
+  }
+
+  Future<void> _shareViaNative() async {
+    final intent = _shareInvite(
+      challengeId: _challenge.id,
+      channel: ChallengeShareChannel.native,
+      challengeTitle: _challenge.title ?? _defaultTitle(),
+    );
+    _shared = true;
+    await SharePlus.instance.share(ShareParams(text: intent.text));
+  }
+
+  // Thin wrapper around url_launcher so we can stub in tests.
+  Future<bool> launchUrl_(Uri uri) =>
+      launchUrl(uri, mode: LaunchMode.externalApplication);
+
   String _defaultTitle() => switch (_challenge.type) {
         ChallengeType.oneVsOne => 'Desafio 1 vs 1',
         ChallengeType.group => 'Desafio em Grupo',
         ChallengeType.team => 'Desafio Time A vs B',
       };
-
-  static String _goalLabel(ChallengeGoal m) => switch (m) {
-        ChallengeGoal.fastestAtDistance => 'Mais rápido',
-        ChallengeGoal.mostDistance => 'Mais km',
-        ChallengeGoal.bestPaceAtDistance => 'Melhor pace',
-        ChallengeGoal.collectiveDistance => 'Coletivo',
-      };
-
-  static String _formatWindow(int ms) {
-    if (ms < 3600000) return '${ms ~/ 60000} minutos';
-    if (ms < 86400000) return '${ms ~/ 3600000} horas';
-    final days = ms ~/ 86400000;
-    return '$days ${days == 1 ? "dia" : "dias"}';
-  }
 }
 
 /// Card explaining how async challenges work across different cities.
