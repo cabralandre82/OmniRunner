@@ -12,11 +12,13 @@ const mockSpanToJSON = vi.fn(
       start_timestamp: number;
     },
 );
+const mockCaptureException = vi.fn();
+const mockCaptureMessage = vi.fn();
 vi.mock("@sentry/nextjs", () => ({
   getActiveSpan: () => mockGetActiveSpan(),
   spanToJSON: (s: unknown) => mockSpanToJSON(s),
-  captureException: vi.fn(),
-  captureMessage: vi.fn(),
+  captureException: (...args: unknown[]) => mockCaptureException(...args),
+  captureMessage: (...args: unknown[]) => mockCaptureMessage(...args),
 }));
 
 const { logger } = await import("./logger");
@@ -26,6 +28,8 @@ describe("logger", () => {
     vi.restoreAllMocks();
     mockGetActiveSpan.mockReturnValue(undefined);
     mockSpanToJSON.mockReturnValue({ data: {}, start_timestamp: 0 });
+    mockCaptureException.mockReset();
+    mockCaptureMessage.mockReset();
   });
 
   it("logs info as structured JSON", () => {
@@ -68,6 +72,77 @@ describe("logger", () => {
 
     const parsed = JSON.parse(spy.mock.calls[0][0]);
     expect(parsed.error).toBe("string error");
+  });
+
+  // ─── L17-05 — logger.error must always report to Sentry ──────────
+  describe("L17-05 Sentry capture invariants", () => {
+    it("reports Error instances via captureException", () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const err = new Error("boom");
+      logger.error("failed", err, { userId: "u1" });
+
+      expect(mockCaptureException).toHaveBeenCalledTimes(1);
+      expect(mockCaptureMessage).not.toHaveBeenCalled();
+      expect(mockCaptureException).toHaveBeenCalledWith(err, {
+        extra: { msg: "failed", userId: "u1" },
+      });
+    });
+
+    it("captures a message even when error is undefined (bug L17-05)", () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      logger.error("config_missing", undefined, { gateway: "stripe" });
+
+      expect(mockCaptureException).not.toHaveBeenCalled();
+      expect(mockCaptureMessage).toHaveBeenCalledTimes(1);
+      expect(mockCaptureMessage).toHaveBeenCalledWith("config_missing", {
+        level: "error",
+        extra: { gateway: "stripe" },
+      });
+    });
+
+    it("captures a message even when error is null", () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      logger.error("ping", null);
+
+      expect(mockCaptureException).not.toHaveBeenCalled();
+      expect(mockCaptureMessage).toHaveBeenCalledWith("ping", {
+        level: "error",
+        extra: {},
+      });
+    });
+
+    it("captures a message when error is a plain string", () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      logger.error("rate limited", "too many requests", { ip: "1.2.3.4" });
+
+      expect(mockCaptureMessage).toHaveBeenCalledWith("rate limited", {
+        level: "error",
+        extra: { ip: "1.2.3.4", error: "too many requests" },
+      });
+    });
+
+    it("captures a message when error is a plain object", () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      logger.error("upstream failure", { code: 503, body: "timeout" });
+
+      expect(mockCaptureMessage).toHaveBeenCalledTimes(1);
+      const call = mockCaptureMessage.mock.calls[0];
+      expect(call[0]).toBe("upstream failure");
+      expect(call[1].level).toBe("error");
+      expect(call[1].extra.error).toEqual({ code: 503, body: "timeout" });
+    });
+
+    it("omits the error field from console JSON when error is undefined", () => {
+      const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+      logger.error("config_missing", undefined, { gateway: "stripe" });
+
+      const parsed = JSON.parse(spy.mock.calls[0][0]);
+      expect(parsed.error).toBeUndefined();
+      expect(parsed.stack).toBeUndefined();
+      expect(parsed.gateway).toBe("stripe");
+      expect(parsed.level).toBe("error");
+      expect(parsed.msg).toBe("config_missing");
+    });
   });
 
   // ─── L20-03 — trace_id auto-injection ────────────────────────────
