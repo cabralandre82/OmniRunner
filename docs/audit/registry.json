@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T16:54:26.640Z",
+  "generated_at": "2026-04-23T17:05:12.983Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 149,
-    "fix-pending": 198,
+    "fixed": 150,
+    "fix-pending": 197,
     "in-progress": 1
   },
   "by_wave": {
@@ -11272,27 +11272,39 @@
       "lens": 23,
       "title": "Onboarding de novo atleta no clube",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "integration",
         "personas",
         "coach"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "omni_runner/lib/domain/value_objects/athlete_onboarding_step.dart",
+        "omni_runner/lib/domain/entities/athlete_onboarding_state.dart",
+        "omni_runner/lib/domain/services/athlete_onboarding_service.dart",
+        "tools/audit/check-athlete-onboarding.ts",
+        "docs/runbooks/ATHLETE_ONBOARDING_RUNBOOK.md"
+      ],
+      "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "omni_runner/test/domain/services/athlete_onboarding_service_test.dart",
+        "tools/audit/check-athlete-onboarding.ts"
+      ],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "local:6889042"
+      ],
+      "owner": "audit-bot",
+      "runbook": "docs/runbooks/ATHLETE_ONBOARDING_RUNBOOK.md",
       "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Pure-domain state machine shipped (enum, VO, service). Persistence (coaching_onboarding_state), wizard UI, Strava backfill Edge Function and email nudges are tracked follow-ups (L23-12-persistence, L23-12-wizard, L23-12-strava-backfill, L23-12-email-nudges)."
     },
     {
       "id": "L23-13",
