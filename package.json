@@ -50,6 +50,7 @@
     "audit:outbox-event-bus": "npx tsx tools/audit/check-outbox-event-bus.ts",
     "audit:athlete-review-quarantine": "npx tsx tools/audit/check-athlete-review-quarantine.ts",
     "audit:privacy-zones": "npx tsx tools/audit/check-privacy-zones.ts",
+    "audit:social-handles-policy": "npx tsx tools/audit/check-social-handles-policy.ts",
     "audit:challenge-invite-deep-link": "npx tsx tools/audit/check-challenge-invite-deep-link.ts",
     "audit:milestone-celebration": "npx tsx tools/audit/check-milestone-celebration.ts",
     "audit:periodization-template": "npx tsx tools/audit/check-periodization-template.ts",
