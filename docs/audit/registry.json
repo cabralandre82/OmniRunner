@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T18:32:53.724Z",
+  "generated_at": "2026-04-24T18:34:13.238Z",
   "total": 361,
   "by_severity": {
     "high": 130,
@@ -10,10 +10,10 @@
     "na": 7
   },
   "by_status": {
-    "fixed": 337,
+    "fixed": 338,
     "not-reproducible": 3,
     "duplicate": 8,
-    "fix-pending": 5,
+    "fix-pending": 4,
     "wont-fix": 8
   },
   "by_wave": {
@@ -6969,11 +6969,11 @@
       "lens": 9,
       "title": "Atleta sem tela 'Minhas mensalidades' — não vê o que deve nem o que pagou",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-24T00:00:00.000Z",
-      "fixed_at": null,
-      "closed_at": null,
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "finance",
         "flutter",
@@ -6995,7 +6995,9 @@
         "omni_runner/test/domain/entities/athlete_subscription_invoice_entity_test.dart"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "8b381e4"
+      ],
       "owner": "platform-finance",
       "runbook": null,
       "effort_points": 3,

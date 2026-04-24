@@ -4,11 +4,11 @@ audit_ref: "9.16"
 lens: 9
 title: "Atleta sem tela 'Minhas mensalidades' — não vê o que deve nem o que pagou"
 severity: high
-status: fix-pending
+status: fixed
 wave: 0
 discovered_at: 2026-04-24
-fixed_at: null
-closed_at: null
+fixed_at: 2026-04-24
+closed_at: 2026-04-24
 tags: ["finance", "flutter", "atleta", "billing", "transparency"]
 files:
   - omni_runner/lib/domain/entities/athlete_subscription_invoice_entity.dart
@@ -22,7 +22,7 @@ test_required: true
 tests:
   - omni_runner/test/domain/entities/athlete_subscription_invoice_entity_test.dart
 linked_issues: []
-linked_prs: []
+linked_prs: ["8b381e4"]
 owner: platform-finance
 runbook: null
 effort_points: 3
@@ -201,3 +201,22 @@ Layout:
 
 - `2026-04-24` — Descoberto como gap simétrico a L09-15. Coach
   tem agenda, atleta não tem.
+- `2026-04-24` — **Corrigido em `8b381e4`**. Entrega:
+  - `AthleteSubscriptionInvoice` (entity com fromJson defensivo,
+    getters `isPayable` / `isOverdue` / `daysUntilDue` /
+    `statusLabel`).
+  - `AthleteSubscriptionInvoiceService` (lê
+    `athlete_subscription_invoices` via RLS `athlete_user_id =
+    auth.uid()`, tolera PGRST205, ordenado por
+    `period_month DESC` limit 24).
+  - `AthleteMyInvoicesScreen` (card de destaque para próxima
+    invoice aberta com CTA "Pagar agora" abrindo
+    `external_invoice_url` no navegador; histórico com badges
+    coloridos por status; empty state orientativo).
+  - Rota `/financial/my-invoices` + nova seção "Financeiro" em
+    `MoreScreen` (somente atletas).
+  - 11 unit tests cobrindo parsing, status coercion, getters e
+    `daysUntilDue` (passado/hoje/futuro).
+  - `flutter analyze` limpo (só `info` do lint
+    `prefer_const_literals_to_create_immutables` nos testes, mesma
+    convenção do L05-29).
