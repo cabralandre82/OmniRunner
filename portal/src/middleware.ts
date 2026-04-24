@@ -12,6 +12,8 @@ import {
   MEMBERSHIP_NONE,
   getCachedMembership,
   setCachedMembership,
+  getCachedPlatformRole,
+  setCachedPlatformRole,
 } from "@/lib/route-policy-cache";
 import { enforceWebhookIpAllowlist } from "@/lib/webhook-ip-allowlist";
 import {
@@ -260,12 +262,21 @@ export async function middleware(request: NextRequest) {
       pathname.startsWith("/platform") ||
       pathname.startsWith("/api/platform/")
     ) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("platform_role")
-        .eq("id", user.id)
-        .single();
-      if (profile?.platform_role !== "admin") {
+      // L01-26 — platform_role is global per-user and changes very
+      // rarely, so we cache it process-locally for 5 min. A page-load
+      // that triggers 15 RSCs against `/platform/*` now costs 1
+      // Postgres round-trip on cold cache and 0 on warm.
+      let platformRole = getCachedPlatformRole(user.id);
+      if (platformRole === undefined) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("platform_role")
+          .eq("id", user.id)
+          .single();
+        platformRole = (profile?.platform_role as string | null) ?? "none";
+        setCachedPlatformRole(user.id, platformRole);
+      }
+      if (platformRole !== "admin") {
         if (pathname.startsWith("/api/")) {
           return tagResponse(
             NextResponse.json({ error: "Forbidden" }, { status: 403 }),

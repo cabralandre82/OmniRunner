@@ -198,3 +198,98 @@ export function clearMembershipCache(): void {
 export function membershipCacheSize(): number {
   return cache.size;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// L01-26 — platform_role cache
+//
+// Mirror of the coaching_members cache above, but for the
+// `profiles.platform_role` lookup that the middleware does on every
+// `/platform/*` and `/api/platform/*` request. Without this cache an
+// admin actively using the dashboard adds 5–15 Postgres round-trips
+// per page (one per RSC + fetch). The cache key is `userId` (not
+// `userId:groupId`) because platform_role is global per-user.
+//
+// TTL is intentionally SHORTER than the membership cache (300 s vs
+// 60 s) because:
+//   - Demotion of platform_role is RARE compared to membership churn.
+//   - When it does happen we explicitly invalidate via
+//     `invalidatePlatformRole(userId)` from the platform admin UI,
+//     so the TTL is a defence-in-depth backstop, not the primary
+//     mechanism.
+//
+// Negative caching uses the literal string `"none"` instead of a
+// `unique symbol` so the JSON-serialisation hooks for inspector tools
+// (admin dashboard) can show "no platform role" without special
+// treatment. Trade-off: a real role would never be "none" because the
+// only valid platform_role value is "admin".
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type CachedPlatformRole = string | "none";
+
+interface PlatformRoleEntry {
+  value: CachedPlatformRole;
+  expiresAt: number;
+}
+
+const PLATFORM_ROLE_DEFAULT_TTL_MS = 300_000;
+const PLATFORM_ROLE_MAX_ENTRIES = 5_000;
+
+let platformRoleTtlMs = PLATFORM_ROLE_DEFAULT_TTL_MS;
+const platformRoleCache = new Map<string, PlatformRoleEntry>();
+
+/** @internal — test-only TTL override. */
+export function setPlatformRoleCacheTTLForTests(value: number | null): void {
+  platformRoleTtlMs = value ?? PLATFORM_ROLE_DEFAULT_TTL_MS;
+}
+
+function prunePlatformRoleCacheIfNeeded(): void {
+  if (platformRoleCache.size <= PLATFORM_ROLE_MAX_ENTRIES) return;
+  const overflow = platformRoleCache.size - PLATFORM_ROLE_MAX_ENTRIES;
+  let removed = 0;
+  const toDelete: string[] = [];
+  platformRoleCache.forEach((_value, key) => {
+    if (removed < overflow) {
+      toDelete.push(key);
+      removed++;
+    }
+  });
+  for (const k of toDelete) platformRoleCache.delete(k);
+}
+
+export function getCachedPlatformRole(
+  userId: string,
+): CachedPlatformRole | undefined {
+  const entry = platformRoleCache.get(userId);
+  if (!entry) return undefined;
+  if (entry.expiresAt <= nowMs()) {
+    platformRoleCache.delete(userId);
+    return undefined;
+  }
+  platformRoleCache.delete(userId);
+  platformRoleCache.set(userId, entry);
+  return entry.value;
+}
+
+export function setCachedPlatformRole(
+  userId: string,
+  value: CachedPlatformRole,
+): void {
+  platformRoleCache.set(userId, {
+    value,
+    expiresAt: nowMs() + platformRoleTtlMs,
+  });
+  prunePlatformRoleCacheIfNeeded();
+}
+
+export function invalidatePlatformRole(userId: string): void {
+  platformRoleCache.delete(userId);
+}
+
+export function clearPlatformRoleCache(): void {
+  platformRoleCache.clear();
+}
+
+/** @internal — for tests / observability dashboards. */
+export function platformRoleCacheSize(): number {
+  return platformRoleCache.size;
+}
