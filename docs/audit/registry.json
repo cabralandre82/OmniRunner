@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T17:53:26.549Z",
-  "total": 356,
+  "generated_at": "2026-04-24T18:02:08.366Z",
+  "total": 357,
   "by_severity": {
     "high": 127,
     "critical": 70,
-    "medium": 131,
+    "medium": 132,
     "safe": 21,
     "na": 7
   },
@@ -13,11 +13,11 @@
     "fixed": 333,
     "not-reproducible": 3,
     "duplicate": 8,
-    "fix-pending": 4,
+    "fix-pending": 5,
     "wont-fix": 8
   },
   "by_wave": {
-    "0": 23,
+    "0": 24,
     "1": 179,
     "2": 125,
     "3": 29
@@ -27,7 +27,7 @@
     "2": 15,
     "3": 20,
     "4": 15,
-    "5": 28,
+    "5": 29,
     "6": 13,
     "7": 13,
     "8": 12,
@@ -4903,6 +4903,47 @@
       "owner": "platform-workout",
       "runbook": null,
       "effort_points": 3,
+      "blocked_by": [],
+      "duplicate_of": null,
+      "deferred_to_wave": null,
+      "note": null
+    },
+    {
+      "id": "L05-29",
+      "audit_ref": "5.29",
+      "lens": 5,
+      "title": "Atleta não tem tela 'Meus envios ao relógio' (histórico de .fit)",
+      "severity": "medium",
+      "status": "fix-pending",
+      "wave": 0,
+      "discovered_at": "2026-04-24T00:00:00.000Z",
+      "fixed_at": null,
+      "closed_at": null,
+      "tags": [
+        "workout",
+        "athlete",
+        "fit-export",
+        "delivery-confirmation",
+        "ui"
+      ],
+      "files": [
+        "omni_runner/lib/domain/entities/athlete_workout_export_entity.dart",
+        "omni_runner/lib/data/services/athlete_export_history_service.dart",
+        "omni_runner/lib/presentation/screens/athlete_my_exports_screen.dart",
+        "omni_runner/lib/core/di/data_module.dart",
+        "omni_runner/lib/core/router/app_router.dart",
+        "omni_runner/lib/presentation/screens/more_screen.dart"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "omni_runner/test/domain/entities/athlete_workout_export_entity_test.dart"
+      ],
+      "linked_issues": [],
+      "linked_prs": [],
+      "owner": "platform-workout",
+      "runbook": null,
+      "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,

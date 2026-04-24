@@ -65,6 +65,18 @@ class _MoreScreenState extends State<MoreScreen> {
               },
             ),
             _ActionTile(
+              icon: Icons.watch_outlined,
+              title: 'Meus envios ao relógio',
+              subtitle:
+                  'Histórico de treinos que você mandou pro seu relógio (.fit)',
+              onTap: (ctx) {
+                if (LoginRequiredSheet.guard(ctx, feature: 'Meus envios')) {
+                  return;
+                }
+                ctx.push(AppRoutes.myExports);
+              },
+            ),
+            _ActionTile(
               icon: Icons.fitness_center,
               title: 'Meu Treino do Dia',
               subtitle: 'Ver o treino agendado para hoje',

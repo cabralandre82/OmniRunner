@@ -100,6 +100,7 @@ import 'package:omni_runner/presentation/screens/support_ticket_screen.dart';
 import 'package:omni_runner/presentation/screens/today_screen.dart';
 import 'package:omni_runner/presentation/screens/wallet_screen.dart';
 import 'package:omni_runner/presentation/screens/welcome_screen.dart';
+import 'package:omni_runner/presentation/screens/athlete_my_exports_screen.dart';
 import 'package:omni_runner/presentation/screens/workout_delivery_screen.dart';
 import 'package:omni_runner/presentation/screens/wrapped_screen.dart';
 import 'package:omni_runner/presentation/screens/athlete_training_feed_screen.dart';
@@ -242,6 +243,7 @@ abstract final class AppRoutes {
   static const map = '/map';
   static const workoutDelivery = '/workouts/delivery';
   static const athleteDelivery = '/workouts/athlete-delivery';
+  static const myExports = '/workouts/my-exports';
 
   // ── Events ──────────────────────────────────────────────────────────────
   static const events = '/events';
@@ -1053,6 +1055,10 @@ GoRouter createAppRouter({RecoveredSession? recovery}) {
       GoRoute(
         path: AppRoutes.athleteDelivery,
         builder: (context, state) => const AthleteDeliveryScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.myExports,
+        builder: (context, state) => const AthleteMyExportsScreen(),
       ),
 
       // ── Events ──────────────────────────────────────────────────────────

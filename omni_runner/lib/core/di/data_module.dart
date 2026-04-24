@@ -19,6 +19,7 @@ import 'package:omni_runner/data/datasources/sync_service.dart';
 import 'package:omni_runner/data/datasources/analytics_sync_service.dart';
 import 'package:omni_runner/data/services/profile_data_service.dart';
 import 'package:omni_runner/data/services/today_data_service.dart';
+import 'package:omni_runner/data/services/athlete_export_history_service.dart';
 import 'package:omni_runner/data/services/workout_delivery_service.dart';
 import 'package:omni_runner/features/wearables_ble/ble_heart_rate_source.dart';
 import 'package:omni_runner/features/wearables_ble/i_heart_rate_source.dart';
@@ -655,6 +656,10 @@ Future<void> registerDataModule(GetIt sl) async {
 
   sl.registerLazySingleton<WorkoutDeliveryService>(
     () => WorkoutDeliveryService(sl<SupabaseClient>()),
+  );
+
+  sl.registerLazySingleton<AthleteExportHistoryService>(
+    () => AthleteExportHistoryService(sl<SupabaseClient>()),
   );
 
   sl.registerLazySingleton<IWorkoutRepo>(
