@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T18:41:05.738Z",
-  "total": 362,
+  "generated_at": "2026-04-24T22:09:49.743Z",
+  "total": 363,
   "by_severity": {
     "high": 130,
-    "critical": 71,
+    "critical": 72,
     "medium": 133,
     "safe": 21,
     "na": 7
@@ -13,12 +13,12 @@
     "fixed": 339,
     "not-reproducible": 3,
     "duplicate": 8,
-    "fix-pending": 4,
+    "fix-pending": 5,
     "wont-fix": 8
   },
   "by_wave": {
     "0": 29,
-    "1": 179,
+    "1": 180,
     "2": 125,
     "3": 29
   },
@@ -31,7 +31,7 @@
     "6": 13,
     "7": 13,
     "8": 12,
-    "9": 17,
+    "9": 18,
     "10": 14,
     "11": 14,
     "12": 12,
@@ -7050,6 +7050,44 @@
       "duplicate_of": null,
       "deferred_to_wave": null,
       "note": null
+    },
+    {
+      "id": "L09-18",
+      "audit_ref": "9.18",
+      "lens": 9,
+      "title": "Divergência: Asaas webhook não escreve em athlete_subscription_invoices (modelo canônico)",
+      "severity": "critical",
+      "status": "fix-pending",
+      "wave": 1,
+      "discovered_at": "2026-04-24T00:00:00.000Z",
+      "fixed_at": null,
+      "closed_at": null,
+      "tags": [
+        "finance",
+        "billing",
+        "webhook",
+        "asaas",
+        "subscriptions",
+        "divergence",
+        "ADR-0010"
+      ],
+      "files": [
+        "supabase/functions/asaas-webhook/index.ts",
+        "supabase/migrations/20260421670000_l23_09_athlete_subscriptions.sql",
+        "supabase/migrations/20260304200000_financial_engine.sql"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [],
+      "linked_issues": [],
+      "linked_prs": [],
+      "owner": "platform-finance",
+      "runbook": "docs/runbooks/ASAAS_WEBHOOK_RUNBOOK.md",
+      "effort_points": 5,
+      "blocked_by": [],
+      "duplicate_of": null,
+      "deferred_to_wave": null,
+      "note": "Este finding rastreia a Fase 1 (F-CON-1) do plano definido em\nADR-0010 (consolidação dos modelos de subscription). Ver\ndocs/adr/ADR-0010-billing-subscriptions-consolidation.md para\ncontexto completo das 3 fases e do raciocínio.\n"
     },
     {
       "id": "L10-01",

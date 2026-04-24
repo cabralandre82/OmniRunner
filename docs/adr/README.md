@@ -18,6 +18,7 @@
 | ADR-008 | [Swap as off-platform credit cession](./008-swap-as-off-platform-credit-cession.md) | Accepted | L09-05 |
 | ADR-009 | [SQLCipher EOL migration](./009-sqlcipher-eol-migration.md) | Accepted | L01-32, L01-33 |
 | ADR-0001 | [Provider fee ownership](./ADR-0001-provider-fee-ownership.md) | Accepted | L09-08 |
+| ADR-0010 | [Billing subscriptions consolidation](./ADR-0010-billing-subscriptions-consolidation.md) | Accepted | L09-18, L23-09 |
 
 > **Naming convention.** New ADRs MUST use the form
 > `ADR-NNNN-<slug>.md` with 4-digit zero-padded number. Legacy
