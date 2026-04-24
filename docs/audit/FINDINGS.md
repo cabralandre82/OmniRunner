@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-24 18:02:08 UTC.
+> Atualizado em 2026-04-24 18:03:16 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -137,7 +137,7 @@ Total: **357** findings.
 | 🟠 high | ✅ fixed | [L05-26](./findings/L05-26-sem-log-de-export-fit.md) | 0 | L05 · CPO | Zero delivery confirmation: coach não sabe se .fit chegou ao relógio | platform-workout |
 | 🟡 medium | ✅ fixed | [L05-27](./findings/L05-27-device-hint-nunca-populado.md) | 0 | L05 · CPO | Export log: device_hint nunca é populado automaticamente | platform-workout |
 | 🟡 medium | ✅ fixed | [L05-28](./findings/L05-28-rest-mode-semantica-ausente.md) | 0 | L05 · CPO | Rest/Recovery: semântica 'parado/caminhando/trote' não representada | platform-workout |
-| 🟡 medium | ⏳ fix-pending | [L05-29](./findings/L05-29-atleta-sem-tela-meus-envios.md) | 0 | L05 · CPO | Atleta não tem tela 'Meus envios ao relógio' (histórico de .fit) | platform-workout |
+| 🟡 medium | ✅ fixed | [L05-29](./findings/L05-29-atleta-sem-tela-meus-envios.md) | 0 | L05 · CPO | Atleta não tem tela 'Meus envios ao relógio' (histórico de .fit) | platform-workout |
 | 🔴 critical | ✅ fixed | [L06-01](./findings/L06-01-zero-runbook-financeiro-custodia-clearing-swap-withdraw.md) | 1 | L06 · COO | Zero runbook financeiro — custódia, clearing, swap, withdraw | unassigned |
 | 🔴 critical | ✅ fixed | [L06-02](./findings/L06-02-health-check-exibe-contagem-exata-de-violacoes-info.md) | 1 | L06 · COO | Health check exibe contagem exata de violações (info leak operacional) | platform |
 | 🟠 high | ✅ fixed | [L06-03](./findings/L06-03-reconcile-wallets-cron-sem-alerta-em-drift-0.md) | 1 | L06 · COO | reconcile-wallets-cron sem alerta em drift > 0 | platform |

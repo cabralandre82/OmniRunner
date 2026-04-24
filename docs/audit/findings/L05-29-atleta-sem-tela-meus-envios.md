@@ -4,11 +4,11 @@ audit_ref: "5.29"
 lens: 5
 title: "Atleta não tem tela 'Meus envios ao relógio' (histórico de .fit)"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 0
 discovered_at: 2026-04-24
-fixed_at: null
-closed_at: null
+fixed_at: 2026-04-24
+closed_at: 2026-04-24
 tags: ["workout", "athlete", "fit-export", "delivery-confirmation", "ui"]
 files:
   - omni_runner/lib/domain/entities/athlete_workout_export_entity.dart
@@ -22,7 +22,7 @@ test_required: true
 tests:
   - omni_runner/test/domain/entities/athlete_workout_export_entity_test.dart
 linked_issues: []
-linked_prs: []
+linked_prs: ["9ed9b7e"]
 owner: platform-workout
 runbook: null
 effort_points: 2
@@ -202,3 +202,9 @@ Manual:
 
 - `2026-04-24` — Descoberto ao revisar Wave B concluída, notei que
   expusemos o log pro coach mas não pro atleta.
+- `2026-04-24` — Fixed em `9ed9b7e`: entity tolerante a shapes do
+  PostgREST, service com filtro explícito por `actor_user_id`,
+  screen com empty/error/success states diferenciados por `kind`,
+  rota + tile no MoreScreen. 11 testes unit da entity passando.
+  Sem migration — dado já existia desde L05-26/27, faltava só o
+  consumer Flutter.
