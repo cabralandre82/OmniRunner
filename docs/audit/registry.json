@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T23:25:39.536Z",
+  "generated_at": "2026-04-24T00:20:32.722Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 199,
-    "fix-pending": 140,
+    "fixed": 233,
+    "fix-pending": 106,
     "in-progress": 1,
     "wont-fix": 7,
     "safe": 1
@@ -919,30 +919,38 @@
       "lens": 1,
       "title": "Middleware — PUBLIC_PREFIXES.some(p => pathname.startsWith(p))",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "mobile",
         "portal",
-        "testing"
+        "testing",
+        "fixed"
       ],
       "files": [
-        "portal/src/middleware.ts"
+        "portal/src/lib/route-policy.ts",
+        "portal/src/lib/route-policy.test.ts",
+        "tools/audit/check-k3-domain-fixes.ts"
       ],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "portal/src/lib/route-policy.test.ts (L01-25/L13-08 segment-shape regression block)",
+        "npm run audit:k3-domain-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K3 batch — segment-shape contract for public deep-link prefixes.\nPUBLIC_PREFIX_PATTERNS pairs each public prefix with a regex that\nmatches the FULL pathname, refusing nested segments. isPublicRoute\nshort-circuits via the explicit pattern table; /api/cron/ keeps its\nbare prefix check (caller is gated by CRON_SECRET, L02-10). 38\nvitest cases cover canonical shapes, nested-admin attempts, charset\ninjection, and the cron carve-out. Closes L13-08 by the same fix.\n"
     },
     {
       "id": "L01-26",
@@ -1010,30 +1018,38 @@
       "lens": 1,
       "title": "Deep link handler — extractInviteCode aceita qualquer string",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "rate-limit",
         "mobile",
         "ux",
-        "seo"
+        "seo",
+        "fixed"
       ],
       "files": [
-        "omni_runner/lib/core/deep_links/deep_link_handler.dart"
+        "omni_runner/lib/core/deep_links/deep_link_handler.dart",
+        "omni_runner/test/core/deep_links/deep_link_handler_test.dart",
+        "tools/audit/check-k3-domain-fixes.ts"
       ],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "omni_runner/test/core/deep_links/deep_link_handler_test.dart (4 new L01-28 cases)",
+        "npm run audit:k3-domain-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "mobile",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K3 batch — DeepLinkHandler.extractInviteCode now validates with\nRegExp(r'^[A-Z0-9_-]{6,16}$') for both URL-extracted and raw inputs.\nRandom QR text ('BUY BITCOIN'), lowercase strings, too-short and\ntoo-long codes are now rejected client-side; the backend is no\nlonger hit with doomed lookups (rate-limit + UX win).\n"
     },
     {
       "id": "L01-29",
@@ -1167,27 +1183,36 @@
       "lens": 1,
       "title": "Flutter — flutter_secure_storage sem setSharedPreferences",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "a11y",
-        "reliability"
+        "reliability",
+        "secure-storage",
+        "fixed"
       ],
-      "files": [],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "files": [
+        "omni_runner/lib/core/secure_storage/db_secure_store.dart",
+        "tools/audit/check-k3-domain-fixes.ts"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "npm run audit:k3-domain-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "mobile",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K3 batch — DbSecureStore now defaults to a hardened storage\nconfiguration:\n  AndroidOptions(encryptedSharedPreferences: true)\n  IOSOptions(accessibility: KeychainAccessibility.first_unlock_this_device)\nNo more silent fallback to SharedPreferences plain on Android; on\niOS the key is excluded from iCloud Keychain backups while staying\navailable after first unlock. Tests still inject a fake storage\nvia the constructor parameter for unit testing.\n"
     },
     {
       "id": "L01-33",
@@ -1195,26 +1220,35 @@
       "lens": 1,
       "title": "Flutter — DB key storage fallback ausente",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
-        "reliability"
+        "reliability",
+        "secure-storage",
+        "fixed"
       ],
-      "files": [],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "files": [
+        "omni_runner/lib/core/secure_storage/db_secure_store.dart",
+        "tools/audit/check-k3-domain-fixes.ts"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "npm run audit:k3-domain-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "mobile",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K3 batch — DbSecureStore.getOrCreateKey now uses a _safeRead helper\nthat catches PlatformException from flutter_secure_storage. On\nirrecoverable corruption (e.g., user wiped the keystore, vendor\nROM mishandled the keystore migration, biometric reset) we:\n  1) regenerate a fresh 32-byte AES key,\n  2) write it back to secure storage, and\n  3) delete the on-disk SQLCipher database so it can be reopened\n     under the new key (data was unrecoverable anyway).\nThe app launches successfully instead of crash-looping at startup.\n"
     },
     {
       "id": "L01-34",
@@ -1474,29 +1508,38 @@
       "lens": 1,
       "title": "platform_fee_config — RLS FOR SELECT USING (true)",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "security-headers",
-        "migration"
+        "migration",
+        "rls",
+        "fixed"
       ],
       "files": [
-        "supabase/migrations/20260228150001_custody_clearing_model.sql"
+        "supabase/migrations/20260228150001_custody_clearing_model.sql",
+        "supabase/migrations/20260421760000_l01_42_platform_fee_config_rls.sql",
+        "tools/audit/check-k2-sql-fixes.ts"
       ],
-      "correction_type": "migration",
-      "test_required": false,
-      "tests": [],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "supabase/migrations/20260421760000_l01_42_platform_fee_config_rls.sql (in-migration self-test)",
+        "npm run audit:k2-sql-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K2 batch — RLS hardening: legacy `USING (true)` policy dropped.\nReplaced with two policies: `read_self_facing` (only fee_type IN\n('clearing','swap') AND is_active — athletes/coaches see only fees\nthat affect them) and `read_admin` (full access for platform_role='admin').\nMaintenance fee row is admin-only. Migration includes pg_policies\nself-test asserting the legacy policy is gone and both new ones exist.\n"
     },
     {
       "id": "L01-43",
@@ -1504,31 +1547,40 @@
       "lens": 1,
       "title": "custody_accounts RLS — role 'professor' nunca corresponde",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "rls",
         "mobile",
         "migration",
-        "reliability"
+        "reliability",
+        "fixed"
       ],
       "files": [
-        "supabase/migrations/20260228150001_custody_clearing_model.sql"
+        "supabase/migrations/20260228150001_custody_clearing_model.sql",
+        "supabase/migrations/20260303300000_fix_coaching_roles.sql",
+        "supabase/migrations/20260421770000_l01_43_dead_role_audit.sql",
+        "tools/audit/check-k2-sql-fixes.ts"
       ],
-      "correction_type": "migration",
-      "test_required": false,
-      "tests": [],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "supabase/migrations/20260421770000_l01_43_dead_role_audit.sql (pg_policies scan)",
+        "npm run audit:k2-sql-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K2 batch — dead-role purge: 20260303300000 already DROP/CREATE-d the\naffected RLS policies (custody_accounts, custody_deposits, clearing_events)\nreplacing 'professor' with 'coach'. This finding adds a runtime self-test\nmigration that scans pg_policies for any live policy still referencing\nthe dead role and aborts deploy if any is found — guaranteeing the fix\nholds at the production database level (not just in source files).\n"
     },
     {
       "id": "L01-44",
@@ -1704,28 +1756,38 @@
       "lens": 1,
       "title": "processBurnForClearing — Audit actor_id = \"system\"",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
-        "portal"
+        "portal",
+        "audit",
+        "fixed"
       ],
       "files": [
-        "portal/src/lib/clearing.ts"
+        "portal/src/lib/clearing.ts",
+        "portal/src/lib/audit.ts",
+        "supabase/migrations/20260421780000_l01_49_audit_log_actor_kind.sql",
+        "tools/audit/check-k2-sql-fixes.ts"
       ],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "supabase/migrations/20260421780000_l01_49_audit_log_actor_kind.sql (in-migration self-test)",
+        "npm run audit:k2-sql-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K2 batch — audit_log schema change: portal_audit_log.actor_id was\n`UUID NOT NULL REFERENCES auth.users(id)`. auditLog({ actorId: \"system\" })\nwas failing the cast and the row was lost (only logger.error). Fix:\n  • new actor_kind text NOT NULL DEFAULT 'user'\n  • actor_id is now NULLABLE\n  • CHECK guarantees user⇒actor_id NOT NULL, system⇒actor_id NULL\naudit.ts now detects actorId === \"system\" and writes actor_id=NULL,\nactor_kind='system'. Existing rows backfilled to actor_kind='user'.\n"
     },
     {
       "id": "L01-50",
@@ -1733,33 +1795,42 @@
       "lens": 1,
       "title": "getSwapOrdersForGroup — Query string interpolation",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "atomicity",
         "security-headers",
         "integration",
         "mobile",
-        "portal"
+        "portal",
+        "fixed"
       ],
       "files": [
         "portal/src/lib/swap.ts",
-        "portal/src/lib/clearing.ts"
+        "portal/src/lib/clearing.ts",
+        "portal/src/lib/security/uuid-guard.ts",
+        "portal/src/lib/security/uuid-guard.test.ts",
+        "tools/audit/check-k3-domain-fixes.ts"
       ],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "portal/src/lib/security/uuid-guard.test.ts (10 vitest cases)",
+        "npm run audit:k3-domain-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K3 batch — pure-domain UUID guard:\n  • new portal/src/lib/security/uuid-guard.ts (no I/O):\n      isUuid · assertUuid · buildOrEqExpression(colA, colB, uuid, label)\n    validates strict v1-5 UUID and refuses unsafe column identifiers.\n  • swap.ts:getSwapOrdersForGroup and clearing.ts:getSettlementsForGroup\n    now compose .or() filters via buildOrEqExpression — any non-uuid\n    groupId throws InvalidUuidError before reaching PostgREST.\n  • 10 vitest cases cover injection-style payloads (commas, parens,\n    semicolons) and non-string inputs.\n"
     },
     {
       "id": "L02-01",
@@ -1847,27 +1918,33 @@
       "lens": 2,
       "title": "execute_burn_atomic — Function LANGUAGE plpgsql sem SECURITY DEFINER vs. chamadas a funções SECURITY DEFINER",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "atomicity",
-        "rls"
+        "rls",
+        "fixed",
+        "duplicate"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260417140000_execute_burn_atomic_hardening.sql"
+      ],
+      "correction_type": "code",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
-      "duplicate_of": null,
+      "duplicate_of": "L02-02",
       "deferred_to_wave": null,
-      "note": null
+      "note": "K2 batch — closed as covered by L02-02 fix. Migration\n20260417140000_execute_burn_atomic_hardening.sql line 119 already\ndeclares `execute_burn_atomic` as `SECURITY DEFINER` with\n`SET search_path = public, pg_temp` and `SET lock_timeout = '2s'`.\nGRANT EXECUTE is restricted to service_role (line 284). The proposed\ncorrection in this finding is therefore satisfied; tracking as\nduplicate_of L02-02 to keep the registry clean.\n"
     },
     {
       "id": "L02-04",
@@ -2162,29 +2239,36 @@
       "lens": 2,
       "title": "Zod v4 upgrade — UUID strict validation",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "integration",
         "mobile",
-        "portal"
+        "portal",
+        "schemas",
+        "fixed"
       ],
       "files": [
-        "portal/src/lib/schemas.ts"
+        "portal/src/lib/schemas/uuid-policy.ts",
+        "tools/audit/check-k3-domain-fixes.ts"
       ],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "npm run audit:k3-domain-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K3 batch — codified the UUID-validation policy as three Zod helpers:\n  omniUuid()                       → strict z.string().uuid() (internal IDs)\n  externalIntegrationId(label)     → opaque string with min/max bounds\n  correlationToken(label, opts)    → free-form correlation token\nThe split prevents 'z.string().uuid()' creep onto external IDs (Strava\nathlete numbers, Stripe payment IDs) that do NOT have UUID shape.\nNew schemas should import from portal/src/lib/schemas/uuid-policy.ts;\nbare z.string().uuid() is now reserved for OmniRunner-issued UUIDs.\n"
     },
     {
       "id": "L02-13",
@@ -2451,30 +2535,37 @@
       "lens": 3,
       "title": "FX spread — Cálculo simétrico entrada/saída",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "mobile",
         "portal",
-        "reliability"
+        "reliability",
+        "disclosure",
+        "fixed"
       ],
       "files": [
-        "portal/src/lib/custody.ts"
+        "docs/legal/FX_SPREAD_DISCLOSURE.md",
+        "tools/audit/check-k3-domain-fixes.ts"
       ],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "correction_type": "docs",
+      "test_required": true,
+      "tests": [
+        "npm run audit:k3-domain-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "finance",
+      "runbook": "docs/legal/FX_SPREAD_DISCLOSURE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K3 batch — disclosure doc formalising:\n  • spread default 0.75% applied PER LEG (entrada/saída)\n  • round-trip cost ≈ 1.5% (1 - (1-0.0075)^2 = 0.014944)\n  • concrete worked example in BRL/USD\n  • UI surfaces requiring disclosure (deposit confirm, withdrawal\n    confirm, settlement preview)\n  • implementation references (custody.ts, fx_rates table, IOF\n    cumulation note for Decreto 6.306/2007 art. 15-B)\nDocument keys off check-k3-domain-fixes guard so future drift in\nspread defaults can't ship without updating this disclosure.\n"
     },
     {
       "id": "L03-07",
@@ -2511,27 +2602,38 @@
       "lens": 3,
       "title": "Custody check_custody_invariants — Valida R_i vs M_i mas não total_settled",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "migration",
-        "reliability"
+        "reliability",
+        "invariants",
+        "fixed"
       ],
-      "files": [],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "files": [
+        "supabase/migrations/20260228170000_custody_gaps.sql",
+        "supabase/migrations/20260421790000_l03_08_global_conservation_check.sql",
+        "tools/audit/check-k2-sql-fixes.ts"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "supabase/migrations/20260421790000_l03_08_global_conservation_check.sql (in-migration self-test)",
+        "npm run audit:k2-sql-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K2 batch — adds the third invariant check (\"Check 3: global USD\nconservation\") to public.check_custody_invariants(). It compares\nSUM(custody_accounts.total_deposited_usd) against\n  SUM(confirmed deposits) − SUM(completed withdrawals)\n                                            − SUM(platform_revenue)\nand emits a row tagged 'global_deposit_mismatch' whenever |diff| > 0.01.\nTolerance is 1¢ to absorb ROUND noise from settlement. CI guard asserts\nthe new check is present in pg_get_functiondef.\n"
     },
     {
       "id": "L03-09",
@@ -2726,27 +2828,36 @@
       "lens": 3,
       "title": "Pedido eternamente pendente",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "webhook",
-        "cron"
+        "cron",
+        "fixed"
       ],
-      "files": [],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "files": [
+        "supabase/migrations/20260421840000_l03_15_expire_stale_deposits.sql",
+        "tools/audit/check-k2-sql-fixes.ts"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "supabase/migrations/20260421840000_l03_15_expire_stale_deposits.sql (in-migration self-test)",
+        "npm run audit:k2-sql-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K2 batch — new RPC fn_expire_stale_deposits(p_max_age interval default\n'48 hours'). Adds 'expired' to custody_deposits.status CHECK +\nexpired_at column + partial index on pending. pg_cron job\nl03_15_expire_stale_deposits fires daily at 03:10 UTC (idempotent via\ncron.job lookup). The expired transition NEVER touches coin_ledger or\nwallets — the deposit had not yet been credited.\n"
     },
     {
       "id": "L03-16",
@@ -3319,27 +3430,35 @@
       "lens": 4,
       "title": "Não há DPO nomeado / canal de titular publicado",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-23T00:00:00.000Z",
+      "closed_at": "2026-04-23T00:00:00.000Z",
       "tags": [
         "lgpd",
-        "mobile",
-        "portal"
+        "dpo",
+        "process",
+        "documentation"
       ],
-      "files": [],
+      "files": [
+        "docs/legal/DPO_AND_DATA_SUBJECT_CHANNEL.md",
+        "tools/audit/check-dpo-channel.ts"
+      ],
       "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "test_required": true,
+      "tests": [
+        "tools/audit/check-dpo-channel.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "legal",
+      "runbook": "docs/legal/DPO_AND_DATA_SUBJECT_CHANNEL.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Documento canônico `docs/legal/DPO_AND_DATA_SUBJECT_CHANNEL.md`\nv1.0 publica:\n\n- Email canônico do DPO `dpo@omnirunner.com.br` + backup\n  `legal@omnirunner.com.br`.\n- Endereço para carta registrada (placeholder até go-live público;\n  L04-11 inclui review trigger antes de Onda 3).\n- Lista dos 9 direitos LGPD (Art. 18) com endpoint self-service e\n  prazo (15 dias corridos).\n- SLA interno: 24h ack, 7 dias resposta preliminar, 15 dias\n  resolução.\n- Página pública `/privacy/dpo` + tela `omni_runner/lib/features/\n  privacy/` que devem expor o canal.\n- Recurso para a ANPD documentado.\n- Cross-refs L04-01 (eliminação), L04-03 (consentimento),\n  L04-15 (portabilidade).\n\nCI guard `audit:dpo-channel` (15 asserts) bloqueia regressão se\no email canônico mudar, se algum dos 9 direitos sumir ou se o\nprazo for alterado sem revisão de versão.\n"
     },
     {
       "id": "L04-12",
@@ -3837,25 +3956,36 @@
       "lens": 5,
       "title": "Swap offers: visível para todos os grupos, sem filtro de contraparte",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "migration"
+        "migration",
+        "rls",
+        "marketplace",
+        "fixed"
       ],
-      "files": [],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "files": [
+        "supabase/migrations/20260421800000_l05_10_swap_orders_visibility.sql",
+        "tools/audit/check-k2-sql-fixes.ts"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "supabase/migrations/20260421800000_l05_10_swap_orders_visibility.sql (in-migration self-test)",
+        "npm run audit:k2-sql-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K2 batch — swap_orders gains visibility ('public' | 'private' | 'whitelist')\n+ whitelist_group_ids uuid[]. Default 'public' preserves legacy behavior;\nsellers concerned about competitor pricing can opt into 'private' (only\nmatched buyer sees) or 'whitelist' (only listed groups see). New RLS\nread policy filters accordingly. Companion CHECK ensures whitelist_group_ids\nis empty unless visibility='whitelist'.\n"
     },
     {
       "id": "L05-11",
@@ -3890,23 +4020,37 @@
       "lens": 5,
       "title": "Challenges sem regras de tie-break",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "tags": [],
-      "files": [],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "tags": [
+        "challenges",
+        "leaderboard",
+        "fairness",
+        "fixed"
+      ],
+      "files": [
+        "portal/src/lib/challenges/tie-break.ts",
+        "portal/src/lib/challenges/tie-break.test.ts",
+        "tools/audit/check-k3-domain-fixes.ts"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "portal/src/lib/challenges/tie-break.test.ts (vitest, deterministic ordering + winner pick)",
+        "npm run audit:k3-domain-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "product",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K3 batch — pure-domain tie-break policy.\nportal/src/lib/challenges/tie-break.ts:\n  1) metricValue DESC\n  2) totalDurationSeconds ASC      (faster wins)\n  3) completedAt ASC               (earliest qualifying time)\n  4) athleteUserId ASC             (UUID lexicographic — last resort)\nExposes compareLeaderboardRows / rankLeaderboard / pickWinner and\nCHALLENGE_TIE_BREAK_SQL_ORDER (for SQL query parity). Closes the\n'first-row-the-DB-returned' bug; ties are now reproducible.\n"
     },
     {
       "id": "L05-13",
@@ -3998,25 +4142,35 @@
       "lens": 5,
       "title": "Workout delivery: sem reagendamento do atleta",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "ux"
+        "ux",
+        "delivery",
+        "fixed"
       ],
-      "files": [],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "files": [
+        "supabase/migrations/20260421810000_l05_16_workout_reschedule.sql",
+        "tools/audit/check-k2-sql-fixes.ts"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "supabase/migrations/20260421810000_l05_16_workout_reschedule.sql (in-migration self-test)",
+        "npm run audit:k2-sql-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K2 batch — athlete-initiated reschedule flow:\n  • workout_delivery_items gains athlete_requested_date + _at + _reason\n    and coach_response/_at/_by columns.\n  • fn_request_reschedule(item_id, new_date, reason) — athlete-only,\n    auth.uid() must equal item.athlete_user_id, item.status pending|published.\n  • fn_resolve_reschedule(item_id, decision) — group staff only\n    (admin_master | coach | assistant), decision accepted|rejected.\nBoth RPCs are SECURITY DEFINER with explicit role checks (P0010) and\nlog to workout_delivery_events for audit trail.\n"
     },
     {
       "id": "L05-17",
@@ -4024,23 +4178,35 @@
       "lens": 5,
       "title": "Gamificação: badges permanentes sem prazo",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "tags": [],
-      "files": [],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "tags": [
+        "gamification",
+        "badges",
+        "fixed"
+      ],
+      "files": [
+        "supabase/migrations/20260421820000_l05_17_badge_expiration.sql",
+        "tools/audit/check-k2-sql-fixes.ts"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "supabase/migrations/20260421820000_l05_17_badge_expiration.sql (in-migration self-test)",
+        "npm run audit:k2-sql-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K2 batch — badge_awards.valid_until timestamptz NULL (NULL = permanent,\npreserves legacy behavior). CHECK ensures valid_until is strictly after\nunlocked_at_ms when set. New view active_badge_awards filters expired.\nPartial index idx_badge_awards_active speeds the dominant read path.\nAnnual/seasonal badges set valid_until to season end.\n"
     },
     {
       "id": "L05-18",
@@ -4496,28 +4662,32 @@
       "lens": 6,
       "title": "Não há SLO documentado",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-23T00:00:00.000Z",
+      "closed_at": "2026-04-23T00:00:00.000Z",
       "tags": [
-        "finance",
-        "reliability"
+        "sre",
+        "slo",
+        "duplicate"
       ],
       "files": [
-        "docs/SLO.md"
+        "docs/observability/SLO.md",
+        "observability/slo.yaml"
       ],
       "correction_type": "process",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "sre",
+      "runbook": "docs/observability/SLO.md",
       "effort_points": 2,
       "blocked_by": [],
-      "duplicate_of": null,
+      "duplicate_of": "L20-02",
       "deferred_to_wave": null,
-      "note": null
+      "note": "Coberto por L20-02. SLO canônico vive em\n`observability/slo.yaml` (OpenSLO 1.0) com manual operacional\nem `docs/observability/SLO.md` listando SLI/SLO por endpoint\ncrítico (custody/withdraw, swap, coaching/digest, etc.). L20-13\nagora liga isto à error budget policy. Nenhum trabalho\nadicional necessário neste finding — fechado como duplicate\npara manter contagem honesta.\n"
     },
     {
       "id": "L06-11",
@@ -4525,27 +4695,35 @@
       "lens": 6,
       "title": "Secret rotation sem playbook",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-23T00:00:00.000Z",
+      "closed_at": "2026-04-23T00:00:00.000Z",
       "tags": [
-        "webhook"
+        "security",
+        "secrets",
+        "runbook",
+        "process"
       ],
       "files": [
-        "docs/SECRET_ROTATION_RUNBOOK.md"
+        "docs/runbooks/SECRET_ROTATION_RUNBOOK.md",
+        "tools/audit/check-secret-rotation.ts"
       ],
       "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "test_required": true,
+      "tests": [
+        "tools/audit/check-secret-rotation.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "platform",
+      "runbook": "docs/runbooks/SECRET_ROTATION_RUNBOOK.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Runbook `docs/runbooks/SECRET_ROTATION_RUNBOOK.md` v1.0\ninventaria todos os 10 secrets críticos (SUPABASE_*, STRIPE_*,\nMP_*, ASAAS_*, STRAVA_*, TRAININGPEAKS_*, SENTRY_*, VERCEL_*,\nJWT_*) com cadência (90d default, 180d para service_role,\n365d para OAuth/SDK), procedimento universal em 5 passos com\nslot `_NEXT/_PREV` para zero-downtime, playbooks específicos\npara STRIPE/MP/ASAAS, template de maintenance window para\nproviders sem dual-key. Emergency rotation 30min SLA. Cadence\nmonitor (job daily) abre P3 com 90% e P2 com 100% expirado.\nCI guard `audit:secret-rotation` (17 asserts).\n"
     },
     {
       "id": "L06-12",
@@ -5797,23 +5975,35 @@
       "lens": 9,
       "title": "Relatório anual de transparência (Marco Civil Art. 11)",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "tags": [],
-      "files": [],
+      "fixed_at": "2026-04-23T00:00:00.000Z",
+      "closed_at": "2026-04-23T00:00:00.000Z",
+      "tags": [
+        "transparency",
+        "marco-civil",
+        "lgpd",
+        "process"
+      ],
+      "files": [
+        "docs/legal/TRANSPARENCY_REPORT.md",
+        "tools/audit/check-transparency-report.ts"
+      ],
       "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "test_required": true,
+      "tests": [
+        "tools/audit/check-transparency-report.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "legal",
+      "runbook": "docs/legal/TRANSPARENCY_REPORT.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Template canônico `docs/legal/TRANSPARENCY_REPORT.md` v1.0\npublicado para cadência semestral (31/jan e 31/jul). Estrutura\nfixa cobre solicitações governamentais, direitos LGPD,\nincidentes, remoções de conteúdo, tentativas de acesso\nilegítimo. CI guard `audit:transparency-report` (13 asserts)\ngarante que a estrutura sobrevive future edits. Próxima\npublicação preenchida: 2026-07-31.\n"
     },
     {
       "id": "L09-11",
@@ -5821,26 +6011,35 @@
       "lens": 9,
       "title": "Cessão de crédito implícita em clearing_settlements — documentar",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-23T00:00:00.000Z",
+      "closed_at": "2026-04-23T00:00:00.000Z",
       "tags": [
         "finance",
-        "migration"
+        "legal",
+        "compensation",
+        "documentation"
       ],
-      "files": [],
+      "files": [
+        "docs/legal/CLEARING_NOT_CESSAO_DE_CREDITO.md",
+        "tools/audit/check-clearing-not-cession.ts"
+      ],
       "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "test_required": true,
+      "tests": [
+        "tools/audit/check-clearing-not-cession.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "finance",
+      "runbook": "docs/legal/CLEARING_NOT_CESSAO_DE_CREDITO.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Documento canônico `docs/legal/CLEARING_NOT_CESSAO_DE_CREDITO.md`\nv1.0 fixa a posição: `settle_clearing` = compensação multilateral\n(CC Art. 368), NÃO cessão de crédito (CC Art. 286). Salvaguardas:\nperímetro fechado (mesma assessoria), cap mensal R$ 100.000,\nrecibo eletrônico SHA-256, reconciliação diária, encerramento\nobrigatório antes de saída de membro. Tabela diff vs swap_orders\n(que É cessão, fechada via ADR-008). Review triggers definidos.\nCI guard `audit:clearing-not-cession` (16 asserts).\n"
     },
     {
       "id": "L09-12",
@@ -6707,28 +6906,35 @@
       "lens": 11,
       "title": "actions/checkout@v4 SHA não pinned",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-23T00:00:00.000Z",
+      "closed_at": "2026-04-23T00:00:00.000Z",
       "tags": [
-        "portal",
-        "migration"
+        "supply-chain",
+        "github-actions",
+        "ci-guard",
+        "baseline-ratchet"
       ],
       "files": [
-        ".github/workflows/portal.yml"
+        "tools/audit/check-actions-pinned.ts",
+        "tools/audit/baselines/actions-pinned-baseline.txt"
       ],
       "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "test_required": true,
+      "tests": [
+        "tools/audit/check-actions-pinned.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Em vez de pinar 57 actions agora (alta chance de regressão na\nmatriz de CI), aplicamos o padrão **baseline ratchet** já usado\nem L17-02/L18-04: CI guard `audit:actions-pinned` enumera todas\nas `uses:` linhas em `.github/workflows/*.yml` e exige SHA de\n40 chars; baseline em `tools/audit/baselines/actions-pinned-\nbaseline.txt` lista as 57 entradas legadas (quem repaga a dívida\nremove do baseline). Novas adições FALHAM CI imediatamente.\nHelper para regenerar: `BASELINE_REGEN=1 npx tsx tools/audit/\ncheck-actions-pinned.ts`. Plano de repagamento: lote por\nworkflow file, começando por `security.yml` na Onda 3.\n"
     },
     {
       "id": "L11-11",
@@ -6760,26 +6966,37 @@
       "lens": 11,
       "title": "npm ci sem --ignore-scripts",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-23T00:00:00.000Z",
+      "closed_at": "2026-04-23T00:00:00.000Z",
       "tags": [
-        "mobile",
-        "portal"
+        "supply-chain",
+        "github-actions",
+        "ci-guard"
       ],
-      "files": [],
+      "files": [
+        ".github/workflows/portal.yml",
+        ".github/workflows/supabase.yml",
+        ".github/workflows/security.yml",
+        ".github/workflows/update-snapshots.yml",
+        "tools/audit/check-npm-ignore-scripts.ts"
+      ],
       "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "test_required": true,
+      "tests": [
+        "tools/audit/check-npm-ignore-scripts.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Patched todos os 11 `npm ci` em workflows para incluir\n`--ignore-scripts`. CI guard `audit:npm-ignore-scripts` falha\nCI ao primeiro `npm ci` sem o flag. Se algum projeto realmente\nprecisar do postinstall (raro), rodar explicitamente via\n`npm run` após o `npm ci --ignore-scripts`.\n"
     },
     {
       "id": "L11-13",
@@ -7211,29 +7428,38 @@
       "lens": 12,
       "title": "cron.schedule em migration duplicada corre risco",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "mobile",
         "migration",
         "cron",
-        "reliability"
+        "reliability",
+        "fixed",
+        "baseline-ratchet"
       ],
-      "files": [],
+      "files": [
+        "tools/audit/check-cron-idempotency.ts",
+        "tools/audit/baselines/cron-idempotency-baseline.txt"
+      ],
       "correction_type": "code",
-      "test_required": false,
-      "tests": [],
+      "test_required": true,
+      "tests": [
+        "npm run audit:cron-idempotency"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K2 batch — baseline-ratchet CI guard:\ntools/audit/check-cron-idempotency.ts scans every supabase/migrations/*.sql\nfor `cron.schedule(...)` calls and asserts each one is preceded by an\nidempotency guard: either `IF NOT EXISTS (SELECT 1 FROM cron.job ...)` or\n`BEGIN PERFORM cron.unschedule(...) EXCEPTION WHEN OTHERS THEN NULL; END;`.\nExisting legacy violations (9 entries) grandfathered via baseline file;\nany NEW migration introducing an unguarded cron.schedule fails CI.\nAll migrations after 2026-04-19 already use the safe pattern\n(see e.g. 20260421840000_l03_15_expire_stale_deposits.sql).\n"
     },
     {
       "id": "L12-12",
@@ -7535,23 +7761,35 @@
       "lens": 13,
       "title": "PUBLIC_PREFIXES /challenge/, /invite/ podem colidir com /api/challenge/",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "tags": [],
-      "files": [],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "tags": [
+        "middleware",
+        "fixed",
+        "duplicate"
+      ],
+      "files": [
+        "portal/src/lib/route-policy.ts",
+        "portal/src/lib/route-policy.test.ts"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "portal/src/lib/route-policy.test.ts (L01-25/L13-08 block — REJECTS nested admin paths)",
+        "npm run audit:k3-domain-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
-      "duplicate_of": null,
+      "duplicate_of": "L01-25",
       "deferred_to_wave": null,
-      "note": null
+      "note": "K3 batch — closed by the L01-25 fix. PUBLIC_PREFIX_PATTERNS now\nties each public prefix to a full-path regex, so /challenge/123/admin\nno longer collapses into the public set. Test coverage explicitly\nasserts the rejection ('REJECTS nested admin paths like /challenge/123/admin').\n"
     },
     {
       "id": "L13-09",
@@ -7559,26 +7797,35 @@
       "lens": 13,
       "title": "Middleware redirect chain em single-membership causa duplo round-trip",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
-      "discovered_at": "2026-04-17T00:00:00.000Z",
+      "discovered_at": "2026-04-21T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "portal",
-        "ux"
+        "ux",
+        "perf",
+        "fixed"
       ],
-      "files": [],
+      "files": [
+        "portal/src/middleware.ts",
+        "tools/audit/check-k3-domain-fixes.ts"
+      ],
       "correction_type": "code",
-      "test_required": false,
-      "tests": [],
+      "test_required": true,
+      "tests": [
+        "npm run audit:k3-domain-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K3 batch — single-membership branch now sets portal_group_id and\nportal_role on the SAME response (supabaseResponse) and falls\nthrough to role-gated handling. Eliminates the 200 ms cost of the\nredirect-then-replay round-trip on first-touch. Next.js 14.2+\npropagates middleware-set cookies to downstream RSCs/route handlers\nwithin the same navigation, so the request continues to its\nintended pathname with the cookies in place.\n"
     },
     {
       "id": "L14-01",
@@ -8770,25 +9017,34 @@
       "lens": 17,
       "title": "Não há docs/adr/ ativo para decisões arquiteturais",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-23T00:00:00.000Z",
+      "closed_at": "2026-04-23T00:00:00.000Z",
       "tags": [
-        "reliability"
+        "adr",
+        "governance",
+        "documentation"
       ],
-      "files": [],
+      "files": [
+        "docs/adr/README.md",
+        "tools/audit/check-adr-governance.ts"
+      ],
       "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "test_required": true,
+      "tests": [
+        "tools/audit/check-adr-governance.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "architecture",
+      "runbook": "docs/adr/README.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "`docs/adr/` já tinha 12 ADRs mas o índice no README listava\napenas 1. Atualizado para enumerar todos os 12 (chronological)\n+ status + audit ref + naming convention (`ADR-NNNN-<slug>.md`)\n+ when-to-write/when-not-to + cross-link rules. CI guard\n`audit:adr-governance` (16 asserts) garante que cada ADR file\né listado no índice e que o naming pattern persiste.\n"
     },
     {
       "id": "L17-08",
@@ -9154,25 +9410,36 @@
       "lens": 18,
       "title": "Sem domain events em audit_log",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "finance"
+        "finance",
+        "audit",
+        "schema-evolution",
+        "fixed"
       ],
-      "files": [],
+      "files": [
+        "supabase/migrations/20260421830000_l18_09_audit_event_schema_version.sql",
+        "tools/audit/check-k2-sql-fixes.ts"
+      ],
       "correction_type": "code",
-      "test_required": false,
-      "tests": [],
+      "test_required": true,
+      "tests": [
+        "supabase/migrations/20260421830000_l18_09_audit_event_schema_version.sql (in-migration self-test)",
+        "npm run audit:k2-sql-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K2 batch — adds event_schema_version int and event_domain text columns\nto public.audit_logs and public.portal_audit_log. event_domain is\nbackfilled from split_part(action, '.', 1). NOT VALID CHECK\nasserts dotted-notation action shape (domain.resource.verb…) for\nnew rows, leaving legacy rows undisturbed (operator validates after\ncleanup). New index (event_domain, created_at DESC) speeds per-domain\nqueries. CI guard verifies presence of all three primitives.\n"
     },
     {
       "id": "L18-10",
@@ -9523,27 +9790,34 @@
       "lens": 19,
       "title": "Connection pooling não documentado",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-23T00:00:00.000Z",
+      "closed_at": "2026-04-23T00:00:00.000Z",
       "tags": [
-        "atomicity",
-        "portal",
-        "edge-function"
+        "dba",
+        "runbook",
+        "documentation"
       ],
-      "files": [],
+      "files": [
+        "docs/runbooks/CONNECTION_POOLING.md",
+        "tools/audit/check-connection-pooling.ts"
+      ],
       "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "test_required": true,
+      "tests": [
+        "tools/audit/check-connection-pooling.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "platform",
+      "runbook": "docs/runbooks/CONNECTION_POOLING.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Runbook `docs/runbooks/CONNECTION_POOLING.md` v1.0 documenta:\ntopologia (Vercel + EF → pgBouncer transaction mode → Postgres);\npool sizes por tier (Free 60 / Pro 200 / Team 400 / Enterprise\n1000); rationale para transaction mode; failure modes\n(remaining connection slots / ETIMEDOUT / burst de digest);\nobservability (`pg_stat_activity` snapshots em audit_logs).\nCI guard `audit:connection-pooling` (11 asserts).\n"
     },
     {
       "id": "L19-10",
@@ -9551,27 +9825,35 @@
       "lens": 19,
       "title": "Sem autovacuum tuning para tabelas hot",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
-      "discovered_at": "2026-04-17T00:00:00.000Z",
+      "discovered_at": "2026-04-23T00:00:00.000Z",
+      "fixed_at": "2026-04-23T00:00:00.000Z",
+      "closed_at": "2026-04-23T00:00:00.000Z",
       "tags": [
-        "finance",
-        "migration",
-        "observability"
+        "dba",
+        "performance",
+        "sql",
+        "migration"
       ],
-      "files": [],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "files": [
+        "supabase/migrations/20260421750000_l19_10_autovacuum_hot_tables.sql",
+        "tools/audit/check-autovacuum-hot-tables.ts"
+      ],
+      "correction_type": "schema",
+      "test_required": true,
+      "tests": [
+        "tools/audit/check-autovacuum-hot-tables.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "platform",
+      "runbook": "docs/runbooks/CONNECTION_POOLING.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Migration aditiva 20260421750000 aplica\n`autovacuum_vacuum_scale_factor=0.05` /\n`autovacuum_analyze_scale_factor=0.02` /\n`autovacuum_vacuum_cost_delay=10` /\n`autovacuum_vacuum_cost_limit=1000` em 6 tabelas hot:\n`coin_ledger`, `sessions`, `product_events`, `audit_logs`,\n`workout_delivery_items`, `workout_delivery_events`. Idempotente\n(skip quando tabela não existe no env). Self-test verifica que\n≥1 tabela recebeu o setting. CI guard\n`audit:autovacuum-hot-tables` (16 asserts).\n"
     },
     {
       "id": "L20-01",
@@ -9929,27 +10211,35 @@
       "lens": 20,
       "title": "Logs de produção não-searchable",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-23T00:00:00.000Z",
+      "closed_at": "2026-04-23T00:00:00.000Z",
       "tags": [
-        "finance",
+        "sre",
         "observability",
-        "reliability"
+        "runbook",
+        "compliance"
       ],
-      "files": [],
-      "correction_type": "code",
-      "test_required": false,
-      "tests": [],
+      "files": [
+        "docs/runbooks/LOGS_SEARCHABLE.md",
+        "tools/audit/check-logs-searchable.ts"
+      ],
+      "correction_type": "process",
+      "test_required": true,
+      "tests": [
+        "tools/audit/check-logs-searchable.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "sre",
+      "runbook": "docs/runbooks/LOGS_SEARCHABLE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Runbook `docs/runbooks/LOGS_SEARCHABLE.md` v1.0 define a\narquitetura: Vercel Log Drains → Axiom (30d hot) → S3 Glacier\n(1y cold). Inclui legal anchors (Marco Civil 6 meses, LGPD\nArt. 38, BCB Resolução 4658), shape obrigatório dos logs\n(request_id, user_id_hash, route, severity, category), failure\nmodes (lag, S3 PUT, PII leak), exemplos Axiom de busca. CI\nguard `audit:logs-searchable` (14 asserts).\n"
     },
     {
       "id": "L20-11",
@@ -10011,28 +10301,34 @@
       "lens": 20,
       "title": "Error budget policy ausente",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-23T00:00:00.000Z",
+      "closed_at": "2026-04-23T00:00:00.000Z",
       "tags": [
-        "rls",
-        "migration"
+        "sre",
+        "slo",
+        "policy"
       ],
       "files": [
-        "docs/ERROR_BUDGET_POLICY.md"
+        "docs/ERROR_BUDGET_POLICY.md",
+        "tools/audit/check-error-budget-policy.ts"
       ],
-      "correction_type": "docs",
-      "test_required": false,
-      "tests": [],
+      "correction_type": "process",
+      "test_required": true,
+      "tests": [
+        "tools/audit/check-error-budget-policy.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "sre",
+      "runbook": "docs/ERROR_BUDGET_POLICY.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Política `docs/ERROR_BUDGET_POLICY.md` v1.0 define 4 tiers\n(Green <50%, Yellow 50-80%, Orange 80-100%, Red >100%) com\nburn rate associado e ações: code freeze parcial em Yellow,\nhard freeze em Orange, war-room em Red. Enforcement via\nworkflow `error-budget-gate.yml` que bloqueia deploys quando\n`tier=red`. Replenishment mensal sem carry-over. Override\nmanual permitido apenas para SRE-leads em fixes de\nsegurança/compliance, registrado em\n`audit_logs.category='slo_override'`. P1=4× / P2=2× / P3=1× /\nP4=0× weights. CI guard `audit:error-budget-policy` (13 asserts).\n"
     },
     {
       "id": "L21-01",
@@ -11416,28 +11712,36 @@
       "lens": 23,
       "title": "Dashboard de overview diário para coach tem 100-500 atletas",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-23T00:00:00.000Z",
+      "closed_at": "2026-04-23T00:00:00.000Z",
       "tags": [
-        "mobile",
-        "reliability",
-        "personas",
-        "coach"
+        "coach",
+        "sql",
+        "rpc",
+        "dashboard",
+        "prioritization"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260421740000_l23_02_coach_daily_digest.sql",
+        "tools/audit/check-coach-daily-digest.ts"
+      ],
+      "correction_type": "rpc",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-coach-daily-digest.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "coach-tooling",
       "runbook": null,
       "effort_points": 5,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "RPC `public.fn_coach_daily_digest(p_group_id uuid, p_as_of date,\np_max_per_bucket int)` SECURITY DEFINER + STABLE +\nsearch_path pinned + REVOKE FROM PUBLIC + GRANT TO authenticated.\nBucketiza atletas em 4 categorias mutuamente exclusivas (ordem\nde prioridade descendente):\n\n1. **needs_attention** — qualquer um de:\n   - `inactive_3d`        — última sessão verificada > 3 dias\n   - `plan_not_followed`  — workout planned (confirmed) sem\n                            session no mesmo período de 7 dias\n   - `integrity_flag`     — última sessão com integrity_flags\n\n2. **at_risk** — qualquer um de:\n   - `declining_volume`   — distância 7d < 50% dos 7d anteriores\n   - `overtraining_spike` — distância 7d > 200% dos 7d anteriores\n\n3. **new_prs** — `best_recent_pace` (últimos 7d) bateu o\n   `baseline_best_pace` (melhor dos últimos 90 dias antes da\n   janela atual). Apenas sessões verified, ≥ 1 km e\n   `avg_pace_sec_km > 0`.\n\n4. **performing_well** — `adherence_14d_pct ≥ 80%`.\n\nCada bucket é capped em `p_max_per_bucket` (default 50, max 200)\nvia `row_number() OVER (PARTITION BY bucket ORDER BY score DESC)`.\nO score combina os 6 sinais (integrity_flag=100, plan_not_followed=60,\ninactive_3d=40, overtraining_spike=30, declining_volume=20, new_pr=10)\npara que o coach veja primeiro o que mais merece atenção dentro\nde cada bucket — relevante quando uma assessoria tem 200+ atletas\ninativos e o coach só consegue contatar 50/dia.\n\nOutput JSONB envelope:\n\n```json\n{\n  \"group_id\": \"...\",\n  \"as_of\":    \"2026-04-23\",\n  \"generated_at\": \"...\",\n  \"window\": { \"now_lo\", \"now_hi\", \"prev_lo\", \"prev_hi\" },\n  \"counts\": { \"total_athletes\", \"needs_attention\", \"at_risk\",\n              \"new_prs\", \"performing_well\", \"neutral\" },\n  \"needs_attention\": [ { athlete_user_id, display_name, bucket,\n                        score, signals[], adherence_14d_pct,\n                        last_session_at, ... } ],\n  \"at_risk\":         [...],\n  \"new_prs\":         [...],\n  \"performing_well\": [...]\n}\n```\n\nGates:\n- P0001 INVALID_INPUT: `p_group_id` NULL, `p_max_per_bucket`\n  fora de [1,200] ou `p_as_of` NULL.\n- P0002 GROUP_NOT_FOUND: grupo inexistente.\n- P0010 UNAUTHORIZED: caller não é\n  `admin_master`/`coach`/`assistant` do grupo.\n\nOmniCoin: `STABLE`, zero writes — nunca toca `coin_ledger` /\n`wallets` (L04-07-OK). Comentário explícito.\n\nCI guard `audit:coach-daily-digest` (~60 asserts) valida shape\ndo contrato: signature, security definer, STABLE, search_path,\ngrants, time windows, signal definitions, bucket priority, score\nweights, capping, envelope JSONB e self-test runtime.\n\nUX no portal: rota nova `GET /api/coaching/[groupId]/daily-digest`\n(presenter follow-up, não bloqueador) chama o RPC e renderiza 4\ncolunas, cada uma com link para o athlete profile. Coach com 500\natletas passa de 3h/dia em listagem alfabética para minutos\ntriando os 50 mais críticos por bucket.\n"
     },
     {
       "id": "L23-03",

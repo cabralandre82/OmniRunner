@@ -4,23 +4,33 @@ audit_ref: "13.8"
 lens: 13
 title: "PUBLIC_PREFIXES /challenge/, /invite/ podem colidir com /api/challenge/"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: []
-files: []
-correction_type: process
-test_required: false
-tests: []
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["middleware", "fixed", "duplicate"]
+files:
+  - portal/src/lib/route-policy.ts
+  - portal/src/lib/route-policy.test.ts
+correction_type: code
+test_required: true
+tests:
+  - "portal/src/lib/route-policy.test.ts (L01-25/L13-08 block — REJECTS nested admin paths)"
+  - "npm run audit:k3-domain-fixes"
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform
 runbook: null
 effort_points: 2
 blocked_by: []
-duplicate_of: null
+duplicate_of: L01-25
 deferred_to_wave: null
-note: null
+note: |
+  K3 batch — closed by the L01-25 fix. PUBLIC_PREFIX_PATTERNS now
+  ties each public prefix to a full-path regex, so /challenge/123/admin
+  no longer collapses into the public set. Test coverage explicitly
+  asserts the rejection ('REJECTS nested admin paths like /challenge/123/admin').
 ---
 # [L13-08] PUBLIC_PREFIXES /challenge/, /invite/ podem colidir com /api/challenge/
 > **Lente:** 13 — Middleware · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

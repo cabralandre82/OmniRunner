@@ -4,24 +4,37 @@ audit_ref: "1.25"
 lens: 1
 title: "Middleware — PUBLIC_PREFIXES.some(p => pathname.startsWith(p))"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["finance", "mobile", "portal", "testing"]
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["finance", "mobile", "portal", "testing", "fixed"]
 files:
-  - portal/src/middleware.ts
-correction_type: process
-test_required: false
-tests: []
+  - portal/src/lib/route-policy.ts
+  - portal/src/lib/route-policy.test.ts
+  - tools/audit/check-k3-domain-fixes.ts
+correction_type: code
+test_required: true
+tests:
+  - "portal/src/lib/route-policy.test.ts (L01-25/L13-08 segment-shape regression block)"
+  - "npm run audit:k3-domain-fixes"
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform
 runbook: null
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  K3 batch — segment-shape contract for public deep-link prefixes.
+  PUBLIC_PREFIX_PATTERNS pairs each public prefix with a regex that
+  matches the FULL pathname, refusing nested segments. isPublicRoute
+  short-circuits via the explicit pattern table; /api/cron/ keeps its
+  bare prefix check (caller is gated by CRON_SECRET, L02-10). 38
+  vitest cases cover canonical shapes, nested-admin attempts, charset
+  injection, and the cron carve-out. Closes L13-08 by the same fix.
 ---
 # [L01-25] Middleware — PUBLIC_PREFIXES.some(p => pathname.startsWith(p))
 > **Lente:** 1 — CISO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

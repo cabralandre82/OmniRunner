@@ -4,25 +4,41 @@ audit_ref: "1.50"
 lens: 1
 title: "getSwapOrdersForGroup — Query string interpolation"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["finance", "atomicity", "security-headers", "integration", "mobile", "portal"]
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["finance", "atomicity", "security-headers", "integration", "mobile", "portal", "fixed"]
 files:
   - portal/src/lib/swap.ts
   - portal/src/lib/clearing.ts
-correction_type: process
-test_required: false
-tests: []
+  - portal/src/lib/security/uuid-guard.ts
+  - portal/src/lib/security/uuid-guard.test.ts
+  - tools/audit/check-k3-domain-fixes.ts
+correction_type: code
+test_required: true
+tests:
+  - "portal/src/lib/security/uuid-guard.test.ts (10 vitest cases)"
+  - "npm run audit:k3-domain-fixes"
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform
 runbook: null
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  K3 batch — pure-domain UUID guard:
+    • new portal/src/lib/security/uuid-guard.ts (no I/O):
+        isUuid · assertUuid · buildOrEqExpression(colA, colB, uuid, label)
+      validates strict v1-5 UUID and refuses unsafe column identifiers.
+    • swap.ts:getSwapOrdersForGroup and clearing.ts:getSettlementsForGroup
+      now compose .or() filters via buildOrEqExpression — any non-uuid
+      groupId throws InvalidUuidError before reaching PostgREST.
+    • 10 vitest cases cover injection-style payloads (commas, parens,
+      semicolons) and non-string inputs.
 ---
 # [L01-50] getSwapOrdersForGroup — Query string interpolation
 > **Lente:** 1 — CISO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

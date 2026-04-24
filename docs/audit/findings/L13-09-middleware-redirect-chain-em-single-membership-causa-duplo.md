@@ -4,23 +4,35 @@ audit_ref: "13.9"
 lens: 13
 title: "Middleware redirect chain em single-membership causa duplo round-trip"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
-discovered_at: 2026-04-17
-tags: ["portal", "ux"]
-files: []
+discovered_at: 2026-04-21
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["portal", "ux", "perf", "fixed"]
+files:
+  - portal/src/middleware.ts
+  - tools/audit/check-k3-domain-fixes.ts
 correction_type: code
-test_required: false
-tests: []
+test_required: true
+tests:
+  - "npm run audit:k3-domain-fixes"
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform
 runbook: null
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  K3 batch — single-membership branch now sets portal_group_id and
+  portal_role on the SAME response (supabaseResponse) and falls
+  through to role-gated handling. Eliminates the 200 ms cost of the
+  redirect-then-replay round-trip on first-touch. Next.js 14.2+
+  propagates middleware-set cookies to downstream RSCs/route handlers
+  within the same navigation, so the request continues to its
+  intended pathname with the cookies in place.
 ---
 # [L13-09] Middleware redirect chain em single-membership causa duplo round-trip
 > **Lente:** 13 — Middleware · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

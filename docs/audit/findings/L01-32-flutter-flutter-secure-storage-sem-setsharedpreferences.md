@@ -4,23 +4,36 @@ audit_ref: "1.32"
 lens: 1
 title: "Flutter — flutter_secure_storage sem setSharedPreferences"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["mobile", "a11y", "reliability"]
-files: []
-correction_type: process
-test_required: false
-tests: []
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["mobile", "a11y", "reliability", "secure-storage", "fixed"]
+files:
+  - omni_runner/lib/core/secure_storage/db_secure_store.dart
+  - tools/audit/check-k3-domain-fixes.ts
+correction_type: code
+test_required: true
+tests:
+  - "npm run audit:k3-domain-fixes"
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: mobile
 runbook: null
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  K3 batch — DbSecureStore now defaults to a hardened storage
+  configuration:
+    AndroidOptions(encryptedSharedPreferences: true)
+    IOSOptions(accessibility: KeychainAccessibility.first_unlock_this_device)
+  No more silent fallback to SharedPreferences plain on Android; on
+  iOS the key is excluded from iCloud Keychain backups while staying
+  available after first unlock. Tests still inject a fake storage
+  via the constructor parameter for unit testing.
 ---
 # [L01-32] Flutter — flutter_secure_storage sem setSharedPreferences
 > **Lente:** 1 — CISO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

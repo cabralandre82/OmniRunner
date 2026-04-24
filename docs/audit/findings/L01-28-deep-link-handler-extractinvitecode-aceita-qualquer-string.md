@@ -4,24 +4,35 @@ audit_ref: "1.28"
 lens: 1
 title: "Deep link handler — extractInviteCode aceita qualquer string"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["rate-limit", "mobile", "ux", "seo"]
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["rate-limit", "mobile", "ux", "seo", "fixed"]
 files:
   - omni_runner/lib/core/deep_links/deep_link_handler.dart
-correction_type: process
-test_required: false
-tests: []
+  - omni_runner/test/core/deep_links/deep_link_handler_test.dart
+  - tools/audit/check-k3-domain-fixes.ts
+correction_type: code
+test_required: true
+tests:
+  - "omni_runner/test/core/deep_links/deep_link_handler_test.dart (4 new L01-28 cases)"
+  - "npm run audit:k3-domain-fixes"
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: mobile
 runbook: null
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  K3 batch — DeepLinkHandler.extractInviteCode now validates with
+  RegExp(r'^[A-Z0-9_-]{6,16}$') for both URL-extracted and raw inputs.
+  Random QR text ('BUY BITCOIN'), lowercase strings, too-short and
+  too-long codes are now rejected client-side; the backend is no
+  longer hit with doomed lookups (rate-limit + UX win).
 ---
 # [L01-28] Deep link handler — extractInviteCode aceita qualquer string
 > **Lente:** 1 — CISO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

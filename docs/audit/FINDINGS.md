@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-23 23:25:39 UTC.
+> Atualizado em 2026-04-24 00:20:32 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -33,15 +33,15 @@ Total: **348** findings.
 | ⚪ na | ⏳ fix-pending | [L01-22](./findings/L01-22-get-terms-get-privacy-outras-rotas-publicas.md) | 3 | L01 · CISO | GET /terms, GET /privacy, outras rotas públicas | unassigned |
 | ⚪ na | ⏳ fix-pending | [L01-23](./findings/L01-23-challenge-id-rota-publica.md) | 3 | L01 · CISO | /challenge/[id] — Rota pública | unassigned |
 | ⚪ na | ⏳ fix-pending | [L01-24](./findings/L01-24-invite-code-rota-publica-de-aceite-de-convite.md) | 3 | L01 · CISO | /invite/[code] — Rota pública de aceite de convite | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L01-25](./findings/L01-25-middleware-public-prefixes-some-p-pathname-startswith-p.md) | 2 | L01 · CISO | Middleware — PUBLIC_PREFIXES.some(p => pathname.startsWith(p)) | unassigned |
+| 🟡 medium | ✅ fixed | [L01-25](./findings/L01-25-middleware-public-prefixes-some-p-pathname-startswith-p.md) | 2 | L01 · CISO | Middleware — PUBLIC_PREFIXES.some(p => pathname.startsWith(p)) | platform |
 | 🟡 medium | ⏳ fix-pending | [L01-26](./findings/L01-26-middleware-platform-role-check-sem-cache.md) | 2 | L01 · CISO | Middleware — platform role check sem cache | unassigned |
 | 🟢 safe | ✅ fixed | [L01-27](./findings/L01-27-requireadminmaster-em-rotas-de-custody-service-client-sem.md) | 3 | L01 · CISO | requireAdminMaster em rotas de custody — Service client sem RLS | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L01-28](./findings/L01-28-deep-link-handler-extractinvitecode-aceita-qualquer-string.md) | 2 | L01 · CISO | Deep link handler — extractInviteCode aceita qualquer string | unassigned |
+| 🟡 medium | ✅ fixed | [L01-28](./findings/L01-28-deep-link-handler-extractinvitecode-aceita-qualquer-string.md) | 2 | L01 · CISO | Deep link handler — extractInviteCode aceita qualquer string | mobile |
 | 🟠 high | ✅ fixed | [L01-29](./findings/L01-29-deep-link-strava-callback-sem-state-csrf.md) | 1 | L01 · CISO | Deep link — Strava callback sem state/CSRF | app-team |
 | 🟠 high | ✅ fixed | [L01-30](./findings/L01-30-android-falta-de-proguard-r8.md) | 1 | L01 · CISO | Android — Falta de ProGuard/R8 | app-team |
 | 🟠 high | ✅ fixed | [L01-31](./findings/L01-31-android-release-assina-com-debug-key-se-key.md) | 1 | L01 · CISO | Android — Release assina com debug key se key.properties não existir | app-team |
-| 🟡 medium | ⏳ fix-pending | [L01-32](./findings/L01-32-flutter-flutter-secure-storage-sem-setsharedpreferences.md) | 2 | L01 · CISO | Flutter — flutter_secure_storage sem setSharedPreferences | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L01-33](./findings/L01-33-flutter-db-key-storage-fallback-ausente.md) | 2 | L01 · CISO | Flutter — DB key storage fallback ausente | unassigned |
+| 🟡 medium | ✅ fixed | [L01-32](./findings/L01-32-flutter-flutter-secure-storage-sem-setsharedpreferences.md) | 2 | L01 · CISO | Flutter — flutter_secure_storage sem setSharedPreferences | mobile |
+| 🟡 medium | ✅ fixed | [L01-33](./findings/L01-33-flutter-db-key-storage-fallback-ausente.md) | 2 | L01 · CISO | Flutter — DB key storage fallback ausente | mobile |
 | 🟢 safe | ✅ fixed | [L01-34](./findings/L01-34-flutter-getorcreatekey-sha-256-ofuscacao-e-redundante.md) | 3 | L01 · CISO | Flutter — getOrCreateKey SHA-256 ofuscação é redundante | unassigned |
 | 🟢 safe | ✅ fixed | [L01-35](./findings/L01-35-supabase-functions-delete-account-admin-master-nao-pode.md) | 3 | L01 · CISO | supabase/functions/delete-account — Admin master não pode se auto-deletar | unassigned |
 | 🟠 high | ✅ fixed | [L01-36](./findings/L01-36-delete-account-fn-delete-user-data-nao-aborta.md) | 1 | L01 · CISO | delete-account — fn_delete_user_data não-aborta no erro | platform |
@@ -50,18 +50,18 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L01-39](./findings/L01-39-csp-style-src-unsafe-inline.md) | 2 | L01 · CISO | CSP — style-src 'unsafe-inline' | unassigned |
 | 🟢 safe | ✅ fixed | [L01-40](./findings/L01-40-google-services-google-services-json-commitado.md) | 3 | L01 · CISO | Google services — google-services.json commitado | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L01-41](./findings/L01-41-coin-ledger-sem-assinatura-criptografica.md) | 2 | L01 · CISO | coin_ledger — Sem assinatura criptográfica | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L01-42](./findings/L01-42-platform-fee-config-rls-for-select-using-true.md) | 2 | L01 · CISO | platform_fee_config — RLS FOR SELECT USING (true) | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L01-43](./findings/L01-43-custody-accounts-rls-role-professor-nunca-corresponde.md) | 2 | L01 · CISO | custody_accounts RLS — role 'professor' nunca corresponde | unassigned |
+| 🟡 medium | ✅ fixed | [L01-42](./findings/L01-42-platform-fee-config-rls-for-select-using-true.md) | 2 | L01 · CISO | platform_fee_config — RLS FOR SELECT USING (true) | platform |
+| 🟡 medium | ✅ fixed | [L01-43](./findings/L01-43-custody-accounts-rls-role-professor-nunca-corresponde.md) | 2 | L01 · CISO | custody_accounts RLS — role 'professor' nunca corresponde | platform |
 | 🔴 critical | ✅ fixed | [L01-44](./findings/L01-44-migration-drift-platform-fee-config-fee-type-check.md) | 0 | L01 · CISO | Migration drift — platform_fee_config.fee_type CHECK + INSERT 'fx_spread' | unassigned |
 | 🟠 high | ✅ fixed | [L01-45](./findings/L01-45-fee-type-fx-spread-ausente-do-endpoint-admin.md) | 1 | L01 · CISO | fee_type — 'fx_spread' ausente do endpoint admin | backend-platform |
 | 🟢 safe | ✅ fixed | [L01-46](./findings/L01-46-execute-swap-locks-for-update-com-ordering.md) | 3 | L01 · CISO | execute_swap — Locks FOR UPDATE com ordering | unassigned |
 | ⚪ na | ⏳ fix-pending | [L01-47](./findings/L01-47-executewithdrawal-execute-withdrawal-rpc-sem-codigo-mostrado.md) | 3 | L01 · CISO | executeWithdrawal — execute_withdrawal RPC sem código mostrado | unassigned |
 | 🟢 safe | ✅ fixed | [L01-48](./findings/L01-48-aggregateclearingwindow-aggregation-only.md) | 3 | L01 · CISO | aggregateClearingWindow — Aggregation only | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L01-49](./findings/L01-49-processburnforclearing-audit-actor-id-system.md) | 2 | L01 · CISO | processBurnForClearing — Audit actor_id = "system" | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L01-50](./findings/L01-50-getswapordersforgroup-query-string-interpolation.md) | 2 | L01 · CISO | getSwapOrdersForGroup — Query string interpolation | unassigned |
+| 🟡 medium | ✅ fixed | [L01-49](./findings/L01-49-processburnforclearing-audit-actor-id-system.md) | 2 | L01 · CISO | processBurnForClearing — Audit actor_id = "system" | platform |
+| 🟡 medium | ✅ fixed | [L01-50](./findings/L01-50-getswapordersforgroup-query-string-interpolation.md) | 2 | L01 · CISO | getSwapOrdersForGroup — Query string interpolation | platform |
 | 🔴 critical | ✅ fixed | [L02-01](./findings/L02-01-distribute-coins-orquestracao-nao-atomica-entre-4-rpcs.md) | 0 | L02 · CTO | distribute-coins — Orquestração não-atômica entre 4 RPCs (partial-failure silencioso) | unassigned |
 | 🔴 critical | ✅ fixed | [L02-02](./findings/L02-02-execute-burn-atomic-excecoes-engolidas-em-custody-release.md) | 0 | L02 · CTO | execute_burn_atomic — Exceções engolidas em custody_release_committed e settle_clearing | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L02-03](./findings/L02-03-execute-burn-atomic-function-language-plpgsql-sem-security.md) | 2 | L02 · CTO | execute_burn_atomic — Function LANGUAGE plpgsql sem SECURITY DEFINER vs. chamadas a funções SECURITY DEFINER | unassigned |
+| 🟡 medium | ✅ fixed | [L02-03](./findings/L02-03-execute-burn-atomic-function-language-plpgsql-sem-security.md) | 2 | L02 · CTO | execute_burn_atomic — Function LANGUAGE plpgsql sem SECURITY DEFINER vs. chamadas a funções SECURITY DEFINER | platform |
 | 🟢 safe | ✅ fixed | [L02-04](./findings/L02-04-confirm-custody-deposit-for-update-upsert.md) | 3 | L02 · CTO | confirm_custody_deposit — FOR UPDATE + UPSERT | unassigned |
 | 🟢 safe | ✅ fixed | [L02-05](./findings/L02-05-execute-swap-deadlock-prevention-via-uuid-ordering.md) | 3 | L02 · CTO | execute_swap — Deadlock prevention via UUID ordering | unassigned |
 | 🟠 high | ✅ fixed | [L02-06](./findings/L02-06-execute-withdrawal-estado-processing-sem-transicao-final.md) | 1 | L02 · CTO | execute_withdrawal — Estado 'processing' sem transição final | backend |
@@ -70,7 +70,7 @@ Total: **348** findings.
 | 🔴 critical | ✅ fixed | [L02-09](./findings/L02-09-migration-drift-check-platform-fee-config-fee-type.md) | 1 | L02 · CTO | Migration drift — CHECK platform_fee_config.fee_type (duplica 1.44) | platform |
 | 🟠 high | ✅ fixed | [L02-10](./findings/L02-10-cold-start-timeout-vercel-em-operacoes-longas.md) | 1 | L02 · CTO | Cold start + timeout Vercel em operações longas | platform |
 | 🟡 medium | ⏳ fix-pending | [L02-11](./findings/L02-11-pool-de-conexoes-createserviceclient-per-request.md) | 2 | L02 · CTO | Pool de conexões createServiceClient per-request | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L02-12](./findings/L02-12-zod-v4-upgrade-uuid-strict-validation.md) | 2 | L02 · CTO | Zod v4 upgrade — UUID strict validation | unassigned |
+| 🟡 medium | ✅ fixed | [L02-12](./findings/L02-12-zod-v4-upgrade-uuid-strict-validation.md) | 2 | L02 · CTO | Zod v4 upgrade — UUID strict validation | platform |
 | ⚪ na | ⏳ fix-pending | [L02-13](./findings/L02-13-api-inngest-nao-existe-no-codigo.md) | 3 | L02 · CTO | /api/inngest — Não existe no código | unassigned |
 | ⚪ na | ⏳ fix-pending | [L02-14](./findings/L02-14-pg-cron-jobs-lock-contention.md) | 3 | L02 · CTO | pg_cron jobs — Lock contention | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L02-15](./findings/L02-15-getredis-module-level-cache-vs-runtime-config.md) | 2 | L02 · CTO | getRedis() — Module-level cache vs runtime config | unassigned |
@@ -79,16 +79,16 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L03-03](./findings/L03-03-execute-withdrawal-total-deposited-usd-amount-usd-nao.md) | 1 | L03 · CFO | execute_withdrawal — total_deposited_usd -= amount_usd não contabiliza fee do provider | cfo |
 | 🟢 safe | ✅ fixed | [L03-04](./findings/L03-04-1-coin-us-1-00-peg-enforcement.md) | 3 | L03 · CFO | 1 Coin = US$ 1.00 (peg enforcement) | unassigned |
 | 🟢 safe | ✅ fixed | [L03-05](./findings/L03-05-gateway-fee-na-emissao-chk-gross-fee-net.md) | 3 | L03 · CFO | Gateway fee na emissão — chk_gross_fee_net | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L03-06](./findings/L03-06-fx-spread-calculo-simetrico-entrada-saida.md) | 2 | L03 · CFO | FX spread — Cálculo simétrico entrada/saída | unassigned |
+| 🟡 medium | ✅ fixed | [L03-06](./findings/L03-06-fx-spread-calculo-simetrico-entrada-saida.md) | 2 | L03 · CFO | FX spread — Cálculo simétrico entrada/saída | finance |
 | ⚪ na | ⏳ fix-pending | [L03-07](./findings/L03-07-cupom-100-pedido-de-0-00.md) | 3 | L03 · CFO | Cupom 100% / pedido de $0.00 | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L03-08](./findings/L03-08-custody-check-custody-invariants-valida-r-i-vs.md) | 2 | L03 · CFO | Custody check_custody_invariants — Valida R_i vs M_i mas não total_settled | unassigned |
+| 🟡 medium | ✅ fixed | [L03-08](./findings/L03-08-custody-check-custody-invariants-valida-r-i-vs.md) | 2 | L03 · CFO | Custody check_custody_invariants — Valida R_i vs M_i mas não total_settled | platform |
 | 🟠 high | ✅ fixed | [L03-09](./findings/L03-09-platform-revenue-fee-type-check.md) | 1 | L03 · CFO | platform_revenue.fee_type CHECK | cfo |
 | 🟡 medium | ⏳ fix-pending | [L03-10](./findings/L03-10-custody-commit-coins-reserva-antes-de-credito-ao.md) | 2 | L03 · CFO | custody_commit_coins — Reserva ANTES de crédito ao atleta | unassigned |
 | ⚪ na | ⏳ fix-pending | [L03-11](./findings/L03-11-pedido-de-r-0-via-cupom-100-duplica.md) | 3 | L03 · CFO | Pedido de R$ 0 via cupom 100% (duplica 3.7) | unassigned |
 | 🟢 safe | ✅ fixed | [L03-12](./findings/L03-12-clearing-settlements-fees-concedidas-nulas.md) | 3 | L03 · CFO | clearing_settlements — Fees concedidas nulas | unassigned |
 | 🔴 critical | ✅ fixed | [L03-13](./findings/L03-13-reembolso-estorno-nao-ha-funcao-reverse-burn-ou.md) | 1 | L03 · CFO | Reembolso / Estorno — Não há função reverse_burn ou refund_deposit | platform-finance |
 | ⚪ na | ⏳ fix-pending | [L03-14](./findings/L03-14-cancelamento-apos-payment-confirmed.md) | 3 | L03 · CFO | Cancelamento após PAYMENT_CONFIRMED | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L03-15](./findings/L03-15-pedido-eternamente-pendente.md) | 2 | L03 · CFO | Pedido eternamente pendente | unassigned |
+| 🟡 medium | ✅ fixed | [L03-15](./findings/L03-15-pedido-eternamente-pendente.md) | 2 | L03 · CFO | Pedido eternamente pendente | platform |
 | 🟡 medium | ⏳ fix-pending | [L03-16](./findings/L03-16-consistencia-entrada-saida-de-fx.md) | 2 | L03 · CFO | Consistência entrada–saída de FX | unassigned |
 | 🟠 high | ✅ fixed | [L03-17](./findings/L03-17-arredondamento-ieee-754-em-typescript.md) | 1 | L03 · CFO | Arredondamento IEEE 754 em TypeScript | portal-team |
 | 🟢 safe | ✅ fixed | [L03-18](./findings/L03-18-coin-ledger-delta-coins-tipo-integer.md) | 3 | L03 · CFO | coin_ledger.delta_coins — Tipo integer | unassigned |
@@ -104,7 +104,7 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L04-08](./findings/L04-08-backups-supabase-sem-politica-de-retencao-documentada.md) | 1 | L04 · CLO | Backups Supabase — sem política de retenção documentada | platform |
 | 🟠 high | ✅ fixed | [L04-09](./findings/L04-09-terceiros-strava-trainingpeaks-nao-ha-processo-de-revogacao.md) | 1 | L04 · CLO | Terceiros (Strava, TrainingPeaks) — não há processo de revogação | platform |
 | 🟠 high | ✅ fixed | [L04-10](./findings/L04-10-transferencia-internacional-de-dados-supabase-us-sentry-us.md) | 1 | L04 · CLO | Transferência internacional de dados (Supabase US, Sentry US) sem cláusulas | platform |
-| 🟡 medium | ⏳ fix-pending | [L04-11](./findings/L04-11-nao-ha-dpo-nomeado-canal-de-titular-publicado.md) | 2 | L04 · CLO | Não há DPO nomeado / canal de titular publicado | unassigned |
+| 🟡 medium | ✅ fixed | [L04-11](./findings/L04-11-nao-ha-dpo-nomeado-canal-de-titular-publicado.md) | 2 | L04 · CLO | Não há DPO nomeado / canal de titular publicado | legal |
 | 🟡 medium | ⏳ fix-pending | [L04-12](./findings/L04-12-portal-admin-expoe-dados-sensiveis-sem-masking.md) | 2 | L04 · CLO | Portal admin expõe dados sensíveis sem masking | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L04-13](./findings/L04-13-logs-estruturados-enviam-user-id-e-podem-enviar.md) | 2 | L04 · CLO | Logs estruturados enviam user_id e podem enviar ip_address ao Sentry | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L04-14](./findings/L04-14-ausencia-de-verificacao-de-idade-coppa-eca.md) | 2 | L04 · CLO | Ausência de verificação de idade (COPPA/ECA) | unassigned |
@@ -118,14 +118,14 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L05-07](./findings/L05-07-swap-amount-minimo-us-100-inviabiliza-grupos-pequenos.md) | 1 | L05 · CPO | Swap: amount mínimo US$ 100 inviabiliza grupos pequenos | cpo+frontend |
 | 🟠 high | ✅ fixed | [L05-08](./findings/L05-08-withdraw-nenhuma-tela-de-progresso-para-pending-processing.md) | 1 | L05 · CPO | Withdraw: nenhuma tela de progresso para pending→processing→completed | unassigned |
 | 🟠 high | ✅ fixed | [L05-09](./findings/L05-09-deposit-custody-deposits-sem-cap-diario-antifraude.md) | 1 | L05 · CPO | Deposit custody_deposits — sem cap diário antifraude | cfo+ciso |
-| 🟡 medium | ⏳ fix-pending | [L05-10](./findings/L05-10-swap-offers-visivel-para-todos-os-grupos-sem.md) | 2 | L05 · CPO | Swap offers: visível para todos os grupos, sem filtro de contraparte | unassigned |
+| 🟡 medium | ✅ fixed | [L05-10](./findings/L05-10-swap-offers-visivel-para-todos-os-grupos-sem.md) | 2 | L05 · CPO | Swap offers: visível para todos os grupos, sem filtro de contraparte | platform |
 | 🟡 medium | ⏳ fix-pending | [L05-11](./findings/L05-11-ui-distribute-coins-sem-confirmacao-dupla-de-grandes.md) | 2 | L05 · CPO | UI distribute-coins: sem confirmação dupla de grandes valores | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L05-12](./findings/L05-12-challenges-sem-regras-de-tie-break.md) | 2 | L05 · CPO | Challenges sem regras de tie-break | unassigned |
+| 🟡 medium | ✅ fixed | [L05-12](./findings/L05-12-challenges-sem-regras-de-tie-break.md) | 2 | L05 · CPO | Challenges sem regras de tie-break | product |
 | 🟡 medium | ⏳ fix-pending | [L05-13](./findings/L05-13-mobile-corrida-sem-gps-salvo-como-0-km.md) | 2 | L05 · CPO | Mobile: corrida sem GPS salvo como 0 km não invalidada | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L05-14](./findings/L05-14-feed-social-sem-report-moderacao.md) | 2 | L05 · CPO | Feed social: sem "report" / moderação | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L05-15](./findings/L05-15-mobile-logout-nao-revoga-tokens-strava-trainingpeaks.md) | 2 | L05 · CPO | Mobile: logout não revoga tokens Strava/TrainingPeaks | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L05-16](./findings/L05-16-workout-delivery-sem-reagendamento-do-atleta.md) | 2 | L05 · CPO | Workout delivery: sem reagendamento do atleta | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L05-17](./findings/L05-17-gamificacao-badges-permanentes-sem-prazo.md) | 2 | L05 · CPO | Gamificação: badges permanentes sem prazo | unassigned |
+| 🟡 medium | ✅ fixed | [L05-16](./findings/L05-16-workout-delivery-sem-reagendamento-do-atleta.md) | 2 | L05 · CPO | Workout delivery: sem reagendamento do atleta | platform |
+| 🟡 medium | ✅ fixed | [L05-17](./findings/L05-17-gamificacao-badges-permanentes-sem-prazo.md) | 2 | L05 · CPO | Gamificação: badges permanentes sem prazo | platform |
 | 🟡 medium | ⏳ fix-pending | [L05-18](./findings/L05-18-moeda-fica-em-wallet-do-atleta-que-saiu.md) | 2 | L05 · CPO | Moeda fica em wallet do atleta que saiu do grupo | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L05-19](./findings/L05-19-offline-first-flutter-sessoes-ficam-em-drift-ate.md) | 2 | L05 · CPO | Offline-first Flutter: sessões ficam em drift até sincronizar | unassigned |
 | 🟢 safe | ✅ fixed | [L05-20](./findings/L05-20-delete-account-bloqueia-admin-master-boa-pratica.md) | 3 | L05 · CPO | delete-account bloqueia admin_master (boa prática) | unassigned |
@@ -138,8 +138,8 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L06-07](./findings/L06-07-global-error-do-next-js-nao-reporta-a.md) | 1 | L06 · COO | Global error do Next.js não reporta a Sentry | portal-platform |
 | 🟠 high | ✅ fixed | [L06-08](./findings/L06-08-delete-account-executa-deleteuser-sem-audit-log.md) | 1 | L06 · COO | delete-account executa deleteUser sem audit_log | platform |
 | 🟡 medium | ⏳ fix-pending | [L06-09](./findings/L06-09-metricas-portal-src-lib-metrics-ts-so-geram.md) | 2 | L06 · COO | Métricas (portal/src/lib/metrics.ts) só geram log JSON, sem exporter real | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L06-10](./findings/L06-10-nao-ha-slo-documentado.md) | 2 | L06 · COO | Não há SLO documentado | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L06-11](./findings/L06-11-secret-rotation-sem-playbook.md) | 2 | L06 · COO | Secret rotation sem playbook | unassigned |
+| 🟡 medium | ✅ fixed | [L06-10](./findings/L06-10-nao-ha-slo-documentado.md) | 2 | L06 · COO | Não há SLO documentado | sre |
+| 🟡 medium | ✅ fixed | [L06-11](./findings/L06-11-secret-rotation-sem-playbook.md) | 2 | L06 · COO | Secret rotation sem playbook | platform |
 | 🟡 medium | ⏳ fix-pending | [L06-12](./findings/L06-12-api-liveness-trivial-mas-api-readiness-inexistente.md) | 2 | L06 · COO | /api/liveness trivial mas /api/readiness inexistente | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L06-13](./findings/L06-13-logs-estruturados-sem-request-id-propagado-do-portal.md) | 2 | L06 · COO | Logs estruturados sem request_id propagado do portal | unassigned |
 | 🔴 critical | ✅ fixed | [L07-01](./findings/L07-01-mensagens-de-erro-em-portugues-hardcoded-no-backend.md) | 1 | L07 · CXO | Mensagens de erro em português hardcoded no backend | portal-platform |
@@ -176,8 +176,8 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L09-07](./findings/L09-07-politica-de-reembolso-chargeback-sem-prazo-sla.md) | 1 | L09 · CRO | Política de reembolso/chargeback sem prazo SLA | platform-finance |
 | 🟠 high | ✅ fixed | [L09-08](./findings/L09-08-provider-fee-usd-2-12-onus-ao-cliente.md) | 1 | L09 · CRO | provider_fee_usd ([2.12]) — ônus ao cliente ou à plataforma? | platform-finance |
 | 🟠 high | ✅ fixed | [L09-09](./findings/L09-09-contratos-privados-termo-de-adesao-do-clube-termo.md) | 1 | L09 · CRO | Contratos privados (termo de adesão do clube, termo de atleta) inexistentes no repo | legal-ops |
-| 🟡 medium | ⏳ fix-pending | [L09-10](./findings/L09-10-relatorio-anual-de-transparencia-marco-civil-art-11.md) | 2 | L09 · CRO | Relatório anual de transparência (Marco Civil Art. 11) | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L09-11](./findings/L09-11-cessao-de-credito-implicita-em-clearing-settlements-document.md) | 2 | L09 · CRO | Cessão de crédito implícita em clearing_settlements — documentar | unassigned |
+| 🟡 medium | ✅ fixed | [L09-10](./findings/L09-10-relatorio-anual-de-transparencia-marco-civil-art-11.md) | 2 | L09 · CRO | Relatório anual de transparência (Marco Civil Art. 11) | legal |
+| 🟡 medium | ✅ fixed | [L09-11](./findings/L09-11-cessao-de-credito-implicita-em-clearing-settlements-document.md) | 2 | L09 · CRO | Cessão de crédito implícita em clearing_settlements — documentar | finance |
 | 🟡 medium | ⏳ fix-pending | [L09-12](./findings/L09-12-auditoria-externa-financeira-inexistente.md) | 2 | L09 · CRO | Auditoria externa financeira — inexistente | unassigned |
 | 🔴 critical | ✅ fixed | [L10-01](./findings/L10-01-nenhum-bug-bounty-disclosure-policy.md) | 1 | L10 · CSO | Nenhum bug bounty / disclosure policy | security |
 | 🔴 critical | ✅ fixed | [L10-02](./findings/L10-02-threat-model-formal-nao-documentado.md) | 1 | L10 · CSO | Threat model formal não documentado | security |
@@ -202,9 +202,9 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L11-07](./findings/L11-07-sqlcipher-flutter-libs-0-7-0-eol-eol.md) | 1 | L11 · Supply Chain | sqlcipher_flutter_libs: ^0.7.0+eol — "eol" = end of life | mobile |
 | 🟠 high | ✅ fixed | [L11-08](./findings/L11-08-flutter-sdk-3-8-0-4-0-0.md) | 1 | L11 · Supply Chain | Flutter sdk: '>=3.8.0 <4.0.0' — permite 3.9, 3.10… | mobile |
 | 🟡 medium | ✅ fixed | [L11-09](./findings/L11-09-github-actions-sem-oidc-para-deploys.md) | 1 | L11 · Supply Chain | GitHub Actions sem OIDC para deploys | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L11-10](./findings/L11-10-actions-checkout-v4-sha-nao-pinned.md) | 2 | L11 · Supply Chain | actions/checkout@v4 SHA não pinned | unassigned |
+| 🟡 medium | ✅ fixed | [L11-10](./findings/L11-10-actions-checkout-v4-sha-nao-pinned.md) | 2 | L11 · Supply Chain | actions/checkout@v4 SHA não pinned | platform |
 | 🟡 medium | ⏳ fix-pending | [L11-11](./findings/L11-11-sem-renovate-como-alternativa.md) | 2 | L11 · Supply Chain | Sem Renovate como alternativa | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L11-12](./findings/L11-12-npm-ci-sem-ignore-scripts.md) | 2 | L11 · Supply Chain | npm ci sem --ignore-scripts | unassigned |
+| 🟡 medium | ✅ fixed | [L11-12](./findings/L11-12-npm-ci-sem-ignore-scripts.md) | 2 | L11 · Supply Chain | npm ci sem --ignore-scripts | platform |
 | 🟡 medium | ⏳ fix-pending | [L11-13](./findings/L11-13-lockfile-drift-nao-validado.md) | 2 | L11 · Supply Chain | Lockfile drift não validado | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L11-14](./findings/L11-14-omni-runner-pubspec-lock-commitado.md) | 2 | L11 · Supply Chain | omni_runner/pubspec.lock commitado? | unassigned |
 | 🔴 critical | ✅ fixed | [L12-01](./findings/L12-01-reconcile-wallets-cron-existe-mas-nao-esta-agendado.md) | 1 | L12 · Cron/Scheduler | reconcile-wallets-cron existe mas NÃO está agendado | platform |
@@ -217,7 +217,7 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L12-08](./findings/L12-08-clearing-cron-em-02-00-consolidacao-de-d.md) | 1 | L12 · Cron/Scheduler | clearing-cron em 02:00 — consolidação de D-1 antes de fim do dia | cfo |
 | 🟠 high | ✅ fixed | [L12-09](./findings/L12-09-lifecycle-cron-dispara-notificacoes-idempotencia-nao-garanti.md) | 1 | L12 · Cron/Scheduler | lifecycle-cron dispara notificações idempotência não garantida | coo |
 | 🟡 medium | ⏳ fix-pending | [L12-10](./findings/L12-10-jobs-pg-cron-executam-como-superuser-padrao.md) | 2 | L12 · Cron/Scheduler | Jobs pg_cron executam como superuser (padrão) | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L12-11](./findings/L12-11-cron-schedule-em-migration-duplicada-corre-risco.md) | 2 | L12 · Cron/Scheduler | cron.schedule em migration duplicada corre risco | unassigned |
+| 🟡 medium | ✅ fixed | [L12-11](./findings/L12-11-cron-schedule-em-migration-duplicada-corre-risco.md) | 2 | L12 · Cron/Scheduler | cron.schedule em migration duplicada corre risco | platform |
 | 🟡 medium | ⏳ fix-pending | [L12-12](./findings/L12-12-timezone-do-cron-utc-ok-mas-horario-dst.md) | 2 | L12 · Cron/Scheduler | Timezone do cron = UTC ok, mas horário DST? | unassigned |
 | 🔴 critical | ✅ fixed | [L13-01](./findings/L13-01-admin-only-routes-admin-professor-routes-ordem-importa.md) | 1 | L13 · Middleware | ADMIN_ONLY_ROUTES + ADMIN_PROFESSOR_ROUTES — ordem importa, e está errada | portal |
 | 🔴 critical | ✅ fixed | [L13-02](./findings/L13-02-nome-da-constante-ainda-em-portugues-admin-professor.md) | 1 | L13 · Middleware | Nome da constante ainda em português (ADMIN_PROFESSOR_ROUTES) | portal |
@@ -226,8 +226,8 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L13-05](./findings/L13-05-cookies-sem-secure-explicito.md) | 1 | L13 · Middleware | Cookies sem Secure explícito | platform |
 | 🟠 high | ✅ fixed | [L13-06](./findings/L13-06-x-request-id-nao-propagado-ao-supabase-lib.md) | 1 | L13 · Middleware | x-request-id não propagado ao supabase/lib downstream | platform |
 | 🟠 high | ✅ fixed | [L13-07](./findings/L13-07-public-routes-contem-api-custody-webhook-sem-ip.md) | 1 | L13 · Middleware | PUBLIC_ROUTES contém /api/custody/webhook sem IP allow-list | platform |
-| 🟡 medium | ⏳ fix-pending | [L13-08](./findings/L13-08-public-prefixes-challenge-invite-podem-colidir-com-api.md) | 2 | L13 · Middleware | PUBLIC_PREFIXES /challenge/, /invite/ podem colidir com /api/challenge/ | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L13-09](./findings/L13-09-middleware-redirect-chain-em-single-membership-causa-duplo.md) | 2 | L13 · Middleware | Middleware redirect chain em single-membership causa duplo round-trip | unassigned |
+| 🟡 medium | ✅ fixed | [L13-08](./findings/L13-08-public-prefixes-challenge-invite-podem-colidir-com-api.md) | 2 | L13 · Middleware | PUBLIC_PREFIXES /challenge/, /invite/ podem colidir com /api/challenge/ | platform |
+| 🟡 medium | ✅ fixed | [L13-09](./findings/L13-09-middleware-redirect-chain-em-single-membership-causa-duplo.md) | 2 | L13 · Middleware | Middleware redirect chain em single-membership causa duplo round-trip | platform |
 | 🔴 critical | ✅ fixed | [L14-01](./findings/L14-01-74-route-handlers-46-documentados-em-openapi.md) | 1 | L14 · Contracts | 74 route handlers, 46 documentados em OpenAPI | backend-platform |
 | 🔴 critical | ✅ fixed | [L14-02](./findings/L14-02-sem-versionamento-de-path-api-v1.md) | 1 | L14 · Contracts | Sem versionamento de path (/api/v1) | backend-platform |
 | 🔴 critical | ✅ fixed | [L14-03](./findings/L14-03-api-docs-carrega-swagger-ui-de-unpkg-sem.md) | 0 | L14 · Contracts | /api/docs carrega Swagger-UI de unpkg sem SRI | unassigned |
@@ -261,7 +261,7 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L17-04](./findings/L17-04-testes-unitarios-em-portal-src-lib-qa-test.md) | 1 | L17 · VP Eng | Testes unitários em portal/src/lib/qa-*.test.ts — arquivos >800 linhas | portal |
 | 🟠 high | ✅ fixed | [L17-05](./findings/L17-05-logger-silencia-errors-nao-error.md) | 1 | L17 · VP Eng | Logger silencia errors não-Error | portal |
 | 🟠 high | ✅ fixed | [L17-06](./findings/L17-06-csrfcheck-nao-e-chamado-no-middleware-central.md) | 1 | L17 · VP Eng | csrfCheck não é chamado no middleware central | platform |
-| 🟡 medium | ⏳ fix-pending | [L17-07](./findings/L17-07-nao-ha-docs-adr-ativo-para-decisoes-arquiteturais.md) | 2 | L17 · VP Eng | Não há docs/adr/ ativo para decisões arquiteturais | unassigned |
+| 🟡 medium | ✅ fixed | [L17-07](./findings/L17-07-nao-ha-docs-adr-ativo-para-decisoes-arquiteturais.md) | 2 | L17 · VP Eng | Não há docs/adr/ ativo para decisões arquiteturais | architecture |
 | 🟡 medium | ⏳ fix-pending | [L17-08](./findings/L17-08-ausencia-de-monorepo-tooling-turbo-nx-pnpm-workspaces.md) | 2 | L17 · VP Eng | Ausência de monorepo tooling (turbo, nx, pnpm-workspaces) | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L17-09](./findings/L17-09-sem-shared-types-ts-dart-entre-portal-e.md) | 2 | L17 · VP Eng | Sem shared types TS/Dart entre portal e mobile | unassigned |
 | 🔴 critical | ✅ fixed | [L18-01](./findings/L18-01-duas-fontes-da-verdade-para-balance-de-wallet.md) | 1 | L18 · Principal Eng | Duas fontes da verdade para balance de wallet (wallets.balance_coins vs SUM(coin_ledger)) | principal-eng |
@@ -272,7 +272,7 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L18-06](./findings/L18-06-cachedflags-em-feature-flags-ts-cache-de-modulo.md) | 1 | L18 · Principal Eng | cachedFlags em feature-flags.ts — cache de módulo com TTL racional | backend |
 | 🟠 high | ✅ fixed | [L18-07](./findings/L18-07-userbucket-em-feature-flags-usa-hash-java-style.md) | 1 | L18 · Principal Eng | userBucket em feature-flags usa hash Java-style (inseguro, colisões) | backend |
 | 🟠 high | ✅ fixed | [L18-08](./findings/L18-08-edge-functions-vs-route-handlers-responsabilidade-duplicada.md) | 1 | L18 · Principal Eng | Edge Functions vs Route Handlers — responsabilidade duplicada | backend |
-| 🟡 medium | ⏳ fix-pending | [L18-09](./findings/L18-09-sem-domain-events-em-audit-log.md) | 2 | L18 · Principal Eng | Sem domain events em audit_log | unassigned |
+| 🟡 medium | ✅ fixed | [L18-09](./findings/L18-09-sem-domain-events-em-audit-log.md) | 2 | L18 · Principal Eng | Sem domain events em audit_log | platform |
 | 🟡 medium | ⏳ fix-pending | [L18-10](./findings/L18-10-sem-health-check-de-business-logic-vs-infra.md) | 2 | L18 · Principal Eng | Sem health-check de business logic (vs infra) | unassigned |
 | 🔴 critical | ✅ fixed | [L19-01](./findings/L19-01-coin-ledger-nao-e-particionada-tabela-crescendo-sem.md) | 0 | L19 · DBA | coin_ledger não é particionada — tabela crescendo sem controle | unassigned |
 | 🔴 critical | ✅ fixed | [L19-02](./findings/L19-02-delete-em-archive-cron-gera-table-bloat-massivo.md) | 1 | L19 · DBA | DELETE em archive cron gera table bloat massivo | platform-data-eng |
@@ -282,8 +282,8 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L19-06](./findings/L19-06-jsonb-em-audit-logs-metadata-sem-indice-gin.md) | 1 | L19 · DBA | JSONB em audit_logs.metadata sem índice GIN | platform-dba |
 | 🟠 high | ✅ fixed | [L19-07](./findings/L19-07-pg-stat-statements-nao-referenciado-em-tuning.md) | 1 | L19 · DBA | pg_stat_statements não referenciado em tuning | platform-dba |
 | 🟠 high | ✅ fixed | [L19-08](./findings/L19-08-constraints-check-sem-name-padronizado.md) | 1 | L19 · DBA | Constraints CHECK sem name padronizado | platform-db |
-| 🟡 medium | ⏳ fix-pending | [L19-09](./findings/L19-09-connection-pooling-nao-documentado.md) | 2 | L19 · DBA | Connection pooling não documentado | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L19-10](./findings/L19-10-sem-autovacuum-tuning-para-tabelas-hot.md) | 2 | L19 · DBA | Sem autovacuum tuning para tabelas hot | unassigned |
+| 🟡 medium | ✅ fixed | [L19-09](./findings/L19-09-connection-pooling-nao-documentado.md) | 2 | L19 · DBA | Connection pooling não documentado | platform |
+| 🟡 medium | ✅ fixed | [L19-10](./findings/L19-10-sem-autovacuum-tuning-para-tabelas-hot.md) | 2 | L19 · DBA | Sem autovacuum tuning para tabelas hot | platform |
 | 🔴 critical | ✅ fixed | [L20-01](./findings/L20-01-sem-dashboard-consolidado-de-operacoes-financeiras.md) | 1 | L20 · SRE | Sem dashboard consolidado de operações financeiras | unassigned |
 | 🔴 critical | ✅ fixed | [L20-02](./findings/L20-02-sem-slo-sli-definidos-impossivel-ter-alert-policy.md) | 1 | L20 · SRE | Sem SLO/SLI definidos → impossível ter alert policy razoável | unassigned |
 | 🔴 critical | ✅ fixed | [L20-03](./findings/L20-03-sem-tracing-distribuido-opentelemetry.md) | 1 | L20 · SRE | Sem tracing distribuído (OpenTelemetry) | sre |
@@ -293,10 +293,10 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L20-07](./findings/L20-07-backup-testado-zero-evidence.md) | 1 | L20 · SRE | Backup testado — zero evidence | unassigned |
 | 🟠 high | ✅ fixed | [L20-08](./findings/L20-08-post-mortem-template-ausente.md) | 1 | L20 · SRE | Post-mortem template ausente | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L20-09](./findings/L20-09-chaos-engineering-inexistente.md) | 2 | L20 · SRE | Chaos engineering inexistente | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L20-10](./findings/L20-10-logs-de-producao-nao-searchable.md) | 2 | L20 · SRE | Logs de produção não-searchable | unassigned |
+| 🟡 medium | ✅ fixed | [L20-10](./findings/L20-10-logs-de-producao-nao-searchable.md) | 2 | L20 · SRE | Logs de produção não-searchable | sre |
 | 🟡 medium | ⏳ fix-pending | [L20-11](./findings/L20-11-cost-observability-inexistente.md) | 2 | L20 · SRE | Cost observability inexistente | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L20-12](./findings/L20-12-capacity-planning-sem-modelo.md) | 2 | L20 · SRE | Capacity planning sem modelo | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L20-13](./findings/L20-13-error-budget-policy-ausente.md) | 2 | L20 · SRE | Error budget policy ausente | unassigned |
+| 🟡 medium | ✅ fixed | [L20-13](./findings/L20-13-error-budget-policy-ausente.md) | 2 | L20 · SRE | Error budget policy ausente | sre |
 | 🔴 critical | ✅ fixed | [L21-01](./findings/L21-01-max-speed-ms-12-5-m-s-invalida.md) | 1 | L21 · Atleta Pro | MAX_SPEED_MS = 12.5 m/s invalida velocistas profissionais | unassigned |
 | 🔴 critical | ✅ fixed | [L21-02](./findings/L21-02-max-hr-bpm-220-inferior-a-realidade-de.md) | 1 | L21 · Atleta Pro | MAX_HR_BPM = 220 inferior à realidade de atletas jovens | unassigned |
 | 🔴 critical | ⏳ fix-pending | [L21-03](./findings/L21-03-dados-gps-e-biometricos-sem-controle-de-propriedade.md) | 1 | L21 · Atleta Pro | Dados GPS e biométricos sem controle de propriedade (dilema do patrocínio) | unassigned |
@@ -338,7 +338,7 @@ Total: **348** findings.
 | 🟡 medium | ⏳ fix-pending | [L22-19](./findings/L22-19-social-comparison-saudavel-vs-toxica.md) | 2 | L22 · Atleta Amador | Social comparison saudável vs tóxica | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L22-20](./findings/L22-20-retencao-d30-d90-hooks-especificos.md) | 2 | L22 · Atleta Amador | Retenção D30/D90 — hooks específicos | unassigned |
 | 🔴 critical | ✅ fixed | [L23-01](./findings/L23-01-workout-delivery-em-massa-sem-preview-por-atleta.md) | 1 | L23 · Treinador | Workout delivery em massa sem preview por atleta | coach-tooling |
-| 🔴 critical | ⏳ fix-pending | [L23-02](./findings/L23-02-dashboard-de-overview-diario-para-coach-tem-100.md) | 1 | L23 · Treinador | Dashboard de overview diário para coach tem 100-500 atletas | unassigned |
+| 🔴 critical | ✅ fixed | [L23-02](./findings/L23-02-dashboard-de-overview-diario-para-coach-tem-100.md) | 1 | L23 · Treinador | Dashboard de overview diário para coach tem 100-500 atletas | coach-tooling |
 | 🔴 critical | ✅ fixed | [L23-03](./findings/L23-03-comunicacao-coach-atleta-carece.md) | 1 | L23 · Treinador | Comunicação coach ↔ atleta carece | coach-platform |
 | 🔴 critical | ✅ fixed | [L23-04](./findings/L23-04-bulk-assign-semanal-ver-20260416000000-bulk-assign-and.md) | 1 | L23 · Treinador | Bulk assign semanal (ver 20260416000000_bulk_assign_and_week_templates.sql) sem rollback | coach-tooling |
 | 🟠 high | ✅ fixed | [L23-05](./findings/L23-05-workout-template-library-pobre.md) | 1 | L23 · Treinador | Workout template library pobre | unassigned |

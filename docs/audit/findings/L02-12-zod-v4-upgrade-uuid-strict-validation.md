@@ -4,24 +4,36 @@ audit_ref: "2.12"
 lens: 2
 title: "Zod v4 upgrade — UUID strict validation"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["integration", "mobile", "portal"]
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["integration", "mobile", "portal", "schemas", "fixed"]
 files:
-  - portal/src/lib/schemas.ts
-correction_type: process
-test_required: false
-tests: []
+  - portal/src/lib/schemas/uuid-policy.ts
+  - tools/audit/check-k3-domain-fixes.ts
+correction_type: code
+test_required: true
+tests:
+  - "npm run audit:k3-domain-fixes"
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform
 runbook: null
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  K3 batch — codified the UUID-validation policy as three Zod helpers:
+    omniUuid()                       → strict z.string().uuid() (internal IDs)
+    externalIntegrationId(label)     → opaque string with min/max bounds
+    correlationToken(label, opts)    → free-form correlation token
+  The split prevents 'z.string().uuid()' creep onto external IDs (Strava
+  athlete numbers, Stripe payment IDs) that do NOT have UUID shape.
+  New schemas should import from portal/src/lib/schemas/uuid-policy.ts;
+  bare z.string().uuid() is now reserved for OmniRunner-issued UUIDs.
 ---
 # [L02-12] Zod v4 upgrade — UUID strict validation
 > **Lente:** 2 — CTO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending
