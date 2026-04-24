@@ -13,6 +13,7 @@ import { currentTraceId, currentSpanId, withSpan } from "@/lib/observability/tra
  * that want to preserve original trace_id from a prior context).
  */
 export async function auditLog(params: {
+  /** Pass an auth.users uuid OR the literal string "system" (L01-49). */
   actorId: string;
   groupId?: string;
   action: string;
@@ -21,18 +22,21 @@ export async function auditLog(params: {
   metadata?: Record<string, unknown>;
 }): Promise<void> {
   const enrichedMetadata = enrichMetadataWithTrace(params.metadata);
+  const isSystem = params.actorId === "system";
 
   await withSpan(
     `audit ${params.action}`,
     "audit.write",
     async (setAttr) => {
       setAttr("omni.actor_id", params.actorId);
+      setAttr("omni.actor_kind", isSystem ? "system" : "user");
       setAttr("omni.group_id", params.groupId);
       setAttr("omni.action", params.action);
       try {
         const db = createServiceClient();
         const { error } = await db.from("portal_audit_log").insert({
-          actor_id: params.actorId,
+          actor_id: isSystem ? null : params.actorId,
+          actor_kind: isSystem ? "system" : "user",
           group_id: params.groupId ?? null,
           action: params.action,
           target_type: params.targetType ?? null,

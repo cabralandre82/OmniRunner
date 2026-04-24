@@ -88,6 +88,8 @@
     "audit:logs-searchable": "npx tsx tools/audit/check-logs-searchable.ts",
     "audit:error-budget-policy": "npx tsx tools/audit/check-error-budget-policy.ts",
     "audit:secret-rotation": "npx tsx tools/audit/check-secret-rotation.ts",
+    "audit:cron-idempotency": "npx tsx tools/audit/check-cron-idempotency.ts",
+    "audit:k2-sql-fixes": "npx tsx tools/audit/check-k2-sql-fixes.ts",
     "audit:og-metadata": "npx tsx tools/audit/check-og-metadata.ts",
     "audit:challenge-invite-deep-link": "npx tsx tools/audit/check-challenge-invite-deep-link.ts",
     "audit:milestone-celebration": "npx tsx tools/audit/check-milestone-celebration.ts",

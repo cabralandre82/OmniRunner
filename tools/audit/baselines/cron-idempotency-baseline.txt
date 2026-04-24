@@ -1,0 +1,13 @@
+# L12-11 baseline — known legacy cron.schedule calls without idempotency guard.
+# DO NOT add new entries; new violations must use IF NOT EXISTS / unschedule.
+# Format: <file>:<line>:<jobname>
+
+supabase/migrations/20260221000001_auto_topup_cron.sql:56:auto-topup-hourly
+supabase/migrations/20260221000002_lifecycle_cron.sql:16:lifecycle-cron
+supabase/migrations/20260221000008_clearing_cron.sql:16:clearing-cron
+supabase/migrations/20260224000004_verification_cron.sql:19:eval-verification-cron
+supabase/migrations/20260224100000_challenge_queue.sql:82:expire-matchmaking-queue
+supabase/migrations/20260311000000_onboarding_nudge_cron.sql:6:onboarding-nudge-daily
+supabase/migrations/20260320000000_strava_time_index_and_partitioning.sql:85:archive-old-sessions
+supabase/migrations/20260320000000_strava_time_index_and_partitioning.sql:91:archive-old-ledger
+supabase/migrations/20260407000000_training_plan_module.sql:1566:process-scheduled-workout-releases
