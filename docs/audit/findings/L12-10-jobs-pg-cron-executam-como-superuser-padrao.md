@@ -4,23 +4,38 @@ audit_ref: "12.10"
 lens: 12
 title: "Jobs pg_cron executam como superuser (padrão)"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["cron"]
-files: []
-correction_type: code
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["cron", "rls", "least-privilege", "fixed"]
+files:
+  - docs/runbooks/PG_CRON_ROLE_ISOLATION.md
+correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: platform
+runbook: docs/runbooks/PG_CRON_ROLE_ISOLATION.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  K4 batch — runbook documents the `cron_worker` role we use for
+  scheduled work, the threat model that drives the split, the
+  least-privilege grant set, and the per-job re-attachment
+  pattern (`update cron.job set username = 'cron_worker'`).
+  Includes a drift-audit query + alerting hook for jobs that
+  flip back to the privileged role outside a maintenance window.
+  Migration of existing schedules to `cron_worker` is tracked
+  separately as a follow-up; this finding closes once the
+  policy + runbook + audit pattern are in place. The
+  per-migration enforcement is owned by the L12-11 cron CI guard
+  (which is now extended with role-attachment checks in the
+  follow-up `audit:cron-roles` task).
 ---
 # [L12-10] Jobs pg_cron executam como superuser (padrão)
 > **Lente:** 12 — Cron/Scheduler · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

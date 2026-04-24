@@ -4,23 +4,35 @@ audit_ref: "12.12"
 lens: 12
 title: "Timezone do cron = UTC ok, mas horário DST?"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["cron"]
-files: []
-correction_type: process
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["cron", "timezone", "docs", "fixed"]
+files:
+  - docs/runbooks/CRON_TIMEZONE_POLICY.md
+correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: platform
+runbook: docs/runbooks/CRON_TIMEZONE_POLICY.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  K4 batch — codified the policy that pg_cron schedules are ALWAYS
+  in UTC. Calendar-aware cutoffs (e.g. "settle today's clearing")
+  resolve `now()` against `America/Sao_Paulo` inside the helper
+  function the cron invokes, never inside the schedule string.
+  DST is irrelevant for Brazil today; the runbook documents the
+  US/EU expansion checklist (per-tenant `business_timezone`
+  column, helper invocation, NO change to the cron schedule).
+  Cross-references `fn_clearing_cutoff_utc` (L12-08) and
+  `fn_should_send_nudge_now` (L12-07) as canonical examples.
 ---
 # [L12-12] Timezone do cron = UTC ok, mas horário DST?
 > **Lente:** 12 — Cron/Scheduler · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

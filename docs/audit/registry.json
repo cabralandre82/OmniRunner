@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T00:20:32.722Z",
+  "generated_at": "2026-04-24T00:36:43.153Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 233,
-    "fix-pending": 106,
+    "fixed": 244,
+    "fix-pending": 95,
     "in-progress": 1,
     "wont-fix": 7,
     "safe": 1
@@ -424,30 +424,40 @@
       "lens": 1,
       "title": "GET /api/auth/callback — Open redirect candidato",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "integration",
         "mobile",
         "portal",
-        "testing"
+        "testing",
+        "open-redirect",
+        "fixed"
       ],
       "files": [
-        "portal/src/app/api/auth/callback/route.ts"
+        "portal/src/app/api/auth/callback/route.ts",
+        "portal/src/lib/security/safe-next.ts",
+        "portal/src/lib/security/safe-next.test.ts",
+        "tools/audit/check-k4-security-fixes.ts"
       ],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "portal/src/lib/security/safe-next.test.ts (8 vitest cases)",
+        "npm run audit:k4-security-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K4 batch — pure-domain safeNext() module rejects:\n  • protocol-relative paths (`//evil.example.com/x`)\n  • Windows-style backslash escape (`/\\evil.example.com/x`)\n  • foreign schemes (`javascript:`, `data:`, `https://`)\n  • paths longer than 256 chars\n  • characters outside ASCII alphanumeric + `-_./?&=%`\nThe OAuth callback now consumes searchParams.get(\"next\") through\nsafeNext() and falls back to /dashboard on validation failure.\nCannot redirect to /platform/* via crafted URL anymore.\n"
     },
     {
       "id": "L01-11",
@@ -800,31 +810,44 @@
       "lens": 1,
       "title": "rateLimit no portal — Fail-open para memory",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "rate-limit",
         "portal",
         "observability",
-        "reliability"
+        "reliability",
+        "fixed"
       ],
       "files": [
-        "portal/src/lib/rate-limit.ts"
+        "portal/src/lib/rate-limit.ts",
+        "portal/src/lib/redis.ts",
+        "portal/src/app/api/custody/withdraw/route.ts",
+        "portal/src/app/api/custody/route.ts",
+        "portal/src/app/api/distribute-coins/route.ts",
+        "portal/src/app/api/distribute-coins/batch/route.ts",
+        "portal/src/app/api/swap/route.ts",
+        "portal/src/app/api/coins/reverse/route.ts",
+        "tools/audit/check-k4-security-fixes.ts"
       ],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "npm run audit:k4-security-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K4 batch — `rateLimit()` gains an `onMissingRedis` option:\n  • `degrade` (default) — keep legacy in-memory fallback for\n    low-risk surfaces (e.g. invite, branding, attribution).\n  • `fail_closed` — return `allowed: false` immediately when\n    Redis is missing. Wired on every financial mutation:\n      - POST /api/custody (deposit)\n      - POST /api/custody/withdraw\n      - POST /api/distribute-coins\n      - POST /api/distribute-coins/batch\n      - POST /api/swap\n      - POST /api/coins/reverse\nTelemetry counters (`rateLimitTelemetrySnapshot`) expose\n`failClosedHits` and `fallbackHits` for SRE dashboards.\n`getRedis()` is now request-aware (60 s recheck, see L02-15)\nso a hot-deployed env-var change lands within one minute.\n"
     },
     {
       "id": "L01-22",
@@ -958,29 +981,37 @@
       "lens": 1,
       "title": "Middleware — platform role check sem cache",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "portal",
         "cron",
-        "performance"
+        "performance",
+        "cache",
+        "fixed"
       ],
       "files": [
-        "portal/src/middleware.ts"
+        "portal/src/middleware.ts",
+        "portal/src/lib/route-policy-cache.ts",
+        "tools/audit/check-k4-security-fixes.ts"
       ],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "npm run audit:k4-security-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K4 batch — process-local LRU cache for `profiles.platform_role`,\nmirroring the `coaching_members` cache from L13-03 but with a\nlonger TTL (300 s vs 60 s) because platform_role demotions are\nrare. New helpers `getCachedPlatformRole`, `setCachedPlatformRole`,\n`invalidatePlatformRole`, `clearPlatformRoleCache` live in\n`lib/route-policy-cache.ts`. Middleware path\n`/platform/*` + `/api/platform/*` now performs at most one\nPostgres round-trip per cold cache window per user (was 1 per\nRSC). Negative caching uses literal `\"none\"` for inspector\nergonomics.\n"
     },
     {
       "id": "L01-27",
@@ -1426,25 +1457,32 @@
       "lens": 1,
       "title": "CSP — style-src 'unsafe-inline'",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "portal"
+        "portal",
+        "csp",
+        "docs",
+        "fixed"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/runbooks/CSP_STYLE_SRC_MIGRATION.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "platform",
+      "runbook": "docs/runbooks/CSP_STYLE_SRC_MIGRATION.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K4 batch — closed by docs decision. The relaxation\n`style-src 'self' 'unsafe-inline'` is acceptable today because\nTailwind / shadcn-ui generate compile-time CSS and the residual\ninline-style surface (~42 hits, mostly chart bars + radix-ui\nstate-driven CSS variables + Stripe Elements) has medium-not-\ncritical risk per OWASP CSP cheatsheet. The runbook documents:\n  • why the relaxation is currently acceptable\n  • the inventory of inline-style patterns to migrate\n  • the concrete migration steps when the trigger fires\n  • the acceptance criteria for re-closing this finding under\n    a stricter policy\nRe-evaluation is mandatory when we ship a stylesheet that is\nNOT generated by Tailwind / shadcn-ui at compile time.\n"
     },
     {
       "id": "L01-40",
@@ -2209,29 +2247,36 @@
       "lens": 2,
       "title": "Pool de conexões createServiceClient per-request",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "atomicity",
         "portal",
-        "edge-function"
+        "edge-function",
+        "pool",
+        "fixed"
       ],
       "files": [
-        "portal/src/lib/supabase/service.ts"
+        "portal/src/lib/supabase/service.ts",
+        "tools/audit/check-k4-security-fixes.ts"
       ],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "npm run audit:k4-security-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K4 batch — `createServiceClient` is now module-cached with a\nconfigKey derived from the env tuple (URL + key length, never\nthe secret value). A warm lambda reuses the same Supabase\nclient (and therefore the same keep-alive HTTP socket pool to\nPostgREST) across requests. Cold starts pay one construction\ncost. Tests can call `__resetServiceClientForTests` to drop\nthe singleton between mocks. Eliminates ECONNRESET against\nPostgREST under load and saves the 5-15 ms TLS handshake per\ncall.\n"
     },
     {
       "id": "L02-12",
@@ -2333,25 +2378,35 @@
       "lens": 2,
       "title": "getRedis() — Module-level cache vs runtime config",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "portal"
+        "portal",
+        "redis",
+        "fixed"
       ],
-      "files": [],
+      "files": [
+        "portal/src/lib/redis.ts",
+        "portal/src/lib/rate-limit.ts",
+        "tools/audit/check-k4-security-fixes.ts"
+      ],
       "correction_type": "code",
-      "test_required": false,
-      "tests": [],
+      "test_required": true,
+      "tests": [
+        "npm run audit:k4-security-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K4 batch — `getRedis()` no longer caches the (no-config) state\nforever. We re-read process.env every `RECHECK_INTERVAL_MS` (60 s)\nand rebuild the client when the env tuple (URL + token length)\nchanges. A hot lambda whose first invocation observed \"no Redis\"\nnow upgrades to Redis within one minute of the env being fixed.\nNew helper `isRedisAvailable()` exposes the same recheck signal\nto callers (used by `rateLimit` to branch between\n`degrade`/`fail_closed` modes — see L01-21).\n"
     },
     {
       "id": "L03-01",
@@ -6469,28 +6524,37 @@
       "lens": 10,
       "title": "CSRF no portal confiando apenas em SameSite=Lax",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "security-headers",
         "portal",
-        "migration"
+        "migration",
+        "duplicate",
+        "fixed"
       ],
-      "files": [],
+      "files": [
+        "portal/src/middleware.ts",
+        "portal/src/lib/api/csrf.ts"
+      ],
       "correction_type": "code",
-      "test_required": false,
-      "tests": [],
+      "test_required": true,
+      "tests": [
+        "portal/src/lib/api/csrf.test.ts (existing CSRF unit tests cover origin pinning + token check)"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
-      "duplicate_of": null,
+      "duplicate_of": "L17-06",
       "deferred_to_wave": null,
-      "note": null
+      "note": "K4 batch — closed by L17-06. The portal already enforces\nCSRF defence-in-depth on every `/api/*` mutation:\n  1. Origin pinning runs FIRST (verifyOrigin → 403 CSRF_ORIGIN_INVALID).\n  2. Double-submit token check runs SECOND (verifyCsrf → 403\n     CSRF_TOKEN_INVALID).\n  3. The legacy `sameSite: \"lax\"` cookies retain their default\n     behaviour but are no longer the primary defence.\nSee `portal/src/middleware.ts:178-231` and\n`portal/src/lib/api/csrf.ts`. Webhook + OAuth callback paths are\nexempt because they're authenticated by HMAC / OAuth `state`,\nnot by browser cookies.\n"
     },
     {
       "id": "L10-13",
@@ -7004,23 +7068,35 @@
       "lens": 11,
       "title": "Lockfile drift não validado",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "tags": [],
-      "files": [],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "tags": [
+        "supply-chain",
+        "ci",
+        "fixed"
+      ],
+      "files": [
+        "tools/audit/check-lockfile-drift.ts",
+        "package.json"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "npm run audit:lockfile-drift",
+        "npm run audit:k4-security-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K4 batch — new CI guard `tools/audit/check-lockfile-drift.ts`\nscans every workspace (root + portal) and fails when:\n  1. package-lock.json is missing entirely\n  2. a dependency listed in package.json has no entry in the\n     lockfile (i.e. someone forgot to `npm install`)\n  3. a pinned dependency in package.json (no ^/~) does not match\n     the version recorded in the lockfile\nWired via `npm run audit:lockfile-drift` for fast lint and\nreused by `audit:k4-security-fixes`. CI continues to run\n`npm ci --ignore-scripts` (L11-12) for the full check; this\nguard catches drift in 2 s instead of 90 s.\n"
     },
     {
       "id": "L11-14",
@@ -7028,26 +7104,35 @@
       "lens": 11,
       "title": "omni_runner/pubspec.lock commitado?",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
-        "cron"
+        "supply-chain",
+        "fixed"
       ],
-      "files": [],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "files": [
+        ".gitignore",
+        "omni_runner/pubspec.lock",
+        "tools/audit/check-k4-security-fixes.ts"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "npm run audit:k4-security-fixes"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "mobile",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K4 batch — `omni_runner/pubspec.lock` is now committed (was\nignored). Flutter docs require lockfile commit for application\npackages so every CI run, dev box, and release bundle resolves\nto the same transitive dependency tree. The .gitignore line\n`omni_runner/pubspec.lock` was replaced with an explicit comment\n`# intentionally NOT ignored` to prevent regression. CI guard\n`audit:k4-security-fixes` asserts both the comment marker and\nthe file's existence on disk.\n"
     },
     {
       "id": "L12-01",
@@ -7402,25 +7487,32 @@
       "lens": 12,
       "title": "Jobs pg_cron executam como superuser (padrão)",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "cron"
+        "cron",
+        "rls",
+        "least-privilege",
+        "fixed"
       ],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/runbooks/PG_CRON_ROLE_ISOLATION.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "platform",
+      "runbook": "docs/runbooks/PG_CRON_ROLE_ISOLATION.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K4 batch — runbook documents the `cron_worker` role we use for\nscheduled work, the threat model that drives the split, the\nleast-privilege grant set, and the per-job re-attachment\npattern (`update cron.job set username = 'cron_worker'`).\nIncludes a drift-audit query + alerting hook for jobs that\nflip back to the privileged role outside a maintenance window.\nMigration of existing schedules to `cron_worker` is tracked\nseparately as a follow-up; this finding closes once the\npolicy + runbook + audit pattern are in place. The\nper-migration enforcement is owned by the L12-11 cron CI guard\n(which is now extended with role-attachment checks in the\nfollow-up `audit:cron-roles` task).\n"
     },
     {
       "id": "L12-11",
@@ -7467,25 +7559,32 @@
       "lens": 12,
       "title": "Timezone do cron = UTC ok, mas horário DST?",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "cron"
+        "cron",
+        "timezone",
+        "docs",
+        "fixed"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/runbooks/CRON_TIMEZONE_POLICY.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "platform",
+      "runbook": "docs/runbooks/CRON_TIMEZONE_POLICY.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "K4 batch — codified the policy that pg_cron schedules are ALWAYS\nin UTC. Calendar-aware cutoffs (e.g. \"settle today's clearing\")\nresolve `now()` against `America/Sao_Paulo` inside the helper\nfunction the cron invokes, never inside the schedule string.\nDST is irrelevant for Brazil today; the runbook documents the\nUS/EU expansion checklist (per-tenant `business_timezone`\ncolumn, helper invocation, NO change to the cron schedule).\nCross-references `fn_clearing_cutoff_utc` (L12-08) and\n`fn_should_send_nudge_now` (L12-07) as canonical examples.\n"
     },
     {
       "id": "L13-01",

@@ -4,23 +4,40 @@ audit_ref: "11.13"
 lens: 11
 title: "Lockfile drift não validado"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: []
-files: []
-correction_type: process
-test_required: false
-tests: []
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["supply-chain", "ci", "fixed"]
+files:
+  - tools/audit/check-lockfile-drift.ts
+  - package.json
+correction_type: code
+test_required: true
+tests:
+  - "npm run audit:lockfile-drift"
+  - "npm run audit:k4-security-fixes"
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform
 runbook: null
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  K4 batch — new CI guard `tools/audit/check-lockfile-drift.ts`
+  scans every workspace (root + portal) and fails when:
+    1. package-lock.json is missing entirely
+    2. a dependency listed in package.json has no entry in the
+       lockfile (i.e. someone forgot to `npm install`)
+    3. a pinned dependency in package.json (no ^/~) does not match
+       the version recorded in the lockfile
+  Wired via `npm run audit:lockfile-drift` for fast lint and
+  reused by `audit:k4-security-fixes`. CI continues to run
+  `npm ci --ignore-scripts` (L11-12) for the full check; this
+  guard catches drift in 2 s instead of 90 s.
 ---
 # [L11-13] Lockfile drift não validado
 > **Lente:** 11 — Supply Chain · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

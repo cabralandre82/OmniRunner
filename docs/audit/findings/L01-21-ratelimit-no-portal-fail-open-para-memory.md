@@ -4,24 +4,50 @@ audit_ref: "1.21"
 lens: 1
 title: "rateLimit no portal — Fail-open para memory"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["finance", "rate-limit", "portal", "observability", "reliability"]
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["finance", "rate-limit", "portal", "observability", "reliability", "fixed"]
 files:
   - portal/src/lib/rate-limit.ts
-correction_type: process
-test_required: false
-tests: []
+  - portal/src/lib/redis.ts
+  - portal/src/app/api/custody/withdraw/route.ts
+  - portal/src/app/api/custody/route.ts
+  - portal/src/app/api/distribute-coins/route.ts
+  - portal/src/app/api/distribute-coins/batch/route.ts
+  - portal/src/app/api/swap/route.ts
+  - portal/src/app/api/coins/reverse/route.ts
+  - tools/audit/check-k4-security-fixes.ts
+correction_type: code
+test_required: true
+tests:
+  - "npm run audit:k4-security-fixes"
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform
 runbook: null
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  K4 batch — `rateLimit()` gains an `onMissingRedis` option:
+    • `degrade` (default) — keep legacy in-memory fallback for
+      low-risk surfaces (e.g. invite, branding, attribution).
+    • `fail_closed` — return `allowed: false` immediately when
+      Redis is missing. Wired on every financial mutation:
+        - POST /api/custody (deposit)
+        - POST /api/custody/withdraw
+        - POST /api/distribute-coins
+        - POST /api/distribute-coins/batch
+        - POST /api/swap
+        - POST /api/coins/reverse
+  Telemetry counters (`rateLimitTelemetrySnapshot`) expose
+  `failClosedHits` and `fallbackHits` for SRE dashboards.
+  `getRedis()` is now request-aware (60 s recheck, see L02-15)
+  so a hot-deployed env-var change lands within one minute.
 ---
 # [L01-21] rateLimit no portal — Fail-open para memory
 > **Lente:** 1 — CISO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

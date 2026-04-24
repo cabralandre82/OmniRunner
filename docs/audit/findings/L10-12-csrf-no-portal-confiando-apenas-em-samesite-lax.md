@@ -4,23 +4,39 @@ audit_ref: "10.12"
 lens: 10
 title: "CSRF no portal confiando apenas em SameSite=Lax"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["finance", "security-headers", "portal", "migration"]
-files: []
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["finance", "security-headers", "portal", "migration", "duplicate", "fixed"]
+files:
+  - portal/src/middleware.ts
+  - portal/src/lib/api/csrf.ts
 correction_type: code
-test_required: false
-tests: []
+test_required: true
+tests:
+  - "portal/src/lib/api/csrf.test.ts (existing CSRF unit tests cover origin pinning + token check)"
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform
 runbook: null
 effort_points: 2
 blocked_by: []
-duplicate_of: null
+duplicate_of: L17-06
 deferred_to_wave: null
-note: null
+note: |
+  K4 batch — closed by L17-06. The portal already enforces
+  CSRF defence-in-depth on every `/api/*` mutation:
+    1. Origin pinning runs FIRST (verifyOrigin → 403 CSRF_ORIGIN_INVALID).
+    2. Double-submit token check runs SECOND (verifyCsrf → 403
+       CSRF_TOKEN_INVALID).
+    3. The legacy `sameSite: "lax"` cookies retain their default
+       behaviour but are no longer the primary defence.
+  See `portal/src/middleware.ts:178-231` and
+  `portal/src/lib/api/csrf.ts`. Webhook + OAuth callback paths are
+  exempt because they're authenticated by HMAC / OAuth `state`,
+  not by browser cookies.
 ---
 # [L10-12] CSRF no portal confiando apenas em SameSite=Lax
 > **Lente:** 10 — CSO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

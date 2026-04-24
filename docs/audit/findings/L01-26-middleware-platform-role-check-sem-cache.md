@@ -4,24 +4,39 @@ audit_ref: "1.26"
 lens: 1
 title: "Middleware — platform role check sem cache"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["portal", "cron", "performance"]
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["portal", "cron", "performance", "cache", "fixed"]
 files:
   - portal/src/middleware.ts
-correction_type: process
-test_required: false
-tests: []
+  - portal/src/lib/route-policy-cache.ts
+  - tools/audit/check-k4-security-fixes.ts
+correction_type: code
+test_required: true
+tests:
+  - "npm run audit:k4-security-fixes"
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform
 runbook: null
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  K4 batch — process-local LRU cache for `profiles.platform_role`,
+  mirroring the `coaching_members` cache from L13-03 but with a
+  longer TTL (300 s vs 60 s) because platform_role demotions are
+  rare. New helpers `getCachedPlatformRole`, `setCachedPlatformRole`,
+  `invalidatePlatformRole`, `clearPlatformRoleCache` live in
+  `lib/route-policy-cache.ts`. Middleware path
+  `/platform/*` + `/api/platform/*` now performs at most one
+  Postgres round-trip per cold cache window per user (was 1 per
+  RSC). Negative caching uses literal `"none"` for inspector
+  ergonomics.
 ---
 # [L01-26] Middleware — platform role check sem cache
 > **Lente:** 1 — CISO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

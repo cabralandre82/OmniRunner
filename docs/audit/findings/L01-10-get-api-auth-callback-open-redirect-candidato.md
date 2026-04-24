@@ -4,24 +4,40 @@ audit_ref: "1.10"
 lens: 1
 title: "GET /api/auth/callback — Open redirect candidato"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["integration", "mobile", "portal", "testing"]
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["integration", "mobile", "portal", "testing", "open-redirect", "fixed"]
 files:
   - portal/src/app/api/auth/callback/route.ts
-correction_type: process
-test_required: false
-tests: []
+  - portal/src/lib/security/safe-next.ts
+  - portal/src/lib/security/safe-next.test.ts
+  - tools/audit/check-k4-security-fixes.ts
+correction_type: code
+test_required: true
+tests:
+  - "portal/src/lib/security/safe-next.test.ts (8 vitest cases)"
+  - "npm run audit:k4-security-fixes"
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform
 runbook: null
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  K4 batch — pure-domain safeNext() module rejects:
+    • protocol-relative paths (`//evil.example.com/x`)
+    • Windows-style backslash escape (`/\evil.example.com/x`)
+    • foreign schemes (`javascript:`, `data:`, `https://`)
+    • paths longer than 256 chars
+    • characters outside ASCII alphanumeric + `-_./?&=%`
+  The OAuth callback now consumes searchParams.get("next") through
+  safeNext() and falls back to /dashboard on validation failure.
+  Cannot redirect to /platform/* via crafted URL anymore.
 ---
 # [L01-10] GET /api/auth/callback — Open redirect candidato
 > **Lente:** 1 — CISO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

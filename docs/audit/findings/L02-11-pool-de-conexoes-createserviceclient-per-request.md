@@ -4,24 +4,37 @@ audit_ref: "2.11"
 lens: 2
 title: "Pool de conexões createServiceClient per-request"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["atomicity", "portal", "edge-function"]
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["atomicity", "portal", "edge-function", "pool", "fixed"]
 files:
   - portal/src/lib/supabase/service.ts
-correction_type: process
-test_required: false
-tests: []
+  - tools/audit/check-k4-security-fixes.ts
+correction_type: code
+test_required: true
+tests:
+  - "npm run audit:k4-security-fixes"
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform
 runbook: null
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  K4 batch — `createServiceClient` is now module-cached with a
+  configKey derived from the env tuple (URL + key length, never
+  the secret value). A warm lambda reuses the same Supabase
+  client (and therefore the same keep-alive HTTP socket pool to
+  PostgREST) across requests. Cold starts pay one construction
+  cost. Tests can call `__resetServiceClientForTests` to drop
+  the singleton between mocks. Eliminates ECONNRESET against
+  PostgREST under load and saves the 5-15 ms TLS handshake per
+  call.
 ---
 # [L02-11] Pool de conexões createServiceClient per-request
 > **Lente:** 2 — CTO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

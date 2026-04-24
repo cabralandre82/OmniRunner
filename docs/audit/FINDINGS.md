@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-24 00:20:32 UTC.
+> Atualizado em 2026-04-24 00:36:43 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -18,7 +18,7 @@ Total: **348** findings.
 | 🟡 medium | ✅ fixed | [L01-07](./findings/L01-07-get-api-health-information-disclosure.md) | 2 | L01 · CISO | GET /api/health — Information disclosure | platform |
 | 🟢 safe | ✅ fixed | [L01-08](./findings/L01-08-get-api-liveness-ok.md) | 3 | L01 · CISO | GET /api/liveness — OK | unassigned |
 | 🟠 high | ✅ fixed | [L01-09](./findings/L01-09-post-api-checkout-gateway-proxy.md) | 1 | L01 · CISO | POST /api/checkout — Gateway proxy | backend-platform |
-| 🟡 medium | ⏳ fix-pending | [L01-10](./findings/L01-10-get-api-auth-callback-open-redirect-candidato.md) | 2 | L01 · CISO | GET /api/auth/callback — Open redirect candidato | unassigned |
+| 🟡 medium | ✅ fixed | [L01-10](./findings/L01-10-get-api-auth-callback-open-redirect-candidato.md) | 2 | L01 · CISO | GET /api/auth/callback — Open redirect candidato | platform |
 | ⚪ na | ⏳ fix-pending | [L01-11](./findings/L01-11-post-api-workouts-assign-api-workouts-templates-autorizacao.md) | 3 | L01 · CISO | POST /api/workouts/assign, /api/workouts/templates — Autorização cross-athlete | unassigned |
 | 🟢 safe | ✅ fixed | [L01-12](./findings/L01-12-post-api-verification-evaluate-ownership.md) | 3 | L01 · CISO | POST /api/verification/evaluate — Ownership | unassigned |
 | 🟡 medium | 🚧 in-progress | [L01-13](./findings/L01-13-post-api-platform-fees-alteracao-de-taxas.md) | 2 | L01 · CISO | POST /api/platform/fees — Alteração de taxas | unassigned |
@@ -29,12 +29,12 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L01-18](./findings/L01-18-asaas-webhook-supabase-functions-asaas-webhook-index-ts.md) | 1 | L01 · CISO | Asaas Webhook — supabase/functions/asaas-webhook/index.ts | backend-platform |
 | 🟡 medium | ⏳ fix-pending | [L01-19](./findings/L01-19-edge-functions-verify-jwt-false-com-auth-manual.md) | 2 | L01 · CISO | Edge Functions — verify_jwt = false com auth manual | unassigned |
 | 🟢 safe | ✅ fixed | [L01-20](./findings/L01-20-checkratelimit-via-rpc-fail-closed.md) | 3 | L01 · CISO | checkRateLimit via RPC — Fail-closed | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L01-21](./findings/L01-21-ratelimit-no-portal-fail-open-para-memory.md) | 2 | L01 · CISO | rateLimit no portal — Fail-open para memory | unassigned |
+| 🟡 medium | ✅ fixed | [L01-21](./findings/L01-21-ratelimit-no-portal-fail-open-para-memory.md) | 2 | L01 · CISO | rateLimit no portal — Fail-open para memory | platform |
 | ⚪ na | ⏳ fix-pending | [L01-22](./findings/L01-22-get-terms-get-privacy-outras-rotas-publicas.md) | 3 | L01 · CISO | GET /terms, GET /privacy, outras rotas públicas | unassigned |
 | ⚪ na | ⏳ fix-pending | [L01-23](./findings/L01-23-challenge-id-rota-publica.md) | 3 | L01 · CISO | /challenge/[id] — Rota pública | unassigned |
 | ⚪ na | ⏳ fix-pending | [L01-24](./findings/L01-24-invite-code-rota-publica-de-aceite-de-convite.md) | 3 | L01 · CISO | /invite/[code] — Rota pública de aceite de convite | unassigned |
 | 🟡 medium | ✅ fixed | [L01-25](./findings/L01-25-middleware-public-prefixes-some-p-pathname-startswith-p.md) | 2 | L01 · CISO | Middleware — PUBLIC_PREFIXES.some(p => pathname.startsWith(p)) | platform |
-| 🟡 medium | ⏳ fix-pending | [L01-26](./findings/L01-26-middleware-platform-role-check-sem-cache.md) | 2 | L01 · CISO | Middleware — platform role check sem cache | unassigned |
+| 🟡 medium | ✅ fixed | [L01-26](./findings/L01-26-middleware-platform-role-check-sem-cache.md) | 2 | L01 · CISO | Middleware — platform role check sem cache | platform |
 | 🟢 safe | ✅ fixed | [L01-27](./findings/L01-27-requireadminmaster-em-rotas-de-custody-service-client-sem.md) | 3 | L01 · CISO | requireAdminMaster em rotas de custody — Service client sem RLS | unassigned |
 | 🟡 medium | ✅ fixed | [L01-28](./findings/L01-28-deep-link-handler-extractinvitecode-aceita-qualquer-string.md) | 2 | L01 · CISO | Deep link handler — extractInviteCode aceita qualquer string | mobile |
 | 🟠 high | ✅ fixed | [L01-29](./findings/L01-29-deep-link-strava-callback-sem-state-csrf.md) | 1 | L01 · CISO | Deep link — Strava callback sem state/CSRF | app-team |
@@ -47,7 +47,7 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L01-36](./findings/L01-36-delete-account-fn-delete-user-data-nao-aborta.md) | 1 | L01 · CISO | delete-account — fn_delete_user_data não-aborta no erro | platform |
 | 🟢 safe | ✅ fixed | [L01-37](./findings/L01-37-set-user-role-aceita-so-strings-explicitas.md) | 3 | L01 · CISO | set-user-role — Aceita só strings explícitas | unassigned |
 | 🟠 high | ✅ fixed | [L01-38](./findings/L01-38-csp-unsafe-inline-unsafe-eval-em-script-src.md) | 1 | L01 · CISO | CSP 'unsafe-inline' + 'unsafe-eval' em script-src | portal-team |
-| 🟡 medium | ⏳ fix-pending | [L01-39](./findings/L01-39-csp-style-src-unsafe-inline.md) | 2 | L01 · CISO | CSP — style-src 'unsafe-inline' | unassigned |
+| 🟡 medium | ✅ fixed | [L01-39](./findings/L01-39-csp-style-src-unsafe-inline.md) | 2 | L01 · CISO | CSP — style-src 'unsafe-inline' | platform |
 | 🟢 safe | ✅ fixed | [L01-40](./findings/L01-40-google-services-google-services-json-commitado.md) | 3 | L01 · CISO | Google services — google-services.json commitado | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L01-41](./findings/L01-41-coin-ledger-sem-assinatura-criptografica.md) | 2 | L01 · CISO | coin_ledger — Sem assinatura criptográfica | unassigned |
 | 🟡 medium | ✅ fixed | [L01-42](./findings/L01-42-platform-fee-config-rls-for-select-using-true.md) | 2 | L01 · CISO | platform_fee_config — RLS FOR SELECT USING (true) | platform |
@@ -69,11 +69,11 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L02-08](./findings/L02-08-realtime-websocket-cross-tenant-leak.md) | 1 | L02 · CTO | Realtime / Websocket — Cross-tenant leak | dba-team |
 | 🔴 critical | ✅ fixed | [L02-09](./findings/L02-09-migration-drift-check-platform-fee-config-fee-type.md) | 1 | L02 · CTO | Migration drift — CHECK platform_fee_config.fee_type (duplica 1.44) | platform |
 | 🟠 high | ✅ fixed | [L02-10](./findings/L02-10-cold-start-timeout-vercel-em-operacoes-longas.md) | 1 | L02 · CTO | Cold start + timeout Vercel em operações longas | platform |
-| 🟡 medium | ⏳ fix-pending | [L02-11](./findings/L02-11-pool-de-conexoes-createserviceclient-per-request.md) | 2 | L02 · CTO | Pool de conexões createServiceClient per-request | unassigned |
+| 🟡 medium | ✅ fixed | [L02-11](./findings/L02-11-pool-de-conexoes-createserviceclient-per-request.md) | 2 | L02 · CTO | Pool de conexões createServiceClient per-request | platform |
 | 🟡 medium | ✅ fixed | [L02-12](./findings/L02-12-zod-v4-upgrade-uuid-strict-validation.md) | 2 | L02 · CTO | Zod v4 upgrade — UUID strict validation | platform |
 | ⚪ na | ⏳ fix-pending | [L02-13](./findings/L02-13-api-inngest-nao-existe-no-codigo.md) | 3 | L02 · CTO | /api/inngest — Não existe no código | unassigned |
 | ⚪ na | ⏳ fix-pending | [L02-14](./findings/L02-14-pg-cron-jobs-lock-contention.md) | 3 | L02 · CTO | pg_cron jobs — Lock contention | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L02-15](./findings/L02-15-getredis-module-level-cache-vs-runtime-config.md) | 2 | L02 · CTO | getRedis() — Module-level cache vs runtime config | unassigned |
+| 🟡 medium | ✅ fixed | [L02-15](./findings/L02-15-getredis-module-level-cache-vs-runtime-config.md) | 2 | L02 · CTO | getRedis() — Module-level cache vs runtime config | platform |
 | 🔴 critical | ✅ fixed | [L03-01](./findings/L03-01-divergencia-de-formula-de-fee-ts-vs-sql.md) | 1 | L03 · CFO | Divergência de fórmula de fee — TS vs SQL | backend-platform |
 | 🟠 high | ✅ fixed | [L03-02](./findings/L03-02-congelamento-de-precos-taxas.md) | 1 | L03 · CFO | Congelamento de preços / taxas | cfo |
 | 🟠 high | ✅ fixed | [L03-03](./findings/L03-03-execute-withdrawal-total-deposited-usd-amount-usd-nao.md) | 1 | L03 · CFO | execute_withdrawal — total_deposited_usd -= amount_usd não contabiliza fee do provider | cfo |
@@ -190,7 +190,7 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L10-09](./findings/L10-09-falta-defesa-anti-credential-stuffing-no-mobile-portal.md) | 1 | L10 · CSO | Falta defesa anti credential stuffing no Mobile/Portal | platform-security |
 | 🟡 medium | ⏳ fix-pending | [L10-10](./findings/L10-10-nao-ha-pentest-externo-documentado.md) | 2 | L10 · CSO | Não há pentest externo documentado | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L10-11](./findings/L10-11-sem-inventario-de-chaves-de-api-terceiros.md) | 2 | L10 · CSO | Sem inventário de chaves de API terceiros | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L10-12](./findings/L10-12-csrf-no-portal-confiando-apenas-em-samesite-lax.md) | 2 | L10 · CSO | CSRF no portal confiando apenas em SameSite=Lax | unassigned |
+| 🟡 medium | ✅ fixed | [L10-12](./findings/L10-12-csrf-no-portal-confiando-apenas-em-samesite-lax.md) | 2 | L10 · CSO | CSRF no portal confiando apenas em SameSite=Lax | platform |
 | 🟡 medium | ⏳ fix-pending | [L10-13](./findings/L10-13-sem-dpi-device-posture-no-flutter.md) | 2 | L10 · CSO | Sem DPI (Device Posture) no Flutter | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L10-14](./findings/L10-14-jwts-sem-rotacao-de-refresh-token.md) | 2 | L10 · CSO | JWTs sem rotação de refresh_token | unassigned |
 | 🔴 critical | ✅ fixed | [L11-01](./findings/L11-01-ci-sem-npm-audit-flutter-pub-audit.md) | 1 | L11 · Supply Chain | CI sem npm audit / flutter pub audit | unassigned |
@@ -205,8 +205,8 @@ Total: **348** findings.
 | 🟡 medium | ✅ fixed | [L11-10](./findings/L11-10-actions-checkout-v4-sha-nao-pinned.md) | 2 | L11 · Supply Chain | actions/checkout@v4 SHA não pinned | platform |
 | 🟡 medium | ⏳ fix-pending | [L11-11](./findings/L11-11-sem-renovate-como-alternativa.md) | 2 | L11 · Supply Chain | Sem Renovate como alternativa | unassigned |
 | 🟡 medium | ✅ fixed | [L11-12](./findings/L11-12-npm-ci-sem-ignore-scripts.md) | 2 | L11 · Supply Chain | npm ci sem --ignore-scripts | platform |
-| 🟡 medium | ⏳ fix-pending | [L11-13](./findings/L11-13-lockfile-drift-nao-validado.md) | 2 | L11 · Supply Chain | Lockfile drift não validado | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L11-14](./findings/L11-14-omni-runner-pubspec-lock-commitado.md) | 2 | L11 · Supply Chain | omni_runner/pubspec.lock commitado? | unassigned |
+| 🟡 medium | ✅ fixed | [L11-13](./findings/L11-13-lockfile-drift-nao-validado.md) | 2 | L11 · Supply Chain | Lockfile drift não validado | platform |
+| 🟡 medium | ✅ fixed | [L11-14](./findings/L11-14-omni-runner-pubspec-lock-commitado.md) | 2 | L11 · Supply Chain | omni_runner/pubspec.lock commitado? | mobile |
 | 🔴 critical | ✅ fixed | [L12-01](./findings/L12-01-reconcile-wallets-cron-existe-mas-nao-esta-agendado.md) | 1 | L12 · Cron/Scheduler | reconcile-wallets-cron existe mas NÃO está agendado | platform |
 | 🔴 critical | ✅ fixed | [L12-02](./findings/L12-02-thundering-herd-em-02-00-04-00-utc.md) | 1 | L12 · Cron/Scheduler | Thundering herd em 02:00–04:00 UTC | platform |
 | 🔴 critical | ✅ fixed | [L12-03](./findings/L12-03-5-crons-sem-lock-overlap-risk.md) | 1 | L12 · Cron/Scheduler | */5 * * * * crons sem lock — overlap risk | platform |
@@ -216,9 +216,9 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L12-07](./findings/L12-07-horario-utc-usuarios-br-veem-meia-noite-brasil.md) | 1 | L12 · Cron/Scheduler | Horário UTC → usuários BR veem "meia-noite Brasil" | coo |
 | 🟠 high | ✅ fixed | [L12-08](./findings/L12-08-clearing-cron-em-02-00-consolidacao-de-d.md) | 1 | L12 · Cron/Scheduler | clearing-cron em 02:00 — consolidação de D-1 antes de fim do dia | cfo |
 | 🟠 high | ✅ fixed | [L12-09](./findings/L12-09-lifecycle-cron-dispara-notificacoes-idempotencia-nao-garanti.md) | 1 | L12 · Cron/Scheduler | lifecycle-cron dispara notificações idempotência não garantida | coo |
-| 🟡 medium | ⏳ fix-pending | [L12-10](./findings/L12-10-jobs-pg-cron-executam-como-superuser-padrao.md) | 2 | L12 · Cron/Scheduler | Jobs pg_cron executam como superuser (padrão) | unassigned |
+| 🟡 medium | ✅ fixed | [L12-10](./findings/L12-10-jobs-pg-cron-executam-como-superuser-padrao.md) | 2 | L12 · Cron/Scheduler | Jobs pg_cron executam como superuser (padrão) | platform |
 | 🟡 medium | ✅ fixed | [L12-11](./findings/L12-11-cron-schedule-em-migration-duplicada-corre-risco.md) | 2 | L12 · Cron/Scheduler | cron.schedule em migration duplicada corre risco | platform |
-| 🟡 medium | ⏳ fix-pending | [L12-12](./findings/L12-12-timezone-do-cron-utc-ok-mas-horario-dst.md) | 2 | L12 · Cron/Scheduler | Timezone do cron = UTC ok, mas horário DST? | unassigned |
+| 🟡 medium | ✅ fixed | [L12-12](./findings/L12-12-timezone-do-cron-utc-ok-mas-horario-dst.md) | 2 | L12 · Cron/Scheduler | Timezone do cron = UTC ok, mas horário DST? | platform |
 | 🔴 critical | ✅ fixed | [L13-01](./findings/L13-01-admin-only-routes-admin-professor-routes-ordem-importa.md) | 1 | L13 · Middleware | ADMIN_ONLY_ROUTES + ADMIN_PROFESSOR_ROUTES — ordem importa, e está errada | portal |
 | 🔴 critical | ✅ fixed | [L13-02](./findings/L13-02-nome-da-constante-ainda-em-portugues-admin-professor.md) | 1 | L13 · Middleware | Nome da constante ainda em português (ADMIN_PROFESSOR_ROUTES) | portal |
 | 🔴 critical | ✅ fixed | [L13-03](./findings/L13-03-middleware-executa-query-db-a-cada-request-autenticado.md) | 1 | L13 · Middleware | Middleware executa query DB a cada request autenticado | portal |
