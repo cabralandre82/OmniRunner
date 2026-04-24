@@ -115,5 +115,35 @@ void main() {
         isNull,
       );
     });
+
+    // L01-28 — random QR text must NOT round-trip as an "invite code"
+    test('random QR text is rejected (L01-28)', () {
+      expect(DeepLinkHandler.extractInviteCode('BUY BITCOIN'), isNull);
+      expect(DeepLinkHandler.extractInviteCode('hello world'), isNull);
+      expect(DeepLinkHandler.extractInviteCode('lowercase'), isNull);
+      expect(DeepLinkHandler.extractInviteCode('SHORT'), isNull); // < 6
+      expect(
+        DeepLinkHandler.extractInviteCode('A' * 17),
+        isNull, // > 16 → out of band
+      );
+    });
+
+    test('valid uppercase alnum codes are accepted (L01-28)', () {
+      expect(DeepLinkHandler.extractInviteCode('ABCDEF'), 'ABCDEF');
+      expect(DeepLinkHandler.extractInviteCode('A1B2C3'), 'A1B2C3');
+      expect(
+        DeepLinkHandler.extractInviteCode('CLUB-2026_Q1'),
+        'CLUB-2026_Q1',
+      );
+    });
+
+    test('URL with malformed code returns null (L01-28)', () {
+      expect(
+        DeepLinkHandler.extractInviteCode(
+          'https://omnirunner.app/invite/lowercase',
+        ),
+        isNull,
+      );
+    });
   });
 }

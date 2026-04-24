@@ -187,8 +187,16 @@ class DeepLinkHandler {
     return prefs.getString(PreferencesKeys.pendingInviteCode);
   }
 
+  /// L01-28 — invite codes are uppercase alphanumeric (with optional
+  /// hyphen / underscore separators), 6–16 chars. Anything else
+  /// (random QR text like "BUY BITCOIN", scribbles, accidental
+  /// barcode) is rejected client-side so we don't burn backend rate
+  /// limit on doomed lookups.
+  static final RegExp _inviteCodeShape = RegExp(r'^[A-Z0-9_-]{6,16}$');
+
   /// Parse an invite code from a URL string, QR data, or raw code.
-  /// Returns the extracted code or null if not an invite.
+  /// Returns the extracted code or null if it does not match the
+  /// canonical shape (L01-28).
   static String? extractInviteCode(String input) {
     final trimmed = input.trim();
 
@@ -199,11 +207,11 @@ class DeepLinkHandler {
         uri.pathSegments.length >= 2 &&
         uri.pathSegments[0] == 'invite') {
       final code = uri.pathSegments[1];
-      if (code.isNotEmpty) return code;
+      if (_inviteCodeShape.hasMatch(code)) return code;
+      return null;
     }
 
-    // Raw code (non-empty, non-URL)
-    if (trimmed.isNotEmpty && !trimmed.contains('/')) return trimmed;
+    if (_inviteCodeShape.hasMatch(trimmed)) return trimmed;
 
     return null;
   }
