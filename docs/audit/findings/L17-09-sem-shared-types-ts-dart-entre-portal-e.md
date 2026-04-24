@@ -17,7 +17,9 @@ correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 8046248
+
 owner: platform
 runbook: docs/runbooks/SHARED_TYPES_TS_DART.md
 effort_points: 2

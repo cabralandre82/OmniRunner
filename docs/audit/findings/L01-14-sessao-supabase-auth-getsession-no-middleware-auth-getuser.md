@@ -18,7 +18,9 @@ correction_type: process
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 8046248
+
 owner: platform
 runbook: null
 effort_points: 2

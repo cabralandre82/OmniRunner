@@ -16,7 +16,9 @@ correction_type: spec
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 9a74988
+
 owner: mobile+security
 runbook: docs/security/MOBILE_DEVICE_POSTURE_POLICY.md
 effort_points: 2

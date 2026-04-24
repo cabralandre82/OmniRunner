@@ -14,7 +14,9 @@ correction_type: code
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 9b5eb71
+
 owner: finance
 runbook: null
 effort_points: 2

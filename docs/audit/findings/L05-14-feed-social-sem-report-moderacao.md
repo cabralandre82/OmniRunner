@@ -16,7 +16,9 @@ correction_type: spec
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 9b5eb71
+
 owner: product+legal+trust-safety
 runbook: docs/policies/SOCIAL_MODERATION_POLICY.md
 effort_points: 2

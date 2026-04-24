@@ -16,7 +16,9 @@ correction_type: code
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 9a74988
+
 owner: mobile
 runbook: null
 effort_points: 2

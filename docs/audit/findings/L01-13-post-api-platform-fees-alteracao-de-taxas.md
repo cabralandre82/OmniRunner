@@ -20,7 +20,9 @@ test_required: true
 tests:
   - portal/src/app/api/platform/fees/route.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 8046248
+
 owner: platform-finance
 runbook: null
 effort_points: 2

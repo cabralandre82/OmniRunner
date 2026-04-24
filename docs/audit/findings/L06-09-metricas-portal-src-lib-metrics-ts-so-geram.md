@@ -16,7 +16,9 @@ correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 9b5eb71
+
 owner: platform+observability
 runbook: docs/runbooks/METRICS_EXPORTER_DECISION.md
 effort_points: 2

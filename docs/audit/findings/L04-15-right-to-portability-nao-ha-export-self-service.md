@@ -16,7 +16,9 @@ correction_type: spec
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 9b5eb71
+
 owner: legal+platform
 runbook: docs/runbooks/DATA_PORTABILITY_EXPORT.md
 effort_points: 2

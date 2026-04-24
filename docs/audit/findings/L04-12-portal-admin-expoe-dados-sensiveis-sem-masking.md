@@ -18,7 +18,9 @@ test_required: true
 tests:
   - portal/src/lib/pii/mask.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 9b5eb71
+
 owner: platform-security+legal
 runbook: null
 effort_points: 2

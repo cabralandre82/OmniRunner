@@ -16,7 +16,9 @@ correction_type: spec
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 8046248
+
 owner: finance+security
 runbook: docs/security/COIN_LEDGER_TAMPER_EVIDENCE.md
 effort_points: 2

@@ -22,7 +22,9 @@ test_required: true
 tests:
   - portal/src/lib/observability/sentryPii.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 9b5eb71
+
 owner: platform-security
 runbook: null
 effort_points: 2

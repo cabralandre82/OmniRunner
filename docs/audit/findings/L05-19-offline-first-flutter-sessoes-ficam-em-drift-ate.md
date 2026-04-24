@@ -16,7 +16,9 @@ correction_type: spec
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 9b5eb71
+
 owner: mobile+reliability
 runbook: docs/runbooks/MOBILE_OFFLINE_SESSION_BACKUP.md
 effort_points: 2

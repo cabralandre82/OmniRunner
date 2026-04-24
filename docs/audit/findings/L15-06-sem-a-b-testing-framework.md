@@ -16,7 +16,9 @@ correction_type: spec
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 9a74988
+
 owner: product+platform
 runbook: docs/runbooks/AB_TESTING_FRAMEWORK.md
 effort_points: 2
