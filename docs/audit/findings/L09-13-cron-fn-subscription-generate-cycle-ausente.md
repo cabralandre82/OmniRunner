@@ -4,11 +4,11 @@ audit_ref: "9.13"
 lens: 9
 title: "Cron fn_subscription_generate_cycle ausente — faturas mensais nunca são geradas"
 severity: critical
-status: fix-pending
+status: fixed
 wave: 0
 discovered_at: 2026-04-24
-fixed_at: null
-closed_at: null
+fixed_at: 2026-04-24
+closed_at: 2026-04-24
 tags: ["finance", "cron", "subscriptions", "billing", "reliability"]
 files:
   - supabase/migrations/20260424160000_l09_13_subscription_crons.sql
@@ -17,7 +17,7 @@ test_required: true
 tests:
   - tools/audit/check-cron-idempotency.ts
 linked_issues: []
-linked_prs: []
+linked_prs: ["1521561"]
 owner: platform-finance
 runbook: null
 effort_points: 2
@@ -199,3 +199,9 @@ SELECT public.fn_subscription_generate_cycle();
 
 - `2026-04-24` — Descoberto durante análise de prontidão de
   go-to-market do financeiro (estudo de produto).
+- `2026-04-24` — Fixed em `1521561`. Migration agenda o cron com
+  pattern L12-11 (IF NOT EXISTS + unschedule defensivo), SET LOCAL
+  role inline para satisfazer o runtime guard da função, seed em
+  cron_run_state. check-cron-idempotency.ts passa (9 calls, 0
+  unguarded). Fechado junto com L09-14 no mesmo arquivo por serem
+  par operacional.

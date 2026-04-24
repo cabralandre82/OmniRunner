@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T18:14:16.772Z",
+  "generated_at": "2026-04-24T18:15:29.946Z",
   "total": 359,
   "by_severity": {
     "high": 128,
@@ -10,10 +10,10 @@
     "na": 7
   },
   "by_status": {
-    "fixed": 334,
+    "fixed": 336,
     "not-reproducible": 3,
     "duplicate": 8,
-    "fix-pending": 6,
+    "fix-pending": 4,
     "wont-fix": 8
   },
   "by_wave": {
@@ -6845,11 +6845,11 @@
       "lens": 9,
       "title": "Cron fn_subscription_generate_cycle ausente — faturas mensais nunca são geradas",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-24T00:00:00.000Z",
-      "fixed_at": null,
-      "closed_at": null,
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "finance",
         "cron",
@@ -6866,7 +6866,9 @@
         "tools/audit/check-cron-idempotency.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "1521561"
+      ],
       "owner": "platform-finance",
       "runbook": null,
       "effort_points": 2,
@@ -6881,11 +6883,11 @@
       "lens": 9,
       "title": "Cron fn_subscription_mark_overdue ausente — inadimplência invisível",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-24T00:00:00.000Z",
-      "fixed_at": null,
-      "closed_at": null,
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "finance",
         "cron",
@@ -6903,7 +6905,9 @@
         "tools/audit/check-cron-idempotency.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "1521561"
+      ],
       "owner": "platform-finance",
       "runbook": null,
       "effort_points": 1,

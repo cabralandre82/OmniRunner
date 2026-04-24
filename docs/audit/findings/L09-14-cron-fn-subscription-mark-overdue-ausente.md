@@ -4,11 +4,11 @@ audit_ref: "9.14"
 lens: 9
 title: "Cron fn_subscription_mark_overdue ausente — inadimplência invisível"
 severity: high
-status: fix-pending
+status: fixed
 wave: 0
 discovered_at: 2026-04-24
-fixed_at: null
-closed_at: null
+fixed_at: 2026-04-24
+closed_at: 2026-04-24
 tags: ["finance", "cron", "subscriptions", "billing", "reliability", "dunning"]
 files:
   - supabase/migrations/20260424160000_l09_13_subscription_crons.sql
@@ -17,7 +17,7 @@ test_required: true
 tests:
   - tools/audit/check-cron-idempotency.ts
 linked_issues: []
-linked_prs: []
+linked_prs: ["1521561"]
 owner: platform-finance
 runbook: null
 effort_points: 1
@@ -162,3 +162,6 @@ SELECT public.fn_subscription_mark_overdue();
 
 - `2026-04-24` — Descoberto junto com L09-13 na análise de prontidão
   do financeiro. Mesmo padrão ("function existe, cron ausente").
+- `2026-04-24` — Fixed em `1521561`. Agendado 05:30 UTC diário (30min
+  depois do L09-13 para não competir no dia 1). Sem advisory lock
+  porque UPDATE é 100% idempotente. Mesma migration que L09-13.
