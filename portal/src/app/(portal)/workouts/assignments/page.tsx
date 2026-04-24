@@ -14,12 +14,28 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 
 const PAGE_SIZE = 25;
 
+// L05-26 — humaniza "faz X h/d" para a coluna Relógio. Inputs curtos
+// viram "agora", >7 dias mostra data crua.
+function timeAgo(iso: string): string {
+  const ageMs = Date.now() - new Date(iso).getTime();
+  const minutes = Math.floor(ageMs / 60_000);
+  if (minutes < 1) return "agora";
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+  return formatDateISO(iso.slice(0, 10));
+}
+
 interface Assignment {
   id: string;
   scheduled_date: string;
   status: string;
   athlete_name: string;
   template_name: string;
+  last_export_at: string | null;
+  last_export_surface: "app" | "portal" | null;
 }
 
 async function getAssignments(
@@ -56,8 +72,9 @@ async function getAssignments(
 
   const athleteIds = Array.from(new Set(assignments.map((a) => a.athlete_user_id)));
   const templateIds = Array.from(new Set(assignments.map((a) => a.template_id)));
+  const assignmentIds = assignments.map((a) => a.id);
 
-  const [profilesRes, templatesRes] = await Promise.all([
+  const [profilesRes, templatesRes, exportsRes] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, display_name")
@@ -66,6 +83,11 @@ async function getAssignments(
       .from("coaching_workout_templates")
       .select("id, name")
       .in("id", templateIds),
+    // L05-26 — last export per assignment, via the view (RLS-compliant).
+    supabase
+      .from("v_assignment_last_export")
+      .select("assignment_id, last_export_at, surface")
+      .in("assignment_id", assignmentIds),
   ]);
 
   const profileMap = new Map(
@@ -80,15 +102,29 @@ async function getAssignments(
       t.name,
     ]),
   );
+  const exportMap = new Map(
+    (exportsRes.data ?? []).map(
+      (e: {
+        assignment_id: string;
+        last_export_at: string;
+        surface: "app" | "portal";
+      }) => [e.assignment_id, { at: e.last_export_at, surface: e.surface }],
+    ),
+  );
 
   return {
-    assignments: assignments.map((a) => ({
-      id: a.id,
-      scheduled_date: a.scheduled_date,
-      status: a.status,
-      athlete_name: profileMap.get(a.athlete_user_id) ?? "Sem nome",
-      template_name: templateMap.get(a.template_id) ?? "Template removido",
-    })),
+    assignments: assignments.map((a) => {
+      const exp = exportMap.get(a.id);
+      return {
+        id: a.id,
+        scheduled_date: a.scheduled_date,
+        status: a.status,
+        athlete_name: profileMap.get(a.athlete_user_id) ?? "Sem nome",
+        template_name: templateMap.get(a.template_id) ?? "Template removido",
+        last_export_at: exp?.at ?? null,
+        last_export_surface: exp?.surface ?? null,
+      };
+    }),
     total: count ?? 0,
   };
 }
@@ -183,6 +219,12 @@ export default async function WorkoutAssignmentsPage({
                 <th className="px-4 py-3 text-left font-medium text-content-secondary">Template</th>
                 <th className="px-4 py-3 text-left font-medium text-content-secondary">Data</th>
                 <th className="px-4 py-3 text-center font-medium text-content-secondary">Status</th>
+                <th
+                  className="px-4 py-3 text-center font-medium text-content-secondary"
+                  title="Última vez que o .fit foi gerado para este treino"
+                >
+                  Relógio
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
@@ -206,6 +248,27 @@ export default async function WorkoutAssignmentsPage({
                       >
                         {statusInfo.label}
                       </span>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-center">
+                      {a.last_export_at ? (
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            a.last_export_surface === "app"
+                              ? "bg-success-soft text-success"
+                              : "bg-info-soft text-info"
+                          }`}
+                          title={`Gerado ${
+                            a.last_export_surface === "app"
+                              ? "pelo atleta"
+                              : "pelo coach (portal)"
+                          } em ${new Date(a.last_export_at).toLocaleString("pt-BR")}`}
+                        >
+                          {a.last_export_surface === "app" ? "Atleta" : "Coach"}{" "}
+                          · {timeAgo(a.last_export_at)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-content-muted">—</span>
+                      )}
                     </td>
                   </tr>
                 );

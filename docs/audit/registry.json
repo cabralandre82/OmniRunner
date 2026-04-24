@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T16:58:16.888Z",
-  "total": 353,
+  "generated_at": "2026-04-24T17:27:43.828Z",
+  "total": 354,
   "by_severity": {
-    "high": 126,
+    "high": 127,
     "critical": 70,
     "medium": 129,
     "safe": 21,
@@ -13,11 +13,11 @@
     "fixed": 330,
     "not-reproducible": 3,
     "duplicate": 8,
-    "fix-pending": 4,
+    "fix-pending": 5,
     "wont-fix": 8
   },
   "by_wave": {
-    "0": 20,
+    "0": 21,
     "1": 179,
     "2": 125,
     "3": 29
@@ -27,7 +27,7 @@
     "2": 15,
     "3": 20,
     "4": 15,
-    "5": 25,
+    "5": 26,
     "6": 13,
     "7": 13,
     "8": 12,
@@ -4772,6 +4772,45 @@
       "owner": "platform-workout",
       "runbook": null,
       "effort_points": 2,
+      "blocked_by": [],
+      "duplicate_of": null,
+      "deferred_to_wave": null,
+      "note": null
+    },
+    {
+      "id": "L05-26",
+      "audit_ref": "5.26",
+      "lens": 5,
+      "title": "Zero delivery confirmation: coach não sabe se .fit chegou ao relógio",
+      "severity": "high",
+      "status": "fix-pending",
+      "wave": 0,
+      "discovered_at": "2026-04-24T00:00:00.000Z",
+      "fixed_at": null,
+      "closed_at": null,
+      "tags": [
+        "workout",
+        "observability",
+        "coach",
+        "fit-export",
+        "delivery"
+      ],
+      "files": [
+        "supabase/migrations/20260424140000_l05_26_workout_export_log.sql",
+        "supabase/functions/generate-fit-workout/index.ts",
+        "portal/src/app/api/training-plan/workouts/[id]/export.fit/route.ts",
+        "portal/src/app/(portal)/workouts/assignments/page.tsx"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "portal/src/app/api/training-plan/workouts/[id]/export.fit/route.test.ts"
+      ],
+      "linked_issues": [],
+      "linked_prs": [],
+      "owner": "platform-workout",
+      "runbook": null,
+      "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,

@@ -379,14 +379,43 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } },
     );
 
-    const { assignment_id, template_id } = await req.json();
+    // L05-26 — we need auth.uid() to set actor_user_id on the log row (RLS
+    // policy requires it to match the caller). This is a single round-trip
+    // to /auth/v1/user; Supabase caches it.
+    const { data: userData } = await supabase.auth.getUser();
+    const actorUserId = userData?.user?.id ?? null;
+
+    const {
+      assignment_id,
+      template_id,
+      surface: rawSurface,
+      device_hint: rawDeviceHint,
+    } = await req.json();
     let templateId = template_id;
     let workoutName = "";
+    let groupId: string | null = null;
+    // L05-26 — normalize log-shape inputs. Unknown values collapse to defaults
+    // (we never trust client-controlled CHECK values).
+    const surface: "app" | "portal" =
+      rawSurface === "portal" ? "portal" : "app";
+    const allowedHints = [
+      "garmin",
+      "coros",
+      "suunto",
+      "polar",
+      "apple_watch",
+      "wear_os",
+      "other",
+    ];
+    const deviceHint: string | null =
+      typeof rawDeviceHint === "string" && allowedHints.includes(rawDeviceHint)
+        ? rawDeviceHint
+        : null;
 
     if (assignment_id) {
       const { data: assignment, error: aErr } = await supabase
         .from("coaching_workout_assignments")
-        .select("template_id, coaching_workout_templates(name)")
+        .select("template_id, group_id, coaching_workout_templates(name)")
         .eq("id", assignment_id)
         .single();
 
@@ -397,7 +426,9 @@ serve(async (req) => {
         });
       }
       templateId = assignment.template_id;
-      workoutName = (assignment as any).coaching_workout_templates?.name ?? "Workout";
+      groupId = (assignment as { group_id: string }).group_id;
+      workoutName =
+        (assignment as any).coaching_workout_templates?.name ?? "Workout";
     }
 
     if (!templateId) {
@@ -407,13 +438,14 @@ serve(async (req) => {
       });
     }
 
-    if (!workoutName) {
+    if (!workoutName || !groupId) {
       const { data: tmpl } = await supabase
         .from("coaching_workout_templates")
-        .select("name")
+        .select("name, group_id")
         .eq("id", templateId)
         .single();
-      workoutName = tmpl?.name ?? "Workout";
+      workoutName = workoutName || (tmpl?.name ?? "Workout");
+      groupId = groupId || (tmpl?.group_id ?? null);
     }
 
     const { data: blocks, error: bErr } = await supabase
@@ -427,6 +459,18 @@ serve(async (req) => {
       .order("order_index");
 
     if (bErr || !blocks || blocks.length === 0) {
+      await logExport({
+        supabase,
+        actorUserId,
+        groupId,
+        templateId,
+        assignmentId: assignment_id ?? null,
+        surface,
+        deviceHint,
+        kind: "failed",
+        bytes: null,
+        errorCode: bErr ? "DB_ERROR" : "NO_BLOCKS",
+      });
       return new Response(JSON.stringify({ error: "No workout blocks found" }), {
         status: 404,
         headers: { "Content-Type": "application/json" },
@@ -439,6 +483,21 @@ serve(async (req) => {
       .replace(/[^a-zA-Z0-9_\- ]/g, "")
       .replace(/\s+/g, "_")
       .substring(0, 50);
+
+    // L05-26 — best-effort log. Never fail the request over log-write errors;
+    // the user still gets their .fit, we just lose observability for this row.
+    await logExport({
+      supabase,
+      actorUserId,
+      groupId,
+      templateId,
+      assignmentId: assignment_id ?? null,
+      surface,
+      deviceHint,
+      kind: "generated",
+      bytes: fitBytes.byteLength,
+      errorCode: null,
+    });
 
     return new Response(fitBytes, {
       status: 200,
@@ -454,3 +513,61 @@ serve(async (req) => {
     return jsonErr(500, "INTERNAL", err instanceof Error ? err.message : String(err), undefined, undefined, undefined, req);
   }
 });
+
+// L05-26 — best-effort export log writer. Swallows errors; callers must not
+// depend on the return value for request success. `groupId` is required for
+// the RLS `self_export_log_insert` policy — if missing (edge case where the
+// template was deleted between the read and the write), we skip the log.
+// `supabase` typed as `any` on purpose: the SupabaseClient generic
+// signature drifts between Deno import-map versions and pinning it fights
+// the rest of the file (blocks/assignments selects are already untyped).
+// Runtime surface (`.from().insert()`) is stable.
+async function logExport(params: {
+  supabase: any;
+  actorUserId: string | null;
+  groupId: string | null;
+  templateId: string;
+  assignmentId: string | null;
+  surface: "app" | "portal";
+  deviceHint: string | null;
+  kind: "generated" | "shared" | "delivered" | "failed";
+  bytes: number | null;
+  errorCode: string | null;
+}): Promise<void> {
+  try {
+    if (!params.actorUserId || !params.groupId) {
+      // Without actor or group, RLS rejects the insert — skip silently.
+      // Log to stderr so we notice if it becomes recurrent.
+      console.warn("logExport: missing actor/group, skipping", {
+        templateId: params.templateId,
+        hasActor: !!params.actorUserId,
+        hasGroup: !!params.groupId,
+      });
+      return;
+    }
+    const { error } = await params.supabase
+      .from("coaching_workout_export_log")
+      .insert({
+        group_id: params.groupId,
+        actor_user_id: params.actorUserId,
+        template_id: params.templateId,
+        assignment_id: params.assignmentId,
+        surface: params.surface,
+        kind: params.kind,
+        bytes: params.bytes,
+        device_hint: params.deviceHint,
+        error_code: params.errorCode,
+      });
+    if (error) {
+      console.warn("logExport insert failed", {
+        templateId: params.templateId,
+        error: error.message,
+      });
+    }
+  } catch (err) {
+    console.warn("logExport unexpected error", {
+      templateId: params.templateId,
+      err: err instanceof Error ? err.message : String(err),
+    });
+  }
+}

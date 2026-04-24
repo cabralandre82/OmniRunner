@@ -172,7 +172,9 @@ describe("GET /api/training-plan/workouts/[id]/export.fit", () => {
     const headers = init.headers as Record<string, string>;
     expect(headers.Authorization).toBe(`Bearer ${TEST_SESSION.access_token}`);
     expect(headers.apikey).toBe("stub-anon-key");
-    expect(init.body).toBe(JSON.stringify({ template_id: "tpl-1" }));
+    expect(init.body).toBe(
+      JSON.stringify({ template_id: "tpl-1", surface: "portal" }),
+    );
   });
 
   it("returns 429 when rate-limited", async () => {

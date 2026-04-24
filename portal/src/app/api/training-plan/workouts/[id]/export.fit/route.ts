@@ -103,7 +103,13 @@ export async function GET(
         apikey: anonKey,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ template_id: params.id }),
+      body: JSON.stringify({
+        template_id: params.id,
+        // L05-26 — tells the Edge Function to tag the export log with the
+        // portal surface, so the coach's manual smoke-tests don't get
+        // confused with athlete-initiated exports in the assignments page.
+        surface: "portal",
+      }),
     });
   } catch (err) {
     logger.error("export.fit edge call failed", {
