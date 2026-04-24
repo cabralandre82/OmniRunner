@@ -91,6 +91,8 @@
     "audit:cron-idempotency": "npx tsx tools/audit/check-cron-idempotency.ts",
     "audit:k2-sql-fixes": "npx tsx tools/audit/check-k2-sql-fixes.ts",
     "audit:k3-domain-fixes": "npx tsx tools/audit/check-k3-domain-fixes.ts",
+    "audit:k4-security-fixes": "npx tsx tools/audit/check-k4-security-fixes.ts",
+    "audit:lockfile-drift": "npx tsx tools/audit/check-lockfile-drift.ts",
     "audit:og-metadata": "npx tsx tools/audit/check-og-metadata.ts",
     "audit:challenge-invite-deep-link": "npx tsx tools/audit/check-challenge-invite-deep-link.ts",
     "audit:milestone-celebration": "npx tsx tools/audit/check-milestone-celebration.ts",
