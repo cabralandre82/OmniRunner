@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T17:34:20.042Z",
+  "generated_at": "2026-04-24T17:35:11.242Z",
   "total": 355,
   "by_severity": {
     "high": 127,
@@ -10,10 +10,10 @@
     "na": 7
   },
   "by_status": {
-    "fixed": 331,
+    "fixed": 332,
     "not-reproducible": 3,
     "duplicate": 8,
-    "fix-pending": 5,
+    "fix-pending": 4,
     "wont-fix": 8
   },
   "by_wave": {
@@ -4824,11 +4824,11 @@
       "lens": 5,
       "title": "Export log: device_hint nunca é populado automaticamente",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-24T00:00:00.000Z",
-      "fixed_at": null,
-      "closed_at": null,
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "workout",
         "observability",
@@ -4844,7 +4844,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "cef3afa"
+      ],
       "owner": "platform-workout",
       "runbook": null,
       "effort_points": 1,

@@ -4,11 +4,11 @@ audit_ref: "5.27"
 lens: 5
 title: "Export log: device_hint nunca é populado automaticamente"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 0
 discovered_at: 2026-04-24
-fixed_at: null
-closed_at: null
+fixed_at: 2026-04-24
+closed_at: 2026-04-24
 tags: ["workout", "observability", "coach", "fit-export", "delivery"]
 files:
   - supabase/functions/generate-fit-workout/index.ts
@@ -17,7 +17,7 @@ correction_type: code
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs: ["cef3afa"]
 owner: platform-workout
 runbook: null
 effort_points: 1
