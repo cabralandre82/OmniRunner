@@ -4,11 +4,11 @@ audit_ref: "9.17"
 lens: 9
 title: "Atleta sem alerta in-app quando mensalidade está próxima do vencimento"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 0
 discovered_at: 2026-04-24
-fixed_at: null
-closed_at: null
+fixed_at: 2026-04-24
+closed_at: 2026-04-24
 tags: ["finance", "flutter", "atleta", "billing", "engagement", "retention"]
 files:
   - omni_runner/lib/domain/policies/financial_alert_policy.dart
@@ -19,7 +19,7 @@ test_required: true
 tests:
   - omni_runner/test/domain/policies/financial_alert_policy_test.dart
 linked_issues: []
-linked_prs: []
+linked_prs: ["252d227"]
 owner: platform-finance
 runbook: null
 effort_points: 2
@@ -200,3 +200,16 @@ Posicionamento escolhido porque:
 
 - `2026-04-24` — Descoberto como extensão natural da L09-16: a
   tela existe mas é passiva, atleta não é alertado.
+- `2026-04-24` — **Corrigido em `252d227`**. Entrega:
+  - `FinancialAlertPolicy` (domain/policies, função pura) com
+    regras: overdue → danger; pending ≤3d → danger; pending ≤7d
+    → warning; senão → null.
+  - `FinancialAlertBanner` (presentation/widgets) lendo via
+    `AthleteSubscriptionInvoiceService` (limit=6), degradando
+    silenciosamente em erros.
+  - Integrado no topo do `AthleteDashboardScreen`, acima de
+    primeiros passos.
+  - 18 unit tests exaustivos (casos triviais, janelas warning
+    e danger, overdue, prioridade entre múltiplas invoices,
+    `canPayInline`).
+  - `flutter analyze` limpo (0 issues).
