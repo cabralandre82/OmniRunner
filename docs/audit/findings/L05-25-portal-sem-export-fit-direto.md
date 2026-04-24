@@ -4,11 +4,11 @@ audit_ref: "5.25"
 lens: 5
 title: "Portal: coach não consegue exportar .fit direto do template"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 0
 discovered_at: 2026-04-24
-fixed_at: null
-closed_at: null
+fixed_at: 2026-04-24
+closed_at: 2026-04-24
 tags: ["workout", "portal", "coach", "fit-export", "integration"]
 files:
   - portal/src/app/(portal)/workouts/[id]/page.tsx
@@ -18,7 +18,7 @@ test_required: true
 tests:
   - portal/src/app/api/training-plan/workouts/[id]/export.fit/route.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs: ["34aa89b"]
 owner: platform-workout
 runbook: null
 effort_points: 2

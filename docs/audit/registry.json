@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T16:57:13.949Z",
+  "generated_at": "2026-04-24T16:58:16.888Z",
   "total": 353,
   "by_severity": {
     "high": 126,
@@ -10,10 +10,10 @@
     "na": 7
   },
   "by_status": {
-    "fixed": 328,
+    "fixed": 330,
     "not-reproducible": 3,
     "duplicate": 8,
-    "fix-pending": 6,
+    "fix-pending": 4,
     "wont-fix": 8
   },
   "by_wave": {
@@ -4707,11 +4707,11 @@
       "lens": 5,
       "title": "Flutter: Polar (e correção Suunto) excluídos de _fitCompatible",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-24T00:00:00.000Z",
-      "fixed_at": null,
-      "closed_at": null,
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "workout",
         "flutter",
@@ -4727,7 +4727,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "34aa89b"
+      ],
       "owner": "platform-workout",
       "runbook": null,
       "effort_points": 1,
@@ -4742,11 +4744,11 @@
       "lens": 5,
       "title": "Portal: coach não consegue exportar .fit direto do template",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-24T00:00:00.000Z",
-      "fixed_at": null,
-      "closed_at": null,
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "workout",
         "portal",
@@ -4764,7 +4766,9 @@
         "portal/src/app/api/training-plan/workouts/[id]/export.fit/route.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "34aa89b"
+      ],
       "owner": "platform-workout",
       "runbook": null,
       "effort_points": 2,

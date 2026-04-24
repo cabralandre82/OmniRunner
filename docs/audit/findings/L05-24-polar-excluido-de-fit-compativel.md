@@ -4,11 +4,11 @@ audit_ref: "5.24"
 lens: 5
 title: "Flutter: Polar (e correção Suunto) excluídos de _fitCompatible"
 severity: high
-status: fix-pending
+status: fixed
 wave: 0
 discovered_at: 2026-04-24
-fixed_at: null
-closed_at: null
+fixed_at: 2026-04-24
+closed_at: 2026-04-24
 tags: ["workout", "flutter", "watch", "integration", "coach", "athlete"]
 files:
   - omni_runner/lib/presentation/screens/athlete_workout_day_screen.dart
@@ -16,7 +16,7 @@ correction_type: code
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs: ["34aa89b"]
 owner: platform-workout
 runbook: null
 effort_points: 1
