@@ -58,7 +58,7 @@ jobs:
       - run: flutter test --coverage --reporter expanded
       - name: Upload coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: omni_runner/coverage/lcov.info
@@ -110,7 +110,7 @@ jobs:
           echo "## Build Metrics" >> $GITHUB_STEP_SUMMARY
           echo "- **Build duration:** ${{ steps.build-apk.outputs.build_duration_seconds }} seconds" >> $GITHUB_STEP_SUMMARY
           echo "- **APK size:** ${{ steps.apk-size-check.outputs.apk_size_mb }} MB" >> $GITHUB_STEP_SUMMARY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: apk-release
           path: omni_runner/build/app/outputs/flutter-apk/app-release.apk
