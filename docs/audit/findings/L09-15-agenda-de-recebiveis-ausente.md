@@ -4,11 +4,11 @@ audit_ref: "9.15"
 lens: 9
 title: "Portal financeiro sem agenda de recebíveis — coach voa no escuro"
 severity: high
-status: fix-pending
+status: fixed
 wave: 0
 discovered_at: 2026-04-24
-fixed_at: null
-closed_at: null
+fixed_at: 2026-04-24
+closed_at: 2026-04-24
 tags: ["finance", "ux", "coach", "billing", "agenda", "forecast"]
 files:
   - supabase/migrations/20260424170000_l09_15_financial_agenda.sql
@@ -21,7 +21,7 @@ test_required: true
 tests:
   - portal/src/app/api/financial/generate-cycle/route.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs: ["bbf87ef"]
 owner: platform-finance
 runbook: null
 effort_points: 3
@@ -206,3 +206,10 @@ Empty state (zero invoices no mês):
 
 - `2026-04-24` — Descoberto na análise de prontidão do financeiro;
   foi o gap #1 listado pelo user ("tem agenda?").
+- `2026-04-24` — Corrigido em `bbf87ef` (Wave F · slice 2):
+  migration com RPC admin-callable, API route POST
+  /api/financial/generate-cycle (10 tests), página
+  /financial/agenda (4 KPIs + lista agrupada por due_date + badges
+  de atraso), link no dashboard financeiro. build-registry +
+  verify + check-athlete-subscriptions + check-cron-idempotency
+  todos verdes.

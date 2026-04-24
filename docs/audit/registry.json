@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T18:23:00.738Z",
+  "generated_at": "2026-04-24T18:24:56.613Z",
   "total": 360,
   "by_severity": {
     "high": 129,
@@ -10,10 +10,10 @@
     "na": 7
   },
   "by_status": {
-    "fixed": 336,
+    "fixed": 337,
     "not-reproducible": 3,
     "duplicate": 8,
-    "fix-pending": 5,
+    "fix-pending": 4,
     "wont-fix": 8
   },
   "by_wave": {
@@ -6924,11 +6924,11 @@
       "lens": 9,
       "title": "Portal financeiro sem agenda de recebíveis — coach voa no escuro",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-24T00:00:00.000Z",
-      "fixed_at": null,
-      "closed_at": null,
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "finance",
         "ux",
@@ -6950,7 +6950,9 @@
         "portal/src/app/api/financial/generate-cycle/route.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "bbf87ef"
+      ],
       "owner": "platform-finance",
       "runbook": null,
       "effort_points": 3,
