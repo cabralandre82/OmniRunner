@@ -185,13 +185,34 @@ export default async function WorkoutDetailPage({
             </div>
           )}
           {blockList.map((block) => {
+            // L05-22: explicit repeat_end closes the nesting; we no longer
+            // guess based on block_type. Legacy templates without repeat_end
+            // keep the old heuristic as a fallback so the UI doesn't regress.
             const isRepeat = block.block_type === "repeat";
+            const isRepeatEnd = block.block_type === "repeat_end";
             if (isRepeat) inRepeat = true;
+            if (isRepeatEnd) inRepeat = false;
+            // Legacy fallback: if no repeat_end ever shows up, close on the
+            // first non-active block (matches pre-L05-21 visual behavior).
             if (
               !isRepeat &&
+              !isRepeatEnd &&
               !["interval", "recovery"].includes(block.block_type)
             ) {
               inRepeat = false;
+            }
+
+            if (isRepeatEnd) {
+              // Don't render repeat_end as a visible row — it's a structural
+              // marker only. Show a subtle separator so the coach still sees
+              // the group boundary.
+              return (
+                <div
+                  key={block.id}
+                  className="border-l-2 border-brand/40 ml-8 py-1"
+                  aria-hidden="true"
+                />
+              );
             }
 
             const details: string[] = [];

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { NoGroupSelected } from "@/components/no-group-selected";
 import { formatDateISO } from "@/lib/format";
+import { sumTotals, type BlockType } from "@/lib/workout/expand-repeats";
 
 export const dynamic = "force-dynamic";
 
@@ -23,24 +24,19 @@ interface WorkoutTemplate {
 }
 
 function calcTotalDistance(blocks: WorkoutBlock[]): number {
-  let total = 0;
-  let repeatMult = 1;
-  let inRepeat = false;
-  for (const b of blocks) {
-    if (b.block_type === "repeat") {
-      repeatMult = b.repeat_count ?? 1;
-      inRepeat = true;
-      continue;
-    }
-    if (b.block_type !== "rest" && b.distance_meters) {
-      total += b.distance_meters * (inRepeat ? repeatMult : 1);
-    }
-    if (!["interval", "recovery"].includes(b.block_type)) {
-      inRepeat = false;
-      repeatMult = 1;
-    }
-  }
-  return total;
+  // L05-22: delegated to shared helper. The prior heuristic (inRepeat while
+  // block_type ∈ {interval,recovery}) diverged from the FIT encoder which used
+  // "until next repeat marker or EOL" — coach saw 5km in the UI and the watch
+  // received 55km. Single source of truth in `@/lib/workout/expand-repeats`.
+  return sumTotals(
+    blocks.map((b) => ({
+      order_index: 0, // positional iteration — order_index not consulted
+      block_type: b.block_type as BlockType,
+      duration_seconds: null,
+      distance_meters: b.distance_meters,
+      repeat_count: b.repeat_count,
+    })),
+  ).distanceM;
 }
 
 async function getTemplates(groupId: string): Promise<WorkoutTemplate[]> {

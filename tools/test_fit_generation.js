@@ -163,37 +163,62 @@ function blockToFitStep(block) {
   };
 }
 
+// L05-21/L05-22: mirrors the logic in
+//   supabase/functions/_shared/workout_expand.ts
+//   portal/src/lib/workout/expand-repeats.ts
+// If you touch this, mirror the change in those two files (and the
+// vitest suite portal/src/lib/workout/expand-repeats.test.ts).
 function expandBlocks(blocks) {
   const steps = [];
-  let i = 0;
-  while (i < blocks.length) {
+  let activeGroup = null; // { startStep, count }
+
+  for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i];
+
     if (block.block_type === "repeat") {
-      const repeatCount = block.repeat_count || 1;
-      const repeatStartIndex = steps.length;
-      i++;
-      const innerBlocks = [];
-      while (i < blocks.length && blocks[i].block_type !== "repeat") {
-        innerBlocks.push(blocks[i]);
-        i++;
+      if (activeGroup) {
+        // Nested repeats not supported — drop inner opener.
+        continue;
       }
-      for (const inner of innerBlocks) {
-        steps.push(blockToFitStep(inner));
-      }
-      steps.push({
-        durationType: DUR_REPEAT_UNTIL_STEPS_CMPLT,
-        durationValue: repeatStartIndex,
-        targetType: TARGET_OPEN,
-        targetValue: repeatCount,
-        customLow: 0,
-        customHigh: 0,
-        intensity: INTENSITY_ACTIVE,
-      });
-    } else {
-      steps.push(blockToFitStep(block));
-      i++;
+      const rc = typeof block.repeat_count === "number" && block.repeat_count >= 1
+        ? block.repeat_count
+        : 1;
+      activeGroup = { startStep: steps.length, count: rc };
+      continue;
     }
+
+    if (block.block_type === "repeat_end") {
+      if (activeGroup) {
+        steps.push({
+          durationType: DUR_REPEAT_UNTIL_STEPS_CMPLT,
+          durationValue: activeGroup.startStep,
+          targetType: TARGET_OPEN,
+          targetValue: activeGroup.count,
+          customLow: 0,
+          customHigh: 0,
+          intensity: INTENSITY_ACTIVE,
+        });
+        activeGroup = null;
+      }
+      continue;
+    }
+
+    steps.push(blockToFitStep(block));
   }
+
+  // Legacy fallback: unclosed repeat at EOL → synthesize the marker.
+  if (activeGroup) {
+    steps.push({
+      durationType: DUR_REPEAT_UNTIL_STEPS_CMPLT,
+      durationValue: activeGroup.startStep,
+      targetType: TARGET_OPEN,
+      targetValue: activeGroup.count,
+      customLow: 0,
+      customHigh: 0,
+      intensity: INTENSITY_ACTIVE,
+    });
+  }
+
   return steps;
 }
 
@@ -292,13 +317,18 @@ function buildFitWorkout(name, blocks) {
 
 // ─── Test Workout ──────────────────────────────────────────────────────────────
 
+// L05-21 canonical intervalado: warmup → 5×(1km interval @ 4:30-5:00 + 2min rec) → 3km steady → cooldown.
+// Before the fix, `steady` and `cooldown` were pulled into the repeat loop
+// because the encoder had no terminator. The `repeat_end` marker below
+// guarantees the watch stops repeating after the last recovery.
 const testBlocks = [
-  { block_type: "warmup", duration_seconds: 600, distance_meters: null, target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null, target_hr_zone: null, target_hr_min: null, target_hr_max: null, repeat_count: null, notes: null },
-  { block_type: "repeat", duration_seconds: null, distance_meters: null, target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null, target_hr_zone: null, target_hr_min: null, target_hr_max: null, repeat_count: 5, notes: null },
-  { block_type: "interval", duration_seconds: null, distance_meters: 1000, target_pace_min_sec_per_km: 270, target_pace_max_sec_per_km: 300, target_hr_zone: null, target_hr_min: null, target_hr_max: null, repeat_count: null, notes: null },
-  { block_type: "recovery", duration_seconds: 120, distance_meters: null, target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null, target_hr_zone: null, target_hr_min: null, target_hr_max: null, repeat_count: null, notes: null },
-  { block_type: "steady", duration_seconds: null, distance_meters: 3000, target_pace_min_sec_per_km: 330, target_pace_max_sec_per_km: 360, target_hr_zone: null, target_hr_min: 140, target_hr_max: 160, repeat_count: null, notes: null },
-  { block_type: "cooldown", duration_seconds: 600, distance_meters: null, target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null, target_hr_zone: null, target_hr_min: null, target_hr_max: null, repeat_count: null, notes: null },
+  { block_type: "warmup",     duration_seconds: 600, distance_meters: null, target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null, target_hr_zone: null, target_hr_min: null, target_hr_max: null, repeat_count: null,  notes: null },
+  { block_type: "repeat",     duration_seconds: null, distance_meters: null, target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null, target_hr_zone: null, target_hr_min: null, target_hr_max: null, repeat_count: 5,    notes: null },
+  { block_type: "interval",   duration_seconds: null, distance_meters: 1000, target_pace_min_sec_per_km: 270, target_pace_max_sec_per_km: 300, target_hr_zone: null, target_hr_min: null, target_hr_max: null, repeat_count: null, notes: null },
+  { block_type: "recovery",   duration_seconds: 120, distance_meters: null, target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null, target_hr_zone: null, target_hr_min: null, target_hr_max: null, repeat_count: null, notes: null },
+  { block_type: "repeat_end", duration_seconds: null, distance_meters: null, target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null, target_hr_zone: null, target_hr_min: null, target_hr_max: null, repeat_count: null, notes: null },
+  { block_type: "steady",     duration_seconds: null, distance_meters: 3000, target_pace_min_sec_per_km: 330, target_pace_max_sec_per_km: 360, target_hr_zone: null, target_hr_min: 140, target_hr_max: 160, repeat_count: null,   notes: null },
+  { block_type: "cooldown",   duration_seconds: 600, distance_meters: null, target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null, target_hr_zone: null, target_hr_min: null, target_hr_max: null, repeat_count: null, notes: null },
 ];
 
 const fitBuffer = buildFitWorkout("Treino Intervalado 5x1km", testBlocks);
@@ -307,6 +337,48 @@ fs.writeFileSync(outPath, fitBuffer);
 
 console.log(`Generated: ${outPath} (${fitBuffer.length} bytes)`);
 console.log(`Header CRC OK, Data size: ${fitBuffer.length - 16} bytes`);
+
+// L05-21 semantic assertions: count FIT steps and check the repeat marker is at index 3.
+const fitStepsGenerated = expandBlocks(testBlocks);
+console.log(`\nSemantic check — ${fitStepsGenerated.length} FIT steps generated:`);
+fitStepsGenerated.forEach((s, idx) => {
+  const tag = s.durationType === DUR_REPEAT_UNTIL_STEPS_CMPLT
+    ? `REPEAT → target step ${s.durationValue}, count ${s.targetValue}`
+    : `step (intensity=${s.intensity}, durType=${s.durationType}, durVal=${s.durationValue})`;
+  console.log(`  [${idx}] ${tag}`);
+});
+
+const repeatMarkerIdx = fitStepsGenerated.findIndex(
+  (s) => s.durationType === DUR_REPEAT_UNTIL_STEPS_CMPLT
+);
+const expected = {
+  totalSteps: 5, // interval + recovery + repeat_marker + steady + cooldown (warmup is step 0 → total 6)
+  repeatMarkerAt: 3, // warmup(0), interval(1), recovery(2), repeat_marker(3), steady(4), cooldown(5)
+  repeatTarget: 1,
+  repeatCount: 5,
+};
+const actual = {
+  totalSteps: fitStepsGenerated.length - 1, // minus warmup to match the "after warmup" narrative
+  repeatMarkerAt: repeatMarkerIdx,
+  repeatTarget: fitStepsGenerated[repeatMarkerIdx]?.durationValue,
+  repeatCount: fitStepsGenerated[repeatMarkerIdx]?.targetValue,
+};
+const semanticPass =
+  fitStepsGenerated.length === 6 &&
+  actual.repeatMarkerAt === expected.repeatMarkerAt &&
+  actual.repeatTarget === expected.repeatTarget &&
+  actual.repeatCount === expected.repeatCount &&
+  fitStepsGenerated[5].intensity === INTENSITY_COOLDOWN;
+
+if (!semanticPass) {
+  console.log("\n✗ L05-21 SEMANTIC CHECK FAILED");
+  console.log("  expected:", expected);
+  console.log("  actual:  ", actual);
+  console.log("  last step intensity:", fitStepsGenerated[fitStepsGenerated.length - 1]?.intensity,
+              "(should be", INTENSITY_COOLDOWN, "INTENSITY_COOLDOWN)");
+  process.exit(1);
+}
+console.log("\n✓ L05-21 semantic check PASSED: repeat marker at step 3, cooldown outside loop.");
 
 // Basic self-validation
 const headerSize = fitBuffer[0];

@@ -16,7 +16,7 @@ function createClient() {
 
 const ReleaseBlockSchema = z.object({
   order_index:                z.number().int().min(0),
-  block_type:                 z.enum(["warmup","interval","recovery","cooldown","steady","rest","repeat"]),
+  block_type:                 z.enum(["warmup","interval","recovery","cooldown","steady","rest","repeat","repeat_end"]),
   duration_seconds:           z.number().int().min(1).nullable().optional(),
   distance_meters:            z.number().int().min(1).nullable().optional(),
   target_pace_min_sec_per_km: z.number().int().min(60).max(1800).nullable().optional(),

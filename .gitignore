@@ -12,6 +12,9 @@
 *.zip
 *.apk
 
+# Generated FIT test artifacts (tools/test_fit_generation.js output)
+tools/*.fit
+
 # Firebase credentials (contains API keys)
 omni_runner/android/app/google-services.json
 omni_runner/ios/Runner/GoogleService-Info.plist

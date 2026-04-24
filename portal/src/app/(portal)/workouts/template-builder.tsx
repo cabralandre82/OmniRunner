@@ -263,13 +263,29 @@ export function TemplateBuilder({
 
         <div className="divide-y divide-border-subtle">
           {blocks.map((block, idx) => {
+            // L05-22: explicit repeat_end closes the group. Kept legacy
+            // fallback ({interval,recovery} only) for backward-compat with
+            // templates authored before the terminator migration.
             const isRepeat = block.block_type === "repeat";
+            const isRepeatEnd = block.block_type === "repeat_end";
             if (isRepeat) inRepeat = true;
+            if (isRepeatEnd) inRepeat = false;
             if (
               !isRepeat &&
+              !isRepeatEnd &&
               !["interval", "recovery"].includes(block.block_type)
             ) {
               inRepeat = false;
+            }
+
+            if (isRepeatEnd) {
+              return (
+                <div
+                  key={block.id ?? `end-${idx}`}
+                  className="border-l-2 border-brand/40 ml-8 py-1"
+                  aria-hidden="true"
+                />
+              );
             }
 
             const details: string[] = [];

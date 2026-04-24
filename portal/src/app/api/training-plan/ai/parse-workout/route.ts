@@ -20,10 +20,13 @@ Retorne APENAS um JSON válido com os seguintes campos:
 
 Cada bloco em blocks deve ter:
 - order_index: inteiro começando em 0
-- block_type: um de warmup/steady/interval/recovery/repeat/rest/cooldown
+- block_type: um de warmup/steady/interval/recovery/repeat/repeat_end/rest/cooldown
   • warmup = aquecimento  • steady = corrida contínua  • interval = tiro/esforço
-  • recovery = recuperação ativa  • repeat = marcador de repetição (envolve os blocos seguintes)
-  • rest = descanso parado  • cooldown = volta à calma
+  • recovery = recuperação ativa  • rest = descanso parado  • cooldown = volta à calma
+  • repeat = ABRE grupo de repetição (o próximo bloco é o primeiro da série)
+  • repeat_end = FECHA grupo de repetição (OBRIGATÓRIO após o último bloco da série,
+    especialmente quando existe cooldown, rest ou steady depois do grupo — sem ele
+    o relógio pode repetir blocos que não deveriam fazer parte do loop)
 - distance_meters: inteiro em metros (ou null se controlado por tempo)
 - duration_seconds: inteiro em segundos (ou null se controlado por distância)
 - target_pace_min_sec_per_km: pace mais rápido em segundos/km (ou null)
@@ -33,15 +36,18 @@ Cada bloco em blocks deve ter:
 - repeat_count: só para block_type=repeat — número de repetições
 - notes: observação do bloco (ou null)
 
-Regras de estrutura para intervalados: use repeat→interval→recovery→interval→recovery etc.
-Sempre inclua warmup e cooldown quando fizer sentido.
+Regras de estrutura para intervalados:
+  1. Para cada grupo de repetição: repeat → (interval, recovery, ... ) → repeat_end.
+  2. SEMPRE feche o repeat com repeat_end ANTES de qualquer cooldown/rest/steady.
+  3. Sempre inclua warmup e cooldown quando fizer sentido.
+  4. Se a descrição NÃO contiver repetição, NÃO emita repeat nem repeat_end.
 
 Exemplos:
 Input: "30min leve"
 Output: {"workout_type":"continuous","workout_label":"Corrida Leve 30min","description":"Corrida de 30 minutos em ritmo leve","coach_notes":"Mantenha conversa fácil","estimated_distance_km":null,"estimated_duration_minutes":30,"blocks":[{"order_index":0,"block_type":"warmup","distance_meters":null,"duration_seconds":300,"target_pace_min_sec_per_km":null,"target_pace_max_sec_per_km":null,"target_hr_zone":2,"rpe_target":3,"repeat_count":null,"notes":"Aquecimento leve"},{"order_index":1,"block_type":"steady","distance_meters":null,"duration_seconds":1500,"target_pace_min_sec_per_km":null,"target_pace_max_sec_per_km":null,"target_hr_zone":2,"rpe_target":4,"repeat_count":null,"notes":null},{"order_index":2,"block_type":"cooldown","distance_meters":null,"duration_seconds":300,"target_pace_min_sec_per_km":null,"target_pace_max_sec_per_km":null,"target_hr_zone":1,"rpe_target":2,"repeat_count":null,"notes":null}]}
 
 Input: "4x1km em 4:30 com 2min de descanso"
-Output: {"workout_type":"interval","workout_label":"Intervalado 4×1km em 4:30/km","description":"4 repetições de 1km no pace 4:30/km com 2min de recuperação","coach_notes":"Aquecimento de 10min antes. Foco no pace.","estimated_distance_km":8,"estimated_duration_minutes":40,"blocks":[{"order_index":0,"block_type":"warmup","distance_meters":null,"duration_seconds":600,"target_pace_min_sec_per_km":null,"target_pace_max_sec_per_km":null,"target_hr_zone":2,"rpe_target":3,"repeat_count":null,"notes":null},{"order_index":1,"block_type":"repeat","distance_meters":null,"duration_seconds":null,"target_pace_min_sec_per_km":null,"target_pace_max_sec_per_km":null,"target_hr_zone":null,"rpe_target":null,"repeat_count":4,"notes":null},{"order_index":2,"block_type":"interval","distance_meters":1000,"duration_seconds":null,"target_pace_min_sec_per_km":255,"target_pace_max_sec_per_km":275,"target_hr_zone":4,"rpe_target":8,"repeat_count":null,"notes":null},{"order_index":3,"block_type":"recovery","distance_meters":null,"duration_seconds":120,"target_pace_min_sec_per_km":null,"target_pace_max_sec_per_km":null,"target_hr_zone":2,"rpe_target":3,"repeat_count":null,"notes":null},{"order_index":4,"block_type":"cooldown","distance_meters":null,"duration_seconds":600,"target_pace_min_sec_per_km":null,"target_pace_max_sec_per_km":null,"target_hr_zone":2,"rpe_target":3,"repeat_count":null,"notes":null}]}`;
+Output: {"workout_type":"interval","workout_label":"Intervalado 4×1km em 4:30/km","description":"4 repetições de 1km no pace 4:30/km com 2min de recuperação","coach_notes":"Aquecimento de 10min antes. Foco no pace.","estimated_distance_km":8,"estimated_duration_minutes":40,"blocks":[{"order_index":0,"block_type":"warmup","distance_meters":null,"duration_seconds":600,"target_pace_min_sec_per_km":null,"target_pace_max_sec_per_km":null,"target_hr_zone":2,"rpe_target":3,"repeat_count":null,"notes":null},{"order_index":1,"block_type":"repeat","distance_meters":null,"duration_seconds":null,"target_pace_min_sec_per_km":null,"target_pace_max_sec_per_km":null,"target_hr_zone":null,"rpe_target":null,"repeat_count":4,"notes":null},{"order_index":2,"block_type":"interval","distance_meters":1000,"duration_seconds":null,"target_pace_min_sec_per_km":255,"target_pace_max_sec_per_km":275,"target_hr_zone":4,"rpe_target":8,"repeat_count":null,"notes":null},{"order_index":3,"block_type":"recovery","distance_meters":null,"duration_seconds":120,"target_pace_min_sec_per_km":null,"target_pace_max_sec_per_km":null,"target_hr_zone":2,"rpe_target":3,"repeat_count":null,"notes":null},{"order_index":4,"block_type":"repeat_end","distance_meters":null,"duration_seconds":null,"target_pace_min_sec_per_km":null,"target_pace_max_sec_per_km":null,"target_hr_zone":null,"rpe_target":null,"repeat_count":null,"notes":null},{"order_index":5,"block_type":"cooldown","distance_meters":null,"duration_seconds":600,"target_pace_min_sec_per_km":null,"target_pace_max_sec_per_km":null,"target_hr_zone":2,"rpe_target":3,"repeat_count":null,"notes":null}]}`;
 
 /**
  * POST /api/training-plan/ai/parse-workout
@@ -139,26 +145,52 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
   // Validate and sanitize the AI response
   const validTypes = ["continuous", "interval", "regenerative", "long_run", "strength",
     "technique", "test", "free", "race", "brick"];
-  const validBlockTypes = ["warmup", "interval", "recovery", "cooldown", "steady", "rest", "repeat"];
+  const validBlockTypes = ["warmup", "interval", "recovery", "cooldown", "steady", "rest", "repeat", "repeat_end"];
 
+  // L05-23 strict mode: reject unrecognized block_type with 422 instead of
+  // silently downgrading to "steady". A silent downgrade causes the coach to
+  // save a workout that looks right in the preview but is semantically
+  // different from what they described.
   const rawBlocks = Array.isArray(result.blocks) ? result.blocks : [];
+  const invalidBlockTypeIssues: Array<{ index: number; got: unknown }> = [];
   const blocks = rawBlocks
     .filter((b: unknown) => b && typeof b === "object")
-    .map((b: Record<string, unknown>, i: number) => ({
-      order_index:                i,
-      block_type:                 validBlockTypes.includes(b.block_type as string) ? b.block_type : "steady",
-      distance_meters:            typeof b.distance_meters === "number" ? Math.round(b.distance_meters) : null,
-      duration_seconds:           typeof b.duration_seconds === "number" ? Math.round(b.duration_seconds) : null,
-      target_pace_min_sec_per_km: typeof b.target_pace_min_sec_per_km === "number" ? Math.round(b.target_pace_min_sec_per_km) : null,
-      target_pace_max_sec_per_km: typeof b.target_pace_max_sec_per_km === "number" ? Math.round(b.target_pace_max_sec_per_km) : null,
-      target_hr_zone:             typeof b.target_hr_zone === "number" ? Math.round(b.target_hr_zone) : null,
-      target_hr_min:              null,
-      target_hr_max:              null,
-      rpe_target:                 typeof b.rpe_target === "number" ? Math.round(b.rpe_target) : null,
-      repeat_count:               typeof b.repeat_count === "number" ? Math.round(b.repeat_count) : null,
-      notes:                      typeof b.notes === "string" ? b.notes.slice(0, 200) : null,
-    }))
+    .map((b: Record<string, unknown>, i: number) => {
+      if (!validBlockTypes.includes(b.block_type as string)) {
+        invalidBlockTypeIssues.push({ index: i, got: b.block_type });
+      }
+      return {
+        order_index:                i,
+        block_type:                 validBlockTypes.includes(b.block_type as string) ? b.block_type : "steady",
+        distance_meters:            typeof b.distance_meters === "number" ? Math.round(b.distance_meters) : null,
+        duration_seconds:           typeof b.duration_seconds === "number" ? Math.round(b.duration_seconds) : null,
+        target_pace_min_sec_per_km: typeof b.target_pace_min_sec_per_km === "number" ? Math.round(b.target_pace_min_sec_per_km) : null,
+        target_pace_max_sec_per_km: typeof b.target_pace_max_sec_per_km === "number" ? Math.round(b.target_pace_max_sec_per_km) : null,
+        target_hr_zone:             typeof b.target_hr_zone === "number" ? Math.round(b.target_hr_zone) : null,
+        target_hr_min:              null,
+        target_hr_max:              null,
+        rpe_target:                 typeof b.rpe_target === "number" ? Math.round(b.rpe_target) : null,
+        repeat_count:               typeof b.repeat_count === "number" ? Math.round(b.repeat_count) : null,
+        notes:                      typeof b.notes === "string" ? b.notes.slice(0, 200) : null,
+      };
+    })
     .slice(0, 30);
+
+  if (invalidBlockTypeIssues.length > 0) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: {
+          code: "AI_INVALID_BLOCK_TYPE",
+          message:
+            `A IA retornou block_type(s) fora do enum aceito (${validBlockTypes.join("|")}). ` +
+            "Reformule a descrição com mais clareza (ex: \"strides\" → \"aceleradas de 100m\") e tente novamente.",
+          details: invalidBlockTypeIssues,
+        },
+      },
+      { status: 422 }
+    );
+  }
 
   return NextResponse.json({
     ok: true,

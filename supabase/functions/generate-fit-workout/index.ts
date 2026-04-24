@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { handleCors } from "../_shared/cors.ts";
 import { jsonErr } from "../_shared/http.ts";
+import { buildEncoderPlan, type Block as ExpandBlock } from "../_shared/workout_expand.ts";
 
 // ─── FIT Protocol Constants ────────────────────────────────────────────────────
 
@@ -117,18 +118,13 @@ class FitWriter {
 
 // ─── FIT Workout File Builder ──────────────────────────────────────────────────
 
-interface WorkoutBlock {
-  block_type: string;
-  duration_seconds: number | null;
-  distance_meters: number | null;
+interface WorkoutBlock extends ExpandBlock {
   target_pace_min_sec_per_km: number | null;
   target_pace_max_sec_per_km: number | null;
   target_hr_zone: number | null;
   target_hr_min: number | null;
   target_hr_max: number | null;
-  repeat_count: number | null;
   notes: string | null;
-  order_index: number;
 }
 
 function blockToIntensity(type: string): number {
@@ -276,46 +272,30 @@ interface FitStep {
 }
 
 function expandBlocks(blocks: WorkoutBlock[]): FitStep[] {
-  const steps: FitStep[] = [];
-  let i = 0;
+  // L05-21/L05-22: delegated to shared module with explicit repeat_end support.
+  // The prior inline logic ("collect until next repeat or EOL") silently pulled
+  // trailing cooldowns into the repeat group, corrupting the FIT workout. The
+  // shared module honors 'repeat_end' and matches the portal UI behavior.
+  const fitSteps: FitStep[] = [];
+  const { entries } = buildEncoderPlan<WorkoutBlock>(blocks);
 
-  while (i < blocks.length) {
-    const block = blocks[i];
-
-    if (block.block_type === "repeat") {
-      const repeatCount = block.repeat_count ?? 1;
-      const repeatStartIndex = steps.length;
-
-      // Collect inner blocks (everything between repeat and next repeat/end)
-      i++;
-      const innerBlocks: WorkoutBlock[] = [];
-      while (i < blocks.length && blocks[i].block_type !== "repeat") {
-        innerBlocks.push(blocks[i]);
-        i++;
-      }
-
-      // Add inner blocks as steps
-      for (const inner of innerBlocks) {
-        steps.push(blockToFitStep(inner));
-      }
-
-      // Add repeat step pointing back to the first inner step
-      steps.push({
+  for (const entry of entries) {
+    if (entry.kind === "step") {
+      fitSteps.push(blockToFitStep(entry.block));
+    } else {
+      fitSteps.push({
         durationType: DUR_REPEAT_UNTIL_STEPS_CMPLT,
-        durationValue: repeatStartIndex,
+        durationValue: entry.targetStepIndex,
         targetType: TARGET_OPEN,
-        targetValue: repeatCount,
+        targetValue: entry.count,
         customLow: 0,
         customHigh: 0,
         intensity: INTENSITY_ACTIVE,
       });
-    } else {
-      steps.push(blockToFitStep(block));
-      i++;
     }
   }
 
-  return steps;
+  return fitSteps;
 }
 
 function blockToFitStep(block: WorkoutBlock): FitStep {

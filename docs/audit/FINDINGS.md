@@ -1,11 +1,11 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-24 12:00:07 UTC.
+> Atualizado em 2026-04-24 16:19:33 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
-Total: **348** findings.
+Total: **351** findings.
 
 | Sev | Status | ID | Onda | Lente | Título | Owner |
 |-----|--------|----|------|-------|--------|-------|
@@ -129,6 +129,9 @@ Total: **348** findings.
 | 🟡 medium | ✅ fixed | [L05-18](./findings/L05-18-moeda-fica-em-wallet-do-atleta-que-saiu.md) | 2 | L05 · CPO | Moeda fica em wallet do atleta que saiu do grupo | finance+product |
 | 🟡 medium | ✅ fixed | [L05-19](./findings/L05-19-offline-first-flutter-sessoes-ficam-em-drift-ate.md) | 2 | L05 · CPO | Offline-first Flutter: sessões ficam em drift até sincronizar | mobile+reliability |
 | 🟢 safe | ✅ fixed | [L05-20](./findings/L05-20-delete-account-bloqueia-admin-master-boa-pratica.md) | 3 | L05 · CPO | delete-account bloqueia admin_master (boa prática) | unassigned |
+| 🔴 critical | ⏳ fix-pending | [L05-21](./findings/L05-21-workout-repeat-sem-terminador-corrompe-fit.md) | 0 | L05 · CPO | Workout: bloco repeat sem terminador corrompe passagem para .FIT | platform-workout |
+| 🟠 high | ⏳ fix-pending | [L05-22](./findings/L05-22-workout-inrepeat-heuristica-divergente.md) | 0 | L05 · CPO | Workout: heurística inRepeat divergente entre portal UI e FIT encoder | platform-workout |
+| 🟠 high | ⏳ fix-pending | [L05-23](./findings/L05-23-ai-parse-workout-aceita-block-type-invalido.md) | 0 | L05 · CPO | AI parse-workout: block_type inválido trocado silenciosamente por steady | platform-workout |
 | 🔴 critical | ✅ fixed | [L06-01](./findings/L06-01-zero-runbook-financeiro-custodia-clearing-swap-withdraw.md) | 1 | L06 · COO | Zero runbook financeiro — custódia, clearing, swap, withdraw | unassigned |
 | 🔴 critical | ✅ fixed | [L06-02](./findings/L06-02-health-check-exibe-contagem-exata-de-violacoes-info.md) | 1 | L06 · COO | Health check exibe contagem exata de violações (info leak operacional) | platform |
 | 🟠 high | ✅ fixed | [L06-03](./findings/L06-03-reconcile-wallets-cron-sem-alerta-em-drift-0.md) | 1 | L06 · COO | reconcile-wallets-cron sem alerta em drift > 0 | platform |

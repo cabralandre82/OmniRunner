@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T12:00:07.893Z",
-  "total": 348,
+  "generated_at": "2026-04-24T16:19:33.637Z",
+  "total": 351,
   "by_severity": {
-    "high": 123,
-    "critical": 69,
+    "high": 125,
+    "critical": 70,
     "medium": 128,
     "safe": 21,
     "na": 7
@@ -13,11 +13,11 @@
     "fixed": 325,
     "not-reproducible": 3,
     "duplicate": 8,
-    "fix-pending": 4,
+    "fix-pending": 7,
     "wont-fix": 8
   },
   "by_wave": {
-    "0": 15,
+    "0": 18,
     "1": 179,
     "2": 125,
     "3": 29
@@ -27,7 +27,7 @@
     "2": 15,
     "3": 20,
     "4": 15,
-    "5": 20,
+    "5": 23,
     "6": 13,
     "7": 13,
     "8": 12,
@@ -4562,6 +4562,109 @@
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 2,
+      "blocked_by": [],
+      "duplicate_of": null,
+      "deferred_to_wave": null,
+      "note": null
+    },
+    {
+      "id": "L05-21",
+      "audit_ref": "5.21",
+      "lens": 5,
+      "title": "Workout: bloco repeat sem terminador corrompe passagem para .FIT",
+      "severity": "critical",
+      "status": "fix-pending",
+      "wave": 0,
+      "discovered_at": "2026-04-24T00:00:00.000Z",
+      "tags": [
+        "workout",
+        "fit-export",
+        "watch",
+        "coach",
+        "go-to-market"
+      ],
+      "files": [
+        "supabase/functions/generate-fit-workout/index.ts",
+        "portal/src/app/(portal)/workouts/page.tsx",
+        "portal/src/app/(portal)/workouts/[id]/page.tsx",
+        "portal/src/app/(portal)/workouts/template-builder.tsx",
+        "tools/test_fit_generation.js"
+      ],
+      "correction_type": "migration",
+      "test_required": true,
+      "tests": [],
+      "linked_issues": [],
+      "linked_prs": [],
+      "owner": "platform-workout",
+      "runbook": null,
+      "effort_points": 5,
+      "blocked_by": [],
+      "duplicate_of": null,
+      "deferred_to_wave": null,
+      "note": null
+    },
+    {
+      "id": "L05-22",
+      "audit_ref": "5.22",
+      "lens": 5,
+      "title": "Workout: heurística inRepeat divergente entre portal UI e FIT encoder",
+      "severity": "high",
+      "status": "fix-pending",
+      "wave": 0,
+      "discovered_at": "2026-04-24T00:00:00.000Z",
+      "tags": [
+        "workout",
+        "fit-export",
+        "consistency",
+        "coach"
+      ],
+      "files": [
+        "portal/src/app/(portal)/workouts/page.tsx",
+        "portal/src/app/(portal)/workouts/[id]/page.tsx",
+        "portal/src/app/(portal)/workouts/template-builder.tsx",
+        "supabase/functions/generate-fit-workout/index.ts"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [],
+      "linked_issues": [],
+      "linked_prs": [],
+      "owner": "platform-workout",
+      "runbook": null,
+      "effort_points": 3,
+      "blocked_by": [
+        "L05-21"
+      ],
+      "duplicate_of": null,
+      "deferred_to_wave": null,
+      "note": null
+    },
+    {
+      "id": "L05-23",
+      "audit_ref": "5.23",
+      "lens": 5,
+      "title": "AI parse-workout: block_type inválido trocado silenciosamente por steady",
+      "severity": "high",
+      "status": "fix-pending",
+      "wave": 0,
+      "discovered_at": "2026-04-24T00:00:00.000Z",
+      "tags": [
+        "workout",
+        "ai",
+        "validation",
+        "coach"
+      ],
+      "files": [
+        "portal/src/app/api/training-plan/ai/parse-workout/route.ts"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [],
+      "linked_issues": [],
+      "linked_prs": [],
+      "owner": "platform-workout",
+      "runbook": null,
+      "effort_points": 3,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
