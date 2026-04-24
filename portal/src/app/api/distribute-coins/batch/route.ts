@@ -104,7 +104,7 @@ async function _post(request: NextRequest) {
       userId: user.id,
       request,
     }),
-    { maxRequests: 5, windowMs: 60_000 },
+    { maxRequests: 5, windowMs: 60_000, onMissingRedis: "fail_closed" },
   );
   if (!rl.allowed) {
     const retryAfter = Math.ceil((rl.resetAt - Date.now()) / 1000);

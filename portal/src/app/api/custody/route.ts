@@ -109,7 +109,7 @@ async function _post(req: NextRequest) {
   const cookieGroupId = cookies().get("portal_group_id")?.value ?? null;
   const rl = await rateLimit(
     rateLimitKey({ prefix: "custody", groupId: cookieGroupId, request: req }),
-    { maxRequests: 10, windowMs: 60_000 },
+    { maxRequests: 10, windowMs: 60_000, onMissingRedis: "fail_closed" },
   );
   if (!rl.allowed) {
     const retryAfter = Math.ceil((rl.resetAt - Date.now()) / 1000);
