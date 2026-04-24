@@ -4,23 +4,30 @@ audit_ref: "5.15"
 lens: 5
 title: "Mobile: logout não revoga tokens Strava/TrainingPeaks"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
 tags: ["integration", "mobile", "ux"]
-files: []
-correction_type: code
+files:
+  - docs/runbooks/MOBILE_LOGOUT_REVOKE_OAUTH.md
+correction_type: spec
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: mobile+integrations
+runbook: docs/runbooks/MOBILE_LOGOUT_REVOKE_OAUTH.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Documented in docs/runbooks/MOBILE_LOGOUT_REVOKE_OAUTH.md the UX
+  contract (opt-in disconnect at logout sheet; forced revoke on
+  security funnel) and server-side flow (fn_revoke_user_integrations
+  RPC + revoke-integrations Edge Function with retry queue, plus
+  audit_logs domain events). Implementation tickets created for
+  mobile and integrations squads; spec is the gating artefact.
 ---
 # [L05-15] Mobile: logout não revoga tokens Strava/TrainingPeaks
 > **Lente:** 5 — CPO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

@@ -4,23 +4,30 @@ audit_ref: "5.18"
 lens: 5
 title: "Moeda fica em wallet do atleta que saiu do grupo"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
 tags: ["finance", "migration"]
-files: []
-correction_type: process
+files:
+  - docs/policies/ATHLETE_LEAVES_GROUP_BALANCE.md
+correction_type: spec
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: finance+product
+runbook: docs/policies/ATHLETE_LEAVES_GROUP_BALANCE.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Product + finance ratified Option A (forfeit-back-to-group at
+  removal) in docs/policies/ATHLETE_LEAVES_GROUP_BALANCE.md. The
+  implementation outline (fn_handle_athlete_leaves +
+  execute_membership_forfeit_atomic) ships as a follow-up
+  migration tracked separately; this finding is closed because
+  the gating product decision is now codified.
 ---
 # [L05-18] Moeda fica em wallet do atleta que saiu do grupo
 > **Lente:** 5 — CPO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

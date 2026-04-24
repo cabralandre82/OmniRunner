@@ -4,24 +4,33 @@ audit_ref: "6.12"
 lens: 6
 title: "/api/liveness trivial mas /api/readiness inexistente"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
 tags: ["finance", "mobile", "portal"]
 files:
   - portal/src/app/api/liveness/route.ts
+  - portal/src/app/api/readiness/route.ts
 correction_type: code
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform-sre
 runbook: null
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  /api/liveness is now the trivial "process up" probe (no
+  downstream calls); /api/readiness probes Postgres and Upstash
+  Redis with a 1.5s timeout each, returns per-dep latency, and
+  flips to HTTP 503 only when DB is unreachable (Redis is
+  optional and reported but not gated). Custody invariants and
+  Stripe heartbeat are intentionally NOT in readiness because
+  they belong on the business-health endpoint
+  (/api/internal/business-health, L18-10).
 ---
 # [L06-12] /api/liveness trivial mas /api/readiness inexistente
 > **Lente:** 6 — COO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending
