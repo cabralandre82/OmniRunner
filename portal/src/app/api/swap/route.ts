@@ -268,6 +268,25 @@ async function _post(req: NextRequest) {
   }
 
   if (data.action === "accept") {
+    // L01-05 — race-accept hardening: além do POST-global limit (10/min),
+    // accept tem um sub-bucket dedicado (3/min/group) para impedir que um
+    // único grupo varra o book inteiro e tente race-accept de ofertas
+    // recém-criadas. Bucket por groupId (autenticado) — IP é fallback
+    // apenas para requisições sem grupo, o que aqui nunca ocorre porque
+    // `requireAdminMaster()` já travou o caller.
+    const acceptRl = await rateLimit(
+      rateLimitKey({
+        prefix: "swap:accept",
+        groupId: auth.groupId,
+        request: req,
+      }),
+      { maxRequests: 3, windowMs: 60_000, onMissingRedis: "fail_closed" },
+    );
+    if (!acceptRl.allowed) {
+      const retryAfter = Math.ceil((acceptRl.resetAt - Date.now()) / 1000);
+      return apiRateLimited(req, retryAfter);
+    }
+
     try {
       await acceptSwapOffer(
         data.order_id,

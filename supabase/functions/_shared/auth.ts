@@ -255,6 +255,29 @@ export async function requireUser(
     }
   }
 
+  // [L01-19] `db` is the **user-scoped** client.
+  //
+  // It is built on the *anon* key (or service key as last-resort fallback
+  // when SUPABASE_ANON_KEY is missing in dev/sandbox) plus the user's
+  // bearer JWT. This means:
+  //   - When seeded with anonKey → PostgREST runs as `authenticated`
+  //     role and RLS policies on the row's tables ARE evaluated.
+  //     → Use this for any query that touches user-owned rows.
+  //   - When falling back to serviceKey (only happens if SUPABASE_ANON_KEY
+  //     is unset, which we treat as a misconfiguration) → PostgREST
+  //     runs as `service_role` and **RLS is bypassed**. The fallback is
+  //     intentional only to keep local sandboxes alive; production env
+  //     MUST set SUPABASE_ANON_KEY.
+  //
+  // For privileged ops (auth.admin, cross-tenant maintenance, ledger
+  // mutations behind SECURITY DEFINER RPCs that need service grant)
+  // use `adminDb` instead — it is explicitly named so reviewers see
+  // RLS is bypassed.
+  if (!anonKey) {
+    console.warn(
+      "[L01-19] SUPABASE_ANON_KEY missing — falling back to service key for `db`. RLS will NOT apply. This must NOT happen in production.",
+    );
+  }
   const db = createClient(supabaseUrl, anonKey || serviceKey, {
     global: { headers: { Authorization: `Bearer ${jwt}` } },
     auth: {

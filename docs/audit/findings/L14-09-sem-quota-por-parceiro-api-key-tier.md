@@ -4,23 +4,31 @@ audit_ref: "14.9"
 lens: 14
 title: "Sem quota por parceiro (API key tier)"
 severity: medium
-status: fix-pending
+status: duplicate
 wave: 2
 discovered_at: 2026-04-17
-tags: []
+closed_at: 2026-04-21
+tags: ["partner-api", "rate-limit"]
 files: []
-correction_type: code
+correction_type: process
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform
 runbook: null
 effort_points: 2
 blocked_by: []
-duplicate_of: null
+duplicate_of: L16-03
 deferred_to_wave: null
-note: null
+note: |
+  Fechado como **duplicate de L16-03** ("sem API pública para
+  parceiros B2B", critical em Onda 0). A demanda de quota por
+  parceiro (API key tier free/pro/enterprise + scopes + quota
+  diária) só faz sentido depois que L16-03 entregar o
+  `api_keys` table + middleware de auth de parceiro. Quando
+  esse trabalho começar, este finding será rastreado dentro da
+  spec de L16-03 — duplicar aqui seria criar drift.
 ---
 # [L14-09] Sem quota por parceiro (API key tier)
 > **Lente:** 14 — Contracts · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

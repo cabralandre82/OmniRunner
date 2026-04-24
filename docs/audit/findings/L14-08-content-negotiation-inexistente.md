@@ -4,23 +4,37 @@ audit_ref: "14.8"
 lens: 14
 title: "Content negotiation inexistente"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
 tags: ["security-headers", "mobile"]
-files: []
-correction_type: process
+files:
+  - docs/api/CONTENT_NEGOTIATION_POLICY.md
+correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: platform+product
+runbook: docs/api/CONTENT_NEGOTIATION_POLICY.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Política ratificada em `docs/api/CONTENT_NEGOTIATION_POLICY.md`.
+  Decisão deliberada: **um shape por URL** (CSV/ICS/PDF moram
+  em rotas separadas com sufixo `.csv`/`.ics`/`.pdf`) em vez de
+  `Accept`-header negotiation no mesmo endpoint. Justificado por
+  cache poisoning surface (Vary: Accept frágil em CDN tiers),
+  OpenAPI tooling mais limpo (TS + Dart codegen), audit-log
+  legibilidade, e modelo de auth diferente entre JSON-list e
+  CSV-export. Documento define naming convention e headers
+  honrados (`Accept-Language`, `Idempotency-Key`,
+  `If-None-Match`) vs ignorados (`Accept: application/xml`,
+  `Accept-Charset`, `Range` em JSON).
 ---
 # [L14-08] Content negotiation inexistente
 > **Lente:** 14 — Contracts · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending
