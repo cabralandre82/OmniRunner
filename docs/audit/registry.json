@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T17:51:56.744Z",
+  "generated_at": "2026-04-24T17:53:26.549Z",
   "total": 356,
   "by_severity": {
     "high": 127,
@@ -10,10 +10,10 @@
     "na": 7
   },
   "by_status": {
-    "fixed": 332,
+    "fixed": 333,
     "not-reproducible": 3,
     "duplicate": 8,
-    "fix-pending": 5,
+    "fix-pending": 4,
     "wont-fix": 8
   },
   "by_wave": {
@@ -4861,11 +4861,11 @@
       "lens": 5,
       "title": "Rest/Recovery: semântica 'parado/caminhando/trote' não representada",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-24T00:00:00.000Z",
-      "fixed_at": null,
-      "closed_at": null,
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "workout",
         "semantics",
@@ -4897,7 +4897,9 @@
         "portal/src/app/api/training-plan/ai/parse-workout/route.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "7be6216"
+      ],
       "owner": "platform-workout",
       "runbook": null,
       "effort_points": 3,

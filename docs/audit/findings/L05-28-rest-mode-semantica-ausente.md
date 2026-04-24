@@ -4,11 +4,11 @@ audit_ref: "5.28"
 lens: 5
 title: "Rest/Recovery: semântica 'parado/caminhando/trote' não representada"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 0
 discovered_at: 2026-04-24
-fixed_at: null
-closed_at: null
+fixed_at: 2026-04-24
+closed_at: 2026-04-24
 tags: ["workout", "semantics", "coach", "fit-export", "ai-parser", "rest-mode"]
 files:
   - supabase/migrations/20260424150000_l05_28_rest_mode.sql
@@ -31,7 +31,7 @@ tests:
   - portal/src/lib/workout/validate.test.ts
   - portal/src/app/api/training-plan/ai/parse-workout/route.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs: ["7be6216"]
 owner: platform-workout
 runbook: null
 effort_points: 3
@@ -233,3 +233,10 @@ Manual:
 - `2026-04-24` — Descoberto durante Wave B slice 4, ao revisitar o
   gap semântico identificado no estudo inicial de passagem de treino
   ("rest.mode passive/active").
+- `2026-04-24` — Fixed em `7be6216`: migration com 3 CHECKs
+  (enum + scope + jog-only-recovery), validator com 3 códigos de
+  erro novos, 5 Zod schemas + sanitização no POST templates, AI
+  prompt diferenciando parado/caminhando/trote, UI portal +
+  template-builder com sufixo e select novo, Flutter
+  PlanWorkoutBlock com sanitização espelhando o portal e label
+  enriquecido. 67 testes portal + 12 testes Flutter passando.
