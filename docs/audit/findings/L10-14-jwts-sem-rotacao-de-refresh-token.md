@@ -4,23 +4,35 @@ audit_ref: "10.14"
 lens: 10
 title: "JWTs sem rotação de refresh_token"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
 tags: []
-files: []
-correction_type: process
+files:
+  - docs/security/REFRESH_TOKEN_ROTATION.md
+correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: security+platform
+runbook: docs/security/REFRESH_TOKEN_ROTATION.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Policy ratified in docs/security/REFRESH_TOKEN_ROTATION.md:
+  Refresh Token Rotation = ON, Reuse Interval = 0,
+  Rotation Period = 10s, JWT Expiry = 1h, Refresh Expiry = 30d.
+  Rationale: reuse triggers refresh_token_reused event,
+  which we ingest into audit_logs (event_domain='auth',
+  L18-09 dotted-domain naming) and revokes ALL of the
+  user's sessions. Settings live in Supabase Dashboard +
+  this doc + docs/runbooks/SUPABASE_AUTH_BOOTSTRAP.md;
+  drift caught (planned) by tools/audit/check-supabase-auth-config.ts
+  via Management API GET /v1/projects/{ref}/config/auth.
+  Manual quarterly review until the API guard ships.
 ---
 # [L10-14] JWTs sem rotação de refresh_token
 > **Lente:** 10 — CSO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

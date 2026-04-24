@@ -4,23 +4,33 @@ audit_ref: "8.11"
 lens: 8
 title: "Feature flags (quando [6.6] implementar) precisam de metrics"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
 tags: []
-files: []
-correction_type: code
+files:
+  - docs/runbooks/FEATURE_FLAG_AUDIT.md
+correction_type: spec
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: platform
+runbook: docs/runbooks/FEATURE_FLAG_AUDIT.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Codified in docs/runbooks/FEATURE_FLAG_AUDIT.md the audit
+  contract that the future L06-06 feature-flag service must
+  honour: trigger fn_audit_feature_flag_change writes
+  audit_logs row with event_domain='feature_flag' and
+  before_value/after_value jsonb on every INSERT/UPDATE/DELETE,
+  actor_kind='system' for SLO auto-rollbacks (L01-49 taxonomy),
+  metrics.feature_flag.toggle counter for SRE dashboard,
+  fn_feature_flag_history admin-only RPC for the dashboard,
+  with regression test plan.
 ---
 # [L08-11] Feature flags (quando [6.6] implementar) precisam de metrics
 > **Lente:** 8 — CDO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending
