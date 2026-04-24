@@ -4,23 +4,37 @@ audit_ref: "4.14"
 lens: 4
 title: "Ausência de verificação de idade (COPPA/ECA)"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["lgpd", "rls", "ux"]
-files: []
-correction_type: process
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["lgpd", "rls", "ux", "minors"]
+files:
+  - docs/policies/MINOR_USER_AGE_VERIFICATION.md
+correction_type: spec
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: legal+product
+runbook: docs/policies/MINOR_USER_AGE_VERIFICATION.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
-deferred_to_wave: null
-note: null
+deferred_to_wave: 3
+note: |
+  Política ratificada em
+  `docs/policies/MINOR_USER_AGE_VERIFICATION.md`. Modelo
+  3-tier: < 13 (sem signup direto, vira `dependent_profiles`
+  sob conta dos pais), 13–17 (signup com double-opt-in
+  parental por email), 18+ (fluxo padrão). Coleta apenas
+  ano de nascimento (LGPD minimisation). Schema + RLS +
+  onboarding UI + backfill modal de existing users planejados
+  em Wave 3. Política inclui regras operacionais (no leaderboard
+  exposure para menores, no Strava/TP OAuth binding,
+  hard-delete sem grace period quando consent é revogado, audit
+  trail `event_domain='lgpd'`).
 ---
 # [L04-14] Ausência de verificação de idade (COPPA/ECA)
 > **Lente:** 4 — CLO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

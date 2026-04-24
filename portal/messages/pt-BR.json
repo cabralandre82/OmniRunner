@@ -54,6 +54,7 @@
   "athletes": {
     "title": "Atletas",
     "distribute": "Distribuir moedas",
+    "distribute_confirm_high_value": "Você está prestes a distribuir {amount} OmniCoins para {athlete}. Isso é um valor alto. Confirmar?",
     "export": "Exportar",
     "noAthletes": "Nenhum atleta encontrado"
   },

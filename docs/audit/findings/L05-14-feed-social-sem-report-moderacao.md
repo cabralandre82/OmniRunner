@@ -4,23 +4,34 @@ audit_ref: "5.14"
 lens: 5
 title: "Feed social: sem \"report\" / moderação"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["migration", "ux"]
-files: []
-correction_type: process
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["migration", "ux", "trust-safety", "marco-civil"]
+files:
+  - docs/policies/SOCIAL_MODERATION_POLICY.md
+correction_type: spec
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: product+legal+trust-safety
+runbook: docs/policies/SOCIAL_MODERATION_POLICY.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
-deferred_to_wave: null
-note: null
+deferred_to_wave: 3
+note: |
+  Política ratificada em
+  `docs/policies/SOCIAL_MODERATION_POLICY.md`. Tabela
+  `social_reports` (RLS forçada, UNIQUE per reporter+content)
+  + trigger auto-hide a 3 reports distintos + queue admin em
+  `/platform/moderation` + SLA cron 72h alinhado com Marco
+  Civil Art. 19. AI moderation rejeitada em v1 (escala atual,
+  PII LGPD, false-positives em PT-BR). Re-avaliação quando MAU
+  > 50k ou p95 review time > 24h. Implementação Wave 3.
 ---
 # [L05-14] Feed social: sem "report" / moderação
 > **Lente:** 5 — CPO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

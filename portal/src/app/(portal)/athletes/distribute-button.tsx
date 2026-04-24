@@ -28,6 +28,23 @@ export function DistributeButton({
       return;
     }
 
+    // L05-11 — fat-finger guard. Anything ≥ 500 OmniCoins (~ R$ 500
+    // at default 1:1 issuance rate, half of the per-call cap) needs
+    // a typed-confirmation. Browser-native `confirm()` is enough here
+    // because the single-athlete distribute is low-frequency and we
+    // don't want to ship a heavyweight modal for a non-batch path.
+    // Batch distribute (`/api/distribute-coins/batch`) gets its own
+    // dedicated TYPE-CONFIRMAR modal when the UI ships.
+    if (num >= 500) {
+      const confirmed = window.confirm(
+        ta("distribute_confirm_high_value", {
+          amount: String(num),
+          athlete: athleteName,
+        }),
+      );
+      if (!confirmed) return;
+    }
+
     setLoading(true);
     setResult(null);
 
