@@ -12,11 +12,13 @@ closed_at: null
 tags: ["finance", "billing", "webhook", "asaas", "subscriptions", "divergence", "ADR-0010"]
 files:
   - supabase/functions/asaas-webhook/index.ts
+  - supabase/migrations/20260424180000_l09_18_subscription_bridge.sql
   - supabase/migrations/20260421670000_l23_09_athlete_subscriptions.sql
   - supabase/migrations/20260304200000_financial_engine.sql
 correction_type: code
 test_required: true
-tests: []
+tests:
+  - tools/audit/check-billing-models-converged.ts
 linked_issues: []
 linked_prs: []
 owner: platform-finance

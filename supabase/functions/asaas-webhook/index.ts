@@ -59,6 +59,28 @@ function getDb() {
   });
 }
 
+/**
+ * Derive the canonical period_month (first day of the month) for an Asaas
+ * payment.
+ *
+ * Asaas sends `payment.dueDate` in ISO format ("YYYY-MM-DD"). The new-model
+ * `athlete_subscription_invoices.period_month` is by CHECK constraint always
+ * the first day of the month, so we truncate. When the field is missing or
+ * unparseable we fall back to the first day of the current month (UTC) so
+ * the bridge can still attempt a match by (subscription_id, period_month).
+ *
+ * Returns ISO "YYYY-MM-01".
+ */
+export function derivePeriodMonth(dueDate: string | undefined | null): string {
+  if (typeof dueDate === "string" && /^\d{4}-\d{2}-\d{2}/.test(dueDate)) {
+    return dueDate.slice(0, 8) + "01";
+  }
+  const now = new Date();
+  const y = now.getUTCFullYear();
+  const m = String(now.getUTCMonth() + 1).padStart(2, "0");
+  return `${y}-${m}-01`;
+}
+
 serve(async (req: Request) => {
   const url = new URL(req.url);
   if (url.pathname.endsWith("/health")) {
@@ -327,6 +349,70 @@ serve(async (req: Request) => {
 
       if (subErr) {
         errors.push(`subscription_update: ${subErr.message}`);
+      }
+
+      // ── ADR-0010 F-CON-1 bridge: also close the new-model invoice ─────
+      // The webhook historically only updated coaching_subscriptions
+      // (legacy). Per ADR-0010 the canonical model is
+      // athlete_subscription_invoices. We call a service-role bridge that
+      // resolves (group, athlete, period_month) from the legacy sub and
+      // marks the corresponding new-model invoice as 'paid' via
+      // fn_subscription_mark_invoice_paid. Fail-open: errors are logged
+      // and surfaced in `errors[]` but never block the webhook 200 — losing
+      // an Asaas event would trigger exponential retry and duplicate
+      // processing, which is strictly worse than a transient bridge miss
+      // (the cron-health-monitor + audit:billing-models-converged guard
+      // will surface persistent divergence). See L09-18.
+      if (
+        (event === "PAYMENT_CONFIRMED" || event === "PAYMENT_RECEIVED") &&
+        subscriptionId
+      ) {
+        try {
+          const periodMonth = derivePeriodMonth(paymentObj?.dueDate as string | undefined);
+          const { data: bridgeResult, error: bridgeErr } = await db.rpc(
+            "fn_subscription_bridge_mark_paid_from_legacy",
+            {
+              p_legacy_subscription_id: subscriptionId,
+              p_period_month: periodMonth,
+              p_external_charge_id: asaasPaymentId ?? null,
+            },
+          );
+
+          if (bridgeErr) {
+            errors.push(`bridge_invoice: ${bridgeErr.message}`);
+            log("warn", "asaas-webhook bridge_rpc_error", {
+              request_id: requestId,
+              subscription_id: subscriptionId,
+              event,
+              message: bridgeErr.message,
+            });
+          } else {
+            const r = bridgeResult as Record<string, unknown> | null;
+            log("info", "asaas-webhook bridge_result", {
+              request_id: requestId,
+              subscription_id: subscriptionId,
+              event,
+              bridge_ok: r?.ok ?? null,
+              bridge_matched: r?.matched ?? null,
+              bridge_was_paid_now: r?.was_paid_now ?? null,
+              bridge_reason: r?.reason ?? null,
+              invoice_id: r?.invoice_id ?? null,
+            });
+            if (r?.ok === false) {
+              errors.push(`bridge_invoice: ${String(r?.reason ?? "unknown")}`);
+            }
+          }
+        } catch (e) {
+          // Never block the webhook on bridge failure (fail-open).
+          const msg = e instanceof Error ? e.message : String(e);
+          errors.push(`bridge_invoice: ${msg}`);
+          log("warn", "asaas-webhook bridge_exception", {
+            request_id: requestId,
+            subscription_id: subscriptionId,
+            event,
+            message: msg,
+          });
+        }
       }
 
       // Maintenance fee on confirmed payments (idempotent via fee_type+source_ref_id)

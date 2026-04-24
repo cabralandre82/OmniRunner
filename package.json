@@ -89,6 +89,7 @@
     "audit:error-budget-policy": "npx tsx tools/audit/check-error-budget-policy.ts",
     "audit:secret-rotation": "npx tsx tools/audit/check-secret-rotation.ts",
     "audit:cron-idempotency": "npx tsx tools/audit/check-cron-idempotency.ts",
+    "audit:billing-models-converged": "npx tsx tools/audit/check-billing-models-converged.ts",
     "audit:k2-sql-fixes": "npx tsx tools/audit/check-k2-sql-fixes.ts",
     "audit:k3-domain-fixes": "npx tsx tools/audit/check-k3-domain-fixes.ts",
     "audit:k4-security-fixes": "npx tsx tools/audit/check-k4-security-fixes.ts",

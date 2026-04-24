@@ -324,7 +324,110 @@ SELECT actor_role, COUNT(*) FROM public.payment_provider_secret_access_log
  GROUP BY 1;
 ```
 
-## 9. Limitações conhecidas
+## 9. Bridge para `athlete_subscription_invoices` (ADR-0010 F-CON-1)
+
+Desde 2026-04-24 o webhook escreve em **dois modelos** em paralelo
+ao processar `PAYMENT_CONFIRMED` / `PAYMENT_RECEIVED`:
+
+1. **Legado (compat)**: `coaching_subscriptions.status` /
+   `last_payment_at` / `next_due_date` — caminho original, intacto.
+2. **Novo (canônico)**: chama
+   `fn_subscription_bridge_mark_paid_from_legacy(legacy_id, period, ext)`
+   que resolve `(group, athlete, period_month)` e fecha a invoice
+   correspondente em `athlete_subscription_invoices` via
+   `fn_subscription_mark_invoice_paid`.
+
+**Por quê:** os crons L09-13/L09-14 geram invoices mensais
+(`pending`) e marcam atrasadas (`overdue`) no modelo novo. O
+`FinancialAlertBanner` (L09-17) lê esse estado pra disparar alerta
+in-app. Sem a bridge, todo atleta que paga via Asaas fica eternamente
+`pending → overdue` no novo modelo enquanto o legado mostra
+`active` — o atleta vê alerta vermelho falso, o coach vê dois
+dashboards contraditórios. Ver
+[ADR-0010](../adr/ADR-0010-billing-subscriptions-consolidation.md)
+para o plano completo das 3 fases (esta é F-CON-1).
+
+### 9.1 Comportamento esperado (fail-open)
+
+A bridge NUNCA falha o webhook. Cenários esperados, todos com
+HTTP 200 + `errors[]` opcional:
+
+| `bridge_reason` | Significado | Ação |
+|---|---|---|
+| `paid_now` | Invoice estava pending/overdue → fechada agora | Esperado |
+| `already_paid` | Invoice já paga (idempotência: webhook reentregue) | Esperado |
+| `invoice_not_found` | Atleta tem `athlete_subscriptions` mas a invoice do mês não foi gerada (cron L09-13 fora ou subscription nova mid-cycle) | Investigar se persistir |
+| `no_athlete_sub` | Atleta só existe no legado (pré-F-CON-2) | Esperado durante transição |
+| `legacy_sub_not_found` | `subscriptionId` resolvido pelo webhook não existe (anomalia) | Investigar |
+| `cancelled_invoice` | Invoice nova foi cancelada e webhook tentou marcar paga (anomalia: pagamento off-policy) | Investigar / reconciliar |
+| `exception:<code>:<msg>` | Exceção interna na função SQL | Verificar log do PG |
+
+Filtrar logs por `message="asaas-webhook bridge_result"` ou
+`message="asaas-webhook bridge_exception"` no Sentry/Logflare.
+
+### 9.2 Diagnóstico de divergência
+
+```sql
+-- Quantos atletas pagaram este mês mas a invoice nova não está paid?
+SELECT count(*) AS divergence_count
+  FROM public.fn_find_subscription_models_divergence(1000);
+```
+
+```sql
+-- Detalhe (até 50 amostras)
+SELECT * FROM public.fn_find_subscription_models_divergence(50);
+```
+
+`kind` ∈ {`invoice_missing`, `invoice_overdue`, `invoice_pending`}:
+
+- `invoice_missing` → cron L09-13 não rodou para o mês ou o atleta
+  iniciou subscription novo mid-cycle. Rodar
+  `SELECT public.fn_subscription_generate_cycle();` (service_role)
+  e re-executar a bridge para o `legacy_subscription_id` reportado.
+- `invoice_pending` ou `invoice_overdue` → bridge falhou ou nunca foi
+  chamada. Re-disparar com:
+
+```sql
+-- Reconciliação manual (service_role)
+SET LOCAL role = 'service_role';
+SELECT public.fn_subscription_bridge_mark_paid_from_legacy(
+  '<LEGACY_SUBSCRIPTION_ID>'::uuid,
+  date_trunc('month', CURRENT_DATE)::date,
+  NULL  -- ou external_charge_id do Asaas, se conhecido
+);
+```
+
+O retorno é jsonb com `{ ok, matched, was_paid_now, invoice_id, reason }`.
+
+### 9.3 Asserção em CI / cron
+
+```bash
+npm run audit:billing-models-converged   # estático (fonte)
+```
+
+Em produção, o cron-health-monitor (L06-04) chama
+`SELECT public.fn_assert_subscription_models_converged(10);`
+diariamente; raise P0010 com até 10 amostras vai parar em
+`cron_health_alerts` com `severity=critical`. Esse é o canário
+da F-CON-1 — se ele dispara persistentemente, há código que paga
+no Asaas mas não passa por este webhook (gateway alternativo,
+SDK direto, etc) e a F-CON-2 (migração de leituras + onboarding
+direto no novo modelo) precisa acelerar.
+
+### 9.4 Fail-mode da bridge: o que o atleta vê
+
+Se a bridge **não roda** (ex: rollback do edge function): atleta
+paga, dashboard antigo do coach mostra "Ativo", mas
+`FinancialAlertBanner` continua mostrando "vencida" → ticket de
+suporte. Reconciliar via 9.2 + investigar por que o caminho da
+bridge não foi exercido (logs do edge function).
+
+Se a bridge **erra** (`bridge_reason='exception:...'`): mesmo
+efeito do above, mas com sample SQL no log. Ler
+`sample_error` em `payment_webhook_events.error_message` (que
+agora carrega o `bridge_invoice: <reason>`).
+
+## 10. Limitações conhecidas
 
 - **Sem rate limit por grupo no edge function** — Asaas pode enviar
   rajadas legítimas (e.g., billing batch). Atualmente o único

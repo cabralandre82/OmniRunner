@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T22:09:49.743Z",
+  "generated_at": "2026-04-24T22:16:35.216Z",
   "total": 363,
   "by_severity": {
     "high": 130,
@@ -7073,12 +7073,15 @@
       ],
       "files": [
         "supabase/functions/asaas-webhook/index.ts",
+        "supabase/migrations/20260424180000_l09_18_subscription_bridge.sql",
         "supabase/migrations/20260421670000_l23_09_athlete_subscriptions.sql",
         "supabase/migrations/20260304200000_financial_engine.sql"
       ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "tools/audit/check-billing-models-converged.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "platform-finance",
