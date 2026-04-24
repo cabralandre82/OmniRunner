@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T18:34:13.238Z",
-  "total": 361,
+  "generated_at": "2026-04-24T18:39:50.339Z",
+  "total": 362,
   "by_severity": {
     "high": 130,
     "critical": 71,
-    "medium": 132,
+    "medium": 133,
     "safe": 21,
     "na": 7
   },
@@ -13,11 +13,11 @@
     "fixed": 338,
     "not-reproducible": 3,
     "duplicate": 8,
-    "fix-pending": 4,
+    "fix-pending": 5,
     "wont-fix": 8
   },
   "by_wave": {
-    "0": 28,
+    "0": 29,
     "1": 179,
     "2": 125,
     "3": 29
@@ -31,7 +31,7 @@
     "6": 13,
     "7": 13,
     "8": 12,
-    "9": 16,
+    "9": 17,
     "10": 14,
     "11": 14,
     "12": 12,
@@ -7003,6 +7003,47 @@
       "effort_points": 3,
       "blocked_by": [
         "L23-09"
+      ],
+      "duplicate_of": null,
+      "deferred_to_wave": null,
+      "note": null
+    },
+    {
+      "id": "L09-17",
+      "audit_ref": "9.17",
+      "lens": 9,
+      "title": "Atleta sem alerta in-app quando mensalidade está próxima do vencimento",
+      "severity": "medium",
+      "status": "fix-pending",
+      "wave": 0,
+      "discovered_at": "2026-04-24T00:00:00.000Z",
+      "fixed_at": null,
+      "closed_at": null,
+      "tags": [
+        "finance",
+        "flutter",
+        "atleta",
+        "billing",
+        "engagement",
+        "retention"
+      ],
+      "files": [
+        "omni_runner/lib/domain/policies/financial_alert_policy.dart",
+        "omni_runner/lib/presentation/widgets/financial_alert_banner.dart",
+        "omni_runner/lib/presentation/screens/athlete_dashboard_screen.dart"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "omni_runner/test/domain/policies/financial_alert_policy_test.dart"
+      ],
+      "linked_issues": [],
+      "linked_prs": [],
+      "owner": "platform-finance",
+      "runbook": null,
+      "effort_points": 2,
+      "blocked_by": [
+        "L09-16"
       ],
       "duplicate_of": null,
       "deferred_to_wave": null,

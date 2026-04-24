@@ -10,6 +10,7 @@ import 'package:omni_runner/core/theme/design_tokens.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_group_repo.dart';
 import 'package:omni_runner/domain/repositories/i_coaching_member_repo.dart';
 import 'package:omni_runner/presentation/widgets/assessoria_required_sheet.dart';
+import 'package:omni_runner/presentation/widgets/financial_alert_banner.dart';
 import 'package:omni_runner/presentation/widgets/login_required_sheet.dart';
 import 'package:flutter/services.dart';
 import 'package:omni_runner/presentation/widgets/shimmer_loading.dart';
@@ -348,6 +349,7 @@ class _AthleteDashboardScreenState extends State<AthleteDashboardScreen>
                 ),
               ),
               const SizedBox(height: DesignTokens.spacingMd),
+              const FinancialAlertBanner(),
               if (!_loading && !_allFirstStepsComplete)
                 _FirstStepsCard(
                   stravaConnected: _stravaConnected,
