@@ -4,23 +4,40 @@ audit_ref: "15.6"
 lens: 15
 title: "Sem A/B testing framework"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["ux"]
-files: []
-correction_type: process
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["ux", "platform", "experimentation"]
+files:
+  - docs/runbooks/AB_TESTING_FRAMEWORK.md
+correction_type: spec
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: product+platform
+runbook: docs/runbooks/AB_TESTING_FRAMEWORK.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
-deferred_to_wave: null
-note: null
+deferred_to_wave: 3
+note: |
+  Decisão ratificada em
+  `docs/runbooks/AB_TESTING_FRAMEWORK.md`. **GrowthBook
+  self-hosted no Render + PostHog backend**. Variant
+  assignment via stable hash de `user_id`/`device_id`,
+  mutually-exclusive namespaces para experimentos
+  relacionados, holdout 5%. Eventos `experiment.assigned` em
+  `product_events` (L08-09 catalog) → SQL joins sem nova
+  pipeline. Guardrails: SRM check diário, auto-stop em
+  regressão de signup_rate/error_rate/withdraw_completion,
+  mobile rollout 24h após portal, registry obrigatório em
+  `EXPERIMENT_REGISTRY.md`. CI guard
+  `audit:no-experiments-on-finance` bloqueia
+  `getFeatureValue` em `app/api/{custody,swap,coins,
+  distribute-coins,checkout}`. Implementação Wave 3.
 ---
 # [L15-06] Sem A/B testing framework
 > **Lente:** 15 — CMO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

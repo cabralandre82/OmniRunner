@@ -4,23 +4,27 @@ audit_ref: "7.8"
 lens: 7
 title: "Dark mode parcial"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["portal"]
-files: []
-correction_type: process
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["portal", "ux", "design-system"]
+files:
+  - docs/design/UX_BASELINE.md
+correction_type: spec
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: design+frontend
+runbook: docs/design/UX_BASELINE.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
-deferred_to_wave: null
-note: null
+deferred_to_wave: 3
+note: |
+  Coberto pelo `docs/design/UX_BASELINE.md` §L07-08: adoção de `next-themes` + Tailwind `dark:` variants (já configurado `darkMode: 'class'`). Mapping completo de semantic tokens. Persistência via cookie `portal_theme` para evitar FOUC em RSC. Implementação Wave 3.
 ---
 # [L07-08] Dark mode parcial
 > **Lente:** 7 — CXO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

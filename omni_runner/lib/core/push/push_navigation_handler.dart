@@ -98,6 +98,18 @@ class PushNavigationHandler {
     final nav = navigatorKey.currentState;
     if (nav == null) return;
 
+    // [L07-09] Generic deep-link escape hatch. New push types should
+    // include a `route` key in their data payload; the server is
+    // responsible for setting it correctly. This means we no longer
+    // have to ship an app update every time backend introduces a new
+    // notification type — as long as the route exists in the app's
+    // navigator (named-routes only, validated against an allowlist).
+    final route = data['route'] as String?;
+    if (route != null && _isAllowedDeepLinkRoute(route)) {
+      nav.pushNamed(route, arguments: data['route_args']);
+      return;
+    }
+
     final type = data['type'] as String? ?? '';
 
     switch (type) {
@@ -163,5 +175,36 @@ class PushNavigationHandler {
 
   void dispose() {
     _openedSub?.cancel();
+  }
+
+  /// [L07-09] Allowlist of deep-link routes accepted from server-sent
+  /// push payloads. Anything not in this set falls back to the
+  /// per-`type` switch above. Keeping this list short prevents a
+  /// server-side bug (or a malicious backend operator) from being
+  /// able to navigate the app to an arbitrary route via push.
+  static const Set<String> _allowedDeepLinkRoutes = {
+    '/today',
+    '/progress',
+    '/wallet',
+    '/friends',
+    '/championships',
+    '/coaching',
+    '/workout-delivery',
+    '/league',
+    '/profile',
+    '/settings',
+  };
+
+  bool _isAllowedDeepLinkRoute(String route) {
+    // Trim any querystring before comparing so '/wallet?tab=history'
+    // still matches the allowlist.
+    final base = route.split('?').first.split('#').first;
+    if (_allowedDeepLinkRoutes.contains(base)) return true;
+    // Allow `/<prefix>/<id>` for prefixes in the allowlist (named
+    // routes commonly carry a trailing path segment).
+    for (final allowed in _allowedDeepLinkRoutes) {
+      if (base.startsWith('$allowed/')) return true;
+    }
+    return false;
   }
 }
