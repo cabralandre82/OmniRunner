@@ -9,13 +9,17 @@ wave: 0
 discovered_at: 2026-04-24
 tags: ["workout", "fit-export", "consistency", "coach"]
 files:
+  - portal/src/lib/workout/expand-repeats.ts
+  - portal/src/lib/workout/expand-repeats.test.ts
+  - supabase/functions/_shared/workout_expand.ts
   - portal/src/app/(portal)/workouts/page.tsx
   - portal/src/app/(portal)/workouts/[id]/page.tsx
   - portal/src/app/(portal)/workouts/template-builder.tsx
   - supabase/functions/generate-fit-workout/index.ts
 correction_type: code
 test_required: true
-tests: []
+tests:
+  - portal/src/lib/workout/expand-repeats.test.ts
 linked_issues: []
 linked_prs: []
 owner: platform-workout

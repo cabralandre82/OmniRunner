@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T16:19:33.637Z",
+  "generated_at": "2026-04-24T16:43:30.739Z",
   "total": 351,
   "by_severity": {
     "high": 125,
@@ -4584,7 +4584,11 @@
         "go-to-market"
       ],
       "files": [
+        "supabase/migrations/20260424130000_l05_21_workout_repeat_terminator.sql",
+        "supabase/functions/_shared/workout_expand.ts",
         "supabase/functions/generate-fit-workout/index.ts",
+        "portal/src/lib/workout/expand-repeats.ts",
+        "portal/src/lib/workout/expand-repeats.test.ts",
         "portal/src/app/(portal)/workouts/page.tsx",
         "portal/src/app/(portal)/workouts/[id]/page.tsx",
         "portal/src/app/(portal)/workouts/template-builder.tsx",
@@ -4592,7 +4596,10 @@
       ],
       "correction_type": "migration",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/workout/expand-repeats.test.ts",
+        "tools/test_fit_generation.js"
+      ],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "platform-workout",
@@ -4619,6 +4626,9 @@
         "coach"
       ],
       "files": [
+        "portal/src/lib/workout/expand-repeats.ts",
+        "portal/src/lib/workout/expand-repeats.test.ts",
+        "supabase/functions/_shared/workout_expand.ts",
         "portal/src/app/(portal)/workouts/page.tsx",
         "portal/src/app/(portal)/workouts/[id]/page.tsx",
         "portal/src/app/(portal)/workouts/template-builder.tsx",
@@ -4626,7 +4636,9 @@
       ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/workout/expand-repeats.test.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "platform-workout",
@@ -4655,11 +4667,16 @@
         "coach"
       ],
       "files": [
-        "portal/src/app/api/training-plan/ai/parse-workout/route.ts"
+        "portal/src/app/api/training-plan/ai/parse-workout/route.ts",
+        "portal/src/lib/workout/validate.ts",
+        "portal/src/lib/workout/validate.test.ts"
       ],
       "correction_type": "code",
       "test_required": true,
-      "tests": [],
+      "tests": [
+        "portal/src/lib/workout/validate.test.ts",
+        "portal/src/app/api/training-plan/ai/parse-workout/route.test.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "platform-workout",

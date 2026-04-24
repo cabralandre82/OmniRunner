@@ -9,14 +9,20 @@ wave: 0
 discovered_at: 2026-04-24
 tags: ["workout", "fit-export", "watch", "coach", "go-to-market"]
 files:
+  - supabase/migrations/20260424130000_l05_21_workout_repeat_terminator.sql
+  - supabase/functions/_shared/workout_expand.ts
   - supabase/functions/generate-fit-workout/index.ts
+  - portal/src/lib/workout/expand-repeats.ts
+  - portal/src/lib/workout/expand-repeats.test.ts
   - portal/src/app/(portal)/workouts/page.tsx
   - portal/src/app/(portal)/workouts/[id]/page.tsx
   - portal/src/app/(portal)/workouts/template-builder.tsx
   - tools/test_fit_generation.js
 correction_type: migration
 test_required: true
-tests: []
+tests:
+  - portal/src/lib/workout/expand-repeats.test.ts
+  - tools/test_fit_generation.js
 linked_issues: []
 linked_prs: []
 owner: platform-workout

@@ -81,7 +81,11 @@ describe("POST /api/training-plan/ai/parse-workout", () => {
         { order_index: 3, block_type: "recovery", duration_seconds: 120, distance_meters: null,
           target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null,
           target_hr_zone: 2, rpe_target: 3, repeat_count: null, notes: null },
-        { order_index: 4, block_type: "cooldown", duration_seconds: 600, distance_meters: null,
+        // L05-21: repeat_end now required before any non-active block (e.g. cooldown).
+        { order_index: 4, block_type: "repeat_end", duration_seconds: null, distance_meters: null,
+          target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null,
+          target_hr_zone: null, rpe_target: null, repeat_count: null, notes: null },
+        { order_index: 5, block_type: "cooldown", duration_seconds: 600, distance_meters: null,
           target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null,
           target_hr_zone: 2, rpe_target: 3, repeat_count: null, notes: null },
       ],
@@ -98,11 +102,13 @@ describe("POST /api/training-plan/ai/parse-workout", () => {
     expect(json.ok).toBe(true);
     expect(json.data.workout_type).toBe("interval");
     expect(json.data.workout_label).toBe("Intervalado 4×1km em 4:30/km");
-    expect(json.data.blocks).toHaveLength(5);
+    expect(json.data.blocks).toHaveLength(6);
     expect(json.data.blocks[0].block_type).toBe("warmup");
     expect(json.data.blocks[2].distance_meters).toBe(1000);
     expect(json.data.blocks[2].target_pace_min_sec_per_km).toBe(255);
     expect(json.data.blocks[1].repeat_count).toBe(4);
+    expect(json.data.blocks[4].block_type).toBe("repeat_end");
+    expect(json.data.blocks[5].block_type).toBe("cooldown");
   });
 
   it("returns empty blocks array when AI returns none", async () => {
@@ -202,7 +208,7 @@ describe("POST /api/training-plan/ai/parse-workout", () => {
     expect(json.error.message).toContain("Resposta cortada");
   });
 
-  it("sanitizes blocks — strips unknown block_type, caps at 30 blocks", async () => {
+  it("caps at 30 blocks", async () => {
     const tooManyBlocks = Array.from({ length: 35 }, (_, i) => ({
       order_index: i,
       block_type: i % 2 === 0 ? "interval" : "recovery",
@@ -237,5 +243,98 @@ describe("POST /api/training-plan/ai/parse-workout", () => {
     const json = await res.json();
     expect(json.ok).toBe(true);
     expect(json.data.blocks.length).toBeLessThanOrEqual(30);
+  });
+
+  it("L05-23: rejects AI output with unknown block_type (no silent fallback)", async () => {
+    mockFetch.mockReturnValueOnce(openaiResponse({
+      choices: [{
+        message: {
+          content: JSON.stringify({
+            workout_type: "interval",
+            workout_label: "Strides",
+            description: "Aceleradas",
+            coach_notes: null,
+            estimated_distance_km: null,
+            estimated_duration_minutes: null,
+            blocks: [
+              { order_index: 0, block_type: "strides", duration_seconds: 60, distance_meters: null,
+                target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null,
+                target_hr_zone: null, rpe_target: null, repeat_count: null, notes: null },
+            ],
+          }),
+        },
+      }],
+    }));
+
+    const { POST } = await import("./route");
+    const res = await POST(makeReq({ text: "strides de 100m" }));
+    const json = await res.json();
+    expect(res.status).toBe(422);
+    expect(json.error.code).toBe("AI_INVALID_BLOCK_TYPE");
+  });
+
+  it("L05-23: rejects AI output with inverted pace range", async () => {
+    mockFetch.mockReturnValueOnce(openaiResponse({
+      choices: [{
+        message: {
+          content: JSON.stringify({
+            workout_type: "interval",
+            workout_label: "Invertido",
+            description: null,
+            coach_notes: null,
+            estimated_distance_km: null,
+            estimated_duration_minutes: null,
+            blocks: [
+              { order_index: 0, block_type: "interval", distance_meters: 1000, duration_seconds: null,
+                target_pace_min_sec_per_km: 300, target_pace_max_sec_per_km: 250,
+                target_hr_zone: null, rpe_target: null, repeat_count: null, notes: null },
+            ],
+          }),
+        },
+      }],
+    }));
+
+    const { POST } = await import("./route");
+    const res = await POST(makeReq({ text: "1km em 4:10 a 5:00" }));
+    const json = await res.json();
+    expect(res.status).toBe(422);
+    expect(json.error.code).toBe("AI_SEMANTIC_VALIDATION_FAILED");
+    expect(json.error.details.errors.some((e: { code: string }) => e.code === "pace_inverted")).toBe(true);
+  });
+
+  it("L05-23: rejects AI output with repeat missing repeat_end", async () => {
+    mockFetch.mockReturnValueOnce(openaiResponse({
+      choices: [{
+        message: {
+          content: JSON.stringify({
+            workout_type: "interval",
+            workout_label: "Sem end",
+            description: null,
+            coach_notes: null,
+            estimated_distance_km: null,
+            estimated_duration_minutes: null,
+            blocks: [
+              { order_index: 0, block_type: "repeat", repeat_count: 3,
+                duration_seconds: null, distance_meters: null,
+                target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null,
+                target_hr_zone: null, rpe_target: null, notes: null },
+              { order_index: 1, block_type: "interval", distance_meters: 400, duration_seconds: null,
+                target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null,
+                target_hr_zone: null, rpe_target: null, repeat_count: null, notes: null },
+              { order_index: 2, block_type: "cooldown", duration_seconds: 300, distance_meters: null,
+                target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null,
+                target_hr_zone: null, rpe_target: null, repeat_count: null, notes: null },
+            ],
+          }),
+        },
+      }],
+    }));
+
+    const { POST } = await import("./route");
+    const res = await POST(makeReq({ text: "3x 400m" }));
+    const json = await res.json();
+    expect(res.status).toBe(422);
+    expect(json.error.code).toBe("AI_SEMANTIC_VALIDATION_FAILED");
+    expect(json.error.details.errors.some((e: { code: string }) => e.code === "repeat_unclosed")).toBe(true);
   });
 });

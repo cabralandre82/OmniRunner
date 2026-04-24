@@ -10,9 +10,13 @@ discovered_at: 2026-04-24
 tags: ["workout", "ai", "validation", "coach"]
 files:
   - portal/src/app/api/training-plan/ai/parse-workout/route.ts
+  - portal/src/lib/workout/validate.ts
+  - portal/src/lib/workout/validate.test.ts
 correction_type: code
 test_required: true
-tests: []
+tests:
+  - portal/src/lib/workout/validate.test.ts
+  - portal/src/app/api/training-plan/ai/parse-workout/route.test.ts
 linked_issues: []
 linked_prs: []
 owner: platform-workout

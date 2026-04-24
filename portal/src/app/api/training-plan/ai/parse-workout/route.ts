@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { withErrorHandler } from "@/lib/api-handler";
+import { validateWorkoutBlocks, type ValidatableBlock } from "@/lib/workout/validate";
+import type { BlockType } from "@/lib/workout/expand-repeats";
 
 const ParseSchema = z.object({
   text: z.string().min(3).max(1000),
@@ -192,6 +194,54 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
     );
   }
 
+  // L05-23 phase 2: semantic validation of the full block sequence before
+  // we send the workout back to the coach. Catches pace inversion, trigger
+  // conflicts, repeat imbalance, and estimate hallucination that slip past
+  // the JSON schema.
+  const estimatedDistanceKm = typeof result.estimated_distance_km === "number"
+    ? result.estimated_distance_km
+    : null;
+  const estimatedDurationMinutes = typeof result.estimated_duration_minutes === "number"
+    ? result.estimated_duration_minutes
+    : null;
+
+  const validation = validateWorkoutBlocks(
+    blocks.map((b) => ({
+      block_type: b.block_type as BlockType,
+      duration_seconds: b.duration_seconds,
+      distance_meters: b.distance_meters,
+      target_pace_min_sec_per_km: b.target_pace_min_sec_per_km,
+      target_pace_max_sec_per_km: b.target_pace_max_sec_per_km,
+      target_hr_min: b.target_hr_min,
+      target_hr_max: b.target_hr_max,
+      target_hr_zone: b.target_hr_zone,
+      repeat_count: b.repeat_count,
+    })) as ValidatableBlock[],
+    {
+      estimatedDistanceKm,
+      estimatedDurationMinutes,
+    },
+  );
+
+  if (!validation.ok) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: {
+          code: "AI_SEMANTIC_VALIDATION_FAILED",
+          message:
+            "A IA retornou um treino estruturalmente inválido. " +
+            "Revise a descrição ou edite os blocos manualmente.",
+          details: {
+            errors: validation.errors,
+            warnings: validation.warnings,
+          },
+        },
+      },
+      { status: 422 },
+    );
+  }
+
   return NextResponse.json({
     ok: true,
     data: {
@@ -199,8 +249,9 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
       workout_label:              (result.workout_label as string)?.slice(0, 60) ?? "Treino",
       description:                (result.description as string)?.slice(0, 2000) ?? null,
       coach_notes:                (result.coach_notes as string | null) ?? null,
-      estimated_distance_km:      typeof result.estimated_distance_km === "number" ? result.estimated_distance_km : null,
-      estimated_duration_minutes: typeof result.estimated_duration_minutes === "number" ? result.estimated_duration_minutes : null,
+      estimated_distance_km:      estimatedDistanceKm,
+      estimated_duration_minutes: estimatedDurationMinutes,
+      warnings:                   validation.warnings.length > 0 ? validation.warnings : undefined,
       blocks,
     },
   });
