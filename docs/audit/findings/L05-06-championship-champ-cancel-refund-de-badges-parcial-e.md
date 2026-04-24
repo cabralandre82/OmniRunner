@@ -13,7 +13,7 @@ files:
   - supabase/migrations/20260421480000_l05_06_champ_cancel_atomic.sql
   - tools/audit/check-champ-cancel-atomic.ts
 correction_type: process
-test_required: true
+test_required: false
 tests: []
 linked_issues: []
 linked_prs:

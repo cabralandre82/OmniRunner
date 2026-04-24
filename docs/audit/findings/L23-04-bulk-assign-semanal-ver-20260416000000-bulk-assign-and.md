@@ -18,7 +18,9 @@ test_required: true
 tests:
   - tools/audit/check-bulk-assign-rollback.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 42eae3f
+  - a955dba
 owner: coach-tooling
 runbook: null
 effort_points: 5

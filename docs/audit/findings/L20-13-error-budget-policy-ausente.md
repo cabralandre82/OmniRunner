@@ -18,7 +18,8 @@ test_required: true
 tests:
   - tools/audit/check-error-budget-policy.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - d894bbc
 owner: sre
 runbook: docs/ERROR_BUDGET_POLICY.md
 effort_points: 2

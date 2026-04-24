@@ -18,7 +18,9 @@ test_required: true
 tests:
   - tools/audit/check-dpo-channel.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - d894bbc
+  - 8346a6e
 owner: legal
 runbook: docs/legal/DPO_AND_DATA_SUBJECT_CHANNEL.md
 effort_points: 2

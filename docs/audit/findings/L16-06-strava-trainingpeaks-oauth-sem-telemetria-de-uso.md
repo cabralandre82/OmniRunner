@@ -17,7 +17,7 @@ files:
   - portal/src/app/api/platform/integrations/health/route.ts
   - tools/audit/check-integration-telemetry.ts
 correction_type: code
-test_required: true
+test_required: false
 tests: []
 linked_issues: []
 linked_prs:

@@ -16,9 +16,10 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "portal/src/lib/api/csrf.test.ts (existing CSRF unit tests cover origin pinning + token check)"
+  - portal/src/lib/api/csrf.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 99ac6c7
 owner: platform
 runbook: null
 effort_points: 2

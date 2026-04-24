@@ -21,7 +21,10 @@ tests:
   - portal/src/lib/_boundaries/manifest.test.ts
   - tools/audit/check-portal-bounded-contexts.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - d894bbc
+  - 42eae3f
+  - 1e98b5c
 owner: portal-architecture
 runbook: null
 effort_points: 5

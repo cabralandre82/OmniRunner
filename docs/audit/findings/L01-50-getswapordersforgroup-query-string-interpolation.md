@@ -19,10 +19,12 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "portal/src/lib/security/uuid-guard.test.ts (10 vitest cases)"
-  - "npm run audit:k3-domain-fixes"
+  - portal/src/lib/security/uuid-guard.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - e022472
+  - 908a5b7
+  - 461f80a
 owner: platform
 runbook: null
 effort_points: 2

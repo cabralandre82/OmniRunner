@@ -18,10 +18,12 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "supabase/migrations/20260421780000_l01_49_audit_log_actor_kind.sql (in-migration self-test)"
-  - "npm run audit:k2-sql-fixes"
+  - supabase/migrations/20260421780000_l01_49_audit_log_actor_kind.sql
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - ba3c71e
+  - aa816fb
+  - 8c62f60
 owner: platform
 runbook: null
 effort_points: 2

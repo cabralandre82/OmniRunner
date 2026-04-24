@@ -17,10 +17,11 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "supabase/migrations/20260421760000_l01_42_platform_fee_config_rls.sql (in-migration self-test)"
-  - "npm run audit:k2-sql-fixes"
+  - supabase/migrations/20260421760000_l01_42_platform_fee_config_rls.sql
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - aa816fb
+  - 8c62f60
 owner: platform
 runbook: null
 effort_points: 2

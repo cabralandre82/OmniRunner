@@ -18,7 +18,8 @@ test_required: true
 tests:
   - tools/audit/check-secret-rotation.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - d894bbc
 owner: platform
 runbook: docs/runbooks/SECRET_ROTATION_RUNBOOK.md
 effort_points: 2

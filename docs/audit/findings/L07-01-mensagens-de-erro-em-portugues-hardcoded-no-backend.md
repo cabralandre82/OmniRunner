@@ -21,7 +21,8 @@ tests:
   - tools/audit/check-api-error-i18n.ts
   - portal/src/lib/api/error-messages.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 1b768d4
 owner: portal-platform
 runbook: null
 effort_points: 5

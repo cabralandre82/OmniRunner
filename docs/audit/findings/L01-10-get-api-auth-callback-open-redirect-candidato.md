@@ -18,10 +18,12 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "portal/src/lib/security/safe-next.test.ts (8 vitest cases)"
-  - "npm run audit:k4-security-fixes"
+  - portal/src/lib/security/safe-next.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 99ac6c7
+  - 4d7950b
+  - 3435925
 owner: platform
 runbook: null
 effort_points: 2

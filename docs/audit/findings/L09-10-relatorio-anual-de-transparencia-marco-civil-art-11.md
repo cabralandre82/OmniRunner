@@ -18,7 +18,8 @@ test_required: true
 tests:
   - tools/audit/check-transparency-report.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - d894bbc
 owner: legal
 runbook: docs/legal/TRANSPARENCY_REPORT.md
 effort_points: 2

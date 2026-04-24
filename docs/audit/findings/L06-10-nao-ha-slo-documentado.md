@@ -17,7 +17,8 @@ correction_type: process
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - d894bbc
 owner: sre
 runbook: docs/observability/SLO.md
 effort_points: 2

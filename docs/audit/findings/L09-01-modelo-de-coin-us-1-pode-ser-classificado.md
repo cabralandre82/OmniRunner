@@ -18,7 +18,10 @@ test_required: true
 tests:
   - tools/audit/check-bcb-classification.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 42eae3f
+  - fc1e1e5
+  - 0299f45
 owner: legal-finance-platform
 runbook: docs/compliance/BCB_CLASSIFICATION.md
 effort_points: 5

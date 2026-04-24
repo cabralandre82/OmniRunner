@@ -19,9 +19,9 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "omni_runner/test/features/strava/strava_oauth_state_test.dart"
-  - "omni_runner/test/features/strava/strava_auth_repository_test.dart"
-  - "omni_runner/test/core/deep_links/deep_link_handler_test.dart"
+  - omni_runner/test/features/strava/strava_oauth_state_test.dart
+  - omni_runner/test/features/strava/strava_auth_repository_test.dart
+  - omni_runner/test/core/deep_links/deep_link_handler_test.dart
 linked_issues: []
 linked_prs:
   - "commit:396340c"

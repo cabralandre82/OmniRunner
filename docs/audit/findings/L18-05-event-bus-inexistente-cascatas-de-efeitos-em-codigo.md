@@ -12,7 +12,7 @@ files:
   - supabase/migrations/20260421540000_l18_05_outbox_event_bus.sql
   - tools/audit/check-outbox-event-bus.ts
 correction_type: process
-test_required: true
+test_required: false
 tests: []
 linked_issues: []
 linked_prs:

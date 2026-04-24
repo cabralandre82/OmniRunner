@@ -14,7 +14,7 @@ files:
   - supabase/migrations/20260421520000_l15_01_utm_attribution.sql
   - tools/audit/check-utm-attribution.ts
 correction_type: process
-test_required: true
+test_required: false
 tests: []
 linked_issues: []
 linked_prs:

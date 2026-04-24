@@ -17,7 +17,8 @@ test_required: true
 tests:
   - tools/audit/check-workout-messages.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - c0d5a76
 owner: coach-platform
 runbook: null
 effort_points: 5

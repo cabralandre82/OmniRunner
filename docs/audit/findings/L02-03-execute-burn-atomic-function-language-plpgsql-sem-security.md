@@ -16,7 +16,9 @@ correction_type: code
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - aa816fb
+  - 8c62f60
 owner: platform
 runbook: null
 effort_points: 2

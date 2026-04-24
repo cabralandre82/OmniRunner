@@ -18,7 +18,9 @@ correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 3af9c9b
+  - 15a8b4b
 owner: data+product
 runbook: docs/runbooks/PRODUCT_EVENTS_RUNBOOK.md
 effort_points: 2

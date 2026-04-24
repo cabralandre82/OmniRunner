@@ -15,7 +15,9 @@ correction_type: code
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 3af9c9b
+  - 01674b0
 owner: platform
 runbook: null
 effort_points: 2

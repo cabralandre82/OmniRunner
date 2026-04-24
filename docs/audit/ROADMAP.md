@@ -319,3 +319,95 @@ Os seguintes findings já têm **correção proposta + testes de regressão + SQ
 - `L01-02` — FX rate server-side authoritative via `platform_fx_quotes` + `.strict()` schema + endpoint read-only para UI
 - `L05-01` — `cancel_swap_order` RPC com `FOR UPDATE` + ownership/status guards + SQLSTATE distinguíveis (P0001/P0002/P0003/P0004) → portal mapeia para 404/409/403/400/422/503
 - Gradualmente, conforme o time converter outros findings da Onda 0 em PRs, estes também ganharão detalhamento similar.
+
+---
+
+## Continuação Onda 2 — Batches K1–K6 (60 mediums + 1 critical)
+
+**Data:** 2026-04-21 · **Critical extra:** L23-02 (coach
+overview dashboard).
+
+A Onda 2 começou densa em mediums após o fechamento do Wave-1
+(95%+ critical/high concluídos). Para evitar PRs gigantes,
+agrupamos 60 findings 🟡 medium em **6 batches por superfície**,
+cada um com `fix(...)` + `docs(...)` separados e CI guards
+quando aplicável.
+
+| Batch | Foco                                          | Findings | Commits âncora                                             |
+|-------|-----------------------------------------------|----------|-------------------------------------------------------------|
+| K1    | Policy / docs / runbook                       | 11       | `d894bbc`, `8346a6e`                                        |
+| K2    | SQL / schema / RLS                            | 11       | `8c62f60`, `aa816fb`                                        |
+| K3    | Pure-domain TypeScript / Dart                 | 10       | `27bc0f5`, `461f80a`, `9fc89cc`, `02a99bb`, `908a5b7`, `e022472` |
+| K4    | Middleware / API / security                   | 11       | `3435925`, `5fc0aee`, `d63d253`, `4d7950b`, `69db409`, `99ac6c7` |
+| K5    | Feature / UX / observability                  | 8        | `01674b0`, `6285bdc`, `15a8b4b`, `3af9c9b`                  |
+| K6    | Cleanup + remaining (specs/policies/runbooks) | 9        | `4a7a2c9`, `ba3c71e`, `41699e9`, `d3488b4`                  |
+
+**Critical extra (mesma janela):** L23-02 (`e30ab8a`) — coach
+daily-digest RPC com 4 buckets priorizados.
+
+### Batch K1 — Policy / docs / runbook (11)
+DPO channel (L04-11), Transparency Report (L09-10), Connection
+Pooling Runbook (L19-09), Autovacuum Tuning (L19-10), Logs
+Searchability (L20-10), Error Budget Policy (L20-13), GitHub
+Actions SHA Pinning (L11-10), `npm ci --ignore-scripts`
+(L11-12), Secret Rotation Runbook (L06-11), SLO doc (L06-10) +
+ADR governance (L17-07). L06-10 marcado como duplicate.
+
+### Batch K2 — SQL / schema / RLS (11)
+`platform_fee_config` RLS hardening (L01-42), deprecated
+'professor' role audit (L01-43), `portal_audit_log.actor_kind`
+(L01-49), `check_custody_invariants` global conservation
+(L03-08), `custody_deposits` expiration (L03-15), `swap_orders`
+visibility scope (L05-10), `workout_delivery_items`
+rescheduling (L05-16), `badge_awards` expiration (L05-17),
+`audit_logs` event_schema_version (L18-09), cron idempotency
+ratchet (L12-11). L02-03 marcado como duplicate.
+
+### Batch K3 — Pure-domain TypeScript / Dart (10)
+UUID guard for PostgREST `.or()` composition (L01-50),
+public-prefix segment-shape contract (L01-25/L13-08),
+single-membership no-redirect (L13-09), FX spread disclosure
+(L03-06), Zod UUID policy (L02-12), invite-code regex (L01-28),
+flutter_secure_storage hardening (L01-32/L01-33), challenge
+deterministic tie-break (L05-12).
+
+### Batch K4 — Middleware / API / security (11)
+safeNext open-redirect guard (L01-10), rate-limit fail-closed
+mode for financial endpoints (L01-21), request-aware Redis
+client (L02-15), platform_role middleware cache (L01-26),
+module-cached service client (L02-11), CSP `style-src
+'unsafe-inline'` migration plan (L01-39), `pg_cron` role
+isolation (L12-10), cron timezone policy (L12-12), pubspec.lock
+tracking + lockfile drift CI guard (L11-13/L11-14). L10-12
+marcado como duplicate of L17-06.
+
+### Batch K5 — Feature / UX / observability (8)
+liveness/readiness split (L06-12), auto request_id in logs
+(L06-13), business-health endpoint + `fn_rpc_latency_summary`
+(L18-10), event catalog + CI guard (L08-09), cost
+observability runbook (L20-11), mobile-logout revoke spec
+(L05-15), athlete-leaves-group balance policy (L05-18). L05-13
+marcado como duplicate of L08-04.
+
+### Batch K6 — Cleanup + remaining (9)
+Secrets inventory (L10-11), pentest program (L10-10),
+refresh-token rotation policy (L10-14), cohort retention spec
+(L08-10), feature-flag audit spec (L08-11), mobile offline
+analytics spec (L08-12), external financial audit policy
+(L09-12), Renovate vs Dependabot decision (L11-11), monorepo
+tooling decision (L17-08).
+
+### Final sweep
+- `linked_prs` backfilled em todos os 60+ findings via mapping
+  por commit-message → finding-id (script idempotente).
+- Tests sanitizados: dropped `npm run …` lines (não são paths)
+  e parenthetical descriptions; CI guards permanecem
+  referenciados via `files:`.
+- `audit:verify` passa zero erros (348/348 validados).
+- L22-03 movido de `safe` (status inválido) para `wont-fix`.
+- L05-05 / L10-04 corrigidos paths antigos para CI guards
+  reais.
+
+Total fechado nesta janela: **60 mediums + 1 critical = 61
+findings**, mantendo a postura "fix(...) + docs(...) + CI
+guard quando aplicável" estabelecida no Wave 1.

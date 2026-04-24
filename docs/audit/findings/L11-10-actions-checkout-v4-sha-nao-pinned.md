@@ -18,7 +18,8 @@ test_required: true
 tests:
   - tools/audit/check-actions-pinned.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - d894bbc
 owner: platform
 runbook: null
 effort_points: 2

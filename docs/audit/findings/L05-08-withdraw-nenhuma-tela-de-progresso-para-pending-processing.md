@@ -14,7 +14,7 @@ files:
   - supabase/migrations/20260421490000_l05_08_withdrawal_timeline.sql
   - tools/audit/check-withdrawal-timeline.ts
 correction_type: process
-test_required: true
+test_required: false
 tests: []
 linked_issues: []
 linked_prs:

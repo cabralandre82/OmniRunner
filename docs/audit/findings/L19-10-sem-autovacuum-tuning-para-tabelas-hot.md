@@ -18,7 +18,8 @@ test_required: true
 tests:
   - tools/audit/check-autovacuum-hot-tables.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - d894bbc
 owner: platform
 runbook: docs/runbooks/CONNECTION_POOLING.md
 effort_points: 2

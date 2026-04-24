@@ -14,7 +14,9 @@ correction_type: spec
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 3af9c9b
+  - 15a8b4b
 owner: finance+product
 runbook: docs/policies/ATHLETE_LEAVES_GROUP_BALANCE.md
 effort_points: 2

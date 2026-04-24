@@ -16,7 +16,7 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "tools/test_l12_08_clearing_cron_deterministic_cutoff.ts"
+  - tools/test_l12_08_clearing_cron_deterministic_cutoff.ts
 linked_issues: []
 linked_prs: ["7f52a25"]
 owner: cfo

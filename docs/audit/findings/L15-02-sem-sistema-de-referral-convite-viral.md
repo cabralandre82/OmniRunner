@@ -13,7 +13,7 @@ files:
   - supabase/migrations/20260421700000_l22_02_revoke_nonchallenge_coins.sql
   - tools/audit/check-referral-program.ts
 correction_type: process
-test_required: true
+test_required: false
 tests: []
 linked_issues: []
 linked_prs:

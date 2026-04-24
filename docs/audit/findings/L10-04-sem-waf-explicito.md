@@ -19,8 +19,8 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - npm run audit:waf
-  - cd portal && npx vitest run src/lib/security/waf.test.ts
+  - portal/src/lib/security/waf.test.ts
+  - tools/audit/check-waf.ts
 linked_issues: []
 linked_prs:
   - local:78c8268

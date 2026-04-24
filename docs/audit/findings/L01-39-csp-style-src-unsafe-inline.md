@@ -16,7 +16,9 @@ correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 99ac6c7
+  - 69db409
 owner: platform
 runbook: docs/runbooks/CSP_STYLE_SRC_MIGRATION.md
 effort_points: 2

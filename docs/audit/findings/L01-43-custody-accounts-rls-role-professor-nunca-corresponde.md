@@ -18,10 +18,11 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "supabase/migrations/20260421770000_l01_43_dead_role_audit.sql (pg_policies scan)"
-  - "npm run audit:k2-sql-fixes"
+  - supabase/migrations/20260421770000_l01_43_dead_role_audit.sql
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - aa816fb
+  - 8c62f60
 owner: platform
 runbook: null
 effort_points: 2

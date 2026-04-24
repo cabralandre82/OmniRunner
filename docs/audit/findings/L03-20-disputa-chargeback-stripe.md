@@ -17,9 +17,9 @@ files:
 correction_type: process
 test_required: true
 tests:
-  - portal/src/app/api/custody/webhook/route.test.ts  # 29/29 (12 novos dispute-path)
+  - portal/src/app/api/custody/webhook/route.test.ts  # 29/29
   - tools/test_l03_20_dispute_chargeback.ts           # 14/14 pgsandbox
-  - supabase/migrations/20260421160000_l03_dispute_chargeback_flow.sql  # self-test in-migration (4 branches)
+  - supabase/migrations/20260421160000_l03_dispute_chargeback_flow.sql  # self-test in-migration
 linked_issues: []
 linked_prs:
   - 4b5aaed

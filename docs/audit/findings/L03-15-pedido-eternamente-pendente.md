@@ -16,10 +16,11 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "supabase/migrations/20260421840000_l03_15_expire_stale_deposits.sql (in-migration self-test)"
-  - "npm run audit:k2-sql-fixes"
+  - supabase/migrations/20260421840000_l03_15_expire_stale_deposits.sql
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - aa816fb
+  - 8c62f60
 owner: platform
 runbook: null
 effort_points: 2

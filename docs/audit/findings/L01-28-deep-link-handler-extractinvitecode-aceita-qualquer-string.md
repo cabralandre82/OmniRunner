@@ -17,10 +17,12 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "omni_runner/test/core/deep_links/deep_link_handler_test.dart (4 new L01-28 cases)"
-  - "npm run audit:k3-domain-fixes"
+  - omni_runner/test/core/deep_links/deep_link_handler_test.dart
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - e022472
+  - 908a5b7
+  - 9fc89cc
 owner: mobile
 runbook: null
 effort_points: 2

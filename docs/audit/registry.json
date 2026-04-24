@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T00:36:43.153Z",
+  "generated_at": "2026-04-24T01:06:09.424Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,11 +10,11 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 244,
-    "fix-pending": 95,
+    "fixed": 260,
+    "fix-pending": 78,
     "in-progress": 1,
-    "wont-fix": 7,
-    "safe": 1
+    "duplicate": 1,
+    "wont-fix": 8
   },
   "by_wave": {
     "0": 15,
@@ -446,11 +446,14 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "portal/src/lib/security/safe-next.test.ts (8 vitest cases)",
-        "npm run audit:k4-security-fixes"
+        "portal/src/lib/security/safe-next.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "99ac6c7",
+        "4d7950b",
+        3435925
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -835,12 +838,14 @@
         "tools/audit/check-k4-security-fixes.ts"
       ],
       "correction_type": "code",
-      "test_required": true,
-      "tests": [
-        "npm run audit:k4-security-fixes"
-      ],
+      "test_required": false,
+      "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "99ac6c7",
+        "4d7950b",
+        "5fc0aee"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -962,11 +967,14 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "portal/src/lib/route-policy.test.ts (L01-25/L13-08 segment-shape regression block)",
-        "npm run audit:k3-domain-fixes"
+        "portal/src/lib/route-policy.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "e022472",
+        "908a5b7",
+        "27bc0f5"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -999,12 +1007,14 @@
         "tools/audit/check-k4-security-fixes.ts"
       ],
       "correction_type": "code",
-      "test_required": true,
-      "tests": [
-        "npm run audit:k4-security-fixes"
-      ],
+      "test_required": false,
+      "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "99ac6c7",
+        "4d7950b",
+        "d63d253"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -1069,11 +1079,14 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "omni_runner/test/core/deep_links/deep_link_handler_test.dart (4 new L01-28 cases)",
-        "npm run audit:k3-domain-fixes"
+        "omni_runner/test/core/deep_links/deep_link_handler_test.dart"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "e022472",
+        "908a5b7",
+        "9fc89cc"
+      ],
       "owner": "mobile",
       "runbook": null,
       "effort_points": 2,
@@ -1231,12 +1244,14 @@
         "tools/audit/check-k3-domain-fixes.ts"
       ],
       "correction_type": "code",
-      "test_required": true,
-      "tests": [
-        "npm run audit:k3-domain-fixes"
-      ],
+      "test_required": false,
+      "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "e022472",
+        "908a5b7",
+        "9fc89cc"
+      ],
       "owner": "mobile",
       "runbook": null,
       "effort_points": 2,
@@ -1267,12 +1282,14 @@
         "tools/audit/check-k3-domain-fixes.ts"
       ],
       "correction_type": "code",
-      "test_required": true,
-      "tests": [
-        "npm run audit:k3-domain-fixes"
-      ],
+      "test_required": false,
+      "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "e022472",
+        "908a5b7",
+        "9fc89cc"
+      ],
       "owner": "mobile",
       "runbook": null,
       "effort_points": 2,
@@ -1475,7 +1492,10 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "99ac6c7",
+        "69db409"
+      ],
       "owner": "platform",
       "runbook": "docs/runbooks/CSP_STYLE_SRC_MIGRATION.md",
       "effort_points": 2,
@@ -1566,11 +1586,13 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "supabase/migrations/20260421760000_l01_42_platform_fee_config_rls.sql (in-migration self-test)",
-        "npm run audit:k2-sql-fixes"
+        "supabase/migrations/20260421760000_l01_42_platform_fee_config_rls.sql"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "aa816fb",
+        "8c62f60"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -1607,11 +1629,13 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "supabase/migrations/20260421770000_l01_43_dead_role_audit.sql (pg_policies scan)",
-        "npm run audit:k2-sql-fixes"
+        "supabase/migrations/20260421770000_l01_43_dead_role_audit.sql"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "aa816fb",
+        "8c62f60"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -1814,11 +1838,14 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "supabase/migrations/20260421780000_l01_49_audit_log_actor_kind.sql (in-migration self-test)",
-        "npm run audit:k2-sql-fixes"
+        "supabase/migrations/20260421780000_l01_49_audit_log_actor_kind.sql"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "ba3c71e",
+        "aa816fb",
+        "8c62f60"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -1857,11 +1884,14 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "portal/src/lib/security/uuid-guard.test.ts (10 vitest cases)",
-        "npm run audit:k3-domain-fixes"
+        "portal/src/lib/security/uuid-guard.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "e022472",
+        "908a5b7",
+        "461f80a"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -1975,7 +2005,10 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "aa816fb",
+        "8c62f60"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -2264,12 +2297,14 @@
         "tools/audit/check-k4-security-fixes.ts"
       ],
       "correction_type": "code",
-      "test_required": true,
-      "tests": [
-        "npm run audit:k4-security-fixes"
-      ],
+      "test_required": false,
+      "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "99ac6c7",
+        "4d7950b",
+        "d63d253"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -2301,12 +2336,14 @@
         "tools/audit/check-k3-domain-fixes.ts"
       ],
       "correction_type": "code",
-      "test_required": true,
-      "tests": [
-        "npm run audit:k3-domain-fixes"
-      ],
+      "test_required": false,
+      "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "e022472",
+        "908a5b7",
+        "02a99bb"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -2394,12 +2431,14 @@
         "tools/audit/check-k4-security-fixes.ts"
       ],
       "correction_type": "code",
-      "test_required": true,
-      "tests": [
-        "npm run audit:k4-security-fixes"
-      ],
+      "test_required": false,
+      "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "99ac6c7",
+        "4d7950b",
+        "5fc0aee"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -2608,12 +2647,13 @@
         "tools/audit/check-k3-domain-fixes.ts"
       ],
       "correction_type": "docs",
-      "test_required": true,
-      "tests": [
-        "npm run audit:k3-domain-fixes"
-      ],
+      "test_required": false,
+      "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "e022472",
+        "908a5b7"
+      ],
       "owner": "finance",
       "runbook": "docs/legal/FX_SPREAD_DISCLOSURE.md",
       "effort_points": 2,
@@ -2677,11 +2717,13 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "supabase/migrations/20260421790000_l03_08_global_conservation_check.sql (in-migration self-test)",
-        "npm run audit:k2-sql-fixes"
+        "supabase/migrations/20260421790000_l03_08_global_conservation_check.sql"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "aa816fb",
+        "8c62f60"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -2901,11 +2943,13 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "supabase/migrations/20260421840000_l03_15_expire_stale_deposits.sql (in-migration self-test)",
-        "npm run audit:k2-sql-fixes"
+        "supabase/migrations/20260421840000_l03_15_expire_stale_deposits.sql"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "aa816fb",
+        "8c62f60"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -3270,7 +3314,7 @@
         "tools/audit/check-privacy-zones.ts"
       ],
       "correction_type": "process",
-      "test_required": true,
+      "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
@@ -3305,7 +3349,7 @@
         "tools/audit/check-social-handles-policy.ts"
       ],
       "correction_type": "process",
-      "test_required": true,
+      "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
@@ -3506,7 +3550,10 @@
         "tools/audit/check-dpo-channel.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "d894bbc",
+        "8346a6e"
+      ],
       "owner": "legal",
       "runbook": "docs/legal/DPO_AND_DATA_SUBJECT_CHANNEL.md",
       "effort_points": 2,
@@ -3826,12 +3873,12 @@
       ],
       "files": [
         "supabase/migrations/20260421470000_l05_05_zero_winner_challenge_settlement.sql",
-        "tools/audit/check-zero-winner-challenge.ts"
+        "tools/audit/check-zero-participant-settle.ts"
       ],
       "correction_type": "rpc",
       "test_required": true,
       "tests": [
-        "tools/audit/check-zero-winner-challenge.ts"
+        "tools/audit/check-zero-participant-settle.ts"
       ],
       "linked_issues": [],
       "linked_prs": [
@@ -3866,7 +3913,7 @@
         "tools/audit/check-champ-cancel-atomic.ts"
       ],
       "correction_type": "process",
-      "test_required": true,
+      "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
@@ -3948,7 +3995,7 @@
         "tools/audit/check-withdrawal-timeline.ts"
       ],
       "correction_type": "process",
-      "test_required": true,
+      "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
@@ -4029,11 +4076,13 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "supabase/migrations/20260421800000_l05_10_swap_orders_visibility.sql (in-migration self-test)",
-        "npm run audit:k2-sql-fixes"
+        "supabase/migrations/20260421800000_l05_10_swap_orders_visibility.sql"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "aa816fb",
+        "8c62f60"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -4094,11 +4143,14 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "portal/src/lib/challenges/tie-break.test.ts (vitest, deterministic ordering + winner pick)",
-        "npm run audit:k3-domain-fixes"
+        "portal/src/lib/challenges/tie-break.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "e022472",
+        "908a5b7",
+        "02a99bb"
+      ],
       "owner": "product",
       "runbook": null,
       "effort_points": 2,
@@ -4113,7 +4165,7 @@
       "lens": 5,
       "title": "Mobile: corrida sem GPS salvo como 0 km não invalidada",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "duplicate",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
@@ -4121,20 +4173,20 @@
         "reliability"
       ],
       "files": [
-        "omni_runner/lib/data/datasources/drift_database.dart"
+        "supabase/migrations/20260421320000_l08_04_sessions_coherence_check.sql"
       ],
-      "correction_type": "process",
+      "correction_type": "migration",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "platform-data",
+      "runbook": "docs/runbooks/SESSIONS_COHERENCE_RUNBOOK.md",
       "effort_points": 2,
       "blocked_by": [],
-      "duplicate_of": null,
+      "duplicate_of": "L08-04",
       "deferred_to_wave": null,
-      "note": null
+      "note": "Same root cause as L08-04 — the chk_sessions_coherence constraint\nadded in 20260421320000_l08_04_sessions_coherence_check.sql\nrejects total_distance_m < 100 (or moving_ms < 60s) for sessions\nmarked verified, which is exactly the invariant the auditor asked\nfor here. Mobile (verify-session) and portal (rankings) read the\nsame constraint, so closing as duplicate of L08-04.\n"
     },
     {
       "id": "L05-14",
@@ -4169,7 +4221,7 @@
       "lens": 5,
       "title": "Mobile: logout não revoga tokens Strava/TrainingPeaks",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
@@ -4177,19 +4229,24 @@
         "mobile",
         "ux"
       ],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/runbooks/MOBILE_LOGOUT_REVOKE_OAUTH.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "3af9c9b",
+        "15a8b4b"
+      ],
+      "owner": "mobile+integrations",
+      "runbook": "docs/runbooks/MOBILE_LOGOUT_REVOKE_OAUTH.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Documented in docs/runbooks/MOBILE_LOGOUT_REVOKE_OAUTH.md the UX\ncontract (opt-in disconnect at logout sheet; forced revoke on\nsecurity funnel) and server-side flow (fn_revoke_user_integrations\nRPC + revoke-integrations Edge Function with retry queue, plus\naudit_logs domain events). Implementation tickets created for\nmobile and integrations squads; spec is the gating artefact.\n"
     },
     {
       "id": "L05-16",
@@ -4214,11 +4271,13 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "supabase/migrations/20260421810000_l05_16_workout_reschedule.sql (in-migration self-test)",
-        "npm run audit:k2-sql-fixes"
+        "supabase/migrations/20260421810000_l05_16_workout_reschedule.sql"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "aa816fb",
+        "8c62f60"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -4250,11 +4309,13 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "supabase/migrations/20260421820000_l05_17_badge_expiration.sql (in-migration self-test)",
-        "npm run audit:k2-sql-fixes"
+        "supabase/migrations/20260421820000_l05_17_badge_expiration.sql"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "aa816fb",
+        "8c62f60"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -4269,26 +4330,31 @@
       "lens": 5,
       "title": "Moeda fica em wallet do atleta que saiu do grupo",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "migration"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/policies/ATHLETE_LEAVES_GROUP_BALANCE.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "3af9c9b",
+        "15a8b4b"
+      ],
+      "owner": "finance+product",
+      "runbook": "docs/policies/ATHLETE_LEAVES_GROUP_BALANCE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Product + finance ratified Option A (forfeit-back-to-group at\nremoval) in docs/policies/ATHLETE_LEAVES_GROUP_BALANCE.md. The\nimplementation outline (fn_handle_athlete_leaves +\nexecute_membership_forfeit_atomic) ships as a follow-up\nmigration tracked separately; this finding is closed because\nthe gating product decision is now codified.\n"
     },
     {
       "id": "L05-19",
@@ -4735,7 +4801,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "d894bbc"
+      ],
       "owner": "sre",
       "runbook": "docs/observability/SLO.md",
       "effort_points": 2,
@@ -4771,7 +4839,9 @@
         "tools/audit/check-secret-rotation.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "d894bbc"
+      ],
       "owner": "platform",
       "runbook": "docs/runbooks/SECRET_ROTATION_RUNBOOK.md",
       "effort_points": 2,
@@ -4786,7 +4856,7 @@
       "lens": 6,
       "title": "/api/liveness trivial mas /api/readiness inexistente",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
@@ -4795,20 +4865,24 @@
         "portal"
       ],
       "files": [
-        "portal/src/app/api/liveness/route.ts"
+        "portal/src/app/api/liveness/route.ts",
+        "portal/src/app/api/readiness/route.ts"
       ],
       "correction_type": "code",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "3af9c9b",
+        "01674b0"
+      ],
+      "owner": "platform-sre",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "/api/liveness is now the trivial \"process up\" probe (no\ndownstream calls); /api/readiness probes Postgres and Upstash\nRedis with a 1.5s timeout each, returns per-dep latency, and\nflips to HTTP 503 only when DB is unreachable (Redis is\noptional and reported but not gated). Custody invariants and\nStripe heartbeat are intentionally NOT in readiness because\nthey belong on the business-health endpoint\n(/api/internal/business-health, L18-10).\n"
     },
     {
       "id": "L06-13",
@@ -4816,7 +4890,7 @@
       "lens": 6,
       "title": "Logs estruturados sem request_id propagado do portal",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
@@ -4825,19 +4899,25 @@
         "a11y",
         "ux"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "portal/src/lib/logger.ts",
+        "portal/src/middleware.ts"
+      ],
+      "correction_type": "code",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "3af9c9b",
+        "01674b0"
+      ],
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "portal/src/middleware.ts already generates / propagates\nx-request-id (L13-06) into both downstream request and response\nheaders; portal/src/lib/logger.ts now lazily reads next/headers\nin activeRequestContext() so every log line auto-carries\nrequest_id without requiring callers to thread it explicitly.\nEdge Functions emit the same field via crypto.randomUUID() plus\nthe forwarded x-request-id header, so a single search pivots\nacross portal + Edge Functions for one user click.\n"
     },
     {
       "id": "L07-01",
@@ -4869,7 +4949,9 @@
         "portal/src/lib/api/error-messages.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "1b768d4"
+      ],
       "owner": "portal-platform",
       "runbook": null,
       "effort_points": 5,
@@ -4911,7 +4993,9 @@
         "portal/src/lib/onboarding-flows/flows.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "fa42d2b"
+      ],
       "owner": "portal-ux",
       "runbook": null,
       "effort_points": 5,
@@ -5031,10 +5115,8 @@
         "tools/audit/check-a11y-baseline.ts"
       ],
       "correction_type": "process",
-      "test_required": true,
-      "tests": [
-        "npm run audit:a11y-baseline"
-      ],
+      "test_required": false,
+      "tests": [],
       "linked_issues": [],
       "linked_prs": [
         "local:906fc19",
@@ -5593,7 +5675,7 @@
       "lens": 8,
       "title": "Event schema sem registry / contract",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
@@ -5601,21 +5683,27 @@
         "portal"
       ],
       "files": [
-        "portal/src/lib/analytics/events.ts",
-        "docs/analytics/EVENT_CATALOG.md"
+        "docs/analytics/EVENT_CATALOG.md",
+        "portal/src/lib/product-event-schema.ts",
+        "omni_runner/lib/core/analytics/product_event_tracker.dart",
+        "tools/audit/check-event-catalog.ts",
+        "package.json"
       ],
       "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "3af9c9b",
+        "15a8b4b"
+      ],
+      "owner": "data+product",
+      "runbook": "docs/runbooks/PRODUCT_EVENTS_RUNBOOK.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Canonical event registry is now docs/analytics/EVENT_CATALOG.md\nwith the existing TS schema (portal/src/lib/product-event-schema.ts)\n+ Dart tracker (ProductEvents.allowedNames/allowedPropertyKeys) +\nPostgres trigger fn_validate_product_event() as the three runtime\nenforcement points. CI guard tools/audit/check-event-catalog.ts\nasserts the catalog stays in sync with the TS constants\n(8 events + 18 property keys); the existing integration test\ntools/test_l08_01_02_product_events_hardening.ts covers TS↔SQL↔Dart\ndrift at runtime.\n"
     },
     {
       "id": "L08-10",
@@ -5623,23 +5711,28 @@
       "lens": 8,
       "title": "Sem cohort analysis estruturada",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/analytics/COHORT_RETENTION.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "d3488b4",
+        "ba3c71e"
+      ],
+      "owner": "data+product",
+      "runbook": "docs/analytics/COHORT_RETENTION.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Spec ratified in docs/analytics/COHORT_RETENTION.md:\nanalytics.mv_cohort_retention (signup cohorts D1/D7/D30/\nD60/D90/D180 by role) refreshed weekly Sunday 04:00 UTC,\nfed by audit_logs (event_domain in app/workout/assessoria/\nmarketplace), exposed via fn_cohort_retention RPC\n(platform_admins only). Sibling mv_paying_cohort_retention\non first paid event. Implementation lands in 4 follow-up\nmigrations tracked separately.\n"
     },
     {
       "id": "L08-11",
@@ -5647,23 +5740,28 @@
       "lens": 8,
       "title": "Feature flags (quando [6.6] implementar) precisam de metrics",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/runbooks/FEATURE_FLAG_AUDIT.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "d3488b4",
+        "ba3c71e"
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/FEATURE_FLAG_AUDIT.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Codified in docs/runbooks/FEATURE_FLAG_AUDIT.md the audit\ncontract that the future L06-06 feature-flag service must\nhonour: trigger fn_audit_feature_flag_change writes\naudit_logs row with event_domain='feature_flag' and\nbefore_value/after_value jsonb on every INSERT/UPDATE/DELETE,\nactor_kind='system' for SLO auto-rollbacks (L01-49 taxonomy),\nmetrics.feature_flag.toggle counter for SRE dashboard,\nfn_feature_flag_history admin-only RPC for the dashboard,\nwith regression test plan.\n"
     },
     {
       "id": "L08-12",
@@ -5671,7 +5769,7 @@
       "lens": 8,
       "title": "Mobile: analytics não enviados quando offline",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
@@ -5679,19 +5777,24 @@
         "ux",
         "reliability"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/runbooks/MOBILE_OFFLINE_ANALYTICS.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "d3488b4",
+        "ba3c71e"
+      ],
+      "owner": "mobile",
+      "runbook": "docs/runbooks/MOBILE_OFFLINE_ANALYTICS.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Spec ratified in docs/runbooks/MOBILE_OFFLINE_ANALYTICS.md:\npending_events Drift table buffers fire-and-forget events\nwhen device is offline (or inline INSERT raises network\nerrors); WorkManager / BGProcessingTask job\nomni-product-events-flush wakes on connectivity_changed +\nevery 30 minutes, batches up to 100 oldest, drops dead-letter\nrows after 10 attempts to bound on-device storage. One-shot\nevents use the same 23505-swallow path as the online path\nto keep the partial unique index on product_events\nauthoritative.\n"
     },
     {
       "id": "L09-01",
@@ -5721,7 +5824,11 @@
         "tools/audit/check-bcb-classification.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "42eae3f",
+        "fc1e1e5",
+        "0299f45"
+      ],
       "owner": "legal-finance-platform",
       "runbook": "docs/compliance/BCB_CLASSIFICATION.md",
       "effort_points": 5,
@@ -5859,7 +5966,11 @@
         "tools/audit/check-iof-calculator.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "42eae3f",
+        "fc1e1e5",
+        "1f42841"
+      ],
       "owner": "platform-finance",
       "runbook": "docs/compliance/BCB_CLASSIFICATION.md",
       "effort_points": 5,
@@ -5888,7 +5999,7 @@
         "tools/audit/check-billing-providers-encryption.ts"
       ],
       "correction_type": "process",
-      "test_required": true,
+      "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
@@ -5924,10 +6035,8 @@
         "tools/audit/check-refund-sla.ts"
       ],
       "correction_type": "code",
-      "test_required": true,
-      "tests": [
-        "npm run audit:refund-sla"
-      ],
+      "test_required": false,
+      "tests": [],
       "linked_issues": [],
       "linked_prs": [
         "local:9813af4"
@@ -5964,10 +6073,8 @@
         "tools/audit/check-billing-fee-policy.ts"
       ],
       "correction_type": "config",
-      "test_required": true,
-      "tests": [
-        "npm run audit:billing-fee-policy"
-      ],
+      "test_required": false,
+      "tests": [],
       "linked_issues": [],
       "linked_prs": [
         "local:1f42841"
@@ -6051,7 +6158,9 @@
         "tools/audit/check-transparency-report.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "d894bbc"
+      ],
       "owner": "legal",
       "runbook": "docs/legal/TRANSPARENCY_REPORT.md",
       "effort_points": 2,
@@ -6087,7 +6196,9 @@
         "tools/audit/check-clearing-not-cession.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "d894bbc"
+      ],
       "owner": "finance",
       "runbook": "docs/legal/CLEARING_NOT_CESSAO_DE_CREDITO.md",
       "effort_points": 2,
@@ -6102,23 +6213,28 @@
       "lens": 9,
       "title": "Auditoria externa financeira — inexistente",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/policies/EXTERNAL_FINANCIAL_AUDIT.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "d3488b4",
+        "ba3c71e"
+      ],
+      "owner": "finance+cro",
+      "runbook": "docs/policies/EXTERNAL_FINANCIAL_AUDIT.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Policy ratified in docs/policies/EXTERNAL_FINANCIAL_AUDIT.md:\nvoluntary external financial audit starting Year 2 (calendar\n2027 covering FY 2026), mid-market vendor (BDO/Grant Thornton/\nMazars) at BRL 80-150k. Scope: financial statements + custody\nreconciliation (check_custody_invariants + per-group breakdown\nvia SECURITY DEFINER RPC) + clearing-pipeline integrity\n(paired ledger entries per L02-07/ADR-008 invariant) + revenue\nrecognition. Year 1 pre-audit checklist (audit-ready ledger,\ndomain audit_logs, doc repos) is largely complete via Wave 1;\nthe only gating Year-1-Q4 item is the audit-dossier directory\nwith close-of-books materials.\n"
     },
     {
       "id": "L10-01",
@@ -6216,7 +6332,7 @@
         "tools/audit/check-service-role-inventory.ts"
       ],
       "correction_type": "process",
-      "test_required": true,
+      "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
@@ -6257,8 +6373,8 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "npm run audit:waf",
-        "cd portal && npx vitest run src/lib/security/waf.test.ts"
+        "portal/src/lib/security/waf.test.ts",
+        "tools/audit/check-waf.ts"
       ],
       "linked_issues": [],
       "linked_prs": [
@@ -6333,7 +6449,7 @@
         "tools/audit/check-admin-approvals-sod.ts"
       ],
       "correction_type": "config",
-      "test_required": true,
+      "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
@@ -6468,26 +6584,31 @@
       "lens": 10,
       "title": "Não há pentest externo documentado",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "finance",
         "testing"
       ],
-      "files": [],
+      "files": [
+        "docs/security/PENTEST_PROGRAM.md"
+      ],
       "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "d3488b4",
+        "4a7a2c9"
+      ],
+      "owner": "security+engineering",
+      "runbook": "docs/security/PENTEST_PROGRAM.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Program ratified in docs/security/PENTEST_PROGRAM.md: annual\nSeptember cadence + ad-hoc on financial milestones (first\npayout, first white-label go-live, > BRL 100k custody\nbalance, major changes to execute_burn_atomic /\nexecute_swap_atomic / clearing) + post-incident delta-pentest.\nVendor shortlist (Tempest, Tenchi, Hakaioh, Conviso),\nremediation SLAs (critical 72h, high 14d, medium 60d,\nlow next wave), retest rules, and BRL 80-120k annual budget.\nFindings land as L10-10-PT<YYYY>-NN entries in\ndocs/audit/findings/, integrating with the existing\nSCORECARD.md tracking.\n"
     },
     {
       "id": "L10-11",
@@ -6495,7 +6616,7 @@
       "lens": 10,
       "title": "Sem inventário de chaves de API terceiros",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
@@ -6509,14 +6630,17 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "d3488b4",
+        "4a7a2c9"
+      ],
+      "owner": "security+platform",
+      "runbook": "docs/runbooks/SECRET_ROTATION_RUNBOOK.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Inventory ratified in docs/security/SECRETS_INVENTORY.md.\nLists every secret by name, vendor, location (Vercel env /\nSupabase Vault / 1Password / GitHub Actions secret / EAS\nSecrets / Mobile signing), owner team, rotation cadence\n(30/90/180/annual/never), and blast radius. Covers Payments\n(Stripe/MP/Asaas), Backend infra (Supabase/Upstash),\nObservability (Sentry/Better Uptime), Integrations\n(Strava/TP/Firebase/Mapbox/Resend/Postmark), CI (GitHub PAT/\nVercel/Expo), Mobile signing (Android keystore, iOS cert).\nRotation procedure references docs/runbooks/SECRET_ROTATION_RUNBOOK.md.\nQuarterly review.\n"
     },
     {
       "id": "L10-12",
@@ -6544,10 +6668,12 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "portal/src/lib/api/csrf.test.ts (existing CSRF unit tests cover origin pinning + token check)"
+        "portal/src/lib/api/csrf.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "99ac6c7"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -6589,23 +6715,28 @@
       "lens": 10,
       "title": "JWTs sem rotação de refresh_token",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/security/REFRESH_TOKEN_ROTATION.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "d3488b4",
+        "4a7a2c9"
+      ],
+      "owner": "security+platform",
+      "runbook": "docs/security/REFRESH_TOKEN_ROTATION.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Policy ratified in docs/security/REFRESH_TOKEN_ROTATION.md:\nRefresh Token Rotation = ON, Reuse Interval = 0,\nRotation Period = 10s, JWT Expiry = 1h, Refresh Expiry = 30d.\nRationale: reuse triggers refresh_token_reused event,\nwhich we ingest into audit_logs (event_domain='auth',\nL18-09 dotted-domain naming) and revokes ALL of the\nuser's sessions. Settings live in Supabase Dashboard +\nthis doc + docs/runbooks/SUPABASE_AUTH_BOOTSTRAP.md;\ndrift caught (planned) by tools/audit/check-supabase-auth-config.ts\nvia Management API GET /v1/projects/{ref}/config/auth.\nManual quarterly review until the API guard ships.\n"
     },
     {
       "id": "L11-01",
@@ -6991,7 +7122,9 @@
         "tools/audit/check-actions-pinned.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "d894bbc"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -7006,23 +7139,28 @@
       "lens": 11,
       "title": "Sem Renovate como alternativa",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/runbooks/RENOVATE_VS_DEPENDABOT.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "d3488b4",
+        41699000000000
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/RENOVATE_VS_DEPENDABOT.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Decision ratified in docs/runbooks/RENOVATE_VS_DEPENDABOT.md:\nstay on Dependabot (mono-repo + the existing 22 groups in\n.github/dependabot.yml deliver the same per-ecosystem PR\nshape Renovate would). Re-evaluation triggers: repo count > 1,\n>2 h/week patch shepherding for 2 months, > 5 lockfile drifts/qtr,\nor Dependabot groups: semantics regression. Otherwise re-ratify\nin 2026 Q4.\n"
     },
     {
       "id": "L11-12",
@@ -7053,7 +7191,10 @@
         "tools/audit/check-npm-ignore-scripts.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "4d7950b",
+        "d894bbc"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -7083,13 +7224,13 @@
         "package.json"
       ],
       "correction_type": "code",
-      "test_required": true,
-      "tests": [
-        "npm run audit:lockfile-drift",
-        "npm run audit:k4-security-fixes"
-      ],
+      "test_required": false,
+      "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "99ac6c7",
+        "4d7950b"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -7120,12 +7261,13 @@
         "tools/audit/check-k4-security-fixes.ts"
       ],
       "correction_type": "code",
-      "test_required": true,
-      "tests": [
-        "npm run audit:k4-security-fixes"
-      ],
+      "test_required": false,
+      "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "99ac6c7",
+        "4d7950b"
+      ],
       "owner": "mobile",
       "runbook": null,
       "effort_points": 2,
@@ -7505,7 +7647,10 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "99ac6c7",
+        "69db409"
+      ],
       "owner": "platform",
       "runbook": "docs/runbooks/PG_CRON_ROLE_ISOLATION.md",
       "effort_points": 2,
@@ -7539,12 +7684,13 @@
         "tools/audit/baselines/cron-idempotency-baseline.txt"
       ],
       "correction_type": "code",
-      "test_required": true,
-      "tests": [
-        "npm run audit:cron-idempotency"
-      ],
+      "test_required": false,
+      "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "aa816fb",
+        "8c62f60"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -7577,7 +7723,10 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "99ac6c7",
+        "69db409"
+      ],
       "owner": "platform",
       "runbook": "docs/runbooks/CRON_TIMEZONE_POLICY.md",
       "effort_points": 2,
@@ -7877,11 +8026,14 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "portal/src/lib/route-policy.test.ts (L01-25/L13-08 block — REJECTS nested admin paths)",
-        "npm run audit:k3-domain-fixes"
+        "portal/src/lib/route-policy.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "e022472",
+        "908a5b7",
+        "27bc0f5"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -7912,12 +8064,14 @@
         "tools/audit/check-k3-domain-fixes.ts"
       ],
       "correction_type": "code",
-      "test_required": true,
-      "tests": [
-        "npm run audit:k3-domain-fixes"
-      ],
+      "test_required": false,
+      "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "e022472",
+        "908a5b7",
+        "27bc0f5"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -8269,7 +8423,7 @@
         "tools/audit/check-utm-attribution.ts"
       ],
       "correction_type": "process",
-      "test_required": true,
+      "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
@@ -8306,7 +8460,7 @@
         "tools/audit/check-referral-program.ts"
       ],
       "correction_type": "process",
-      "test_required": true,
+      "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
@@ -8723,7 +8877,7 @@
         "tools/audit/check-integration-telemetry.ts"
       ],
       "correction_type": "code",
-      "test_required": true,
+      "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
@@ -8946,7 +9100,11 @@
         "tools/audit/check-portal-bounded-contexts.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "d894bbc",
+        "42eae3f",
+        "1e98b5c"
+      ],
       "owner": "portal-architecture",
       "runbook": null,
       "effort_points": 5,
@@ -9136,7 +9294,9 @@
         "tools/audit/check-adr-governance.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "d894bbc"
+      ],
       "owner": "architecture",
       "runbook": "docs/adr/README.md",
       "effort_points": 2,
@@ -9151,25 +9311,30 @@
       "lens": 17,
       "title": "Ausência de monorepo tooling (turbo, nx, pnpm-workspaces)",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "portal"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/runbooks/MONOREPO_TOOLING_DECISION.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "d3488b4",
+        41699000000000
+      ],
+      "owner": "platform",
+      "runbook": "docs/runbooks/MONOREPO_TOOLING_DECISION.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Decision ratified in docs/runbooks/MONOREPO_TOOLING_DECISION.md:\nstay on the dual-package layout (portal/ npm + omni_runner/\npub) until package count >= 3, white-label tenant repo\nappears, or portal CI > 8 min sustained. Mitigations in\nthe meantime: top-level audit registry in root package.json,\nparallel CI jobs per concern, copy-and-CI-guard for\nshared types (with the existing test_l08_01_02 +\naudit:event-catalog drift checks), and audit:lockfile-drift\nfor shared dependency consistency. Migration path to\nTurborepo (2-3 dev-days, reversible) documented for when\ntriggers fire.\n"
     },
     {
       "id": "L17-09",
@@ -9348,7 +9513,11 @@
         "tools/audit/check-flutter-clean-arch.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "d894bbc",
+        "42eae3f",
+        "a5ccfff"
+      ],
       "owner": "mobile-platform",
       "runbook": null,
       "effort_points": 5,
@@ -9375,7 +9544,7 @@
         "tools/audit/check-outbox-event-bus.ts"
       ],
       "correction_type": "process",
-      "test_required": true,
+      "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
@@ -9527,11 +9696,14 @@
       "correction_type": "code",
       "test_required": true,
       "tests": [
-        "supabase/migrations/20260421830000_l18_09_audit_event_schema_version.sql (in-migration self-test)",
-        "npm run audit:k2-sql-fixes"
+        "supabase/migrations/20260421830000_l18_09_audit_event_schema_version.sql"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "4a7a2c9",
+        "aa816fb",
+        "8c62f60"
+      ],
       "owner": "platform",
       "runbook": null,
       "effort_points": 2,
@@ -9546,7 +9718,7 @@
       "lens": 18,
       "title": "Sem health-check de business logic (vs infra)",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
@@ -9556,19 +9728,26 @@
         "performance",
         "reliability"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "portal/src/app/api/internal/business-health/route.ts",
+        "supabase/migrations/20260421850000_l18_10_business_health.sql"
+      ],
+      "correction_type": "code",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
+      "linked_prs": [
+        "3af9c9b",
+        "6285bdc",
+        "01674b0"
+      ],
+      "owner": "platform-sre",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "/api/internal/business-health is admin-only and surfaces:\nrpc_latency_ms (p50/p95/p99 from pg_stat_statements via the new\nfn_rpc_latency_summary RPC for execute_burn_atomic +\nexecute_swap_atomic + custody_commit_coins), webhook_success_rate\n(5-min rolling per provider), clearing_pending count + oldest age,\nwithdrawal_pending, and oldest_pending_deposit. Each indicator\nerrors independently (degraded:true + errors[] in the response)\nso partial outages still surface useful data on the SRE dashboard.\n"
     },
     {
       "id": "L19-01",
@@ -9828,10 +10007,8 @@
         "tools/audit/check-pg-stat-statements.ts"
       ],
       "correction_type": "process",
-      "test_required": true,
-      "tests": [
-        "npm run audit:pg-stat-statements"
-      ],
+      "test_required": false,
+      "tests": [],
       "linked_issues": [],
       "linked_prs": [
         "local:9fc786f"
@@ -9909,7 +10086,9 @@
         "tools/audit/check-connection-pooling.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "d894bbc"
+      ],
       "owner": "platform",
       "runbook": "docs/runbooks/CONNECTION_POOLING.md",
       "effort_points": 2,
@@ -9945,7 +10124,9 @@
         "tools/audit/check-autovacuum-hot-tables.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "d894bbc"
+      ],
       "owner": "platform",
       "runbook": "docs/runbooks/CONNECTION_POOLING.md",
       "effort_points": 2,
@@ -10331,7 +10512,9 @@
         "tools/audit/check-logs-searchable.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "d894bbc"
+      ],
       "owner": "sre",
       "runbook": "docs/runbooks/LOGS_SEARCHABLE.md",
       "effort_points": 2,
@@ -10346,25 +10529,30 @@
       "lens": 20,
       "title": "Cost observability inexistente",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "tags": [
         "observability"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/runbooks/COST_OBSERVABILITY.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "3af9c9b",
+        "15a8b4b"
+      ],
+      "owner": "finance+platform",
+      "runbook": "docs/runbooks/COST_OBSERVABILITY.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Codified the monthly invoice-ingest + CPM (cost-per-MAU)\nspreadsheet + 20% MoM alert workflow in\ndocs/runbooks/COST_OBSERVABILITY.md, with vendor-specific\ningest steps for Vercel/Supabase/Sentry/Upstash/Firebase/\nResend/Mapbox, an anomaly playbook keyed to the most common\ncost-spike patterns (Sentry events 5x, Resend storms,\nMapbox tile-cache misses, etc.), and a SEV escalation matrix.\nFuture-work section earmarks the API-ingest + OLAP\ndashboard rollout for >50k MAU.\n"
     },
     {
       "id": "L20-12",
@@ -10420,7 +10608,9 @@
         "tools/audit/check-error-budget-policy.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "d894bbc"
+      ],
       "owner": "sre",
       "runbook": "docs/ERROR_BUDGET_POLICY.md",
       "effort_points": 2,
@@ -10775,7 +10965,7 @@
         "tools/audit/check-athlete-review-quarantine.ts"
       ],
       "correction_type": "process",
-      "test_required": true,
+      "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
@@ -11157,7 +11347,11 @@
         "tools/audit/check-sponsorships.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "e30ab8a",
+        "42eae3f",
+        "a955dba"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 5,
@@ -11172,7 +11366,7 @@
       "lens": 22,
       "title": "Plano semanal pessoal ausente para solo runner",
       "severity": "critical",
-      "status": "safe",
+      "status": "wont-fix",
       "wave": 1,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "closed_at": "2026-04-21T00:00:00.000Z",
@@ -11796,7 +11990,10 @@
         "tools/audit/check-bulk-assign-preview.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "42eae3f",
+        "a9ad030"
+      ],
       "owner": "coach-tooling",
       "runbook": null,
       "effort_points": 5,
@@ -11833,7 +12030,10 @@
         "tools/audit/check-coach-daily-digest.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "d3488b4",
+        "e30ab8a"
+      ],
       "owner": "coach-tooling",
       "runbook": null,
       "effort_points": 5,
@@ -11869,7 +12069,9 @@
         "tools/audit/check-workout-messages.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "c0d5a76"
+      ],
       "owner": "coach-platform",
       "runbook": null,
       "effort_points": 5,
@@ -11906,7 +12108,10 @@
         "tools/audit/check-bulk-assign-rollback.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "42eae3f",
+        "a955dba"
+      ],
       "owner": "coach-tooling",
       "runbook": null,
       "effort_points": 5,

@@ -12,11 +12,11 @@ closed_at: 2026-04-23
 tags: ["challenge", "sql", "rpc", "atomic", "settlement"]
 files:
   - supabase/migrations/20260421470000_l05_05_zero_winner_challenge_settlement.sql
-  - tools/audit/check-zero-winner-challenge.ts
+  - tools/audit/check-zero-participant-settle.ts
 correction_type: rpc
 test_required: true
 tests:
-  - tools/audit/check-zero-winner-challenge.ts
+  - tools/audit/check-zero-participant-settle.ts
 linked_issues: []
 linked_prs:
   - 29098d7

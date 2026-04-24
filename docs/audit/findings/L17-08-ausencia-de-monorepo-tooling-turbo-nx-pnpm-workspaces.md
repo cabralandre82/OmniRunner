@@ -14,7 +14,9 @@ correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - d3488b4
+  - 41699e9
 owner: platform
 runbook: docs/runbooks/MONOREPO_TOOLING_DECISION.md
 effort_points: 2

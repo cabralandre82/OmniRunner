@@ -23,7 +23,8 @@ tests:
   - tools/audit/check-onboarding-flows.ts
   - portal/src/lib/onboarding-flows/flows.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - fa42d2b
 owner: portal-ux
 runbook: null
 effort_points: 5

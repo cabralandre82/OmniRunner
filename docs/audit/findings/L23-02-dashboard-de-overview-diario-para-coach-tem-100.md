@@ -18,7 +18,9 @@ test_required: true
 tests:
   - tools/audit/check-coach-daily-digest.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - d3488b4
+  - e30ab8a
 owner: coach-tooling
 runbook: null
 effort_points: 5

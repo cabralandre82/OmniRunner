@@ -14,7 +14,9 @@ correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - d3488b4
+  - 4a7a2c9
 owner: security+platform
 runbook: docs/runbooks/SECRET_ROTATION_RUNBOOK.md
 effort_points: 2

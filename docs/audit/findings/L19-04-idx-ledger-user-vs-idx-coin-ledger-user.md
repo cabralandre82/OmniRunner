@@ -17,7 +17,7 @@ files:
 correction_type: migration
 test_required: true
 tests:
-  - "tools/test_l19_04_duplicate_indexes.ts"
+  - tools/test_l19_04_duplicate_indexes.ts
 linked_issues: []
 linked_prs: ["d5bcc54"]
 owner: dba

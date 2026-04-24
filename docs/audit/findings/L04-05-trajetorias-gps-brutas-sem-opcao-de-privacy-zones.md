@@ -12,7 +12,7 @@ files:
   - supabase/migrations/20260421560000_l04_05_privacy_zones.sql
   - tools/audit/check-privacy-zones.ts
 correction_type: process
-test_required: true
+test_required: false
 tests: []
 linked_issues: []
 linked_prs:

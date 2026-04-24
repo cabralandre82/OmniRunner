@@ -12,7 +12,7 @@ files:
   - supabase/migrations/20260421550000_l21_10_athlete_review_quarantine.sql
   - tools/audit/check-athlete-review-quarantine.ts
 correction_type: process
-test_required: true
+test_required: false
 tests: []
 linked_issues: []
 linked_prs:

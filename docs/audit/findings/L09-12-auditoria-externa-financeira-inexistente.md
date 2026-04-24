@@ -14,7 +14,9 @@ correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - d3488b4
+  - ba3c71e
 owner: finance+cro
 runbook: docs/policies/EXTERNAL_FINANCIAL_AUDIT.md
 effort_points: 2

@@ -24,8 +24,8 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "portal/src/lib/feature-flags.test.ts"
-  - "portal/src/app/api/platform/feature-flags/route.test.ts"
+  - portal/src/lib/feature-flags.test.ts
+  - portal/src/app/api/platform/feature-flags/route.test.ts
 linked_issues: []
 linked_prs:
   - "commit:a3a35ff"

@@ -14,7 +14,9 @@ correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 3af9c9b
+  - 15a8b4b
 owner: finance+platform
 runbook: docs/runbooks/COST_OBSERVABILITY.md
 effort_points: 2

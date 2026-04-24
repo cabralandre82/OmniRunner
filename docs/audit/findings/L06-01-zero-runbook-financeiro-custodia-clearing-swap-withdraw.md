@@ -20,7 +20,7 @@ files:
 correction_type: process
 test_required: true
 tests:
-  - "docs/runbooks/README.md"
+  - docs/runbooks/README.md
 linked_issues: []
 linked_prs:
   - "commit:c996831"

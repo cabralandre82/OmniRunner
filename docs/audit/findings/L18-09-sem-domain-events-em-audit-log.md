@@ -16,10 +16,12 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "supabase/migrations/20260421830000_l18_09_audit_event_schema_version.sql (in-migration self-test)"
-  - "npm run audit:k2-sql-fixes"
+  - supabase/migrations/20260421830000_l18_09_audit_event_schema_version.sql
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 4a7a2c9
+  - aa816fb
+  - 8c62f60
 owner: platform
 runbook: null
 effort_points: 2

@@ -21,7 +21,10 @@ tests:
   - portal/src/lib/iof/calculator.test.ts
   - tools/audit/check-iof-calculator.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 42eae3f
+  - fc1e1e5
+  - 1f42841
 owner: platform-finance
 runbook: docs/compliance/BCB_CLASSIFICATION.md
 effort_points: 5

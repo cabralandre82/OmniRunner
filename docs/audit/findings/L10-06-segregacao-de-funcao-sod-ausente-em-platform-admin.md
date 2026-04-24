@@ -12,7 +12,7 @@ files:
   - supabase/migrations/20260421510000_l10_06_admin_approvals_sod.sql
   - tools/audit/check-admin-approvals-sod.ts
 correction_type: config
-test_required: true
+test_required: false
 tests: []
 linked_issues: []
 linked_prs:

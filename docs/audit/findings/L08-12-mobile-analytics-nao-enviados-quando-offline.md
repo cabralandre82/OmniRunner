@@ -14,7 +14,9 @@ correction_type: spec
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - d3488b4
+  - ba3c71e
 owner: mobile
 runbook: docs/runbooks/MOBILE_OFFLINE_ANALYTICS.md
 effort_points: 2

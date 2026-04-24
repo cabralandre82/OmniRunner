@@ -18,10 +18,10 @@ files:
 correction_type: migration
 test_required: true
 tests:
-  - "tools/test_l12_05_auto_topup_daily_cap.ts"
-  - "portal/src/app/api/auto-topup/route.test.ts"
-  - "portal/src/app/(portal)/settings/auto-topup-form.test.tsx"
-  - "portal/src/lib/schemas.test.ts"
+  - tools/test_l12_05_auto_topup_daily_cap.ts
+  - portal/src/app/api/auto-topup/route.test.ts
+  - portal/src/app/(portal)/settings/auto-topup-form.test.tsx
+  - portal/src/lib/schemas.test.ts
 linked_issues: []
 linked_prs:
   - "73d871f"  # fix(auto-topup): daily cap antifraud guardrail (L12-05)

@@ -18,9 +18,9 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "tools/test_l12_04_cron_sla_monitor.ts"
-  - "portal/src/lib/cron-sla.test.ts"
-  - "portal/src/app/api/platform/cron-sla/route.test.ts"
+  - tools/test_l12_04_cron_sla_monitor.ts
+  - portal/src/lib/cron-sla.test.ts
+  - portal/src/app/api/platform/cron-sla/route.test.ts
 linked_issues: []
 linked_prs: ["685b769"]
 owner: platform

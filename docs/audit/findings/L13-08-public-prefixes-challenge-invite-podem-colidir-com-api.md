@@ -16,10 +16,12 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "portal/src/lib/route-policy.test.ts (L01-25/L13-08 block — REJECTS nested admin paths)"
-  - "npm run audit:k3-domain-fixes"
+  - portal/src/lib/route-policy.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - e022472
+  - 908a5b7
+  - 27bc0f5
 owner: platform
 runbook: null
 effort_points: 2

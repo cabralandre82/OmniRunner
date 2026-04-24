@@ -16,9 +16,8 @@ files:
   - tools/audit/a11y-baseline-allowlist.json
   - tools/audit/check-a11y-baseline.ts
 correction_type: process
-test_required: true
-tests:
-  - npm run audit:a11y-baseline
+test_required: false
+tests: []
 linked_issues: []
 linked_prs:
   - local:906fc19

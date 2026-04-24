@@ -25,7 +25,10 @@ tests:
   - tools/audit/check-referral-program.ts
   - tools/audit/check-sponsorships.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - e30ab8a
+  - 42eae3f
+  - a955dba
 owner: unassigned
 runbook: null
 effort_points: 5

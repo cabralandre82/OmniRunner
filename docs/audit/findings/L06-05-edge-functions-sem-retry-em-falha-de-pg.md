@@ -16,8 +16,8 @@ files:
 correction_type: migration
 test_required: true
 tests:
-  - "tools/test_l06_05_edge_retry_wrapper.ts"
-  - "supabase/migrations/20260421230000_l06_05_edge_retry_wrapper.sql"
+  - tools/test_l06_05_edge_retry_wrapper.ts
+  - supabase/migrations/20260421230000_l06_05_edge_retry_wrapper.sql
 linked_issues: []
 linked_prs:
   - "86a3e03"

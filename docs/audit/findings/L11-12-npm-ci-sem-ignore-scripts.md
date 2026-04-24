@@ -21,7 +21,9 @@ test_required: true
 tests:
   - tools/audit/check-npm-ignore-scripts.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 4d7950b
+  - d894bbc
 owner: platform
 runbook: null
 effort_points: 2

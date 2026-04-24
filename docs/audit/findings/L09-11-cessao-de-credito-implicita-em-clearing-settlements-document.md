@@ -18,7 +18,8 @@ test_required: true
 tests:
   - tools/audit/check-clearing-not-cession.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - d894bbc
 owner: finance
 runbook: docs/legal/CLEARING_NOT_CESSAO_DE_CREDITO.md
 effort_points: 2

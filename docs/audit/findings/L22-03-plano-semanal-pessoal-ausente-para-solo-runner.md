@@ -4,7 +4,7 @@ audit_ref: "22.3"
 lens: 22
 title: "Plano semanal pessoal ausente para solo runner"
 severity: critical
-status: safe
+status: wont-fix
 wave: 1
 discovered_at: 2026-04-17
 closed_at: 2026-04-21

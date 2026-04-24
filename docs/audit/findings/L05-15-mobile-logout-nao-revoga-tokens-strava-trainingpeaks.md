@@ -14,7 +14,9 @@ correction_type: spec
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 3af9c9b
+  - 15a8b4b
 owner: mobile+integrations
 runbook: docs/runbooks/MOBILE_LOGOUT_REVOKE_OAUTH.md
 effort_points: 2

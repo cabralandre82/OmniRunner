@@ -18,7 +18,8 @@ test_required: true
 tests:
   - tools/audit/check-adr-governance.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - d894bbc
 owner: architecture
 runbook: docs/adr/README.md
 effort_points: 2

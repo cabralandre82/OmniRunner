@@ -17,7 +17,7 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "tools/test_l12_06_archive_sessions_chunked.ts"
+  - tools/test_l12_06_archive_sessions_chunked.ts
 linked_issues: []
 linked_prs: ["d8b0e10"]
 owner: coo

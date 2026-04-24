@@ -18,9 +18,9 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "tools/test_l06_04_cron_health_monitor.ts"
-  - "portal/src/lib/cron-health.test.ts"
-  - "portal/src/app/api/platform/cron-health/route.test.ts"
+  - tools/test_l06_04_cron_health_monitor.ts
+  - portal/src/lib/cron-health.test.ts
+  - portal/src/app/api/platform/cron-health/route.test.ts
 linked_issues: []
 linked_prs: ["0eb0317"]
 owner: platform

@@ -14,7 +14,7 @@ files:
   - docs/security/SERVICE_ROLE_USAGE_INVENTORY.md
   - tools/audit/check-service-role-inventory.ts
 correction_type: process
-test_required: true
+test_required: false
 tests: []
 linked_issues: []
 linked_prs:

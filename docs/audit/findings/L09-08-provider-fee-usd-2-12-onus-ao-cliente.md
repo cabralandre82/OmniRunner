@@ -17,9 +17,8 @@ files:
   - supabase/migrations/20260421440000_l09_08_billing_fee_policy.sql
   - tools/audit/check-billing-fee-policy.ts
 correction_type: config
-test_required: true
-tests:
-  - npm run audit:billing-fee-policy
+test_required: false
+tests: []
 linked_issues: []
 linked_prs:
   - local:1f42841

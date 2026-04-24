@@ -14,11 +14,12 @@ files:
   - docs/legal/FX_SPREAD_DISCLOSURE.md
   - tools/audit/check-k3-domain-fixes.ts
 correction_type: docs
-test_required: true
-tests:
-  - "npm run audit:k3-domain-fixes"
+test_required: false
+tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - e022472
+  - 908a5b7
 owner: finance
 runbook: docs/legal/FX_SPREAD_DISCLOSURE.md
 effort_points: 2

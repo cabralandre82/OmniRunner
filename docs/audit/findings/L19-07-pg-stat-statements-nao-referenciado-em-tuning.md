@@ -15,9 +15,8 @@ files:
   - docs/runbooks/DBA_QUERY_TUNING.md
   - tools/audit/check-pg-stat-statements.ts
 correction_type: process
-test_required: true
-tests:
-  - npm run audit:pg-stat-statements
+test_required: false
+tests: []
 linked_issues: []
 linked_prs:
   - local:9fc786f

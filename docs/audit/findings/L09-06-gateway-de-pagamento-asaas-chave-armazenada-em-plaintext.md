@@ -12,7 +12,7 @@ files:
   - supabase/migrations/20260421500000_l09_06_billing_providers_at_rest_encryption.sql
   - tools/audit/check-billing-providers-encryption.ts
 correction_type: process
-test_required: true
+test_required: false
 tests: []
 linked_issues: []
 linked_prs:

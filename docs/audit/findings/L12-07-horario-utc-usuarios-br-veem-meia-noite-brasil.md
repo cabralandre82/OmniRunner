@@ -17,7 +17,7 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "tools/test_l12_07_onboarding_nudge_timezone.ts"
+  - tools/test_l12_07_onboarding_nudge_timezone.ts
 linked_issues: []
 linked_prs: ["4f14773"]
 owner: coo

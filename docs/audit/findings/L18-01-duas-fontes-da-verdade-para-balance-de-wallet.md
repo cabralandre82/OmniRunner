@@ -14,7 +14,7 @@ files:
 correction_type: code
 test_required: true
 tests:
-  - "tools/test_l18_wallet_guard.ts"
+  - tools/test_l18_wallet_guard.ts
 linked_issues: []
 linked_prs:
   - "dee5791"

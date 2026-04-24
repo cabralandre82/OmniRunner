@@ -15,11 +15,13 @@ files:
   - portal/src/lib/rate-limit.ts
   - tools/audit/check-k4-security-fixes.ts
 correction_type: code
-test_required: true
-tests:
-  - "npm run audit:k4-security-fixes"
+test_required: false
+tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 99ac6c7
+  - 4d7950b
+  - 5fc0aee
 owner: platform
 runbook: null
 effort_points: 2

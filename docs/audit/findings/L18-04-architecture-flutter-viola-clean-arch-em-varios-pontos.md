@@ -18,7 +18,10 @@ test_required: true
 tests:
   - tools/audit/check-flutter-clean-arch.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - d894bbc
+  - 42eae3f
+  - a5ccfff
 owner: mobile-platform
 runbook: null
 effort_points: 5

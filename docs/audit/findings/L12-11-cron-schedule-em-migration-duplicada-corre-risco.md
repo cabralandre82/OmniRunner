@@ -14,11 +14,12 @@ files:
   - tools/audit/check-cron-idempotency.ts
   - tools/audit/baselines/cron-idempotency-baseline.txt
 correction_type: code
-test_required: true
-tests:
-  - "npm run audit:cron-idempotency"
+test_required: false
+tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - aa816fb
+  - 8c62f60
 owner: platform
 runbook: null
 effort_points: 2

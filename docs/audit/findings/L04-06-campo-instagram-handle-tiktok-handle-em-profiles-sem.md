@@ -12,7 +12,7 @@ files:
   - supabase/migrations/20260421570000_l04_06_social_handles_policy.sql
   - tools/audit/check-social-handles-policy.ts
 correction_type: process
-test_required: true
+test_required: false
 tests: []
 linked_issues: []
 linked_prs:

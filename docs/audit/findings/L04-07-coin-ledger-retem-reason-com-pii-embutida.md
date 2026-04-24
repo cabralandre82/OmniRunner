@@ -17,8 +17,8 @@ files:
 correction_type: migration
 test_required: true
 tests:
-  - "tools/test_l04_07_ledger_reason_pii.ts"
-  - "supabase/migrations/20260421220000_l04_07_ledger_reason_pii_guard.sql"
+  - tools/test_l04_07_ledger_reason_pii.ts
+  - supabase/migrations/20260421220000_l04_07_ledger_reason_pii_guard.sql
 linked_issues: []
 linked_prs:
   - "be5e962"

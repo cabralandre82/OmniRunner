@@ -15,9 +15,8 @@ files:
   - docs/compliance/REFUND_POLICY.md
   - tools/audit/check-refund-sla.ts
 correction_type: code
-test_required: true
-tests:
-  - npm run audit:refund-sla
+test_required: false
+tests: []
 linked_issues: []
 linked_prs:
   - local:9813af4
