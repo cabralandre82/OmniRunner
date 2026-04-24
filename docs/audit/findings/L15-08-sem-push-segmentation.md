@@ -16,7 +16,9 @@ correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 32ef899
+
 owner: marketing+platform
 runbook: docs/marketing/PUSH_SEGMENTATION_FRAMEWORK.md
 effort_points: 2

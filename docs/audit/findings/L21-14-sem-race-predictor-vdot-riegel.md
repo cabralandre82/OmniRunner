@@ -17,7 +17,9 @@ correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 32ef899
+
 owner: product
 runbook: docs/product/RACE_PREDICTOR.md
 effort_points: 2

@@ -411,3 +411,101 @@ tooling decision (L17-08).
 Total fechado nesta janela: **60 mediums + 1 critical = 61
 findings**, mantendo a postura "fix(...) + docs(...) + CI
 guard quando aplicável" estabelecida no Wave 1.
+
+---
+
+## Continuação Onda 2 — Batches K7–K11 (51 mediums)
+
+**Data:** 2026-04-21 · "escolha os próximos 50 e continue na
+mesma toada".
+
+Continuando o ritmo dos batches K1-K6, agrupamos os próximos 50
+findings 🟡 medium em mais 5 batches por superfície (K7-K11).
+Diferença marcante deste bloco em relação a K1-K6: a maior parte
+das correções é **spec-first** (políticas, runbooks,
+strategies) com implementação faseada para Wave 3+. O motivo é
+que os 50 mediums escolhidos cobrem áreas onde a decisão
+arquitetural é o bem escasso (JWT revocation, COPPA/ECA, A/B
+testing framework, capacity planning, marketplace de planos,
+ciclo menstrual feminino), não a digitação. Quando aplicável, o
+spec já vem com schema completo + RLS + CI-guard placeholder
+para que o PR de implementação se reduza a "hoje a gente
+implementa o spec-X exato". Implementations puramente tácticas
+(rate-limit accept-action de swap, PII masking helpers, Sentry
+PII stripping, fat-finger guard de distribute-coins, deep-link
+escape hatch em push handler) entraram inline no batch
+correspondente.
+
+| Batch | Foco                                          | Findings | Commits âncora        |
+|-------|-----------------------------------------------|----------|------------------------|
+| K7    | Security / API hardening                      | 10       | `8046248`              |
+| K8    | Finance / privacy / LGPD                      | 10       | `9b5eb71`              |
+| K9    | UX / copy / visual                            | 10       | `9a74988`              |
+| K10   | Marketing / integrations / SRE / product      | 10       | `32ef899`              |
+| K11   | Personas — Atleta-Pro + Atleta-Amador         | 11       | `b2007d6`              |
+
+### Batch K7 — Security / API hardening (10)
+Race-accept rate-limit em `/api/swap` (L01-05),
+JWT revocation policy two-layer sem `revoked_tokens` (L01-15),
+RLS clarification em Edge Functions auth helper (L01-19),
+coin_ledger tamper-evidence via hash chain (L01-41),
+`Idempotency-Key` contract para POSTs financeiros (L14-07),
+content negotiation policy "different URL" (L14-08),
+shared types TS↔Dart via OpenAPI codegen (L17-09).
+L01-13 dup of L01-44, L01-14 dup of L01-26, L14-09 dup of
+L16-03.
+
+### Batch K8 — Finance / privacy / LGPD (10)
+PII masking helpers `portal/src/lib/pii/mask.ts` + 18 testes
+(L04-12), Sentry PII stripping em 3 runtimes + 7 testes
+(L04-13), age verification 3-tier (COPPA/ECA) (L04-14),
+LGPD data portability self-service export (L04-15),
+fat-finger guard ≥500 OmniCoins em distribute UI (L05-11),
+social moderation policy (Marco Civil Art. 19) (L05-14),
+mobile offline session backup 3-layer (L05-19),
+metrics exporter decision (stay log-line 12 mo) (L06-09).
+L03-10 dup of L02-01, L03-16 dup of L01-02.
+
+### Batch K9 — UX / copy / visual (10)
+**Umbrella `docs/design/UX_BASELINE.md`** consolida 6 findings
+(image fallback L07-07, dark mode portal L07-08, empty states
+L07-10, loading states L07-11, financial copy/glossary L07-12,
+type-to-confirm destrutivo L07-13). Standalones: deep-link
+escape hatch com allow-list em push handler Flutter (L07-09),
+mobile device posture 2-tier (DPI) (L10-13),
+SEO landing strategy MDX-based (L15-05),
+A/B testing framework GrowthBook+PostHog (L15-06).
+
+### Batch K10 — Marketing / integrations / SRE / product (10)
+Wrapped social sharing público opt-in (L15-07),
+push segmentation com SQL DSL (L15-08),
+**umbrella `docs/integrations/PARTNER_SAAS_TIERING.md`**
+consolida 3 findings (TP OAuth credentials per-group L16-07,
+SSO SAML/OIDC L16-09, sandbox tier L16-10) em modelo de tiers
+Starter/Pro/Business/Enterprise. Marketplace de planos com
+checkout Stripe (L16-08), chaos engineering 6 GameDays/ano
+(L20-09), capacity planning model com 5 breakpoints (L20-12),
+recovery/sleep tracking read-only (L21-13), race predictor
+client-side Riegel+VDOT+McMillan (L21-14).
+
+### Batch K11 — Personas Atleta-Pro + Atleta-Amador (11)
+**Dois umbrellas**: `docs/product/ATHLETE_PRO_BASELINE.md`
+cobre 6 findings (weather enrichment L21-15, race results
+table L21-16, sponsorship disclosure L21-17, dual HR source
+L21-18, post-run nutrition log L21-19, privacy/competition
+mode L21-20). `docs/product/ATHLETE_AMATEUR_BASELINE.md`
+cobre 5 (Apple Watch / Wear OS thin companion L22-10,
+treadmill mode sem GPS L22-11, streaks com grace + shield
+L22-12, menstrual cycle tracking opt-in com pgsodium L22-13,
+ACWR-driven active recovery L22-14).
+
+### Sweep K7-K11
+- `linked_prs` backfilled em todos os 51 findings via mapping
+  por commit-message → finding-id (script idempotente, mesmo
+  padrão K1-K6).
+- `audit:verify` passa zero erros (348/348 validados).
+- Wave-3+ implementação tracked no front-matter `note:` de
+  cada finding com decisão completa (não placeholder).
+- Total geral Wave-2 medium fechado nesta sessão acumulada:
+  **111 mediums** (60 K1-K6 + 51 K7-K11) + 1 critical
+  (L23-02).

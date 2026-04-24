@@ -16,7 +16,9 @@ correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 32ef899
+
 owner: sre+finance
 runbook: docs/sre/CAPACITY_PLANNING.md
 effort_points: 2

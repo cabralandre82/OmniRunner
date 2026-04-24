@@ -17,7 +17,9 @@ correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 32ef899
+
 owner: platform+integrations
 runbook: docs/integrations/PARTNER_SAAS_TIERING.md
 effort_points: 2

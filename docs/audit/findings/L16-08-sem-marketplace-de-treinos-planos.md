@@ -17,7 +17,9 @@ correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - 32ef899
+
 owner: product+platform
 runbook: docs/integrations/MARKETPLACE_TRAINING_PLANS.md
 effort_points: 2

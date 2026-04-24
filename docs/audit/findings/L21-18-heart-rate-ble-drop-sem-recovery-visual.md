@@ -17,7 +17,9 @@ correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - b2007d6
+
 owner: mobile+platform
 runbook: docs/product/ATHLETE_PRO_BASELINE.md
 effort_points: 2

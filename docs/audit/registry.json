@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T01:54:01.572Z",
+  "generated_at": "2026-04-24T01:56:48.319Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -8833,7 +8833,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "32ef899"
+      ],
       "owner": "marketing+platform",
       "runbook": "docs/marketing/WRAPPED_SOCIAL_SHARING.md",
       "effort_points": 2,
@@ -8863,7 +8865,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "32ef899"
+      ],
       "owner": "marketing+platform",
       "runbook": "docs/marketing/PUSH_SEGMENTATION_FRAMEWORK.md",
       "effort_points": 2,
@@ -9112,7 +9116,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "32ef899"
+      ],
       "owner": "platform+integrations",
       "runbook": "docs/integrations/PARTNER_SAAS_TIERING.md",
       "effort_points": 2,
@@ -9142,7 +9148,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "32ef899"
+      ],
       "owner": "product+platform",
       "runbook": "docs/integrations/MARKETPLACE_TRAINING_PLANS.md",
       "effort_points": 2,
@@ -9170,7 +9178,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "32ef899"
+      ],
       "owner": "platform+integrations",
       "runbook": "docs/integrations/PARTNER_SAAS_TIERING.md",
       "effort_points": 2,
@@ -9200,7 +9210,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "32ef899"
+      ],
       "owner": "platform+integrations",
       "runbook": "docs/integrations/PARTNER_SAAS_TIERING.md",
       "effort_points": 2,
@@ -10698,7 +10710,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "32ef899"
+      ],
       "owner": "sre+platform",
       "runbook": "docs/runbooks/CHAOS_ENGINEERING.md",
       "effort_points": 2,
@@ -10797,7 +10811,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "32ef899"
+      ],
       "owner": "sre+finance",
       "runbook": "docs/sre/CAPACITY_PLANNING.md",
       "effort_points": 2,
@@ -11295,7 +11311,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "32ef899"
+      ],
       "owner": "product+mobile",
       "runbook": "docs/product/RECOVERY_SLEEP_TRACKING.md",
       "effort_points": 2,
@@ -11328,7 +11346,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "32ef899"
+      ],
       "owner": "product",
       "runbook": "docs/product/RACE_PREDICTOR.md",
       "effort_points": 2,
@@ -11359,7 +11379,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "b2007d6"
+      ],
       "owner": "product+platform",
       "runbook": "docs/product/ATHLETE_PRO_BASELINE.md",
       "effort_points": 2,
@@ -11391,7 +11413,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "b2007d6"
+      ],
       "owner": "product+platform",
       "runbook": "docs/product/ATHLETE_PRO_BASELINE.md",
       "effort_points": 2,
@@ -11423,7 +11447,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "b2007d6"
+      ],
       "owner": "product+legal",
       "runbook": "docs/product/ATHLETE_PRO_BASELINE.md",
       "effort_points": 2,
@@ -11455,7 +11481,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "b2007d6"
+      ],
       "owner": "mobile+platform",
       "runbook": "docs/product/ATHLETE_PRO_BASELINE.md",
       "effort_points": 2,
@@ -11486,7 +11514,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "b2007d6"
+      ],
       "owner": "product+mobile",
       "runbook": "docs/product/ATHLETE_PRO_BASELINE.md",
       "effort_points": 2,
@@ -11518,7 +11548,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "b2007d6"
+      ],
       "owner": "product+platform",
       "runbook": "docs/product/ATHLETE_PRO_BASELINE.md",
       "effort_points": 2,
@@ -11935,7 +11967,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "b2007d6"
+      ],
       "owner": "mobile+platform",
       "runbook": "docs/product/ATHLETE_AMATEUR_BASELINE.md",
       "effort_points": 2,
@@ -11968,7 +12002,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "b2007d6"
+      ],
       "owner": "mobile+anti-cheat",
       "runbook": "docs/product/ATHLETE_AMATEUR_BASELINE.md",
       "effort_points": 2,
@@ -11999,7 +12035,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "b2007d6"
+      ],
       "owner": "product",
       "runbook": "docs/product/ATHLETE_AMATEUR_BASELINE.md",
       "effort_points": 2,
@@ -12030,7 +12068,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "b2007d6"
+      ],
       "owner": "product+legal+platform",
       "runbook": "docs/product/ATHLETE_AMATEUR_BASELINE.md",
       "effort_points": 2,
@@ -12061,7 +12101,9 @@
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "b2007d6"
+      ],
       "owner": "product+coaching",
       "runbook": "docs/product/ATHLETE_AMATEUR_BASELINE.md",
       "effort_points": 2,
