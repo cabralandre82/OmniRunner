@@ -3,10 +3,45 @@ import {
   resolveRouteAccess,
   isStaffRole,
   isAuthNoGroupRoute,
+  isPublicRoute,
   portalCookieOptions,
   AUTH_NO_GROUP_ROUTES,
   PORTAL_COOKIE_MAX_AGE_SEC,
 } from "./route-policy";
+
+describe("isPublicRoute — L01-25 / L13-08 segment-shape regression", () => {
+  it("allows the canonical deep-link shape /challenge/<code>", () => {
+    expect(isPublicRoute("/challenge/ABC123")).toBe(true);
+    expect(isPublicRoute("/challenge/spring_cup-2026")).toBe(true);
+  });
+
+  it("allows the canonical deep-link shape /invite/<code>", () => {
+    expect(isPublicRoute("/invite/XYZ789")).toBe(true);
+  });
+
+  it("REJECTS nested admin paths like /challenge/123/admin (L13-08)", () => {
+    expect(isPublicRoute("/challenge/123/admin")).toBe(false);
+    expect(isPublicRoute("/challenge/abc/delete")).toBe(false);
+    expect(isPublicRoute("/invite/abc/admin")).toBe(false);
+  });
+
+  it("REJECTS challenge code with PostgREST/path injection chars", () => {
+    expect(isPublicRoute("/challenge/abc;drop")).toBe(false);
+    expect(isPublicRoute("/challenge/abc?token=x")).toBe(false);
+    expect(isPublicRoute("/challenge/")).toBe(false);
+    expect(isPublicRoute("/challenge/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")).toBe(false);
+  });
+
+  it("keeps /api/cron/* public (CRON_SECRET-gated, L02-10)", () => {
+    expect(isPublicRoute("/api/cron/heartbeat")).toBe(true);
+    expect(isPublicRoute("/api/cron/clearing/run")).toBe(true);
+  });
+
+  it("non-matching paths return false", () => {
+    expect(isPublicRoute("/dashboard")).toBe(false);
+    expect(isPublicRoute("/api/swap")).toBe(false);
+  });
+});
 
 describe("resolveRouteAccess — L13-01 ordering regression", () => {
   describe("/settings/invite (admin OR coach) vs /settings (admin only)", () => {

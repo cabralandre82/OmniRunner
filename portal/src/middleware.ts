@@ -390,14 +390,25 @@ export async function middleware(request: NextRequest) {
       if (isStaffRole(role)) {
         setCachedMembership(user.id, groupId, { role });
       }
-      const redirect = NextResponse.redirect(request.nextUrl);
-      redirect.cookies.set(
+      // L13-09 — eliminate the double round-trip on first-touch.
+      // Next.js 14.2+ propagates cookies set on the SAME response to
+      // downstream RSCs/route handlers within the same navigation,
+      // which removes the need for the redirect-then-replay pattern
+      // that previously cost ~200 ms on cold paint. The cookies land
+      // on `supabaseResponse` (already authoritative for everything
+      // else in this branch) and the request continues to the
+      // requested pathname.
+      supabaseResponse.cookies.set(
         "portal_group_id",
         groupId,
         portalCookieOptions(),
       );
-      redirect.cookies.set("portal_role", role, portalCookieOptions());
-      return tagResponse(redirect);
+      supabaseResponse.cookies.set(
+        "portal_role",
+        role,
+        portalCookieOptions(),
+      );
+      // fall through to the role-gated section below; no redirect.
     } else {
       // Multi-membership: defer to /select-group. The redundant
       // pathname-equality check that used to live here is no longer

@@ -104,6 +104,27 @@ export const PUBLIC_PREFIXES: readonly string[] = [
 ];
 
 /**
+ * L01-25 / L13-08 — segment-shape contracts for the public deep-link
+ * prefixes. The bare prefix match used to allow:
+ *
+ *   /challenge/123/admin-only-action  ← becomes public ❌
+ *
+ * which would expose any nested route under `/challenge/`. Each
+ * prefix below is paired with a regex that constrains the *full*
+ * pathname to a single trailing segment of safe characters.
+ *
+ * `/api/cron/` keeps the simple prefix check (caller is gated by
+ * `CRON_SECRET`, not the public-prefix logic; see L02-10).
+ */
+export const PUBLIC_PREFIX_PATTERNS: ReadonlyArray<{
+  prefix: string;
+  fullPath: RegExp;
+}> = [
+  { prefix: "/challenge/", fullPath: /^\/challenge\/[A-Za-z0-9_-]{1,64}$/ },
+  { prefix: "/invite/", fullPath: /^\/invite\/[A-Za-z0-9_-]{1,64}$/ },
+];
+
+/**
  * Path prefixes that require a session but no group membership
  * (platform admin pages).
  */
@@ -211,10 +232,16 @@ export function portalCookieOptions(opts?: {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function isPublicRoute(pathname: string): boolean {
-  return (
-    PUBLIC_ROUTES.has(pathname) ||
-    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))
-  );
+  if (PUBLIC_ROUTES.has(pathname)) return true;
+  // L02-10 cron — caller is gated by CRON_SECRET; prefix check is sufficient.
+  if (pathname.startsWith("/api/cron/")) return true;
+  // L01-25 / L13-08 — `/challenge/...` and `/invite/...` are public
+  // ONLY when the trailing segment is shape-valid AND there are no
+  // additional path segments. `/challenge/abc/admin` is NOT public.
+  for (const { prefix, fullPath } of PUBLIC_PREFIX_PATTERNS) {
+    if (pathname.startsWith(prefix) && fullPath.test(pathname)) return true;
+  }
+  return false;
 }
 
 export function isAuthOnlyRoute(pathname: string): boolean {
