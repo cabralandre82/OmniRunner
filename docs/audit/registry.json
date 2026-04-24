@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T01:06:09.424Z",
+  "generated_at": "2026-04-24T01:47:03.711Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,10 +10,9 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 260,
-    "fix-pending": 78,
-    "in-progress": 1,
-    "duplicate": 1,
+    "fixed": 296,
+    "fix-pending": 40,
+    "duplicate": 4,
     "wont-fix": 8
   },
   "by_wave": {
@@ -529,10 +528,12 @@
       "lens": 1,
       "title": "POST /api/platform/fees — Alteração de taxas",
       "severity": "medium",
-      "status": "in-progress",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
       "fix_ready_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "rate-limit",
@@ -553,13 +554,13 @@
       ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform-finance",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": "L01-44",
       "deferred_to_wave": null,
-      "note": "Corrigido junto com L01-44 (mesma raiz: drift em platform_fee_config). Zod enum estendido + FEE_LABELS.fx_spread + 2 testes adicionais."
+      "note": "Corrigido junto com L01-44 (mesma raiz: drift em platform_fee_config). Zod enum estendido + FEE_LABELS.fx_spread + 2 testes adicionais. Fechado como duplicate."
     },
     {
       "id": "L01-14",
@@ -567,9 +568,11 @@
       "lens": 1,
       "title": "Sessão Supabase.auth.getSession() no middleware + auth.getUser() em updateSession",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "portal",
@@ -577,20 +580,21 @@
       ],
       "files": [
         "portal/src/lib/supabase/middleware.ts",
-        "portal/src/middleware.ts"
+        "portal/src/middleware.ts",
+        "portal/src/lib/auth/membership-cache.ts"
       ],
       "correction_type": "process",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
-      "duplicate_of": null,
+      "duplicate_of": "L01-26",
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fechado como **duplicate de L01-26**. A causa-raiz que o finding\napontava — \"2 queries por request (getUser + coaching_members)\" no\nmiddleware — foi neutralizada pelo trabalho de cache de\n`coaching_members` + `platform_role` introduzido em L01-26\n(`membership-cache.ts` + `platform-role-cache.ts`). Hoje:\n`getUser()` continua server-side (não dá para fazer cache disso —\né o que garante logout remoto efetivo), mas `coaching_members` é\nservida de cache LRU process-local com TTL curto e invalidação\nativa em eventos de role change. Em RSC com 15 sub-renders contra\n`/platform/*`, custo cai de 16 round-trips Postgres para 1 (cold)\nou 0 (warm).\n"
     },
     {
       "id": "L01-15",
@@ -598,28 +602,32 @@
       "lens": 1,
       "title": "JWT expiry window — Logout forçado",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "portal",
         "edge-function",
         "migration",
         "reliability"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/security/JWT_REVOCATION_POLICY.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "security+platform",
+      "runbook": "docs/security/JWT_REVOCATION_POLICY.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Política ratificada em `docs/security/JWT_REVOCATION_POLICY.md`.\nDecisão: **2-layer revocation** (refresh-token kill via\n`auth.admin.signOut(uid, \"global\")` + L01-26 cache eviction)\nem vez de tabela `revoked_tokens`. Worst-case window cai para\n0 s em endpoints platform/group-scoped (cache invalidado →\nnext request bate o DB e vê o rebaixamento de role) e fica\nlimitado ao access-token TTL (≤ 5 min mobile / ≤ 60 min portal)\nem endpoints self-data. Edge Function `force-signout` é\nfollow-up não-blocking; hooks de cache já estão em produção.\n"
     },
     {
       "id": "L01-16",
@@ -751,9 +759,11 @@
       "lens": 1,
       "title": "Edge Functions — verify_jwt = false com auth manual",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "rls",
         "security-headers",
@@ -763,18 +773,18 @@
       "files": [
         "supabase/functions/_shared/auth.ts"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform-security",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Auditoria concluiu que o desenho atual já é correto: `db` usa\nanon key + Bearer JWT (RLS aplica como `authenticated`),\nenquanto `adminDb` é service-role explicitamente nomeado. A\nconfusão original do finding era documental. Hardening\naplicado: (a) bloco de comentário grande no ponto exato em que\n`db` é construído explicando que RLS aplica via anonKey e que\no fallback para serviceKey só dispara se `SUPABASE_ANON_KEY`\nestiver ausente (sandbox), (b) `console.warn` audível quando\no fallback dispara — produção PRECISA setar\n`SUPABASE_ANON_KEY`. Renomear `db` → `adminDbScopedToUser`\nfoi rejeitado: induziria devs a achar que RLS NÃO aplica, o\noposto do real.\n"
     },
     {
       "id": "L01-20",
@@ -1539,26 +1549,30 @@
       "lens": 1,
       "title": "coin_ledger — Sem assinatura criptográfica",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "anti-cheat"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/security/COIN_LEDGER_TAMPER_EVIDENCE.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "finance+security",
+      "runbook": "docs/security/COIN_LEDGER_TAMPER_EVIDENCE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
-      "deferred_to_wave": null,
-      "note": null
+      "deferred_to_wave": 3,
+      "note": "Spec ratificada em `docs/security/COIN_LEDGER_TAMPER_EVIDENCE.md`.\nEscolha: hash chain SHA-256 em **tabela sibling write-once**\n(`coin_ledger_hash_chain`), populada por trigger BEFORE INSERT\nem cada partition mensal, com snapshot inline para detectar o\ncaso \"atacante apaga linha do chain para esconder UPDATE em\ncoin_ledger\". Verificação: cron diário recomputa última\npartition fechada e dispara `audit_logs` +\n`CHARGEBACK_RUNBOOK` em mismatch; assinatura Ed25519 da\ncabeça do chain publicada trimestralmente em repo Git público\npara attestation third-party. Implementação real (~150 LOC)\nvai num PR dedicado em Wave 3 — não cabe num batch de 50\nfindings porque toca o hot path de toda RPC financeira.\n"
     },
     {
       "id": "L01-42",
@@ -2778,9 +2792,10 @@
       "lens": 3,
       "title": "custody_commit_coins — Reserva ANTES de crédito ao atleta",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "duplicate",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "atomicity",
@@ -2792,13 +2807,13 @@
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "finance",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
-      "duplicate_of": null,
+      "duplicate_of": "L02-01",
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fechado como **duplicate de L02-01** (`distribute_coins_atomic`).\nA janela \"reserva → decrement → increment\" foi colapsada numa\núnica transação SQL pelo trabalho de Onda 0 (L02-01 +\ncross-ref L01-03), eliminando a temporal-inconsistency-window\napontada aqui. A invariante R = M é checada por\n`check_custody_invariants` (L03-08) em real-time via\n`/api/platform/invariants/wallets` (L08-07).\n"
     },
     {
       "id": "L03-11",
@@ -2964,11 +2979,13 @@
       "lens": 3,
       "title": "Consistência entrada–saída de FX",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "duplicate",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "portal"
+        "portal",
+        "fx"
       ],
       "files": [],
       "correction_type": "code",
@@ -2976,13 +2993,13 @@
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "finance",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
-      "duplicate_of": null,
+      "duplicate_of": "L01-02",
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fechado como **duplicate de L01-02** (\"FX rate\nclient-supplied\"). A solução autoritária para FX já foi\nembarcada em Onda 0: `platform_fx_quotes` (server-side\nauthoritative), endpoint `GET /api/fx/quote` read-only para\nUI, e `.strict()` Zod schemas em todos os handlers que aceitam\namount em USD. Entrada e saída agora consultam o mesmo\nsnapshot identificado por `quote_id`, eliminando assimetria\nentre custody.deposit (entrada) e custody.withdraw (saída).\nCross-ref: L03-06 (FX spread cálculo simétrico) também já\nfechado em K3.\n"
     },
     {
       "id": "L03-17",
@@ -3568,26 +3585,34 @@
       "lens": 4,
       "title": "Portal admin expõe dados sensíveis sem masking",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
-        "portal"
+        "portal",
+        "lgpd"
       ],
-      "files": [],
+      "files": [
+        "portal/src/lib/pii/mask.ts",
+        "portal/src/lib/pii/mask.test.ts"
+      ],
       "correction_type": "code",
-      "test_required": false,
-      "tests": [],
+      "test_required": true,
+      "tests": [
+        "portal/src/lib/pii/mask.test.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform-security+legal",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Helpers canônicos de masking embarcados em\n`portal/src/lib/pii/mask.ts`: `maskCpf` (`123.***.***-45`),\n`maskCnpj` (1ª e últimas 2 dígitos), `maskEmail`\n(`a***@example.com`), `maskPhone` (`(11) ****-**21` com\nstrip de +55), `maskName` (primeiro nome + tokens\nmascarados), `maskAccount` (últimos 4 chars), `looksLikeCpf`\n(detector para audit-log scrubber). 18 vitest cases cobrem\nformatos com/sem separadores, edge cases (null/undefined,\ncomprimento inválido). Helpers ficam em `lib/` (não em\n`components/`) para serem reutilizados em RSC, CSV export e\nredação de logs. Componente `<MaskedDoc value reveal>` que\nconsome esses helpers e emite `audit_log` no reveal será o\nfollow-up natural quando os primeiros call-sites do\n`/platform/users` migrarem — não bloqueante para fechar este\nfinding (camada de domínio está pronta).\n"
     },
     {
       "id": "L04-13",
@@ -3595,29 +3620,38 @@
       "lens": 4,
       "title": "Logs estruturados enviam user_id e podem enviar ip_address ao Sentry",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "portal",
         "observability",
         "reliability"
       ],
       "files": [
-        "portal/src/lib/logger.ts"
+        "portal/src/lib/logger.ts",
+        "portal/src/lib/observability/sentryPii.ts",
+        "portal/src/lib/observability/sentryPii.test.ts",
+        "portal/sentry.client.config.ts",
+        "portal/sentry.server.config.ts",
+        "portal/sentry.edge.config.ts"
       ],
-      "correction_type": "process",
-      "test_required": false,
-      "tests": [],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "portal/src/lib/observability/sentryPii.test.ts"
+      ],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform-security",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Sentry agora tem `sendDefaultPii: false` em todos os 3\nruntimes (client/server/edge) **+** `stripPii()` rodando como\núltima etapa de `beforeSend` / `beforeSendTransaction`. O\nhelper canônico (`portal/src/lib/observability/sentryPii.ts`)\nzera `user.email`/`user.ip_address` (mantém apenas\n`user.id` — UUID pseudonimizado, necessário para triagem),\nremove `Authorization`/`Cookie`/`x-forwarded-for` dos\nheaders (allow-list só com `user-agent`, `x-request-id`,\n`x-omni-client`, `Referer`), apaga `request.cookies`,\n`request.query_string`, `request.data` e\n`contexts.request.client_ip`. 7 vitest cases cobrem o\ncomportamento. Defesa-em-profundidade: mesmo se uma chamada\nlegacy `Sentry.setUser({ email })` resurgir, `stripPii`\nintercepta antes do envio.\n"
     },
     {
       "id": "L04-14",
@@ -3625,27 +3659,32 @@
       "lens": 4,
       "title": "Ausência de verificação de idade (COPPA/ECA)",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "lgpd",
         "rls",
-        "ux"
+        "ux",
+        "minors"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/policies/MINOR_USER_AGE_VERIFICATION.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "legal+product",
+      "runbook": "docs/policies/MINOR_USER_AGE_VERIFICATION.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
-      "deferred_to_wave": null,
-      "note": null
+      "deferred_to_wave": 3,
+      "note": "Política ratificada em\n`docs/policies/MINOR_USER_AGE_VERIFICATION.md`. Modelo\n3-tier: < 13 (sem signup direto, vira `dependent_profiles`\nsob conta dos pais), 13–17 (signup com double-opt-in\nparental por email), 18+ (fluxo padrão). Coleta apenas\nano de nascimento (LGPD minimisation). Schema + RLS +\nonboarding UI + backfill modal de existing users planejados\nem Wave 3. Política inclui regras operacionais (no leaderboard\nexposure para menores, no Strava/TP OAuth binding,\nhard-delete sem grace period quando consent é revogado, audit\ntrail `event_domain='lgpd'`).\n"
     },
     {
       "id": "L04-15",
@@ -3653,28 +3692,32 @@
       "lens": 4,
       "title": "Right to portability — não há export self-service",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "lgpd",
         "finance",
         "edge-function",
         "ux"
       ],
-      "files": [],
-      "correction_type": "config",
+      "files": [
+        "docs/runbooks/DATA_PORTABILITY_EXPORT.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "legal+platform",
+      "runbook": "docs/runbooks/DATA_PORTABILITY_EXPORT.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
-      "deferred_to_wave": null,
-      "note": null
+      "deferred_to_wave": 3,
+      "note": "Spec ratificada em\n`docs/runbooks/DATA_PORTABILITY_EXPORT.md`. Auto-serviço a\npartir da tela de conta: `POST /api/account/export` enfileira\nvia `fn_enqueue_data_export`, cron horário invoca Edge\nFunction `export-my-data` com retries (L06-05), grava ZIP em\n`storage/exports/{uid}/{ts}.zip` (cap 500 MB, signed URL 24\nh), notifica via Resend, GC diário apaga após 24 h. Manifest\n+ 6 domínios (profile/runs/wallet/coaching/integrations/\nbadges). Excluídos por design: dados de outros usuários,\ntokens OAuth (secrets), audit_logs raw, health-data raw\n(opt-in). Rate limit 1/24h por usuário (fail_closed) é a\nprópria idempotência. Implementação fica para Wave 3 (Edge\nFunction não-trivial + load test + storage GC + email\ntemplating com revisão legal).\n"
     },
     {
       "id": "L05-01",
@@ -4097,26 +4140,33 @@
       "lens": 5,
       "title": "UI distribute-coins: sem confirmação dupla de grandes valores",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
-        "portal"
+        "portal",
+        "ux"
       ],
-      "files": [],
+      "files": [
+        "portal/src/app/(portal)/athletes/distribute-button.tsx",
+        "portal/messages/pt-BR.json",
+        "portal/messages/en.json"
+      ],
       "correction_type": "code",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "product+platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Single-athlete distribute (cap 1000 OmniCoins per call após\nL05-03) ganha fat-finger guard: quando `amount >= 500` (≈ 50%\ndo cap), `window.confirm()` força double-check com nome do\natleta + valor. Implementação browser-native em vez de modal\nfull-stack porque o caminho é low-frequency e a UI é\nclient-component leve. i18n completo (pt-BR + en) com\ntemplate `{amount}` / `{athlete}`. Batch distribute\n(`/api/distribute-coins/batch`, cap 100k via L05-03) ainda\nnão tem UI dedicada — quando o painel batch chegar terá modal\nTYPE-CONFIRMAR estilo GitHub (anchor: este finding).\n"
     },
     {
       "id": "L05-12",
@@ -4194,26 +4244,32 @@
       "lens": 5,
       "title": "Feed social: sem \"report\" / moderação",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "migration",
-        "ux"
+        "ux",
+        "trust-safety",
+        "marco-civil"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/policies/SOCIAL_MODERATION_POLICY.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "product+legal+trust-safety",
+      "runbook": "docs/policies/SOCIAL_MODERATION_POLICY.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
-      "deferred_to_wave": null,
-      "note": null
+      "deferred_to_wave": 3,
+      "note": "Política ratificada em\n`docs/policies/SOCIAL_MODERATION_POLICY.md`. Tabela\n`social_reports` (RLS forçada, UNIQUE per reporter+content)\n+ trigger auto-hide a 3 reports distintos + queue admin em\n`/platform/moderation` + SLA cron 72h alinhado com Marco\nCivil Art. 19. AI moderation rejeitada em v1 (escala atual,\nPII LGPD, false-positives em PT-BR). Re-avaliação quando MAU\n> 50k ou p95 review time > 24h. Implementação Wave 3.\n"
     },
     {
       "id": "L05-15",
@@ -4362,27 +4418,31 @@
       "lens": 5,
       "title": "Offline-first Flutter: sessões ficam em drift até sincronizar",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "cron",
         "reliability"
       ],
-      "files": [],
-      "correction_type": "config",
+      "files": [
+        "docs/runbooks/MOBILE_OFFLINE_SESSION_BACKUP.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "mobile+reliability",
+      "runbook": "docs/runbooks/MOBILE_OFFLINE_SESSION_BACKUP.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
-      "deferred_to_wave": null,
-      "note": null
+      "deferred_to_wave": 3,
+      "note": "Spec ratificada em\n`docs/runbooks/MOBILE_OFFLINE_SESSION_BACKUP.md`. Estratégia\n3 camadas: (1) eager-push baseline já existente, (2) email\ndigest após 24h sem sync (encrypted via account-derived key,\n1 email/24h por usuário, piggyback no WorkManager de L08-12),\n(3) tela `Settings → Pending Runs` com ações manuais\n(try-sync / send-email / export-file / delete). Rejeitados\npor design: `flutter_secure_storage` (mesmo failure mode em\nfactory reset, limite de 1 MB por key, two-source-of-truth)\ne iCloud/Google Drive auto-backup (sem consent explícito do\nusuário sobre GPS trajectories). Implementação Wave 3.\n"
     },
     {
       "id": "L05-20",
@@ -4757,25 +4817,30 @@
       "lens": 6,
       "title": "Métricas (portal/src/lib/metrics.ts) só geram log JSON, sem exporter real",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "observability"
+        "observability",
+        "platform"
       ],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/runbooks/METRICS_EXPORTER_DECISION.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "platform+observability",
+      "runbook": "docs/runbooks/METRICS_EXPORTER_DECISION.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Decisão ratificada: **manter `LogMetricsCollector` por\npelo menos 12 meses**. Tabela em\n`docs/runbooks/METRICS_EXPORTER_DECISION.md` mostra que cada\nnecessidade real (latência por rota, error rate,\ncustody/clearing drift, cron health, webhook rate, liveness/\nreadiness, cost-per-MAU) já é coberta por\nSentry+L18-10/L06-12/L06-04/L06-03/L20-11. Triggers para\nflip-to-Prometheus/OTLP definidos: multi-tenant white-label,\nMAU > 100k, segundo deployment target, > 4h/sem em Metabase\ndashboards, postmortem citando \"não vimos na métrica\" 2x/\ntrimestre. Catalog companion `METRIC_CATALOG.md` planejado\ncomo follow-up não-blocking.\n"
     },
     {
       "id": "L06-10",
@@ -5169,26 +5234,32 @@
       "lens": 7,
       "title": "Ícones sem fallback (mobile offline)",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "rls",
-        "reliability"
+        "reliability",
+        "mobile",
+        "ux"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/design/UX_BASELINE.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "design+frontend",
+      "runbook": "docs/design/UX_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
-      "deferred_to_wave": null,
-      "note": null
+      "deferred_to_wave": 3,
+      "note": "Coberto pelo `docs/design/UX_BASELINE.md` §L07-07: `cached_network_image` obrigatório, placeholder = iniciais coloridas determinísticas, fallback de erro persistente com badge `!`, cache 30d/100MB. Implementação Wave 3 dentro da PR-series do design system.\n"
     },
     {
       "id": "L07-08",
@@ -5196,25 +5267,31 @@
       "lens": 7,
       "title": "Dark mode parcial",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "portal"
+        "portal",
+        "ux",
+        "design-system"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/design/UX_BASELINE.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "design+frontend",
+      "runbook": "docs/design/UX_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
-      "deferred_to_wave": null,
-      "note": null
+      "deferred_to_wave": 3,
+      "note": "Coberto pelo `docs/design/UX_BASELINE.md` §L07-08: adoção de `next-themes` + Tailwind `dark:` variants (já configurado `darkMode: 'class'`). Mapping completo de semantic tokens. Persistência via cookie `portal_theme` para evitar FOUC em RSC. Implementação Wave 3.\n"
     },
     {
       "id": "L07-09",
@@ -5222,11 +5299,14 @@
       "lens": 7,
       "title": "Notificações push: sem deep link preciso",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "mobile"
+        "mobile",
+        "ux"
       ],
       "files": [
         "omni_runner/lib/core/push/push_navigation_handler.dart"
@@ -5236,13 +5316,13 @@
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "mobile",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "`push_navigation_handler.dart` ganha **escape hatch genérico\nde deep-link**: payloads com `data.route` (ex.\n`/workout-delivery/123`) navegam direto via `pushNamed`,\ncaindo para o switch por `type` apenas se a rota não estiver\nna allowlist. Allowlist de 10 rotas (`/today`, `/wallet`,\n`/championships`, `/workout-delivery`, etc.) com suporte a\n`<prefix>/<id>` e querystring. Hardening: backend pode\nintroduzir novos tipos de notificação sem app-update; rota\nnão-allowlist é silenciosamente ignorada (defesa contra\nservidor comprometido tentando navegar para rota inesperada).\n"
     },
     {
       "id": "L07-10",
@@ -5250,25 +5330,30 @@
       "lens": 7,
       "title": "Empty states genéricos",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "ux"
+        "ux",
+        "design-system"
       ],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/design/UX_BASELINE.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "design+frontend",
+      "runbook": "docs/design/UX_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
-      "deferred_to_wave": null,
-      "note": null
+      "deferred_to_wave": 3,
+      "note": "Coberto pelo `docs/design/UX_BASELINE.md` §L07-10: componente canônico `<EmptyState illustration title description primaryAction secondaryAction />`. Inventário de 8 telas in-scope listado no doc. Implementação Wave 3.\n"
     },
     {
       "id": "L07-11",
@@ -5276,25 +5361,32 @@
       "lens": 7,
       "title": "Loading states inconsistentes",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "mobile"
+        "mobile",
+        "portal",
+        "ux",
+        "design-system"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/design/UX_BASELINE.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "design+frontend",
+      "runbook": "docs/design/UX_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
-      "deferred_to_wave": null,
-      "note": null
+      "deferred_to_wave": 3,
+      "note": "Coberto pelo `docs/design/UX_BASELINE.md` §L07-11: regra `<SkeletonCard rows={page_size} />` para listas, `<SkeletonDetail />` para single-record (mesmo grid → zero CLS), spinner-in-button para mutations. Mirror Flutter via `shimmer` package. Implementação Wave 3.\n"
     },
     {
       "id": "L07-12",
@@ -5302,26 +5394,32 @@
       "lens": 7,
       "title": "Copy financeiro confunde atleta",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
-        "mobile"
+        "mobile",
+        "ux",
+        "design-system"
       ],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/design/UX_BASELINE.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "design+frontend",
+      "runbook": "docs/design/UX_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
-      "deferred_to_wave": null,
-      "note": null
+      "deferred_to_wave": 3,
+      "note": "Coberto pelo `docs/design/UX_BASELINE.md` §L07-12: glossário canônico OmniCoins / Badges / Créditos / (deprecated) Inventário, com `<TermDef>` tooltip na primeira ocorrência por tela linkando `/help/glossary`. Modelo de dados (`coaching_groups.token_inventory`) intocado — só labels mudam. Implementação Wave 3.\n"
     },
     {
       "id": "L07-13",
@@ -5329,25 +5427,31 @@
       "lens": 7,
       "title": "Confirmações destrutivas sem confirm dialog",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "mobile"
+        "mobile",
+        "ux",
+        "design-system"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/design/UX_BASELINE.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "design+frontend",
+      "runbook": "docs/design/UX_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
-      "deferred_to_wave": null,
-      "note": null
+      "deferred_to_wave": 3,
+      "note": "Coberto pelo `docs/design/UX_BASELINE.md` §L07-13: `<DestructiveConfirm typeToConfirm consequence onConfirm />` obrigatório em 5 fluxos catalogados (delete account, cancel championship c/ participantes, cancel swap accepted, remover atleta pagante, force-disconnect custody). Padrão type-to-confirm estilo GitHub. Implementação Wave 3.\n"
     },
     {
       "id": "L08-01",
@@ -6688,26 +6792,32 @@
       "lens": 10,
       "title": "Sem DPI (Device Posture) no Flutter",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
-        "mobile"
+        "mobile",
+        "anti-cheat",
+        "security"
       ],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/security/MOBILE_DEVICE_POSTURE_POLICY.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "mobile+security",
+      "runbook": "docs/security/MOBILE_DEVICE_POSTURE_POLICY.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
-      "deferred_to_wave": null,
-      "note": null
+      "deferred_to_wave": 3,
+      "note": "Política ratificada em\n`docs/security/MOBILE_DEVICE_POSTURE_POLICY.md`. **2-tier\nposture**: SOFT em uso geral / HARD em ações financeiras.\nv1 free (`flutter_jailbreak_detection` + `device_info_plus`,\ncomposer `DevicePosture` com `healthy/suspicious/\ncompromised`); v2 billable (Play Integrity API + iOS App\nAttest) quando withdraw fraud > BRL 5k/mês. Matriz de\nenforcement por surface (login=allow, distribute/withdraw=\nblock em compromised, withdraw em suspicious=2FA challenge).\nServidor NUNCA bloqueia só por claim do client; usa\n`X-Device-Posture` em `audit_logs` para correlação e daily\n`posture-suspicious-actors` report. JWT revogation por\nposture rejeitada (atacante poderia spoofar para mass-logout).\n"
     },
     {
       "id": "L10-14",
@@ -8329,27 +8439,33 @@
       "lens": 14,
       "title": "Sem idempotency-key header em POSTs financeiros",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "idempotency",
         "security-headers",
         "reliability"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/api/IDEMPOTENCY_CONTRACT.md",
+        "docs/runbooks/IDEMPOTENCY_RUNBOOK.md",
+        "portal/src/lib/api/idempotency.ts"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "platform+finance",
+      "runbook": "docs/runbooks/IDEMPOTENCY_RUNBOOK.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Contrato consolidado em `docs/api/IDEMPOTENCY_CONTRACT.md`. A\ninfraestrutura já existe (L18-02:\n`withIdempotency()` + tabela `idempotency_keys` write-once com\nGC horário + `IDEMPOTENCY_RUNBOOK.md`). O finding agora aponta\npara o contrato canônico que enumera as 11 rotas in-scope, as\n3 categorias out-of-scope (swap, GET, webhooks de provider que\ncarregam própria key), o storage server-side, e a semântica de\nfalha (`MISSING_IDEMPOTENCY_KEY` / `IDEMPOTENCY_KEY_CONFLICT`\n/ `IDEMPOTENCY_KEY_INFLIGHT`). CI guard\n`audit:idempotency-coverage` listado como follow-up\nnão-blocking.\n"
     },
     {
       "id": "L14-08",
@@ -8357,26 +8473,30 @@
       "lens": 14,
       "title": "Content negotiation inexistente",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "security-headers",
         "mobile"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/api/CONTENT_NEGOTIATION_POLICY.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "platform+product",
+      "runbook": "docs/api/CONTENT_NEGOTIATION_POLICY.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Política ratificada em `docs/api/CONTENT_NEGOTIATION_POLICY.md`.\nDecisão deliberada: **um shape por URL** (CSV/ICS/PDF moram\nem rotas separadas com sufixo `.csv`/`.ics`/`.pdf`) em vez de\n`Accept`-header negotiation no mesmo endpoint. Justificado por\ncache poisoning surface (Vary: Accept frágil em CDN tiers),\nOpenAPI tooling mais limpo (TS + Dart codegen), audit-log\nlegibilidade, e modelo de auth diferente entre JSON-list e\nCSV-export. Documento define naming convention e headers\nhonrados (`Accept-Language`, `Idempotency-Key`,\n`If-None-Match`) vs ignorados (`Accept: application/xml`,\n`Accept-Charset`, `Range` em JSON).\n"
     },
     {
       "id": "L14-09",
@@ -8384,23 +8504,27 @@
       "lens": 14,
       "title": "Sem quota por parceiro (API key tier)",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "duplicate",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "tags": [],
+      "closed_at": "2026-04-21T00:00:00.000Z",
+      "tags": [
+        "partner-api",
+        "rate-limit"
+      ],
       "files": [],
-      "correction_type": "code",
+      "correction_type": "process",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
+      "owner": "platform",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
-      "duplicate_of": null,
+      "duplicate_of": "L16-03",
       "deferred_to_wave": null,
-      "note": null
+      "note": "Fechado como **duplicate de L16-03** (\"sem API pública para\nparceiros B2B\", critical em Onda 0). A demanda de quota por\nparceiro (API key tier free/pro/enterprise + scopes + quota\ndiária) só faz sentido depois que L16-03 entregar o\n`api_keys` table + middleware de auth de parceiro. Quando\nesse trabalho começar, este finding será rastreado dentro da\nspec de L16-03 — duplicar aqui seria criar drift.\n"
     },
     {
       "id": "L15-01",
@@ -8570,26 +8694,31 @@
       "lens": 15,
       "title": "Sem landing pages SEO-otimizadas",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "mobile",
-        "portal"
+        "portal",
+        "marketing",
+        "seo"
       ],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/marketing/SEO_LANDING_STRATEGY.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "marketing+frontend",
+      "runbook": "docs/marketing/SEO_LANDING_STRATEGY.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
-      "deferred_to_wave": null,
-      "note": null
+      "deferred_to_wave": 3,
+      "note": "Estratégia ratificada em\n`docs/marketing/SEO_LANDING_STRATEGY.md`. **MDX-driven\nmarketing route group** em `app/(marketing)/[slug]` lendo\n`_content/*.mdx` com Metadata + JsonLd\n(`SportsActivity`/`Article`) + sitemap automático +\nprefetch para `/signup?utm_source=seo`. Wave-3 launch set\nde 10 páginas selecionadas por keyword research pt-BR\n(volumes 590-9.9k MoM). Lighthouse target ≥ 95. Métricas\n+ retire criteria mensais. CMS rejeitado em v1 (MDX +\nGitHub PR é suficiente para < 5 edits/mês; migração para\nSanity simples se cresce).\n"
     },
     {
       "id": "L15-06",
@@ -8597,25 +8726,31 @@
       "lens": 15,
       "title": "Sem A/B testing framework",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
-        "ux"
+        "ux",
+        "platform",
+        "experimentation"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/runbooks/AB_TESTING_FRAMEWORK.md"
+      ],
+      "correction_type": "spec",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "product+platform",
+      "runbook": "docs/runbooks/AB_TESTING_FRAMEWORK.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
-      "deferred_to_wave": null,
-      "note": null
+      "deferred_to_wave": 3,
+      "note": "Decisão ratificada em\n`docs/runbooks/AB_TESTING_FRAMEWORK.md`. **GrowthBook\nself-hosted no Render + PostHog backend**. Variant\nassignment via stable hash de `user_id`/`device_id`,\nmutually-exclusive namespaces para experimentos\nrelacionados, holdout 5%. Eventos `experiment.assigned` em\n`product_events` (L08-09 catalog) → SQL joins sem nova\npipeline. Guardrails: SRM check diário, auto-stop em\nregressão de signup_rate/error_rate/withdraw_completion,\nmobile rollout 24h após portal, registry obrigatório em\n`EXPERIMENT_REGISTRY.md`. CI guard\n`audit:no-experiments-on-finance` bloqueia\n`getFeatureValue` em `app/api/{custody,swap,coins,\ndistribute-coins,checkout}`. Implementação Wave 3.\n"
     },
     {
       "id": "L15-07",
@@ -8623,29 +8758,31 @@
       "lens": 15,
       "title": "Wrapped (já existe) não é compartilhável fora do app",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "edge-function",
         "seo"
       ],
       "files": [
-        "supabase/functions/generate-wrapped/"
+        "docs/marketing/WRAPPED_SOCIAL_SHARING.md"
       ],
-      "correction_type": "process",
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "marketing+platform",
+      "runbook": "docs/marketing/WRAPPED_SOCIAL_SHARING.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Spec ratificado em `docs/marketing/WRAPPED_SOCIAL_SHARING.md`.\nDecisão: página pública opt-in em `/wrapped/[year]/[slug]` com slug\nassinado, OG image gerado estaticamente, e tabela `wrapped_publications`\npara controle de consent + revogação. Excluímos PII e métricas\nsensíveis (endereço, posição em ranking financeiro). Implementação\nWave 3.\n"
     },
     {
       "id": "L15-08",
@@ -8653,27 +8790,29 @@
       "lens": 15,
       "title": "Sem push segmentation",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "edge-function"
       ],
       "files": [
-        "supabase/functions/send-push"
+        "docs/marketing/PUSH_SEGMENTATION_FRAMEWORK.md"
       ],
-      "correction_type": "process",
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "marketing+platform",
+      "runbook": "docs/marketing/PUSH_SEGMENTATION_FRAMEWORK.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Spec ratificado em `docs/marketing/PUSH_SEGMENTATION_FRAMEWORK.md`.\nDecisão: segmentos definidos em SQL via DSL JSONB AST armazenada em\n`user_segments`, com console de marketing para CMO. Filtro de\nconsent (opt-in marketing) é aplicado server-side e não pode ser\ndesligado pelo console. Frequency-cap por usuário (max 2 marketing\npushes/semana). Implementação Wave 3.\n"
     },
     {
       "id": "L16-01",
@@ -8899,26 +9038,30 @@
       "lens": 16,
       "title": "TrainingPeaks OAuth client credentials em env",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "integration",
         "edge-function"
       ],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/integrations/PARTNER_SAAS_TIERING.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "platform+integrations",
+      "runbook": "docs/integrations/PARTNER_SAAS_TIERING.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Consolidado em `docs/integrations/PARTNER_SAAS_TIERING.md`\n(L16-07 + L16-09 + L16-10). Decisão: por tier, contas Business+\npodem registrar suas próprias `client_id/client_secret` em\n`integration_credentials` (encriptados via pgsodium); credenciais\nglobais ficam apenas para Starter/Pro. Implementação faseada Wave 3+.\n"
     },
     {
       "id": "L16-08",
@@ -8926,25 +9069,29 @@
       "lens": 16,
       "title": "Sem marketplace de treinos/planos",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "migration"
       ],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/integrations/MARKETPLACE_TRAINING_PLANS.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "product+platform",
+      "runbook": "docs/integrations/MARKETPLACE_TRAINING_PLANS.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Spec ratificado em `docs/integrations/MARKETPLACE_TRAINING_PLANS.md`.\nDecisão: `plan_listings` + `plan_purchases` com checkout via Stripe\n(não OmniCoin em v1). Receita de marketplace flui pela infra\nexistente de `platform_revenue` + `custody`. Refund/chargeback\ntratados pelo webhook Stripe já estabilizado (L18-02). Implementação\nWave 3+.\n"
     },
     {
       "id": "L16-09",
@@ -8952,23 +9099,27 @@
       "lens": 16,
       "title": "SSO SAML/OIDC para enterprise",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [],
-      "files": [],
-      "correction_type": "config",
+      "files": [
+        "docs/integrations/PARTNER_SAAS_TIERING.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "platform+integrations",
+      "runbook": "docs/integrations/PARTNER_SAAS_TIERING.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Coberto em `docs/integrations/PARTNER_SAAS_TIERING.md` (consolidação\nL16-07 + L16-09 + L16-10). Decisão: SSO SAML/OIDC apenas para tier\nEnterprise via `sso_providers` nativo do Supabase Auth, com\nauto-provisioning controlado e SCIM como follow-up. Wave 3.\n"
     },
     {
       "id": "L16-10",
@@ -8976,25 +9127,29 @@
       "lens": 16,
       "title": "Sem tier \"free trial\" / sandbox para parceiros",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "testing"
       ],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/integrations/PARTNER_SAAS_TIERING.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "platform+integrations",
+      "runbook": "docs/integrations/PARTNER_SAAS_TIERING.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Coberto em `docs/integrations/PARTNER_SAAS_TIERING.md`. Decisão:\nsandbox em projeto Supabase separado, modo fake-money explícito,\nAPI keys com prefixo `or_test_`, dados regenerados semanalmente.\nFree trial 30 dias para tier Pro+. Wave 3.\n"
     },
     {
       "id": "L17-01",
@@ -9342,28 +9497,31 @@
       "lens": 17,
       "title": "Sem shared types TS/Dart entre portal e mobile",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "portal"
       ],
       "files": [
-        "portal/src/lib/schemas.ts"
+        "portal/src/lib/schemas.ts",
+        "docs/runbooks/SHARED_TYPES_TS_DART.md"
       ],
-      "correction_type": "process",
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "platform",
+      "runbook": "docs/runbooks/SHARED_TYPES_TS_DART.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
-      "deferred_to_wave": null,
-      "note": null
+      "deferred_to_wave": 3,
+      "note": "Estratégia ratificada em\n`docs/runbooks/SHARED_TYPES_TS_DART.md`. **OpenAPI 3.1 como\nsource of truth**, emitido pelo portal a partir do registry\nZod (L14-01) e consumido por `@hey-api/openapi-ts` (TS) e\n`openapi_generator` (Dart) na CI. Migração 4-fase deferred\npara Wave 3 (toca toda a camada de DTOs do mobile +\nsignificativa do portal). Mitigações em produção hoje:\nregistry OpenAPI L14-01 + CI guard de event catalog L08-09 +\npolítica manual de PR review.\n"
     },
     {
       "id": "L18-01",
@@ -10462,28 +10620,32 @@
       "lens": 20,
       "title": "Chaos engineering inexistente",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "rate-limit",
         "mobile",
         "edge-function",
         "testing"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/runbooks/CHAOS_ENGINEERING.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "sre+platform",
+      "runbook": "docs/runbooks/CHAOS_ENGINEERING.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Runbook ratificado em `docs/runbooks/CHAOS_ENGINEERING.md`.\nDecisão: 6 GameDays/ano (3 staging + 3 prod) com rotação de 6\ncenários cobrindo Redis, Edge, Postgres, Resend, rate-limit e\nStripe webhook. Sem Gremlin/Chaos Mesh — bash + Vercel CLI são\nsuficientes pro escala atual. Pre-flight checklist obriga error-\nbudget healthy e on-call ack. Reavalia quando time > 15 eng.\n"
     },
     {
       "id": "L20-10",
@@ -10560,27 +10722,29 @@
       "lens": 20,
       "title": "Capacity planning sem modelo",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile"
       ],
       "files": [
-        "docs/CAPACITY_PLANNING.md"
+        "docs/sre/CAPACITY_PLANNING.md"
       ],
-      "correction_type": "process",
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "sre+finance",
+      "runbook": "docs/sre/CAPACITY_PLANNING.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Modelo ratificado em `docs/sre/CAPACITY_PLANNING.md`. Curva\nMAU × req/MAU/mo × queries/req com 5 breakpoints (5k, 25k, 100k,\n500k, > 500k) e gatilhos de upgrade ANTES do limiar quando p95\npassar 50ms ou pool saturar. Reavaliação trimestral das constantes\ncontra dados reais (Vercel Analytics + business-health).\n"
     },
     {
       "id": "L20-13",
@@ -11053,28 +11217,32 @@
       "lens": 21,
       "title": "Recovery/sleep tracking ausente",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "edge-function",
         "personas",
         "athlete-pro"
       ],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/product/RECOVERY_SLEEP_TRACKING.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "product+mobile",
+      "runbook": "docs/product/RECOVERY_SLEEP_TRACKING.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Spec ratificado em `docs/product/RECOVERY_SLEEP_TRACKING.md`.\nDecisão: ingestão read-only de Garmin/Polar/Apple Health/Health\nConnect, sem entrada manual em v1. Score derivado 'Omni Readiness'\n(0-100) com baseline 28-day pessoal. Consent LGPD Art. 11\nseparado da auth do wearable; hard-delete on opt-out. Implementação\nWave 4.\n"
     },
     {
       "id": "L21-14",
@@ -11082,28 +11250,32 @@
       "lens": 21,
       "title": "Sem race predictor (VDOT/Riegel)",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "mobile",
         "edge-function",
         "personas",
         "athlete-pro"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/product/RACE_PREDICTOR.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "owner": "product",
+      "runbook": "docs/product/RACE_PREDICTOR.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Spec ratificado em `docs/product/RACE_PREDICTOR.md`. Decisão:\nestimador 100% client-side, blend Riegel + VDOT + McMillan-aprox\ncom ajuste de fitness (CTL) clamped em ±5%. Detecção automática\nde seed-race com 4 critérios (race tag, distância padrão, std-dev\nde pace, sem auto-pause). Sem trail/ultra > 100km e sem 'first-\never distance' (sugere time-trial). Implementação Wave 4.\n"
     },
     {
       "id": "L21-15",

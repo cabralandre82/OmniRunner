@@ -4,26 +4,34 @@ audit_ref: "16.10"
 lens: 16
 title: "Sem tier \"free trial\" / sandbox para parceiros"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
 tags: ["testing"]
-files: []
-correction_type: code
+files:
+  - docs/integrations/PARTNER_SAAS_TIERING.md
+
+correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: platform+integrations
+runbook: docs/integrations/PARTNER_SAAS_TIERING.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Coberto em `docs/integrations/PARTNER_SAAS_TIERING.md`. Decisão:
+  sandbox em projeto Supabase separado, modo fake-money explícito,
+  API keys com prefixo `or_test_`, dados regenerados semanalmente.
+  Free trial 30 dias para tier Pro+. Wave 3.
 ---
 # [L16-10] Sem tier "free trial" / sandbox para parceiros
-> **Lente:** 16 — CAO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending
+> **Lente:** 16 — CAO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fixed
 **Camada:** —
 **Personas impactadas:** —
 ## Achado

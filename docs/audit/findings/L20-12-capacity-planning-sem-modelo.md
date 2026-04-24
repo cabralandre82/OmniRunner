@@ -4,27 +4,34 @@ audit_ref: "20.12"
 lens: 20
 title: "Capacity planning sem modelo"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
 tags: ["mobile"]
 files:
-  - docs/CAPACITY_PLANNING.md
-correction_type: process
+  - docs/sre/CAPACITY_PLANNING.md
+correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: sre+finance
+runbook: docs/sre/CAPACITY_PLANNING.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Modelo ratificado em `docs/sre/CAPACITY_PLANNING.md`. Curva
+  MAU × req/MAU/mo × queries/req com 5 breakpoints (5k, 25k, 100k,
+  500k, > 500k) e gatilhos de upgrade ANTES do limiar quando p95
+  passar 50ms ou pool saturar. Reavaliação trimestral das constantes
+  contra dados reais (Vercel Analytics + business-health).
 ---
 # [L20-12] Capacity planning sem modelo
-> **Lente:** 20 — SRE · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending
+> **Lente:** 20 — SRE · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fixed
 **Camada:** —
 **Personas impactadas:** —
 ## Achado

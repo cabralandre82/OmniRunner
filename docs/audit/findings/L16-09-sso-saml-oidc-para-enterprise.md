@@ -4,26 +4,34 @@ audit_ref: "16.9"
 lens: 16
 title: "SSO SAML/OIDC para enterprise"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
 tags: []
-files: []
-correction_type: config
+files:
+  - docs/integrations/PARTNER_SAAS_TIERING.md
+
+correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: platform+integrations
+runbook: docs/integrations/PARTNER_SAAS_TIERING.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Coberto em `docs/integrations/PARTNER_SAAS_TIERING.md` (consolidação
+  L16-07 + L16-09 + L16-10). Decisão: SSO SAML/OIDC apenas para tier
+  Enterprise via `sso_providers` nativo do Supabase Auth, com
+  auto-provisioning controlado e SCIM como follow-up. Wave 3.
 ---
 # [L16-09] SSO SAML/OIDC para enterprise
-> **Lente:** 16 — CAO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending
+> **Lente:** 16 — CAO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fixed
 **Camada:** —
 **Personas impactadas:** —
 ## Achado

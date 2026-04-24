@@ -4,26 +4,36 @@ audit_ref: "21.14"
 lens: 21
 title: "Sem race predictor (VDOT/Riegel)"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
 tags: ["mobile", "edge-function", "personas", "athlete-pro"]
-files: []
-correction_type: process
+files:
+  - docs/product/RACE_PREDICTOR.md
+
+correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: product
+runbook: docs/product/RACE_PREDICTOR.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Spec ratificado em `docs/product/RACE_PREDICTOR.md`. Decisão:
+  estimador 100% client-side, blend Riegel + VDOT + McMillan-aprox
+  com ajuste de fitness (CTL) clamped em ±5%. Detecção automática
+  de seed-race com 4 critérios (race tag, distância padrão, std-dev
+  de pace, sem auto-pause). Sem trail/ultra > 100km e sem 'first-
+  ever distance' (sugere time-trial). Implementação Wave 4.
 ---
 # [L21-14] Sem race predictor (VDOT/Riegel)
-> **Lente:** 21 — Atleta Pro · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending
+> **Lente:** 21 — Atleta Pro · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fixed
 **Camada:** —
 **Personas impactadas:** —
 ## Achado
