@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T01:56:48.319Z",
+  "generated_at": "2026-04-24T10:40:09.422Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -10,8 +10,8 @@
     "na": 12
   },
   "by_status": {
-    "fixed": 307,
-    "fix-pending": 29,
+    "fixed": 308,
+    "fix-pending": 28,
     "duplicate": 4,
     "wont-fix": 8
   },
@@ -230,9 +230,11 @@
       "lens": 1,
       "title": "POST /api/swap — Criação/aceite/cancelamento",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-21T00:00:00.000Z",
+      "closed_at": "2026-04-21T00:00:00.000Z",
       "tags": [
         "finance",
         "rate-limit",
@@ -243,20 +245,20 @@
       "files": [
         "portal/src/app/api/swap/route.ts"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
         8046248
       ],
-      "owner": "unassigned",
+      "owner": "platform+security",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Rate-limit por-ação em `portal/src/app/api/swap/route.ts`\n(commit 8046248, K7): action=accept ganha sub-bucket\ndedicado (3/min/group) em cima do POST-global (10/min)\npara impedir race-accept de ofertas recém-criadas. Bucket\npor `groupId` autenticado (IP é fallback apenas para\nrequisições sem grupo, o que `requireAdminMaster()` já\nbloqueia upstream). `onMissingRedis: \"fail_closed\"` segue\npolítica L01-21/L02-15 (financeiro fecha quando Redis\nindisponível). Observabilidade (`logger.error` com\n`{action, groupId}`) já estava no caminho por L17-01\n(withErrorHandler universal). Book público é decisão\nde produto (L09 B2B marketplace) — não-bug, não-fix.\n"
     },
     {
       "id": "L01-06",

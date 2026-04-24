@@ -4,29 +4,42 @@ audit_ref: "1.5"
 lens: 1
 title: "POST /api/swap — Criação/aceite/cancelamento"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
 tags: ["finance", "rate-limit", "mobile", "portal", "observability"]
 files:
   - portal/src/app/api/swap/route.ts
-correction_type: process
+correction_type: code
 test_required: false
 tests: []
 linked_issues: []
 linked_prs:
   - 8046248
-
-owner: unassigned
+owner: platform+security
 runbook: null
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Rate-limit por-ação em `portal/src/app/api/swap/route.ts`
+  (commit 8046248, K7): action=accept ganha sub-bucket
+  dedicado (3/min/group) em cima do POST-global (10/min)
+  para impedir race-accept de ofertas recém-criadas. Bucket
+  por `groupId` autenticado (IP é fallback apenas para
+  requisições sem grupo, o que `requireAdminMaster()` já
+  bloqueia upstream). `onMissingRedis: "fail_closed"` segue
+  política L01-21/L02-15 (financeiro fecha quando Redis
+  indisponível). Observabilidade (`logger.error` com
+  `{action, groupId}`) já estava no caminho por L17-01
+  (withErrorHandler universal). Book público é decisão
+  de produto (L09 B2B marketplace) — não-bug, não-fix.
 ---
 # [L01-05] POST /api/swap — Criação/aceite/cancelamento
-> **Lente:** 1 — CISO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending
+> **Lente:** 1 — CISO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fixed
 **Camada:** PORTAL
 **Personas impactadas:** Assessorias compradora e vendedora
 ## Achado
