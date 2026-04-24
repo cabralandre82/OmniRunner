@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T16:43:30.739Z",
+  "generated_at": "2026-04-24T16:44:35.928Z",
   "total": 351,
   "by_severity": {
     "high": 125,
@@ -10,10 +10,10 @@
     "na": 7
   },
   "by_status": {
-    "fixed": 325,
+    "fixed": 328,
     "not-reproducible": 3,
     "duplicate": 8,
-    "fix-pending": 7,
+    "fix-pending": 4,
     "wont-fix": 8
   },
   "by_wave": {
@@ -4573,9 +4573,11 @@
       "lens": 5,
       "title": "Workout: bloco repeat sem terminador corrompe passagem para .FIT",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-24T00:00:00.000Z",
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "workout",
         "fit-export",
@@ -4601,7 +4603,10 @@
         "tools/test_fit_generation.js"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "f49e1c6",
+        "d890dc2"
+      ],
       "owner": "platform-workout",
       "runbook": null,
       "effort_points": 5,
@@ -4616,9 +4621,11 @@
       "lens": 5,
       "title": "Workout: heurística inRepeat divergente entre portal UI e FIT encoder",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-24T00:00:00.000Z",
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "workout",
         "fit-export",
@@ -4640,7 +4647,9 @@
         "portal/src/lib/workout/expand-repeats.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "f49e1c6"
+      ],
       "owner": "platform-workout",
       "runbook": null,
       "effort_points": 3,
@@ -4657,9 +4666,11 @@
       "lens": 5,
       "title": "AI parse-workout: block_type inválido trocado silenciosamente por steady",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-24T00:00:00.000Z",
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "workout",
         "ai",
@@ -4678,7 +4689,10 @@
         "portal/src/app/api/training-plan/ai/parse-workout/route.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "f49e1c6",
+        "d890dc2"
+      ],
       "owner": "platform-workout",
       "runbook": null,
       "effort_points": 3,

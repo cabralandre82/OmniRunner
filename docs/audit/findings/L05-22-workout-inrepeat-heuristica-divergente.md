@@ -4,9 +4,11 @@ audit_ref: "5.22"
 lens: 5
 title: "Workout: heurística inRepeat divergente entre portal UI e FIT encoder"
 severity: high
-status: fix-pending
+status: fixed
 wave: 0
 discovered_at: 2026-04-24
+fixed_at: 2026-04-24
+closed_at: 2026-04-24
 tags: ["workout", "fit-export", "consistency", "coach"]
 files:
   - portal/src/lib/workout/expand-repeats.ts
@@ -21,7 +23,8 @@ test_required: true
 tests:
   - portal/src/lib/workout/expand-repeats.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - f49e1c6
 owner: platform-workout
 runbook: null
 effort_points: 3

@@ -4,9 +4,11 @@ audit_ref: "5.21"
 lens: 5
 title: "Workout: bloco repeat sem terminador corrompe passagem para .FIT"
 severity: critical
-status: fix-pending
+status: fixed
 wave: 0
 discovered_at: 2026-04-24
+fixed_at: 2026-04-24
+closed_at: 2026-04-24
 tags: ["workout", "fit-export", "watch", "coach", "go-to-market"]
 files:
   - supabase/migrations/20260424130000_l05_21_workout_repeat_terminator.sql
@@ -24,7 +26,9 @@ tests:
   - portal/src/lib/workout/expand-repeats.test.ts
   - tools/test_fit_generation.js
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - f49e1c6
+  - d890dc2
 owner: platform-workout
 runbook: null
 effort_points: 5

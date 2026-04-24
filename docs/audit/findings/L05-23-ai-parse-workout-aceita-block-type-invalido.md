@@ -4,9 +4,11 @@ audit_ref: "5.23"
 lens: 5
 title: "AI parse-workout: block_type inválido trocado silenciosamente por steady"
 severity: high
-status: fix-pending
+status: fixed
 wave: 0
 discovered_at: 2026-04-24
+fixed_at: 2026-04-24
+closed_at: 2026-04-24
 tags: ["workout", "ai", "validation", "coach"]
 files:
   - portal/src/app/api/training-plan/ai/parse-workout/route.ts
@@ -18,7 +20,9 @@ tests:
   - portal/src/lib/workout/validate.test.ts
   - portal/src/app/api/training-plan/ai/parse-workout/route.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs:
+  - f49e1c6
+  - d890dc2
 owner: platform-workout
 runbook: null
 effort_points: 3
