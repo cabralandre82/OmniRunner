@@ -122,7 +122,16 @@ export default async function FinancialDashboardPage() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Link
+          href="/financial/agenda"
+          className="rounded-xl border border-border bg-surface p-6 shadow-sm hover:border-blue-300 hover:shadow transition"
+        >
+          <h3 className="font-semibold text-content-primary">Agenda de Recebíveis</h3>
+          <p className="mt-1 text-sm text-content-secondary">
+            Faturas por vencimento, KPIs 7/30 dias e vencidas
+          </p>
+        </Link>
         <Link
           href="/financial/subscriptions"
           className="rounded-xl border border-border bg-surface p-6 shadow-sm hover:border-blue-300 hover:shadow transition"
