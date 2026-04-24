@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { calcPercentFee } from "@/lib/money";
+import { buildOrEqExpression } from "@/lib/security/uuid-guard";
 
 export interface SwapOrder {
   id: string;
@@ -328,7 +329,14 @@ export async function getSwapOrdersForGroup(
     const { data } = await db
       .from("swap_orders")
       .select("*")
-      .or(`seller_group_id.eq.${groupId},buyer_group_id.eq.${groupId}`)
+      .or(
+        buildOrEqExpression(
+          "seller_group_id",
+          "buyer_group_id",
+          groupId,
+          "groupId",
+        ),
+      )
       .order("created_at", { ascending: false });
 
     return data ?? [];

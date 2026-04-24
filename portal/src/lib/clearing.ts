@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { auditLog } from "@/lib/audit";
 import { assertInvariantsHealthy } from "@/lib/custody";
 import { calcPercentFee, subtractMoney } from "@/lib/money";
+import { assertUuid, buildOrEqExpression } from "@/lib/security/uuid-guard";
 
 export interface ClearingEvent {
   id: string;
@@ -243,12 +244,19 @@ export async function getSettlementsForGroup(
     .order("created_at", { ascending: false });
 
   if (role === "creditor") {
+    assertUuid(groupId, "groupId");
     query = query.eq("creditor_group_id", groupId);
   } else if (role === "debtor") {
+    assertUuid(groupId, "groupId");
     query = query.eq("debtor_group_id", groupId);
   } else {
     query = query.or(
-      `creditor_group_id.eq.${groupId},debtor_group_id.eq.${groupId}`,
+      buildOrEqExpression(
+        "creditor_group_id",
+        "debtor_group_id",
+        groupId,
+        "groupId",
+      ),
     );
   }
 
