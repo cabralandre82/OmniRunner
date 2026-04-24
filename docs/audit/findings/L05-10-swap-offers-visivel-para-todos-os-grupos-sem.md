@@ -4,23 +4,35 @@ audit_ref: "5.10"
 lens: 5
 title: "Swap offers: visível para todos os grupos, sem filtro de contraparte"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["migration"]
-files: []
-correction_type: process
-test_required: false
-tests: []
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["migration", "rls", "marketplace", "fixed"]
+files:
+  - supabase/migrations/20260421800000_l05_10_swap_orders_visibility.sql
+  - tools/audit/check-k2-sql-fixes.ts
+correction_type: code
+test_required: true
+tests:
+  - "supabase/migrations/20260421800000_l05_10_swap_orders_visibility.sql (in-migration self-test)"
+  - "npm run audit:k2-sql-fixes"
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform
 runbook: null
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  K2 batch — swap_orders gains visibility ('public' | 'private' | 'whitelist')
+  + whitelist_group_ids uuid[]. Default 'public' preserves legacy behavior;
+  sellers concerned about competitor pricing can opt into 'private' (only
+  matched buyer sees) or 'whitelist' (only listed groups see). New RLS
+  read policy filters accordingly. Companion CHECK ensures whitelist_group_ids
+  is empty unless visibility='whitelist'.
 ---
 # [L05-10] Swap offers: visível para todos os grupos, sem filtro de contraparte
 > **Lente:** 5 — CPO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

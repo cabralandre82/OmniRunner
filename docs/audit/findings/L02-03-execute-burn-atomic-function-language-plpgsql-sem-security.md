@@ -4,23 +4,33 @@ audit_ref: "2.3"
 lens: 2
 title: "execute_burn_atomic — Function LANGUAGE plpgsql sem SECURITY DEFINER vs. chamadas a funções SECURITY DEFINER"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["finance", "atomicity", "rls"]
-files: []
-correction_type: process
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["finance", "atomicity", "rls", "fixed", "duplicate"]
+files:
+  - supabase/migrations/20260417140000_execute_burn_atomic_hardening.sql
+correction_type: code
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform
 runbook: null
 effort_points: 2
 blocked_by: []
-duplicate_of: null
+duplicate_of: L02-02
 deferred_to_wave: null
-note: null
+note: |
+  K2 batch — closed as covered by L02-02 fix. Migration
+  20260417140000_execute_burn_atomic_hardening.sql line 119 already
+  declares `execute_burn_atomic` as `SECURITY DEFINER` with
+  `SET search_path = public, pg_temp` and `SET lock_timeout = '2s'`.
+  GRANT EXECUTE is restricted to service_role (line 284). The proposed
+  correction in this finding is therefore satisfied; tracking as
+  duplicate_of L02-02 to keep the registry clean.
 ---
 # [L02-03] execute_burn_atomic — Function LANGUAGE plpgsql sem SECURITY DEFINER vs. chamadas a funções SECURITY DEFINER
 > **Lente:** 2 — CTO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

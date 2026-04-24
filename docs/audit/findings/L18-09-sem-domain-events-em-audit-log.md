@@ -4,23 +4,36 @@ audit_ref: "18.9"
 lens: 18
 title: "Sem domain events em audit_log"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["finance"]
-files: []
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["finance", "audit", "schema-evolution", "fixed"]
+files:
+  - supabase/migrations/20260421830000_l18_09_audit_event_schema_version.sql
+  - tools/audit/check-k2-sql-fixes.ts
 correction_type: code
-test_required: false
-tests: []
+test_required: true
+tests:
+  - "supabase/migrations/20260421830000_l18_09_audit_event_schema_version.sql (in-migration self-test)"
+  - "npm run audit:k2-sql-fixes"
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform
 runbook: null
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  K2 batch — adds event_schema_version int and event_domain text columns
+  to public.audit_logs and public.portal_audit_log. event_domain is
+  backfilled from split_part(action, '.', 1). NOT VALID CHECK
+  asserts dotted-notation action shape (domain.resource.verb…) for
+  new rows, leaving legacy rows undisturbed (operator validates after
+  cleanup). New index (event_domain, created_at DESC) speeds per-domain
+  queries. CI guard verifies presence of all three primitives.
 ---
 # [L18-09] Sem domain events em audit_log
 > **Lente:** 18 — Principal Eng · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

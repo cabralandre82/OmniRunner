@@ -4,24 +4,39 @@ audit_ref: "1.49"
 lens: 1
 title: "processBurnForClearing — Audit actor_id = \"system\""
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["finance", "portal"]
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["finance", "portal", "audit", "fixed"]
 files:
   - portal/src/lib/clearing.ts
-correction_type: process
-test_required: false
-tests: []
+  - portal/src/lib/audit.ts
+  - supabase/migrations/20260421780000_l01_49_audit_log_actor_kind.sql
+  - tools/audit/check-k2-sql-fixes.ts
+correction_type: code
+test_required: true
+tests:
+  - "supabase/migrations/20260421780000_l01_49_audit_log_actor_kind.sql (in-migration self-test)"
+  - "npm run audit:k2-sql-fixes"
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform
 runbook: null
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  K2 batch — audit_log schema change: portal_audit_log.actor_id was
+  `UUID NOT NULL REFERENCES auth.users(id)`. auditLog({ actorId: "system" })
+  was failing the cast and the row was lost (only logger.error). Fix:
+    • new actor_kind text NOT NULL DEFAULT 'user'
+    • actor_id is now NULLABLE
+    • CHECK guarantees user⇒actor_id NOT NULL, system⇒actor_id NULL
+  audit.ts now detects actorId === "system" and writes actor_id=NULL,
+  actor_kind='system'. Existing rows backfilled to actor_kind='user'.
 ---
 # [L01-49] processBurnForClearing — Audit actor_id = "system"
 > **Lente:** 1 — CISO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending

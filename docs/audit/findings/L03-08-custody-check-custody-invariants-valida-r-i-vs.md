@@ -4,23 +4,38 @@ audit_ref: "3.8"
 lens: 3
 title: "Custody check_custody_invariants — Valida R_i vs M_i mas não total_settled"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
-tags: ["finance", "migration", "reliability"]
-files: []
-correction_type: process
-test_required: false
-tests: []
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
+tags: ["finance", "migration", "reliability", "invariants", "fixed"]
+files:
+  - supabase/migrations/20260228170000_custody_gaps.sql
+  - supabase/migrations/20260421790000_l03_08_global_conservation_check.sql
+  - tools/audit/check-k2-sql-fixes.ts
+correction_type: code
+test_required: true
+tests:
+  - "supabase/migrations/20260421790000_l03_08_global_conservation_check.sql (in-migration self-test)"
+  - "npm run audit:k2-sql-fixes"
 linked_issues: []
 linked_prs: []
-owner: unassigned
+owner: platform
 runbook: null
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  K2 batch — adds the third invariant check ("Check 3: global USD
+  conservation") to public.check_custody_invariants(). It compares
+  SUM(custody_accounts.total_deposited_usd) against
+    SUM(confirmed deposits) − SUM(completed withdrawals)
+                                              − SUM(platform_revenue)
+  and emits a row tagged 'global_deposit_mismatch' whenever |diff| > 0.01.
+  Tolerance is 1¢ to absorb ROUND noise from settlement. CI guard asserts
+  the new check is present in pg_get_functiondef.
 ---
 # [L03-08] Custody check_custody_invariants — Valida R_i vs M_i mas não total_settled
 > **Lente:** 3 — CFO · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending
