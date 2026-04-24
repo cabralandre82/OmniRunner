@@ -108,7 +108,7 @@ jobs:
           git tag "v${{ steps.bump.outputs.version }}"
           git push origin master --tags
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
