@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-24 22:16:35 UTC.
+> Atualizado em 2026-04-24 22:23:32 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -193,7 +193,7 @@ Total: **363** findings.
 | 🟠 high | ✅ fixed | [L09-15](./findings/L09-15-agenda-de-recebiveis-ausente.md) | 0 | L09 · CRO | Portal financeiro sem agenda de recebíveis — coach voa no escuro | platform-finance |
 | 🟠 high | ✅ fixed | [L09-16](./findings/L09-16-atleta-sem-tela-minhas-mensalidades.md) | 0 | L09 · CRO | Atleta sem tela 'Minhas mensalidades' — não vê o que deve nem o que pagou | platform-finance |
 | 🟡 medium | ✅ fixed | [L09-17](./findings/L09-17-atleta-sem-alerta-mensalidade-vencendo.md) | 0 | L09 · CRO | Atleta sem alerta in-app quando mensalidade está próxima do vencimento | platform-finance |
-| 🔴 critical | ⏳ fix-pending | [L09-18](./findings/L09-18-divergencia-asaas-webhook-nao-escreve-em-athlete-subscription-invoices.md) | 1 | L09 · CRO | Divergência: Asaas webhook não escreve em athlete_subscription_invoices (modelo canônico) | platform-finance |
+| 🔴 critical | ✅ fixed | [L09-18](./findings/L09-18-divergencia-asaas-webhook-nao-escreve-em-athlete-subscription-invoices.md) | 1 | L09 · CRO | Divergência: Asaas webhook não escreve em athlete_subscription_invoices (modelo canônico) | platform-finance |
 | 🔴 critical | ✅ fixed | [L10-01](./findings/L10-01-nenhum-bug-bounty-disclosure-policy.md) | 1 | L10 · CSO | Nenhum bug bounty / disclosure policy | security |
 | 🔴 critical | ✅ fixed | [L10-02](./findings/L10-02-threat-model-formal-nao-documentado.md) | 1 | L10 · CSO | Threat model formal não documentado | security |
 | 🔴 critical | ✅ fixed | [L10-03](./findings/L10-03-service-role-key-distribuida-amplamente.md) | 1 | L10 · CSO | Service-role key distribuída amplamente | unassigned |

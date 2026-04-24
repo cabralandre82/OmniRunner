@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T22:16:35.216Z",
+  "generated_at": "2026-04-24T22:23:32.496Z",
   "total": 363,
   "by_severity": {
     "high": 130,
@@ -10,10 +10,10 @@
     "na": 7
   },
   "by_status": {
-    "fixed": 339,
+    "fixed": 340,
     "not-reproducible": 3,
     "duplicate": 8,
-    "fix-pending": 5,
+    "fix-pending": 4,
     "wont-fix": 8
   },
   "by_wave": {
@@ -7057,11 +7057,11 @@
       "lens": 9,
       "title": "Divergência: Asaas webhook não escreve em athlete_subscription_invoices (modelo canônico)",
       "severity": "critical",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 1,
       "discovered_at": "2026-04-24T00:00:00.000Z",
-      "fixed_at": null,
-      "closed_at": null,
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "finance",
         "billing",
@@ -7083,7 +7083,9 @@
         "tools/audit/check-billing-models-converged.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "425fccf"
+      ],
       "owner": "platform-finance",
       "runbook": "docs/runbooks/ASAAS_WEBHOOK_RUNBOOK.md",
       "effort_points": 5,

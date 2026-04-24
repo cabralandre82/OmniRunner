@@ -4,11 +4,11 @@ audit_ref: "9.18"
 lens: 9
 title: "Divergência: Asaas webhook não escreve em athlete_subscription_invoices (modelo canônico)"
 severity: critical
-status: fix-pending
+status: fixed
 wave: 1
 discovered_at: 2026-04-24
-fixed_at: null
-closed_at: null
+fixed_at: 2026-04-24
+closed_at: 2026-04-24
 tags: ["finance", "billing", "webhook", "asaas", "subscriptions", "divergence", "ADR-0010"]
 files:
   - supabase/functions/asaas-webhook/index.ts
@@ -20,7 +20,7 @@ test_required: true
 tests:
   - tools/audit/check-billing-models-converged.ts
 linked_issues: []
-linked_prs: []
+linked_prs: ["425fccf"]
 owner: platform-finance
 runbook: docs/runbooks/ASAAS_WEBHOOK_RUNBOOK.md
 effort_points: 5
@@ -196,3 +196,19 @@ F-CON-1/2/3 das 3 fases) em
   (F-CON-1). Severidade `critical` porque com L09-17 já em produção
   o falso-positivo de alerta vermelho dispara churn por
   desconfiança.
+- `2026-04-24` — **Fixed** (commit `425fccf`). Migration
+  `20260424180000_l09_18_subscription_bridge.sql` ship 3 funções
+  (`fn_subscription_bridge_mark_paid_from_legacy`,
+  `fn_find_subscription_models_divergence`,
+  `fn_assert_subscription_models_converged`) com pattern fail-soft
+  WHEN OTHERS / fail-loud insufficient_privilege. Webhook
+  `asaas-webhook/index.ts` chama o bridge em
+  `PAYMENT_CONFIRMED|PAYMENT_RECEIVED` (fail-open). CI guard
+  `audit:billing-models-converged` (43 invariantes estáticas) +
+  `npm run audit:billing-models-converged`. Runbook
+  `ASAAS_WEBHOOK_RUNBOOK.md §9` documenta diagnóstico, 7 reasons,
+  recipe de reconciliação manual. Validado E2E com setup sintético
+  (group + atleta + legacy_sub + new_sub + pending invoice):
+  detector encontrou 1, bridge marcou paid (was_paid_now=true),
+  invoice ficou status=paid + paid_at preenchido, detector voltou a
+  0, segundo call retornou already_paid (idempotência ok).
