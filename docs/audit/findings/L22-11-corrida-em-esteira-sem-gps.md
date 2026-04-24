@@ -4,26 +4,36 @@ audit_ref: "22.11"
 lens: 22
 title: "Corrida em esteira sem GPS"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
 tags: ["anti-cheat", "gps", "personas", "athlete-amateur"]
-files: []
-correction_type: process
+files:
+  - docs/product/ATHLETE_AMATEUR_BASELINE.md
+
+correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: mobile+anti-cheat
+runbook: docs/product/ATHLETE_AMATEUR_BASELINE.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Coberto em `docs/product/ATHLETE_AMATEUR_BASELINE.md`. Modo
+  treadmill com toggle no recording, distância pre-set (5/8/
+  10/15km), HR via BLE, cadência via accelerometer. Anti-cheat
+  L01-43 carve-out: skip GPS-checks, mantém pace/HR/duration
+  plausibility. Excluído de leaderboard GPS, incluído em
+  volume/streak/badges não-geo. Wave 4 fase H.
 ---
 # [L22-11] Corrida em esteira sem GPS
-> **Lente:** 22 — Atleta Amador · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending
+> **Lente:** 22 — Atleta Amador · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fixed
 **Camada:** —
 **Personas impactadas:** —
 ## Achado

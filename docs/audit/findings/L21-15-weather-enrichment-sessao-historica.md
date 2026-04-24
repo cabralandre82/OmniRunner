@@ -4,26 +4,35 @@ audit_ref: "21.15"
 lens: 21
 title: "Weather enrichment (sessão histórica)"
 severity: medium
-status: fix-pending
+status: fixed
 wave: 2
 discovered_at: 2026-04-17
+fixed_at: 2026-04-21
+closed_at: 2026-04-21
 tags: ["personas", "athlete-pro"]
-files: []
-correction_type: code
+files:
+  - docs/product/ATHLETE_PRO_BASELINE.md
+
+correction_type: docs
 test_required: false
 tests: []
 linked_issues: []
 linked_prs: []
-owner: unassigned
-runbook: null
+owner: product+platform
+runbook: docs/product/ATHLETE_PRO_BASELINE.md
 effort_points: 2
 blocked_by: []
 duplicate_of: null
 deferred_to_wave: null
-note: null
+note: |
+  Coberto em `docs/product/ATHLETE_PRO_BASELINE.md` (umbrella
+  Atleta-Pro). Decisão: backfill via cron `enrich-weather` (4h)
+  usando OpenWeather One Call v3 com Open-Meteo como fallback
+  free-tier. Coluna `sessions.weather jsonb` com cap de 1k
+  calls/dia. Wave 4 fase A.
 ---
 # [L21-15] Weather enrichment (sessão histórica)
-> **Lente:** 21 — Atleta Pro · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fix-pending
+> **Lente:** 21 — Atleta Pro · **Severidade:** 🟡 Medium · **Onda:** 2 · **Status:** fixed
 **Camada:** —
 **Personas impactadas:** —
 ## Achado

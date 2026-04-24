@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-24 01:47:03 UTC.
+> Atualizado em 2026-04-24 01:54:01 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -311,12 +311,12 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L21-12](./findings/L21-12-sem-team-dashboard-para-staff-tecnica.md) | 1 | L21 · Atleta Pro | Sem "team dashboard" para staff técnica | unassigned |
 | 🟡 medium | ✅ fixed | [L21-13](./findings/L21-13-recovery-sleep-tracking-ausente.md) | 2 | L21 · Atleta Pro | Recovery/sleep tracking ausente | product+mobile |
 | 🟡 medium | ✅ fixed | [L21-14](./findings/L21-14-sem-race-predictor-vdot-riegel.md) | 2 | L21 · Atleta Pro | Sem race predictor (VDOT/Riegel) | product |
-| 🟡 medium | ⏳ fix-pending | [L21-15](./findings/L21-15-weather-enrichment-sessao-historica.md) | 2 | L21 · Atleta Pro | Weather enrichment (sessão histórica) | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L21-16](./findings/L21-16-competicoes-oficiais-nao-categorizadas.md) | 2 | L21 · Atleta Pro | Competições oficiais não categorizadas | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L21-17](./findings/L21-17-sponsorship-disclosure-automatico-ausente.md) | 2 | L21 · Atleta Pro | Sponsorship disclosure automático ausente | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L21-18](./findings/L21-18-heart-rate-ble-drop-sem-recovery-visual.md) | 2 | L21 · Atleta Pro | Heart-rate BLE drop sem recovery visual | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L21-19](./findings/L21-19-post-run-nutrition-log-esquecido.md) | 2 | L21 · Atleta Pro | Post-run nutrition log esquecido | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L21-20](./findings/L21-20-privacy-mode-para-competicoes.md) | 2 | L21 · Atleta Pro | Privacy mode para competições | unassigned |
+| 🟡 medium | ✅ fixed | [L21-15](./findings/L21-15-weather-enrichment-sessao-historica.md) | 2 | L21 · Atleta Pro | Weather enrichment (sessão histórica) | product+platform |
+| 🟡 medium | ✅ fixed | [L21-16](./findings/L21-16-competicoes-oficiais-nao-categorizadas.md) | 2 | L21 · Atleta Pro | Competições oficiais não categorizadas | product+platform |
+| 🟡 medium | ✅ fixed | [L21-17](./findings/L21-17-sponsorship-disclosure-automatico-ausente.md) | 2 | L21 · Atleta Pro | Sponsorship disclosure automático ausente | product+legal |
+| 🟡 medium | ✅ fixed | [L21-18](./findings/L21-18-heart-rate-ble-drop-sem-recovery-visual.md) | 2 | L21 · Atleta Pro | Heart-rate BLE drop sem recovery visual | mobile+platform |
+| 🟡 medium | ✅ fixed | [L21-19](./findings/L21-19-post-run-nutrition-log-esquecido.md) | 2 | L21 · Atleta Pro | Post-run nutrition log esquecido | product+mobile |
+| 🟡 medium | ✅ fixed | [L21-20](./findings/L21-20-privacy-mode-para-competicoes.md) | 2 | L21 · Atleta Pro | Privacy mode para competições | product+platform |
 | 🔴 critical | ✅ fixed | [L22-01](./findings/L22-01-onboarding-nao-inclui-primeira-corrida-guiada.md) | 1 | L22 · Atleta Amador | Onboarding não inclui "primeira corrida guiada" | athlete-amateur |
 | 🔴 critical | ✅ fixed | [L22-02](./findings/L22-02-conceito-de-moeda-omnicoin-confunde-amador.md) | 1 | L22 · Atleta Amador | Conceito de "moeda / OmniCoin" confunde amador | unassigned |
 | 🔴 critical | 🚫 wont-fix | [L22-03](./findings/L22-03-plano-semanal-pessoal-ausente-para-solo-runner.md) | 1 | L22 · Atleta Amador | Plano semanal pessoal ausente para solo runner | product |
@@ -326,11 +326,11 @@ Total: **348** findings.
 | 🟠 high | ✅ fixed | [L22-07](./findings/L22-07-compra-parcelada-para-assessoria-brasileira.md) | 1 | L22 · Atleta Amador | Compra parcelada para assessoria brasileira | unassigned |
 | 🟠 high | ✅ fixed | [L22-08](./findings/L22-08-desafio-de-grupo-viralizacao-entre-amigos.md) | 1 | L22 · Atleta Amador | Desafio de grupo (viralização entre amigos) | unassigned |
 | 🟠 high | ✅ fixed | [L22-09](./findings/L22-09-progress-celebration-timida.md) | 1 | L22 · Atleta Amador | Progress celebration tímida | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L22-10](./findings/L22-10-apple-watch-wear-os-nativo.md) | 2 | L22 · Atleta Amador | Apple Watch / Wear OS nativo | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L22-11](./findings/L22-11-corrida-em-esteira-sem-gps.md) | 2 | L22 · Atleta Amador | Corrida em esteira sem GPS | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L22-12](./findings/L22-12-streaks-dias-consecutivos-correndo-sem-grace-period.md) | 2 | L22 · Atleta Amador | Streaks (dias consecutivos correndo) sem grace period | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L22-13](./findings/L22-13-menstrual-cycle-tracking-tabu-mas-importante.md) | 2 | L22 · Atleta Amador | Menstrual cycle tracking — tabu mas importante | unassigned |
-| 🟡 medium | ⏳ fix-pending | [L22-14](./findings/L22-14-recuperacao-ativa-nao-sugerida.md) | 2 | L22 · Atleta Amador | Recuperação ativa não sugerida | unassigned |
+| 🟡 medium | ✅ fixed | [L22-10](./findings/L22-10-apple-watch-wear-os-nativo.md) | 2 | L22 · Atleta Amador | Apple Watch / Wear OS nativo | mobile+platform |
+| 🟡 medium | ✅ fixed | [L22-11](./findings/L22-11-corrida-em-esteira-sem-gps.md) | 2 | L22 · Atleta Amador | Corrida em esteira sem GPS | mobile+anti-cheat |
+| 🟡 medium | ✅ fixed | [L22-12](./findings/L22-12-streaks-dias-consecutivos-correndo-sem-grace-period.md) | 2 | L22 · Atleta Amador | Streaks (dias consecutivos correndo) sem grace period | product |
+| 🟡 medium | ✅ fixed | [L22-13](./findings/L22-13-menstrual-cycle-tracking-tabu-mas-importante.md) | 2 | L22 · Atleta Amador | Menstrual cycle tracking — tabu mas importante | product+legal+platform |
+| 🟡 medium | ✅ fixed | [L22-14](./findings/L22-14-recuperacao-ativa-nao-sugerida.md) | 2 | L22 · Atleta Amador | Recuperação ativa não sugerida | product+coaching |
 | 🟡 medium | ⏳ fix-pending | [L22-15](./findings/L22-15-formato-de-exportacao-pessoal-apenas-tecnico.md) | 2 | L22 · Atleta Amador | Formato de exportação pessoal apenas técnico | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L22-16](./findings/L22-16-primeira-experiencia-de-injury-sem-onboarding.md) | 2 | L22 · Atleta Amador | Primeira experiência de injury sem onboarding | unassigned |
 | 🟡 medium | ⏳ fix-pending | [L22-17](./findings/L22-17-clima-local-nao-informa-decisao.md) | 2 | L22 · Atleta Amador | Clima local não informa decisão | unassigned |
