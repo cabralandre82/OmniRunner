@@ -138,6 +138,24 @@ class _MoreScreenState extends State<MoreScreen> {
             ),
           ]),
 
+          if (!_isStaff) _sectionCard(context, 'Financeiro', [
+            _ActionTile(
+              icon: Icons.receipt_long_outlined,
+              title: 'Minhas mensalidades',
+              subtitle:
+                  'Veja o que está pago, o que vence e pague direto pelo app',
+              onTap: (ctx) {
+                if (LoginRequiredSheet.guard(
+                  ctx,
+                  feature: 'Minhas mensalidades',
+                )) {
+                  return;
+                }
+                ctx.push(AppRoutes.myInvoices);
+              },
+            ),
+          ]),
+
           _sectionCard(context, 'Conta', [
             _ActionTile(
               icon: Icons.person,
