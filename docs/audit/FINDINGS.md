@@ -1,11 +1,11 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-24 17:35:11 UTC.
+> Atualizado em 2026-04-24 17:51:56 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
-Total: **355** findings.
+Total: **356** findings.
 
 | Sev | Status | ID | Onda | Lente | Título | Owner |
 |-----|--------|----|------|-------|--------|-------|
@@ -136,6 +136,7 @@ Total: **355** findings.
 | 🟡 medium | ✅ fixed | [L05-25](./findings/L05-25-portal-sem-export-fit-direto.md) | 0 | L05 · CPO | Portal: coach não consegue exportar .fit direto do template | platform-workout |
 | 🟠 high | ✅ fixed | [L05-26](./findings/L05-26-sem-log-de-export-fit.md) | 0 | L05 · CPO | Zero delivery confirmation: coach não sabe se .fit chegou ao relógio | platform-workout |
 | 🟡 medium | ✅ fixed | [L05-27](./findings/L05-27-device-hint-nunca-populado.md) | 0 | L05 · CPO | Export log: device_hint nunca é populado automaticamente | platform-workout |
+| 🟡 medium | ⏳ fix-pending | [L05-28](./findings/L05-28-rest-mode-semantica-ausente.md) | 0 | L05 · CPO | Rest/Recovery: semântica 'parado/caminhando/trote' não representada | platform-workout |
 | 🔴 critical | ✅ fixed | [L06-01](./findings/L06-01-zero-runbook-financeiro-custodia-clearing-swap-withdraw.md) | 1 | L06 · COO | Zero runbook financeiro — custódia, clearing, swap, withdraw | unassigned |
 | 🔴 critical | ✅ fixed | [L06-02](./findings/L06-02-health-check-exibe-contagem-exata-de-violacoes-info.md) | 1 | L06 · COO | Health check exibe contagem exata de violações (info leak operacional) | platform |
 | 🟠 high | ✅ fixed | [L06-03](./findings/L06-03-reconcile-wallets-cron-sem-alerta-em-drift-0.md) | 1 | L06 · COO | reconcile-wallets-cron sem alerta em drift > 0 | platform |

@@ -16,6 +16,7 @@ interface Block {
   target_hr_max: number | null;
   rpe_target: number | null;
   repeat_count: number | null;
+  rest_mode: "stand_still" | "walk" | "jog" | null;
   notes: string | null;
 }
 
@@ -53,6 +54,22 @@ const BLOCK_TYPES = [
 const BLOCK_TYPE_LABELS: Record<string, string> = Object.fromEntries(
   BLOCK_TYPES.map((bt) => [bt.value, bt.label]),
 );
+
+// L05-28
+const REST_MODE_SUFFIX: Record<string, string> = {
+  stand_still: " (parado)",
+  walk: " (caminhando)",
+  jog: " (trote)",
+};
+
+function formatBlockLabel(
+  blockType: string,
+  restMode: string | null | undefined,
+): string {
+  const base = BLOCK_TYPE_LABELS[blockType] ?? blockType;
+  if (!restMode) return base;
+  return base + (REST_MODE_SUFFIX[restMode] ?? "");
+}
 
 const BLOCK_TYPE_COLORS: Record<string, string> = {
   warmup:
@@ -344,7 +361,7 @@ export function TemplateBuilder({
                     "bg-gray-100 text-gray-800"
                   }`}
                 >
-                  {BLOCK_TYPE_LABELS[block.block_type] ?? block.block_type}
+                  {formatBlockLabel(block.block_type, block.rest_mode)}
                 </span>
                 <span className="flex-1 text-sm text-content-primary">
                   {details.join(" · ")}
@@ -452,11 +469,14 @@ function AddBlockForm({
   const [hrMax, setHrMax] = useState("");
   const [rpe, setRpe] = useState<number | null>(null);
   const [repeatCount, setRepeatCount] = useState("");
+  const [restMode, setRestMode] = useState<"stand_still" | "walk" | "jog" | "">("");
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
   const isRepeat = blockType === "repeat";
   const isRest = blockType === "rest";
+  const isRecovery = blockType === "recovery";
+  const restModeVisible = isRest || isRecovery;
 
   function parsePace(minStr: string, secStr: string): number | null {
     const m = parseInt(minStr);
@@ -481,6 +501,17 @@ function AddBlockForm({
     const dur = parseInt(durationMin);
     const dist = parseInt(distanceM);
 
+    // L05-28: rest_mode only meaningful for rest/recovery; jog only valid
+    // with recovery. Coerce silently so the CHECK constraint is never hit.
+    let finalRestMode: "stand_still" | "walk" | "jog" | null = null;
+    if (restModeVisible && restMode) {
+      if (restMode === "jog" && blockType !== "recovery") {
+        finalRestMode = null;
+      } else {
+        finalRestMode = restMode;
+      }
+    }
+
     onAdd({
       id: generateId(),
       order_index: 0,
@@ -495,6 +526,7 @@ function AddBlockForm({
       target_hr_max: isRest || isRepeat ? null : (parseInt(hrMax) || null),
       rpe_target: isRest || isRepeat ? null : rpe,
       repeat_count: isRepeat ? parseInt(repeatCount) || null : null,
+      rest_mode: finalRestMode,
       notes: notes.trim() || null,
     });
   }
@@ -581,6 +613,38 @@ function AddBlockForm({
                 />
               </div>
             </div>
+
+            {/* L05-28: rest_mode — só aparece em rest/recovery */}
+            {restModeVisible && (
+              <div>
+                <label className="mb-1 block text-xs font-medium text-content-secondary">
+                  Modo
+                </label>
+                <select
+                  value={restMode}
+                  onChange={(e) =>
+                    setRestMode(
+                      e.target.value as
+                        | ""
+                        | "stand_still"
+                        | "walk"
+                        | "jog",
+                    )
+                  }
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-brand focus:ring-1 focus:ring-brand"
+                >
+                  <option value="">— (genérico)</option>
+                  <option value="stand_still">Parado (pausa total)</option>
+                  <option value="walk">Caminhando</option>
+                  {isRecovery && <option value="jog">Trote leve</option>}
+                </select>
+                <p className="mt-1 text-xs text-content-secondary">
+                  {isRest
+                    ? "Se o atleta deve trotar entre as séries, use o tipo 'Recuperação' em vez de 'Descanso'."
+                    : "O atleta verá essa instrução no detalhe do treino."}
+                </p>
+              </div>
+            )}
 
             {!isRest && (
               <>

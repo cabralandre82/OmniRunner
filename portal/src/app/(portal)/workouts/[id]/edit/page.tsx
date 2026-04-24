@@ -34,7 +34,7 @@ export default async function EditWorkoutPage({
   const { data: blocks } = await supabase
     .from("coaching_workout_blocks")
     .select(
-      "id, order_index, block_type, duration_seconds, distance_meters, target_pace_min_sec_per_km, target_pace_max_sec_per_km, target_hr_zone, target_hr_min, target_hr_max, rpe_target, repeat_count, notes",
+      "id, order_index, block_type, duration_seconds, distance_meters, target_pace_min_sec_per_km, target_pace_max_sec_per_km, target_hr_zone, target_hr_min, target_hr_max, rpe_target, repeat_count, rest_mode, notes",
     )
     .eq("template_id", params.id)
     .order("order_index");
@@ -65,6 +65,7 @@ export default async function EditWorkoutPage({
           target_hr_max: b.target_hr_max,
           rpe_target: b.rpe_target,
           repeat_count: b.repeat_count,
+          rest_mode: b.rest_mode ?? null,
           notes: b.notes,
         }))}
       />

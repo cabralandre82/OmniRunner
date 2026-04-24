@@ -58,6 +58,7 @@ class PlanWorkoutBlock extends Equatable {
     this.targetHrMax,
     this.rpeTarget,
     this.repeatCount,
+    this.restMode,
     this.notes,
   });
 
@@ -72,6 +73,10 @@ class PlanWorkoutBlock extends Equatable {
   final int? targetHrMax;
   final int? rpeTarget;
   final int? repeatCount;
+  /// L05-28: sub-modo de rest/recovery — 'stand_still' | 'walk' | 'jog'.
+  /// Null em qualquer outro block_type, e também em rest/recovery legados
+  /// criados antes da migration.
+  final String? restMode;
   final String? notes;
 
   factory PlanWorkoutBlock.fromJson(Map<String, dynamic> json) => PlanWorkoutBlock(
@@ -86,19 +91,45 @@ class PlanWorkoutBlock extends Equatable {
         targetHrMax:           (json['target_hr_max'] as num?)?.toInt(),
         rpeTarget:             (json['rpe_target'] as num?)?.toInt(),
         repeatCount:           (json['repeat_count'] as num?)?.toInt(),
+        restMode:              _sanitizeRestMode(
+                                  json['block_type'] as String?,
+                                  json['rest_mode'] as String?,
+                                ),
         notes:                 json['notes'] as String?,
       );
 
-  String get blockTypeLabel => switch (blockType) {
-        'warmup'   => 'Aquecimento',
-        'interval' => 'Intervalo',
-        'recovery' => 'Recuperação',
-        'cooldown' => 'Resfriamento',
-        'steady'   => 'Ritmo contínuo',
-        'rest'     => 'Descanso',
-        'repeat'   => 'Repetição',
-        _          => blockType,
-      };
+  /// L05-28: mirror da sanitização do portal. Snapshots antigos não têm o
+  /// campo (retorna null). Snapshots novos podem ter valores inesperados
+  /// se houver drift — preferimos cair em null a estourar uma exception no
+  /// cliente.
+  static String? _sanitizeRestMode(String? blockType, String? raw) {
+    if (raw == null) return null;
+    const allowed = {'stand_still', 'walk', 'jog'};
+    if (!allowed.contains(raw)) return null;
+    if (blockType != 'rest' && blockType != 'recovery') return null;
+    if (raw == 'jog' && blockType != 'recovery') return null;
+    return raw;
+  }
+
+  String get blockTypeLabel {
+    final base = switch (blockType) {
+      'warmup'   => 'Aquecimento',
+      'interval' => 'Intervalo',
+      'recovery' => 'Recuperação',
+      'cooldown' => 'Resfriamento',
+      'steady'   => 'Ritmo contínuo',
+      'rest'     => 'Descanso',
+      'repeat'   => 'Repetição',
+      _          => blockType,
+    };
+    final suffix = switch (restMode) {
+      'stand_still' => ' (parado)',
+      'walk'        => ' (caminhando)',
+      'jog'         => ' (trote)',
+      _             => '',
+    };
+    return '$base$suffix';
+  }
 
   /// Formata pace em min:sec/km
   static String formatPace(int secondsPerKm) {
@@ -111,7 +142,8 @@ class PlanWorkoutBlock extends Equatable {
   List<Object?> get props => [
         orderIndex, blockType, durationSeconds, distanceMeters,
         targetPaceMinSecPerKm, targetPaceMaxSecPerKm,
-        targetHrZone, targetHrMin, targetHrMax, rpeTarget, repeatCount, notes,
+        targetHrZone, targetHrMin, targetHrMax, rpeTarget, repeatCount,
+        restMode, notes,
       ];
 }
 

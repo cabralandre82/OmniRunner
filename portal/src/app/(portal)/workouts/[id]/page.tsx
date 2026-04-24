@@ -16,6 +16,24 @@ const BLOCK_TYPE_LABELS: Record<string, string> = {
   repeat: "Repetir",
 };
 
+// L05-28: rest_mode refines the rest/recovery label so the athlete knows
+// what to actually do during the pause (stop, walk, or jog). NULL falls
+// back to the bare block_type label for backward-compat with legacy rows.
+const REST_MODE_SUFFIX: Record<string, string> = {
+  stand_still: " (parado)",
+  walk: " (caminhando)",
+  jog: " (trote)",
+};
+
+function formatBlockLabel(
+  blockType: string,
+  restMode: string | null | undefined,
+): string {
+  const base = BLOCK_TYPE_LABELS[blockType] ?? blockType;
+  if (!restMode) return base;
+  return base + (REST_MODE_SUFFIX[restMode] ?? "");
+}
+
 const BLOCK_TYPE_COLORS: Record<string, string> = {
   warmup: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
   interval: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
@@ -57,6 +75,7 @@ interface Block {
   target_hr_max: number | null;
   rpe_target: number | null;
   repeat_count: number | null;
+  rest_mode: string | null;
   notes: string | null;
 }
 
@@ -283,7 +302,7 @@ export default async function WorkoutDetailPage({
                     "bg-gray-100 text-gray-800"
                   }`}
                 >
-                  {BLOCK_TYPE_LABELS[block.block_type] ?? block.block_type}
+                  {formatBlockLabel(block.block_type, block.rest_mode)}
                 </span>
                 <span className="text-sm text-content-primary">
                   {details.join(" · ")}

@@ -28,6 +28,15 @@
 
 import type { BlockType } from "./expand-repeats";
 
+/**
+ * Sub-mode for rest/recovery blocks (L05-28).
+ *   stand_still → athlete stops entirely.
+ *   walk        → athlete walks actively.
+ *   jog         → athlete jogs lightly; ONLY valid with block_type='recovery'.
+ * NULL everywhere else (legacy rest/recovery stays generic).
+ */
+export type RestMode = "stand_still" | "walk" | "jog";
+
 /** A parsed block as it arrives from the AI parser or user input. */
 export interface ValidatableBlock {
   block_type: BlockType;
@@ -39,6 +48,8 @@ export interface ValidatableBlock {
   target_hr_max: number | null;
   target_hr_zone: number | null;
   repeat_count: number | null;
+  /** L05-28 — optional for backward compat with pre-migration callers. */
+  rest_mode?: RestMode | null;
 }
 
 export type ValidationCode =
@@ -56,7 +67,10 @@ export type ValidationCode =
   | "hr_inverted"
   | "hr_partial"
   | "hr_zone_out_of_range"
-  | "repeat_must_have_active_block";
+  | "repeat_must_have_active_block"
+  | "rest_mode_invalid_value"
+  | "rest_mode_misplaced"
+  | "rest_mode_jog_outside_recovery";
 
 export interface ValidationIssue {
   code: ValidationCode;
@@ -91,6 +105,12 @@ const VALID_BLOCK_TYPES: readonly BlockType[] = [
   "repeat",
   "repeat_end",
 ];
+
+const VALID_REST_MODES: readonly RestMode[] = ["stand_still", "walk", "jog"];
+
+/** Block types where rest_mode is semantically meaningful (L05-28).
+ *  On any other block_type the field must be NULL — mirror of the DB CHECK. */
+const REST_MODE_ALLOWED_TYPES: readonly BlockType[] = ["rest", "recovery"];
 
 /** Blocks whose job is to contribute to training load (not structural markers). */
 const ACTIVE_TYPES: readonly BlockType[] = [
@@ -215,6 +235,42 @@ export function validateWorkoutBlocks(
         blockIndex: i,
         field: "target_hr_zone",
       });
+    }
+
+    // rest_mode sanity (L05-28). We only validate when the caller populated
+    // the field; undefined/null is treated as "legacy/unspecified" and
+    // passes every check (preserves behavior for pre-migration clients).
+    const restMode = b.rest_mode ?? null;
+    if (restMode !== null) {
+      if (!VALID_REST_MODES.includes(restMode)) {
+        errors.push({
+          code: "rest_mode_invalid_value",
+          message:
+            `Bloco ${i}: rest_mode "${restMode}" fora do enum aceito ` +
+            `(${VALID_REST_MODES.join("|")}).`,
+          blockIndex: i,
+          field: "rest_mode",
+        });
+      } else if (!REST_MODE_ALLOWED_TYPES.includes(b.block_type)) {
+        errors.push({
+          code: "rest_mode_misplaced",
+          message:
+            `Bloco ${i} (${b.block_type}): rest_mode só é válido em blocos ` +
+            "do tipo 'rest' ou 'recovery'. Remova o campo ou troque o block_type.",
+          blockIndex: i,
+          field: "rest_mode",
+        });
+      } else if (restMode === "jog" && b.block_type !== "recovery") {
+        errors.push({
+          code: "rest_mode_jog_outside_recovery",
+          message:
+            `Bloco ${i} (rest): rest_mode='jog' requer block_type='recovery'. ` +
+            "Se o atleta deve trotar entre esforços, use 'recovery' (que continua " +
+            "gravando movimento no relógio) em vez de 'rest'.",
+          blockIndex: i,
+          field: "rest_mode",
+        });
+      }
     }
 
     // Per-repeat block: repeat_count sanity.

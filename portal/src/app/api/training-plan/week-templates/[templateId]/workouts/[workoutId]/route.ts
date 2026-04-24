@@ -32,6 +32,7 @@ const BlockSchema = z.object({
   target_hr_max:              z.number().int().nullable().optional(),
   rpe_target:                 z.number().int().min(1).max(10).nullable().optional(),
   repeat_count:               z.number().int().min(1).max(100).nullable().optional(),
+  rest_mode:                  z.enum(["stand_still","walk","jog"]).nullable().optional(),
   notes:                      z.string().max(200).nullable().optional(),
 });
 

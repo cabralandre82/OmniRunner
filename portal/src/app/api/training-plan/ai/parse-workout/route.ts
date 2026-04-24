@@ -36,6 +36,9 @@ Cada bloco em blocks deve ter:
 - target_hr_zone: zona 1-5 (ou null)
 - rpe_target: 1-10 (ou null)
 - repeat_count: só para block_type=repeat — número de repetições
+- rest_mode: só para rest/recovery — "stand_still" (parado/pausa total),
+  "walk" (caminhando ativo) ou "jog" (trote leve, APENAS com block_type=recovery).
+  null em qualquer outro block_type. Se a descrição não especificar, deixe null.
 - notes: observação do bloco (ou null)
 
 Regras de estrutura para intervalados:
@@ -43,6 +46,15 @@ Regras de estrutura para intervalados:
   2. SEMPRE feche o repeat com repeat_end ANTES de qualquer cooldown/rest/steady.
   3. Sempre inclua warmup e cooldown quando fizer sentido.
   4. Se a descrição NÃO contiver repetição, NÃO emita repeat nem repeat_end.
+
+Regras de rest_mode (importante para o atleta saber o que fazer no relógio):
+  - "parado", "pausa", "pausa total", "respire", "descanso" → block_type=rest + rest_mode="stand_still"
+  - "caminhando", "caminhada", "andando" → block_type=rest + rest_mode="walk"
+    (mantém block_type=rest porque o atleta não está correndo)
+  - "trote leve", "trote", "jog", "recuperação trotando" → block_type=recovery + rest_mode="jog"
+  - "recuperação caminhada" → block_type=recovery + rest_mode="walk"
+  - Se o texto diz só "recuperação" ou "descanso" sem especificar modo, deixe rest_mode=null.
+  - NUNCA emita block_type=rest com rest_mode="jog" (quem trota usa recovery).
 
 Exemplos:
 Input: "30min leve"
@@ -155,15 +167,33 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
   // different from what they described.
   const rawBlocks = Array.isArray(result.blocks) ? result.blocks : [];
   const invalidBlockTypeIssues: Array<{ index: number; got: unknown }> = [];
+  // L05-28: rest_mode sanitization is best-effort. Unknown values, misplaced
+  // modes (e.g. 'walk' on an interval), and the illegal rest+jog combo are
+  // silently normalized to null — the AI is not perfect at this yet and we
+  // prefer a slightly less informative label over a 422 on the coach.
+  const validRestModes = ["stand_still", "walk", "jog"] as const;
+  const sanitizeRestMode = (
+    blockType: string,
+    raw: unknown,
+  ): "stand_still" | "walk" | "jog" | null => {
+    if (typeof raw !== "string") return null;
+    if (!validRestModes.includes(raw as typeof validRestModes[number])) return null;
+    if (blockType !== "rest" && blockType !== "recovery") return null;
+    if (raw === "jog" && blockType !== "recovery") return null;
+    return raw as "stand_still" | "walk" | "jog";
+  };
   const blocks = rawBlocks
     .filter((b: unknown) => b && typeof b === "object")
     .map((b: Record<string, unknown>, i: number) => {
       if (!validBlockTypes.includes(b.block_type as string)) {
         invalidBlockTypeIssues.push({ index: i, got: b.block_type });
       }
+      const blockType = validBlockTypes.includes(b.block_type as string)
+        ? (b.block_type as string)
+        : "steady";
       return {
         order_index:                i,
-        block_type:                 validBlockTypes.includes(b.block_type as string) ? b.block_type : "steady",
+        block_type:                 blockType,
         distance_meters:            typeof b.distance_meters === "number" ? Math.round(b.distance_meters) : null,
         duration_seconds:           typeof b.duration_seconds === "number" ? Math.round(b.duration_seconds) : null,
         target_pace_min_sec_per_km: typeof b.target_pace_min_sec_per_km === "number" ? Math.round(b.target_pace_min_sec_per_km) : null,
@@ -173,6 +203,7 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
         target_hr_max:              null,
         rpe_target:                 typeof b.rpe_target === "number" ? Math.round(b.rpe_target) : null,
         repeat_count:               typeof b.repeat_count === "number" ? Math.round(b.repeat_count) : null,
+        rest_mode:                  sanitizeRestMode(blockType, b.rest_mode),
         notes:                      typeof b.notes === "string" ? b.notes.slice(0, 200) : null,
       };
     })
@@ -216,6 +247,7 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
       target_hr_max: b.target_hr_max,
       target_hr_zone: b.target_hr_zone,
       repeat_count: b.repeat_count,
+      rest_mode: b.rest_mode,
     })) as ValidatableBlock[],
     {
       estimatedDistanceKm,

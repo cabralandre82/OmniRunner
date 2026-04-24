@@ -302,6 +302,133 @@ describe("POST /api/training-plan/ai/parse-workout", () => {
     expect(json.error.details.errors.some((e: { code: string }) => e.code === "pace_inverted")).toBe(true);
   });
 
+  it("L05-28: preserves rest_mode='walk' on rest block", async () => {
+    mockFetch.mockReturnValueOnce(openaiResponse({
+      choices: [{
+        message: {
+          content: JSON.stringify({
+            workout_type: "interval",
+            workout_label: "Tiros com caminhada",
+            description: "4x400m com 1min caminhada",
+            coach_notes: null,
+            estimated_distance_km: null,
+            estimated_duration_minutes: null,
+            blocks: [
+              { order_index: 0, block_type: "repeat", repeat_count: 4,
+                duration_seconds: null, distance_meters: null,
+                target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null,
+                target_hr_zone: null, rpe_target: null, notes: null, rest_mode: null },
+              { order_index: 1, block_type: "interval", distance_meters: 400, duration_seconds: null,
+                target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null,
+                target_hr_zone: 4, rpe_target: 8, repeat_count: null, notes: null, rest_mode: null },
+              { order_index: 2, block_type: "rest", duration_seconds: 60, distance_meters: null,
+                target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null,
+                target_hr_zone: null, rpe_target: null, repeat_count: null, notes: null,
+                rest_mode: "walk" },
+              { order_index: 3, block_type: "repeat_end", duration_seconds: null, distance_meters: null,
+                target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null,
+                target_hr_zone: null, rpe_target: null, repeat_count: null, notes: null, rest_mode: null },
+            ],
+          }),
+        },
+      }],
+    }));
+
+    const { POST } = await import("./route");
+    const res = await POST(makeReq({ text: "4x400m com 1min caminhada" }));
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.ok).toBe(true);
+    expect(json.data.blocks[2].rest_mode).toBe("walk");
+  });
+
+  it("L05-28: normalizes unknown rest_mode to null (best-effort)", async () => {
+    mockFetch.mockReturnValueOnce(openaiResponse({
+      choices: [{
+        message: {
+          content: JSON.stringify({
+            workout_type: "continuous",
+            workout_label: "Treino",
+            description: null,
+            coach_notes: null,
+            estimated_distance_km: null,
+            estimated_duration_minutes: null,
+            blocks: [
+              { order_index: 0, block_type: "rest", duration_seconds: 120, distance_meters: null,
+                target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null,
+                target_hr_zone: null, rpe_target: null, repeat_count: null, notes: null,
+                rest_mode: "sprinting" },
+            ],
+          }),
+        },
+      }],
+    }));
+
+    const { POST } = await import("./route");
+    const res = await POST(makeReq({ text: "descanso de 2min" }));
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.data.blocks[0].rest_mode).toBeNull();
+  });
+
+  it("L05-28: drops rest_mode='jog' on a rest block (coerced to null)", async () => {
+    mockFetch.mockReturnValueOnce(openaiResponse({
+      choices: [{
+        message: {
+          content: JSON.stringify({
+            workout_type: "continuous",
+            workout_label: "Treino",
+            description: null,
+            coach_notes: null,
+            estimated_distance_km: null,
+            estimated_duration_minutes: null,
+            blocks: [
+              { order_index: 0, block_type: "rest", duration_seconds: 120, distance_meters: null,
+                target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null,
+                target_hr_zone: null, rpe_target: null, repeat_count: null, notes: null,
+                rest_mode: "jog" },
+            ],
+          }),
+        },
+      }],
+    }));
+
+    const { POST } = await import("./route");
+    const res = await POST(makeReq({ text: "pausa 2min" }));
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.data.blocks[0].rest_mode).toBeNull();
+  });
+
+  it("L05-28: drops rest_mode='walk' on an interval block (misplaced)", async () => {
+    mockFetch.mockReturnValueOnce(openaiResponse({
+      choices: [{
+        message: {
+          content: JSON.stringify({
+            workout_type: "continuous",
+            workout_label: "Treino",
+            description: null,
+            coach_notes: null,
+            estimated_distance_km: null,
+            estimated_duration_minutes: null,
+            blocks: [
+              { order_index: 0, block_type: "interval", duration_seconds: 120, distance_meters: null,
+                target_pace_min_sec_per_km: null, target_pace_max_sec_per_km: null,
+                target_hr_zone: null, rpe_target: null, repeat_count: null, notes: null,
+                rest_mode: "walk" },
+            ],
+          }),
+        },
+      }],
+    }));
+
+    const { POST } = await import("./route");
+    const res = await POST(makeReq({ text: "tiro 2min" }));
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.data.blocks[0].rest_mode).toBeNull();
+  });
+
   it("L05-23: rejects AI output with repeat missing repeat_end", async () => {
     mockFetch.mockReturnValueOnce(openaiResponse({
       choices: [{

@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { type BlockType } from "./expand-repeats";
-import { validateWorkoutBlocks, type ValidatableBlock } from "./validate";
+import {
+  validateWorkoutBlocks,
+  type ValidatableBlock,
+  type RestMode,
+} from "./validate";
 
 function mk(overrides: Partial<ValidatableBlock> & { block_type: BlockType }): ValidatableBlock {
   return {
@@ -13,6 +17,7 @@ function mk(overrides: Partial<ValidatableBlock> & { block_type: BlockType }): V
     target_hr_max: overrides.target_hr_max ?? null,
     target_hr_zone: overrides.target_hr_zone ?? null,
     repeat_count: overrides.repeat_count ?? null,
+    rest_mode: overrides.rest_mode ?? null,
   };
 }
 
@@ -241,5 +246,123 @@ describe("validateWorkoutBlocks — invalid block_type", () => {
     ];
     const result = validateWorkoutBlocks(blocks);
     expect(result.errors.some((e) => e.code === "invalid_block_type")).toBe(true);
+  });
+});
+
+describe("validateWorkoutBlocks — rest_mode (L05-28)", () => {
+  it("rest + rest_mode='stand_still' aceita", () => {
+    const blocks: ValidatableBlock[] = [
+      mk({
+        block_type: "rest",
+        duration_seconds: 120,
+        rest_mode: "stand_still",
+      }),
+    ];
+    const result = validateWorkoutBlocks(blocks);
+    expect(result.ok).toBe(true);
+  });
+
+  it("rest + rest_mode='walk' aceita", () => {
+    const blocks: ValidatableBlock[] = [
+      mk({
+        block_type: "rest",
+        duration_seconds: 120,
+        rest_mode: "walk",
+      }),
+    ];
+    const result = validateWorkoutBlocks(blocks);
+    expect(result.ok).toBe(true);
+  });
+
+  it("rest + rest_mode='jog' rejeita (jog só em recovery)", () => {
+    const blocks: ValidatableBlock[] = [
+      mk({
+        block_type: "rest",
+        duration_seconds: 120,
+        rest_mode: "jog",
+      }),
+    ];
+    const result = validateWorkoutBlocks(blocks);
+    expect(result.ok).toBe(false);
+    expect(
+      result.errors.some((e) => e.code === "rest_mode_jog_outside_recovery"),
+    ).toBe(true);
+  });
+
+  it("recovery + rest_mode='jog' aceita", () => {
+    const blocks: ValidatableBlock[] = [
+      mk({
+        block_type: "recovery",
+        duration_seconds: 120,
+        rest_mode: "jog",
+      }),
+    ];
+    const result = validateWorkoutBlocks(blocks);
+    expect(result.ok).toBe(true);
+  });
+
+  it("recovery + rest_mode='walk' aceita", () => {
+    const blocks: ValidatableBlock[] = [
+      mk({
+        block_type: "recovery",
+        duration_seconds: 120,
+        rest_mode: "walk",
+      }),
+    ];
+    const result = validateWorkoutBlocks(blocks);
+    expect(result.ok).toBe(true);
+  });
+
+  it("interval + rest_mode='walk' rejeita (misplaced)", () => {
+    const blocks: ValidatableBlock[] = [
+      mk({
+        block_type: "interval",
+        duration_seconds: 120,
+        rest_mode: "walk",
+      }),
+    ];
+    const result = validateWorkoutBlocks(blocks);
+    expect(result.ok).toBe(false);
+    expect(
+      result.errors.some((e) => e.code === "rest_mode_misplaced"),
+    ).toBe(true);
+  });
+
+  it("warmup + rest_mode=null aceita (legacy path)", () => {
+    const blocks: ValidatableBlock[] = [
+      mk({
+        block_type: "warmup",
+        duration_seconds: 300,
+        rest_mode: null,
+      }),
+    ];
+    const result = validateWorkoutBlocks(blocks);
+    expect(result.ok).toBe(true);
+  });
+
+  it("rest_mode inválido rejeita", () => {
+    const blocks: ValidatableBlock[] = [
+      mk({
+        block_type: "rest",
+        duration_seconds: 120,
+        rest_mode: "sprint" as unknown as RestMode,
+      }),
+    ];
+    const result = validateWorkoutBlocks(blocks);
+    expect(result.ok).toBe(false);
+    expect(
+      result.errors.some((e) => e.code === "rest_mode_invalid_value"),
+    ).toBe(true);
+  });
+
+  it("rest legacy (rest_mode undefined) continua passando", () => {
+    const blocks: ValidatableBlock[] = [
+      mk({
+        block_type: "rest",
+        duration_seconds: 120,
+      }),
+    ];
+    const result = validateWorkoutBlocks(blocks);
+    expect(result.ok).toBe(true);
   });
 });

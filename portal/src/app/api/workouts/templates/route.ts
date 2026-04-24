@@ -15,7 +15,23 @@ interface BlockPayload {
   target_hr_max: number | null;
   rpe_target: number | null;
   repeat_count: number | null;
+  rest_mode: "stand_still" | "walk" | "jog" | null;
   notes: string | null;
+}
+
+const VALID_REST_MODES = new Set(["stand_still", "walk", "jog"]);
+
+function sanitizeRestMode(
+  blockType: string,
+  raw: unknown,
+): "stand_still" | "walk" | "jog" | null {
+  if (typeof raw !== "string" || !VALID_REST_MODES.has(raw)) return null;
+  // Mirror the DB CHECK: rest_mode only meaningful on rest/recovery; jog only
+  // on recovery. Silently drop invalid combos so the client can't trip the
+  // 23514 CHECK violation and surface a cryptic 500.
+  if (blockType !== "rest" && blockType !== "recovery") return null;
+  if (raw === "jog" && blockType !== "recovery") return null;
+  return raw as "stand_still" | "walk" | "jog";
 }
 
 export async function POST(req: Request) {
@@ -105,6 +121,7 @@ export async function POST(req: Request) {
         target_hr_max: b.target_hr_max,
         rpe_target: b.rpe_target,
         repeat_count: b.repeat_count,
+        rest_mode: sanitizeRestMode(b.block_type, b.rest_mode),
         notes: b.notes,
       }));
 
