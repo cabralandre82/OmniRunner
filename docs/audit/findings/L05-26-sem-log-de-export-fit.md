@@ -4,11 +4,11 @@ audit_ref: "5.26"
 lens: 5
 title: "Zero delivery confirmation: coach não sabe se .fit chegou ao relógio"
 severity: high
-status: fix-pending
+status: fixed
 wave: 0
 discovered_at: 2026-04-24
-fixed_at: null
-closed_at: null
+fixed_at: 2026-04-24
+closed_at: 2026-04-24
 tags: ["workout", "observability", "coach", "fit-export", "delivery"]
 files:
   - supabase/migrations/20260424140000_l05_26_workout_export_log.sql
@@ -20,7 +20,7 @@ test_required: true
 tests:
   - portal/src/app/api/training-plan/workouts/[id]/export.fit/route.test.ts
 linked_issues: []
-linked_prs: []
+linked_prs: ["fd16d7b"]
 owner: platform-workout
 runbook: null
 effort_points: 3

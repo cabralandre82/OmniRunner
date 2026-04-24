@@ -1,7 +1,7 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-24 17:27:43 UTC.
+> Atualizado em 2026-04-24 17:28:36 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
@@ -134,7 +134,7 @@ Total: **354** findings.
 | 🟠 high | ✅ fixed | [L05-23](./findings/L05-23-ai-parse-workout-aceita-block-type-invalido.md) | 0 | L05 · CPO | AI parse-workout: block_type inválido trocado silenciosamente por steady | platform-workout |
 | 🟠 high | ✅ fixed | [L05-24](./findings/L05-24-polar-excluido-de-fit-compativel.md) | 0 | L05 · CPO | Flutter: Polar (e correção Suunto) excluídos de _fitCompatible | platform-workout |
 | 🟡 medium | ✅ fixed | [L05-25](./findings/L05-25-portal-sem-export-fit-direto.md) | 0 | L05 · CPO | Portal: coach não consegue exportar .fit direto do template | platform-workout |
-| 🟠 high | ⏳ fix-pending | [L05-26](./findings/L05-26-sem-log-de-export-fit.md) | 0 | L05 · CPO | Zero delivery confirmation: coach não sabe se .fit chegou ao relógio | platform-workout |
+| 🟠 high | ✅ fixed | [L05-26](./findings/L05-26-sem-log-de-export-fit.md) | 0 | L05 · CPO | Zero delivery confirmation: coach não sabe se .fit chegou ao relógio | platform-workout |
 | 🔴 critical | ✅ fixed | [L06-01](./findings/L06-01-zero-runbook-financeiro-custodia-clearing-swap-withdraw.md) | 1 | L06 · COO | Zero runbook financeiro — custódia, clearing, swap, withdraw | unassigned |
 | 🔴 critical | ✅ fixed | [L06-02](./findings/L06-02-health-check-exibe-contagem-exata-de-violacoes-info.md) | 1 | L06 · COO | Health check exibe contagem exata de violações (info leak operacional) | platform |
 | 🟠 high | ✅ fixed | [L06-03](./findings/L06-03-reconcile-wallets-cron-sem-alerta-em-drift-0.md) | 1 | L06 · COO | reconcile-wallets-cron sem alerta em drift > 0 | platform |

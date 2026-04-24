@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T17:27:43.828Z",
+  "generated_at": "2026-04-24T17:28:36.607Z",
   "total": 354,
   "by_severity": {
     "high": 127,
@@ -10,10 +10,10 @@
     "na": 7
   },
   "by_status": {
-    "fixed": 330,
+    "fixed": 331,
     "not-reproducible": 3,
     "duplicate": 8,
-    "fix-pending": 5,
+    "fix-pending": 4,
     "wont-fix": 8
   },
   "by_wave": {
@@ -4783,11 +4783,11 @@
       "lens": 5,
       "title": "Zero delivery confirmation: coach não sabe se .fit chegou ao relógio",
       "severity": "high",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 0,
       "discovered_at": "2026-04-24T00:00:00.000Z",
-      "fixed_at": null,
-      "closed_at": null,
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "workout",
         "observability",
@@ -4807,7 +4807,9 @@
         "portal/src/app/api/training-plan/workouts/[id]/export.fit/route.test.ts"
       ],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "fd16d7b"
+      ],
       "owner": "platform-workout",
       "runbook": null,
       "effort_points": 3,
