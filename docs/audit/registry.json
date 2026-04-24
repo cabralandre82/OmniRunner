@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T18:03:16.404Z",
-  "total": 357,
+  "generated_at": "2026-04-24T18:14:16.772Z",
+  "total": 359,
   "by_severity": {
-    "high": 127,
-    "critical": 70,
+    "high": 128,
+    "critical": 71,
     "medium": 132,
     "safe": 21,
     "na": 7
@@ -13,11 +13,11 @@
     "fixed": 334,
     "not-reproducible": 3,
     "duplicate": 8,
-    "fix-pending": 4,
+    "fix-pending": 6,
     "wont-fix": 8
   },
   "by_wave": {
-    "0": 24,
+    "0": 26,
     "1": 179,
     "2": 125,
     "3": 29
@@ -31,7 +31,7 @@
     "6": 13,
     "7": 13,
     "8": 12,
-    "9": 12,
+    "9": 14,
     "10": 14,
     "11": 14,
     "12": 12,
@@ -6838,6 +6838,81 @@
       "duplicate_of": null,
       "deferred_to_wave": null,
       "note": "Policy ratified in docs/policies/EXTERNAL_FINANCIAL_AUDIT.md:\nvoluntary external financial audit starting Year 2 (calendar\n2027 covering FY 2026), mid-market vendor (BDO/Grant Thornton/\nMazars) at BRL 80-150k. Scope: financial statements + custody\nreconciliation (check_custody_invariants + per-group breakdown\nvia SECURITY DEFINER RPC) + clearing-pipeline integrity\n(paired ledger entries per L02-07/ADR-008 invariant) + revenue\nrecognition. Year 1 pre-audit checklist (audit-ready ledger,\ndomain audit_logs, doc repos) is largely complete via Wave 1;\nthe only gating Year-1-Q4 item is the audit-dossier directory\nwith close-of-books materials.\n"
+    },
+    {
+      "id": "L09-13",
+      "audit_ref": "9.13",
+      "lens": 9,
+      "title": "Cron fn_subscription_generate_cycle ausente — faturas mensais nunca são geradas",
+      "severity": "critical",
+      "status": "fix-pending",
+      "wave": 0,
+      "discovered_at": "2026-04-24T00:00:00.000Z",
+      "fixed_at": null,
+      "closed_at": null,
+      "tags": [
+        "finance",
+        "cron",
+        "subscriptions",
+        "billing",
+        "reliability"
+      ],
+      "files": [
+        "supabase/migrations/20260424160000_l09_13_subscription_crons.sql"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "tools/audit/check-cron-idempotency.ts"
+      ],
+      "linked_issues": [],
+      "linked_prs": [],
+      "owner": "platform-finance",
+      "runbook": null,
+      "effort_points": 2,
+      "blocked_by": [],
+      "duplicate_of": null,
+      "deferred_to_wave": null,
+      "note": null
+    },
+    {
+      "id": "L09-14",
+      "audit_ref": "9.14",
+      "lens": 9,
+      "title": "Cron fn_subscription_mark_overdue ausente — inadimplência invisível",
+      "severity": "high",
+      "status": "fix-pending",
+      "wave": 0,
+      "discovered_at": "2026-04-24T00:00:00.000Z",
+      "fixed_at": null,
+      "closed_at": null,
+      "tags": [
+        "finance",
+        "cron",
+        "subscriptions",
+        "billing",
+        "reliability",
+        "dunning"
+      ],
+      "files": [
+        "supabase/migrations/20260424160000_l09_13_subscription_crons.sql"
+      ],
+      "correction_type": "code",
+      "test_required": true,
+      "tests": [
+        "tools/audit/check-cron-idempotency.ts"
+      ],
+      "linked_issues": [],
+      "linked_prs": [],
+      "owner": "platform-finance",
+      "runbook": null,
+      "effort_points": 1,
+      "blocked_by": [
+        "L09-13"
+      ],
+      "duplicate_of": null,
+      "deferred_to_wave": null,
+      "note": null
     },
     {
       "id": "L10-01",

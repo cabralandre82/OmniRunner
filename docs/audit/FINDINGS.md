@@ -1,11 +1,11 @@
 # FINDINGS — Índice Geral
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-24 18:03:16 UTC.
+> Atualizado em 2026-04-24 18:14:16 UTC.
 >
 > Fonte: `docs/audit/findings/*.md` — editar lá. Rodar `npx tsx tools/audit/build-registry.ts` para regenerar.
 
-Total: **357** findings.
+Total: **359** findings.
 
 | Sev | Status | ID | Onda | Lente | Título | Owner |
 |-----|--------|----|------|-------|--------|-------|
@@ -188,6 +188,8 @@ Total: **357** findings.
 | 🟡 medium | ✅ fixed | [L09-10](./findings/L09-10-relatorio-anual-de-transparencia-marco-civil-art-11.md) | 2 | L09 · CRO | Relatório anual de transparência (Marco Civil Art. 11) | legal |
 | 🟡 medium | ✅ fixed | [L09-11](./findings/L09-11-cessao-de-credito-implicita-em-clearing-settlements-document.md) | 2 | L09 · CRO | Cessão de crédito implícita em clearing_settlements — documentar | finance |
 | 🟡 medium | ✅ fixed | [L09-12](./findings/L09-12-auditoria-externa-financeira-inexistente.md) | 2 | L09 · CRO | Auditoria externa financeira — inexistente | finance+cro |
+| 🔴 critical | ⏳ fix-pending | [L09-13](./findings/L09-13-cron-fn-subscription-generate-cycle-ausente.md) | 0 | L09 · CRO | Cron fn_subscription_generate_cycle ausente — faturas mensais nunca são geradas | platform-finance |
+| 🟠 high | ⏳ fix-pending | [L09-14](./findings/L09-14-cron-fn-subscription-mark-overdue-ausente.md) | 0 | L09 · CRO | Cron fn_subscription_mark_overdue ausente — inadimplência invisível | platform-finance |
 | 🔴 critical | ✅ fixed | [L10-01](./findings/L10-01-nenhum-bug-bounty-disclosure-policy.md) | 1 | L10 · CSO | Nenhum bug bounty / disclosure policy | security |
 | 🔴 critical | ✅ fixed | [L10-02](./findings/L10-02-threat-model-formal-nao-documentado.md) | 1 | L10 · CSO | Threat model formal não documentado | security |
 | 🔴 critical | ✅ fixed | [L10-03](./findings/L10-03-service-role-key-distribuida-amplamente.md) | 1 | L10 · CSO | Service-role key distribuída amplamente | unassigned |
