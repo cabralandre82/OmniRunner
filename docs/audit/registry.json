@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T17:28:36.607Z",
-  "total": 354,
+  "generated_at": "2026-04-24T17:34:20.042Z",
+  "total": 355,
   "by_severity": {
     "high": 127,
     "critical": 70,
-    "medium": 129,
+    "medium": 130,
     "safe": 21,
     "na": 7
   },
@@ -13,11 +13,11 @@
     "fixed": 331,
     "not-reproducible": 3,
     "duplicate": 8,
-    "fix-pending": 4,
+    "fix-pending": 5,
     "wont-fix": 8
   },
   "by_wave": {
-    "0": 21,
+    "0": 22,
     "1": 179,
     "2": 125,
     "3": 29
@@ -27,7 +27,7 @@
     "2": 15,
     "3": 20,
     "4": 15,
-    "5": 26,
+    "5": 27,
     "6": 13,
     "7": 13,
     "8": 12,
@@ -4813,6 +4813,41 @@
       "owner": "platform-workout",
       "runbook": null,
       "effort_points": 3,
+      "blocked_by": [],
+      "duplicate_of": null,
+      "deferred_to_wave": null,
+      "note": null
+    },
+    {
+      "id": "L05-27",
+      "audit_ref": "5.27",
+      "lens": 5,
+      "title": "Export log: device_hint nunca é populado automaticamente",
+      "severity": "medium",
+      "status": "fix-pending",
+      "wave": 0,
+      "discovered_at": "2026-04-24T00:00:00.000Z",
+      "fixed_at": null,
+      "closed_at": null,
+      "tags": [
+        "workout",
+        "observability",
+        "coach",
+        "fit-export",
+        "delivery"
+      ],
+      "files": [
+        "supabase/functions/generate-fit-workout/index.ts",
+        "portal/src/app/(portal)/workouts/assignments/page.tsx"
+      ],
+      "correction_type": "code",
+      "test_required": false,
+      "tests": [],
+      "linked_issues": [],
+      "linked_prs": [],
+      "owner": "platform-workout",
+      "runbook": null,
+      "effort_points": 1,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,

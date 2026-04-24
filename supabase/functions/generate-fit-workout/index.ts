@@ -407,7 +407,7 @@ serve(async (req) => {
       "wear_os",
       "other",
     ];
-    const deviceHint: string | null =
+    const clientDeviceHint: string | null =
       typeof rawDeviceHint === "string" && allowedHints.includes(rawDeviceHint)
         ? rawDeviceHint
         : null;
@@ -446,6 +446,34 @@ serve(async (req) => {
         .single();
       workoutName = workoutName || (tmpl?.name ?? "Workout");
       groupId = groupId || (tmpl?.group_id ?? null);
+    }
+
+    // L05-27 — resolve device_hint from v_athlete_watch_type when the caller
+    // is the athlete (surface='app'). For portal exports the destination
+    // device is ambiguous (coach's own watch vs offline redistribution), so
+    // we leave it null and fall back to whatever the client passed.
+    // Best-effort: failure here just leaves device_hint = clientDeviceHint.
+    let deviceHint: string | null = clientDeviceHint;
+    if (surface === "app" && actorUserId && groupId) {
+      try {
+        const { data: watchRow } = await supabase
+          .from("v_athlete_watch_type")
+          .select("resolved_watch_type")
+          .eq("user_id", actorUserId)
+          .eq("group_id", groupId)
+          .maybeSingle();
+        const resolved = (watchRow as { resolved_watch_type: string | null } | null)
+          ?.resolved_watch_type;
+        if (resolved && allowedHints.includes(resolved)) {
+          deviceHint = resolved;
+        }
+      } catch (err) {
+        console.warn("device_hint resolve failed", {
+          actorUserId,
+          groupId,
+          err: err instanceof Error ? err.message : String(err),
+        });
+      }
     }
 
     const { data: blocks, error: bErr } = await supabase

@@ -14,6 +14,19 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 
 const PAGE_SIZE = 25;
 
+// L05-27 — labels curtos para a marca do relógio no badge Relógio.
+// Mantemos enum fechado para não renderizar strings arbitrárias que
+// possam vazar pela RLS (device_hint é CHECK constraint no DB).
+const DEVICE_HINT_LABELS: Record<string, string> = {
+  garmin: "Garmin",
+  coros: "Coros",
+  suunto: "Suunto",
+  polar: "Polar",
+  apple_watch: "Apple Watch",
+  wear_os: "Wear OS",
+  other: "Outro",
+};
+
 // L05-26 — humaniza "faz X h/d" para a coluna Relógio. Inputs curtos
 // viram "agora", >7 dias mostra data crua.
 function timeAgo(iso: string): string {
@@ -36,6 +49,7 @@ interface Assignment {
   template_name: string;
   last_export_at: string | null;
   last_export_surface: "app" | "portal" | null;
+  last_export_device: string | null;
 }
 
 async function getAssignments(
@@ -84,9 +98,11 @@ async function getAssignments(
       .select("id, name")
       .in("id", templateIds),
     // L05-26 — last export per assignment, via the view (RLS-compliant).
+    // L05-27 — inclui device_hint (resolvido automaticamente pela Edge
+    // Function para surface='app'; NULL para surface='portal').
     supabase
       .from("v_assignment_last_export")
-      .select("assignment_id, last_export_at, surface")
+      .select("assignment_id, last_export_at, surface, device_hint")
       .in("assignment_id", assignmentIds),
   ]);
 
@@ -108,7 +124,15 @@ async function getAssignments(
         assignment_id: string;
         last_export_at: string;
         surface: "app" | "portal";
-      }) => [e.assignment_id, { at: e.last_export_at, surface: e.surface }],
+        device_hint: string | null;
+      }) => [
+        e.assignment_id,
+        {
+          at: e.last_export_at,
+          surface: e.surface,
+          device: e.device_hint,
+        },
+      ],
     ),
   );
 
@@ -123,6 +147,7 @@ async function getAssignments(
         template_name: templateMap.get(a.template_id) ?? "Template removido",
         last_export_at: exp?.at ?? null,
         last_export_surface: exp?.surface ?? null,
+        last_export_device: exp?.device ?? null,
       };
     }),
     total: count ?? 0,
@@ -261,10 +286,18 @@ export default async function WorkoutAssignmentsPage({
                             a.last_export_surface === "app"
                               ? "pelo atleta"
                               : "pelo coach (portal)"
+                          }${
+                            a.last_export_device
+                              ? ` · ${DEVICE_HINT_LABELS[a.last_export_device] ?? a.last_export_device}`
+                              : ""
                           } em ${new Date(a.last_export_at).toLocaleString("pt-BR")}`}
                         >
-                          {a.last_export_surface === "app" ? "Atleta" : "Coach"}{" "}
-                          · {timeAgo(a.last_export_at)}
+                          {a.last_export_surface === "app" ? "Atleta" : "Coach"}
+                          {a.last_export_device
+                            ? ` · ${DEVICE_HINT_LABELS[a.last_export_device] ?? a.last_export_device}`
+                            : ""}
+                          {" · "}
+                          {timeAgo(a.last_export_at)}
                         </span>
                       ) : (
                         <span className="text-xs text-content-muted">—</span>
