@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { safeNext } from "@/lib/security/safe-next";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  // L01-10 — safeNext rejects protocol-relative URLs, foreign
+  // schemes, oversized strings, and characters outside the
+  // internal-path allowlist. Anything dodgy falls back to /dashboard.
+  const next = safeNext(searchParams.get("next"));
 
   if (code) {
     const cookieStore = cookies();
