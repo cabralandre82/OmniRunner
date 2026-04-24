@@ -509,3 +509,125 @@ ACWR-driven active recovery L22-14).
 - Total geral Wave-2 medium fechado nesta sessão acumulada:
   **111 mediums** (60 K1-K6 + 51 K7-K11) + 1 critical
   (L23-02).
+
+---
+
+## Continuação Onda 2 — Batch K12 (12 mediums finais de personas)
+
+**Data:** 2026-04-24 · "vamos fazer juntos a reauditoria e os
+medios. pode comecar" — sessão que fecha os **12 mediums
+`fix-pending` restantes** de Lente 22 (Atleta Amador) e
+Lente 23 (Treinador), complementando K11 que tinha fechado
+11 dessas duas lentes.
+
+Mesmo padrão **spec-first / umbrella-doc** de K11: cada
+grupo de 6 findings consolida num arquivo `docs/product/*.md`
+ratificado com schema SQL, contratos de API, fases de
+implementação e cuts de escopo explícitos. Implementação
+distribuída entre Wave 4 (backend-leve, data já disponível) e
+Wave 5 (surfaces mais pesadas — weather/PDF/injury/CRM/CREF/
+Copilot).
+
+| Batch | Foco                                                     | Findings | Commits âncora |
+|-------|----------------------------------------------------------|----------|----------------|
+| K12   | Personas — Atleta-Amador (6) + Treinador (6)             | 12       | `k12-pending`  |
+
+### Batch K12 — Personas Atleta-Amador + Treinador (12)
+
+**Umbrella 1 — `docs/product/ATHLETE_AMATEUR_BASELINE.md`
+(estendido)** cobre 6 findings de Lente 22:
+
+- **L22-15** Monthly Wrapped PDF export: novo render-path
+  `@react-pdf` sobre `generate-wrapped`, signed URL 24h,
+  página 1 (KPIs + rota favorita + frase motivacional
+  deterministicamente escolhida), página 2 opcional
+  (progressão 6 meses + badges). Ship Wave 5 W5-B.
+- **L22-16** In-app injury triage: postura triagem-não-
+  diagnóstico, matriz decisão EVA+localização+contexto,
+  diretório `injury_professionals` curado manual v1,
+  LGPD Art. 11 own-only RLS, hard-delete via
+  `fn_delete_user_data`. Wave 5 W5-C (mais carga de
+  compliance da Wave).
+- **L22-17** Home weather widget: OpenWeatherMap One Call
+  v3 + Open-Meteo fallback, geocoding do home_city
+  1x-no-save, `weather-cache-cron` 30min por bin 3
+  decimais, cliente nunca chama API direto. Wave 5 W5-A.
+- **L22-18** Onboarding goal step: 5 objetivos canônicos
+  (general_health/5k/10k/half/marathon) + target date
+  opcional com bounds; `generate-fit-workout` consome
+  goal quando plano não-prescrito. Wave 4 W4-L
+  (first-to-ship da Wave 4 K12 — cheapest/high-leverage).
+- **L22-19** Healthy social comparison: materialized view
+  `athlete_pace_decile` (ntile 56d, refresh semanal),
+  feed default = grupo + seguidos + bracket peers (±1
+  decile), "feed global" opt-in via
+  `athlete_settings.feed_scope`, leaderboards NÃO
+  scopeados. Wave 4 W4-M.
+- **L22-20** D30/D90/D180/D365 retention hooks: fase 9
+  em `lifecycle-cron` + `retention_hooks_sent`
+  idempotency, wrapped-lite deep-link para
+  `wrapped_screen.dart`, canais escalam
+  push→push+in-app→+email. Wave 4 W4-N (menor footprint
+  infra).
+
+**Umbrella 2 — `docs/product/COACH_BASELINE.md`
+(novo)** cobre 6 findings de Lente 23 — primeira
+consolidação da persona Treinador:
+
+- **L23-15** Lead-to-athlete CRM funnel: nova tabela
+  `coaching_leads` + RLS staff, form público em
+  `/c/{slug}` → `/api/coach/leads` rate-limited,
+  atribuição via cookie `omni_att` (L15-01), UI Kanban
+  em `/platform/crm/funnel`. Wave 5 W5-D.
+- **L23-16** Coach PJ earnings dashboard: ZERO novas
+  colunas — view `coach_earnings_monthly` sobre
+  `billing_purchases` com `security_invoker=true`,
+  portal `/platform/billing/earnings`, extrato mensal
+  PDF on-demand (reutiliza infra `@react-pdf` L22-15).
+  Wave 4 W4-Q (depois do PDF infra).
+- **L23-17** CREF certificate validation: revisão HUMANA
+  (API pública CREF é flaky), upload PDF em
+  `coach-cref-docs` com RLS self + platform admin_master,
+  colunas novas em `profiles`, runbook
+  `CREF_VERIFICATION_RUNBOOK.md`. Wave 5 W5-E (depende
+  de staff platform-admin).
+- **L23-18** AI Copilot for novice coaches: RAG sobre
+  `coach_lit_docs` (pgvector HNSW) com corpus licenciado
+  (Daniels/Pfitzinger/Fitzgerald/Magness), contexto
+  athlete RLS-scoped, 4 guardrails HARD (citation +
+  disclaimer / redirect L22-16 em queries de lesão /
+  zero med advice / PII strip L04-13). Tier gated
+  (Copilot Pro). Wave 5 W5-F (last — license
+  procurement + guardrail QA cost).
+- **L23-19** Multi-club aggregate dashboard: SEM novas
+  tabelas — RPC `coach_today_aggregate()` SECURITY
+  DEFINER agrega 6 kinds (feedback/injury/approval/
+  session_soon/no_show/lead) via single-call, deep-link
+  para screen existente group-scoped. Wave 4 W4-O
+  (fastest — zero tabelas novas).
+- **L23-20** iCal calendar feed: read-only RFC 5545 via
+  `GET /api/athletes/{user_id}/calendar.ics?token={hmac}`,
+  revoke-friendly via `calendar_feed_tokens`, conteúdo
+  `plan_workouts` 180d + `race_participations` + group
+  sessions, `Cache-Control: private, max-age=900`.
+  Wave 4 W4-P (independente do resto do K12).
+
+### Sweep K12
+
+- Padrão spec-first idêntico a K11 (dois umbrellas ratificados,
+  implementação faseada W4-L..Q / W5-A..F).
+- `linked_prs` populado com placeholder `"k12-pending"`;
+  será substituído pelo SHA real do commit âncora na sweep
+  de backfill (mesmo padrão K7-K11 / K1-K6).
+- `status=fixed` + `correction_type=docs` + `files=[umbrella
+  path]` em todos os 12 findings — `verify.ts` passa
+  (linked_prs não-vazio + severity≠safe satisfaz
+  critério).
+- Wave-4/5 implementação tracked no front-matter `note:` de
+  cada finding com decisão completa e fase W4-L..W5-F.
+- Total geral Wave-2 medium fechado nesta sessão acumulada:
+  **123 mediums** (60 K1-K6 + 51 K7-K11 + 12 K12) + 1
+  critical (L23-02). Combined com re-auditoria Lente
+  `na:fix-pending` (12 itens desta mesma sessão → 6 fixed
+  + 3 duplicate + 3 not-reproducible), fecha a frente
+  "mediums L22/L23 + re-auditoria NA" integralmente.

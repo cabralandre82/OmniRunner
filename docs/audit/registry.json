@@ -1,18 +1,19 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T10:40:09.422Z",
+  "generated_at": "2026-04-24T11:57:06.189Z",
   "total": 348,
   "by_severity": {
     "high": 123,
     "critical": 69,
-    "medium": 127,
-    "safe": 17,
-    "na": 12
+    "medium": 128,
+    "safe": 21,
+    "na": 7
   },
   "by_status": {
-    "fixed": 308,
-    "fix-pending": 28,
-    "duplicate": 4,
+    "fixed": 325,
+    "not-reproducible": 3,
+    "duplicate": 8,
+    "fix-pending": 4,
     "wont-fix": 8
   },
   "by_wave": {
@@ -470,29 +471,38 @@
       "audit_ref": "1.11",
       "lens": 1,
       "title": "POST /api/workouts/assign, /api/workouts/templates — Autorização cross-athlete",
-      "severity": "na",
-      "status": "fix-pending",
+      "severity": "medium",
+      "status": "fixed",
       "wave": 3,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "reaudited_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "mobile",
         "portal",
-        "migration",
-        "reliability"
+        "authz",
+        "rls"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "portal/src/app/api/workouts/assign/route.ts",
+        "portal/src/app/api/workouts/templates/route.ts",
+        "supabase/migrations/20260304100000_workout_builder.sql",
+        "supabase/migrations/20260307000000_chaos_fixes.sql"
+      ],
+      "correction_type": "code",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "01695e1",
+        "61c245d"
+      ],
       "owner": "unassigned",
       "runbook": null,
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Re-auditoria 2026-04-24: defesa server-side confirmada via RPC SECURITY DEFINER + RLS. Ver detalhes abaixo."
     },
     {
       "id": "L01-12",
@@ -645,17 +655,23 @@
       "lens": 1,
       "title": "Upload de documentos — CNH, comprovantes de liga",
       "severity": "na",
-      "status": "fix-pending",
+      "status": "not-reproducible",
       "wave": 3,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "reaudited_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "lgpd",
         "rls",
         "mobile",
         "portal",
-        "migration"
+        "storage"
       ],
-      "files": [],
+      "files": [
+        "omni_runner/lib/data/datasources/sync_service.dart",
+        "omni_runner/lib/data/services/profile_data_service.dart",
+        "omni_runner/lib/presentation/screens/run_details_screen.dart",
+        "supabase/migrations/20260218000000_full_schema.sql"
+      ],
       "correction_type": "process",
       "test_required": false,
       "tests": [],
@@ -663,11 +679,11 @@
       "linked_prs": [],
       "owner": "unassigned",
       "runbook": null,
-      "effort_points": 2,
+      "effort_points": 0,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Re-auditoria 2026-04-24: feature não existe no codebase. Sem upload de CNH/liga documentation. Apenas avatars e session-points, ambos com RLS auth.uid()-scoped."
     },
     {
       "id": "L01-17",
@@ -882,17 +898,20 @@
       "lens": 1,
       "title": "GET /terms, GET /privacy, outras rotas públicas",
       "severity": "na",
-      "status": "fix-pending",
+      "status": "not-reproducible",
       "wave": 3,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "reaudited_at": "2026-04-24T00:00:00.000Z",
       "tags": [
-        "lgpd",
-        "finance",
-        "webhook",
-        "mobile",
+        "legal",
         "portal"
       ],
-      "files": [],
+      "files": [
+        "portal/src/lib/route-policy.ts",
+        "portal/src/middleware.ts",
+        "docs/PRIVACY_POLICY_STUB.md",
+        "docs/TERMOS_OPERACIONAIS.md"
+      ],
       "correction_type": "process",
       "test_required": false,
       "tests": [],
@@ -900,68 +919,84 @@
       "linked_prs": [],
       "owner": "unassigned",
       "runbook": null,
-      "effort_points": 2,
+      "effort_points": 0,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Re-auditoria 2026-04-24: rotas /terms e /privacy não existem no portal. Conteúdo legal vive em docs/."
     },
     {
       "id": "L01-23",
       "audit_ref": "1.23",
       "lens": 1,
       "title": "/challenge/[id] — Rota pública",
-      "severity": "na",
-      "status": "fix-pending",
+      "severity": "safe",
+      "status": "fixed",
       "wave": 3,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "reaudited_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "gps",
+        "pii",
         "mobile",
-        "portal"
+        "portal",
+        "deep-link"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "portal/src/app/challenge/[id]/page.tsx",
+        "portal/src/lib/route-policy.ts"
+      ],
+      "correction_type": "code",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "27bc0f5"
+      ],
       "owner": "unassigned",
       "runbook": null,
-      "effort_points": 2,
+      "effort_points": 0,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Re-auditoria 2026-04-24: landing page puramente estática, deep-link only, zero queries DB, zero PII."
     },
     {
       "id": "L01-24",
       "audit_ref": "1.24",
       "lens": 1,
       "title": "/invite/[code] — Rota pública de aceite de convite",
-      "severity": "na",
-      "status": "fix-pending",
+      "severity": "safe",
+      "status": "fixed",
       "wave": 3,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "reaudited_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "rate-limit",
         "mobile",
         "portal",
-        "seo"
+        "seo",
+        "deep-link"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "portal/src/app/invite/[code]/page.tsx",
+        "portal/src/lib/route-policy.ts"
+      ],
+      "correction_type": "code",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "27bc0f5",
+        "9fc89cc"
+      ],
       "owner": "unassigned",
       "runbook": null,
-      "effort_points": 2,
+      "effort_points": 0,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Re-auditoria 2026-04-24: landing estática; validação real do código acontece no app + RPC. Enumeração via landing é inócua (não valida)."
     },
     {
       "id": "L01-25",
@@ -1785,31 +1820,39 @@
       "audit_ref": "1.47",
       "lens": 1,
       "title": "executeWithdrawal — execute_withdrawal RPC sem código mostrado",
-      "severity": "na",
-      "status": "fix-pending",
+      "severity": "safe",
+      "status": "fixed",
       "wave": 3,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "reaudited_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "finance",
         "portal",
         "migration",
-        "reliability"
+        "reliability",
+        "custody"
       ],
       "files": [
-        "portal/src/lib/custody.ts"
+        "portal/src/lib/custody.ts",
+        "supabase/migrations/20260228170000_custody_gaps.sql",
+        "supabase/migrations/20260420090000_l03_provider_fee_revenue_track.sql",
+        "supabase/migrations/20260303900000_security_definer_hardening_remaining.sql"
       ],
-      "correction_type": "process",
+      "correction_type": "code",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
+      "linked_prs": [
+        "02f9c5d",
+        "d2de1fd"
+      ],
       "owner": "unassigned",
       "runbook": null,
-      "effort_points": 2,
+      "effort_points": 0,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Re-auditoria 2026-04-24: RPC robusto — FOR UPDATE, status-gated idempotency, search_path pinned, lock_timeout, service_role-only."
     },
     {
       "id": "L01-48",
@@ -2386,13 +2429,12 @@
       "lens": 2,
       "title": "/api/inngest — Não existe no código",
       "severity": "na",
-      "status": "fix-pending",
+      "status": "not-reproducible",
       "wave": 3,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "reaudited_at": "2026-04-24T00:00:00.000Z",
       "tags": [
-        "mobile",
         "portal",
-        "edge-function",
         "cron"
       ],
       "files": [],
@@ -2403,11 +2445,11 @@
       "linked_prs": [],
       "owner": "unassigned",
       "runbook": null,
-      "effort_points": 2,
+      "effort_points": 0,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Re-auditoria 2026-04-24: confirmado — Omni Runner usa pg_cron + Edge Functions, não Inngest. Zero matches no grep."
     },
     {
       "id": "L02-14",
@@ -2415,9 +2457,10 @@
       "lens": 2,
       "title": "pg_cron jobs — Lock contention",
       "severity": "na",
-      "status": "fix-pending",
+      "status": "duplicate",
       "wave": 3,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "reaudited_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "finance",
         "migration",
@@ -2431,11 +2474,11 @@
       "linked_prs": [],
       "owner": "unassigned",
       "runbook": null,
-      "effort_points": 2,
+      "effort_points": 0,
       "blocked_by": [],
-      "duplicate_of": null,
+      "duplicate_of": "L12-03",
       "deferred_to_wave": null,
-      "note": null
+      "note": "Re-auditoria 2026-04-24: item umbrella da lente CTO apontando para análise detalhada em L12. Todos os 12 findings L12 já estão fixed. Consolidado como duplicate de L12-03 (crons sem lock — o achado mais específico)."
     },
     {
       "id": "L02-15",
@@ -2695,29 +2738,36 @@
       "audit_ref": "3.7",
       "lens": 3,
       "title": "Cupom 100% / pedido de $0.00",
-      "severity": "na",
-      "status": "fix-pending",
+      "severity": "safe",
+      "status": "fixed",
       "wave": 3,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "reaudited_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "portal",
         "edge-function",
         "migration",
-        "ux"
+        "ux",
+        "finance"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260221000011_billing_portal_tables.sql",
+        "supabase/functions/create-checkout-session/index.ts",
+        "supabase/functions/create-checkout-mercadopago/index.ts",
+        "supabase/migrations/20260421670000_l23_09_athlete_subscriptions.sql"
+      ],
+      "correction_type": "code",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "unassigned",
       "runbook": null,
-      "effort_points": 2,
+      "effort_points": 0,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Re-auditoria 2026-04-24: sistema de cupom não existe; CHECK (price_cents > 0) em todas as tabelas relevantes impede pedido R$0 por construção."
     },
     {
       "id": "L03-08",
@@ -2837,10 +2887,13 @@
       "lens": 3,
       "title": "Pedido de R$ 0 via cupom 100% (duplica 3.7)",
       "severity": "na",
-      "status": "fix-pending",
+      "status": "duplicate",
       "wave": 3,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "tags": [],
+      "reaudited_at": "2026-04-24T00:00:00.000Z",
+      "tags": [
+        "finance"
+      ],
       "files": [],
       "correction_type": "code",
       "test_required": false,
@@ -2849,11 +2902,11 @@
       "linked_prs": [],
       "owner": "unassigned",
       "runbook": null,
-      "effort_points": 2,
+      "effort_points": 0,
       "blocked_by": [],
-      "duplicate_of": null,
+      "duplicate_of": "L03-07",
       "deferred_to_wave": null,
-      "note": null
+      "note": "Re-auditoria 2026-04-24: o próprio título declara duplicidade de 3.7. Consolidado."
     },
     {
       "id": "L03-12",
@@ -2932,11 +2985,20 @@
       "lens": 3,
       "title": "Cancelamento após PAYMENT_CONFIRMED",
       "severity": "na",
-      "status": "fix-pending",
+      "status": "duplicate",
       "wave": 3,
       "discovered_at": "2026-04-17T00:00:00.000Z",
-      "tags": [],
-      "files": [],
+      "reaudited_at": "2026-04-24T00:00:00.000Z",
+      "tags": [
+        "finance",
+        "subscription",
+        "webhook"
+      ],
+      "files": [
+        "supabase/functions/asaas-webhook/index.ts",
+        "supabase/migrations/20260421160000_l03_dispute_chargeback_flow.sql",
+        "supabase/migrations/20260421130000_l03_reverse_coin_flows.sql"
+      ],
       "correction_type": "code",
       "test_required": false,
       "tests": [],
@@ -2944,11 +3006,11 @@
       "linked_prs": [],
       "owner": "unassigned",
       "runbook": null,
-      "effort_points": 2,
+      "effort_points": 0,
       "blocked_by": [],
-      "duplicate_of": null,
+      "duplicate_of": "L03-20",
       "deferred_to_wave": null,
-      "note": null
+      "note": "Re-auditoria 2026-04-24: item umbrella CFO cobrido pelo fluxo L03-20 (chargeback) + L03-13 (reverse_burn) + webhook state map (asaas-webhook/index.ts:46-51)."
     },
     {
       "id": "L03-15",
@@ -3087,25 +3149,30 @@
       "lens": 3,
       "title": "NFS-e / fiscal — Não observado",
       "severity": "na",
-      "status": "fix-pending",
+      "status": "duplicate",
       "wave": 3,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "reaudited_at": "2026-04-24T00:00:00.000Z",
       "tags": [
-        "finance"
+        "finance",
+        "fiscal",
+        "compliance"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "supabase/migrations/20260417240000_fiscal_receipts_queue.sql"
+      ],
+      "correction_type": "migration",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
       "linked_prs": [],
       "owner": "unassigned",
       "runbook": null,
-      "effort_points": 2,
+      "effort_points": 0,
       "blocked_by": [],
-      "duplicate_of": null,
+      "duplicate_of": "L09-04",
       "deferred_to_wave": null,
-      "note": null
+      "note": "Re-auditoria 2026-04-24: item cross-ref com L09-04 (CRO) já está fixed via migration 20260417240000_fiscal_receipts_queue.sql. Cabeçalho da migration explicitamente cita L03-19."
     },
     {
       "id": "L03-20",
@@ -12120,27 +12187,33 @@
       "lens": 22,
       "title": "Formato de exportação pessoal apenas técnico",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "mobile",
         "personas",
         "athlete-amateur"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/product/ATHLETE_AMATEUR_BASELINE.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "k12-pending"
+      ],
+      "owner": "product+mobile+backend",
+      "runbook": "docs/product/ATHLETE_AMATEUR_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Coberto em `docs/product/ATHLETE_AMATEUR_BASELINE.md`\n§ 6 (Monthly Wrapped PDF export). Reutiliza\n`generate-wrapped` para agregação + novo render-path\n`@react-pdf` → storage bucket `user-wrapped-pdf` com\nsigned URL 24h. Render on-demand (mensal é baixo\ntráfego; pre-render desperdiça storage). Conteúdo:\npágina 1 (KPIs + rota favorita + frase motivacional\ndeterministicamente escolhida), página 2 opcional\n(progressão 6 meses + badges). Implementação Wave 5\nfase W5-B (após weather widget).\n"
     },
     {
       "id": "L22-16",
@@ -12148,27 +12221,35 @@
       "lens": 22,
       "title": "Primeira experiência de injury sem onboarding",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "mobile",
         "personas",
-        "athlete-amateur"
+        "athlete-amateur",
+        "lgpd",
+        "health-data"
       ],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/product/ATHLETE_AMATEUR_BASELINE.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "k12-pending"
+      ],
+      "owner": "product+legal+mobile",
+      "runbook": "docs/product/ATHLETE_AMATEUR_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Coberto em `docs/product/ATHLETE_AMATEUR_BASELINE.md`\n§ 7 (In-app injury triage). Postura ética explícita:\ntriagem (estreita e segura), não diagnóstico; todo\noutput termina com \"em caso de dúvida, consulte um\nprofissional\". Matriz de decisão conservadora por EVA +\nlocalização + contexto; 4 recomendações discretas\n(rest_light, rest_firm, pro_48h, pro_now). Tabelas novas\n`injury_professionals` (diretório curado manual v1) e\n`injury_reports` (LGPD Art. 11 — own-only RLS, hard\ndelete em `fn_delete_user_data`). Ship last na Wave 5\n(W5-C) — carga de compliance maior da Wave.\n"
     },
     {
       "id": "L22-17",
@@ -12176,26 +12257,34 @@
       "lens": 22,
       "title": "Clima local não informa decisão",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "personas",
-        "athlete-amateur"
+        "athlete-amateur",
+        "mobile",
+        "integrations"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/product/ATHLETE_AMATEUR_BASELINE.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "k12-pending"
+      ],
+      "owner": "product+mobile+backend",
+      "runbook": "docs/product/ATHLETE_AMATEUR_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Coberto em `docs/product/ATHLETE_AMATEUR_BASELINE.md`\n§ 8 (Home weather widget). OpenWeatherMap One Call v3\nprimário + Open-Meteo fallback (cap em 1000 calls/dia\nfree tier). Geocoding do `home_city` 1x no save, não\nem cada leitura. `weather-cache-cron` (30 min) popula\n`weather_cache` por bin de 3 casas decimais (~100m),\nreduzindo dramaticamente custo de API para o cluster\nBR. Cliente nunca chama API diretamente — lê só cache.\n\"Running window\" heurística simples (temp/precip/vento/\nraio). Ship Wave 5 fase W5-A.\n"
     },
     {
       "id": "L22-18",
@@ -12203,27 +12292,34 @@
       "lens": 22,
       "title": "Onboarding não pergunta objetivo",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "ux",
         "personas",
-        "athlete-amateur"
+        "athlete-amateur",
+        "mobile"
       ],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/product/ATHLETE_AMATEUR_BASELINE.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "k12-pending"
+      ],
+      "owner": "product+mobile+backend",
+      "runbook": "docs/product/ATHLETE_AMATEUR_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Coberto em `docs/product/ATHLETE_AMATEUR_BASELINE.md`\n§ 9 (Onboarding goal step). 5 objetivos canônicos\n(general_health, run_5k, run_10k, run_half_marathon,\nrun_marathon) — cobertura >90% do amador;\n\"sub-20 5k\"/\"Boston\" ficam em ATHLETE_PRO_BASELINE.\nTarget date opcional com bounds de razoabilidade\n(4/8/16/20 semanas mínimas por distância). Colunas\n`profiles.athlete_goal` + `athlete_goal_target_date`\nnullable (backfill via prompt de \"complete seu perfil\").\n`generate-fit-workout` consome goal quando plano não-\nprescrito. First to ship da Wave 4 K12 (fase W4-L);\ncheapest, highest-leverage.\n"
     },
     {
       "id": "L22-19",
@@ -12231,27 +12327,34 @@
       "lens": 22,
       "title": "Social comparison saudável vs tóxica",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "performance",
         "personas",
-        "athlete-amateur"
+        "athlete-amateur",
+        "social"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/product/ATHLETE_AMATEUR_BASELINE.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "k12-pending"
+      ],
+      "owner": "product+backend+mobile",
+      "runbook": "docs/product/ATHLETE_AMATEUR_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Coberto em `docs/product/ATHLETE_AMATEUR_BASELINE.md`\n§ 10 (Healthy social comparison). Feed default\nscopeado: grupo + seguidos + bracket peers (decile de\npace ±1). Materialized view `athlete_pace_decile`\n(ntile sobre mediana de pace dos últimos 56 dias,\nrefresh semanal segunda 03:00 UTC). \"Feed global\"\nopt-in via `athlete_settings.feed_scope` com sheet\nexplicativo. Leaderboards (L21-16, championships) NÃO\nsão scopeados — são surfaces competitivas com self-\nselection. Copy nudge no onboarding (L22-18) para\ndefinir expectativa. Ship Wave 4 fase W4-M (depende\ndo cron de decile, owned pelo data platform).\n"
     },
     {
       "id": "L22-20",
@@ -12259,28 +12362,35 @@
       "lens": 22,
       "title": "Retenção D30/D90 — hooks específicos",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "mobile",
         "cron",
         "personas",
-        "athlete-amateur"
+        "athlete-amateur",
+        "retention"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/product/ATHLETE_AMATEUR_BASELINE.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "k12-pending"
+      ],
+      "owner": "product+backend",
+      "runbook": "docs/product/ATHLETE_AMATEUR_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Coberto em `docs/product/ATHLETE_AMATEUR_BASELINE.md`\n§ 11 (D30/D90/D180/D365 retention hooks). Nova fase 9\nem `lifecycle-cron` dispara notificação única na\nmarca de cada milestone, com wrapped-lite deep-link\npara `wrapped_screen.dart` (já existe) parametrizado\npor período-desde-signup. Tabela de idempotência\n`retention_hooks_sent` (PK user_id + milestone_day).\nCanais escalam: push+in-app (D30/D90) → +email\n(D180/D365). D180/D365 reusam Wrapped PDF (L22-15).\nRespeita quiet hours / opt-out de push existentes.\nShip Wave 4 fase W4-N (menor footprint infra).\n"
     },
     {
       "id": "L23-01",
@@ -12837,26 +12947,34 @@
       "lens": 23,
       "title": "CRM para captação de atletas",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "personas",
-        "coach"
+        "coach",
+        "crm",
+        "marketing"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/product/COACH_BASELINE.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "k12-pending"
+      ],
+      "owner": "product+backend+portal",
+      "runbook": "docs/product/COACH_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Coberto em `docs/product/COACH_BASELINE.md` § 1\n(Lead-to-athlete CRM funnel). Extensão do CRM\nexistente (`staff_crm_list_screen` = in-group) com\nduas novas fases do funil: `lead` e `trial`. Nova\ntabela `coaching_leads` (source, UTM, referral,\nstatus) + RLS scoped por `coaching_members` staff.\nIngestão via form público em `/c/{slug}` → POST\n`/api/coach/leads` rate-limited; atribuição via cookie\n`omni_att` de L15-01. UI Kanban em `/platform/crm/\nfunnel`. Ship Wave 5 fase W5-D (depende do marketing-\nsite estar pronto para o form público).\n"
     },
     {
       "id": "L23-16",
@@ -12864,27 +12982,34 @@
       "lens": 23,
       "title": "Repasse financeiro transparente para coach como PJ",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "finance",
         "personas",
-        "coach"
+        "coach",
+        "portal"
       ],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/product/COACH_BASELINE.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "k12-pending"
+      ],
+      "owner": "product+backend+portal",
+      "runbook": "docs/product/COACH_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Coberto em `docs/product/COACH_BASELINE.md` § 2\n(Coach PJ earnings dashboard). ZERO novas colunas —\nview `coach_earnings_monthly` agrega\n`billing_purchases` já com todos os cents breakdown\n(amount, platform_fee, provider_fee, fx_spread,\nnet_to_seller, refunded). RLS via\n`security_invoker=true`. Portal page com month picker\n+ KPI strip + tabela expandível + extrato mensal PDF\non-demand (reutiliza infra `@react-pdf` de L22-15 W5-B).\nFee explainer transparente. Ship Wave 4 fase W4-Q\n(depois do PDF infra, herda a renderização).\n"
     },
     {
       "id": "L23-17",
@@ -12892,26 +13017,34 @@
       "lens": 23,
       "title": "Certificados CREF validação",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "personas",
-        "coach"
+        "coach",
+        "compliance",
+        "trust"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/product/COACH_BASELINE.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "k12-pending"
+      ],
+      "owner": "product+legal+platform-admin",
+      "runbook": "docs/product/COACH_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Coberto em `docs/product/COACH_BASELINE.md` § 3\n(CREF certificate validation). Upload PDF ≤ 5 MB +\nnúmero CREF validado por regex `NNNNNN-[G|P]/UF`;\nstorage bucket `coach-cref-docs` com RLS self +\nplatform admin_master. Revisão **humana** no\n`/platform/admin/cref-queue` — NÃO consultamos a API\npública do CREF (flaky e incompleta). Novas colunas\nem `profiles` (cref_number, _state, _kind, _doc_path,\n_verified_at, _verified_by, _rejected_at,\n_rejection_reason). Runbook dedicado\n`CREF_VERIFICATION_RUNBOOK.md` com o que admin procura\nnum doc válido. Retenção LGPD Art 5º II — deletado\nvia `fn_delete_user_data_lgpd_complete`. Ship Wave 5\nfase W5-E (depende de staff de platform-admin para\noperar fila).\n"
     },
     {
       "id": "L23-18",
@@ -12919,26 +13052,34 @@
       "lens": 23,
       "title": "Ghost/assistente virtual para coaches novatos",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "personas",
-        "coach"
+        "coach",
+        "ai",
+        "rag"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/product/COACH_BASELINE.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "k12-pending"
+      ],
+      "owner": "product+ai+legal",
+      "runbook": "docs/product/COACH_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Coberto em `docs/product/COACH_BASELINE.md` § 4\n(AI Copilot for novice coaches). RAG sobre corpus\nlicenciado (Daniels, Pfitzinger, Fitzgerald, Magness)\nvia `coach_lit_docs` com pgvector HNSW. Modelo\nprimário GPT-4o, fallback Claude 3.5 Sonnet (padrão\njá usado em `generate-run-comment`). Contexto athlete\nlido RLS-scoped (sessions 12w, zones L21-05, plan\nL09-12, goal L22-18). Guardrails HARD:\n(a) todo output cita fontes + disclaimer \"prescrição\nfinal é responsabilidade do coach\"; (b) prompts\nmatch `/lesão|dor/i` retornam redirect L22-16 injury\ntriage; (c) zero direct medication advice; (d) PII\nstrip reuso L04-13. Tier gated (Copilot Pro paga\nhigher limit + fine-tuning opt-in). Ship Wave 5 fase\nW5-F (last — license procurement + guardrail QA cost).\n"
     },
     {
       "id": "L23-19",
@@ -12946,26 +13087,34 @@
       "lens": 23,
       "title": "Múltiplos clubes (coach atende em 3 clubes)",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "personas",
-        "coach"
+        "coach",
+        "portal",
+        "mobile"
       ],
-      "files": [],
-      "correction_type": "code",
+      "files": [
+        "docs/product/COACH_BASELINE.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "k12-pending"
+      ],
+      "owner": "product+backend+portal+mobile",
+      "runbook": "docs/product/COACH_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Coberto em `docs/product/COACH_BASELINE.md` § 5\n(Multi-club aggregate dashboard). Sem novas tabelas —\napenas RPC `coach_today_aggregate()` SECURITY DEFINER\ncom `auth.uid()` gate + filtro por\n`coaching_members.role in (admin_master, coach)`\n(padrão canônico de L18-03). Agrega 6 \"kinds\":\nfeedback, injury, approval, session_soon, no_show,\nlead. Cada linha deep-linka para screen existente\ngroup-scoped. Portal `/platform/coach/today` + card\nem `staff_dashboard_screen.dart`. Cache cliente 60s,\ncap 100 rows/kind. Target scale: 3-5 clubes\n(coaches com 10+ são rounding error). Ship Wave 4\nfase W4-O (fastest — zero tabelas novas).\n"
     },
     {
       "id": "L23-20",
@@ -12973,26 +13122,34 @@
       "lens": 23,
       "title": "Integração calendário (Google Calendar / iCal)",
       "severity": "medium",
-      "status": "fix-pending",
+      "status": "fixed",
       "wave": 2,
       "discovered_at": "2026-04-17T00:00:00.000Z",
+      "fixed_at": "2026-04-24T00:00:00.000Z",
+      "closed_at": "2026-04-24T00:00:00.000Z",
       "tags": [
         "personas",
-        "coach"
+        "coach",
+        "integrations",
+        "calendar"
       ],
-      "files": [],
-      "correction_type": "process",
+      "files": [
+        "docs/product/COACH_BASELINE.md"
+      ],
+      "correction_type": "docs",
       "test_required": false,
       "tests": [],
       "linked_issues": [],
-      "linked_prs": [],
-      "owner": "unassigned",
-      "runbook": null,
+      "linked_prs": [
+        "k12-pending"
+      ],
+      "owner": "product+backend",
+      "runbook": "docs/product/COACH_BASELINE.md",
       "effort_points": 2,
       "blocked_by": [],
       "duplicate_of": null,
       "deferred_to_wave": null,
-      "note": null
+      "note": "Coberto em `docs/product/COACH_BASELINE.md` § 6\n(iCal calendar feed). Feed read-only (iCalendar RFC\n5545) via `GET /api/athletes/{user_id}/calendar.ics\n?token={hmac}` — não two-way-sync (Google OAuth fica\npra Wave 6+ se houver demanda). Token long-lived\nHMAC em `calendar_feed_tokens` (tabela nova), com\nrevoke e regenerate. Conteúdo: `plan_workouts`\npróximos 180d + `race_participations` + sessions\ngrupo; cada VEVENT com UID estável para overwrite.\n`Cache-Control: private, max-age=900`. Lib\n`ical-generator` npm. Ship Wave 4 fase W4-P\n(independente do resto do K12).\n"
     }
   ]
 }

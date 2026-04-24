@@ -1,11 +1,16 @@
 # Athlete-Amateur Persona Baseline
 
-**Status:** Ratified (2026-04-21), implementation Wave 4
+**Status:** Ratified (2026-04-21, extended 2026-04-24),
+implementation Wave 4-5 (see phases)
 **Owner:** product + mobile + backend
-**Related:** L22-10 (Watch/Wear), L22-11 (treadmill),
-L22-12 (streaks), L22-13 (cycle), L22-14 (active recovery),
-L21-12 (training load), L21-13 (recovery data),
-L04-04 (health-data consent).
+**Related — K11 batch (sections 1–5):** L22-10 (Watch/Wear),
+L22-11 (treadmill), L22-12 (streaks), L22-13 (cycle),
+L22-14 (active recovery), L21-12 (training load),
+L21-13 (recovery data), L04-04 (health-data consent).
+**Related — K12 batch (sections 6–11):** L22-15 (PDF wrapped),
+L22-16 (injury triage), L22-17 (weather widget), L22-18
+(onboarding goal), L22-19 (healthy social comparison),
+L22-20 (D30/D90/D180/D365 retention hooks).
 
 ## Question being answered
 
@@ -302,6 +307,557 @@ We log this in audit_logs.
 UX. The mandatory recovery card has a "I know what I'm doing"
 override, but logs the override (so the coach sees it later).
 
+### 6. Monthly Wrapped PDF export (L22-15)
+
+**What.** A shareable monthly PDF (1–2 pages) with the big
+numbers an amateur actually wants to show off: km, runs,
+best 5k, longest run, streak length, favorite route (heat
+strip), a motivational line, profile photo in the header.
+
+**Why not the technical export.** We already ship `.fit`
+(L21-07), which is the right format for TrainingPeaks /
+Garmin / Strava interop. But `.fit` is unreadable by the
+amateur's friends and family — the share-worthy artifact is
+a visual summary. Splitting the two is the right layering:
+`.fit` = data portability, PDF = consumer share object.
+
+**Reuse, don't rebuild.** `generate-wrapped` Edge Function
+already produces the aggregate JSON for period = month. We
+add **one** rendering path on top:
+
+```
+┌──────────────────────┐     ┌──────────────────────┐
+│ generate-wrapped     │ --> │ render-wrapped-pdf   │
+│  (aggregate JSON)    │     │  (Node + @react-pdf) │
+│  existente           │     │  novo Edge/Serverless│
+└──────────────────────┘     └─────────┬────────────┘
+                                       │
+                              ┌────────┴─────────┐
+                              │ storage bucket   │
+                              │ user-wrapped-pdf │
+                              │ signed URL 24h   │
+                              └──────────────────┘
+```
+
+**Rendering.** `@react-pdf/renderer` running in a Node
+runtime (Edge Deno has a React-PDF port but fonts are
+painful). Render happens server-side on-demand when the
+athlete taps "Exportar em PDF"; 24h signed URL returned.
+No pre-generation — monthly wrapped is low-traffic
+(< 5% MAU monthly), pre-rendering wastes storage.
+
+**PDF content (page 1).**
+
+- Header: profile photo + month/year ("Outubro 2026").
+- Big number row: `km` · `corridas` · `tempo total`.
+- Subtext: best 5k time, longest run (with distance + pace).
+- "Sua rota favorita" — heat strip of top-visited
+  segment (computed already by `compute-leaderboard`).
+- Motivational line, picked from a curated JSON (10 options,
+  rotating by `hash(user_id + month)` so same user sees
+  the same line that month, but it varies month to month).
+
+**PDF content (page 2, optional).**
+
+- Progression graph (monthly km last 6 months, bar chart).
+- Badges earned this month (L22-12 streaks + L05-12
+  badges).
+- Share copy block: "Compartilhe com seus amigos — #Omni".
+
+**Storage.**
+
+```sql
+create table public.user_wrapped_pdf (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id),
+  period_key text not null,             -- e.g. '2026-10'
+  storage_path text not null,           -- user-wrapped-pdf/u/{uid}/{period}.pdf
+  generated_at timestamptz not null default now(),
+  bytes int not null,
+  unique (user_id, period_key)
+);
+
+alter table public.user_wrapped_pdf enable row level security;
+create policy own_wrapped_pdf on public.user_wrapped_pdf
+  for select using (user_id = auth.uid());
+```
+
+**Storage bucket.** `user-wrapped-pdf`, private, path
+scheme `u/{user_id}/{period_key}.pdf`, RLS mirrors
+the table.
+
+**Social sharing.** Mobile uses the OS share sheet with
+`application/pdf` mime; no additional watermark / meta
+needed beyond what the PDF already shows.
+
+**Out of scope v1.**
+
+- Video wrapped (Reels-style). Separate project; much
+  higher cost to generate and distribute.
+- Custom theme / color pick. v1 ships one opinionated
+  template.
+
+### 7. In-app injury triage (L22-16)
+
+**What.** An in-app flow that triages a musculoskeletal
+complaint, gives immediate self-care guidance, and
+connects the athlete to a local professional if needed.
+
+**Ethical stance (must-have).** We do **not** diagnose. We
+**triage** (a narrower, safer scope: "should you rest, or
+should you see a professional?"). Copy across the flow
+reinforces this boundary. All outputs end with "Em caso
+de dúvida, consulte um profissional."
+
+**Flow.**
+
+1. Trigger points: Settings → "Reportar lesão" · post-run
+   sheet "Senti dor hoje" · weekly retrospective prompt.
+2. Screen 1 — Location: body-map picker with 8 regions
+   (pé, tornozelo, canela, joelho, coxa, quadril, lombar,
+   outro). Single-select.
+3. Screen 2 — Onset + intensity: "Quando começou?"
+   (today / this week / longer) · "Quão forte?" (EVA 0–10
+   slider, labels: 0 = "não incomoda", 10 = "insuportável").
+4. Screen 3 — Context: "Dói em repouso?" / "Dói só
+   correndo?" / "Dói até caminhando?" (radio, single).
+5. Output — Recommendation, from a decision matrix (see
+   below).
+
+**Decision matrix (v1, conservative).**
+
+```
+if intensity >= 8                         → professional NOW
+elif intensity >= 5 AND hurts_at_rest     → professional within 48h
+elif intensity >= 5                       → rest 3-5d + pro if ≥ day 3 same
+elif intensity < 5 AND onset > 7d         → rest 3d + pro if no improvement
+elif intensity < 5                        → rest 2-3d + gentle ROM
+```
+
+All branches include: RICE mnemonic card (Rest/Ice/
+Compression/Elevation), a "pausar treino" one-tap that
+freezes the streak (L22-12 manual_freeze, audited) and
+pauses the current plan, and a "find local professional"
+CTA.
+
+**Professional directory.** Read from a new table,
+curated manually (v1 not crowd-sourced):
+
+```sql
+create table public.injury_professionals (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null check (kind in
+    ('physio','orthopedist','sports_medicine','podiatry')),
+  name text not null,
+  city text not null,
+  state text not null check (char_length(state) = 2),
+  phone text,
+  whatsapp text,
+  website text,
+  accepts_insurance text[],
+  verified_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index injury_pro_state_city on public.injury_professionals
+  (state, city) where verified_at is not null;
+```
+
+Surfaced only when the triage result is "professional"
+and sorted by distance (city-level; no GPS tracking —
+uses the city on user profile). No booking integration
+in v1 — we link to WhatsApp / website.
+
+**Data capture.**
+
+```sql
+create table public.injury_reports (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id),
+  region text not null,
+  intensity int not null check (intensity between 0 and 10),
+  onset text not null check (onset in
+    ('today','this_week','longer')),
+  hurts_at_rest boolean not null,
+  hurts_walking boolean not null,
+  recommendation text not null check (recommendation in
+    ('rest_light','rest_firm','pro_48h','pro_now')),
+  created_at timestamptz not null default now()
+);
+
+alter table public.injury_reports enable row level security;
+create policy own_injury on public.injury_reports
+  for all using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+```
+
+**LGPD posture.** Health data (Art. 11). Stored per-user
+with own-only RLS. **Never** shared with coach automatically
+— if the athlete wants to tell the coach, they send a
+message. Hard-deleted on account deletion via
+`fn_delete_user_data`.
+
+**Out of scope v1.**
+
+- ML triage (training data is too sparse, ethical floor
+  is too high).
+- In-app telemedicine. Partner deep-link only.
+- Insurance claim assist. Partner territory.
+- Medication dosing / naming. Strict no-go.
+
+### 8. Home weather widget (L22-17)
+
+**What.** The today-screen header shows a 3-line block:
+now + next 6h precipitation + "running window" hint.
+
+**Why.** Amateurs routinely open the window or another app
+to decide "do I go out now?". The alternative is not
+running. Bringing the decision into the run app is cheap
+(one API call) and materially helps adherence.
+
+**Data source.** Primary: OpenWeatherMap One Call API 3.0
+(cache-friendly, good BR coverage). Fallback: Open-Meteo
+(free, sufficient for "will it rain in 2h?"). Budget cap
+at OpenWeatherMap free tier (1,000 calls/day) — any call
+over the ceiling falls back to Open-Meteo automatically.
+
+**Coordinates.** From the athlete's home city on profile
+(not runtime GPS — that would require background location
+permission we don't need). Resolution: city centroid,
+cached at user level.
+
+```sql
+alter table public.profiles
+  add column home_city_lat double precision,
+  add column home_city_lng double precision;
+```
+
+We geocode `home_city` once on save, not at every
+weather read.
+
+**Caching.** We **never** call the weather API on
+app open. `weather-cache-cron` (pg_cron every 30 min)
+pulls current+forecast for distinct (lat/lng) bins used
+by ≥1 user, and stores:
+
+```sql
+create table public.weather_cache (
+  cache_key text primary key,       -- '{lat3}:{lng3}' (3 decimals ≈ 100m)
+  fetched_at timestamptz not null default now(),
+  payload jsonb not null,           -- { now, hourly[6], alerts[] }
+  source text not null check (source in ('openweather','openmeteo'))
+);
+```
+
+App reads `weather_cache` by key; no direct API call from
+client. The bin resolution (3 decimals) trades 100m
+precision for dramatic API cost reduction (1,000 active
+cities, not 1M athletes).
+
+**UI (home screen).**
+
+```
+┌──────────────────────────────────────────────┐
+│ Hoje · 06:00   22°C · nublado                │
+│ Próximas 6h: chuva começa ~ 08:30            │
+│ 👟 Boa janela: agora até 08:00               │
+└──────────────────────────────────────────────┘
+```
+
+The "running window" is a simple heuristic:
+
+```
+pleasant if temperature in [12, 28] AND precipitation_mm = 0
+  AND wind_speed < 6 m/s AND no lightning alert
+marginal if temperature in [8, 32] AND precipitation_mm < 0.5
+harsh otherwise
+```
+
+**Consent.** Weather isn't sensitive, but the home-city
+geocoding stores a lat/lng. We add a short line in
+onboarding: "Para o widget de clima — se desativar, a
+tela pula o bloco". Preference persists in `athlete_settings`.
+
+**Out of scope v1.**
+
+- Per-run GPS-based forecasting (unnecessary, adds perms).
+- Pollen / UV / AQI. Nice-to-haves; separate spec.
+- Alerts push (e.g. "chuva em 30 min"). Pilot separately
+  once we trust the data source volume on BR metros.
+
+### 9. Onboarding goal step (L22-18)
+
+**What.** A mandatory step in amateur onboarding that asks
+"Qual seu objetivo?" with 5 canonical goals and an
+optional target date. The plan generator reads the goal;
+the home screen reads it; the social copy reads it.
+
+**The 5 canonical goals.**
+
+1. `general_health` — "Saúde geral / bem-estar".
+2. `run_5k` — "Terminar um 5k".
+3. `run_10k` — "Terminar um 10k".
+4. `run_half_marathon` — "Terminar uma meia (21k)".
+5. `run_marathon` — "Terminar uma maratona (42k)".
+
+We ship 5, not 20. 5 covers >90% of the amateur cohort and
+keeps periodization logic simple. "Sub-20 5k" /
+"qualificar-me para Boston" are pro-tier concerns
+(`ATHLETE_PRO_BASELINE.md`).
+
+**Target date.** Optional. If provided, must be ≥ 4 weeks
+out for 5k, ≥ 8 weeks for 10k, ≥ 16 weeks for half,
+≥ 20 weeks for marathon. Shorter windows show a warning
+"prazo apertado — plano agressivo" but are allowed
+(adults, informed consent).
+
+**Schema.**
+
+```sql
+alter table public.profiles
+  add column athlete_goal text check (athlete_goal in
+    ('general_health','run_5k','run_10k',
+     'run_half_marathon','run_marathon')),
+  add column athlete_goal_target_date date;
+
+create index profile_goal on public.profiles (athlete_goal)
+  where athlete_goal is not null;
+```
+
+Column is nullable so the existing unboarded users aren't
+forced to backfill; the next app open prompts a
+"completa seu perfil em 30s" card.
+
+**Plan generator consumption.** `generate-fit-workout`
+reads `athlete_goal`:
+
+- `general_health` → 3× easy runs + 1× walk per week,
+  volume cap 25 km/wk unless user overrides.
+- `run_5k` → 3–4× runs, one interval, one long
+  run ≤ 7 km at steady pace.
+- `run_10k` → 4× runs, one tempo, long run up to 12 km.
+- `run_half_marathon` → 4–5× runs, tempo + intervals
+  alternating, long run scaling to 18–22 km.
+- `run_marathon` → 5× runs, long run scaling to 32 km
+  over 16–20 wks.
+
+The existing coach-prescribed plan (L09-12) overrides all
+of this. Goal is only used when the user is self-guided.
+
+**Analytics.** A product event fires on goal set / change:
+
+```
+product_event: athlete_goal_set
+  goal: <one of 5>
+  has_target_date: bool
+  distance_experience_weeks: int
+  source: 'onboarding' | 'settings'
+```
+
+Onboarding funnel: goal-set CTR is a KPI for this finding's
+post-ship review.
+
+**Out of scope v1.**
+
+- Trail / ultra / vertical km goals. Niche personas;
+  separate spec.
+- Multi-goal athletes (marathon + 5k concurrent). Pro
+  tier; the plan generator for amateur assumes one
+  primary goal.
+
+### 10. Healthy social comparison (L22-19)
+
+**What.** The default feed is scoped to the athlete's
+group + followed users + ability-bracket peers. A global
+feed is opt-in, warned on entry, and remembered as a
+choice per session.
+
+**Why.** Amateurs joining the app mid-journey ("eu estava
+animada por ter corrido 8 min/km") see a shared feed full
+of 4 min/km runners and silently disengage. The
+Instagram / Strava research on social comparison is
+well-documented; the fix is scope, not content moderation.
+
+**Scope layers (default on).**
+
+```
+feed_default = {
+  group_members,           -- coaching_group_members for joined groups
+  followed_users,          -- existing follows
+  bracket_peers            -- see below
+}
+```
+
+**Bracket matching.** Pace decile from the last 8 weeks
+of the athlete's own runs. The feed includes users whose
+pace decile is within ±1 of the viewer's. Deciles are
+re-computed weekly:
+
+```sql
+create materialized view public.athlete_pace_decile as
+select
+  user_id,
+  ntile(10) over (order by median_pace_secs_per_km) as decile,
+  median_pace_secs_per_km
+from (
+  select user_id,
+         percentile_cont(0.5) within group
+           (order by moving_time_secs::float / distance_km)
+           as median_pace_secs_per_km
+  from public.sessions
+  where started_at > now() - interval '56 days'
+    and distance_km >= 2
+    and recording_type in ('outdoor','treadmill')
+  group by user_id
+) t;
+
+create unique index athlete_pace_decile_uid
+  on public.athlete_pace_decile (user_id);
+```
+
+Refreshed by a weekly cron (Mondays 03:00 UTC).
+
+**Feed query sketch.**
+
+```sql
+select p.*
+from posts p
+join athletes a on a.id = p.author_id
+where
+  -- group & followed
+  (p.author_id in (select followed_id from follows where follower_id = $viewer))
+  or (p.group_id in (select group_id from coaching_members
+                      where user_id = $viewer))
+  -- bracket peers
+  or (
+     a.decile between $viewer_decile - 1 and $viewer_decile + 1
+     and p.visibility in ('public','followers_of_followers')
+  );
+```
+
+**"Feed global" opt-in.** Settings → "Feed". Toggle with
+a sheet:
+
+> Ativar o Feed Global mostra corridas de todos os atletas
+> — incluindo performances bem acima das suas. Útil se
+> você curte comparar, desmotivante se você está no
+> começo. Pode voltar a desligar a qualquer momento.
+
+Opt-in persists in `athlete_settings.feed_scope` (`home`,
+`global`), defaults to `home`.
+
+**Leaderboard posture.** Leaderboards (L21-16 races,
+championships) are **not** scoped by bracket — they show
+everyone. The finding is about the *default feed*, not
+competitive surfaces. Opt-in not required because users
+browsing a 10k leaderboard already expect to see fast
+runners (self-selection into the surface).
+
+**Copy nudges.** On amateur onboarding (L22-18) we include:
+"Seu feed começa com o seu grupo e pessoas de ritmo
+parecido. Você pode ver todo mundo nas Configurações."
+Sets the expectation up-front.
+
+**Out of scope v1.**
+
+- ML-ranked feed. Over-engineered for current scale.
+- Block / mute based on pace differential. We don't want
+  to hide specific users; we want to change the default
+  surface.
+
+### 11. D30/D90/D180/D365 retention hooks (L22-20)
+
+**What.** `lifecycle-cron` emits a dedicated push + email
++ in-app card on the athlete's D30, D90, D180, D365
+anniversary of signup. Each delivers a "wrapped-lite"
+artifact scoped to the period.
+
+**Why.** Our existing retention stack (streak, badges,
+inactivity_nudge, streak_at_risk) covers the D0–D7
+window well. D30+ is under-served; the absolute biggest
+win in retention research (Sean Ellis, Reforge, Strava
+internal) is celebrating milestones the user wouldn't
+have noticed.
+
+**Delivery matrix.**
+
+| Day | Artifact                         | Channels        |
+|-----|----------------------------------|-----------------|
+| D30 | "Seu primeiro mês" 1-pager       | push + in-app   |
+| D90 | "Trimestre no ar" 1-pager        | push + in-app   |
+| D180| "Meio ano!" + PDF wrapped (L22-15)| push + email + in-app |
+| D365| "1 ano!" + PDF wrapped + badge   | push + email + in-app |
+
+**Cron expansion.** `lifecycle-cron` already runs every
+5 minutes. We add one phase (after phase 8 — streak at
+risk):
+
+```
+# ── 9. Retention milestones (once per user lifetime) ──
+for target_day in [30, 90, 180, 365]:
+  for user in select user_id, created_at from auth.users
+              where date_trunc('day', created_at + interval target_day 'day')
+                    = date_trunc('day', now())
+                and not exists (select 1 from retention_hooks_sent
+                                where user_id = u.user_id
+                                  and milestone_day = target_day):
+    call notify-rules(rule='retention_milestone',
+                      user_id=u.user_id,
+                      milestone_day=target_day)
+    insert retention_hooks_sent (user_id, milestone_day)
+```
+
+**Idempotency table.**
+
+```sql
+create table public.retention_hooks_sent (
+  user_id uuid not null references auth.users(id),
+  milestone_day int not null check (milestone_day in (30,90,180,365)),
+  sent_at timestamptz not null default now(),
+  primary key (user_id, milestone_day)
+);
+```
+
+**notify-rules rule.** `retention_milestone` renders a
+`wrapped-lite`:
+
+```
+{
+  title: "Seu primeiro mês!",
+  subtitle: "42 km · 8 corridas · streak de 5 dias",
+  cta: "Ver detalhes",
+  deep_link: "/(athlete)/wrapped?period=since_signup"
+}
+```
+
+The deep link opens `wrapped_screen.dart` already in the
+app (parameterized for the period since signup).
+
+**Quiet hours.** Respect existing notification settings.
+If user has push off, we fall back to in-app card only
+(no nag on email channel).
+
+**D180 / D365 email.** These two only, because by D180 we
+trust the user will still be active and won't flinch at
+an email. A subject line pattern: "180 dias — parabéns,
+[first_name]" / "1 ano de Omni, [first_name]".
+
+**Measurement.** We track:
+
+- Send rate per milestone (should be ~1:1 with signups
+  180 days ago).
+- Open / tap rate per milestone.
+- D+7 retention post-milestone (did the hook lift
+  activity?).
+
+**Out of scope v1.**
+
+- D7 retention hooks. Already covered by streak /
+  streak_at_risk (overlap would spam).
+- Milestone-specific rewards (OmniCoins, badges) beyond
+  the D365 badge. Growth can iterate.
+- A/B variants of copy. Launch one tone; iterate.
+
 ## What we DO NOT do
 
 - **Calorie tracking**: tried by 5 fitness apps and 4 of them
@@ -311,26 +867,65 @@ override, but logs the override (so the coach sees it later).
   separate finding if it comes up.
 - **In-app exercise videos**: licensing nightmare; partner
   integration if needed.
+- **ML-ranked feed / ML injury triage**: precision floor is
+  too high for us; both would leak health claims. Wave 6+
+  conversation if at all.
+- **Medical device classification**: we stay firmly in the
+  general-wellness lane. Injury triage + weather hints are
+  triage/UX, not diagnosis.
 
-## Implementation phases (Wave 4)
+## Implementation phases
 
-1. **W4-G** Streaks: schema, cron, UI badge.
+Wave 4 already had 5 phases (W4-G…K, sections 1–5).
+K12 adds 6 new phases spread across Wave 4 and Wave 5:
+
+### Wave 4 (continuation — K11 phases already defined)
+
+1. **W4-G** Streaks: schema, cron, UI badge. (L22-12)
 2. **W4-H** Treadmill mode: recording flag, anti-cheat
-   carve-out, UI toggle.
-3. **W4-I** Active recovery suggestion: heuristic in
-   `generate-fit-workout`, daily_recommendations field, UI.
-4. **W4-J** Apple Watch / Wear OS thin companion (each is
-   its own native target; can ship in parallel).
-5. **W4-K** Cycle tracking: dedicated opt-in flow, schema
-   with pgsodium encryption, hard-delete on opt-out.
+   carve-out, UI toggle. (L22-11)
+3. **W4-I** Active recovery suggestion. (L22-14)
+4. **W4-J** Apple Watch / Wear OS thin companion. (L22-10)
+5. **W4-K** Cycle tracking (last — LGPD review). (L22-13)
 
-Cycle tracking is **last** because it needs the most legal /
-LGPD review and we want the rest of the persona-baseline
-features shipped first.
+### Wave 4 — K12 additions (product-feature batch)
+
+6. **W4-L** Onboarding goal step (L22-18): small migration
+   + onboarding screen + plan-generator hook. Cheap, high
+   leverage; first to ship of K12.
+7. **W4-M** Healthy social comparison (L22-19): decile
+   materialized view + feed query change +
+   `athlete_settings.feed_scope`. Depends on
+   `athlete_pace_decile` cron — owned by data platform.
+8. **W4-N** D30/D90/D180/D365 retention hooks (L22-20):
+   new `lifecycle-cron` phase + `retention_hooks_sent`
+   idempotency table + `notify-rules` template. Smallest
+   infra footprint; ship alongside W4-L.
+
+### Wave 5 — K12 (heavier features)
+
+9. **W5-A** Home weather widget (L22-17): requires
+   OpenWeatherMap contract + `weather-cache-cron` +
+   home-city geocoding. Partner dependency shifts it
+   out of Wave 4.
+10. **W5-B** Monthly Wrapped PDF (L22-15): new edge/serverless
+    runtime (`@react-pdf`) + `user-wrapped-pdf` bucket.
+    Ship after the weather widget so the template has
+    one more "real" output to amortize.
+11. **W5-C** In-app injury triage (L22-16): legal review of
+    copy + `injury_professionals` curated directory seed
+    + hard-delete integration. Heaviest compliance load
+    — ships last.
+
+Cycle tracking (W4-K) remains the LGPD-hairiest; injury
+triage (W5-C) is the heaviest compliance load of the K12
+batch. Both ship at the end of their respective waves.
 
 ## See also
 
 - `docs/product/ATHLETE_PRO_BASELINE.md` (sibling)
+- `docs/product/COACH_BASELINE.md` (K12 sibling, treinador
+  persona)
 - `docs/product/RECOVERY_SLEEP_TRACKING.md` (L21-13)
 - `docs/policies/HEALTH_DATA_CONSENT.md` (L04-04)
 - `docs/runbooks/MOBILE_OFFLINE_SESSION_BACKUP.md` (L05-19)
