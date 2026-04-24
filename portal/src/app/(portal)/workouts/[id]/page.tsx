@@ -128,6 +128,15 @@ export default async function WorkoutDetailPage({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {blockList.length > 0 && (
+              <a
+                href={`/api/training-plan/workouts/${params.id}/export.fit`}
+                className="rounded-lg border border-border bg-transparent px-4 py-2 text-sm font-medium text-content-secondary hover:bg-surface-elevated"
+                title="Baixa o mesmo .fit que chega no relógio do atleta"
+              >
+                Baixar .fit
+              </a>
+            )}
             <Link
               href={`/workouts/${params.id}/edit`}
               className="rounded-lg border border-brand bg-transparent px-4 py-2 text-sm font-medium text-brand hover:bg-brand/5"

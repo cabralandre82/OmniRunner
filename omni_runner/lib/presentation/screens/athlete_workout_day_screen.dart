@@ -46,7 +46,10 @@ class _AthleteWorkoutDayScreenState extends State<AthleteWorkoutDayScreen> {
   int _pendingDeliveries = 0;
   bool _fitCompatible = false;
 
-  static const _fitProviders = {'garmin', 'coros', 'suunto'};
+  // L05-24 — Polar adicionado. Polar Flow importa .fit nativamente em
+  // Vantage, Pacer, Grit e Ignite. Apple Watch fica de fora (usa
+  // WorkoutKit, não .fit — coberto pela L22-10).
+  static const _fitProviders = {'garmin', 'coros', 'suunto', 'polar'};
 
   @override
   void initState() {

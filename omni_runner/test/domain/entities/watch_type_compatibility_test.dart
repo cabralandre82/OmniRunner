@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  const fitProviders = {'garmin', 'coros', 'suunto'};
+  // L05-24 — Polar incluído (Polar Flow importa .fit nativamente).
+  // Apple Watch segue de fora (WorkoutKit, coberto pela L22-10).
+  const fitProviders = {'garmin', 'coros', 'suunto', 'polar'};
 
   String? resolveWatchType(String? manualType, String? linkedProvider) {
     if (manualType != null) return manualType;
@@ -56,8 +58,8 @@ void main() {
       expect(isFitCompatible('apple_watch'), false);
     });
 
-    test('polar is NOT FIT compatible', () {
-      expect(isFitCompatible('polar'), false);
+    test('polar IS FIT compatible (L05-24)', () {
+      expect(isFitCompatible('polar'), true);
     });
 
     test('null is NOT FIT compatible', () {
@@ -78,6 +80,16 @@ void main() {
     test('Apple Watch user via device link → hide send to watch', () {
       final watch = resolveWatchType(null, 'apple');
       expect(isFitCompatible(watch), false);
+    });
+
+    test('Polar user via device link → show send to watch (L05-24)', () {
+      final watch = resolveWatchType(null, 'polar');
+      expect(isFitCompatible(watch), true);
+    });
+
+    test('Coach overrides athlete to polar → show send to watch (L05-24)', () {
+      final watch = resolveWatchType('polar', null);
+      expect(isFitCompatible(watch), true);
     });
 
     test('Coach overrides to coros → show send to watch', () {
