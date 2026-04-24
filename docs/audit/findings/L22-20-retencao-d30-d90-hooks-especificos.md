@@ -18,7 +18,7 @@ test_required: false
 tests: []
 linked_issues: []
 linked_prs:
-  - "k12-pending"
+  - "fce133b"
 
 owner: product+backend
 runbook: docs/product/ATHLETE_AMATEUR_BASELINE.md

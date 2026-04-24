@@ -1,7 +1,7 @@
 # SCORECARD — Progresso da Auditoria
 
 > **Gerado automaticamente** por `tools/audit/build-registry.ts`. **Não editar à mão.**
-> Atualizado em 2026-04-24 11:57:06 UTC.
+> Atualizado em 2026-04-24 12:00:07 UTC.
 
 ## Visão Geral
 

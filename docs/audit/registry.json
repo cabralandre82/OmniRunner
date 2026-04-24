@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-24T11:57:06.189Z",
+  "generated_at": "2026-04-24T12:00:07.893Z",
   "total": 348,
   "by_severity": {
     "high": 123,
@@ -12205,7 +12205,7 @@
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
-        "k12-pending"
+        "fce133b"
       ],
       "owner": "product+mobile+backend",
       "runbook": "docs/product/ATHLETE_AMATEUR_BASELINE.md",
@@ -12241,7 +12241,7 @@
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
-        "k12-pending"
+        "fce133b"
       ],
       "owner": "product+legal+mobile",
       "runbook": "docs/product/ATHLETE_AMATEUR_BASELINE.md",
@@ -12276,7 +12276,7 @@
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
-        "k12-pending"
+        "fce133b"
       ],
       "owner": "product+mobile+backend",
       "runbook": "docs/product/ATHLETE_AMATEUR_BASELINE.md",
@@ -12311,7 +12311,7 @@
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
-        "k12-pending"
+        "fce133b"
       ],
       "owner": "product+mobile+backend",
       "runbook": "docs/product/ATHLETE_AMATEUR_BASELINE.md",
@@ -12346,7 +12346,7 @@
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
-        "k12-pending"
+        "fce133b"
       ],
       "owner": "product+backend+mobile",
       "runbook": "docs/product/ATHLETE_AMATEUR_BASELINE.md",
@@ -12382,7 +12382,7 @@
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
-        "k12-pending"
+        "fce133b"
       ],
       "owner": "product+backend",
       "runbook": "docs/product/ATHLETE_AMATEUR_BASELINE.md",
@@ -12966,7 +12966,7 @@
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
-        "k12-pending"
+        "fce133b"
       ],
       "owner": "product+backend+portal",
       "runbook": "docs/product/COACH_BASELINE.md",
@@ -13001,7 +13001,7 @@
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
-        "k12-pending"
+        "fce133b"
       ],
       "owner": "product+backend+portal",
       "runbook": "docs/product/COACH_BASELINE.md",
@@ -13036,7 +13036,7 @@
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
-        "k12-pending"
+        "fce133b"
       ],
       "owner": "product+legal+platform-admin",
       "runbook": "docs/product/COACH_BASELINE.md",
@@ -13071,7 +13071,7 @@
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
-        "k12-pending"
+        "fce133b"
       ],
       "owner": "product+ai+legal",
       "runbook": "docs/product/COACH_BASELINE.md",
@@ -13106,7 +13106,7 @@
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
-        "k12-pending"
+        "fce133b"
       ],
       "owner": "product+backend+portal+mobile",
       "runbook": "docs/product/COACH_BASELINE.md",
@@ -13141,7 +13141,7 @@
       "tests": [],
       "linked_issues": [],
       "linked_prs": [
-        "k12-pending"
+        "fce133b"
       ],
       "owner": "product+backend",
       "runbook": "docs/product/COACH_BASELINE.md",
